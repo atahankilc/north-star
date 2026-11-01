@@ -991,3 +991,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Verified: tsc, vitest 876, check:tokens 0, check:gallery 84, check:lessons, lint (no errors); each fork shot its
   states in dark and light; SidePanel, Settings and the card panels old against new (worktrees): identical once the
   rules' margin was put back, the rest of the differences the real-time canvas's noise seen old against old.
+
+## Done (2026-11-01): the panels on the kit (D-326)
+- CardPanel, CardPanelKinds, TaskPanel, Threads, ThreadInbox, DocContent, PeopleSettings onto Button, Label, Rule,
+  Field, PromptField, Checkbox, Chip, Empty (two forks; a session restart cut their reports, the check was redone).
+- Verified: tsc, vitest, check:tokens 0, check:gallery; 108 gallery states (card panel, its parts, card tasks, task
+  panel, threads, threads panel, document text, people settings, tasks button, CountBadge, plane) old against new,
+  old and new each served from a checkout of its own (served from the main tree, every glyph's antialiasing differs:
+  a first run showed that), a second old as the noise floor: 97 identical, 11 flagged, all of them in the canvas
+  behind (cropped: the panels themselves 0 px).

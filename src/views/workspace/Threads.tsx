@@ -29,6 +29,7 @@ import {
 import { useHistory } from '../../data/history'
 import { isOnPlane, type Card } from '../../data/cards'
 import { ago } from '../../ui/ago'
+import { Button } from '../../ui/Button'
 import styles from './Threads.module.css'
 
 type ThreadView = {
@@ -254,9 +255,9 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
           as the other actions, cyan on hover (D-220); actions in brackets; [×]. With the list shut, `all threads` opens it beside. */}
       <header className={styles.head}>
         {onList && (
-          <button className={styles.action} onClick={onList}>
+          <Button className={styles.action} onClick={onList}>
             all threads
-          </button>
+          </Button>
         )}
         <span className={styles.title} title={where ? `${title} · on ${where}` : title}>
           <span className={styles.titleWhat}>
@@ -265,28 +266,28 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
           </span>
           {where && !onShow && <span className={styles.titleWhere}> · on {where}</span>}
           {onShow && (
-            <button className={styles.goThere} title={`go there${where ? ` (on ${where})` : ''}`} onClick={onShow}>
+            <Button className={styles.goThere} title={`go there${where ? ` (on ${where})` : ''}`} onClick={onShow}>
               <span className={styles.goThereName}>{where ? `on ${where}` : 'go there'}</span>
               <span className={styles.goThereMark} aria-hidden>
                 ↗
               </span>
-            </button>
+            </Button>
           )}
         </span>
         <span className={styles.actions}>
           {thread && (
-            <button className={styles.action} onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>
+            <Button className={styles.action} onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>
               {resolved ? 'reopen' : 'resolve'}
-            </button>
+            </Button>
           )}
           {mayDeleteThread && (
-            <button className={styles.action} data-tone="danger" onClick={() => thread && deleteThread(wid, thread.id).then(closeThread, fail)}>
+            <Button className={styles.action} tone="danger" onClick={() => thread && deleteThread(wid, thread.id).then(closeThread, fail)}>
               delete
-            </button>
+            </Button>
           )}
-          <button className={styles.close} aria-label="Close thread" onClick={closeThread}>
+          <Button className={styles.close} icon tone="danger" aria-label="Close thread" onClick={closeThread}>
             [×]
-          </button>
+          </Button>
         </span>
       </header>
       <ol ref={list} className={styles.log}>
@@ -303,16 +304,16 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
               {/* Only its writer edits or deletes a message (D-166). */}
               {m.uid === me && editing?.id !== m.id && (
                 <span className={styles.msgActions}>
-                  <button className={styles.action} onClick={() => setEditing({ id: m.id, text: m.text })}>
+                  <Button className={styles.action} onClick={() => setEditing({ id: m.id, text: m.text })}>
                     edit
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     className={styles.action}
-                    data-tone="danger"
+                    tone="danger"
                     onClick={() => thread && deleteMessage(wid, thread.id, m.id, messages.data.length === 1).then(() => messages.data.length === 1 && closeThread(), fail)}
                   >
                     delete
-                  </button>
+                  </Button>
                 </span>
               )}
             </div>
@@ -400,9 +401,9 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
           </div>
           <div className={styles.bar}>
             <span className={styles.footnote}>enter sends · shift+enter: new line · @: mention</span>
-            <button type="submit" className={styles.send} disabled={!text.trim() || busy}>
+            <Button type="submit" className={styles.send} tone="primary" disabled={!text.trim() || busy}>
               send
-            </button>
+            </Button>
           </div>
         </form>
       )}

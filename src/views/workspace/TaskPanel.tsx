@@ -23,6 +23,7 @@ import { TYPE_ACCENT } from './PlaneCards'
 import { useTasksSide } from './sideState'
 import styles from './CardPanel.module.css'
 import own from './TaskPanel.module.css'
+import { Chip } from '../../ui/Chip'
 
 const TONE = 'var(--accent-cyan)'
 
@@ -430,14 +431,9 @@ function Labels({ task, editor, n }: { task: Task; editor: boolean; n: number })
     <PanelSection n={n} name="labels" add={editor && draft === null ? { label: 'label', onClick: () => setDraft('') } : undefined} empty={!labels.length && draft === null}>
       <div className={styles.tags}>
         {labels.map((l) => (
-          <span key={l} className={styles.chip}>
+          <Chip key={l} onRemove={editor ? () => set(labels.filter((x) => x !== l)) : undefined} removeLabel="Remove">
             #{l}
-            {editor && (
-              <button className={styles.chipX} title="Remove" onClick={() => set(labels.filter((x) => x !== l))}>
-                ×
-              </button>
-            )}
-          </span>
+          </Chip>
         ))}
         {draft !== null && (
           <input

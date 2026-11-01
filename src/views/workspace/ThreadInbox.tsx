@@ -15,6 +15,8 @@ import { ago } from '../../ui/ago'
 import { runCells } from '../../ui/Appear'
 import { DURATION_MS, CELLS_SHUT } from '../../ui/cellReveal'
 import { CommentIcon, myUid, ThreadPanel, toggleInbox, useThreadView } from './Threads'
+import { CountBadge } from '../../ui/CountBadge'
+import { Button } from '../../ui/Button'
 import styles from './Threads.module.css'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
@@ -89,7 +91,7 @@ export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
       onClick={() => toggleInbox()}
     >
       <CommentIcon />
-      {mentions > 0 ? <span className={styles.badge}>{mentions > 9 ? '9+' : mentions}</span> : fresh.length > 0 && <span className={styles.dot} />}
+      {mentions > 0 ? <CountBadge count={mentions} /> : fresh.length > 0 && <span className={styles.dot} />}
     </button>
   )
 }
@@ -227,13 +229,13 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
         <span className={styles.title}>threads</span>
         <span className={styles.actions}>
           {counts.new > 0 && (
-            <button className={styles.action} onClick={markAll}>
+            <Button className={styles.action} onClick={markAll}>
               mark all read
-            </button>
+            </Button>
           )}
-          <button className={styles.close} aria-label="Close threads" onClick={() => toggleInbox(false)}>
+          <Button className={styles.close} icon tone="danger" aria-label="Close threads" onClick={() => toggleInbox(false)}>
             [×]
-          </button>
+          </Button>
         </span>
       </header>
       {/* What you're looking at, always said (D-195): the whole workspace, or what's inside one plane. */}
@@ -244,36 +246,36 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
             <span>
               on <b>{canvasScope!.name}</b>
             </span>
-            <button className={styles.action} onClick={() => useThreadView.setState({ scope: null })}>
+            <Button className={styles.action} onClick={() => useThreadView.setState({ scope: null })}>
               whole workspace
-            </button>
+            </Button>
           </>
         ) : scope && scope !== THIS_CANVAS ? (
           <>
             <span>
               inside <b>{scopeName?.(scope) ?? 'a plane'}</b>
             </span>
-            <button className={styles.action} onClick={() => useThreadView.setState({ scope: null })}>
+            <Button className={styles.action} onClick={() => useThreadView.setState({ scope: null })}>
               whole workspace
-            </button>
+            </Button>
           </>
         ) : (
           <>
             <span>whole workspace</span>
             {canvasScope && (
-              <button className={styles.action} onClick={() => useThreadView.setState({ scope: THIS_CANVAS })}>
+              <Button className={styles.action} onClick={() => useThreadView.setState({ scope: THIS_CANVAS })}>
                 on this canvas
-              </button>
+              </Button>
             )}
           </>
         )}
       </div>
       <nav className={styles.views} aria-label="Which threads">
         {(['all', 'new', 'mentions', 'resolved'] as const).map((v) => (
-          <button key={v} className={styles.action} aria-pressed={view === v} data-lit={(v === 'new' && counts.new > 0) || undefined} onClick={() => setView(v)}>
+          <Button key={v} className={styles.action} pressed={view === v} data-lit={(v === 'new' && counts.new > 0) || undefined} onClick={() => setView(v)}>
             {v}
             {counts[v] > 0 && ` ${counts[v]}`}
-          </button>
+          </Button>
         ))}
       </nav>
       <ol className={styles.rows}>

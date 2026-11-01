@@ -100,10 +100,6 @@
   letter-spacing: var(--track-label);
 }
 
-.action {
-  composes: small from '../../ui/AsciiButton.module.css';
-}
-
 .inviteForm {
   display: flex;
   align-items: center;

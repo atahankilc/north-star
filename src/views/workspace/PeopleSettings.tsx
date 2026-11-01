@@ -22,6 +22,7 @@ import {
   useMembers,
 } from '../../data/workspaces'
 import { AsciiButton } from '../../ui/AsciiButton'
+import { Button } from '../../ui/Button'
 import { Loading } from '../../ui/Loading'
 import { Select } from '../../ui/Select'
 import { Note, Row, Section } from '../../ui/Settings'
@@ -62,12 +63,12 @@ export function PeopleSettings({ wid, workspace, requests }: Props) {
                       {r.email && r.email !== r.name && <span className={styles.dim}> {r.email}</span>}
                     </span>
                     <span>
-                      <button className={styles.action} data-tone="primary" onClick={() => run(approveJoinRequest(wid, r))}>
+                      <Button tone="primary" onClick={() => run(approveJoinRequest(wid, r))}>
                         let in
-                      </button>
-                      <button className={styles.action} data-tone="danger" onClick={() => run(denyJoinRequest(wid, r.uid))}>
+                      </Button>
+                      <Button tone="danger" onClick={() => run(denyJoinRequest(wid, r.uid))}>
                         deny
-                      </button>
+                      </Button>
                     </span>
                   </li>
                 ))}
@@ -130,24 +131,23 @@ function Members({ wid, workspace, run }: { wid: string; workspace: WorkspaceCtx
           {isOwner && !me && !lastOwner && (
             confirm === uid ? (
               <>
-                <button
-                  className={styles.action}
-                  data-tone="danger"
+                <Button
+                  tone="danger"
                   onClick={() => {
                     setConfirm(null)
                     run(removeMember(wid, uid))
                   }}
                 >
                   remove {name.split(' ')[0]}?
-                </button>
-                <button className={styles.action} onClick={() => setConfirm(null)}>
+                </Button>
+                <Button onClick={() => setConfirm(null)}>
                   keep
-                </button>
+                </Button>
               </>
             ) : (
-              <button className={styles.action} data-tone="danger" onClick={() => setConfirm(uid)}>
+              <Button tone="danger" onClick={() => setConfirm(uid)}>
                 remove
-              </button>
+              </Button>
             )
           )}
         </span>
@@ -179,9 +179,9 @@ function Members({ wid, workspace, run }: { wid: string; workspace: WorkspaceCtx
       )}
       {members.hasMore && (
         <div className={styles.more}>
-          <button className={styles.action} onClick={members.more} disabled={members.loadingMore}>
+          <Button onClick={members.more} disabled={members.loadingMore}>
             {members.loadingMore ? 'loading…' : 'show more'}
-          </button>
+          </Button>
           <span className={styles.dim}>
             {listed.length} of {total}
           </span>
@@ -215,9 +215,9 @@ function InviteCode({ wid, workspace, isOwner, run }: { wid: string; workspace: 
           {copied ? 'copied' : 'copy'}
         </AsciiButton>
         {isOwner && user && (
-          <button className={styles.action} onClick={() => run(renewInviteCode(wid, code, user.id))}>
+          <Button onClick={() => run(renewInviteCode(wid, code, user.id))}>
             new code
-          </button>
+          </Button>
         )}
       </Row>
     </Section>
@@ -270,9 +270,9 @@ function EmailInvites({ workspace, onError }: { workspace: WorkspaceCtx['workspa
               <span className={styles.who}>
                 {address} <span className={styles.dim}>invited</span>
               </span>
-              <button className={styles.action} data-tone="danger" onClick={() => uninviteEmail(wid, address).catch((e: Error) => onError(e.message))}>
+              <Button tone="danger" onClick={() => uninviteEmail(wid, address).catch((e: Error) => onError(e.message))}>
                 remove
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

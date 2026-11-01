@@ -5,16 +5,13 @@
 }
 
 .eyebrow {
+  composes: label from '../../ui/Label.module.css';
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-3);
   align-items: baseline;
   margin: 0 0 var(--space-3);
-  color: var(--fg-dim);
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .private {

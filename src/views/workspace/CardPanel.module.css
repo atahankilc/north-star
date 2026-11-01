@@ -186,17 +186,6 @@
   gap: var(--space-1);
 }
 
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-half);
-  padding: 0 var(--space-1);
-  border: var(--line-w) solid var(--line);
-  background: var(--chip);
-  font-size: var(--text-xs);
-  line-height: var(--space-4);
-}
-
 .chipX {
   display: none;
   padding: 0;
@@ -205,10 +194,6 @@
   color: var(--fg-faint);
   font: inherit;
   cursor: pointer;
-}
-
-.chip:hover .chipX {
-  display: inline;
 }
 
 .chipX:hover {
@@ -279,10 +264,6 @@
   gap: var(--space-3);
 }
 
-.small {
-  composes: small from '../../ui/AsciiButton.module.css';
-}
-
 .hint {
   margin-left: auto;
   color: var(--fg-faint);
@@ -312,12 +293,6 @@
   align-items: baseline;
 }
 
-.k {
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-}
 
 .field {
   border-bottom-color: transparent;

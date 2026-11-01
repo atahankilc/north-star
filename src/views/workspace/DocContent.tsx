@@ -8,6 +8,7 @@ import { filesAvailable, type Doc, type DocBody, type DocKind } from '../../data
 import { ago } from '../../ui/ago'
 import { Markdown } from '../../ui/Markdown'
 import styles from './DocContent.module.css'
+import { numText } from '../../ui/Rule'
 
 // Each kind's mark (D-232): a square in its colour and a short name.
 export const KIND_SHORT: Record<DocKind, string> = { markdown: 'md', image: 'img', pdf: 'pdf', report: 'rep' }
@@ -114,7 +115,7 @@ function Report({ body, research, links }: { body: DocBody; research: boolean; l
       {(body.sections ?? []).map((s, i) => (
         <section key={i} className={styles.section}>
           <h2 className={styles.question} data-heading={i}>
-            <span className={styles.num}>{String(i + 1).padStart(2, '0')}</span>
+            <span className={styles.num}>{numText(i + 1)}</span>
             {s.question}
           </h2>
           <ul className={styles.points}>

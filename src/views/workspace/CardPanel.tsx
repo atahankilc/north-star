@@ -51,6 +51,9 @@ import { openThread, startComment, threadOn } from './Threads'
 import styles from './CardPanel.module.css'
 import { DUR } from '../../ui/motion'
 import { CARD_TONE } from '../../ui/cardTone'
+import { Button } from '../../ui/Button'
+import { Chip } from '../../ui/Chip'
+import { Label as UiLabel } from '../../ui/Label'
 
 // Type = the panel's colour, as the card's edge (D-055).
 const TONE: Record<AnyType, string> = CARD_TONE
@@ -334,14 +337,9 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
       >
         <div className={styles.tags}>
           {all.map((tag) => (
-            <span key={tag} className={styles.chip}>
+            <Chip key={tag} onRemove={editor ? () => retag(tag, false) : undefined} removeLabel="Take it off all of them">
               #{tag}
-              {editor && (
-                <button className={styles.chipX} title="Take it off all of them" onClick={() => retag(tag, false)}>
-                  ×
-                </button>
-              )}
-            </span>
+            </Chip>
           ))}
           {adding !== null && (
             <input
@@ -489,7 +487,7 @@ function PackagePlan({ n, card, editor }: P) {
   const { wid } = useWs()
   const row = (field: 'impact' | 'effort', values: string[]) => (
     <>
-      <span className={styles.k}>{field}</span>
+      <UiLabel>{field}</UiLabel>
       <Pills values={values} value={card[field]} editor={editor} label={field} onPick={(v) => void updateCard(wid, card, { [field]: v }, `${field} of`)} />
     </>
   )
@@ -561,7 +559,7 @@ function PlanSection({ n, card, editor }: P) {
   const { wid } = useWs()
   const row = (label: string, field: 'priority' | 'status' | 'impact' | 'effort', values: string[]) => (
     <>
-      <span className={styles.k}>{label}</span>
+      <UiLabel>{label}</UiLabel>
       <Pills values={values} value={card[field]} editor={editor} label={label} onPick={(v) => void updateCard(wid, card, { [field]: v }, `${label} of`)} />
     </>
   )
@@ -828,12 +826,12 @@ export function EvidenceForm({ start, onDone }: { start?: Partial<Evidence>; onD
       </div>
       <input className={styles.input} placeholder="link (optional)" value={f.url ?? ''} maxLength={2000} onChange={(e) => setF({ ...f, url: e.target.value })} onKeyDown={keys} />
       <div className={styles.formActions}>
-        <button className={styles.small} data-tone="primary" onClick={save}>
+        <Button tone="primary" onClick={save}>
           {start?.id ? 'save' : 'add'}
-        </button>
-        <button className={styles.small} onClick={() => onDone(null)}>
+        </Button>
+        <Button onClick={() => onDone(null)}>
           cancel
-        </button>
+        </Button>
         <span className={styles.hint}>enter {start?.id ? 'saves' : 'adds'} · esc</span>
       </div>
     </div>
@@ -1096,14 +1094,9 @@ function TagsSection({ n, card, editor }: P) {
     <PanelSection n={n} name="tags" add={editor ? { label: 'tag', onClick: () => setAdding(true) } : undefined} empty={!tags.length && !adding}>
       <div className={styles.tags}>
         {tags.map((t) => (
-          <span key={t} className={styles.chip}>
+          <Chip key={t} onRemove={editor ? () => set(tags.filter((x) => x !== t)) : undefined} removeLabel="Remove">
             #{t}
-            {editor && (
-              <button className={styles.chipX} title="Remove" onClick={() => set(tags.filter((x) => x !== t))}>
-                ×
-              </button>
-            )}
-          </span>
+          </Chip>
         ))}
         {adding && (
           <input

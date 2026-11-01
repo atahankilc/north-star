@@ -6007,7 +6007,12 @@ docs/foundation-audit-2026-10-31.md).
   keys), Chip (`tag` | `pill` | `kind`, `onRemove`), CountBadge (`9+`, corner | inline). Each with its example.
   SidePanel and Settings identical old and new in both themes; the comparison caught the card panel's rules losing
   their margin to the stylesheet order (fixed: `.section .rule`).
-- *Not yet:* moving the areas onto the kit (what each copy still needs is in those forks' notes: a world size for
+- *Built:* the panels on the kit (2026-11-01): the card panel and its parts, the task panel, threads and the
+  threads panel, a document's text, people settings (Button, Label, Rule, Field, PromptField, Checkbox, Chip, Empty
+  where they were hand-made; 234 lines out, 125 in, mostly CSS). The tasks button and CountBadge stayed as they were.
+  108 gallery states old against new, each served from its own checkout, both themes: the panels identical; the 11
+  flagged differ only in the real-time canvas behind them.
+- *Not yet:* moving the other areas onto the kit (what each copy still needs is in those forks' notes: a world size for
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
   MenuPanel, the settings gear's badge 4 px higher once moved); patterns (Dialog/Window, WizardShell, SetupPanel,
   Dock); `check:kit`; folders.

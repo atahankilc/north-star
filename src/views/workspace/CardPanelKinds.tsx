@@ -30,6 +30,9 @@ import { linkTone } from './PlaneLinks'
 import { packageTree } from './cardInside'
 import { confidenceFor } from './cardFacts'
 import styles from './CardPanel.module.css'
+import { Button } from '../../ui/Button'
+import { Chip } from '../../ui/Chip'
+import { Label } from '../../ui/Label'
 
 const MAX_CRITERIA = 8
 
@@ -79,23 +82,18 @@ export function CompetitorProfile({ n, card, editor }: P) {
   return (
     <PanelSection n={n} name="profile">
       <div className={styles.plan}>
-        <span className={styles.k}>does</span>
+        <Label>does</Label>
         <Field value={card.description} placeholder="what they offer" editor={editor} multiline onSave={save('description')} />
-        <span className={styles.k}>for</span>
+        <Label>for</Label>
         <Field value={card.audience} placeholder="who buys it" editor={editor} onSave={save('audience')} />
-        <span className={styles.k}>pricing</span>
+        <Label>pricing</Label>
         <Field value={card.pricing} placeholder="what it costs" editor={editor} onSave={save('pricing')} />
-        <span className={styles.k}>where</span>
+        <Label>where</Label>
         <div className={styles.tags}>
           {regions.map((r) => (
-            <span key={r} className={styles.chip}>
+            <Chip key={r} onRemove={editor ? () => setRegions(regions.filter((x) => x !== r)) : undefined} removeLabel="Remove">
               {r}
-              {editor && (
-                <button className={styles.chipX} title="Remove" onClick={() => setRegions(regions.filter((x) => x !== r))}>
-                  ×
-                </button>
-              )}
-            </span>
+            </Chip>
           ))}
           {region !== null ? (
             <input
@@ -121,7 +119,7 @@ export function CompetitorProfile({ n, card, editor }: P) {
             )
           )}
         </div>
-        <span className={styles.k}>site</span>
+        <Label>site</Label>
         <Field value={card.url} placeholder="their website" editor={editor} link onSave={save('url')} />
       </div>
     </PanelSection>
@@ -205,18 +203,18 @@ function NewFeature({ card, cards, categories, onDone }: { card: Card; cards: Ca
     <div className={styles.form}>
       <input className={styles.input} autoFocus placeholder="its name" value={f.name} maxLength={200} onChange={(e) => setF({ ...f, name: e.target.value })} onKeyDown={keys} />
       <div className={styles.plan}>
-        <span className={styles.k}>about</span>
+        <Label>about</Label>
         <textarea ref={about} className={styles.input} rows={1} placeholder="what it does" value={f.description ?? ''} maxLength={20000} onChange={(e) => setF({ ...f, description: e.target.value })} onKeyDown={keys} />
-        <span className={styles.k}>category</span>
+        <Label>category</Label>
         <div className={styles.cats}>
           <input className={styles.input} placeholder="booking, operations…" value={f.category ?? ''} maxLength={100} onChange={(e) => setF({ ...f, category: e.target.value })} onKeyDown={keys} />
           {categories.length > 0 && (
             <Pills values={categories} value={f.category} editor label="Categories in use" onPick={(v) => setF({ ...f, category: v })} />
           )}
         </div>
-        <span className={styles.k}>offered</span>
+        <Label>offered</Label>
         <Pills values={AVAILABILITIES} value={f.availability} editor label="Offered" onPick={(v) => setF({ ...f, availability: v })} />
-        <span className={styles.k}>ours</span>
+        <Label>ours</Label>
         <Select
           className={styles.select}
           value={ours}
@@ -224,16 +222,16 @@ function NewFeature({ card, cards, categories, onDone }: { card: Card; cards: Ca
           options={[{ value: '', label: 'none' }, ...features.map((c) => ({ value: c.id, label: c.title || 'untitled feature' }))]}
           onChange={setOurs}
         />
-        <span className={styles.k}>seen at</span>
+        <Label>seen at</Label>
         <input className={styles.input} placeholder="where it was seen" value={f.url ?? ''} maxLength={2000} onChange={(e) => setF({ ...f, url: e.target.value })} onKeyDown={keys} />
       </div>
       <div className={styles.formActions}>
-        <button className={styles.small} data-tone="primary" disabled={!f.name.trim()} onClick={add}>
+        <Button tone="primary" disabled={!f.name.trim()} onClick={add}>
           add
-        </button>
-        <button className={styles.small} onClick={() => onDone(null, null)}>
+        </Button>
+        <Button onClick={() => onDone(null, null)}>
           cancel
-        </button>
+        </Button>
         <span className={styles.hint}>enter adds · esc</span>
       </div>
     </div>
@@ -248,18 +246,18 @@ function FeatureDetails({ f, card, cards, ours, editor, categories, onClose }: {
     <div className={styles.cfOpen}>
       <div className={styles.cfHead}>
         <Field value={f.name} placeholder="its name" editor={editor} onSave={(v) => v && set({ name: v })} />
-        <button className={styles.small} onClick={onClose}>
+        <Button onClick={onClose}>
           close
-        </button>
+        </Button>
       </div>
       <div className={styles.plan}>
-        <span className={styles.k}>about</span>
+        <Label>about</Label>
         <Field value={f.description} placeholder="what it does" editor={editor} multiline onSave={(v) => set({ description: v })} />
-        <span className={styles.k}>category</span>
+        <Label>category</Label>
         <Field value={f.category} placeholder={categories.length ? categories.join(', ') : 'booking, operations…'} editor={editor} onSave={(v) => set({ category: v })} />
-        <span className={styles.k}>offered</span>
+        <Label>offered</Label>
         <Pills values={AVAILABILITIES} value={f.availability} editor={editor} label="Offered" onPick={(v) => set({ availability: v })} />
-        <span className={styles.k}>ours</span>
+        <Label>ours</Label>
         {editor ? (
           <Select
             className={styles.select}
@@ -271,21 +269,20 @@ function FeatureDetails({ f, card, cards, ours, editor, categories, onClose }: {
         ) : (
           <span>{ours?.title ?? '—'}</span>
         )}
-        <span className={styles.k}>seen at</span>
+        <Label>seen at</Label>
         <Field value={f.url} placeholder="where it was seen" editor={editor} link onSave={(v) => set({ url: v })} />
       </div>
       {editor && (
         <div className={styles.formActions}>
-          <button
-            className={styles.small}
-            data-tone="danger"
+          <Button
+            tone="danger"
             onClick={() => {
               onClose()
               void removeCompetitorFeature(wid, f, comparisons)
             }}
           >
             remove
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -330,9 +327,9 @@ export function Parent({ card, cards, editor }: { card: Card; cards: Card[]; edi
         ↑ {parent.title || PLACEHOLDER[parent.type]}
       </button>
       {editor && (
-        <button className={styles.small} onClick={() => void deleteEdge(wid, e.id)}>
+        <Button onClick={() => void deleteEdge(wid, e.id)}>
           detach
-        </button>
+        </Button>
       )}
     </div>
   )
