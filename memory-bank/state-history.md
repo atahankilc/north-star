@@ -1035,3 +1035,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   arrange can name them (change.ts' `broughtAlong`).
 - Verified: tsc (app, evals), vitest 914 (agentPlumbing.test.ts: both new tests fail without the fix), stub evals 114
   tasks 0 failed, `--wrong` 114 failed.
+
+## Done (2026-11-01): agent-bugs 7, a plane's preview no longer spills onto the canvas
+- Reproduced in headless Chrome on the emulators: the medium fixture seeded as Alice (evals/emulator.ts' `emulate`
+  through Vite's runner, from the scratchpad), the dev stub's `preview demo: cards`, seen from the canvas. Chips sat
+  below the plane, ghosts were empty dashed boxes, a removed link ran across the canvas.
+- While a plane is only its picture, its marks fold into one on the plane (L's, `N changes inside +3 ~1 ↦1 −1`, no
+  wash); in focus every mark as before (shot after stepping into Segments).
+- Verified: tsc, vitest 917 (previewFold.test.ts, happy-dom), check:tokens 0, stub evals 0 failed; before and after
+  screenshots looked at.

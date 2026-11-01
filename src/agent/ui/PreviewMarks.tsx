@@ -26,7 +26,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { isReducedMotion } from '../../state/motion'
 import { runCells } from '../../ui/Appear'
-import { previewState, setBeforeOpen, subscribePreview, type PreviewState, type Target } from '../preview'
+import { previewState, setBeforeOpen, subscribePreview, type MarkChange, type PreviewState, type Target } from '../preview'
 import styles from './PreviewMarks.module.css'
 import { tokenPx } from '../../styles/cssToken'
 
@@ -35,7 +35,8 @@ export function usePreview(): PreviewState | null {
 }
 
 type Rect = { x: number; y: number; w: number; h: number }
-type Drawn = { key: string; t: Target; r: Rect; ghost?: Rect; line?: [number, number, number, number]; away?: boolean; was: string[]; tag: string }
+// `inside`: a plane's folded mark (the items it stands for, so the stepper's current one lights it).
+export type Drawn = { key: string; t: Target; r: Rect; ghost?: Rect; line?: [number, number, number, number]; away?: boolean; was: string[]; tag: string; inside?: string[] }
 type Chip = { key: string; d: Drawn; x: number; y: number; text: string; inside: boolean }
 
 // Where an element was drawn when the preview opened, relative to the transformed world holding it (so it follows the
@@ -58,6 +59,39 @@ function inPiece(el: Element, piece: string): boolean {
   if (p) return p === piece
   const q = new URLSearchParams(location.search)
   return q.get('focus') === piece || (q.get('beside') ?? '').split(',').includes(piece)
+}
+
+// The plane a thing is drawn in when that plane is only its fitted picture on the canvas (not in focus, not beside):
+// its marks fold into one on the plane (agent-bugs 7), since its cards are a few pixels there and their marks, chips,
+// ghosts and links would lie outside the plane, over the canvas. In focus every mark is drawn as before.
+export function pictureOf(el: Element): Element | null {
+  const p = el.parentElement?.closest('[data-target^="plane:"][data-kind="plane"]')
+  if (!p) return null
+  const id = p.getAttribute('data-target')!.slice(6)
+  const q = new URLSearchParams(location.search)
+  return q.get('focus') === id || (q.get('beside') ?? '').split(',').includes(id) ? null : p
+}
+
+const SIGN: Record<MarkChange, string> = { added: '+', changed: '~', removed: '−', moved: '↦' }
+
+const foldedTargets = new Map<string, Target>()
+
+// One plane's folded marks as one mark on the plane: `3 changes inside +2 ~1`, each change's words on hover.
+export function folded(plane: Element, list: Drawn[]): Drawn {
+  const id = plane.getAttribute('data-target')!.slice(6)
+  const items = new Map<string, Drawn>()
+  for (const d of list) items.set(d.t.item ?? d.t.key, d)
+  const by = new Map<MarkChange, number>()
+  for (const d of items.values()) by.set(d.t.change, (by.get(d.t.change) ?? 0) + 1)
+  const n = items.size
+  const signs = [...by].map(([c, k]) => `${SIGN[c]}${k}`).join(' ')
+  const change: MarkChange = by.size === 1 ? [...by.keys()][0] : 'changed'
+  const made: Target = { key: `inside:${id}`, id, change, sel: '', tier: 'l', tag: `${n} change${n === 1 ? '' : 's'} inside ${signs}`, was: [...new Set([...items.values()].map((d) => d.t.tag))] }
+  // The same target while its words stay (the layer redraws only when a target or a box changes).
+  const had = foldedTargets.get(made.key)
+  const t = had && had.change === made.change && had.tag === made.tag && had.was.join('\n') === made.was.join('\n') ? had : made
+  foldedTargets.set(t.key, t)
+  return { key: t.key, t, r: rectOf(plane), was: t.was, tag: t.tag, inside: [...items.keys()] }
 }
 
 // One of five points of it hits it (the middle and four points in from the corners).
@@ -277,6 +311,15 @@ export function PreviewMarks() {
       const a = document.querySelector('[data-app]')
       const ar = a ? rectOf(a) : { x: 0, y: 0, w: innerWidth, h: innerHeight }
       const out: Drawn[] = []
+      // Marks inside a plane that's only a picture here, by plane: one mark each (bug 7).
+      const fold = new Map<Element, Drawn[]>()
+      const inPicture = (d: Drawn, ...els: (Element | undefined)[]) => {
+        const pics = els.map((e) => (e ? pictureOf(e) : null))
+        const pic = pics.find(Boolean)
+        if (!pic) return false
+        for (const p of new Set(pics.filter((x): x is Element => !!x))) fold.set(p, [...(fold.get(p) ?? []), d])
+        return true
+      }
       for (const { t, els, was } of found) {
         if (t.line) {
           const two = ends.get(t.key)
@@ -291,7 +334,10 @@ export function PreviewMarks() {
               line = [p1.x, p1.y, p2.x, p2.y]
             }
           }
-          if (line) out.push({ key: `${t.key}:l`, t, r: { x: Math.min(line[0], line[2]), y: Math.min(line[1], line[3]), w: Math.abs(line[2] - line[0]) || 1, h: Math.abs(line[3] - line[1]) || 1 }, line, was, tag: t.tag })
+          if (line) {
+            const d: Drawn = { key: `${t.key}:l`, t, r: { x: Math.min(line[0], line[2]), y: Math.min(line[1], line[3]), w: Math.abs(line[2] - line[0]) || 1, h: Math.abs(line[3] - line[1]) || 1 }, line, was, tag: t.tag }
+            if (!inPicture(d, two?.[0], two?.[1], els[0])) out.push(d)
+          }
           continue
         }
         els.forEach((el, i) => {
@@ -312,7 +358,7 @@ export function PreviewMarks() {
               if (Math.abs(g.x - r.x) > 2 || Math.abs(g.y - r.y) > 2 || Math.abs(g.w - r.w) > 2) d.ghost = g
             }
           }
-          out.push(d)
+          if (!inPicture(d, el)) out.push(d)
         })
         // Gone to another canvas: where it was on this one (the canvas's transform read off a plane drawn here).
         if (t.away && st && !new URLSearchParams(location.search).get('focus') && st.ws.canvas === t.away.to) {
@@ -325,6 +371,7 @@ export function PreviewMarks() {
           }
         }
       }
+      for (const [plane, list] of fold) out.push(folded(plane, list))
       if (!same(out, last.current)) {
         last.current = out
         setDrawn(out)
@@ -407,11 +454,11 @@ export function PreviewMarks() {
       </svg>
       {drawn.map((d) => {
         if (d.line) return null
-        const lit = (current && d.t.item === current) || undefined
+        const lit = (current && (d.t.item === current || d.inside?.includes(current))) || undefined
         return (
           <div key={d.key}>
             {d.ghost && <div className={styles.ghost} style={{ left: d.ghost.x - app.x, top: d.ghost.y - app.y, width: d.ghost.w, height: d.ghost.h }} />}
-            <div className={styles.mark} data-change={d.away ? 'away' : d.t.change} data-tier={d.t.tier} data-current={lit} style={{ left: d.r.x - app.x, top: d.r.y - app.y, width: d.r.w, height: d.r.h }}>
+            <div className={styles.mark} data-change={d.away ? 'away' : d.t.change} data-tier={d.t.tier} data-current={lit} data-folded={d.inside ? true : undefined} style={{ left: d.r.x - app.x, top: d.r.y - app.y, width: d.r.w, height: d.r.h }}>
               <i />
               <i />
               <i />
@@ -426,7 +473,7 @@ export function PreviewMarks() {
           key={`c${c.key}`}
           className={c.inside ? styles.badge : c.d.line ? styles.linkTag : styles.tag}
           data-change={c.d.away ? 'away' : c.d.t.change}
-          data-current={(current && c.d.t.item === current) || undefined}
+          data-current={(current && (c.d.t.item === current || c.d.inside?.includes(current))) || undefined}
           style={{ left: c.x - app.x, top: c.y - app.y }}
         >
           {c.text}

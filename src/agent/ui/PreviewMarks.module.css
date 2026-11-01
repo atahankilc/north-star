@@ -53,6 +53,13 @@
   --c: var(--accent-cyan);
 }
 
+/* A plane's changes folded into one mark while it's only a picture (agent-bugs 7): its L's and chip, no wash over the
+   whole plane. */
+.mark[data-folded] {
+  background: none;
+  outline: none;
+}
+
 /* A thing gone to another canvas: only a dashed box where it was. */
 .mark[data-change='away'] {
   --c: var(--accent-cyan);

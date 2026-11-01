@@ -45,7 +45,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 2  | bare short ids in the chat                       | Plumbing     | mid      | code             | open   |
 | 22 | bare ids in documents                            | Plumbing     | mid      | code             | open   |
 | 9  | skills list doesn't scroll                       | Plumbing     | low      | code             | open   |
-| 7  | preview inside a piece spills onto the canvas    | Preview      | high     | code             | open   |
+| 7  | preview inside a piece spills onto the canvas    | Preview      | high     | code             | fixed  |
 | 3  | the stepper's item doesn't stand out             | Preview      | mid      | code             | open   |
 | 4  | plane layouts ignore links                       | Layout       | high     | code + prompt    | built (flow, D-327); no real-model eval yet |
 | 10 | can't rearrange a canvas                         | Layout       | mid      | unknown (repro)  | open   |
@@ -205,6 +205,16 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     inside a plane by its plane px (or by an element that exists only in focus) without the plane's fitted picture, or
     the picture doesn't draw the previewed workspace. Fix: on the canvas, a change inside a piece is drawn in that
     piece's picture and marked there (or the piece gets one mark, `N changes inside`); nothing outside the piece's box.
+    *Fixed 2026-11-01:* reproduced in headless Chrome on the emulators (the dev stub's `preview demo: cards` on the
+    Pazar fixture, seen from the canvas). The cause: a plane on the canvas is its fitted picture, its cards a few px,
+    and the layer drew every card's mark, chip and moved-from ghost round them (chips below the plane's edge, ghosts
+    as empty dashed boxes) and a removed link between two planes as a line across the canvas. Now, while a plane is
+    only a picture (not in focus, not beside), what's inside it folds into one mark on the plane: its L's and a chip
+    `6 changes inside +3 ~1 ↦1 −1`, each change's words on hover, lit when the stepper is on one of them; a link with
+    an end in such a plane folds into it too (PreviewMarks.tsx' `pictureOf`, `folded`). In focus every mark is drawn
+    as before. Only planes: decks and tables draw their real contents on the canvas and keep their own marks.
+    tests/unit/previewFold.test.ts (happy-dom) holds the rule; no gallery scene yet (the agent's UI isn't in the
+    gallery).
 3.  **Stepping through a preview doesn't show the one you're on.** Every change is marked as strongly (PreviewMarks.tsx:
     the stepper's item should stand out, the rest go quiet); and on `next`, in a plane's focus, the canvas's marks show
     first before it reaches the item (the stepper's `goTo` in preview.ts, or canvas marks drawn while in focus). Cause
