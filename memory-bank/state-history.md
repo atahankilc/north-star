@@ -1253,3 +1253,8 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   on its cell), one Trigger.module.css for Menu and Select, Pills deleted for Choice, hand-made `[x]`s and option rows
   moved onto the kit. Verified: tsc, check:kit/tokens/gallery/lessons, vitest 983/0, build; gallery shots of Checkbox,
   Tabs, Choice, Steps, Select, Menu, the task panel.
+
+## Done (2026-11-01): D-338, D-346, D-347 closed
+- The user closed all three ("ilk üç decisionı kapa"): the workspaces page (no release entry, light theme looked at),
+  the backdrop at 70 % in workspaces, one Console for every console, dock and bar (pushed with another session's push,
+  Pages deployed). Their *Not yet* lines in decisions-log.md say so.

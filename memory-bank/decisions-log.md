@@ -6428,8 +6428,8 @@ more keys/too long/stale/another id no; visits), check:tokens 0, check:kit 13, c
 new warnings); headless Chrome on the emulators: first visit `00`, `Pazar` ↵ makes and opens it, a plane added, back by
 the breadcrumb: its picture drawn, the visit `now`; a second one comes first; `ABCD-EFGH` ↵ says the code does not exist;
 right-click → `d` ↵ → the hazard confirm → deleted (`02` → `01`). The gallery's states shot at 1500 × 1100.
-Not yet: no release entry (the first `what's new` opens for everyone: the user's
-call, as D-330); the light theme and reduced motion not shot; a `.zip` dropped not tried in a browser; names in
+Closed by the user 2026-11-01 ("ilk üç decisionı kapa"): no release entry, the light theme looked at. Not yet (small):
+reduced motion not shot; a `.zip` dropped not tried in a browser; names in
 since-you-left only from the people list (≤ 10 a query).
 After the first look (the user, 2026-11-01: "specific olarak bir continue buttonu koymak çok işlevsiz"; "actionları
 sağ click arkasında saklı"; "aynı workspace isminde iki yer açamıyorum… mantıklı mı?"): no continue button, `⋯` on every
@@ -6617,7 +6617,7 @@ Spec: docs/specs/workspaces-page.md.
 Inside a workspace (`/workspaces/<id>`) the backdrop runs at 70 % brightness (`WORKSPACE_BACKDROP_DIM` in
 src/three/sceneClock.ts, passed as `<Backdrop dim>` from App.tsx); the landing and the workspaces page stay at full.
 It eases there through the existing `backdropDim` (the curtain reads the same value). Replaces D-174's "full strength"
-on the canvas. *Not yet:* looked at in a browser by the user; 0.8 at first, then 0.7 (the user: "biraz daha azalt, 0.7 yap").
+on the canvas. 0.8 at first, then 0.7 (the user: "biraz daha azalt, 0.7 yap"). Closed by the user 2026-11-01 ("ilk üç decisionı kapa").
 
 ### D-347 · 2026-11-01 · Accepted (the user: "seninle console alanlarını refactor edip redesing etmek istiyorum… hepsi aynı bileşene geçsin, önce seçenekleri göster"; "edit modunda dimentionlar gösterilmicek artık, umrumuzda değil dimentionlar"; "belki console yer yoksa tam alan kaplayabilir, küçülmeye zorlamasına gerek yok kendini, yada bi width ten sonra bütün alt kısmı kendine alabilir"; "kenardaki pembe L ler de tekrar gözden geçirilebilir"; the pick: "D+E ve marks olsun ancak mark sadece üst tarafta değil alt taraftada olsun eğer gözükcekse (mesela focus mod da consolun alt köşelerine onu koymak olmaz), bir de header yada linkler için de borderı kaldırıp markları kullanalım sadece")
 Every console, dock and bar is one component, `Console` (src/ui/patterns): a piece's console, the focus dock, the
@@ -6652,8 +6652,7 @@ v2. Checked in the gallery (headless): pieces pointed at, edit mode (full edge),
 Then (the user: "geriye kalan her şeyi yap"): `view`, a deck's `lanes`/`rows` and a timeline's `rows` are drawers
 too (`DrawerPick`, `useDrawer`: one drawer open on the screen at a time, Escape closes it), each floor titled; the
 documents dock keeps its words when narrow (no marks for words); a setup (matrix, table, deck) sits on the dock as
-its floor, faint L's on its top, a line under it, the dock's own top L's gone meanwhile; checked in both themes (gallery, headless). *Not yet:* a look in the app
-by the user.
+its floor, faint L's on its top, a line under it, the dock's own top L's gone meanwhile; checked in both themes (gallery, headless). Closed by the user 2026-11-01 ("ilk üç decisionı kapa").
 
 ### D-348 · 2026-11-01 · Accepted (the user: "hud ın büyüklüğünü ayarlara geçirmek istiyorum, display ayarlarına geçebilir. Eğer başka önerilerin varsa da dinlemek isterim"; picked "small / normal / large" and, of the other ideas, "Arka plan yoğunluğu")
 Settings → display gets two rows, saved in this browser like theme, motion and background:

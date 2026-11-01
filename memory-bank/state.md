@@ -58,17 +58,13 @@ something is finished, add its entry to state-history.md and leave at most one l
 - D-335 (Q-029 + old-data code deleted): pushed; firestore:rules deployed 2026-11-01 (rules tests 616/0).
 - D-337 fonts and greys (2026-11-01): Inter + JetBrains Mono, mono only on system bits, brighter greys, the agent's
   column and picture too; pushed 2026-11-01. evals/fonts → Inter: the agent session's (after its terra run). Preview: docs/specs/font-preview/. Left: `--fg-faint`'s uses one by one, the world's 7/8 px sizes.
-- Workspaces page (D-338, docs/specs/workspaces-page.md): built and pushed 2026-11-01, firestore:rules deployed (summary +
-  visited); the user's pick E from docs/specs/workspaces-preview/. Left: whether to add a release entry (the first what's
-  new), a look at it in light theme. Verified: state-history D-338.
 - D-339 (2026-11-01, pushed): rules enforced by hooks; git hooks on (core.hooksPath set by the user). Claude Code
   loads `.claude/settings.json` after `/hooks` or a new session.
 - Landing (D-340, 2026-11-01, committed): full-screen backdrop, mono name, no HUD, Button; the user is working
   through more landing changes. AsciiButton deleted (e1b86de).
 - D-344 (committed): buttons and controls as cells. Open: filters as always-open toggle strips (asked, not built).
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Q-033 closed by D-348.
-- Consoles (D-347): one `Console`, every console/dock/bar on it, committed (not pushed); left: a look in the app.
-- D-346 (2026-11-01, committed): backdrop 70 % in workspaces (sceneClock.ts, Backdrop.tsx, App.tsx); value checked headless, the user not yet.
+- D-338 workspaces page, D-346 backdrop 70 %, D-347 consoles: pushed and closed by the user 2026-11-01 (state-history).
 - D-348 (2026-11-01, pushed): Settings → display: hud size and background strength; the user checked it in the app.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
