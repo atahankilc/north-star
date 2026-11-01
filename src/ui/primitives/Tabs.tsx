@@ -4,10 +4,13 @@
 // P1 P2 P3) are as wide as their words, a radio group. A count after a label, faint. Arrows and Home/End move, and pick,
 // as the focus moves. `tones` lights an option in its own colour; `onReclick` is a click on the current one (a Choice
 // that clears); `edit` marks the options as a picker the preview lock disables (D-098); `disabled` for who can't edit.
+// A wizard's Steps are Tabs too: `lead` before a label (its magenta `01`), `progress` marks the options before the
+// current one as passed (a little brighter), `even` gives every tab the same width, and `keyboard={false}` keeps them
+// out of Tab and leaves the arrows to a window that steps by its own keys.
 import { useRef, type KeyboardEvent, type ReactNode } from 'react'
 import styles from './Tabs.module.css'
 
-export type TabOption<T extends string> = { value: T; label: ReactNode; count?: ReactNode; title?: string; tone?: string }
+export type TabOption<T extends string> = { value: T; label: ReactNode; lead?: ReactNode; count?: ReactNode; title?: string; tone?: string }
 
 type Props<T extends string> = {
   options: TabOption<T>[]
@@ -18,16 +21,20 @@ type Props<T extends string> = {
   onReclick?: () => void
   edit?: boolean
   disabled?: boolean
+  progress?: boolean
+  even?: boolean
+  keyboard?: boolean
   className?: string
 }
 
-export function Tabs<T extends string>({ options, value, onChange, label, look = 'tabs', onReclick, edit, disabled, className }: Props<T>) {
+export function Tabs<T extends string>({ options, value, onChange, label, look = 'tabs', onReclick, edit, disabled, progress, even, keyboard = true, className }: Props<T>) {
   const row = useRef<HTMLDivElement>(null)
   const tabs = look === 'tabs'
   // None current (a group beside another sharing one choice: a deck's tabs while MINE is open, a Choice with nothing
   // picked): the first is the one the keyboard reaches, and the arrows start from it.
   const current = options.findIndex((o) => o.value === value)
   const move = (e: KeyboardEvent) => {
+    if (!keyboard) return
     const at = current < 0 ? (e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? 0 : -1) : current
     const to = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? at + 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? at - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : null
     if (to === null) return
@@ -37,7 +44,7 @@ export function Tabs<T extends string>({ options, value, onChange, label, look =
     requestAnimationFrame(() => row.current?.querySelector<HTMLElement>(`[data-value="${CSS.escape(next.value)}"]`)?.focus())
   }
   return (
-    <div ref={row} className={[styles.row, className].filter(Boolean).join(' ')} data-look={look} role={tabs ? 'tablist' : 'radiogroup'} aria-label={label} onKeyDown={move}>
+    <div ref={row} className={[styles.row, className].filter(Boolean).join(' ')} data-look={look} data-even={even || undefined} role={tabs ? 'tablist' : 'radiogroup'} aria-label={label} onKeyDown={move}>
       {options.map((o, i) => {
         const on = o.value === value
         return (
@@ -48,14 +55,16 @@ export function Tabs<T extends string>({ options, value, onChange, label, look =
             role={tabs ? 'tab' : 'radio'}
             aria-selected={tabs ? on : undefined}
             aria-checked={tabs ? undefined : on}
-            tabIndex={on || (current < 0 && i === 0) ? 0 : -1}
+            tabIndex={keyboard && (on || (current < 0 && i === 0)) ? 0 : -1}
             data-value={o.value}
             data-edit={edit || undefined}
+            data-done={(progress && current >= 0 && i < current) || undefined}
             disabled={disabled}
             title={o.title}
             style={o.tone ? ({ '--button-on': o.tone } as React.CSSProperties) : undefined}
             onClick={() => (on ? onReclick?.() : onChange(o.value))}
           >
+            {o.lead !== undefined && <span className={styles.lead}>{o.lead}</span>}
             <span className={styles.text}>{o.label}</span>
             {o.count !== undefined && <span className={styles.count}>{o.count}</span>}
           </button>

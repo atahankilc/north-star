@@ -1,29 +1,6 @@
-/* A wizard's numbered steps (src/ui/patterns/Steps.tsx, D-326): the same tab cells as Tabs (D-344), joined by a seam
-   and as wide as their row; the current one lit as a pressed Button, the ones behind a little brighter. */
+/* A wizard's numbered steps (src/ui/patterns/Steps.tsx, D-326): Tabs (D-344) with `lead`, `progress` and `even`;
+   only the strip's room and its rule are here. */
 .steps {
-  display: flex;
-  gap: var(--line-w);
   padding: var(--space-2);
   border-bottom: var(--line-w) solid var(--line);
-}
-
-.step {
-  composes: option from '../primitives/Tabs.module.css';
-  flex: 1 1 0;
-  justify-content: flex-start;
-  min-width: 0;
-  padding: 0 var(--space-3);
-  overflow: hidden;
-  letter-spacing: var(--track-label);
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-}
-
-.step[data-done] {
-  color: var(--fg-muted);
-}
-
-.num {
-  margin-right: var(--space-2);
-  color: var(--accent-magenta);
 }

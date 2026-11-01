@@ -1,8 +1,9 @@
-// A wizard's numbered steps (D-326, the kit): tabs along the top, `01 START FROM`, the current one lit with a magenta
-// line under it, the ones behind a little brighter than the ones ahead; any can be clicked. WizardShell's and the
-// onboarding's welcome (Pages) drew it twice. `keyboard={false}` keeps them out of Tab when the window steps by its own
-// keys; `titles` the whole name of a step when its tab is cut short.
+// A wizard's numbered steps (D-326, the kit): Tabs with a magenta `01` before each name, all the same width, the
+// ones behind a little brighter than the ones ahead; any can be clicked, arrows move. WizardShell's and the
+// onboarding's welcome (Pages). `keyboard={false}` keeps them out of Tab and off the arrows when the window steps by
+// its own keys; `titles` the whole name of a step when its tab is cut short.
 import type { ReactNode } from 'react'
+import { Tabs } from '../primitives/Tabs'
 import styles from './Steps.module.css'
 
 type Props = {
@@ -18,23 +19,16 @@ export const stepNumber = (n: number) => String(n).padStart(2, '0')
 
 export function Steps({ steps, step, onStep, label = 'steps', titles, keyboard = true }: Props) {
   return (
-    <nav className={styles.steps} role="tablist" aria-label={label}>
-      {steps.map((s, i) => (
-        <button
-          key={i}
-          type="button"
-          role="tab"
-          aria-selected={step === i}
-          data-done={i < step || undefined}
-          tabIndex={keyboard ? undefined : -1}
-          className={styles.step}
-          title={titles?.[i]}
-          onClick={() => onStep(i)}
-        >
-          <span className={styles.num}>{stepNumber(i + 1)}</span>
-          {s}
-        </button>
-      ))}
+    <nav className={styles.steps}>
+      <Tabs
+        label={label}
+        progress
+        even
+        keyboard={keyboard}
+        options={steps.map((s, i) => ({ value: String(i), lead: stepNumber(i + 1), label: s, title: titles?.[i] }))}
+        value={String(step)}
+        onChange={(v) => onStep(Number(v))}
+      />
     </nav>
   )
 }

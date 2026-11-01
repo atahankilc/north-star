@@ -100,7 +100,7 @@ feature comes back as a piece, and check them with the user then.
   no keys beside them; a caller's class only places one. Buttons that belong together are one `ButtonGroup` strip
   (docks, consoles, panel and wizard feet, zooms, Choice). Menu's triggers are the same cell. A person's square is one
   `Avatar`, 30 px in the HUD like a ToolButton, 24 in rows like a Button. Controls are toggle cells, one component each
-  (D-344): Checkbox (✓ before the word), Tabs (Choice is its segments, Steps its cell), one dropdown trigger (Menu, Select).
+  (D-344): Checkbox (✓ before the word), Tabs (Choice is its segments; Steps is Tabs with `lead`, `progress`, `even`), one dropdown trigger (Menu, Select).
 - HUD (D-027): the breadcrumb top left, fixed margins; the rest becomes a left side nav. Bottom left, top to bottom:
   people here, threads button, a rule, your square, the gear, `--space-3` from the edges, other bottom-left tools
   `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge, cells (D-344); its `+` a drawn

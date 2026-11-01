@@ -1,5 +1,5 @@
 /* One row of options, one current (src/ui/primitives/Tabs.tsx, D-326; D-344): Button cells joined by a hairline seam,
-   the current one lit as a pressed Button. Tabs fill their row, caps; segments are as wide as their words. */
+   the current one lit as a pressed Button. Tabs fill their row, caps; segments are as wide as their words; a wizard's Steps are tabs with a lead number. */
 .row {
   display: flex;
   flex-wrap: wrap;
@@ -24,6 +24,21 @@
   padding: 0 var(--space-3);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
+}
+
+.row[data-even] .option {
+  flex: 1 1 0;
+}
+
+/* Passed (a wizard's steps behind the current one): a little brighter than the ones ahead. */
+.option[data-done] {
+  color: var(--fg-muted);
+}
+
+.lead {
+  flex: none;
+  margin-right: var(--space-2);
+  color: var(--accent-magenta);
 }
 
 .text {
