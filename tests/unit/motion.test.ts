@@ -1,4 +1,4 @@
-// Motion's foundation (D-326): src/ui/motion.ts says what tokens.css says. Every `--dur-*` token has its DUR entry with
+// Motion's foundation (D-326): src/ui/foundation/motion.ts says what tokens.css says. Every `--dur-*` token has its DUR entry with
 // the same milliseconds; the easings use the tokens' control points; the closed-form in-out is the token's curve; and
 // tween() ends where it should, at once under reduced motion.
 import { readFileSync } from 'node:fs'
@@ -10,12 +10,12 @@ vi.stubGlobal('window', { matchMedia: () => ({ matches: false, addEventListener:
 vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => {} })
 vi.stubGlobal('document', { documentElement: { dataset: {}, setAttribute: () => {}, removeAttribute: () => {} } })
 
-type Motion = typeof import('../../src/ui/motion')
+type Motion = typeof import('../../src/ui/foundation/motion')
 let m: Motion
 beforeAll(async () => {
   const state = await import('../../src/state/motion')
   state.useMotion.subscribe((s) => void (reduced = s.reduced))
-  m = await import('../../src/ui/motion')
+  m = await import('../../src/ui/foundation/motion')
 })
 
 const css = readFileSync(new URL('../../src/styles/tokens.css', import.meta.url), 'utf8')

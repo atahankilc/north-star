@@ -53,7 +53,7 @@ it brings its own look).
 │ › card panel          │ STATE   default · open · long · empty  [grid]  │
 │                       │ THEME   dark | light    MOTION  full | reduced │
 │ 26 components         │ ON      page | piece    ZOOM    1 | 2          │
-│                       │ src/ui/Select.tsx   refused 0  [reset] [alone ↗]│
+│                       │ src/ui/primitives/Select.tsx   refused 0  [reset] [alone ↗]│
 └───────────────────────┴────────────────────────────────────────────────┘
 ```
 
@@ -87,14 +87,14 @@ One file per component, next to it: `Select.gallery.tsx` beside `Select.tsx`. Th
 (`import.meta.glob('/src/**/*.gallery.tsx')`), so there is no list to keep.
 
 ```tsx
-// src/ui/Select.gallery.tsx
+// src/ui/primitives/Select.gallery.tsx
 import { example } from '../gallery/example'
 import { Select } from './Select'
 
 export default example({
   name: 'Select',
   place: 'forms/pickers',      // category/group on the map (D-326); `also: ['…']` lists it elsewhere too
-  file: 'src/ui/Select.tsx',
+  file: 'src/ui/primitives/Select.tsx',
   states: {
     default: () => <Select value="b" options={OPTS} onChange={() => {}} ariaLabel="pick" />,
     open: {

@@ -103,7 +103,7 @@ Was: a shutter curtain opening from the centre. The hold mechanism (`useHoldCurt
 Rename is open to all members (workspace card action, or Settings; the breadcrumb name is plain text, D-055).
 
 ### D-024 · 2026-10-17 · Accepted
-**One framed surface for all panels, cards, forms and chips:** `src/ui/Frame.module.css` (`frame`, `dashed`, `interactive`, `label`),
+**One framed surface for all panels, cards, forms and chips:** `src/ui/foundation/Frame.module.css` (`frame`, `dashed`, `interactive`, `label`),
 using the tokens `--surface`, `--surface-blur`, `--line`, `--line-hover`. New framed UI must compose these classes instead of setting its own background or border.
 
 ### D-025 · 2026-10-17 · Accepted (supersedes D-022's visuals; the hold mechanism stays)
@@ -117,7 +117,7 @@ Requirement: **nothing in the backdrop may depend on per-canvas state** (own clo
 **The background flows by itself, like a fluid. No mouse influence.** Two levels of time-varying domain warp in `AmbientField`. Dimming on the board is an ASCII-pass uniform, not CSS opacity.
 
 ### D-027 · 2026-10-17 · Accepted
-**One HUD on every page** (`src/ui/Hud.tsx`): a fixed-height top bar (`--hud-h`) with a breadcrumb on the left
+**One HUD on every page** (`src/ui/patterns/Hud.tsx`): a fixed-height top bar (`--hud-h`) with a breadcrumb on the left
 (`# north-star / workspaces / <name>`; earlier segments link back, the current one is bright; the name is plain text, D-055)
 and page actions on the right. Every screen-edge element (canvas toolbar, detail panel, loading status) uses `--hud-x` / `--hud-y`,
 so nothing shifts between pages. Elements inside the bar must not change its line height (InlineEdit draws underlines as decoration or shadow, not border).
@@ -153,12 +153,12 @@ Was: a blur "rise" entrance (rejected trial). Entrances start at `revealed`; the
 **One entrance everywhere: cell-by-cell build-up.** The user loved the "North Star" headline appearing piece by piece. That was the
 page-load reveal (D-025), not the headline's blur animation. Now every component builds itself the same way: content appears in
 9 px cells on the backdrop's ASCII grid, in random order (D-035), no colour.
-- DOM: `<Appear as=… delay duration>` (`src/ui/Appear.tsx`): a `clip-path: path()` of merged cell runs, viewport-aligned. Exit = breaks apart the same way.
+- DOM: `<Appear as=… delay duration>` (`src/ui/primitives/Appear.tsx`): a `clip-path: path()` of merged cell runs, viewport-aligned. Exit = breaks apart the same way.
 - 3D idea cards: `CardReveal` injects a `discard` into every card material via `onBeforeCompile` (screen-space cells from `gl_FragCoord`).
   Each card owns a base `MeshBasicMaterial` for its troika text (troika's derived material calls the base `onBeforeCompile`), so the shared default isn't touched.
 - The landing headline uses it too, so it builds on every visit, including after sign-out (which previously only faded in).
 - **Rejected by the user:** coloured tile waves (anywhere) and the blur "rise".
-Shared math: `src/ui/cellReveal.ts`. Entrances start at `revealed` (D-035).
+Shared math: `src/ui/foundation/cellReveal.ts`. Entrances start at `revealed` (D-035).
 
 ### D-035 · 2026-10-17 · Accepted (refines D-034, D-025)
 **Random order, all at once, fast.**
@@ -245,7 +245,7 @@ Was: one 3D silhouette per card type. Rejected by the user; flat cards with a ty
 
 ### D-053 · 2026-10-17 · Accepted
 **Fewer, clearer controls.** One `+` create button (bottom-left, solid magenta) opens a menu of card types and text.
-`show`, `for` and `go to` are dropdowns (`src/ui/Menu.tsx`: checkbox items stay open, actions close; arrows/Home/End/Escape).
+`show`, `for` and `go to` are dropdowns (`src/ui/patterns/Menu.tsx`: checkbox items stay open, actions close; arrows/Home/End/Escape).
 The views sit beside the breadcrumb as plain tabs (D-066).
 
 ### D-054 · 2026-10-17 · Superseded by D-064, D-097
@@ -859,7 +859,7 @@ the report screen and every Settings page; the assistant chat was left out on pu
   choices 76 px, so values didn't line up between pages; a stale "coming later: Attachments" row; table names cut mid-letter.
 - *Tokens:* `--text-lg` 18, `--text-heading` 26 (20 on phones), `--text-hero`; 10 px folded into `--text-xs` 11 (user);
   `--track-label/title/display`; `--measure` 760. No raw sizes or tracking left outside the assistant chat.
-- *Shared pieces:* `src/ui/Page.module.css` (`page`, `toolbar`, `title`); `fieldLabel` beside `label` in Frame.module.css;
+- *Shared pieces:* `src/ui/foundation/Page.module.css` (`page`, `toolbar`, `title`); `fieldLabel` beside `label` in Frame.module.css;
   `small` in AsciiButton.module.css for `[verb]` row actions (reports, report screen, Settings, workspaces cards).
 - *Layout:* reports in the filter row's place (now a full-width table, D-106); the table fills the
   width ("linked to" takes the spare room) and names end in "…"; Settings rows line up (their layout now D-097); the
@@ -869,14 +869,14 @@ the report screen and every Settings page; the assistant chat was left out on pu
   (`> account`). Uppercase is only for labels. Before, `[ DELETE ]` (panel) and `[delete]` (lists) both existed. The
   `--track-button` token went with it. `sign in with Google` keeps the name's capital; test users stay `Alice`/`Bob`/`Carol`.
 - *No native dropdowns (user, follow-up):* the five `<select>`s (link kind in the side panel, Table priority and status, the
-  Matrix's "their version", Settings models) opened the macOS menu. `src/ui/Select.tsx` replaces them. First pass used the filter menu's
+  Matrix's "their version", Settings models) opened the macOS menu. `src/ui/primitives/Select.tsx` replaces them. First pass used the filter menu's
   list (tall rows, cell build-up, `>` marks); the user found it looked like an accordion opening, so it now matches the tag
   picker's suggestion list (compact rows, wash on hover, current value bright, no animation, opens downward when it fits), in a portal fixed to the viewport (inside the Settings dialog when it's in one), following its
   trigger on scroll, Escape closing only the list; `data-edit` so the preview lock disables it. The competitor category field's
   `<datalist>` suggestions are still native.
 - *`+ link` as a dropdown (user, follow-up):* the link search used to spread inside the panel (search box, results, `done`),
   pushing the links down. Now it opens as a dropdown under the links heading, the tag list's look with a search box on top;
-  picking links and closes it. `src/ui/floating.ts` holds the placement both dropdowns use.
+  picking links and closes it. `src/ui/foundation/floating.ts` holds the placement both dropdowns use.
 - *Fix (follow-up):* the shared-button swap had split the workspace card's hover selector, so on hover the actions took the
   name input's full width and pushed out "owner · 1 member"; restored.
 - Kept: the Matrix keeps its fit-content width;
@@ -1026,7 +1026,7 @@ a viewer role plus remove (and several owners per workspace), and reports split 
   every visible report at export time; import writes summary + body.
 - *Usage:* this month's totals are fetched once when the usage page opens; the call log is paged 20 at a time with the
   right queries per filter. *Paging:* `usePaged` (hooks.ts): live, several queries merged, rows past a full page's edge
-  held back so none are skipped. `Loading` (src/ui/Loading.tsx): the turning ▖▘▝▗ with a label.
+  held back so none are skipped. `Loading` (src/ui/primitives/Loading.tsx): the turning ▖▘▝▗ with a label.
 - *Indexes:* `firestore.indexes.json` (reports by shared/uid + createdAt; aiUsage by uid, keySource, both + at), deployed by
   `deploy:rules` now. Rules: 232 tests pass (39 new).
 
@@ -1336,7 +1336,7 @@ focus and `active` (thicker, kept through the LINKS filter).
 **The `go to` jump list holds headings and subheadings only, not notes, and has a search field at the top.** User: "Notes
 do not belong to go to jump. Also go to jump filter should have a search bar implemented inside the dropdown." This answers
 the open item from D-108 ("decide whether notes belong in the jump list"); the 1–9 keys follow the same list.
-- `src/ui/Menu.tsx` takes an optional `search` (the field's placeholder). The field is focused on open and narrows the items
+- `src/ui/patterns/Menu.tsx` takes an optional `search` (the field's placeholder). The field is focused on open and narrows the items
   by their label as you type (case-insensitive); Enter picks the first match, ↓ moves into the list, ↑ from the first item
   goes back, Escape closes. `No match` when nothing fits; the query clears on close. Only `go to` uses it today.
 - The same user turn also turned down two board ideas: copy/paste across tabs and workspaces through the system clipboard
@@ -2744,7 +2744,7 @@ categories shown like B, not in a card, and the features under them not indented
   resize gives 825 × 525; cancel keeps the plane, Delete opens the confirm, delete removes it, ⌘Z brings it back; build.
 
 ### D-183 · 2026-10-21 · Accepted (changes D-182's delete confirm look)
-- *Decision:* the confirm's entrance is hazard tape (`src/ui/HazardConfirm.tsx`, replacing `MeltdownConfirm`), picked from
+- *Decision:* the confirm's entrance is hazard tape (`src/ui/patterns/HazardConfirm.tsx`, replacing `MeltdownConfirm`), picked from
   seven entrances on a local preview (today's corrupt cells, rain, CRT power-on, kernel panic, gathering glyphs, VHS
   band, hazard tape). The screen darkens (200 ms); the box comes in four hard steps (260 ms, from 0.96); a band of ASCII
   `╱` three cells wide wraps round it from the box outwards (380 ms, on the screen's 9 px cell grid), its stripes magenta
@@ -2761,7 +2761,7 @@ categories shown like B, not in a card, and the features under them not indented
   another": the plane grows from its place on the canvas to the whole screen and becomes the main view, like the old
   board page. In the address as `?focus=<id>` on the canvas's path: the back button leaves, a reload stays (no
   transition then), a plane deleted while in focus drops it.
-- *Transition* (`src/views/workspace/FocusedPlane.tsx`): a layer with the plane's look animates (WAAPI, 900 ms,
+- *Transition* (`src/views/workspace/canvas/FocusedPlane.tsx`): a layer with the plane's look animates (WAAPI, 900 ms,
   cubic-bezier(0.65, 0, 0.35, 1)) from the plane's screen box to the canvas's whole box, its `+` marks from 25 × zoom px
   to 25 px (a registered `--mark` length) and its edge to nothing; the canvas behind (a `.lens` wrapper round `.world`)
   scales ×2.6 round the plane's middle, blurs 2 px and fades out, then is hidden; 220 ASCII streaks (`- \ | /` by their
@@ -2847,7 +2847,7 @@ categories shown like B, not in a card, and the features under them not indented
   reach 100000 (they were ≤ 2000 board units). Old labels have no `pieceId` and aren't shown. `src/data/labels.ts`
   (add, update with typing merged, delete, moveMany as one undo step); a plane's delete takes its text too.
 - *Look* (board units × 80 = px): H1 48, H2 29, H3 22 px Geist, left-aligned, an H1's rule fading right; paragraphs light
-  Markdown (`src/ui/LightMarkdown.tsx`), S/M/L 11/13/16 px, 500 px wide until its right edge is dragged; sticky notes
+  Markdown (`src/ui/primitives/LightMarkdown.tsx`), S/M/L 11/13/16 px, 500 px wide until its right edge is dragged; sticky notes
   darker paper, a 2 px colour bar (yellow default), `AUTHOR · DATE` head, mono S/M/L; sections a thin frame (its colour
   mixed with the line), `01 NAME` (number in magenta) set into the top edge; the project title a ✦ PROJECT kicker, the
   workspace's name 40 px, a rule, what it's building, corner brackets, width from its right edge. Corner marks on hover
@@ -2874,7 +2874,7 @@ categories shown like B, not in a card, and the features under them not indented
 - *Decision:* in focus, `unfocus` moves from the bottom left to the **focus dock**: a tab standing on the screen's
   bottom edge, in the middle (no bottom border, magenta marks on its top corners), `[unfocus] esc`. It's the place for
   whatever else can be done in focus later: more actions go in before `unfocus`. No plane name in it: the breadcrumb has
-  it. `src/views/workspace/FocusDock.tsx` (`FocusDock`, `DockAction`). It rises in 3 steps once the plane has arrived;
+  it. `src/views/workspace/canvas/FocusDock.tsx` (`FocusDock`, `DockAction`). It rises in 3 steps once the plane has arrived;
   reduced motion: just there.
 - The plane's console takes the same look, smaller, **inside** the plane's bottom-right corner (16 px in), standing on
   its bottom edge, over its cards; cyan in edit mode. Edit mode's `· drag to move · corners to resize` hint is dropped
@@ -2909,7 +2909,7 @@ categories shown like B, not in a card, and the features under them not indented
 ### D-191 · 2026-10-21 · Accepted (collaboration on the canvas, part one: cursors, total follow, selection marks)
 - *Decision:* presence (RTDB, unchanged rules) now says which space you're in: `plane` = the plane in focus, absent =
   the canvas; `x`/`y` = your pointer in that space's px (re-sent when the view moves under a still pointer, cleared
-  when it leaves or while the ink runs); `sel` = your selected card, text or plane. `src/views/workspace/collab.tsx`.
+  when it leaves or while the ink runs); `sel` = your selected card, text or plane. `src/views/workspace/canvas/collab.tsx`.
 - *Cursors:* everyone else's in your space, an arrow and a name tag in their colour, drawn on a curve a little in the
   past (D-169's `cursorAt`), placed on screen by the canvas's camera or the focused plane's own view.
 - *Total follow* (the user: "since we also added focus, people following someone should also experience this. I want
@@ -3011,7 +3011,7 @@ categories shown like B, not in a card, and the features under them not indented
     800 px wide by default (500–2400). Too far out to read the description (26 px under 6 screen px) it folds in 320 ms
     eased both ends: the caption, rule and description shrink away and fade early, the star moves beside the name's
     first line, the name grows into the room, as big as fits the unfolded height without breaking a word
-    (`src/views/workspace/titleLayout.ts`). Reduced motion: no transition.
+    (`src/views/workspace/text/titleLayout.ts`). Reduced motion: no transition.
   - *Sticky notes* (D-158, D-162): the old sizes (units × 80): text S/M/L 6.8 / 8.4 / 10.4 px (under a card title),
     padding 7.2, a 2 px bar, the signed line 5.2 px mono `ATAHAN · 2m` (first name in capitals, `ago`), three little
     checks (▚▚▚, 2.8 px squares) in its colour on the right; paper `--card-behind` (#0e0e0e; #e9e9e9 light); bullets `•`
@@ -3060,7 +3060,7 @@ categories shown like B, not in a card, and the features under them not indented
   1–9 go to the first nine, as before. The icon is a compass (a circle, its needle north, the north half filled); the
   first one (a drawn `↳`) wasn't clear to the user. The view glides there (420 ms, as fit): a plane, section or the title framed
   whole (≤ 100 %, 96 px round); a heading at 100 %, centred, its top at 28 % of the screen so what's under it shows.
-  Going somewhere stops following. Code: `src/views/workspace/goTo.ts` (`placesIn`, `goToPlace`), `GoToButton` in
+  Going somewhere stops following. Code: `src/views/workspace/canvas/goTo.ts` (`placesIn`, `goToPlace`), `GoToButton` in
   WorkspaceLayout, which asks the canvas through `useGoTo`; the keys and the going in CanvasView; `Menu` takes `quiet`
   (an icon trigger in grey like fit) and `indent` on an item.
 - *Why:* the user: "go to özelliğini geri getircez ama her şey için … workshopda isek plane isimlerine, title cardına
@@ -3580,7 +3580,7 @@ categories shown like B, not in a card, and the features under them not indented
 
 
 ### D-219 · 2026-10-22 · Accepted (the right panel's look and place, for every panel that opens on the right; first use: a plane's cards, D-187's "side panel" now back as a shell)
-- *Decision:* one right panel for everything that opens on the right, whatever fills it (`src/ui/SidePanel.tsx`:
+- *Decision:* one right panel for everything that opens on the right, whatever fills it (`src/ui/patterns/SidePanel.tsx`:
   `SidePanel`, `PanelSection`, `PanelAction`). Picked from four on a scratch preview (port 5196; A terminal column, B the
   card opened as a floating sheet, C a tab hanging from the top edge, D a terminal log with a `>` prompt): A.
 - *Look:* a column flush with the right edge of its space, 400 px (narrower if the space is), the screen's full height
@@ -3881,7 +3881,7 @@ categories shown like B, not in a card, and the features under them not indented
 - *Also:* `isLens` (matrix, table) now decides sticking (D-210) and opening onto the canvas (D-228); documents are bare
   pieces but neither. Summaries load with the workspace (two queries, shared and yours), bodies only where read — a
   change from D-098's "reports load where shown" now that documents sit on the canvas. A full Markdown renderer
-  (`src/ui/Markdown.tsx`: headings, lists with tasks, quotes, code, tables, rules; nothing as HTML, nothing fetched).
+  (`src/ui/primitives/Markdown.tsx`: headings, lists with tasks, quotes, code, tables, rules; nothing as HTML, nothing fetched).
 - *Alternatives shown, not picked:* an `ls -l` listing; glyph-only or extension kind marks; a document as a sheet of
   paper or open on the canvas; placing a private document blurred until shared.
 - *User:* "Document olcak ve bu her şeyi kapsicak, imagelardan pdflere ordan da .md lere kadar … kurguyu baştan doğru
@@ -4764,7 +4764,7 @@ The user asked for P2 of the priorities plan.
 ### D-270 · 2026-10-27 · Accepted (builds D-265 for plane cards and text; consistency session 1, docs/specs/consistency.md)
 **One `Marks` component, used by plane cards, packages and every kind of text; a dragged text lands like a card.**
 The user asked for session 1 of the consistency plan (D-263–D-267).
-- *The component:* `src/ui/Marks.tsx` + `Marks.module.css`, tokens `--mark-{s,m,l}-{len,th,hover,sel,rest,press}` and
+- *The component:* `src/ui/primitives/Marks.tsx` + `Marks.module.css`, tokens `--mark-{s,m,l}-{len,th,hover,sel,rest,press}` and
   `--mark-spring` in `tokens.css`. Four L's, sized in screen px (`--zs` = 1 / the space's zoom), state from props
   (`selected`, `pressed`, `dragging`, `target`, `hover` or the parent's `:hover`), tone from the thing; a peer's
   selection the same L's in their colour (a step further out each) with their name on a tag at the top-left
@@ -4964,7 +4964,7 @@ The user asked for session 6 of the consistency plan.
 ### D-277 · 2026-10-27 · Accepted (the consistency spec's "Asked, not decided", chosen by the user: "İkisi de, önce <Ink>"; changes D-190's shade behind text)
 **Text on the canvas sits on ink, line by line; one family of lines: straight holds, fading opens, dashed separates
 rows, a magenta lead starts something numbered.**
-- *Ink:* `src/ui/Ink.tsx` (`<Ink>`, `inkClass`): an inline shade on each line of text, as long as the line
+- *Ink:* `src/ui/primitives/Ink.tsx` (`<Ink>`, `inkClass`): an inline shade on each line of text, as long as the line
   (`box-decoration-break: clone`), the page (or the piece's surface inside one) at 84 %, feathered `0 0 12px 8px` at
   70 %. On a heading's text and its small line, a paragraph's lines (`LightMarkdown`'s `ink`), the project title's
   PROJECT, name and description, a section's number and name. It replaces D-190's one feathered box per item (a box as
@@ -5022,7 +5022,7 @@ handles inside grow and shrink with it and go back to their screen size 120 ms a
 - *Why:* every wheel step in a focus wrote `--zs` on the world, restyling every Marks inside: 18.7 ms of style a step
   in a focused table (450 Marks), 10.6 in a matrix; a plane and a kanban drew all their cards or tasks again on each
   step (their contents were memoised on the zoom).
-- *How:* `useSettledZoom(view.zoom, live)` (`src/ui/Marks.tsx`, with `ZOOM_SETTLE_MS`, shared with CanvasView's
+- *How:* `useSettledZoom(view.zoom, live)` (`src/ui/primitives/Marks.tsx`, with `ZOOM_SETTLE_MS`, shared with CanvasView's
   `useShownZoom`): the zoom as shown while live, the zoom itself otherwise. Each space's `zsIn` and its memoised
   contents (`PlaneInside`, `TaskBoard`, `Days`) take it; the transform, culling, the detail level, a matrix's dots and
   a table's width grips keep the live zoom.
@@ -5567,7 +5567,7 @@ on a plane has none. `?canvas=<id>` (`canvasParams`/`canvasPath` in paths.ts); a
 **Pieces move to another canvas** (docs/specs/canvases.md, session 2). A piece's right-click on the canvas has
 `[m] → move to canvas…`, and its edit console `[move to…]` (before `[delete]`); the canvas's own text too (right-click).
 The prompt (D-222) opens where it was asked: `# canvases` with the others (`[1] → Engineering`), a rule, `+ new canvas`;
-a name typed that nobody has offers `+ new canvas "…"`, made and moved to in one go (src/views/workspace/MoveToCanvas.tsx).
+a name typed that nobody has offers `+ new canvas "…"`, made and moved to in one go (src/views/workspace/canvas/MoveToCanvas.tsx).
 - *What goes:* every piece in edit mode when the one asked for is one of them, else it alone; what's stuck to them, all
   the way down (`withStuck`: a plane's deck and that deck's timeline, D-298); a section takes the pieces and text wholly
   inside it. A plane's cards, text and links are the plane's, so they go with it untouched; a piece stuck to one that
@@ -5950,7 +5950,7 @@ gallery/headless shots in dark and light: changes listed in the spec are expecte
   src/styles/cssToken.ts for pixel math, the token itself in styles); constants that aren't tokens live in one module by
   kind: `src/model/world.ts` (canvas and pieces' geometry: grid, card rows, K/M/T/D, the title), `src/model/limits.ts`
   (text lengths and list sizes for data/, ops/ and the model; tests/unit/limits.test.ts checks them against
-  firestore.rules), `src/ui/feel.ts` (one DRAG_PX = 5, was 4 in the onboarding; ZOOM_MIN/MAX; wheelStep()), durations in
+  firestore.rules), `src/ui/foundation/feel.ts` (one DRAG_PX = 5, was 4 in the onboarding; ZOOM_MIN/MAX; wheelStep()), durations in
   motionTokens.ts (D-326). A constant used in two places or that is a design/feel choice goes to its module; an
   algorithm's own detail stays where it is. `check:tokens` scans TS/TSX too (uncomputed px, quoted hex, bare style
   numbers); a technical exception says why with `// tokens-ok`. Kept that way (the user: "bundan sonra agentlar …
@@ -5977,17 +5977,17 @@ docs/foundation-audit-2026-10-31.md).
   code; blocks born in features (DockAction, Pills, Choices, Toggle) never moved down.
 - *Alternatives:* restructure folders first (churn for every session, fixes no duplication); keep grouping by folder.
 - *Coordination:* D-325 (tokens) works on the same CSS; kit work never on the same files at the same time.
-- *Built:* motion foundations (2026-10-31): src/ui/motionTokens.ts (DUR with `glide` 420, `exit` 192, `consoleIn/Out`,
+- *Built:* motion foundations (2026-10-31): src/ui/foundation/motionTokens.ts (DUR with `glide` 420, `exit` 192, `consoleIn/Out`,
   `focusIn/Out`; EASE_POINTS; `cubicBezier`, `easeOut`, `easeInOut`, `lerp`; pure, so node code reads it) and
-  src/ui/motion.ts (`tween()`, `glideValues()`, reduced motion inside); tests/unit/motion.test.ts holds DUR and the
+  src/ui/foundation/motion.ts (`tween()`, `glideValues()`, reduced motion inside); tests/unit/motion.test.ts holds DUR and the
   easings to tokens.css; tokens.css `--dur-glide`, `--dur-exit`. Moved onto it: canvasView's `glide`, the 13 typed
   420s, Timeline's strip glide and scale, CanvasView's morph, FocusedPlane's easing and timings, DecodeText, the
   exits (200 → 192), the console's cells; `CELLS_SHUT` (cellReveal.ts) for the 5 shut polygons; the root covered by
-  reduced motion (the light theme's colour shift). One card-type colour map: tokens.css `--type-*`, src/ui/cardTone.ts
+  reduced motion (the light theme's colour shift). One card-type colour map: tokens.css `--type-*`, src/ui/foundation/cardTone.ts
   `CARD_TONE` (TYPE_ACCENT, CardPanel's and planeMenu's TONE, FilterDock's TYPE_TONE, KindGuide). Checked: demo scenes
   frame by frame against the code before, identical but for the exits.
-- *Built:* the rest of motion (2026-10-31): one Spinner (src/ui/Spinner.tsx; Loading, Curtain and the agent draw it;
-  the agent's braille one gone); the small entrances in src/ui/Enter.module.css (`enter`, `rise`; their settings
+- *Built:* the rest of motion (2026-10-31): one Spinner (src/ui/primitives/Spinner.tsx; Loading, Curtain and the agent draw it;
+  the agent's braille one gone); the small entrances in src/ui/foundation/Enter.module.css (`enter`, `rise`; their settings
   registered in tokens.css as not inherited) for the finder, the pane beside, the focus dock, the side view, the
   document's ask, the hazard confirm; Marks' settle at DUR.quick (the grow-back's length since D-325); one cell-path
   builder (cellReveal.ts `cellsPath`) for runCells and the focus's ink, the ink and the focus's hold on `tween()`
@@ -5996,7 +5996,7 @@ docs/foundation-audit-2026-10-31.md).
   the SETTLE_MS/CALM_MS pairs elsewhere (different things under one name, not motion).
 - *Built:* the gallery's tree (2026-10-31, 99d6d50): `[tree]` lists every component file by level (primitives first),
   each opening into what uses it; the bar's USES / USED IN; read from the sources (src/gallery/uses.ts). The kit's
-  first piece, Button (src/ui/Button.tsx: `sm` the [verb], `md` the page's, tones primary/danger/main, `pressed`,
+  first piece, Button (src/ui/primitives/Button.tsx: `sm` the [verb], `md` the page's, tones primary/danger/main, `pressed`,
   `keyHint`, `icon`; Button.module.css the one source, AsciiButton.module.css's `small`/`button` compose it);
   AsciiButton (keeps a plain button's submit), PanelAction and DockAction draw it. The dock's `padding: 0 half` never
   applied (the stylesheet order let `small`'s win): kept as it looked. Checked in the gallery against the code before,
@@ -6079,8 +6079,9 @@ docs/foundation-audit-2026-10-31.md).
   and the welcome's step tabs) added to the kit; 131 → 13, only src/agent/ui left. Things drawn in the world (cells,
   rows, typed-in-place text, world-sized caps) stay raw with `kit-ok`. Snaps noted by the forks: Matrix fold `[+ 3]`,
   wizards' templates three to a row and picked on arrow keys, thread prompt `>` magenta, Finder's fold in brackets.
-  (4) Folders by layer (src/ui foundation/primitives/patterns; src/views/workspace by area) in one commit when no
-  other session works. Also still open (what each copy still needs is in those forks' notes: a world size for
+  (4) ~~Folders~~ done 2026-11-01 (the agent session paused): src/ui/{foundation,primitives,patterns},
+  src/views/workspace/{canvas,plane,panels,deck,table,matrix,documents,text,threads,find,settings}; every import, CSS
+  composes, test, eval and doc path rewritten by a script (255 files moved). Also still open (what each copy still needs is in those forks' notes: a world size for
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
   MenuPanel, the settings gear's badge 4 px higher once moved); patterns (Dialog/Window, WizardShell, SetupPanel,
   Dock); `check:kit`; folders.
@@ -6228,7 +6229,7 @@ several planes, a main plane with detail planes beside it, sections), each only 
 ### D-330 · 2026-11-01 · Accepted (the user: "entera basılmadan text componentleri save edilmiyor az önce 10 dk yazı yazıp entera basmak yerine esc ye bastığım için her şeyi kayıp ettim"; then "evet düzelt, yazarken kaydetsin")
 **Text on the canvas saves as it's typed; Escape never throws writing away.**
 - *What:* headings, section names (and their small line or number), paragraphs, sticky notes and the project title
-  write what's typed after a 500 ms pause (`AUTOSAVE_MS`, src/ui/feel.ts), when the tab is hidden and when the field
+  write what's typed after a 500 ms pause (`AUTOSAVE_MS`, src/ui/foundation/feel.ts), when the tab is hidden and when the field
   goes away; Enter / ⌘Enter, Escape or a click away end the typing and write the rest. Nothing empty is written while
   typing: an emptied heading or paragraph is still decided on leaving (it goes away).
 - *Undo:* one go at typing is one undo step however many writes it took (`useTyped` in TextItems.tsx: a key per go,
@@ -6250,7 +6251,7 @@ several planes, a main plane with detail planes beside it, sections), each only 
 ### D-331 · 2026-11-01 · Accepted (the user: "inactive userlar yada ekranı focusta olmayanları şuan gösteriyor muyuz uygulamada?"; then, after the cost: "evet, uzakta durumunu ekle"; "evet, başla")
 **Someone whose tab is hidden or who hasn't touched it for 5 minutes is shown as away.**
 - *What:* presence gets `away: true` (absent = here). The writer sets it when the tab is hidden (at once) or nothing
-  was touched (pointer, keys, wheel, touch) for `AWAY_AFTER_MS` (5 min, src/ui/feel.ts; checked with the 20 s
+  was touched (pointer, keys, wheel, touch) for `AWAY_AFTER_MS` (5 min, src/ui/foundation/feel.ts; checked with the 20 s
   heartbeat); any touch or the tab shown again clears it at once. Going away drops the cursor and a drag in hand; the
   selection stays, so it's back on return.
 - *Seen by others:* the square faint (`--o-dim`) and grey, sorted after those here, `away · on the canvas` on hover and in

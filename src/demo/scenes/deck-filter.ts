@@ -2,9 +2,9 @@
 // `doing`. The hand presses the dock's `[filter]`: the strip builds over the dock (GIVEN TO, DUE, FOR, LABEL); it opens
 // GIVEN TO and picks `me`: only the tasks given to you stay: `to do` empties, `doing`
 // keeps yours. All real: a filter writes nothing.
-import { K } from '../../views/workspace/Kanban'
+import { K } from '../../views/workspace/deck/Kanban'
 import { NO_FILTER } from '../../model/kanbanFilter'
-import { setKanbanFilter } from '../../views/workspace/kanbanFilter'
+import { setKanbanFilter } from '../../views/workspace/deck/kanbanFilter'
 import { aim, camera, cursor, onStage, run, wait, type Scene } from '../director'
 import { base, byText } from '../fixtures/kit'
 import { row } from '../fixtures/o10'

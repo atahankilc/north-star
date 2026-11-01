@@ -6,7 +6,7 @@
 import { useMemo, useState } from 'react'
 import { NODES, type Node } from './uses'
 import type { Entry } from './registry'
-import menu from '../ui/Menu.module.css'
+import menu from '../ui/patterns/Menu.module.css'
 import styles from './Gallery.module.css'
 
 const LEVEL_NAME = ['primitives', 'built from primitives']

@@ -3,17 +3,17 @@
 // `[check]` (each key's model list, which fills the picker), the model (works well / not tried yet; the suggested one only pre-selected), its reasoning effort, and
 // this month's usage in tokens (counts only, from this browser's usage log).
 import { useState } from 'react'
-import { Choice } from '../../ui/Choice'
-import { Note, Row, Section } from '../../ui/Settings'
-import { Select } from '../../ui/Select'
+import { Choice } from '../../ui/primitives/Choice'
+import { Note, Row, Section } from '../../ui/patterns/Settings'
+import { Select } from '../../ui/primitives/Select'
 import { canChat, claudeId, devStubWanted, FIT_WORDS, KNOWN_MODELS, pickerRows, reasons, type ProviderId } from '../models'
 import { listModels, type Effort } from '../openai'
 import { clearUsage, readUsage, sumUsage } from '../usage'
 import { EFFORTS, pickable, readKey, suggested, useAgentSettings } from './settings'
 import { plainError } from './errors'
 import styles from './AgentSettings.module.css'
-import { Button } from '../../ui/Button'
-import { Field } from '../../ui/Field'
+import { Button } from '../../ui/primitives/Button'
+import { Field } from '../../ui/primitives/Field'
 
 const k = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 

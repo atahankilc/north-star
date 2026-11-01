@@ -84,7 +84,7 @@ const files = walk(path.join(root, 'src')).filter((f) => !skip.some((r) => r.tes
 
 // Constants that aren't tokens have one home each (docs/specs/tokens.md §8). A name a home exports is defined nowhere
 // else (import it), and the same UPPER_CASE name with the same number is not written in two files (move it home).
-const HOMES = ['src/ui/feel.ts', 'src/model/limits.ts', 'src/model/world.ts', 'src/ui/motionTokens.ts', 'src/model/grid.ts']
+const HOMES = ['src/ui/foundation/feel.ts', 'src/model/limits.ts', 'src/model/world.ts', 'src/ui/foundation/motionTokens.ts', 'src/model/grid.ts']
 const owned = new Map()
 for (const h of HOMES) {
   if (!fs.existsSync(path.join(root, h))) continue

@@ -1,7 +1,7 @@
 /* The welcome and what's new (D-315, onboarding.md §4.1, §4.4): one paged modal, the wizard window (D-316). Tokens
    only; the mock is docs/specs/onboarding-preview/ (preview.css §1, look a). */
 
-/* The window's own frame; its scrim (z 40, the page at 72 % over everything) is the Window's (src/ui/Window.tsx). */
+/* The window's own frame; its scrim (z 40, the page at 72 % over everything) is the Window's (src/ui/patterns/Window.tsx). */
 .wa {
   position: relative;
   max-width: 100%;
@@ -152,7 +152,7 @@
 }
 
 .count {
-  composes: label from '../ui/Label.module.css';
+  composes: label from '../ui/primitives/Label.module.css';
   margin-bottom: var(--space-2);
 }
 

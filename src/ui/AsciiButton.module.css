@@ -1,8 +1,0 @@
-/* Kept for what composes them (D-326: moving to src/ui/Button.tsx): the styles live in Button.module.css. */
-.button {
-  composes: md from './Button.module.css';
-}
-
-.small {
-  composes: sm from './Button.module.css';
-}

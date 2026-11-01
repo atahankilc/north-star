@@ -22,7 +22,7 @@ file alone.
 
 What v1 has (D-251): a canvas piece, columns on the piece (`todo · doing · done`), tasks in `tasks/{id}` (title, given
 to, due day, the card it's for, checklist, notes), drag between columns, `+ task` at a column's foot, a right panel.
-Code: `src/data/tasks.ts`, `src/views/workspace/Kanban.tsx`, `TaskPanel.tsx`.
+Code: `src/data/tasks.ts`, `src/views/workspace/deck/Kanban.tsx`, `TaskPanel.tsx`.
 
 The user picked these ideas (2026-10-26): 1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16. Not picked: the assistant
 writing tasks (3) and full keyboard use (7). Don't build those unless asked.

@@ -4,7 +4,7 @@
 import { Component, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { makeStore, registerStore, type Store } from '../state/wsStore'
-import { WorkspaceContext } from '../views/workspace/context'
+import { WorkspaceContext } from '../views/workspace/canvas/context'
 import { MAIN } from '../data/canvases'
 import { tiny, workspace, WID } from '../demo/fixtures/tiny'
 import { fresh } from '../demo/realm'

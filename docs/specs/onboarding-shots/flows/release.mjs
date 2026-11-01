@@ -71,7 +71,7 @@ await step('`[show me]` → the side view, its lesson NEW', async () => {
   R.expect(!(await news(p)), "what's new closed")
   const st = await progress(p)
   R.expect(st.lastRelease === '2026-11', `lastRelease = the newest (${st.lastRelease})`)
-  R.expect(await p.evaluate(async () => (await window.__mod('/src/views/workspace/sideState.ts')).useTasksSide.getState().open), 'the side view opened')
+  R.expect(await p.evaluate(async () => (await window.__mod('/src/views/workspace/deck/sideState.ts')).useTasksSide.getState().open), 'the side view opened')
   const l = await until(p, 'side-view', 10000)
   R.expect(!!l, 'its lesson shows')
   if (l) {
@@ -80,7 +80,7 @@ await step('`[show me]` → the side view, its lesson NEW', async () => {
     await full(p, 'side-view-new')
     await closeLesson(p)
   }
-  await p.evaluate(async () => (await window.__mod('/src/views/workspace/sideState.ts')).closeTasksSide())
+  await p.evaluate(async () => (await window.__mod('/src/views/workspace/deck/sideState.ts')).closeTasksSide())
   await wait(900)
   R.expect(await dot(p), 'the dot on the side nav’s `?`')
   const d = await box(p, 'button[aria-label^="Guide:"]')

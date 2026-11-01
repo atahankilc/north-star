@@ -4,7 +4,7 @@
 // `share with everyone`: the mark goes, everyone here sees it now (each write shown with set()).
 import type { Doc } from '../../data/documents'
 import type { WithId } from '../../data/hooks'
-import { useDocUi } from '../../views/workspace/Documents'
+import { useDocUi } from '../../views/workspace/documents/Documents'
 import { aim, camera, cursor, key, onStage, run, set, wait, type Scene } from '../director'
 import { AT, base, rightClick } from '../fixtures/kit'
 import { closeIn, row } from '../fixtures/o10'

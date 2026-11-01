@@ -4,10 +4,10 @@
 // it says (the name field, the code field, the file picker). Gone (and seen) at the first workspace made or the first
 // join asked for; the page's own line shows after that, should it ever be empty again.
 import { createPortal } from 'react-dom'
-import { Appear } from '../ui/Appear'
+import { Appear } from '../ui/primitives/Appear'
 import type { Choice } from './lessons'
 import styles from './Coach.module.css'
-import { Num } from '../ui/Rule'
+import { Num } from '../ui/primitives/Rule'
 
 // What each choice goes to on the page (Workspaces.tsx's fields), by its place in the list.
 const GO: (() => void)[] = [

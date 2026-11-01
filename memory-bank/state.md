@@ -55,7 +55,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
 - Gallery and foundation (D-324, D-326): map, motion, kit, every area on it, patterns, `check:kit` pushed 2026-11-01
   (4a07c52). Landing + workspaces on the kit: pushed 2026-11-01 (f15f8d7). The whole UI but the agent on the kit:
-  check:kit 238 → 13 (only src/agent/ui left), ToolButton and Steps added (2026-11-01, last part not pushed). Next, agreed with the user: the agent's column on Window (only when
+  check:kit 238 → 13 (only src/agent/ui left); D-334 (:where); folders by layer/area (2026-11-01, not pushed). Next, agreed with the user: the agent's column on Window (only when
   the user says), check:kit lower area by area, folders last; the plan is D-326's *Not yet*.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 

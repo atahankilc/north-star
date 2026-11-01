@@ -10,7 +10,7 @@
 import { accents } from '../../styles/tokens'
 import { themeAccent } from '../../state/theme'
 import { usePresence, type Peer } from '../../data/presence'
-import peerStyles from '../../views/workspace/collab.module.css'
+import peerStyles from '../../views/workspace/canvas/collab.module.css'
 import { aim, camera, cursor, inFocus, key, pointOf, wait, type Action, type Ctx, type Scene, type Step, type Target } from '../director'
 import { pazar, workspace, WID, P, PEOPLE, DEMO_USER } from '../fixtures/pazar'
 import { DEMO_DAY } from '../clock'

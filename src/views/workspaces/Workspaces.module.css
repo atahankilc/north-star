@@ -23,7 +23,7 @@
 }
 
 .label {
-  composes: label from '../../ui/Frame.module.css';
+  composes: label from '../../ui/foundation/Frame.module.css';
 }
 
 /* ── forms ─────────────────────────────────────────── */
@@ -37,7 +37,7 @@
 
 /* The import strip (D-080, D-246), across the forms' width. */
 .import {
-  composes: dashed from '../../ui/Frame.module.css';
+  composes: dashed from '../../ui/foundation/Frame.module.css';
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
@@ -55,7 +55,7 @@
 }
 
 .form {
-  composes: interactive from '../../ui/Frame.module.css';
+  composes: interactive from '../../ui/foundation/Frame.module.css';
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -95,7 +95,7 @@
 /* ── waiting: invites and requests (D-062) ─────────── */
 
 .pending {
-  composes: dashed from '../../ui/Frame.module.css';
+  composes: dashed from '../../ui/foundation/Frame.module.css';
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -154,7 +154,7 @@
 }
 
 .card {
-  composes: interactive from '../../ui/Frame.module.css';
+  composes: interactive from '../../ui/foundation/Frame.module.css';
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -288,7 +288,7 @@ span.cardName {
 /* ── empty state ───────────────────────────────────── */
 
 .empty {
-  composes: dashed from '../../ui/Frame.module.css';
+  composes: dashed from '../../ui/foundation/Frame.module.css';
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

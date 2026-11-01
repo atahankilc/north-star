@@ -4,7 +4,7 @@
 // O6 mounts <Coach /> for real (WorkspaceLayout, the workspaces page).
 import { createRoot, type Root } from 'react-dom/client'
 import { activeStore } from '../state/wsStore'
-import { WorkspaceContext } from '../views/workspace/context'
+import { WorkspaceContext } from '../views/workspace/canvas/context'
 import { Coach, coachDev } from './Coach'
 import { lessonById, type Role } from './lessons'
 import { pagesFor, type Shown } from './queue'

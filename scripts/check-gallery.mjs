@@ -12,7 +12,7 @@ const ROOT = join(dirname(new URL(import.meta.url).pathname), '..')
 const COVERED = ['src/ui', 'src/views/workspace', 'src/onboarding']
 // Component files with no example, and why.
 const EXEMPT = {
-  'src/ui/Curtain.tsx': 'the page’s own loading curtain (WebGL backdrop); seen on every page load, and it drives the global `revealed` the gallery holds on',
+  'src/ui/patterns/Curtain.tsx': 'the page’s own loading curtain (WebGL backdrop); seen on every page load, and it drives the global `revealed` the gallery holds on',
 }
 
 // Components still waiting for their example: none since G3. Kept so a folder joining later can list its own while

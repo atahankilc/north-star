@@ -4,15 +4,15 @@
 // What's new is the same frame: the pages are the changes, `[show me]` where an item has somewhere to go, the last
 // page `+ N more` as a list.
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { stopCanvas, Window } from '../ui/Window'
-import { DecodeText } from '../ui/DecodeText'
+import { stopCanvas, Window } from '../ui/patterns/Window'
+import { DecodeText } from '../ui/primitives/DecodeText'
 import { Demo } from './Demo'
 import { bits, fitTab, plain, two, type PageModel } from './words'
 import type { ReleaseItem } from './releases'
 import styles from './Pages.module.css'
-import { Button } from '../ui/Button'
-import { Num } from '../ui/Rule'
-import { Steps } from '../ui/Steps'
+import { Button } from '../ui/primitives/Button'
+import { Num } from '../ui/primitives/Rule'
+import { Steps } from '../ui/patterns/Steps'
 
 export type PagesEnd = { how: 'done' | 'skipped'; go?: NonNullable<ReleaseItem['go']>['action'] }
 
@@ -56,8 +56,8 @@ function setRef<T>(ref: React.Ref<T>, v: T | null) {
 }
 
 // Focus kept inside and given back, Tab going round, a press on the scrim keeping the focus, the canvas never hearing a
-// press: the Window's (src/ui/Window.tsx, D-326), here for the lessons and nudges that import them from this file.
-export { keepFocus, stopCanvas, trapTab, useDialogFocus } from '../ui/Window'
+// press: the Window's (src/ui/patterns/Window.tsx, D-326), here for the lessons and nudges that import them from this file.
+export { keepFocus, stopCanvas, trapTab, useDialogFocus } from '../ui/patterns/Window'
 
 type Props = {
   kind: 'welcome' | 'news'

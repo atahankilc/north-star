@@ -4,7 +4,7 @@
 // focus: its line in the middle of the screen (or of its piece), no arrow.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Appear } from '../ui/Appear'
+import { Appear } from '../ui/primitives/Appear'
 import { findAnchor } from './Lesson'
 import { useCanvasView } from '../state/canvasView'
 import styles from './Coach.module.css'

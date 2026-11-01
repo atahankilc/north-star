@@ -66,7 +66,7 @@
 }
 
 .noDemo {
-  composes: label from '../ui/Label.module.css';
+  composes: label from '../ui/primitives/Label.module.css';
   display: grid;
   place-items: center;
   border: var(--line-w) dashed var(--line);

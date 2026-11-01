@@ -12,9 +12,9 @@ import type { Store } from '../state/wsStore'
 import type { WorkspaceCtx } from '../state/wsStore'
 import { camOf, planeArea, setCam, useCanvasView, type Bounds } from '../state/canvasView'
 import { isReducedMotion } from '../state/motion'
-import { runCells } from '../ui/Appear'
+import { runCells } from '../ui/primitives/Appear'
 import { finishAnimations, releaseAnimations, restart, step as stepClock, stepAnimations, yieldTask, realClock } from './clock'
-import { CELLS_SHUT } from '../ui/cellReveal'
+import { CELLS_SHUT } from '../ui/foundation/cellReveal'
 
 export type Pt = { x: number; y: number }
 // Where the cursor goes: a CSS selector (the element's middle, or `aim()`'s point in it), a stage point, or a function

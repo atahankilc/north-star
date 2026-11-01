@@ -1,0 +1,593 @@
+/* The workspace's canvas (D-176): fills the app's box, pans and zooms; the backdrop shows through. */
+.canvas {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  /* Drags here move things; they never select text (fields being typed in still do). */
+  user-select: none;
+}
+
+.canvas[data-panning='true'] {
+  cursor: grabbing;
+}
+
+/* Everything on the canvas, as one layer the focus transition runs past you and fades (D-184). */
+.lens {
+  position: absolute;
+  inset: 0;
+}
+
+/* The canvas plane: its origin goes to the middle of the screen plus the camera's offset, then scales. */
+.world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+/* A plane on the canvas (D-180): a framed box, its name set into the top edge like a section's (D-157). Everything on the
+   canvas has its own background; a piece's is graphite (D-263), solid (no backdrop through it), lifted off the page by a
+   shadow and a hairline of light on top, a 2 px band in its kind's colour along the top edge. Inside it the page's tokens
+   take the surface's, so what it holds sits on it. In its focus (and a pane beside it) the screen is the page's black
+   again, what it holds still graphite (D-289). */
+.piece:not([data-open='true']) {
+  --bg: var(--piece);
+  --bg-raised: var(--piece-card);
+  --grid-mark: var(--piece-mark);
+}
+
+.piece {
+  --kind: var(--fg);
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: var(--line-w) solid var(--piece-edge);
+  background: var(--piece);
+  box-shadow:
+    var(--piece-shadow),
+    inset 0 var(--line-w) 0 var(--piece-hi);
+  /* Out of edit mode it pans the canvas like empty space (D-186). */
+  cursor: inherit;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    scale var(--dur-quick) var(--ease-out),
+    translate var(--dur-quick) var(--ease-out);
+}
+
+/* The marks: a dot every 25 plane px (D-332), on its cards' grid as it shows them (D-187). */
+.piece::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--grid-mark);
+  -webkit-mask: var(--grid-mark-shape) var(--mx, calc(var(--w-grid) / -2)) var(--my, calc(var(--w-grid) / -2)) / var(--mark, var(--w-grid)) var(--mark, var(--w-grid));
+  mask: var(--grid-mark-shape) var(--mx, calc(var(--w-grid) / -2)) var(--my, calc(var(--w-grid) / -2)) / var(--mark, var(--w-grid)) var(--mark, var(--w-grid));
+  pointer-events: none;
+}
+
+/* Edit mode (D-180, D-181): the plane's own edge as always (no dashed line, D-194); it moves from anywhere on it, its
+   corner grips and edge bars resize it. */
+.piece[data-editing='true'] {
+  cursor: move;
+}
+
+.piece[data-dragging='true'] {
+  cursor: grabbing;
+}
+
+/* Hover and selection are its `Marks` (D-265); in edit mode they're selected, with a cyan handle on every corner and
+   edge (Marks' handles). Moved, it goes 0.8 round the point held under the pointer, its L's where it lands; let go,
+   it grows back into them. */
+.piece[data-carried='true'] {
+  z-index: var(--z-world-ui);
+  transition: none;
+}
+
+/* A matrix (D-204, D-208) is a window: a plane's edge, fill, name and console, but no grid marks; its table sits at
+   its own size from the top-left, cut by the edge. In focus its copy there glides out, so this one hides. A table
+   (D-209) is the same kind of window. */
+.piece[data-kind='matrix']::before,
+.piece[data-kind='table']::before,
+.piece[data-kind='documents']::before,
+.piece[data-kind='document']::before,
+.piece[data-kind='kanban']::before,
+.piece[data-kind='timeline']::before {
+  content: none;
+}
+
+/* Its kind's band on the top edge (D-263), over the edge line; the name's notch (on `--bg`, the surface) cuts it. */
+.piece::after {
+  content: '';
+  position: absolute;
+  top: calc(-1 * var(--line-w));
+  right: calc(-1 * var(--line-w));
+  left: calc(-1 * var(--line-w));
+  height: var(--piece-band);
+  background: var(--kind);
+  pointer-events: none;
+}
+
+.piece[data-kind='matrix'] { --kind: var(--link-solves); }
+.piece[data-kind='table'] { --kind: var(--link-part); }
+.piece[data-kind='kanban'] { --kind: var(--link-draws); }
+.piece[data-kind='documents'],
+.piece[data-kind='document'] { --kind: var(--link-depends); }
+.piece[data-kind='timeline'] { --kind: var(--link-competes); }
+
+/* A matrix or table about to stick to this plane (D-210): its edge in cyan. */
+.piece[data-stick='true'] {
+  border-color: var(--accent-cyan);
+}
+
+/* A link between a plane and its matrix or table (D-215): quiet grey, cyan while either is under the pointer. No motion.
+   The notch on the plane's edge where it's linked. */
+.notch {
+  position: absolute;
+  z-index: var(--z-2);
+  background: var(--edge);
+  pointer-events: none;
+}
+
+/* Touching: the gap holds faint `· ›` cells, 9 px each (drawn under the pieces). */
+.bondGap {
+  position: absolute;
+  overflow: hidden;
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: var(--w-text-xs);
+  line-height: var(--lh-none);
+  letter-spacing: 0;
+  text-align: center;
+  white-space: pre;
+  pointer-events: none;
+}
+
+/* Apart: a thin straight line, never dashed, under the pieces so it never crosses one. */
+.bondLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  width: var(--line-w);
+  height: var(--line-w);
+  pointer-events: none;
+}
+
+.bondLine line {
+  stroke: var(--line-hover);
+}
+
+.notch[data-lit='true'] {
+  background: var(--accent-cyan);
+}
+
+.bondGap[data-lit='true'] {
+  color: var(--accent-cyan);
+}
+
+.bondLine[data-lit='true'] line {
+  stroke: var(--accent-cyan);
+}
+
+/* The link dropdown in a matrix's or table's console (D-215). */
+.linkPick {
+  color: var(--fg-muted);
+}
+
+/* What's in a console grows with it (D-264): the dropdown's text, the comment icon. */
+.console :is(.linkPick, .linkPick *) {
+  font-size: inherit;
+}
+
+.console svg {
+  width: 1em;
+  height: 1em;
+}
+
+.linkAt {
+  color: var(--fg-muted);
+}
+
+.piece[data-away='true'] {
+  visibility: hidden;
+}
+
+/* A piece's name (D-180, D-223): set into the top edge, held at a size on the screen whatever the canvas's zoom (13 px
+   at 100 %, never under 11 or over 15), so it reads zoomed out. `--z` is the canvas's zoom, set on the piece. Named, its
+   kind follows it faint (`PAZAR · PLANE`); when it doesn't fit, the kind goes first, then the name is cut with `…`, all
+   of it shown while hovered. */
+.name {
+  --name-size: clamp(var(--text-xs), calc(var(--text-sm) * var(--z, 1)), var(--text-md));
+
+  position: absolute;
+  /* Over the plane's cards (D-187). */
+  z-index: var(--z-1);
+  top: 0;
+  /* Cut into the edge as a section's name is (D-266): a 16 px lead of edge, then 8 px clear each side of it. */
+  left: calc(var(--space-4) / var(--z, 1));
+  display: flex;
+  gap: 0.6em;
+  max-width: calc(100% - 2 * var(--space-4) / var(--z, 1));
+  padding: 0 calc(var(--space-2) / var(--z, 1));
+  transform: translateY(-50%);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: calc(var(--name-size) / var(--z, 1));
+  font-weight: var(--weight-medium);
+  line-height: var(--lh-body);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase; /* kit-ok: a piece's name in its top edge, sized against the zoom (D-223) */
+  white-space: nowrap;
+}
+
+.piece:hover .name {
+  max-width: none;
+}
+
+.nameText {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+/* A number it starts with: magenta, before it (D-266). */
+.nameNum {
+  flex: none;
+  color: var(--accent-magenta);
+  font-weight: var(--weight-regular);
+}
+
+/* Unframed (D-267): no edge to be cut into; the name is a heading's small line 8 px over its contents, on the canvas:
+   mono 11 px on the screen, caps, tracked, `04 ── RIVALS · TABLE`, on a shade that hugs it. */
+.piece[data-open='true'] .name {
+  --name-size: var(--text-xs);
+  top: calc(var(--w-grid) - var(--space-2) / var(--z, 1));
+  left: var(--w-grid);
+  align-items: center;
+  max-width: calc(100% - 2 * var(--w-grid));
+  padding: 0;
+  transform: translateY(-100%);
+  background: color-mix(in srgb, var(--bg) var(--mix-near), transparent);
+  box-shadow: 0 0 calc(var(--space-4) / var(--z, 1)) calc(var(--space-3) / var(--z, 1)) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
+  font-weight: var(--weight-regular);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--track-label);
+}
+
+.nameRule {
+  flex: none;
+  width: 1.8em;
+  height: calc(var(--line-w) / var(--z, 1));
+  background: var(--fg-dim);
+}
+
+.nameSep,
+.nameKind {
+  overflow: hidden;
+  /* The kind gives way before the name does. */
+  flex-shrink: 100;
+  min-width: 0;
+  color: var(--fg-faint);
+  font-weight: var(--weight-regular);
+}
+
+.name[data-unnamed='true'] {
+  color: var(--fg-faint);
+  font-weight: var(--weight-regular);
+}
+
+/* The name in edit mode (D-179, D-180, D-223): a field on the edge framed in cyan, a cyan `>` before what's typed and
+   the count after it, in the name's case as typed. */
+.piece .name.nameEdit {
+  gap: 0.5em;
+  max-width: none;
+  padding: 0.15em 0.6em;
+  border: var(--line-w) solid var(--accent-cyan);
+  color: var(--fg-strong);
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: text;
+}
+
+.namePrompt {
+  color: var(--accent-cyan);
+}
+
+/* A Field in the name's own face (the cyan frame round it says it's being typed in). */
+.nameField {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  caret-color: var(--accent-cyan);
+}
+
+.nameCount {
+  align-self: center;
+  color: var(--fg-faint);
+  font-size: 0.8em;
+  font-weight: var(--weight-regular);
+}
+
+/* A piece's console (D-179, D-181, D-189, D-264): a tab inside its bottom-right corner, standing on its bottom edge (no
+   bottom border), magenta marks on its top corners, like the focus dock; over what the piece holds. Shown only while the
+   piece is pointed at (built cell by cell, CanvasView's PlaneConsole), in edit mode, with its setup open or the keyboard
+   in it. On the screen 11 px at 100 % and over, growing as the canvas zooms out (`--cs`, 1.4 times at most); everything
+   in it by the same factor. On a piece narrower than it, it runs past the left edge. Bracketed actions, nothing before
+   them. In edit mode a status line in cyan. */
+.console {
+  position: absolute;
+  z-index: var(--z-2);
+  right: calc(var(--space-4) * var(--cs, 1));
+  bottom: 0;
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--space-2) * var(--cs, 1));
+  padding: calc(var(--space-1) * var(--cs, 1)) calc(var(--space-3) * var(--cs, 1)) calc(var(--space-2) * var(--cs, 1));
+  border: calc(var(--line-w) * var(--cs, 1)) solid var(--piece-edge);
+  border-bottom: 0;
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: calc(var(--text-xs) * var(--cs, 1));
+  line-height: calc(var(--space-4) * var(--cs, 1));
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* Hidden (its cells broken): takes nothing. */
+.console:not([data-shown]):not([data-fresh]) {
+  pointer-events: none;
+}
+
+.console::before,
+.console::after {
+  content: '';
+  position: absolute;
+  top: calc(-1 * var(--line-w) * var(--cs, 1));
+  width: calc(var(--corner-mark) * var(--cs, 1));
+  height: calc(var(--corner-mark) * var(--cs, 1));
+  border-top: calc(var(--line-w) * var(--cs, 1)) solid var(--accent-magenta);
+  pointer-events: none;
+}
+
+.console::before {
+  left: calc(-1 * var(--line-w) * var(--cs, 1));
+  border-left: calc(var(--line-w) * var(--cs, 1)) solid var(--accent-magenta);
+}
+
+.console::after {
+  right: calc(-1 * var(--line-w) * var(--cs, 1));
+  border-right: calc(var(--line-w) * var(--cs, 1)) solid var(--accent-magenta);
+}
+
+.console[data-editing='true'],
+.console[data-editing='true']::before,
+.console[data-editing='true']::after {
+  border-color: var(--accent-cyan);
+}
+
+/* Something new inside while the console's hidden: a small tab of its own, magenta (D-264). */
+.console[data-fresh] {
+  padding-inline: calc(var(--space-2) * var(--cs, 1));
+  border-color: var(--accent-magenta);
+}
+
+.mode {
+  color: var(--accent-cyan);
+  letter-spacing: var(--track-label);
+}
+
+.readout {
+  color: var(--fg);
+}
+
+/* The console's buttons are the kit's Button (D-326) at the kit's padding; `.tool` only lets their text grow with the
+   console (`--cs`, D-264). */
+.console .tool {
+  font-size: inherit;
+}
+
+.console[data-editing='true'] .tool {
+  color: var(--accent-cyan);
+}
+
+/* Delete (D-182), and it asks first. */
+.console .tool[data-tone='danger'] {
+  color: var(--accent-magenta);
+}
+
+/* A plane in focus (D-184, D-185): the whole screen, solid, carrying the plane's dot marks on its own grid (--mx, --my)
+   at the canvas's zoom (--mark), so they never move. The ink transition cuts it with a clip-path. On the page's black
+   (D-289: graphite only on the canvas, where it sets a piece off), what it holds on the pieces' raised shade. */
+.focused {
+  --bg-raised: var(--piece-card);
+  --grid-mark: var(--piece-mark);
+  position: absolute;
+  inset: 0;
+  z-index: calc(var(--z-3) + 1);
+  background: var(--bg);
+  /* Its own view pans (D-186). */
+  cursor: grab;
+}
+
+/* Going in and out its page eases between the piece's graphite and the black (D-297); what's on `--bg` inside follows. */
+.focused:not([data-reduced='true']) {
+  transition: --bg var(--shade-ms, 0ms) ease-in-out;
+}
+
+.focused[data-shade='piece'] {
+  --bg: var(--piece);
+}
+
+.focused[data-panning='true'] {
+  cursor: grabbing;
+}
+
+/* Its dot marks: an element of their own under what it holds, so the view's --mark/--mx/--my, written on every pan
+   and zoom step, restyle only it and not everything inside (custom properties inherit). */
+.focusMarks {
+  position: absolute;
+  inset: 0;
+  background: var(--grid-mark);
+  -webkit-mask: var(--grid-mark-shape) var(--mx) var(--my) / var(--mark) var(--mark);
+  mask: var(--grid-mark-shape) var(--mx) var(--my) / var(--mark) var(--mark);
+  pointer-events: none;
+}
+
+/* A matrix in focus: no marks and nothing of its own behind; its page (`.page`) is what the cells build, under the table. */
+.focused[data-bare='true'] {
+  background: none;
+}
+
+.page {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+}
+
+/* What a matrix's focus holds, over its page: cut to its window on the way in and out (FocusedPlane's `hold`). */
+.held {
+  position: absolute;
+  inset: 0;
+}
+
+/* A plane's console while it's in focus or on its way (D-185): gone at once. */
+.consoleAway {
+  visibility: hidden;
+}
+
+
+/* A plane's comments in its console (D-193): the mark and the count on one line, magenta while something is new. */
+.tool[aria-label^='Comments inside'] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.tool[data-new='true'] {
+  color: var(--accent-magenta);
+}
+
+/* A matrix or table opened onto the canvas (D-228): no edge, its contents a margin in from the corner, its name and
+   console in that margin. Its view stays at 1 under the canvas's zoom; what's at screen size in it reads `--z`. On the
+   page's black (D-289), its edge feathered out a little, never a box, so the backdrop stays out from under what's in it;
+   what it holds on the pieces' raised shade, as in focus. */
+.piece[data-open='true'] {
+  --bg-raised: var(--piece-card);
+  --grid-mark: var(--piece-mark);
+  border-color: transparent;
+  background: var(--bg);
+  box-shadow: var(--feather) var(--bg);
+}
+
+.piece[data-open='true']::after {
+  content: none;
+}
+
+/* Unframed (D-267): the same console on the same hover rule, hanging 10 px under its contents' right end, its own edge
+   all round (nothing to stand on). */
+.piece[data-open='true'] > .console {
+  top: calc(100% - 2 * var(--w-grid) + var(--space-3) * var(--cs, 1));
+  right: var(--w-grid);
+  bottom: auto;
+  border-bottom: calc(var(--line-w) * var(--cs, 1)) solid var(--piece-edge);
+}
+
+/* Going between (D-267): the window it leaves or goes into, the piece's own look, breaking or building cell by cell
+   under what's in it; meanwhile the piece itself shows none of it (framing: it's the copy that builds). */
+.ghostWindow {
+  position: absolute;
+  top: calc(-1 * var(--line-w));
+  left: calc(-1 * var(--line-w));
+  border: var(--line-w) solid var(--piece-edge);
+  background: var(--piece);
+  box-shadow:
+    var(--piece-shadow),
+    inset 0 var(--line-w) 0 var(--piece-hi);
+  pointer-events: none;
+}
+
+.ghostWindow::after {
+  content: '';
+  position: absolute;
+  top: calc(-1 * var(--line-w));
+  right: calc(-1 * var(--line-w));
+  left: calc(-1 * var(--line-w));
+  height: var(--piece-band);
+  background: var(--kind);
+}
+
+.piece[data-morph='framed'] {
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+}
+
+.piece[data-morph='framed']::after {
+  content: none;
+}
+
+.openLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+/* Files held over the canvas (D-232): its edge lit cyan, as a panel's is for a drop. */
+.canvas[data-file-over='true']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: calc(var(--z-world-ui) + 2);
+  border: var(--line-w) solid var(--accent-cyan);
+  background: var(--wash-cyan);
+  pointer-events: none;
+}
+
+/* A document dragged out of its list (D-232): a small window under the pointer, its name in the edge. */
+.dragGhost {
+  position: absolute;
+  z-index: calc(var(--z-world-ui) + 1);
+  width: var(--size-xs);
+  height: calc(4 * var(--w-grid));
+  margin: calc(-1 * var(--space-3)) 0 0 calc(-1 * var(--space-3));
+  border: var(--line-w) solid var(--accent-cyan);
+  background: var(--wash-cyan);
+  pointer-events: none;
+}
+
+.dragGhostName {
+  composes: label from '../../../ui/primitives/Label.module.css';
+  position: absolute;
+  top: 0;
+  left: var(--space-3);
+  max-width: calc(100% - 2 * var(--space-3));
+  overflow: hidden;
+  padding: 0 var(--space-2);
+  transform: translateY(-50%);
+  background: var(--bg);
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Its own colour over the kit's label (which can come again later): outweighs it. */
+.dragGhost .dragGhostName {
+  color: var(--fg);
+}
+
+/* A piece on several canvases (D-302's session 3): `⧉ 2` after its kind, its number magenta like a name's (D-266). */
+.nameShared {
+  flex: none;
+  margin-left: 0.6em;
+  color: var(--accent-magenta);
+  font-weight: var(--weight-regular);
+}

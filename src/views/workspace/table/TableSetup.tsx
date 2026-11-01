@@ -1,0 +1,346 @@
+// A table's setup (D-209, D-218), in the matrix's way (D-212): a tabbed panel over the bottom middle of its space (the
+// screen in focus, a pane beside a plane, D-211), above the dock: rows · columns · view, and `start over from ▾` (a
+// template; ⌘Z brings back what it replaced). The same editors make a new table in the wizard (TableWizard.tsx), on a
+// draft instead of the piece. Rows: the cards that meet its rules (each a field, `is` or `is not`, and the values it
+// takes; none required), then cards and names added by hand. Columns: the cards' own fields (switched on and off) and
+// columns of its own (a mark from a scale, a number with a unit, a few words, a check), moved, renamed, taken out.
+// View: rows a page, the order. Every change is one undo step; typing in a field merges into one.
+import type { WithId } from '../../../data/hooks'
+import type { Piece } from '../../../data/model'
+import { kindOfPiece } from '../../../data/pieces'
+import { newId, SCALES } from '../../../data/matrix'
+import { choicesOf, MAX_RULES, RULE_FIELDS, rowsOf, type Rule, type RuleField, type Source, type SourceItem } from '../../../data/source'
+import {
+  colName,
+  COL_NAME_MAX,
+  DEFAULT_STEPS,
+  FIELDS,
+  MAX_COLS,
+  NAME_COL,
+  OWN_KINDS,
+  PAGE_SIZES,
+  removeColumn,
+  removeRow,
+  setTable,
+  setTablePart,
+  TEMPLATES,
+  type Column,
+  type Field,
+  type OwnKind,
+  type TableSetup,
+} from '../../../data/table'
+import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
+import { Select } from '../../../ui/primitives/Select'
+import { AutosaveField } from '../../../ui/primitives/AutosaveField'
+import { useWs } from '../canvas/context'
+import { AddPill, Choices, Row, Toggle } from '../matrix/MatrixSetup'
+import { followTable, tableOf, useTableUi, TABLE_TABS, type TableTab } from './Table'
+import { TYPE_ACCENT } from '../plane/PlaneCards'
+import m from '../matrix/Matrix.module.css'
+import styles from './Table.module.css'
+import { Tabs } from '../../../ui/primitives/Tabs'
+import { Button } from '../../../ui/primitives/Button'
+import { Empty } from '../../../ui/primitives/Empty'
+import { Options } from '../../../ui/patterns/Options'
+
+const TAB_NAME: Record<TableTab, string> = { rows: 'rows', cols: 'columns', view: 'view' }
+
+// One part of a setup changed: on the piece (one undo step each), or on the wizard's draft.
+export type SetTable = <K extends keyof TableSetup>(part: K, value: TableSetup[K] | undefined, key?: string) => void
+
+export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
+  const { wid, cards, cells } = useWs()
+  const setup = tableOf(piece)
+  const tab = useTableUi((s) => s.tab)
+  const part: SetTable = (k, v, key) => {
+    // A row or column added here: the table's view follows it in (D-214's way).
+    const r = k === 'rows' ? (v as Source | undefined) : undefined
+    if (r && (r.items.length > setup.rows.items.length || (r.hide?.length ?? 0) < (setup.rows.hide?.length ?? 0))) followTable(piece.id)
+    if (k === 'cols' && ((v as Column[] | undefined)?.length ?? 0) > setup.cols.length) followTable(piece.id)
+    void setTablePart(wid, piece.id, k, v, key)
+  }
+  const close = () => useTableUi.setState({ setup: null })
+  const count = { rows: rowsOf(setup.rows, cards, !setup.manual).length, cols: setup.cols.length + 1 }
+  const restart: MenuEntry[] = TEMPLATES.map((t) => ({ key: t.key, label: t.name, hint: t.hint, onSelect: () => void setTable(wid, piece.id, t.setup(), piece.name ? undefined : t.name) }))
+  return (
+    <section className={m.setup} data-learn="setup" aria-label="Set up the table" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
+      <header className={m.setupHead}>
+        <Tabs<TableTab> label="Setup" value={tab} onChange={(t) => useTableUi.setState({ tab: t })} options={TABLE_TABS.map((t) => ({ value: t, label: TAB_NAME[t], count: t !== 'view' ? count[t] : undefined }))} />
+        <span className={m.setupEnd}>
+          <Menu label="start over from" up quiet prompt="a template…" noun="templates" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows and columns' }, ...restart]} />
+          <Button title="close (Esc)" onClick={close}>
+            done
+          </Button>
+        </span>
+      </header>
+      <div className={m.setupBody} role="tabpanel">
+        {tab === 'rows' && (
+          <RowsEditor
+            setup={setup}
+            onChange={part}
+            // On the piece a typed row goes with its values, as its `×` on the table does.
+            onRemoveItem={(item) => void removeRow(wid, piece.id, setup, { key: item.cardId ?? item.id, name: item.name ?? '', item, auto: false }, cells)}
+          />
+        )}
+        {tab === 'cols' && <ColumnsEditor setup={setup} onChange={part} onRemoveCol={(c) => void removeColumn(wid, piece.id, setup, c.id, cells)} />}
+        {tab === 'view' && <ViewEditor setup={setup} onChange={part} />}
+      </div>
+    </section>
+  )
+}
+
+type EditorProps = { setup: TableSetup; onChange: SetTable }
+
+// Rows: the cards that meet the rules (switched off: a list of names), the rules, and what's added by hand.
+// `cardsOnly` (a kanban holding cards, D-268): always the rules' cards, and only cards added by hand, no typed names.
+export function RowsEditor({ setup, onChange, onRemoveItem, cardsOnly }: EditorProps & { onRemoveItem?: (item: SourceItem) => void; cardsOnly?: boolean }) {
+  const { cards } = useWs()
+  const rows = setup.rows
+  const set = (s: Source, key?: string) => onChange('rows', s, key)
+  const hidden = rows.hide?.length ?? 0
+  const byId = new Map(cards.map((c) => [c.id, c]))
+  const on = new Set(rowsOf(rows, cards, !setup.manual).map((r) => r.key))
+  // A rule changed by hand is yours, even the one linking set (D-210).
+  const setRule = (i: number, r: Rule | null, key?: string) => {
+    const own = r && (({ auto: _, ...rest }) => rest)(r)
+    set({ ...rows, rules: own ? rows.rules.map((x, j) => (j === i ? own : x)) : rows.rules.filter((_, j) => j !== i) }, key)
+  }
+  const drop = (item: SourceItem) => (onRemoveItem ? onRemoveItem(item) : set({ ...rows, items: rows.items.filter((i) => i !== item) }))
+  return (
+    <>
+      <Row label="cards" hint="they join and leave by themselves as cards are made, changed or deleted">
+        {cardsOnly ? <span className={m.checkHint}>{rows.rules.length ? 'the cards that meet these rules: every rule must hold' : 'no rules: every card on every plane'}</span> : <Toggle on={!setup.manual} label="the cards that meet these rules" hint={rows.rules.length ? 'every rule must hold' : 'no rules: every card on every plane'} onChange={(v) => onChange('manual', v ? undefined : true)} />}
+        {hidden > 0 && (
+          <Button title="bring back the cards taken out" onClick={() => set({ ...rows, hide: undefined })}>
+            {hidden} hidden · show
+          </Button>
+        )}
+      </Row>
+      {!setup.manual &&
+        rows.rules.map((r, i) => <RuleLine key={i} rule={r} first={i === 0} onChange={(next, key) => setRule(i, next, key ? `rule:${i}:${key}` : undefined)} onRemove={() => setRule(i, null)} />)}
+      {!setup.manual && rows.rules.length < MAX_RULES && (
+        <Row label={rows.rules.length ? 'and' : 'where'}>
+          <Options
+            pick="act"
+            label="Add a rule on"
+            options={RULE_FIELDS.filter((f) => !rows.rules.some((r) => r.field === f)).map((f) => ({ value: f, label: `+ ${f}` }))}
+            onPick={(f) => set({ ...rows, rules: [...rows.rules, { field: f, values: [] }] })}
+          />
+        </Row>
+      )}
+      <Row label="added by hand" hint={cardsOnly ? 'single cards of any type' : "single cards of any type, or names that aren't cards"}>
+        <span className={m.pills}>
+          {rows.items.map((item) => {
+            const c = item.cardId ? byId.get(item.cardId) : undefined
+            if (item.cardId && !c) return null
+            return (
+              <span key={item.id} className={m.pill} data-card={c ? true : undefined} style={c ? { ['--type' as string]: TYPE_ACCENT[c.type] } : undefined} title={c ? c.type : 'a typed name'}>
+                <span className={m.pillMark} aria-hidden />
+                {c ? c.title || `untitled ${c.type}` : item.name || 'name'}
+                <Button icon tone="danger" className={m.pillX} aria-label="Take it out" onClick={() => drop(item)}>
+                  ×
+                </Button>
+              </span>
+            )
+          })}
+          <AddPill
+            exclude={on}
+            onCard={(c) => set({ ...rows, hide: rows.hide?.filter((h) => h !== c.id), items: rows.hide?.includes(c.id) ? rows.items : [...rows.items, { id: newId(), cardType: c.type, cardId: c.id }] })}
+            onName={cardsOnly ? undefined : (n) => set({ ...rows, items: [...rows.items, { id: newId(), name: n }] })}
+          />
+        </span>
+      </Row>
+    </>
+  )
+}
+
+// One rule: `where type is idea · feature`, `and plane is not 02`, `and title has "sync"`. Its values are picked from
+// what the workspace has; a rule with none picked doesn't narrow anything yet.
+function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: boolean; onChange: (r: Rule, key?: string) => void; onRemove: () => void }) {
+  const { cards, pieces } = useWs()
+  const planes = pieces.filter((p) => kindOfPiece(p) === 'plane')
+  const choices = choicesOf(rule.field, cards, planes)
+  return (
+    <Row label={first ? 'where' : 'and'}>
+      <span className={m.choices}>
+        <Select<string>
+          ariaLabel="What it looks at"
+          className={m.select}
+          value={rule.field}
+          options={RULE_FIELDS.map((f) => ({ value: f, label: f }))}
+          onChange={(f) => onChange({ field: f as RuleField, values: [], ...(rule.not ? { not: true } : {}) })}
+        />
+        <Options
+          pick="act"
+          label="is, or is not"
+          options={[{ value: 'not', label: rule.field === 'title' ? (rule.not ? 'lacks' : 'has') : rule.not ? 'is not' : 'is', title: 'is, or is not' }]}
+          onPick={() => onChange({ ...rule, not: rule.not ? undefined : true })}
+        />
+        {rule.field === 'title' ? (
+          <AutosaveField className={m.pillField} label="the words" placeholder="words in the title" maxLength={200} value={rule.values[0] ?? ''} onSave={(w) => onChange({ ...rule, values: w.trim() ? [w] : [] }, 'words')} />
+        ) : choices.length ? (
+          <Options
+            pick="many"
+            label={`${rule.field} values`}
+            values={rule.values}
+            options={choices.map((c) => ({ value: c.value, label: c.label, swatch: rule.field === 'type' ? TYPE_ACCENT[c.value as keyof typeof TYPE_ACCENT] : undefined }))}
+            onChange={(values) => onChange({ ...rule, values })}
+          />
+        ) : (
+          <Empty as="span">{rule.field === 'tag' ? 'no tags yet' : 'nothing to pick yet'}</Empty>
+        )}
+        {rule.auto && (
+          <span className={styles.auto} title="set by itself: the plane it's linked to. Change it and it's yours">
+            · auto
+          </span>
+        )}
+        <Button icon tone="danger" className={m.pillX} title="take the rule out" aria-label="Take the rule out" onClick={onRemove}>
+          ×
+        </Button>
+      </span>
+    </Row>
+  )
+}
+
+const OWN_NAME: Record<OwnKind, { label: string; name: string; sample: string; hint: string }> = {
+  scale: { label: 'a mark', name: 'mark', sample: '▁▄█', hint: 'from a scale: low → high, yes / no, 1 – 5…' },
+  number: { label: 'a number', name: 'number', sample: '42', hint: 'a price, hours, a score; sorts by size' },
+  text: { label: 'a few words', name: 'notes', sample: 'beta', hint: 'up to 200 characters' },
+  check: { label: 'a check', name: 'done', sample: '✓', hint: 'done or not' },
+}
+
+// Columns: the name first (always); the cards' fields switched on and off; columns of its own, each a kind of value.
+export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { onRemoveCol?: (c: Column) => void }) {
+  const cols = setup.cols
+  const set = (next: Column[], key?: string) => onChange('cols', next, key)
+  const edit = (c: Column, change: Partial<Column>, key?: string) => set(cols.map((x) => (x.id === c.id ? { ...x, ...change } : x)), key ? `col:${c.id}:${key}` : undefined)
+  const drop = (c: Column) => (onRemoveCol ? onRemoveCol(c) : set(cols.filter((x) => x !== c)))
+  const move = (i: number, by: -1 | 1) => {
+    const j = i + by
+    if (j < 0 || j >= cols.length) return
+    const next = [...cols]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    set(next)
+  }
+  const full = cols.length >= MAX_COLS
+  return (
+    <>
+      <Row label="the card's" hint="shown as they are on the card; switch one on to add it, off to take it out">
+        <Options
+          pick="many"
+          label="The card's fields as columns"
+          values={FIELDS.filter((f) => cols.some((x) => x.field === f))}
+          options={FIELDS.map((f) => ({ value: f, label: f, disabled: full && !cols.some((x) => x.field === f) }))}
+          onChange={(next) => {
+            const off = cols.find((x) => x.field && !next.includes(x.field))
+            const on = next.find((f) => !cols.some((x) => x.field === f))
+            if (off) drop(off)
+            else if (on) set([...cols, { id: newId(), field: on as Field }])
+          }}
+        />
+      </Row>
+      <Row label="its own" hint="values only this table holds">
+        <Options
+          pick="act"
+          cards
+          label="A column of its own"
+          options={OWN_KINDS.map((k) => ({ value: k, label: `+ ${OWN_NAME[k].label}`, sample: OWN_NAME[k].sample, line: OWN_NAME[k].hint, disabled: full }))}
+          onPick={(k) => set([...cols, { id: newId(), name: OWN_NAME[k].name, kind: k, ...(k === 'scale' ? { steps: DEFAULT_STEPS } : {}) }])}
+        />
+      </Row>
+      <Row label="in order" hint="the name always comes first">
+        <ol className={styles.colList}>
+          <li className={styles.colItem}>
+            <span className={styles.colFixed}>{setup.manual ? 'name' : 'title'}</span>
+            <span className={m.checkHint}>always first</span>
+          </li>
+          {cols.map((c, i) => (
+            <li key={c.id} className={styles.colItem}>
+              <Button disabled={i === 0} title="move it left" aria-label="Move left" onClick={() => move(i, -1)}>
+                ‹
+              </Button>
+              <Button disabled={i === cols.length - 1} title="move it right" aria-label="Move right" onClick={() => move(i, 1)}>
+                ›
+              </Button>
+              {c.field ? (
+                <span className={styles.colFixed}>{colName(c)}</span>
+              ) : (
+                <AutosaveField className={m.pillField} label="column name" maxLength={COL_NAME_MAX} value={c.name ?? ''} placeholder="name" onSave={(n) => edit(c, { name: n.trim() || undefined }, 'name')} />
+              )}
+              {c.field ? (
+                <span className={m.checkHint}>the card's</span>
+              ) : (
+                <>
+                  <Choices<OwnKind>
+                    value={c.kind ?? 'text'}
+                    options={OWN_KINDS.map((k) => ({ value: k, label: OWN_NAME[k].sample, hint: OWN_NAME[k].label }))}
+                    onChange={(k) => edit(c, { kind: k, ...(k === 'scale' && !c.steps ? { steps: DEFAULT_STEPS } : {}) })}
+                  />
+                  {c.kind === 'number' && (
+                    <AutosaveField className={m.field} label="unit" placeholder="unit: €, h, %…" maxLength={20} value={c.unit ?? ''} onSave={(u) => edit(c, { unit: u.trim() || undefined }, 'unit')} />
+                  )}
+                  {c.kind === 'scale' && (
+                    <Select<string>
+                      ariaLabel="Its steps"
+                      className={m.select}
+                      value={SCALES.find((s) => JSON.stringify(s.steps) === JSON.stringify(c.steps ?? DEFAULT_STEPS))?.key ?? 'own'}
+                      options={[...SCALES.map((s) => ({ value: s.key, label: `${s.name}  ${s.steps.map((x) => x.glyph).join('')}` })), { value: 'own', label: 'its own steps' }]}
+                      onChange={(k) => {
+                        const s = SCALES.find((x) => x.key === k)
+                        if (s) edit(c, { steps: s.steps })
+                      }}
+                    />
+                  )}
+                </>
+              )}
+              <Button icon tone="danger" className={m.pillX} title="take the column out (its values go; ⌘Z brings them back)" aria-label={`Take ${colName(c)} out`} onClick={() => drop(c)}>
+                ×
+              </Button>
+            </li>
+          ))}
+        </ol>
+      </Row>
+    </>
+  )
+}
+
+const ALL = 'all'
+const NONE = 'none'
+
+// View: how many rows a page, and the order (the heads sort too).
+export function ViewEditor({ setup, onChange }: EditorProps) {
+  return (
+    <>
+      <Row label="rows a page" hint="the dock pages through them">
+        <Choices<string>
+          label="Rows a page"
+          value={setup.pageSize ? String(setup.pageSize) : ALL}
+          options={[{ value: ALL, label: 'all' }, ...PAGE_SIZES.map((n) => ({ value: String(n), label: String(n) }))]}
+          onChange={(v) => onChange('pageSize', v === ALL ? undefined : Number(v))}
+        />
+      </Row>
+      <Row label="in order of" hint="a column's head sorts by it too">
+        <span className={m.choices}>
+          <Select<string>
+            ariaLabel="Sort by"
+            className={m.select}
+            value={setup.sort?.col ?? NONE}
+            options={[{ value: NONE, label: 'as they come' }, { value: NAME_COL, label: setup.manual ? 'name' : 'title' }, ...setup.cols.map((c) => ({ value: c.id, label: colName(c) }))]}
+            onChange={(v) => onChange('sort', v === NONE ? undefined : { col: v, ...(setup.sort?.desc ? { desc: true } : {}) })}
+          />
+          {setup.sort && (
+            <Choices<string>
+              label="Order"
+              value={setup.sort.desc ? 'down' : 'up'}
+              options={[
+                { value: 'up', label: '↑ a → z' },
+                { value: 'down', label: '↓ z → a' },
+              ]}
+              onChange={(v) => onChange('sort', { col: setup.sort!.col, ...(v === 'down' ? { desc: true } : {}) })}
+            />
+          )}
+        </span>
+      </Row>
+    </>
+  )
+}

@@ -239,9 +239,9 @@ Durations written in TS (cellReveal, the focus ink, the curtain) are not CSS: th
     `T`, documents' `D`, the project title), which also writes the CSS's `--w-*` vars.
   - `src/model/limits.ts`: text lengths and list sizes, for data/, ops/ (the agent) and the model; firestore.rules holds
     the same numbers and tests/unit/limits.test.ts fails when they part.
-  - `src/ui/feel.ts`: how handling feels: one `DRAG_PX` (5), the zoom's range and `wheelStep()`. Sticking's reach is
+  - `src/ui/foundation/feel.ts`: how handling feels: one `DRAG_PX` (5), the zoom's range and `wheelStep()`. Sticking's reach is
     `STICK_REACH` in model/pieceMoves.ts (the agent's ops read it).
-  - `src/ui/motionTokens.ts`: durations and easings (D-326).
+  - `src/ui/foundation/motionTokens.ts`: durations and easings (D-326).
   A constant used in two places, or one that is a design or feel choice, goes to its module; an algorithm's own detail
   (a day in ms, a cap on drawn dots) stays where it's used.
 - **`check:tokens` reads TS/TSX too:** an uncomputed `"…px"`, a quoted hex colour, a style key given a bare number. The

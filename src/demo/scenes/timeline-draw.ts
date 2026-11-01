@@ -4,7 +4,7 @@
 // task's days drawn as it goes; let go, the card prompt opens (`a card it's for, or type a task…`); `shelf` typed narrows
 // it, the hand picks the pickup shelf idea: the task is there, those days, for that card (the write shown with set()).
 import type { Task } from '../../data/tasks'
-import { resetStrip } from '../../views/workspace/Timeline'
+import { resetStrip } from '../../views/workspace/deck/Timeline'
 import { cursor, find, onStage, set, wait, type Ctx, type Scene } from '../director'
 import { AT, base, type } from '../fixtures/kit'
 import { row, view } from '../fixtures/o10'

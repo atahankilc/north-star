@@ -31,7 +31,7 @@ are dead leftovers from 1.0.)
 |---|---|---|---|---|
 | landing | Headline cell by cell, the welcome sky, `[sign in with Google]`. | `Landing` src/views/landing/Landing.tsx:41; route App.tsx:74 | signed out | — |
 | sign-in-continue | A link opened signed out continues after sign-in. | `ToLanding` App.tsx:92, `AfterSignIn` :98 | all | landing |
-| loading-curtain | Flowing backdrop + `▖ STATUS`, then a cell-by-cell rebuild. | `Curtain` src/ui/Curtain.tsx:27; `useHoldCurtain` curtain.ts:38 | all | — |
+| loading-curtain | Flowing backdrop + `▖ STATUS`, then a cell-by-cell rebuild. | `Curtain` src/ui/patterns/Curtain.tsx:27; `useHoldCurtain` curtain.ts:38 | all | — |
 | workspaces-page | Create, join with a code, import a .zip, pending invites/requests, workspace cards. | `Workspaces` src/views/workspaces/Workspaces.tsx:38 | signed in | landing |
 | ws-create | `[create]` with a name → opens it. | `CreateForm` Workspaces.tsx:232 → `createWorkspace` workspaces.ts:55 | signed in | workspaces-page |
 | join-code | Type a code → a request goes to the owners (not in yet). | `JoinForm` Workspaces.tsx:272 → `requestToJoin` workspaces.ts:84 | signed in | workspaces-page |
@@ -39,7 +39,7 @@ are dead leftovers from 1.0.)
 | import | `[import .zip]` → a new workspace you own. | `ImportStrip` Workspaces.tsx:385 → importWorkspace.ts:42 | signed in | workspaces-page |
 | ws-card | Open, rename, leave, delete (inline confirm). | `WorkspaceCard` Workspaces.tsx:95 | O deletes | workspaces-page |
 | ws-empty | "no workspaces yet". | Workspaces.tsx:79-85 | signed in | — |
-| breadcrumb | `# north-star / workspaces / <ws> [/ <canvas>] [/ <focused>]`. | `Hud` src/ui/Hud.tsx:38-69; crumbs WorkspaceLayout.tsx:121-131 | all | — |
+| breadcrumb | `# north-star / workspaces / <ws> [/ <canvas>] [/ <focused>]`. | `Hud` src/ui/patterns/Hud.tsx:38-69; crumbs WorkspaceLayout.tsx:121-131 | all | — |
 | canvas-crumb | The workspace/canvas name `▾`: canvases prompt (go, new, rename, move, delete). | `CanvasCrumb` CanvasSwitch.tsx:23 | all go; E+ manage | breadcrumb |
 | side-nav | Left middle: `+`, fit, compass, decks-and-days icon. | Hud.tsx:75; WorkspaceLayout.tsx:142-150 | all (`+` E+) | — |
 | plus-menu | Magenta `+` → prompt `add…` (canvas letters p m t d k l h a n s i; in a plane c r o i f k h a n s e). | `AddToCanvas` WorkspaceLayout.tsx:234; `<Menu>` :287; items :298-326. Not for viewers (:145); hidden in a bare focus | E+ | canvas |
@@ -47,11 +47,11 @@ are dead leftovers from 1.0.)
 | finder | Compass or ⌘F: places when empty, matches when typed; Tab scope; ⌥C/⌥W/⌥X; → ← fold; Enter goes. | `FinderButton` WorkspaceLayout.tsx:213; ⌘F Finder.tsx:66-76; `openFinder` find.ts:46 (`useFind.open`); `findGo` find.ts:54 | all | canvas, focus |
 | finder-preview | Live preview of where you'll land. | FindPreview.tsx | all | finder |
 | tasks-side-btn | Columns-over-a-bar icon (only with a deck/timeline); magenta count of tasks given to you. | `TasksButton` MyTasks.tsx:18 | all | deck |
-| corner-people | Squares of who's here, `+N`. | `PeopleHere` src/ui/PeopleHere.tsx; WorkspaceLayout.tsx:138 | all | — |
+| corner-people | Squares of who's here, `+N`. | `PeopleHere` src/ui/patterns/PeopleHere.tsx; WorkspaceLayout.tsx:138 | all | — |
 | corner-threads | Threads button, magenta dot / `@` count. | `InboxButton` ThreadInbox.tsx:76 → `toggleInbox` Threads.tsx:53 | all | — |
-| corner-square | Your initial → Settings (account). | `SettingsButton` src/ui/Settings.tsx:72 | all | — |
+| corner-square | Your initial → Settings (account). | `SettingsButton` src/ui/patterns/Settings.tsx:72 | all | — |
 | corner-gear | ⚙ → Settings (people page when people wait; cyan badge). | Settings.tsx:78; `useJoinRequests` WorkspaceLayout.tsx:99 | all (badge O) | — |
-| toast | One line bottom centre (undo/redo/what was done, `[go there]`). | `Toast` src/ui/Toast.tsx:10 (WorkspaceLayout.tsx:155); `useHistory.say` history.ts:43 | all | — |
+| toast | One line bottom centre (undo/redo/what was done, `[go there]`). | `Toast` src/ui/patterns/Toast.tsx:10 (WorkspaceLayout.tsx:155); `useHistory.say` history.ts:43 | all | — |
 | undo-redo | ⌘Z, ⇧⌘Z / Ctrl+Y. | `useEditKeys` useEditKeys.ts:10-28 | E+ | — |
 | viewer-lock | A viewer's tries say "You're a viewer…". | WorkspaceLayout.tsx:66, :105-109 | V | — |
 | canvas-switch-anim | Old canvas breaks, new builds. | `useShownCanvas` WorkspaceLayout.tsx:163-190 | all | canvases |
@@ -71,7 +71,7 @@ are dead leftovers from 1.0.)
 | piece-move-resize | Drag moves (0.8 + landing L's), handles resize, 25 px snap (alt free), ≥ 325 × 200. | `press` CanvasView.tsx:1603-1676 → `placePiece` pieces.ts:121 | E+ | edit-mode |
 | piece-rename | Cyan `>` field in the top edge, `17/80`. | `NameField` CanvasView.tsx:1884 → `renamePiece` pieces.ts:285 | E+ | edit-mode |
 | piece-delete | Delete/Backspace in edit mode or `[delete]` → hazard confirm. | CanvasView.tsx:916-919, :2053; `askDeleteHere` → `confirming` → :1218-1263 → `deletePiece` pieces.ts:296 | E+ | edit-mode |
-| hazard-confirm | Dark screen, `╱╱╱` tape, cancel focused. | `HazardConfirm` src/ui/HazardConfirm.tsx:33 | E+ | — |
+| hazard-confirm | Dark screen, `╱╱╱` tape, cancel focused. | `HazardConfirm` src/ui/patterns/HazardConfirm.tsx:33 | E+ | — |
 | unframe | `[unframe]` / `[frame]`: a lens lies on the canvas live (cell-by-cell morph). | Console :2031-2034 → `openPiece` pieces.ts:251; `canOpen` :60 | E+ | edit-mode |
 | open-tools | On an unframed piece's console: `[setup]`, pages, weeks. | `OpenTools` CanvasView.tsx:2115; `CanvasSetup` :2143 | E+ | unframe |
 | stick-link | Drag a matrix/table/deck near a plane's edge (a timeline to a deck or plane) → snaps and links; alt free. | Drag :1641-1647 (`stickTarget` pieces.ts:164) → `placeLens` pieces.ts:243 (`stick a …`); `Bond` CanvasView.tsx:1378 | E+ | piece-move-resize |
@@ -274,11 +274,11 @@ cards `addCard` (cards.ts:95), text `addLabel` (labels.ts:79), links `createEdge
 not on window.
 
 ## E. Entrance primitives for a new modal
-- `runCells(el, 'enter'|'exit', delay, ms, onDone?, sweep?)` (src/ui/Appear.tsx:27): 9 px cells on the viewport grid,
+- `runCells(el, 'enter'|'exit', delay, ms, onDone?, sweep?)` (src/ui/primitives/Appear.tsx:27): 9 px cells on the viewport grid,
   random order; reduced motion instant.
 - `<Appear as delay duration elRef>` (Appear.tsx:99): 320 ms, starts at `revealed`, exits at 0.6×; inside
   `<AnimatePresence>`. Used by SidePanel, ContextMenu, Menu, PackPick, FilterDock, Landing, Workspaces.
-- `<DecodeText text duration=260 delay>` (src/ui/DecodeText.tsx:8): glyphs settle into text.
+- `<DecodeText text duration=260 delay>` (src/ui/primitives/DecodeText.tsx:8): glyphs settle into text.
 - Durations: components 320, headline/page 400, decode 260. No slides, fades or tile waves (rejected).
 - Small consoles: manual `runCells` 170 in / 90 out (CanvasView.tsx:2001). Read `isReducedMotion()`.
 - Per-browser state lives in localStorage under `north-star:*` keys; per-user cross-device state needs Firestore (like

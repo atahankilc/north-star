@@ -1,0 +1,90 @@
+/* Framed options (src/ui/patterns/Options.tsx, D-326): each option in its own frame, the picked ones cyan (the setups'
+   `customers 0 | problems 0 | …` until now Matrix.module.css's `.choice`); `cards` makes each a small card, three
+   to a row (a matrix's cell kinds, a table's own columns). */
+.row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.row[data-cards] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-sm);
+  padding: 0 var(--space-2);
+  border: var(--line-w) solid var(--line);
+  background: none;
+  color: var(--fg-dim);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.option:hover:not(:disabled) {
+  border-color: var(--line-hover);
+  color: var(--fg);
+}
+
+.option:is([aria-checked='true'], [aria-pressed='true']) {
+  border-color: var(--accent-cyan);
+  background: var(--wash-cyan);
+  color: var(--fg-strong);
+}
+
+.option:disabled {
+  opacity: var(--o-faint);
+  cursor: not-allowed;
+}
+
+/* The label's line: the swatch, the words, the count. */
+.head {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.swatch {
+  display: block;
+  flex: none;
+  width: var(--dot);
+  height: var(--dot);
+  background: var(--swatch);
+}
+
+.count {
+  color: var(--fg-faint);
+}
+
+/* `cards`: a sample, the label, a line under it. */
+.option[data-card] {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-half);
+  padding: var(--space-2) var(--space-3);
+  color: var(--fg);
+  text-align: left;
+}
+
+.sample {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--control-sm);
+  color: var(--fg-strong);
+  font-size: var(--text-sm);
+}
+
+.line {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  line-height: var(--lh-body);
+}

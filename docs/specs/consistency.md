@@ -49,7 +49,7 @@ repo root, e.g. `npx serve .` → `/docs/specs/consistency-preview/`). Its "heps
   stays on the bottom-right corner and runs past the left edge.
 
 ### Marks: selecting, dragging, resizing (D-265)
-One component, `src/ui/Marks.tsx` (+ `Marks.module.css`, tokens `--mark-*`), four L's, for everything selectable.
+One component, `src/ui/primitives/Marks.tsx` (+ `Marks.module.css`, tokens `--mark-*`), four L's, for everything selectable.
 - **Size:** three tiers in screen px, picked by the thing's short side on screen (< 48 px S, < 240 px M, else L):
 
   | tier | for | L / stroke | hover → selected | pressed L | leaving |
@@ -114,7 +114,7 @@ One component, `src/ui/Marks.tsx` (+ `Marks.module.css`, tokens `--mark-*`), fou
 ---
 
 ## Session 1: one Marks component, plane cards and text · **done** (D-270, 2026-10-27)
-Scope: `src/ui/Marks.tsx` + module + `--mark-*` tokens (D-265's tiers, states, motion, colour). Use it for plane cards
+Scope: `src/ui/primitives/Marks.tsx` + module + `--mark-*` tokens (D-265's tiers, states, motion, colour). Use it for plane cards
 and all text (heading, paragraph, sticky note, project title, section). Drag: the landing box for text and sticky notes
 (fixes the user's bug: today a dragged text's marks shrink with it, `TextItems.tsx` ~270). Box select on planes with
 the cyan L's. Peer selection on these as L's + name tag.

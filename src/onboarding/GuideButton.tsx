@@ -2,7 +2,7 @@
 // keys, tips on/off), as `?` does. A magenta dot on it while something new is still unseen.
 import { openGuide } from './Coach'
 import { useGuideDot } from './Guide'
-import { ToolButton } from '../ui/ToolButton'
+import { ToolButton } from '../ui/primitives/ToolButton'
 
 export function GuideButton() {
   const dot = useGuideDot()

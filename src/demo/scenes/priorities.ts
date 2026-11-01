@@ -4,7 +4,7 @@
 // the card's own priority differs). All real: the order is only read, never written.
 import { emptyKanban } from '../../data/tasks'
 import { KANBAN_TEMPLATES } from '../../model/kanbanCards'
-import { orderShown, toggleOrder } from '../../views/workspace/CardKanban'
+import { orderShown, toggleOrder } from '../../views/workspace/deck/CardKanban'
 import { aim, camera, cursor, onStage, run, wait, type Scene } from '../director'
 import { base, frameTo, piece } from '../fixtures/kit'
 import { NO_HUD, pageStyle } from '../fixtures/o12'

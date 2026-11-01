@@ -18,7 +18,7 @@ vi.mock('../../src/state/canvasView', async () => {
   const { create } = await import('zustand')
   return { useCanvasView: create(() => ({ focusArrived: false, focusLeaving: false, size: { w: 1000, h: 800 }, cardSelected: null, panelShut: null, selected: null, beside: 0 })) }
 })
-vi.mock('../../src/views/workspace/find', async () => {
+vi.mock('../../src/views/workspace/find/find', async () => {
   const { useCanvasView } = await import('../../src/state/canvasView')
   return {
     clearFound: () => {},
@@ -34,10 +34,10 @@ vi.mock('../../src/views/workspace/find', async () => {
     },
   }
 })
-vi.mock('../../src/views/workspace/CardPanel', () => ({ goToCard: () => {} }))
-vi.mock('../../src/views/workspace/Kanban', () => ({ goToTask: () => {}, selectTask: () => {}, selectTasks: () => {}, useKanbanUi: { getState: () => ({ selected: null, many: null }) } }))
-vi.mock('../../src/views/workspace/selection', () => ({ selectedIds: () => [], setSelection: (ids: string[]) => env.log.push(`select ${ids.join(',')}`) }))
-vi.mock('../../src/views/workspace/sideState', () => ({ useTasksSide: { getState: () => ({ open: false }), setState: () => {} } }))
+vi.mock('../../src/views/workspace/panels/CardPanel', () => ({ goToCard: () => {} }))
+vi.mock('../../src/views/workspace/deck/Kanban', () => ({ goToTask: () => {}, selectTask: () => {}, selectTasks: () => {}, useKanbanUi: { getState: () => ({ selected: null, many: null }) } }))
+vi.mock('../../src/views/workspace/canvas/selection', () => ({ selectedIds: () => [], setSelection: (ids: string[]) => env.log.push(`select ${ids.join(',')}`) }))
+vi.mock('../../src/views/workspace/deck/sideState', () => ({ useTasksSide: { getState: () => ({ open: false }), setState: () => {} } }))
 
 import { makeStore, registerStore } from '../../src/state/wsStore'
 import { fixtureWs, ID } from './fixtures/ws'

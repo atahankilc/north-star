@@ -1,0 +1,1049 @@
+// A kanban on the canvas (D-251): the team's tasks in columns, `todo · doing · done` to start. Drawn in its own px
+// through a view, like a table (D-209): on the canvas a picture (the pointer goes through to the canvas, D-186); in
+// focus, or unframed (D-228), live. There a task is dragged to its place (in its column or another; after 5 px, a
+// click still selects), a click opens its right panel (TaskPanel), `+ add a task` under a column's last task types new
+// ones (Enter makes one and keeps typing, Escape stops), `+ column` adds a column. A column's head: a double-click
+// renames it; its tools on hover move it left or right, mark it the finished one (`✓`), take it away (its tasks go to
+// the one before). Delete takes the selected task away, Escape lets go of it.
+//
+// Its look, the ledger (D-252): no box round a column, only a numbered rule (`01 TODO ──── 5`, the right panel's
+// sections); tasks hang under it as raised sheets as tall as their text, their left edge in the colour of the card they're
+// for; the place a held task would land is a cyan line between two tasks.
+//
+// Stuck to a plane (D-255), like a table (D-210): it shows that plane's tasks (for its cards, or for none), until it's
+// unlinked (D-303: no switch, no note; the link shows it), and opens beside the plane in its focus, where a task picked glides the
+// plane to its card (`onTask`).
+//
+// Filters, labels, priority, limits (D-256): what it shows narrows by its dock's filter (kanbanFilter.ts, yours); a
+// task carries `#labels` and `P1`–`P3`; a column may have a limit (its head's `≤`), its head magenta when over.
+//
+// Lanes and several at once (D-258): rows across the columns by who a task is given to or the card it's for (rows.ts,
+// `[lanes ▾]` in its dock), each folding from its head (yours); dropping into a lane gives the task to that person or
+// card. Shift+click adds a task to the selection or takes it out, alt+drag a box selects what it touches; dragging one of
+// them carries them all, in their order; the panel turns into `N selected`.
+//
+// Working together (D-260): others see the tasks you've picked (a frame in your colour) and one you're dragging (a ghost
+// in your colour, collab.tsx); right-click a task → `comment`, its thread's chip on its bottom-right corner.
+//
+// Soon (D-262): over the columns, a line of what's due soon: past its day (magenta), today (cyan), this week, each a
+// pill that picks its task; `▾ SOON` folds it to counts (yours, per kanban per browser); nothing due, no line.
+//
+// Cards instead of tasks (D-268): a kanban whose setup holds cards is drawn by CardKanban.tsx, its columns a field's
+// values; made from `+ → kanban…` (KanbanWizard.tsx), set up in its tabbed panel (KanbanSetup.tsx).
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
+import { create } from 'zustand'
+import type { WithId } from '../../../data/hooks'
+import type { Piece } from '../../../data/model'
+import { passes, useKanbanFilter } from './kanbanFilter'
+import { addTask, CARD_FIELDS, setKanbanSetup, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTasks, emptyKanban, KANBAN_COLS_MAX, moveTasks, orderBetween, setKanbanRows, KANBAN_ROWS, type KanbanRows, type TaskMove, overdue, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../../data/tasks'
+import { newId } from '../../../data/matrix'
+import { useAuth } from '../../../data/auth'
+import { useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
+import { timelineKanbans } from '../../../data/tasks'
+import { revealOnStrip } from './stripReveal'
+import { closeFinder, findGo, landing } from '../find/find'
+import type { Card } from '../../../data/cards'
+import { useWs } from '../canvas/context'
+import { alikeProps } from '../canvas/kept'
+import { DockAction } from '../canvas/FocusDock'
+import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
+import { loadFolds, saveFolds, taskRows, type Lane } from '../table/rows'
+import { setPresenceDrag } from '../../../data/presence'
+import { PeerTaskDrags, usePeersOn } from '../canvas/collab'
+import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
+import { ThreadChip, threadOn } from '../threads/Threads'
+import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { learnable } from '../panels/TaskPanel'
+import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
+import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
+import { useKanbanSizes } from '../canvas/sizes'
+import { Button } from '../../../ui/primitives/Button'
+import { Chip } from '../../../ui/primitives/Chip'
+import { Empty } from '../../../ui/primitives/Empty'
+import { Field } from '../../../ui/primitives/Field'
+import { PromptField } from '../../../ui/primitives/PromptField'
+import { Rule } from '../../../ui/primitives/Rule'
+import styles from './Kanban.module.css'
+import { DECK_PX } from '../../../model/world'
+
+// Its parts in its own px: model/world.ts (D-325).
+export const K = DECK_PX
+
+// What's due soon on it (D-262): not finished, due by Sunday; past its day first, then by day.
+function weekEnd() {
+  const d = new Date()
+  d.setDate(d.getDate() + ((7 - d.getDay()) % 7))
+  return today(d)
+}
+export function soonOf(piece: Pick<Piece, 'kanban'>, tasks: Task[]) {
+  const done = new Set(kanbanOf(piece).cols.filter((c) => c.done).map((c) => c.id))
+  const end = weekEnd()
+  return tasks.filter((t) => t.due && t.due <= end && !done.has(t.col)).sort((a, b) => a.due!.localeCompare(b.due!) || a.order - b.order)
+}
+const hasSoon = (piece: Pick<Piece, 'kanban'>, tasks: Task[]) => soonOf(piece, tasks).length > 0
+const SOON_KEY = (id: string) => `north-star:kanban-soon:${id}`
+function soonFolded(id: string) {
+  try {
+    return localStorage.getItem(SOON_KEY(id)) === 'folded'
+  } catch {
+    return false
+  }
+}
+
+const NO_SETUP = emptyKanban()
+export const kanbanOf = (p: Pick<Piece, 'kanban'>): KanbanSetup => p.kanban ?? NO_SETUP
+
+// How big each kanban came out, measured as it's drawn (its tasks are as tall as their text): what fit frames, and its
+// box unframed (shownBox.ts).
+export { useKanbanSizes }
+const useSizes = useKanbanSizes
+
+const hasMeta = (t: Task) => !!(t.cardId || t.due || t.checks?.length || t.assignee)
+// About how tall a task is before it's drawn: its title's lines (about 30 letters each, at most 3) and its meta line.
+const guess = (t: Task) => K.pad + Math.min(3, Math.max(1, Math.ceil(t.title.length / 30))) * K.line + (hasMeta(t) ? K.meta : 0) + (t.labels?.length ? K.line : 0)
+
+// The box round its columns, in its px: what fit frames. As drawn once it has been; until then, guessed.
+export function kanbanBounds(piece: WithId<Piece>, tasks: Task[]): Bounds {
+  const seen = useSizes.getState()[piece.id]
+  if (seen) return { x: 0, y: 0, ...seen }
+  // Holding cards (D-268): about five columns of a few cards, until it's drawn.
+  if (kanbanOf(piece).holds === 'cards') return { x: 0, y: 0, w: 5 * (K.col + K.gap), h: 400 }
+  const cols = kanbanOf(piece).cols
+  const mine = tasks.filter((t) => t.pieceId === piece.id)
+  const tall = Math.max(0, ...cols.map((c) => mine.filter((t) => t.col === c.id).reduce((s, t) => s + guess(t) + K.cardGap, 0)))
+  return { x: 0, y: 0, w: cols.length * (K.col + K.gap) + K.add + 32, h: K.head + 10 + tall + 68 + (hasSoon(piece, mine) ? K.soon : 0) }
+}
+
+// About where a task is on its kanban, in its px (its column, the tasks above it at their guessed heights; lanes not
+// counted): what going to it lands on.
+export function taskBox(piece: WithId<Piece>, tasks: Task[], id: string): Bounds | null {
+  const t = tasks.find((x) => x.id === id)
+  const cols = kanbanOf(piece).cols
+  const i = t ? cols.findIndex((c) => c.id === t.col) : -1
+  if (!t || i < 0) return null
+  const above = tasksIn(tasks.filter((x) => x.pieceId === piece.id), t.col).filter((x) => x.order < t.order || (x.order === t.order && x.createdAt < t.createdAt))
+  const y = 12 + (hasSoon(piece, tasks.filter((x) => x.pieceId === piece.id)) ? K.soon : 0) + K.head + 10 + above.reduce((sum, x) => sum + guess(x) + K.cardGap, 0)
+  return { x: 16 + i * (K.col + K.gap), y, w: K.col, h: guess(t) }
+}
+
+// Going to a task (D-261: from your tasks, the finder): into its kanban's focus, landing on it, the task picked once the
+// kanban is live (`pending`); already there, picked at once and brought into view. In the focus of a timeline showing it
+// (D-298), it stays there: the task picked on the timeline, the view moved to it if it's off the screen.
+export function goToTask(piece: WithId<Piece>, tasks: Task[], task: Pick<Task, 'id'>, pieces: WithId<Piece>[] = []) {
+  const focus = new URLSearchParams(location.search).get('focus')
+  const here = focus ? pieces.find((p) => p.id === focus) : undefined
+  if (here?.kind === 'timeline' && timelineKanbans(here, pieces).some((k) => k.id === piece.id) && showOnTimeline(piece.id, task.id)) return
+  useKanbanUi.setState({ pending: { piece: piece.id, task: task.id } })
+  const content = kanbanBounds(piece, tasks)
+  const view = landing(content, taskBox(piece, tasks, task.id) ?? content, useCanvasView.getState().size)
+  findGo({ kind: 'lens', space: piece.id, key: `task:${task.id}`, k: 0, focus: piece.id, view })
+}
+
+// A task on the timeline in focus (D-298): picked there, glided to when it's off the screen. False when the timeline
+// doesn't draw it (filtered out, or not one of its decks').
+function showOnTimeline(kanban: string, task: string): boolean {
+  // On the live timeline only (its strip glides its days and rows to it, D-304): the kanban drawn on the canvas has its
+  // tasks too.
+  if (!revealOnStrip(task)) return false
+  // The finder goes, as when it goes elsewhere.
+  closeFinder()
+  selectTask(kanban, task)
+  return true
+}
+
+// The task whose panel is open (its kanban's id with it), the column `+ add a task` is typing into, the column being
+// renamed, the task whose panel should open on its evidence form (D-254), the tasks selected together (D-258; `adding`
+// is a column and a lane, `col|lane`). Yours, not shared.
+// `pending`: a task to pick once its kanban is live (a thread's go there, D-260).
+type Many = { piece: string; tasks: string[] }
+type One = { piece: string; task: string }
+// `setup`: the kanban whose setup is open (D-268), on its `tab`; `wizard`: a new kanban's wizard is open.
+export const KANBAN_TABS = ['holds', 'cards', 'cols', 'boxes'] as const
+export type KanbanTab = (typeof KANBAN_TABS)[number]
+export const useKanbanUi = create<{ selected: One | null; adding: string | null; naming: string | null; learning: string | null; many: Many | null; pending: One | null; setup: string | null; tab: KanbanTab; wizard: boolean }>(() => ({
+  setup: null,
+  tab: 'holds',
+  wizard: false,
+  pending: null,
+  selected: null,
+  adding: null,
+  naming: null,
+  learning: null,
+  many: null,
+}))
+// Dev hook: the kanban's own state, for checks in a headless browser.
+if (import.meta.env.DEV) (window as unknown as { __kanbanUi: typeof useKanbanUi }).__kanbanUi = useKanbanUi
+// One task picked (or none): the several selected let go.
+export const selectTask = (piece: string, task: string | null) => useKanbanUi.setState({ selected: task ? { piece, task } : null, many: null })
+// Several (D-258): two or more is a selection of several, one is that task picked, none lets go.
+export function selectTasks(piece: string, tasks: string[]) {
+  if (tasks.length > 1) useKanbanUi.setState({ selected: null, many: { piece, tasks } })
+  else selectTask(piece, tasks[0] ?? null)
+}
+
+// Two letters for a member's square: their initials, or the first two letters of a one-word name.
+export function initials(name?: string) {
+  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return '?'
+  return (parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : parts[0].slice(0, 2)).toUpperCase()
+}
+
+// A due day as the card says it: `today`, `tomorrow`, `yesterday`, else `28 oct` (the year only when it isn't this one).
+export function dueText(due: string) {
+  const t = today()
+  const day = (s: string) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10))
+  const diff = Math.round((day(due) - day(t)) / 86400000)
+  if (diff === 0) return 'today'
+  if (diff === 1) return 'tomorrow'
+  if (diff === -1) return 'yesterday'
+  const d = new Date(day(due))
+  const month = d.toLocaleString('en', { month: 'short', timeZone: 'UTC' }).toLowerCase()
+  return `${d.getUTCDate()} ${month}${due.slice(0, 4) === t.slice(0, 4) ? '' : ` ${due.slice(0, 4)}`}`
+}
+
+// A checklist as small cells, done ones filled (up to 8; past that, the count alone).
+const cells = (done: number, all: number) => (all > 8 ? '' : '▮'.repeat(done) + '▯'.repeat(all - done))
+
+// Tasks held: the one pressed (and the others selected with it, in their order), where the press began (screen), where
+// in the task it was taken and its size (its px), where the pointer is now (its px), and where they'd land: a column, a
+// lane ('' without lanes), the place among that cell's tasks.
+type Over = { col: string; lane: string; index: number }
+type Drag = { id: string; ids: string[]; from: [number, number]; grab: [number, number]; size: [number, number]; at: [number, number]; moving: boolean; over: Over | null }
+// A box being drawn with alt held (its px), from where it began to the pointer.
+type Box = { from: [number, number]; to: [number, number] }
+
+// `onTask`: a task picked (beside a plane, D-255: the plane glides to its card); `onCard`: a card picked on one holding
+// cards (D-268).
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onTask?: (t: Task) => void; onCard?: (c: Card) => void }
+
+const NO_LANE: Lane[] = [{ key: '', label: '', drop: true }]
+
+// Tasks, or cards (D-268).
+export function KanbanView({ onCard, ...props }: Props) {
+  return kanbanOf(props.piece).holds === 'cards' ? <CardKanbanView {...props} onCard={onCard} /> : <TaskKanbanView {...props} />
+}
+
+// Its view moves only the world's transform: the board is drawn again when the zoom changes, never as the view pans.
+function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }: Props) {
+  // Marks, chips and handles at screen size take the zoom once it settles (D-278), so a wheel step restyles none of them.
+  const settled = useSettledZoom(view.zoom, live)
+  return (
+    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
+      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
+        <TaskBoard piece={piece} zoom={settled} live={live} editor={editor} onTask={onTask} />
+      </div>
+    </div>
+  )
+}
+
+type BoardProps = { piece: WithId<Piece>; zoom: number; live: boolean; editor: boolean; onTask?: (t: Task) => void }
+
+const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }: BoardProps) {
+  const { wid, tasks: all, cards, threads } = useWs()
+  const { user } = useAuth()
+  const setup = kanbanOf(piece)
+  const cols = setup.cols
+  const tasks = useMemo(() => all.filter((t) => t.pieceId === piece.id), [all, piece.id])
+  // What it shows: stuck to a plane, that plane's tasks (D-255).
+  // And by its filter, yours (D-256).
+  const filter = useKanbanFilter(piece.id)
+  // A task added after the filter was set (yours or someone's) shows anyway until it changes again (D-308).
+  const ids = useRef<string[]>([])
+  ids.current = tasks.map((t) => t.id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const before = useMemo(() => new Set(ids.current), [filter])
+  const shown = useMemo(() => {
+    const done = new Set(cols.filter((c) => c.done).map((c) => c.id))
+    const typeOf = (id: string) => cards.find((c) => c.id === id)?.type
+    return shownTasks(tasks, piece, cards).filter((t) => !before.has(t.id) || passes(t, filter, done.has(t.col), user?.id, typeOf))
+  }, [tasks, piece, cards, filter, before, cols, user?.id])
+  // Its lanes (D-258): by a field, or one lane with no head.
+  const field = useMemo(() => {
+    const names = new Map(tasks.flatMap((t) => (t.assignee && t.assigneeName ? [[t.assignee, t.assigneeName] as const] : [])))
+    return taskRows(setup.rows, cards, { me: user ? { id: user.id, name: user.name ?? '' } : undefined, names })
+  }, [setup.rows, cards, tasks, user])
+  const lanes = useMemo(() => (field ? field.lanes(shown) : NO_LANE), [field, shown])
+  const laneOf = (t: Task) => (field ? field.laneOf(t) : '')
+  const byCol = useMemo(() => new Map(cols.map((c) => [c.id, tasksIn(shown, c.id)])), [cols, shown])
+  const byCell = useMemo(() => {
+    const m = new Map<string, Task[]>()
+    for (const c of cols) for (const t of byCol.get(c.id) ?? []) {
+      const k = `${c.id}|${field ? field.laneOf(t) : ''}`
+      m.set(k, [...(m.get(k) ?? []), t])
+    }
+    return m
+  }, [cols, byCol, field])
+  const [folds, setFolds] = useState(() => loadFolds(piece.id))
+  const fold = (lane: string) => {
+    const next = folds.includes(lane) ? folds.filter((x) => x !== lane) : [...folds, lane]
+    setFolds(next)
+    saveFolds(piece.id, next)
+  }
+  const selected = useKanbanUi((s) => (live && s.selected?.piece === piece.id ? s.selected.task : null))
+  const many = useKanbanUi((s) => (live && s.many?.piece === piece.id ? s.many.tasks : null))
+  const adding = useKanbanUi((s) => (live ? s.adding : null))
+  const naming = useKanbanUi((s) => (live ? s.naming : null))
+  const board = useRef<HTMLDivElement>(null)
+  const [drag, setDrag] = useState<Drag | null>(null)
+  const dragRef = useRef(drag)
+  dragRef.current = drag
+  const [box, setBox] = useState<Box | null>(null)
+
+  // What you're dragging, for the others (D-260): sent with your cursor, gone once let go.
+  const sending = drag?.moving ? { id: drag.id, x: drag.at[0] - drag.grab[0], y: drag.at[1] - drag.grab[1], n: drag.ids.length } : null
+  useEffect(() => {
+    if (sending) setPresenceDrag(sending)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sending?.id, sending?.x, sending?.y, sending?.n])
+  const draggingNow = !!sending
+  useEffect(() => {
+    if (!draggingNow) return
+    return () => setPresenceDrag(null)
+  }, [draggingNow])
+
+  // Its drawn size, for fit (written only when it changes).
+  useLayoutEffect(() => {
+    const el = board.current
+    if (!el) return
+    const note = () => {
+      const size = { w: el.offsetWidth, h: el.offsetHeight }
+      const was = useSizes.getState()[piece.id]
+      if (!was || was.w !== size.w || was.h !== size.h) useSizes.setState({ [piece.id]: size })
+    }
+    note()
+    const ro = new ResizeObserver(note)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [piece.id])
+
+  // A selected task that went (deleted here or elsewhere, or moved to another kanban) lets go; so does leaving focus.
+  useEffect(() => {
+    if (selected && !tasks.some((t) => t.id === selected)) selectTask(piece.id, null)
+  }, [selected, tasks, piece.id])
+  useEffect(() => {
+    if (many && many.some((id) => !tasks.some((t) => t.id === id))) selectTasks(piece.id, many.filter((id) => tasks.some((t) => t.id === id)))
+  }, [many, tasks, piece.id])
+  // A pick waiting for it (D-260): taken once it's live.
+  const pending = useKanbanUi((s) => (live && s.pending?.piece === piece.id ? s.pending.task : null))
+  useEffect(() => {
+    if (!pending) return
+    useKanbanUi.setState({ pending: null })
+    if (tasks.some((t) => t.id === pending)) selectTask(piece.id, pending)
+  }, [pending, tasks, piece.id])
+  useEffect(() => {
+    if (!live) return
+    return () =>
+      useKanbanUi.setState((s) => ({ selected: s.selected?.piece === piece.id ? null : s.selected, many: s.many?.piece === piece.id ? null : s.many, adding: null, naming: null }))
+  }, [live, piece.id])
+
+  // Delete takes the selected task (or tasks) away, Escape lets go; heard before the canvas's own keys (Escape would
+  // leave focus).
+  const picked = many ?? (selected ? [selected] : null)
+  useEffect(() => {
+    if (!live || !picked) return
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (t?.closest('input, textarea, [contenteditable], [role=menu], [role=dialog] input, [role=listbox], [aria-modal=true], [data-coach]')) return
+      if (e.key === 'Escape') {
+        e.stopImmediatePropagation()
+        selectTask(piece.id, null)
+      }
+      if (editor && (e.key === 'Delete' || e.key === 'Backspace')) {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        void deleteTasks(wid, picked)
+      }
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, picked?.join(','), editor, wid, piece.id])
+
+  // The board's scale on the screen (the canvas's zoom and the view's), and a point on the screen in its px.
+  const scale = () => {
+    const el = board.current
+    return el ? el.getBoundingClientRect().width / (el.offsetWidth || 1) : 1
+  }
+  const local = (x: number, y: number): [number, number] => {
+    const r = board.current?.getBoundingClientRect()
+    const s = scale()
+    return r ? [(x - r.left) / s, (y - r.top) / s] : [0, 0]
+  }
+  // Where tasks held under the pointer would land, read off what's drawn: the cell (a column in an open lane that takes
+  // them) under the pointer or the nearest, and the place among its other tasks by their middles.
+  const landing = (x: number, y: number, ids: string[]): Over | null => {
+    const cellsAt = [...(board.current?.querySelectorAll<HTMLElement>('[data-cell][data-drop]') ?? [])]
+    if (!cellsAt.length) return null
+    const dist = (c: HTMLElement) => {
+      const r = c.getBoundingClientRect()
+      const dx = x < r.left ? r.left - x : x > r.right ? x - r.right : 0
+      const dy = y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0
+      return Math.hypot(dx, dy)
+    }
+    const cell = cellsAt.reduce((a, b) => (dist(b) < dist(a) ? b : a))
+    const rows = [...cell.querySelectorAll<HTMLElement>('[data-task]')].filter((t) => !ids.includes(t.dataset.task!))
+    const index = rows.filter((t) => {
+      const r = t.getBoundingClientRect()
+      return r.top + r.height / 2 < y
+    }).length
+    return { col: cell.dataset.col!, lane: cell.dataset.lane ?? '', index }
+  }
+
+  const drop = (task: Task) => {
+    const d = dragRef.current
+    setDrag(null)
+    if (!d) return
+    if (!d.moving) return pick(task)
+    if (!d.over) return
+    const moving = d.ids.map((id) => tasks.find((t) => t.id === id)!).filter(Boolean)
+    const list = (byCell.get(`${d.over.col}|${d.over.lane}`) ?? []).filter((t) => !d.ids.includes(t.id))
+    const before = list[d.over.index - 1]
+    const after = list[d.over.index]
+    // Let go where it was (one task, its own cell, between the same two): nothing changes.
+    if (moving.length === 1) {
+      const was = byCell.get(`${task.col}|${laneOf(task)}`) ?? []
+      const k = was.findIndex((t) => t.id === task.id)
+      if (d.over.col === task.col && d.over.lane === laneOf(task) && was[k - 1]?.id === before?.id && was[k + 1]?.id === after?.id) return
+    }
+    // Into another lane: its field too (null: the lane takes nothing, so they keep theirs).
+    const lanePatch = field && d.over.lane ? field.set(d.over.lane) : null
+    // Into an empty cell: after every task in that column (the other lanes' too), so lanes switched off keep the order.
+    const lo = before?.order ?? (after ? undefined : tasksIn(tasks.filter((t) => !d.ids.includes(t.id)), d.over.col).at(-1)?.order)
+    const hi = after?.order
+    const moves: TaskMove[] = moving.map((t, i) => {
+      const order = lo === undefined && hi === undefined ? i + 1 : lo === undefined ? hi! - (moving.length - i) : hi === undefined ? lo + i + 1 : lo + ((hi - lo) * (i + 1)) / (moving.length + 1)
+      return { id: t.id, col: d.over!.col, order, fields: lanePatch && laneOf(t) !== d.over!.lane ? lanePatch : undefined }
+    })
+    void moveTasks(wid, moves, moves.length > 1 ? `move ${moves.length} tasks` : 'move a task')
+  }
+  // A press on a task: held; it moves after 5 px (with the others selected, if it's one of them). The window hears the
+  // pointer meanwhile, since the task leaves its list while it's held. With shift, it joins the selection or leaves it.
+  const press = (task: Task) => (e: ReactPointerEvent<HTMLElement>) => {
+    if (!live || e.button !== 0) return
+    if (e.shiftKey) {
+      e.stopPropagation()
+      const now = many ?? (selected ? [selected] : [])
+      return selectTasks(piece.id, now.includes(task.id) ? now.filter((x) => x !== task.id) : [...now, task.id])
+    }
+    if (!editor) return
+    e.stopPropagation()
+    const r = e.currentTarget.getBoundingClientRect()
+    const s = scale()
+    // The selection in the board's order (column, then place).
+    const order = cols.flatMap((c) => byCol.get(c.id) ?? []).map((t) => t.id)
+    const ids = many?.includes(task.id) ? order.filter((id) => many.includes(id)) : [task.id]
+    setDrag({ id: task.id, ids, from: [e.clientX, e.clientY], grab: [(e.clientX - r.left) / s, (e.clientY - r.top) / s], size: [r.width / s, r.height / s], at: local(e.clientX, e.clientY), moving: false, over: null })
+    const move = (ev: PointerEvent) => {
+      const d = dragRef.current
+      if (!d) return
+      const moving = d.moving || Math.hypot(ev.clientX - d.from[0], ev.clientY - d.from[1]) > 5
+      if (moving) setDrag({ ...d, at: local(ev.clientX, ev.clientY), moving, over: landing(ev.clientX, ev.clientY, d.ids) ?? d.over })
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      drop(task)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+  }
+  // Alt held, a press on the board's empty space draws a box; let go, what it touches is selected (with shift, added).
+  const boxPress = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!live || e.button !== 0 || !e.altKey) return
+    if ((e.target as HTMLElement).closest('[data-task], button, input, textarea')) return
+    e.stopPropagation()
+    e.preventDefault()
+    const from = local(e.clientX, e.clientY)
+    const keep = e.shiftKey ? (many ?? (selected ? [selected] : [])) : []
+    let to = from
+    setBox({ from, to })
+    const move = (ev: PointerEvent) => {
+      to = local(ev.clientX, ev.clientY)
+      setBox({ from, to })
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      setBox(null)
+      const [x0, x1] = [Math.min(from[0], to[0]), Math.max(from[0], to[0])]
+      const [y0, y1] = [Math.min(from[1], to[1]), Math.max(from[1], to[1])]
+      const hit = [...(board.current?.querySelectorAll<HTMLElement>('[data-cell] [data-task]') ?? [])]
+        .filter((el) => {
+          const r = el.getBoundingClientRect()
+          const [a, b] = [local(r.left, r.top), local(r.right, r.bottom)]
+          return a[0] < x1 && b[0] > x0 && a[1] < y1 && b[1] > y0
+        })
+        .map((el) => el.dataset.task!)
+      selectTasks(piece.id, [...new Set([...keep, ...hit])])
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+  }
+
+  // A click on a task: picked (its panel opens), or let go if it was.
+  const pick = (task: Task) => {
+    const again = useKanbanUi.getState().selected?.task === task.id
+    selectTask(piece.id, again ? null : task.id)
+    if (!again) onTask?.(task)
+  }
+
+  const setCols = (next: KanbanCol[], what: string) => void setKanbanCols(wid, piece.id, next, what)
+  const moveCol = (i: number, by: -1 | 1) => {
+    const next = [...cols]
+    ;[next[i], next[i + by]] = [next[i + by], next[i]]
+    setCols(next, 'move a column')
+  }
+  const addCol = () => {
+    const id = newId()
+    setCols([...cols, { id, name: 'new column' }], 'add a column')
+    useKanbanUi.setState({ naming: id })
+  }
+  // Typed at a cell's foot: in that column, after every task in it (those not shown too), given its lane's value.
+  const add = (column: string, lane: string, title: string) => {
+    if (!user) return
+    const last = tasksIn(tasks, column).at(-1)?.order
+    const fields = field && lane ? (field.set(lane) ?? {}) : {}
+    const clean = Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== undefined))
+    addTask(wid, piece.id, column, orderBetween(last, undefined), title, user.id, clean)
+  }
+
+  const own = live ? (e: ReactPointerEvent) => e.stopPropagation() : undefined
+  const held = drag?.moving ? tasks.find((t) => t.id === drag.id) : undefined
+  const heldIds = held && drag ? drag.ids : []
+  const cardOf = (t: Task) => (t.cardId ? (cards.find((x) => x.id === t.cardId) ?? null) : null)
+  const vars = { ['--col' as string]: `${K.col}px`, ['--gap' as string]: `${K.gap}px`, ['--head' as string]: `${K.head}px`, ['--card-gap' as string]: `${K.cardGap}px` } as CSSProperties
+  const taskIds = useMemo(() => new Set(tasks.map((t) => t.id)), [tasks])
+  const isPicked = (id: string) => (many ? many.includes(id) : selected === id)
+  // What a task does, read when it's done: the tasks are memoised on what they show, never on a new handler.
+  const taskActs = useRef({ press, pick, learn: (t: Task) => void (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) })
+  taskActs.current = { press, pick, learn: (t: Task) => void (selectTask(piece.id, t.id), useKanbanUi.setState({ learning: t.id })) }
+
+  return (
+    <div ref={board} className={styles.board} style={vars} role="list" aria-label={piece.name || 'deck'} data-dragging={held ? true : undefined} data-lanes={field ? true : undefined} onPointerDown={boxPress}>
+      <SoonBand piece={piece} tasks={shown} live={live} picked={isPicked} onPick={pick} onPress={own} />
+      <div className={styles.row}>
+        {cols.map((c, i) => (
+          <div key={c.id} className={styles.colHead} data-done={c.done || undefined} data-over={(held && drag?.over?.col === c.id) || undefined}>
+            <ColumnHead
+              col={c}
+              n={i + 1}
+              count={(byCol.get(c.id) ?? []).length}
+              holds={tasks.filter((t) => t.col === c.id).length}
+              live={live}
+              editor={editor}
+              naming={naming === c.id}
+              first={i === 0}
+              last={i === cols.length - 1}
+              alone={cols.length < 2}
+              onPress={own}
+              onName={() => useKanbanUi.setState({ naming: c.id })}
+              onRename={(name) => {
+                useKanbanUi.setState({ naming: null })
+                const next = name.trim().slice(0, COL_NAME_MAX)
+                if (next && next !== c.name) setCols(cols.map((x) => (x.id === c.id ? { ...x, name: next } : x)), 'rename a column')
+              }}
+              onMove={(by) => moveCol(i, by)}
+              onLimit={(limit) => setCols(cols.map((x) => (x.id === c.id ? { ...x, limit } : x)), limit ? 'set a column’s limit' : 'take a column’s limit away')}
+              onDone={() => setCols(cols.map((x) => (x.id === c.id ? { ...x, done: !x.done || undefined } : x)), c.done ? 'unmark a finished column' : 'mark a finished column')}
+              onDelete={() => void deleteColumn(wid, piece.id, cols, c.id, tasks)}
+            />
+          </div>
+        ))}
+        {live && editor && cols.length < KANBAN_COLS_MAX && (
+          <Button icon className={styles.addCol} onPointerDown={own} onClick={addCol} title="add a column">
+            + column
+          </Button>
+        )}
+      </div>
+      {lanes.map((lane) => {
+        const folded = !!field && folds.includes(lane.key)
+        const count = shown.filter((t) => laneOf(t) === lane.key).length
+        return (
+          <div key={lane.key || 'all'} className={styles.lane} data-folded={folded || undefined}>
+            {field && <LaneHead lane={lane} count={count} folded={folded} onFold={() => fold(lane.key)} onPress={own} />}
+            {!folded && (
+              <div className={styles.row}>
+                {cols.map((c) => {
+                  const cell = `${c.id}|${lane.key}`
+                  const every = byCell.get(cell) ?? []
+                  const list = held ? every.filter((t) => !heldIds.includes(t.id)) : every
+                  const slot = held && drag?.over?.col === c.id && drag.over.lane === lane.key ? drag.over.index : -1
+                  return (
+                    <div
+                      key={c.id}
+                      className={styles.column}
+                      data-cell
+                      data-col={c.id}
+                      data-lane={lane.key}
+                      data-drop={lane.drop || undefined}
+                      data-done={c.done || undefined}
+                      role="listitem"
+                      aria-label={`${c.name}${lane.label ? `, ${lane.label}` : ''}, ${every.length} tasks`}
+                    >
+                      <div className={styles.list}>
+                        {list.map((t, k) => (
+                          <Slotted key={t.id} slot={slot === k ? drag!.size[1] : 0} tone={held && cardOf(held) ? TYPE_ACCENT[cardOf(held)!.type] : undefined}>
+                            <TaskCard
+                              task={t}
+                              card={cardOf(t)}
+                              finished={!!c.done}
+                              selected={isPicked(t.id)}
+                              live={live}
+                              talk={live && !!threadOn(threads, t.id)}
+                              extra={
+                                <>
+                                  {/* In its top-right corner (under it would sit on the next task). */}
+                                  {live && (
+                                    <span className={styles.chipHere}>
+                                      <ThreadChip wid={wid} thread={threadOn(threads, t.id)} zoom={zoom} />
+                                    </span>
+                                  )}
+                                </>
+                              }
+                              learn={live && editor && !many && learnable(t, cardOf(t) ?? undefined, !!c.done) ? () => taskActs.current.learn(t) : undefined}
+                              onPointerDown={(e) => taskActs.current.press(t)(e)}
+                              onClick={live && !editor ? (e: React.MouseEvent) => void (!e.shiftKey && taskActs.current.pick(t)) : undefined}
+                            />
+                          </Slotted>
+                        ))}
+                        {slot >= 0 && slot >= list.length && <Gap h={drag!.size[1]} tone={held && cardOf(held) ? TYPE_ACCENT[cardOf(held)!.type] : undefined} />}
+                        {!list.length && slot < 0 && adding !== cell && !field && <Empty as="span" className={styles.empty}>· nothing yet</Empty>}
+                        {live && editor && lane.drop && (
+                          <AddTask open={adding === cell} quiet={!!field} onPress={own} onOpen={() => useKanbanUi.setState({ adding: cell })} onClose={() => useKanbanUi.setState({ adding: null })} onAdd={(title) => add(c.id, lane.key, title)} />
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+      {held && drag && (
+        <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: '0.8', transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
+          <TaskCard task={held} card={cardOf(held)} finished={!!cols.find((c) => c.id === (drag.over?.col ?? held.col))?.done} selected={false} live lifted />
+          {heldIds.length > 1 && <span className={styles.more}>+{heldIds.length - 1}</span>}
+        </div>
+      )}
+      <PeerTaskDrags
+        taskIds={taskIds}
+        render={(id) => {
+          const t = tasks.find((x) => x.id === id)!
+          return <TaskCard task={t} card={cardOf(t)} finished={!!cols.find((c) => c.id === t.col)?.done} selected={false} live={false} />
+        }}
+      />
+      {box && (
+        <div
+          className={styles.box}
+          style={{ left: Math.min(box.from[0], box.to[0]), top: Math.min(box.from[1], box.to[1]), width: Math.abs(box.to[0] - box.from[0]), height: Math.abs(box.to[1] - box.from[1]) }}
+          aria-hidden
+        />
+      )}
+    </div>
+  )
+})
+
+// What's due soon (D-262), over the columns: `▾ SOON`, then a pill a task (its day: `was 25 oct` magenta, `today` cyan,
+// `thu`), a rule, how many. A click on `▾` folds it to `▸ SOON · 1 past · 1 today · 2 this week` (yours); on a pill, picks
+// it. Nothing due by Sunday: no band.
+function SoonBand({ piece, tasks, live, picked, onPick, onPress }: { piece: WithId<Piece>; tasks: Task[]; live: boolean; picked: (id: string) => boolean; onPick: (t: Task) => void; onPress?: (e: ReactPointerEvent) => void }) {
+  const [folded, setFolded] = useState(() => soonFolded(piece.id))
+  const soon = soonOf(piece, tasks)
+  if (!soon.length) return null
+  const day = today()
+  const past = soon.filter((t) => t.due! < day).length
+  const now = soon.filter((t) => t.due === day).length
+  const fold = () => {
+    setFolded(!folded)
+    try {
+      if (folded) localStorage.removeItem(SOON_KEY(piece.id))
+      else localStorage.setItem(SOON_KEY(piece.id), 'folded')
+    } catch {
+      // This tab only.
+    }
+  }
+  const weekday = (due: string) => new Date(Date.UTC(+due.slice(0, 4), +due.slice(5, 7) - 1, +due.slice(8, 10))).toLocaleString('en', { weekday: 'short', timeZone: 'UTC' }).toLowerCase()
+  return (
+    <div className={styles.soon} onPointerDown={live ? onPress : undefined}>
+      <Button icon className={styles.soonFold} onClick={live ? fold : undefined} aria-expanded={!folded} title={folded ? 'show what’s due' : 'fold it'}>
+        {folded ? '▸' : '▾'} <span className={styles.soonName}>soon</span>
+      </Button>
+      {folded ? (
+        <span className={styles.soonCounts}>{[past && `${past} past`, now && `${now} today`, soon.length - past - now && `${soon.length - past - now} this week`].filter(Boolean).join(' · ')}</span>
+      ) : (
+        soon.map((t) => {
+          const late = t.due! < day
+          return (
+            <button /* kit-ok: a task drawn small in the SOON band (its day, title, marks), not a [verb] */ key={t.id} className={styles.soonPill} data-late={late || undefined} data-today={t.due === day || undefined} data-selected={picked(t.id) || undefined} onClick={live ? () => onPick(t) : undefined} tabIndex={live ? 0 : -1} title={t.title}>
+              <span className={styles.soonDay}>{late ? `was ${dueText(t.due!)}` : t.due === day ? 'today' : weekday(t.due!)}</span>
+              <span className={styles.soonTitle}>{t.title}</span>
+              <Marks tier="s" tone={t.cardType ? TYPE_ACCENT[t.cardType] : undefined} live={live} selected={picked(t.id)} />
+            </button>
+          )
+        })
+      )}
+      <span className={styles.soonRule} aria-hidden />
+      <span className={styles.count}>{soon.length}</span>
+    </div>
+  )
+}
+
+// A lane's head (D-258), the width of the columns: `▾`, its mark (a member's square, a card type's bar), its name, a
+// rule, how many it holds. A click folds it or opens it.
+export function LaneHead({ lane, count, folded, onFold, onPress }: { lane: Lane; count: number; folded: boolean; onFold: () => void; onPress?: (e: ReactPointerEvent) => void }) {
+  return (
+    <button /* kit-ok: a lane's whole head (fold mark, who or what, name, count) that folds it */ className={styles.laneHead} onPointerDown={onPress} onClick={onFold} aria-expanded={!folded} title={folded ? 'open it' : 'fold it'} style={lane.tone ? ({ ['--tone' as string]: lane.tone } as CSSProperties) : undefined}>
+      <span className={styles.laneFold} aria-hidden>
+        {folded ? '▸' : '▾'}
+      </span>
+      {lane.initials && <span className={styles.who}>{lane.initials}</span>}
+      {lane.kind && <span className={styles.laneKind}>▌{lane.kind}</span>}
+      <span className={styles.laneName} data-none={!lane.initials && !lane.kind ? true : undefined}>
+        {lane.label}
+      </span>
+      <span className={styles.rule} aria-hidden />
+      <span className={styles.count}>{count}</span>
+    </button>
+  )
+}
+
+// Its lanes, in its dock (D-258): none, by who a task is given to, by the card it's for. Shared; editors choose.
+export function KanbanLanes({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  const { wid } = useWs()
+  // Holding cards (D-269): rows by another of their fields.
+  if (kanbanOf(piece).holds === 'cards') {
+    const setup = kanbanOf(piece)
+    const row = rowFieldOf(setup)
+    const fields = CARD_FIELDS.filter((f) => f !== (setup.colField ?? 'status'))
+    const cardItems: MenuEntry[] = [
+      { key: 'none', label: 'no rows', checked: !row, onSelect: () => editor && row && void setKanbanSetup(wid, piece.id, { rowField: undefined }, 'no rows on a deck') },
+      ...fields.map((f) => ({ key: f, label: `by ${FIELD_NAME[f]}`, checked: row === f, onSelect: () => editor && row !== f && void setKanbanSetup(wid, piece.id, { rowField: f }, `a deck’s rows by ${FIELD_NAME[f]}`) })),
+    ]
+    return <Menu label="rows" up plain summary={row ? FIELD_NAME[row] : 'none'} active={!!row} items={cardItems} ariaLabel="Rows" noun="fields" />
+  }
+  const rows = kanbanOf(piece).rows
+  const NAME: Record<KanbanRows, string> = { assignee: 'given to', card: 'card' }
+  const items: MenuEntry[] = [
+    { key: 'none', label: 'no lanes', checked: !rows, onSelect: () => editor && rows && void setKanbanRows(wid, piece.id, undefined) },
+    ...KANBAN_ROWS.map((r) => ({ key: r, label: `by ${NAME[r]}`, checked: rows === r, onSelect: () => editor && rows !== r && void setKanbanRows(wid, piece.id, r) })),
+  ]
+  return <Menu label="lanes" up plain summary={rows ? NAME[rows] : 'none'} active={!!rows} items={items} ariaLabel="Lanes" noun="ways" />
+}
+
+// A task with the place a held one would land just above it (`slot`: its height, 0 none). Memoised on what it shows
+// (the task's handlers only read the board's ref): a card renamed draws its tasks only.
+const Slotted = memo(function Slotted({ slot, tone, children }: { slot: number; tone?: string; children: ReactNode }) {
+  return (
+    <>
+      {slot > 0 && <Gap h={slot} tone={tone} />}
+      {children}
+    </>
+  )
+}, (a, b) => alikeProps(a, b, 5))
+
+// Where a held task or card lands (D-265): a gap opens as tall as it, its L's on the gap's corners at full size.
+export function Gap({ h, tone }: { h: number; tone?: string }) {
+  return (
+    <span className={styles.slot} style={{ height: h }} aria-hidden>
+      <Marks tone={tone} pressed />
+    </span>
+  )
+}
+
+type HeadProps = {
+  col: KanbanCol
+  n: number
+  count: number
+  // Every task in it, shown or not: what its limit counts.
+  holds: number
+  live: boolean
+  editor: boolean
+  naming: boolean
+  first: boolean
+  last: boolean
+  alone: boolean
+  onPress?: (e: ReactPointerEvent) => void
+  onName: () => void
+  onRename: (name: string) => void
+  onMove: (by: -1 | 1) => void
+  onDone: () => void
+  onDelete: () => void
+  onLimit: (limit: number | undefined) => void
+}
+
+// How urgent (D-256), as the kit's pill (D-326): P1 magenta, P2 as the text, P3 faint (no tone).
+export const PRIORITY_TONE: Record<string, string | undefined> = { P1: 'var(--accent-magenta)', P2: 'var(--fg)' }
+
+// A column's head, as the right panel's sections: its number faint, its name in caps, a rule, its count; the finished
+// one's name green. Live, a double-click renames it, and on hover its tools come in after the count. With a limit
+// (D-256), the count reads `4/3` (every task in it, shown or not, over the limit), the head magenta once over; `≤` types
+// the limit (Enter keeps it, empty takes it away, Escape leaves it).
+function ColumnHead({ col, n, count, holds, live, editor, naming, first, last, alone, onPress, onName, onRename, onMove, onDone, onDelete, onLimit }: HeadProps) {
+  const [draft, setDraft] = useState(col.name)
+  useEffect(() => setDraft(col.name), [col.name, naming])
+  const [limiting, setLimiting] = useState<string | null>(null)
+  const tools = live && editor && !naming && limiting === null
+  const over = !!col.limit && holds > col.limit
+  const keepLimit = (v: string) => {
+    setLimiting(null)
+    const k = Math.round(Number(v))
+    const next = v.trim() && k >= 1 ? Math.min(LIMIT_MAX, k) : undefined
+    if (next !== col.limit) onLimit(next)
+  }
+  const name = naming ? (
+    <Field
+      className={styles.headField}
+      value={draft}
+      autoFocus
+      maxLength={COL_NAME_MAX}
+      label="Column name"
+      size="sm"
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={setDraft}
+      onBlur={() => onRename(draft)}
+      onEnter={() => (document.activeElement as HTMLElement | null)?.blur()}
+      onEscape={() => (setDraft(col.name), requestAnimationFrame(() => onRename(col.name)))}
+    />
+  ) : (
+    <span className={styles.name} onDoubleClick={tools ? onName : undefined} title={tools ? 'double-click to rename' : undefined}>
+      {col.name}
+    </span>
+  )
+  const countEl =
+    limiting !== null ? (
+      <span className={styles.count}>
+        {holds}/
+        <Field
+          className={styles.limitField}
+          value={limiting}
+          autoFocus
+          inputMode="numeric"
+          label="Limit"
+          placeholder="–"
+          size="sm"
+          onFocus={(e) => e.currentTarget.select()}
+          onChange={(v) => setLimiting(v.replace(/\D/g, '').slice(0, 2))}
+          onBlur={() => keepLimit(limiting)}
+          onEnter={() => (document.activeElement as HTMLElement | null)?.blur()}
+          onEscape={() => setLimiting(null)}
+        />
+      </span>
+    ) : (
+      <span className={styles.count} title={col.limit ? `${holds} of at most ${col.limit}${over ? ': over its limit' : ''}` : undefined}>
+        {col.limit ? `${holds}/${col.limit}` : count}
+      </span>
+    )
+  // Its tools, after the count while it's hovered (D-252): `≤` the limit, `‹ ›` move it, `✓` the finished one, `×`.
+  const toolRow = tools && (
+    <span className={styles.tools}>
+      <Button icon className={styles.tool} data-limit pressed={!!col.limit} title={col.limit ? `at most ${col.limit}: change or take away` : 'how many it should hold at most'} aria-label="Column limit" onClick={() => setLimiting(col.limit ? String(col.limit) : '')}>
+        ≤
+      </Button>
+      {!first && (
+        <Button icon className={styles.tool} title="move it left" aria-label="Move the column left" onClick={() => onMove(-1)}>
+          ‹
+        </Button>
+      )}
+      {!last && (
+        <Button icon className={styles.tool} title="move it right" aria-label="Move the column right" onClick={() => onMove(1)}>
+          ›
+        </Button>
+      )}
+      <Button icon className={styles.tool} data-done pressed={!!col.done} title={col.done ? 'not the finished column' : 'its tasks are finished: their due days stop warning'} aria-label="Finished column" onClick={onDone}>
+        ✓
+      </Button>
+      {!alone && (
+        <Button icon tone="danger" className={styles.tool} title={count ? `take it away: its ${count} task${count > 1 ? 's go' : ' goes'} to the column ${first ? 'after' : 'before'} it` : 'take it away'} aria-label="Delete the column" onClick={onDelete}>
+          ×
+        </Button>
+      )}
+    </span>
+  )
+  // The kit's rule (D-326): `01 TODO ──── 5`, the tools after it (beside the rule, so hidden they take no room); the head
+  // keeps its own presses and its over state.
+  return (
+    <div className={styles.head} data-over={over || undefined} onPointerDown={naming || tools || limiting !== null ? onPress : undefined}>
+      <Rule as="div" className={styles.headRule} n={n} name={name} count={countEl} countAt="end" />
+      {toolRow}
+    </div>
+  )
+}
+
+type CardProps = {
+  task: Task
+  card: Card | null
+  finished: boolean
+  selected: boolean
+  live: boolean
+  lifted?: boolean
+  // Finished, for a card still being tested (D-254): its line asking what it taught.
+  learn?: () => void
+  // Drawn over it (D-260): others' frames, its comments' chip; `talk`: it has one, so its title leaves room.
+  extra?: ReactNode
+  talk?: boolean
+  onPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
+  onClick?: (e: React.MouseEvent) => void
+}
+
+// A task: raised paper as tall as its title (Geist, up to three lines), its left edge in the colour of the card it's for.
+// Under the title, only when there's something: the card's name, then on the right its due day (magenta once past,
+// unless finished), its checklist as cells, who it's given to (a square with their initials). Finished: a green `✓`
+// before the title, the title grey. Hover and selection are its marks (D-265), in its card's colour (cyan with none);
+// others who have it picked, theirs in their colours.
+function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, talk, onPointerDown, onClick }: CardProps) {
+  const peers = usePeersOn(task.id)
+  const checks = task.checks ?? []
+  const ticked = checks.filter((c) => c.done).length
+  const late = overdue(task, finished)
+  const tone = task.cardType ? TYPE_ACCENT[task.cardType] : undefined
+  return (
+    <div
+      className={styles.task}
+      data-task={task.id}
+      data-target={`task:${task.id}`}
+      data-find={`task:${task.id}`}
+      data-talk={talk || undefined}
+      data-selected={selected || undefined}
+      data-finished={finished || undefined}
+      data-lifted={lifted || undefined}
+      data-card={tone ? true : undefined}
+      style={tone ? ({ ['--tone' as string]: tone } as CSSProperties) : undefined}
+      role={live && !lifted ? 'button' : undefined}
+      tabIndex={live && !lifted ? 0 : -1}
+      aria-label={task.title}
+      onPointerDown={onPointerDown}
+      onClick={onClick}
+    >
+      <span className={styles.title}>
+        {finished && <span className={styles.tick}>✓ </span>}
+        {task.priority && (
+          <>
+            <Chip variant="pill" tone={PRIORITY_TONE[task.priority]}>
+              {task.priority}
+            </Chip>{' '}
+          </>
+        )}
+        {task.title}
+      </span>
+      {!!task.labels?.length && <span className={styles.labels}>{task.labels.map((l) => `#${l}`).join(' ')}</span>}
+      {hasMeta(task) && (
+        <span className={styles.meta}>
+          {task.cardId && (
+            <span className={styles.for} title={card?.title ?? 'its card is gone'}>
+              {card ? card.title || 'untitled' : 'its card is gone'}
+            </span>
+          )}
+          <span className={styles.push} />
+          {task.due && (
+            <span className={styles.due} data-late={late || undefined} title={late ? `was due ${task.due}` : `due ${task.due}`}>
+              ◷ {dueText(task.due)}
+            </span>
+          )}
+          {checks.length > 0 && (
+            <span className={styles.checks} data-all={ticked === checks.length || undefined} title={`${ticked} of ${checks.length} steps done`}>
+              {checks.length <= 8 && <span className={styles.cells}>{cells(ticked, checks.length)}</span>} {ticked}/{checks.length}
+            </span>
+          )}
+          {task.assignee && (
+            <span className={styles.who} title={task.assigneeName}>
+              {initials(task.assigneeName)}
+            </span>
+          )}
+        </span>
+      )}
+      {learn && (
+        <Button
+          icon
+          tone="primary"
+          className={styles.learn}
+          title="log what it taught on its card, as evidence"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => (e.stopPropagation(), learn())}
+        >
+          + log what it taught
+        </Button>
+      )}
+      {live && !lifted && <Marks tone={tone} selected={selected} peers={peers} />}
+      {extra}
+    </div>
+  )
+}
+
+// `quiet`: in a lane, shown only while its cell is hovered (one in every cell would crowd it).
+type AddProps = { open: boolean; quiet?: boolean; onPress?: (e: ReactPointerEvent) => void; onOpen: () => void; onClose: () => void; onAdd: (title: string) => void }
+
+// `+ add a task` under a column's last task, a faint line: a click types a new one in its place, a sheet like a task with
+// the menus' cyan `>` (D-222); Enter makes it and keeps the field for the next, Escape (or leaving it empty) stops.
+function AddTask({ open, quiet, onPress, onOpen, onClose, onAdd }: AddProps) {
+  const [draft, setDraft] = useState('')
+  if (!open)
+    return (
+      <Button icon className={styles.add} data-quiet={quiet || undefined} onPointerDown={onPress} onClick={onOpen}>
+        + add a task
+      </Button>
+    )
+  // The kit's prompt (D-326), a `>` and a field as tall as its text, on a sheet in the task's place: Enter makes it and
+  // keeps the field for the next, Escape or leaving it empty stops; leaving it with words keeps them as a task.
+  const done = () => {
+    if (draft.trim()) onAdd(draft)
+    setDraft('')
+    onClose()
+  }
+  return (
+    <div className={styles.adding} onPointerDown={onPress}>
+      <PromptField
+        className={styles.addPrompt}
+        value={draft}
+        autoFocus
+        multiline
+        maxLength={TASK_TITLE_MAX}
+        placeholder="what needs doing?"
+        label="New task"
+        onChange={setDraft}
+        onBlur={done}
+        onSubmit={(v) => {
+          if (!v.trim()) return onClose()
+          onAdd(v)
+          setDraft('')
+        }}
+        onEscape={() => (setDraft(''), onClose())}
+      />
+    </div>
+  )
+}
+
+// Its tools in a dock (its focus, its pane beside a plane). Linked to a plane it says nothing more: the link shows (D-303).
+export function KanbanDockTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  // Set up as priorities (D-271): `[order]` shows the suggested order beside the grid (yours).
+  const orderOn = useOrderOn(piece.id)
+  const order = isPriorities(kanbanOf(piece)) && (
+    <DockAction label="order" pressed={orderOn} title={orderOn ? 'hide the suggested order' : 'the suggested order beside it: impact × confidence ÷ effort'} onClick={() => toggleOrder(piece.id)} />
+  )
+  return (
+    <>
+      {order}
+      <HiddenTasks piece={piece} editor={editor} />
+    </>
+  )
+}
+
+// Holding cards with tasks still on it from before (D-300): says so, magenta; for editors it opens the setup's `holds`,
+// where they're moved or it holds tasks again.
+function HiddenTasks({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+  const n = useWs().tasks.filter((t) => t.pieceId === piece.id).length
+  if (kanbanOf(piece).holds !== 'cards' || !n) return null
+  return (
+    <DockAction
+      label={`☐ ${n} task${n === 1 ? '' : 's'} from before`}
+      tone="var(--accent-magenta)"
+      title={editor ? 'tasks from before it held cards, not shown on it: move them, or let it hold tasks again' : 'tasks from before it held cards, not shown on it'}
+      onClick={() => editor && useKanbanUi.setState({ setup: piece.id, tab: 'holds' })}
+    />
+  )
+}
+

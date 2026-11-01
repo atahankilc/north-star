@@ -7,7 +7,7 @@ import { create } from 'zustand'
 import { accents } from '../styles/tokens'
 import type { AuthUser } from './auth'
 import { firebase } from './firebase'
-import { AWAY_AFTER_MS } from '../ui/feel'
+import { AWAY_AFTER_MS } from '../ui/foundation/feel'
 
 // The canvas is the only view (D-174).
 export type PresenceView = 'canvas'

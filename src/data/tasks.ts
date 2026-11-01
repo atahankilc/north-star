@@ -7,7 +7,7 @@
 // A task for a customer, problem or idea that's finished may log what it taught on that card (D-254): `learned` is the
 // evidence it wrote, or `skip` once that was declined.
 // A kanban may hold cards instead (D-268, docs/specs/priorities.md): `holds: 'cards'`, which cards from a `source` (the
-// table's rules, D-209), its columns a field's values (`colField`; src/views/workspace/kanbanCards.ts); its own `cols`
+// table's rules, D-209), its columns a field's values (`colField`; src/views/workspace/deck/kanbanCards.ts); its own `cols`
 // stay, unused, for if it holds tasks again.
 // Shapes mirror firestore.rules' validKanban and validTask; change both together.
 // Every write is an op (S8, D-312: src/ops/tasks.ts' create_task / update_task / move_task, src/ops/deck.ts' update_deck,
@@ -38,7 +38,7 @@ export type KanbanSetup = {
   cols: KanbanCol[]
   // Once let a deck stuck to a plane show every task (D-255); ignored since D-303, kept so old data reads.
   everyPlane?: boolean
-  // Its rows (D-258): none, or lanes by who a task is given to or by the card it's for (src/views/workspace/rows.ts).
+  // Its rows (D-258): none, or lanes by who a task is given to or by the card it's for (src/views/workspace/table/rows.ts).
   rows?: KanbanRows
   // What it holds (D-268): tasks (unset) or cards; for cards, which (a source) and the field its columns come from.
   holds?: 'cards'

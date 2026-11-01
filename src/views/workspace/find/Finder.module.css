@@ -1,0 +1,264 @@
+/* The finder (D-236): the menus' prompt (D-222) in the middle of the screen, over a scrim. Its width and height are
+   set as numbers and glide (eased both ends, so the change is seen), and it's centred by its middle, so growing keeps
+   it in the middle. Magenta marks on its top corners, as the dock's. */
+.shade {
+  composes: enter from '../../../ui/foundation/Enter.module.css';
+  /* The Window's scrim (D-326) at the finder's layer and in the page's scrim. */
+  --window-z: var(--z-float);
+  --window-scrim: var(--scrim);
+}
+
+.finder {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: calc(var(--z-float) + 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: var(--line-w) solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  transform: translate(-50%, -50%);
+  transition:
+    width var(--dur-cells) var(--ease-in-out),
+    height var(--dur-cells) var(--ease-in-out);
+}
+
+.finder[data-reduced='true'] {
+  transition: none;
+  animation: none;
+}
+
+.finder::before,
+.finder::after {
+  content: '';
+  position: absolute;
+  top: calc(-1 * var(--line-w));
+  z-index: var(--z-1);
+  width: var(--space-2);
+  height: var(--space-2);
+  border-top: var(--line-w) solid var(--accent-magenta);
+  pointer-events: none;
+}
+
+.finder::before {
+  left: calc(-1 * var(--line-w));
+  border-left: var(--line-w) solid var(--accent-magenta);
+}
+
+.finder::after {
+  right: calc(-1 * var(--line-w));
+  border-right: var(--line-w) solid var(--accent-magenta);
+}
+
+/* The `>` line. */
+.finder .line {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  border-bottom: var(--line-w) solid var(--line);
+  cursor: text;
+}
+
+/* here | everywhere: Tabs' segments (D-326), framed. */
+.scope {
+  display: inline-flex;
+  flex: none;
+  border: var(--line-w) solid var(--line-hover);
+}
+
+.switches {
+  display: inline-flex;
+  flex: none;
+  gap: var(--space-1);
+}
+
+/* The matches, grouped. */
+.list {
+  flex: none;
+  overflow-y: auto;
+}
+
+.list > div {
+  padding: var(--space-1) 0;
+}
+
+.group {
+  composes: label from '../../../ui/primitives/Label.module.css';
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3) var(--space-half);
+}
+
+.hash {
+  color: var(--accent-magenta);
+}
+
+.count {
+  color: var(--fg-faint);
+  letter-spacing: normal;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+/* Under the pointer, a lighter wash; picked (a click, the arrows), the stronger one. */
+.row:hover {
+  background: var(--wash-1);
+}
+
+.row[data-picked='true'] {
+  background: var(--wash-2);
+}
+
+.caret {
+  width: 1ch;
+  color: transparent;
+}
+
+.row[data-picked='true'] .caret {
+  color: var(--accent-magenta);
+}
+
+.glyph {
+  width: 2ch;
+  color: var(--fg-dim);
+  text-align: center;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.row[data-picked='true'] .text {
+  color: var(--fg-strong);
+}
+
+.row[data-inside='true'] .text {
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.hint {
+  flex: none;
+  max-width: 34ch;
+  overflow: hidden;
+  color: var(--fg-faint);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hit {
+  background: color-mix(in srgb, var(--accent-yellow) var(--mix-soft), transparent);
+  color: var(--fg-strong);
+}
+
+.none {
+  padding: var(--space-4) var(--space-3);
+}
+
+/* The preview: what the screen shows once you're there, small. */
+.preview {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  border-top: var(--line-w) solid var(--line);
+  background: var(--bg);
+}
+
+.previewHead {
+  composes: label from '../../../ui/primitives/Label.module.css';
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+  gap: var(--space-3);
+  height: var(--control-sm);
+  padding: 0 var(--space-3);
+  align-items: center;
+}
+
+.previewWhere {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  overflow: hidden;
+  color: var(--fg-faint);
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.foot {
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  border-top: var(--line-w) solid var(--line);
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+
+.foot b {
+  color: var(--fg-muted);
+  font-weight: var(--weight-regular);
+}
+
+/* The preview's zoom: `[−] 140% [+]`, the number back to 100 %. */
+.zoom {
+  display: inline-flex;
+  flex: none;
+  align-items: baseline;
+  gap: var(--space-1);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* `100%`, a Button icon between `[−]` and `[+]`. */
+.zoomAt[data-icon] {
+  min-width: 5ch;
+  padding: 0;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.zoomAt[data-icon]:hover {
+  color: var(--fg-strong);
+}
+
+/* Go to (nothing typed): a plane's own places under it, in; its `▸ N inside` opens them (D-200). */
+.row[data-indent='true'] {
+  padding-left: calc(var(--space-3) + 3ch);
+}
+
+/* `[▸ 3 inside]`, a Button, pressed while open. */
+.fold {
+  flex: none;
+}
+
+.drawing {
+  color: var(--fg-faint);
+  letter-spacing: normal;
+  text-transform: none;
+}

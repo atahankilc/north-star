@@ -42,10 +42,10 @@ the same time: the two leads share the repo, the emulators and the machine._
   - `package.json`, `vitest.config.*`: vitest comes from the agent run's **S2**. Onboarding adds only the
     `check:lessons` script line, after telling b2. If S2 isn't committed when O2 needs unit tests, write the tests
     anyway and run them when it lands (log it), or ask b2.
-  - `src/data/presence.ts` (agent S14 adds the agent as a participant), `src/views/workspace/WorkspaceLayout.tsx`
+  - `src/data/presence.ts` (agent S14 adds the agent as a participant), `src/views/workspace/canvas/WorkspaceLayout.tsx`
     (agent S14 mounts its box; another session has uncommitted edits there now): onboarding's one-line additions
     (a demo source in presence; `<Coach />`) go in **after** asking b2, as small separate commits.
-  - `src/views/workspace/context.ts`: the agent's S2 adds `getWs()`; onboarding doesn't edit it.
+  - `src/views/workspace/canvas/context.ts`: the agent's S2 adds `getWs()`; onboarding doesn't edit it.
   - `src/firebase.ts` (demo guard) and `vite.config.ts` (the `demo.html` entry): not on the agent's list; tell b2 anyway.
 - Hot files (CanvasView.tsx, CardPanel.tsx, WorkspaceLayout.tsx, PlaneCards.tsx, Kanban.tsx, TextItems.tsx,
   selection.ts…): change them as little as possible. Events come from store subscriptions; anchors are

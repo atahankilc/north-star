@@ -97,7 +97,7 @@
 }
 
 .choice {
-  composes: interactive from '../ui/Frame.module.css';
+  composes: interactive from '../ui/foundation/Frame.module.css';
   flex: 1;
   display: grid;
   grid-template-columns: auto 1fr;

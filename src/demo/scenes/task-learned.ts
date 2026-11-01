@@ -4,7 +4,7 @@
 // task's notes; Enter adds it: the panel reads `learned · supports it`, as evidence on the idea (shown with
 // set()).
 import type { Evidence } from '../../data/evidence'
-import { K } from '../../views/workspace/Kanban'
+import { K } from '../../views/workspace/deck/Kanban'
 import { cursor, key, onStage, set, wait, type Scene } from '../director'
 import { AT, base, byText } from '../fixtures/kit'
 import { scrollPanel, view } from '../fixtures/o10'

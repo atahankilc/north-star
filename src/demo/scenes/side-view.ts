@@ -3,7 +3,7 @@
 // it under its tabs; the hand presses the deck's `[days ›]` in its dock: the deck's days come in (under 1300 px they open
 // over the board, `‹ back to the board`). All real: opening it writes nothing.
 import { useCanvasView } from '../../state/canvasView'
-import { useTasksSide } from '../../views/workspace/sideState'
+import { useTasksSide } from '../../views/workspace/deck/sideState'
 import { camera, cursor, key, onStage, run, wait, type Scene } from '../director'
 import { base, byText } from '../fixtures/kit'
 import { calmTasks } from '../fixtures/o12'

@@ -305,13 +305,13 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 
 ## Done (consistent pages, 2026-10-18)
 - D-093: audit (headless screenshots, dark/light/390) of board + panel, flow, table, reports, report screen, Settings; the assistant
-  chat left out on purpose. New tokens (`--text-lg`, `--text-heading`, `--text-hero`, `--track-*`, `--measure`), `src/ui/Page.module.css`
+  chat left out on purpose. New tokens (`--text-lg`, `--text-heading`, `--text-hero`, `--track-*`, `--measure`), `src/ui/foundation/Page.module.css`
   (page, toolbar, title), `fieldLabel` (Frame), `small` `[verb]` button (AsciiButton.module.css) replacing five hand-made copies.
   Reports left-aligned with its header in the filter row's place; table fills the width with "…" names; one Settings label column;
   stale "coming later" removed; phone side panel covers the filters. No raw font sizes or letter-spacing outside AiChat.
   Follow-ups: all actions lowercase (uppercase only for labels); workspace-card hover regression fixed.
-  Later the same day: `src/ui/Select.tsx` replaces every native `<select>`, and `+ link` opens as a dropdown instead of spreading
-  inside the panel (`src/ui/floating.ts`); verified headless, dark, light and 390. Committed and pushed 2026-10-18.
+  Later the same day: `src/ui/primitives/Select.tsx` replaces every native `<select>`, and `+ link` opens as a dropdown instead of spreading
+  inside the panel (`src/ui/foundation/floating.ts`); verified headless, dark, light and 390. Committed and pushed 2026-10-18.
   Build passes; verified headless on emulators (no horizontal scroll at 390, light theme). Committed and pushed 2026-10-18.
 
 ## Done (assistant redesign, step 1, 2026-10-18)
@@ -485,7 +485,7 @@ Append a `## Done (<topic>, <date>)` section here when work finishes; state.md k
 
 ## Done (2026-10-18, pushed together: D-124–D-131, side-panel fields, group drag fix, board speed)
 - Not committed: side-panel text fields grow with their text, never scroll (card title, notes, competitor name/description/notes,
-  their-feature description, matrix cell notes, workspace description; `src/ui/autoGrow.ts`, `AutosaveField` `wrap`). Checked in
+  their-feature description, matrix cell notes, workspace description; `src/ui/foundation/autoGrow.ts`, `AutosaveField` `wrap`). Checked in
   headless Chrome.
 - Not committed: group drag fix (`groupDrag.ts`: one `setDraggingMany` + one batched `streamMany` write per move instead of one
   per piece; carried pieces snap, not glide; held at the drop until `endMoveMany` lands). Checked in headless Chrome.
@@ -960,7 +960,7 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - The foundation audit (docs/foundation-audit-2026-10-31.md) found the duplication D-326 plans to remove.
 
 ## Done (2026-10-31): motion foundations (D-326)
-- src/ui/motionTokens.ts and motion.ts, cardTone.ts, `--dur-glide`/`--dur-exit`/`--type-*`; glide, the 420s, Timeline's
+- src/ui/foundation/motionTokens.ts and motion.ts, cardTone.ts, `--dur-glide`/`--dur-exit`/`--type-*`; glide, the 420s, Timeline's
   tweens, the morph, FocusedPlane, DecodeText, exits, console cells, CELLS_SHUT, the root in reduced motion, the
   card colour maps moved onto them (decisions-log D-326 *Built*).
 - Verified: tsc, vitest (837; the one failure is evalGraders › judge, from 71472c8, not this), check:gallery,
@@ -977,7 +977,7 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   framing, console and canvas scenes match but for noise seen old against old too.
 
 ## Done (2026-10-31): the gallery's tree and the kit's Button (D-326)
-- 99d6d50: `[tree]` (src/gallery/uses.ts, UsesTree.tsx), USES / USED IN in the bar. This commit: src/ui/Button.tsx and
+- 99d6d50: `[tree]` (src/gallery/uses.ts, UsesTree.tsx), USES / USED IN in the bar. This commit: src/ui/primitives/Button.tsx and
   Button.module.css, AsciiButton / PanelAction / DockAction on it, its gallery example.
 - Verified: tsc, vitest 859, check:tokens 0, check:gallery 75, check:lessons; the tree opened in headless Chrome
   (Spinner → Agent, Curtain, Loading → People settings → Workspace screen); AsciiButton, SidePanel, Settings,
@@ -1183,4 +1183,11 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   check:kit 131 → 13 (src/agent/ui only).
 - Verified: tsc, build, vitest 964/964, check:kit/tokens/gallery (89)/lessons, lint 0 errors. No screenshots (the
   user's call); not tried in a browser: the thread prompt's mention keys, a document's rename (now controlled).
+
+## Done (2026-11-01): D-334 and the folders (D-326 step 4)
+- D-334: Button's and Label's rules in `:where()` (Q-032). Folders: src/ui by layer, src/views/workspace by area, 255
+  files moved by a script that rewrote every relative import, `composes`, `vi.mock`, and text path (docs, memory,
+  scripts, gallery `file:`), with the agent session paused.
+- Verified: tsc (app + evals), build, vitest 965/965, check:kit/tokens/gallery/lessons/memory; gallery, demo and app
+  pages load in headless Chrome with no console errors.
 

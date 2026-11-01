@@ -4,17 +4,17 @@
 // editors (one undo step, as the person); and a notes change in the preview as a line diff (+ added, − taken out).
 // DOM text only (never under the ASCII effect); tokens only; the list's build-up is MenuPanel's.
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
-import { MenuPanel, type MenuEntry } from '../../ui/Menu'
-import { Markdown } from '../../ui/Markdown'
-import { ago } from '../../ui/ago'
-import { useAutoGrow } from '../../ui/autoGrow'
-import { useWs } from '../../views/workspace/context'
+import { MenuPanel, type MenuEntry } from '../../ui/patterns/Menu'
+import { Markdown } from '../../ui/primitives/Markdown'
+import { ago } from '../../ui/foundation/ago'
+import { useAutoGrow } from '../../ui/foundation/autoGrow'
+import { useWs } from '../../views/workspace/canvas/context'
 import { useAuth } from '../../data/auth'
 import { diffShown, NOTES_MAX, NOTES_TITLE, type DiffLine } from '../../model/notes'
 import { agentActions, isViewer, liveWs, useAgent } from './agentStore'
 import styles from './AgentMemory.module.css'
-import { Button } from '../../ui/Button'
-import { Rule as KitRule } from '../../ui/Rule'
+import { Button } from '../../ui/primitives/Button'
+import { Rule as KitRule } from '../../ui/primitives/Rule'
 
 // `01 ── CHATS` as the column's other views start.
 // A section's head: the kit's Rule (D-326), its words faint after the line.

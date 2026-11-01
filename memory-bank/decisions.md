@@ -42,8 +42,8 @@ feature comes back as a piece, and check them with the user then.
   component, `npm run check:gallery`.
 - Foundation (D-326, docs/foundation-audit-2026-10-31.md): the UI built from the bottom: tokens and motion, the kit in
   src/ui, patterns, then features; the gallery's map by what a thing is (`place` category/group, `also`), never by
-  folder. Motion's numbers and the tween in src/ui/motionTokens.ts and motion.ts (held to tokens.css by a test), card
-  colours in `--type-*` and src/ui/cardTone.ts; one Spinner, the small entrances in src/ui/Enter.module.css, one
+  folder. Motion's numbers and the tween in src/ui/foundation/motionTokens.ts and motion.ts (held to tokens.css by a test), card
+  colours in `--type-*` and src/ui/foundation/cardTone.ts; one Spinner, the small entrances in src/ui/foundation/Enter.module.css, one
   cell-path builder. The kit in src/ui: Button (`sm`, `md`, `icon`, `link`), ToolButton (the HUD's icon tools), Steps (a wizard's tabs), Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge. The gallery's `[tree]` shows what each
   component draws and where it's used. Patterns: Options, Window, WizardShell. Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
   from coming back. Everything but the agent's column is on it (13 left, all src/agent/ui); next: the agent's column, Q-032, folders.
@@ -82,7 +82,7 @@ feature comes back as a piece, and check them with the user then.
   model/world.ts (geometry), model/limits.ts (data limits, tested against firestore.rules), ui/feel.ts (DRAG_PX 5,
   zoom), motionTokens.ts (D-326); `Frame.module.css` is the one framed
   surface (D-024); shared `Page.module.css`, `fieldLabel`, `small` buttons (D-093). Actions lowercase, labels uppercase; no
-  native `<select>` (`src/ui/Select.tsx`) (D-093). `▸`/`▾` only open or fold something, never lead a row of actions (D-189).
+  native `<select>` (`src/ui/primitives/Select.tsx`) (D-093). `▸`/`▾` only open or fold something, never lead a row of actions (D-189).
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063,
   D-069). Light theme via tokens under `[data-theme='light']` and `usePalette()` (three.js too;
   `Palette` only what WebGL reads, D-321), bg `#f5f5f5`, no-flash script (D-069).
@@ -100,7 +100,7 @@ feature comes back as a piece, and check them with the user then.
   - Console (D-264, D-275): where it is, shown only while pointed at (cells in 170 / out 90 ms), in edit mode, with its
     setup open or the keyboard in it; fresh comments keep a small tab; grows as the canvas zooms out (`--cs`, ≤ 1.4 ×);
     on touch a first tap shows it, a second focuses.
-  - `Marks` (D-265, D-270, D-272; `src/ui/Marks.tsx`) on everything selectable: three tiers in screen px (a step down
+  - `Marks` (D-265, D-270, D-272; `src/ui/primitives/Marks.tsx`) on everything selectable: three tiers in screen px (a step down
     when small), distance = state, tone = what it is, cyan = what you can do, press 70 ms, release a spring; a drag goes
     0.8 round the point held with `<Landing>` L's where it lands (a kanban opens a gap); `<BoxSelect>`; others'
     selections as L's + a name tag in every view.
@@ -109,7 +109,7 @@ feature comes back as a piece, and check them with the user then.
     edges lit and the size shown; pieces and sections move at 0.8 with landing L's.
   - Names and lines (D-266, D-276, D-277): two voices (system mono caps, user Geist); numbers magenta (a piece name's
     leading number, kanban columns, panel sections); containers edged, the name cut in (16 lead, 8 clear), held things
-    banded; text's shade line by line (`src/ui/Ink.tsx`); lines: straight holds, fading opens, dashed separates rows, a
+    banded; text's shade line by line (`src/ui/primitives/Ink.tsx`); lines: straight holds, fading opens, dashed separates rows, a
     magenta lead starts something numbered.
   - Framed = a window, unframed = ink (D-267, D-276, D-289): on a black page feathered at its edge, rows on hugging
     shades, the name a small line (`04 ── RIVALS · TABLE`), the console hanging under; framing turns cell by cell in
@@ -117,7 +117,7 @@ feature comes back as a piece, and check them with the user then.
 
 ## Motion and backdrop
 - One entrance everywhere: cell-by-cell build-up in random order, all at once from `revealed`; components 320 ms,
-  headline and page 400, text decode 260 (D-034, D-035); `<Appear>`, `src/ui/cellReveal.ts`.
+  headline and page 400, text decode 260 (D-034, D-035); `<Appear>`, `src/ui/foundation/cellReveal.ts`.
 - Loading = the flowing backdrop, then a cell-by-cell rebuild; nothing in the backdrop depends on per-canvas state (D-025).
 - Backdrop: flows by itself (no pointer) in generations every ~9 s (D-026, D-028); 30 fps on demand, one texel per cell
   (D-063); a cell is 9 device px, stars by a sine-free hash, light ink near-black (D-172); dimmed to 8 % in workspaces
@@ -137,7 +137,7 @@ feature comes back as a piece, and check them with the user then.
 - Grid marks (D-332): a plane's grid is faint dots every 25 px (`--grid-mark-shape`), not `+`.
 - Edit mode (D-180, D-182, D-183): a press on a piece is its own; only in edit mode does it move, resize (snapped to the
   canvas's 25 px grid, alt free, ≥ 325 × 200), take a name or get deleted; edit stays on until pressed off. Deleting
-  asks in the hazard confirm (`src/ui/HazardConfirm.tsx`: dark screen, `╱╱╱` tape round the box once, ~1.5 s; cancel
+  asks in the hazard confirm (`src/ui/patterns/HazardConfirm.tsx`: dark screen, `╱╱╱` tape round the box once, ~1.5 s; cancel
   focused; ⌘Z brings it back; reduced motion: the tape just there).
 - Planes (D-180, D-181, D-189): never "board" again (`kind: 'plane'`); terminal look, the name in the top edge, the console
   a tab on the bottom edge in the bottom-right corner (`[focus] [edit]`; editing: `EDIT 960 × 600 [delete] [done]`), no

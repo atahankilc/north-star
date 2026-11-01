@@ -2,7 +2,7 @@
 // deck's board. The hand presses `MINE` in its corner: the board gives way to the tasks given to you, across decks, each
 // with its deck and its day; then `ALL · DAYS`: every deck's tasks on days. All real: a tab writes nothing.
 import { useCanvasView } from '../../state/canvasView'
-import { useTasksSide } from '../../views/workspace/sideState'
+import { useTasksSide } from '../../views/workspace/deck/sideState'
 import { camera, cursor, onStage, run, wait, type Scene } from '../director'
 import { base, byText } from '../fixtures/kit'
 import { P } from '../fixtures/pazar'

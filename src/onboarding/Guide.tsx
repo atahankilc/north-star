@@ -10,16 +10,16 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { create } from 'zustand'
-import { Appear } from '../ui/Appear'
+import { Appear } from '../ui/primitives/Appear'
 import { guideModel, guideRows, keyLesson, showDot, parentOf, step, type AreaInfo, type GuideModel, type Note, type Row, type StartRow } from './guideModel'
 import type { KeyRow } from './keys'
 import type { Role } from './lessons'
 import { useProgress } from './progress'
 import styles from './Guide.module.css'
-import { PromptField } from '../ui/PromptField'
-import { Tabs } from '../ui/Tabs'
-import { Label } from '../ui/Label'
-import { Empty } from '../ui/Empty'
+import { PromptField } from '../ui/primitives/PromptField'
+import { Tabs } from '../ui/primitives/Tabs'
+import { Label } from '../ui/primitives/Label'
+import { Empty } from '../ui/primitives/Empty'
 
 type Props = {
   onClose: () => void

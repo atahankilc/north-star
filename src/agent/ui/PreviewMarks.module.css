@@ -267,7 +267,7 @@
 }
 
 .wasHead {
-  composes: label from '../../ui/Label.module.css';
+  composes: label from '../../ui/primitives/Label.module.css';
 }
 
 .why {

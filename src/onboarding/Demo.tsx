@@ -11,10 +11,10 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useMotion } from '../state/motion'
 import { useTheme } from '../state/theme'
 import { useCanvasView } from '../state/canvasView'
-import { Button } from '../ui/Button'
+import { Button } from '../ui/primitives/Button'
 import styles from './Demo.module.css'
 import { DEMO_NS, STAGE, canMove, giveBack, lend, setFrameClass, setSrcBase, type Pool } from './demoPool'
-import { DRAG_PX } from '../ui/feel'
+import { DRAG_PX } from '../ui/foundation/feel'
 
 export { DEMO_NS, STAGE, preloadDemo, disposeDemoPool } from './demoPool'
 const LOOPS = 3

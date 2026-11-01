@@ -1,0 +1,102 @@
+/* The small inline token (src/ui/primitives/Chip.tsx, D-326). `--chip-tone` (set from `tone`) colours it; without it, the ink. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-half);
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--space-4);
+  white-space: nowrap;
+}
+
+.text,
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.label {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* tag: framed on the chip shade (a card's or task's #tags). */
+.chip[data-variant='tag'] {
+  padding: 0 var(--space-1);
+  border: var(--line-w) solid var(--line);
+  background: var(--chip);
+  color: var(--fg);
+}
+
+.chip[data-variant='tag'][data-toned] {
+  color: var(--chip-tone);
+}
+
+.chip[data-variant='tag']:has(.label:hover, .label:focus-visible) {
+  border-color: var(--line-hover);
+}
+
+/* pill: the value in its colour, no frame (P1, a status). It sits in a line of text, so it takes that line's height
+   rather than making the line taller. */
+.chip[data-variant='pill'] {
+  color: var(--fg-dim);
+  letter-spacing: normal;
+  line-height: inherit;
+}
+
+.chip[data-variant='pill'][data-toned] {
+  color: var(--chip-tone);
+}
+
+/* kind: caps, framed in its colour (a link's kind). */
+.chip[data-variant='kind'] {
+  padding: 0 var(--space-1);
+  border: var(--line-w) solid var(--chip-tone, var(--line-hover));
+  background: var(--bg);
+  color: var(--chip-tone, var(--fg-dim));
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+/* world: sized in the world's tokens, so it zooms with what it sits on (a card face's #tags; a link's kind a step
+   bigger). */
+.chip[data-scale='world'] {
+  font-size: var(--w-text-3xs);
+  line-height: var(--lh-body);
+}
+
+.chip[data-scale='world'][data-variant='kind'] {
+  font-size: var(--w-text-2xs);
+}
+
+/* A person's own words (D-266): as typed, never caps, even as a kind (a link's own label). */
+.chip[data-voice='user'] {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* The `×`: there on hover or focus inside the chip, magenta under the pointer. */
+.remove {
+  display: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg-faint);
+  font: inherit;
+  cursor: pointer;
+}
+
+.chip:hover .remove,
+.chip:focus-within .remove {
+  display: inline;
+}
+
+.remove:hover,
+.remove:focus-visible {
+  color: var(--accent-magenta);
+}

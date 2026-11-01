@@ -244,7 +244,7 @@ if (LESSONS.filter((l) => l.format === 'guide').length !== 1) bad('there must be
   if (cardsSrc && !cardTypes.length) bad(`can't read CARD_TYPES in ${cardsFile}`)
   for (const k of NOT_IN_PLUS) if (kinds.length && !kinds.includes(k)) bad(`NOT_IN_PLUS has "${k}", which isn't a piece kind`)
 
-  const layoutFile = 'src/views/workspace/SideNav.tsx'
+  const layoutFile = 'src/views/workspace/canvas/SideNav.tsx'
   const layout = read(layoutFile)
   const start = layout.indexOf('function AddToCanvas')
   const lines = start === -1 ? [] : layout.slice(start, layout.indexOf('\n}\n', start)).split('\n')

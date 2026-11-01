@@ -356,7 +356,7 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 | Read markers | `threads.ts:markSeen`, `markTasksSeen` | Yours. |
 | Canvas on screen | `canvases.ts:setCanvasHere`, `setShownHere` | R1 module state; removed by R1. |
 | 1.0 reports move | `documents.ts:moveReports` | Automatic, once. |
-| Display (theme, motion, background) | localStorage, `src/ui/Settings.tsx` | Yours, per browser. |
+| Display (theme, motion, background) | localStorage, `src/ui/patterns/Settings.tsx` | Yours, per browser. |
 
 **View state → UI tools (§4.4: never write data; S9: `src/agent/ui.ts`, async, one call at a time (queued), counted by `agentDriving()` from asked to 500 ms after it settles):**
 

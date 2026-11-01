@@ -4,8 +4,8 @@
 // itself). Built from the app's own components and tokens.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { create } from 'zustand'
-import { MenuPanel, type MenuEntry } from '../ui/Menu'
-import { Choice } from '../ui/Choice'
+import { MenuPanel, type MenuEntry } from '../ui/patterns/Menu'
+import { Choice } from '../ui/primitives/Choice'
 import { useHistory } from '../data/history'
 import { useTheme } from '../state/theme'
 import { useMotion } from '../state/motion'

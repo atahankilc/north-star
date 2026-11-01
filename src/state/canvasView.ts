@@ -2,7 +2,7 @@
 // for the tab's life, so leaving the workspace and coming back finds the canvas where it was. `center` is the canvas point in the middle of the screen,
 // where the side nav's `+` puts new things.
 import { create } from 'zustand'
-import { DUR, glideValues } from '../ui/motion'
+import { DUR, glideValues } from '../ui/foundation/motion'
 
 export type Cam = { x: number; y: number; zoom: number }
 

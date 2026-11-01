@@ -4,15 +4,15 @@
 import { createElement, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { flushSync } from 'react-dom'
-import { Markdown } from '../ui/Markdown'
+import { Markdown } from '../ui/primitives/Markdown'
 import { DOC_TEXTS } from '../demo/fixtures/o12'
-import { CanvasView } from '../views/workspace/CanvasView'
+import { CanvasView } from '../views/workspace/canvas/CanvasView'
 import { MAIN, setCanvasHere } from '../data/canvases'
 import { useCanvasView } from '../state/canvasView'
 import { pazar, workspace, WID, P } from '../demo/fixtures/pazar'
 import type { WorkspaceCtx } from '../state/wsStore'
 import type { GalleryCtx, StateSpec } from './example'
-import layout from '../views/workspace/WorkspaceLayout.module.css'
+import layout from '../views/workspace/canvas/WorkspaceLayout.module.css'
 
 export { P }
 export const PAZAR: Omit<WorkspaceCtx, 'canvas'> = { ...pazar, wid: WID, workspace }

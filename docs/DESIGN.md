@@ -111,7 +111,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   Going between: the window breaks (or builds) cell by cell while the contents grow from fitted to their own size (or
   shrink back), 320 ms, eased both ends; nothing else moves.
 - *Ink (D-277).* Text on the canvas (headings and their small lines, paragraphs, the project title, section names) sits
-  on a shade line by line, as long as each line (`src/ui/Ink.tsx`), never a box. *Lines:* straight, edge grey, holds
+  on a shade line by line, as long as each line (`src/ui/primitives/Ink.tsx`), never a box. *Lines:* straight, edge grey, holds
   (pieces, sections); fading to the right opens a region (H1, the project title); dashed separates a list's rows
   (tables, lists); a short magenta lead starts something numbered (the title's and an H1's rule, panel sections).
 
@@ -129,12 +129,12 @@ Values will be tuned against contrast checks (WCAG AA for text).
 ## 6. Components (ASCII-styled DOM)
 
 - Boxes drawn with box characters (`┌─┐│└┘`) or 1px lines that echo them
-- Buttons, two sizes, both lowercase (`src/ui/AsciiButton.module.css`, D-093): `<AsciiButton>` `[ create ]` (spaced coloured
+- Buttons, two sizes, both lowercase (`src/ui/primitives/AsciiButton.module.css`, D-093): `<AsciiButton>` `[ create ]` (spaced coloured
   brackets, accent fill on hover) for the main action of a form or panel; `small` `[share]` (dim, faint brackets;
   `data-tone="primary"` cyan, `"danger"` magenta on hover) for row and inline actions. Compose `small`; never redraw brackets.
 - Inputs: underscore or caret cursor `▌`, mono text
 - Tags: `#tag` in an accent colour
-- **Marks** (D-265, `src/ui/Marks.tsx`, tokens `--mark-*`): hover and selection on everything selectable (cards, text,
+- **Marks** (D-265, `src/ui/primitives/Marks.tsx`, tokens `--mark-*`): hover and selection on everything selectable (cards, text,
   tasks, sheets, cells, rows, heads, chips, pieces, sections) are four L's in screen px, in three tiers (S 6 px for
   cells, rows, heads, chips; M 12 for cards, text, tasks; L 18 for pieces and sections; a tier down when small on
   screen). Grey a little out on hover (160 ms); on the corners, longer, in the item's tone while pressed (70 ms); just
@@ -229,22 +229,22 @@ Values will be tuned against contrast checks (WCAG AA for text).
   the current page with a cyan left bar; on the right a title, a one-line description and framed sections (label in the
   top edge, rows split by hairlines, a note at the foot). Below 640 px the menu becomes tabs. 1.0's `ASSISTANT` (keys,
   usage) comes back with the assistant. Signed out there are no controls (D-069).
-- Dropdowns (`src/ui/Menu.tsx`) are a **prompt** (D-222): a framed trigger `SHOW all ▾` (or a side nav icon), a list on
+- Dropdowns (`src/ui/patterns/Menu.tsx`) are a **prompt** (D-222): a framed trigger `SHOW all ▾` (or a side nav icon), a list on
   page black with a `--line-hover` edge, built cell by cell. On top a `>` line with focus (a placeholder saying what it
   does: `add…`, `find a place…`): typing narrows the list, the typed part lit magenta, Enter picks the first. `# text`
   section lines. A row: a magenta `›` where Enter goes, the item's letter `[p]` (typed alone it goes first: `+` `p` Enter
   makes a plane), its glyph, the label, a faint hint; dangerous ones red; `[x]`/`[ ]` checks. A foot counts what's shown
   (`8 things · type to find · a letter goes first`). The right-click menu (`ContextMenu.tsx`) is the same panel at the
   pointer, its `>` line saying what it's on (`do with this customer…`).
-- One-of pickers (`src/ui/Select.tsx`, D-093), never the browser's `<select>`: an inline `value ▾` opens a compact list in
+- One-of pickers (`src/ui/primitives/Select.tsx`, D-093), never the browser's `<select>`: an inline `value ▾` opens a compact list in
   the prompt's look, a cyan `•` on the current value, the magenta `›` + wash under the pointer or keys; past 7 options the
   `>` line, otherwise a first letter jumps; no build-up; opens upward only when it must, stays inside its panel, follows
-  its trigger on scroll; Escape closes only the list. Placement in `src/ui/floating.ts`.
+  its trigger on scroll; Escape closes only the list. Placement in `src/ui/foundation/floating.ts`.
 - Adding a link from a card's panel: each links section's add (at its rule's right end, D-221) opens the same kind of
   list, narrowed to the cards that fit (a problem for `solves`, a customer for `for`).
 
 ### Surfaces (D-024)
-Every framed element (panels, cards, forms, chips, empty states) composes `src/ui/Frame.module.css`:
+Every framed element (panels, cards, forms, chips, empty states) composes `src/ui/foundation/Frame.module.css`:
 - `frame`: translucent near-black (`--surface`) + 10px backdrop blur + 1px `--line` border
 - `interactive`: frame + hover border lift + accent bar wiping in along the top edge (`--accent` sets the colour)
 - `dashed`: empty or placeholder states
@@ -253,7 +253,7 @@ Every framed element (panels, cards, forms, chips, empty states) composes `src/u
   Settings section's top edge (the box draws its own corner)
 
 ### Pages (D-093, 1.0's views; `Page.module.css` is still used by Settings)
-Every 1.0 workspace view except the board composed `src/ui/Page.module.css`:
+Every 1.0 workspace view except the board composed `src/ui/foundation/Page.module.css`:
 - `page`: content from `--hud-x`, starting below the filter row, so switching views never moves it. Frames fill the width
   (Flow, Table, Reports); the Matrix keeps its fit-content width (D-060). Every frame is as tall as its content and stops at
   the page's bottom edge, scrolling inside past that; none stretches to the full height when it has less to show.
@@ -288,7 +288,7 @@ works too. No per-component scroll bar styles; a new scrolling area gets the loo
   to the top right with room between them, ragged edges of small squares, 0.8 s; from 8.4 s the tones go out the same direction. Signed-in
   pages play the intro on paper. Light theme prints its ASCII ink in sRGB space, so it reads as strongly as the dark theme's glyphs.
 - **Component enter/exit** (D-034, D-035): everything builds up cell by cell on the ASCII grid, in random order, no colour
-  (`<Appear>`, `src/ui/cellReveal.ts`), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
+  (`<Appear>`, `src/ui/foundation/cellReveal.ts`), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
 - Everything starts at the same moment (`revealed`), with no staggers. Durations: components 320 ms, headline and page reveal 400 ms, decode 260 ms.
 - *Durations and eases are tokens (D-325):* `--dur-press` 70, `--dur-snap` 120, `--dur-quick` 160, `--dur-fast` 200,
   `--dur-decode` 260, `--dur-spring` 300, `--dur-cells` 320, `--dur-med` 400, `--dur-slow` 600 ms; `--ease-out`,

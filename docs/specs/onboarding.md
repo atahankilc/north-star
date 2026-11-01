@@ -75,7 +75,7 @@ lessons is large (~60): a person meets them over days, one at a time, as they di
    `threads`, `following`, `typing`) and shows on it: that one busy source (and typing inside it) doesn't hold it back.
 3. **Short.** ≤ 4 pages a lesson (the welcome 4; the kind guide replayed from `?` pages through its rows, one per kind), a title ≤ 6 words, a body ≤ 25 words, one demo or none. Keys are
    written as the app writes them (`⌘F`, `esc`, `0`). Lowercase actions, uppercase labels, the app's two voices.
-4. **Next to what it explains, never over it.** An anchored lesson sits beside its anchor (`src/ui/floating.ts`), and
+4. **Next to what it explains, never over it.** An anchored lesson sits beside its anchor (`src/ui/foundation/floating.ts`), and
    never covers the anchor, the piece being taught, or the right panel. When there's no room, it goes to the middle
    bottom as a card.
 5. **Always skippable.** `×`, `esc`, `[got it]`; on every lesson a quiet `don't show tips` (asks nothing, undo in `?`).

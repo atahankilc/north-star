@@ -12,14 +12,14 @@
 // it's drawn at `menu` over the page instead.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Appear } from '../ui/Appear'
-import { DecodeText } from '../ui/DecodeText'
+import { Appear } from '../ui/primitives/Appear'
+import { DecodeText } from '../ui/primitives/DecodeText'
 import { Demo } from './Demo'
 import { lessonById, type GuideLesson, type GuideRow } from './lessons'
 import { useProgress } from './progress'
 import styles from './KindGuide.module.css'
-import { CARD_TONE } from '../ui/cardTone'
-import { Button } from '../ui/Button'
+import { CARD_TONE } from '../ui/foundation/cardTone'
+import { Button } from '../ui/primitives/Button'
 
 type Props = { menu: DOMRect; row: string | null; where: 'canvas' | 'plane'; onHide: () => void }
 

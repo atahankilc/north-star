@@ -25,7 +25,7 @@
 // build, no transitions.
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { isReducedMotion } from '../../state/motion'
-import { runCells } from '../../ui/Appear'
+import { runCells } from '../../ui/primitives/Appear'
 import { previewState, setBeforeOpen, subscribePreview, type MarkChange, type PreviewState, type Target } from '../preview'
 import styles from './PreviewMarks.module.css'
 import { tokenPx } from '../../styles/cssToken'

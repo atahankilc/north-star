@@ -2,7 +2,7 @@
 // them. The hand presses on an empty stretch of the strip and drags it sideways: the days run by under it, on into
 // November; then it presses `[month]` in the dock: the strip eases out to months, the weeks before and after in view.
 // All real: where you are on the strip is yours, never written.
-import { resetStrip } from '../../views/workspace/Timeline'
+import { resetStrip } from '../../views/workspace/deck/Timeline'
 import { aim, cursor, onStage, run, wait, type Ctx, type Scene } from '../director'
 import { base } from '../fixtures/kit'
 import { view } from '../fixtures/o10'

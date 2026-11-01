@@ -2,7 +2,7 @@
 // beside it (it has a deck, so the side nav shows its tasks button, columns over a bar). The hand clicks it: the real
 // side view opens on the right, the launch deck's board in it under its tabs, beside the canvas (nothing written).
 import { useCanvasView } from '../../state/canvasView'
-import { useTasksSide } from '../../views/workspace/sideState'
+import { useTasksSide } from '../../views/workspace/deck/sideState'
 import { camera, cursor, onStage, run, wait, type Scene } from '../director'
 import { sideOnly } from '../fixtures/o13'
 import { base } from '../fixtures/kit'

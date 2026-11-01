@@ -78,7 +78,7 @@ for every move (before/after shots per state, as D-325 does).
    (toast, loading, empty, confirm) · Overlays (menus, dialogs, panels, wizards) · HUD and navigation · Canvas pieces
    · Panels · Onboarding. A component shows under its category and every tag (DecodeText under Motion › text and
    Text). The list no longer follows folders.
-2. **Foundations.** `src/ui/motion.ts`: `DUR` (with `glide` and `exit`), `easeOut`, `easeInOut`, `lerp` in step with
+2. **Foundations.** `src/ui/foundation/motion.ts`: `DUR` (with `glide` and `exit`), `easeOut`, `easeInOut`, `lerp` in step with
    tokens.css; one `tween()` (reduced motion inside); `runCells` with an order (random, sweep, from a rect) and an
    exported `HIDDEN`. One card-type token map (TS and CSS). The `:root` reduced-motion gap closed.
 3. **The kit (primitives).** Button (`[verb]`, sizes, tone, pressed, key hint, icon-only: AsciiButton + `small` +

@@ -120,7 +120,7 @@
 }
 
 .top {
-  composes: label from '../ui/Label.module.css';
+  composes: label from '../ui/primitives/Label.module.css';
   display: flex;
   align-items: baseline;
   gap: var(--space-2);

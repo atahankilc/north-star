@@ -8,7 +8,7 @@ import { base, byText } from '../fixtures/kit'
 import { view } from '../fixtures/o10'
 import { NO_HUD, fresh, glideToShow, pageStyle, pieceSet } from '../fixtures/o11'
 import { P } from '../fixtures/pazar'
-import { useTableUi } from '../../views/workspace/Table'
+import { useTableUi } from '../../views/workspace/table/Table'
 
 const ID = 'table-setup'
 const SETUP = byText('button', 'setup', 0.5, 0.5)

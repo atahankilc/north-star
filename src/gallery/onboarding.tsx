@@ -3,7 +3,7 @@
 // seen-state (useProgress) is never started here (no `startFor`), only reset and, for a state that needs it, patched.
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { create } from 'zustand'
-import { MenuPanel, type MenuEntry } from '../ui/Menu'
+import { MenuPanel, type MenuEntry } from '../ui/patterns/Menu'
 import { useProgress } from '../onboarding/progress'
 import { useGuideRole } from '../onboarding/Guide'
 import { KindGuide } from '../onboarding/KindGuide'

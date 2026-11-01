@@ -27,7 +27,7 @@
 /* ---- The box */
 
 .box {
-  composes: frame from '../../ui/Frame.module.css';
+  composes: frame from '../../ui/foundation/Frame.module.css';
   position: fixed;
   right: var(--space-3);
   bottom: var(--space-3);
@@ -593,7 +593,7 @@
 }
 
 .whereName {
-  composes: label from '../../ui/Label.module.css';
+  composes: label from '../../ui/primitives/Label.module.css';
   margin-top: var(--space-1);
 }
 
@@ -1156,7 +1156,7 @@
 }
 
 .jobKind {
-  composes: label from '../../ui/Label.module.css';
+  composes: label from '../../ui/primitives/Label.module.css';
   flex: none;
 }
 

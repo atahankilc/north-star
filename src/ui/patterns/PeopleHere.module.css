@@ -1,0 +1,247 @@
+.root {
+  position: relative;
+}
+
+/* In the bottom-left corner, above the threads button (D-193): a column. */
+.people {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A chip like the account chip, in the person's colour: a filled square, then their name. */
+.person {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: var(--name-max-w);
+  height: var(--control-sm);
+  padding: 0 var(--space-2) 0 0;
+  border: var(--line-w) solid transparent;
+  background: none;
+  color: var(--peer);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.person:hover,
+.person:focus-visible {
+  outline: none;
+  border-color: var(--peer);
+}
+
+/* Following them: the chip fills in. */
+.person[aria-pressed='true'] {
+  border-color: var(--peer);
+  background: color-mix(in srgb, var(--peer) var(--card-tint), transparent);
+}
+
+.swatch {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  overflow: hidden;
+  background: var(--peer);
+  color: var(--on-accent);
+  font-size: var(--text-xs);
+}
+
+/* A photo keeps a band of their colour underneath, so the colour still reads. */
+.swatch img {
+  width: 100%;
+  height: 100%;
+  border-bottom: var(--line-w-bold) solid var(--peer);
+  object-fit: cover;
+}
+
+/* Squares only, overlapping, each edged in the page colour so they read apart. */
+.stack {
+  gap: 0;
+}
+
+.stack li + li {
+  margin-top: calc(-1 * var(--space-1));
+}
+
+.stack .person {
+  position: relative;
+  max-width: none;
+  padding: 0;
+  border: 0;
+}
+
+.stack .swatch {
+  outline: var(--line-w-bold) solid var(--bg);
+}
+
+.stack .person:hover,
+.stack .person:focus-visible {
+  z-index: var(--z-1);
+}
+
+.stack .person:hover .swatch,
+.stack .person:focus-visible .swatch,
+.stack .person[aria-pressed='true'] .swatch {
+  outline-color: var(--peer);
+}
+
+.stack .person[aria-pressed='true'] {
+  z-index: var(--z-1);
+  background: none;
+}
+
+/* The name, right of the square while it's hovered. */
+.tip {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + var(--space-2));
+  transform: translateY(-50%);
+  padding: var(--space-half) var(--space-2);
+  background: var(--peer);
+  color: var(--on-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.person:hover .tip,
+.person:focus-visible .tip {
+  opacity: 1;
+}
+
+.where {
+  opacity: var(--o-soft);
+}
+
+/* Away (D-331): the square faint and grey, the name still in their colour on hover; nothing to follow. */
+[data-away] .swatch {
+  opacity: var(--o-dim);
+  filter: grayscale(1);
+}
+
+.person[data-away],
+.row[data-away] {
+  cursor: default;
+}
+
+.row[data-away] .rowName {
+  opacity: var(--o-soft);
+}
+
+.more {
+  display: grid;
+  place-items: center;
+  min-width: var(--control-sm);
+  height: var(--control-sm);
+  margin-top: var(--space-1);
+  padding: 0 var(--space-1);
+  border: var(--line-w) solid var(--fg-faint);
+  background: var(--bg);
+  color: var(--fg-dim);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.more:hover,
+.more:focus-visible,
+.more[aria-expanded='true'] {
+  outline: none;
+  border-color: var(--fg);
+  color: var(--fg-strong);
+}
+
+/* Everyone here: a framed list right of the squares, its foot level with theirs. */
+.list {
+  composes: frame from '../foundation/Frame.module.css';
+  position: absolute;
+  bottom: 0;
+  left: calc(100% + var(--space-2));
+  z-index: var(--z-popover);
+  width: var(--menu-w);
+  max-height: min(50vh, var(--list-h));
+  margin: 0;
+  padding: var(--space-1) 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--peer);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover,
+.row:focus-visible,
+.row[aria-pressed='true'] {
+  outline: none;
+  background: var(--wash-3);
+}
+
+.rowName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row .where {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+}
+
+/* While following: the whole page framed in their colour, with a tag at the top middle that stops it (the bottom middle
+   is the focus dock's, the right is kept free; D-191). */
+.following {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-under);
+  border: var(--line-w-bold) solid var(--peer);
+  pointer-events: none;
+}
+
+.followTag {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  padding: var(--space-half) var(--space-2);
+  border: 0;
+  background: var(--peer);
+  color: var(--on-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  transform: translateX(-50%);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.stop {
+  opacity: var(--o-dim);
+}

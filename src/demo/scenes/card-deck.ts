@@ -4,7 +4,7 @@
 // shown with set()): it's counted in `building` now, its column its status.
 import { emptyKanban } from '../../data/tasks'
 import { KANBAN_TEMPLATES } from '../../model/kanbanCards'
-import { K } from '../../views/workspace/Kanban'
+import { K } from '../../views/workspace/deck/Kanban'
 import { aim, cursor, find, onStage, set, wait, type Scene } from '../director'
 import { base, piece } from '../fixtures/kit'
 import { view } from '../fixtures/o10'

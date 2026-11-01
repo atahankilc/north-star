@@ -12,12 +12,12 @@ function reloadOnce(error: unknown): never {
   throw error
 }
 
-export const loadWorkspace = () => import('../views/workspace/WorkspaceLayout').catch(reloadOnce)
+export const loadWorkspace = () => import('../views/workspace/canvas/WorkspaceLayout').catch(reloadOnce)
 
 // Fetched while nothing else is going on, so opening a workspace doesn't wait for it. A failed fetch here only waits:
 // opening one reloads if need be.
 export function fetchWorkspaceAhead() {
-  const go = () => void import('../views/workspace/WorkspaceLayout').catch(() => {})
+  const go = () => void import('../views/workspace/canvas/WorkspaceLayout').catch(() => {})
   if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 3000 })
   else setTimeout(go, 1500)
 }

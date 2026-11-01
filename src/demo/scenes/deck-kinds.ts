@@ -2,7 +2,7 @@
 // starts on `tasks` (to do · doing · done in the preview); the hand presses `features by status`: the preview turns into
 // the features' statuses with how many cards each gets; then, in `columns · rows`, it picks `impact`: the columns are
 // high · medium · low. All real: the wizard writes nothing until it's made.
-import { useKanbanUi } from '../../views/workspace/Kanban'
+import { useKanbanUi } from '../../views/workspace/deck/Kanban'
 import { cursor, onStage, run, wait, type Scene } from '../director'
 import { base, byText } from '../fixtures/kit'
 import { NO_HUD, firstText, pageStyle, wizardCss } from '../fixtures/o12'

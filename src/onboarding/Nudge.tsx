@@ -3,7 +3,7 @@
 // anchor's right; no anchor: low in the middle.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Appear } from '../ui/Appear'
+import { Appear } from '../ui/primitives/Appear'
 import { findAnchor } from './Lesson'
 import { Btn, stopCanvas, Words } from './Pages'
 import { fill, type Fill } from './words'

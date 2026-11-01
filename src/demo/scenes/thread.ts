@@ -4,7 +4,7 @@
 // card now, its chip under the card's corner (what sending would write, shown with set(); the panel is closed so the
 // chip shows: an open thread's messages load from Firestore, which the demo hasn't got), the view closes in on the
 // card, and the hand rests on the chip.
-import { closeThread } from '../../views/workspace/Threads'
+import { closeThread } from '../../views/workspace/threads/Threads'
 import { aim, camera, cursor, inFocus, key, run, set, wait, type Scene } from '../director'
 import { base, rightClick, type } from '../fixtures/kit'
 import { calm, thread, cornerOnly } from '../fixtures/o13'

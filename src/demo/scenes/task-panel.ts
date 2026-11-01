@@ -2,7 +2,7 @@
 // The hand clicks "Sign up five more cooks": its panel builds on the right (its column, who has it, its days, its card,
 // its checklist); the hand goes over the panel, it scrolls down to the checklist, and the last step is ticked (shown
 // with set(): `3/3` on the task too).
-import { K } from '../../views/workspace/Kanban'
+import { K } from '../../views/workspace/deck/Kanban'
 import { aim, cursor, onStage, set, wait, type Scene } from '../director'
 import { base } from '../fixtures/kit'
 import { scrollPanel, view } from '../fixtures/o10'

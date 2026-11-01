@@ -17,7 +17,7 @@ import { Stage } from './Stage'
 import { watchDemoCss } from './demoCss'
 import { fresh } from './realm'
 import { useCanvasView } from '../state/canvasView'
-import { useKanbanUi } from '../views/workspace/Kanban'
+import { useKanbanUi } from '../views/workspace/deck/Kanban'
 
 // Anything that slips through to a write is refused (the toast that would say so isn't mounted here).
 // `:hover` and `:focus-visible` for the made-up input (demoCss.ts): the build rewrote its CSS already; the dev server

@@ -6,8 +6,8 @@
 // The prompt card (D-316): `┌ LESSON · FOCUS`, the right panel's magenta corner marks, a straight lead with a square tip.
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { Appear } from '../ui/Appear'
-import { DecodeText } from '../ui/DecodeText'
+import { Appear } from '../ui/primitives/Appear'
+import { DecodeText } from '../ui/primitives/DecodeText'
 import { useCanvasView } from '../state/canvasView'
 import { Demo } from './Demo'
 import { Btn, keepFocus, stopCanvas, trapTab, useDialogFocus, Words } from './Pages'
@@ -16,7 +16,7 @@ import { getWs } from '../state/wsStore'
 import { fill, lessonName, plain, type Fill } from './words'
 import { countsAsMenu, type CloseHow, type Shown } from './queue'
 import styles from './Lesson.module.css'
-import { CELLS_SHUT } from '../ui/cellReveal'
+import { CELLS_SHUT } from '../ui/foundation/cellReveal'
 
 // Drawn and visible: on screen, with a size, not hidden by style (visibility, opacity 0, display, a cell-by-cell clip
 // that's shut: a piece's console when not shown), not inside something inert or aria-hidden (the canvas picture's cards

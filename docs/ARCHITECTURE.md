@@ -64,7 +64,7 @@ The app talks to Firebase only through **`src/data/`**, so another swap would st
 - **Zustand** for local UI state (selection, canvas view, display, motion)
 - **React Router** with **BrowserRouter** (plain paths, no `#`, D-070). GitHub Pages has no rewrites, so the build copies
   `index.html` to `404.html`; every deep link boots the app. All paths come from `src/app/paths.ts`
-- **motion** for DOM transitions; most entrances are the cell-by-cell build (`src/ui/cellReveal.ts`, D-034)
+- **motion** for DOM transitions; most entrances are the cell-by-cell build (`src/ui/foundation/cellReveal.ts`, D-034)
 - **GitHub Actions** builds and deploys to Pages
 
 ### Rendering strategy (hybrid)

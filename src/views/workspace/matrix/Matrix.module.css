@@ -1,0 +1,1066 @@
+/* A matrix (D-204, D-212). The layer fills its window (or the screen in focus) and clips it; on the canvas the pointer
+   goes through it to the canvas. Its parts are placed in its own px (Matrix.tsx's M). */
+.layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.layer[data-live='true'] {
+  pointer-events: auto;
+}
+
+/* Opened onto the canvas (D-228): nothing cut at its edge (the bar under a cell hangs past it). */
+.layer[data-on-canvas='true'] {
+  overflow: visible;
+}
+
+/* Unframed (D-267): ink on the canvas, no paper box; each head and cell on a shade that hugs it, as text's does. */
+.layer[data-on-canvas='true'] :is(.rowHead:not([data-sub]), .colHead:not([data-sub]), .cell, .endCell)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-under);
+  background: color-mix(in srgb, var(--bg) var(--mix-near), transparent);
+  box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
+  pointer-events: none;
+}
+
+.world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.table {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.table > *,
+.stick > * {
+  position: absolute;
+}
+
+/* The heads' layers (D-214): the size of the table, held in by a transform while panned past in focus; only their
+   heads take the pointer. The band is the page's paper under them out to the screen's edge, so cells pass under. */
+.stick {
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.layer[data-live='true'] .stick > * {
+  pointer-events: auto;
+}
+
+.band {
+  background: var(--bg);
+}
+
+.corner[data-stuck] {
+  background: var(--bg);
+}
+
+/* `features × competitors`, faint caps in the corner: the kit's Label (D-326). */
+.corner {
+  composes: label from '../../../ui/primitives/Label.module.css';
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-1);
+  padding: 0 var(--space-2) var(--space-2) var(--space-half);
+}
+
+.corner > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cross {
+  flex-shrink: 0;
+  color: var(--fg-faint);
+}
+
+/* The heads (D-212): a card's as a plane draws its cards (raised paper, its type's colour down the left); a typed
+   name's in mono over a dashed rule, no paper. Lit while its row or column is under the pointer or selected. */
+.rowHead,
+.colHead {
+  display: flex;
+  gap: var(--space-2);
+  color: var(--fg);
+}
+
+.rowHead[data-card='true'],
+.colHead[data-card='true'] {
+  background: color-mix(in srgb, var(--type) var(--card-tint), var(--bg-raised));
+  box-shadow: inset var(--w-card-edge) 0 0 var(--type), 0 0 0 var(--line-w) var(--piece-card-edge);
+}
+
+.rowHead[data-pick='true'],
+.colHead[data-pick='true'] {
+  cursor: pointer;
+}
+
+.rowHead {
+  align-items: center;
+  padding: 0 var(--space-3) 0 var(--space-3);
+}
+
+.colHead {
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+}
+
+.rowHead:not([data-card]),
+.colHead:not([data-card]) {
+  border-bottom: var(--line-w) dashed var(--line-hover);
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.rowHead[data-hot='true'] .name,
+.colHead[data-hot='true'] .name {
+  color: var(--fg-strong);
+}
+
+.name {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  line-height: var(--lh-snug);
+  /* As many lines as the head holds (D-216): a column's three, four for a typed name or a long one set smaller; a
+     row's two, three when long. */
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+[data-card] > .name {
+  font-family: var(--font-display);
+}
+
+.rowHead .name {
+  flex: 1;
+  -webkit-line-clamp: 2;
+}
+
+.colHead:not([data-card]) .name,
+.colHead[data-long] .name {
+  -webkit-line-clamp: 4;
+}
+
+.rowHead[data-long] .name {
+  -webkit-line-clamp: 3;
+}
+
+[data-card][data-long] > .name {
+  font-size: var(--text-xs);
+}
+
+.name[data-unnamed='true'] {
+  color: var(--fg-faint);
+}
+
+.nameField {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+}
+
+/* `×` to take a head out: in its top-right corner, shown while hovered. */
+/* A head's `×` (a Button icon, tone danger), shown while the head is pointed at. */
+.remove {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.rowHead .remove,
+.colHead .remove {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+}
+
+.rowHead:hover .remove,
+.colHead:hover .remove,
+.remove:focus-visible,
+.remove[data-shown] {
+  opacity: 1;
+}
+
+.remove[data-icon] {
+  padding: 0 var(--space-half);
+  line-height: var(--lh-none);
+}
+
+/* The totals (D-212): squares, one per cell; a line of the steps' shares; or a number. */
+.totals {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--lh-none);
+}
+
+.colHead .totals {
+  width: 100%;
+}
+
+.squares {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-half);
+}
+
+.squares > i,
+.sampleSquares > i {
+  display: block;
+  width: var(--dot);
+  height: var(--dot);
+}
+
+.squares > i[data-empty],
+.sampleSquares > i[data-empty] {
+  box-shadow: inset 0 0 0 var(--line-w) var(--line-hover);
+}
+
+.track {
+  display: flex;
+  flex: 1;
+  gap: var(--line-w);
+  min-width: var(--control-lg);
+  height: var(--line-w-bold);
+  background: var(--wash-3);
+}
+
+.rowHead .track {
+  flex: none;
+  width: var(--control-xl);
+}
+
+.tally {
+  white-space: nowrap;
+}
+
+/* The totals at the ends: a column after the cells, a row under them; their heads faint caps (the kit's Label). */
+.endHead {
+  composes: label from '../../../ui/primitives/Label.module.css';
+  display: flex;
+  align-items: flex-end;
+  padding: 0 var(--space-2) var(--space-2);
+}
+
+.endHead[data-row] {
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 var(--space-3);
+}
+
+.endCell {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border-left: var(--line-w) solid var(--line);
+}
+
+.endCell[data-row] {
+  justify-content: center;
+  border-top: var(--line-w) solid var(--line);
+  border-left: 0;
+}
+
+/* A cell: what it holds in the middle; its marks in its corners, out of the middle's way. */
+.cell {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  /* A faint paper, so the corners its marks sit in are there to see. */
+  background: var(--wash-1);
+  color: var(--tone, var(--fg));
+  font: inherit;
+  font-size: var(--text-md);
+  outline: none;
+  cursor: default;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.cell[data-hot='true'] {
+  background: var(--wash-2);
+}
+
+.layer[data-live='true'] .cell {
+  cursor: pointer;
+}
+
+.cell:focus-visible {
+  background: var(--wash-3);
+}
+
+/* A scale's step: a square filled to it from the left, in its colour (D-212); empty, a faint outline. */
+.square {
+  display: block;
+  width: var(--control-xs);
+  height: var(--control-xs);
+  box-shadow: inset 0 0 0 var(--line-w) var(--tone);
+  background: linear-gradient(90deg, var(--tone) var(--fill), transparent var(--fill));
+}
+
+.unset {
+  display: block;
+  width: var(--control-xs);
+  height: var(--control-xs);
+  box-shadow: inset 0 0 0 var(--line-w) var(--line);
+}
+
+.cell:hover .unset {
+  box-shadow: inset 0 0 0 var(--line-w) var(--line-hover);
+}
+
+.unsetDot {
+  color: var(--fg-faint);
+}
+
+.glyph {
+  line-height: var(--lh-none);
+}
+
+/* Doesn't apply: a short rule where the value would be. */
+.out {
+  display: block;
+  width: var(--control-xs);
+  height: var(--line-w);
+  background: var(--fg-faint);
+}
+
+.number {
+  color: var(--fg-strong);
+  font-size: var(--text-sm);
+}
+
+.unit {
+  margin-left: var(--space-half);
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+}
+
+.text {
+  max-width: calc(100% - 2 * var(--space-3));
+  overflow: hidden;
+  color: var(--fg);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cellField {
+  width: calc(100% - 2 * var(--space-3));
+  padding: 0;
+  border: 0;
+  border-bottom: var(--line-w) solid var(--accent-cyan);
+  outline: none;
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+/* A note: the cell's top-right corner folded. Not sure: `~` or `?` in its top-left. */
+.noted {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-top: var(--arrow) solid var(--fg-dim);
+  border-left: var(--arrow) solid transparent;
+}
+
+.sure {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  line-height: var(--lh-none);
+}
+
+/* The dashed card closing an axis (D-212): `+ feature`; open, a field to type a name in, cards that match under it. */
+.add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-3);
+  border: var(--line-w) dashed var(--line-hover);
+  background: none;
+  color: var(--fg-faint);
+  font: inherit;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+
+.add[data-which='rows'] {
+  justify-content: flex-start;
+}
+
+.add:hover {
+  border-color: var(--fg-faint);
+  color: var(--accent-magenta);
+}
+
+.add[data-open] {
+  z-index: var(--z-2);
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--space-1);
+  border: 0;
+  background: var(--bg);
+  cursor: text;
+}
+
+/* A column's is wider than its card while typing, so a name fits. */
+.add[data-open][data-which='cols'] {
+  width: auto !important;
+  min-width: var(--size-sm);
+}
+
+/* Typed as it will read: a typed name's mono, no frame; a caret, and the line the name will stand on. */
+.addField {
+  width: 100%;
+  min-width: 0;
+  padding: 0 0 var(--space-1);
+  border: 0;
+  border-bottom: var(--line-w) dashed var(--line-hover);
+  outline: none;
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+  font-size: var(--text-sm);
+  caret-color: var(--accent-magenta);
+}
+
+.addField:focus-visible {
+  outline: none;
+}
+
+.addField::placeholder {
+  color: var(--placeholder);
+}
+
+.addHint {
+  color: var(--fg-faint);
+  font-size: var(--w-text-sm);
+  white-space: nowrap;
+}
+
+.picks {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: calc(-1 * var(--line-w));
+  display: flex;
+  flex-direction: column;
+  min-width: var(--size-sm);
+  padding: var(--space-1) 0;
+  border: var(--line-w) solid var(--line-hover);
+  background: var(--bg);
+}
+
+.pick {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  background: none;
+  box-shadow: inset var(--line-w-bold) 0 0 var(--type);
+  color: var(--fg);
+  font: inherit;
+  font-size: var(--text-xs);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pick:hover,
+.pick:focus-visible {
+  background: var(--wash-2);
+  outline: none;
+}
+
+.pickName {
+  flex: 1;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pickType {
+  color: var(--fg-faint);
+}
+
+/* Nothing to cross yet: the kit's Empty (dim), centred in the cells' place. */
+.empty {
+  display: grid;
+  place-items: center;
+  font-size: var(--text-sm);
+}
+
+/* The selected cell's bar, at screen size under it, kept on the screen (like text's bar, D-188). */
+.cellBar {
+  position: absolute;
+  z-index: var(--z-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: max-content;
+  max-width: var(--size-lg);
+  padding: var(--space-2) var(--space-3);
+  border: var(--line-w) solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  cursor: default;
+}
+
+.where {
+  display: flex;
+  gap: var(--space-1);
+  overflow: hidden;
+  color: var(--fg);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.barRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+}
+
+/* The cell bar's tools: the kit's Button (D-326); a step's square beside its name, a step picked in its own tone. */
+.barTool {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.cellBar .barTool[aria-pressed='true'] {
+  color: var(--tone, var(--accent-cyan));
+}
+
+.barTool .square {
+  width: var(--dot-lg);
+  height: var(--dot-lg);
+}
+
+.stepGlyph {
+  color: var(--tone, var(--fg));
+}
+
+.note {
+  width: 100%;
+  min-width: var(--size-sm);
+  padding: var(--space-1) 0;
+  border: 0;
+  border-top: var(--line-w) dashed var(--line);
+  outline: none;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  resize: none;
+}
+
+.note::placeholder {
+  color: var(--placeholder);
+}
+
+.noteText {
+  margin: 0;
+  padding-top: var(--space-1);
+  border-top: var(--line-w) dashed var(--line);
+  color: var(--fg);
+  white-space: pre-wrap;
+}
+
+/* The setup (D-212): a tabbed panel over the bottom middle of its space, just above the dock. No scrolling of its own:
+   the card picker's list opens over its edge. */
+.setup {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--space-8) + var(--space-2));
+  z-index: var(--z-3);
+  display: flex;
+  flex-direction: column;
+  width: min(calc(var(--size-xl) + var(--size-xs)), calc(100% - 2 * var(--space-4)));
+  border: var(--line-w) solid var(--line-hover);
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  transform: translateX(-50%);
+  cursor: default;
+}
+
+.setupHead {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  border-bottom: var(--line-w) solid var(--line);
+}
+
+.setupEnd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.setupBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.setupRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.setupLabel {
+  composes: label from '../../../ui/primitives/Label.module.css';
+  flex-shrink: 0;
+  width: calc(4 * var(--w-grid));
+}
+
+.setupValue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  min-width: 0;
+}
+
+.select {
+  color: var(--fg);
+}
+
+.checkHint {
+  display: block;
+  margin: var(--space-half) 0 0;
+  color: var(--fg-faint);
+  font-size: var(--w-text-sm);
+}
+
+/* A rule's line: what it looks at, is / is not, its values (src/ui/patterns/Options.tsx), side by side. */
+.choices {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* What's added by hand: a card with its type's colour down the left, a name in mono. */
+/* What's added by hand (D-216): pills like the type choices, a card's square in its type's colour, a name's an outline;
+   then one dashed pill to add more, its list of matches opening upward. */
+.pills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.pill,
+.addPill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-sm);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border: var(--line-w) solid var(--line);
+  color: var(--fg);
+}
+
+.pillMark {
+  display: block;
+  flex-shrink: 0;
+  width: var(--dot);
+  height: var(--dot);
+  box-shadow: inset 0 0 0 var(--line-w) var(--fg-dim);
+}
+
+[data-card] > .pillMark {
+  background: var(--type);
+  box-shadow: none;
+}
+
+/* A pill's `×` (a Button icon, tone danger). */
+.pillX[data-icon] {
+  padding: 0 var(--space-half);
+  color: var(--fg-faint);
+}
+
+.addPill {
+  padding-right: var(--space-2);
+  border-style: dashed;
+  border-color: var(--line-hover);
+  color: var(--fg-dim);
+}
+
+.addPill[data-open] {
+  border-color: var(--fg-faint);
+}
+
+.pillPlus {
+  color: var(--fg-faint);
+}
+
+.addPillField {
+  width: 22ch;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  caret-color: var(--accent-magenta);
+}
+
+.addPillField:focus-visible {
+  outline: none;
+}
+
+.addPillField::placeholder {
+  color: var(--placeholder);
+}
+
+.addList {
+  position: absolute;
+  bottom: calc(100% + var(--space-1));
+  left: calc(-1 * var(--line-w));
+  z-index: calc(var(--z-3) + 1);
+  display: flex;
+  flex-direction: column;
+  min-width: var(--size-sm);
+  padding: var(--space-1) 0;
+  border: var(--line-w) solid var(--line-hover);
+  background: var(--bg);
+}
+
+.addOpt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.addOpt[aria-selected='true'] {
+  background: var(--wash-2);
+  color: var(--fg-strong);
+}
+
+.addOptName {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.addOptType {
+  color: var(--fg-faint);
+}
+
+/* A text field shaped like a pill. */
+.pillField {
+  min-height: var(--control-sm);
+  width: 22ch;
+  padding: 0 var(--space-2);
+  border: var(--line-w) solid var(--line);
+  outline: none;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+}
+
+.pillField:focus {
+  border-color: var(--fg-faint);
+}
+
+.pillField::placeholder {
+  color: var(--placeholder);
+}
+
+.field,
+.glyphField {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: var(--line-w) solid var(--line);
+  outline: none;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+}
+
+.field::placeholder {
+  color: var(--placeholder);
+}
+
+.field:focus,
+.glyphField:focus {
+  border-bottom-color: var(--accent-cyan);
+}
+
+.field {
+  width: 22ch;
+}
+
+.glyphField {
+  width: 4ch;
+  text-align: center;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0 0 0 calc(calc(4 * var(--w-grid)) + var(--space-3));
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.stepKey {
+  width: 2ch;
+  color: var(--fg-faint);
+}
+
+.stepLook {
+  display: grid;
+  place-items: center;
+  width: var(--control-xs);
+  color: var(--tone);
+}
+
+.tone {
+  padding: 0 var(--space-half);
+  border: 0;
+  background: none;
+  color: var(--tone);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The totals' looks, small, in their choices. */
+.sampleNum {
+  color: var(--fg);
+}
+
+.sampleSquares {
+  display: inline-flex;
+  gap: var(--space-half);
+}
+
+.sampleBar {
+  display: inline-flex;
+  gap: var(--line-w);
+  width: var(--control-lg);
+  height: var(--line-w-bold);
+  background: var(--wash-3);
+}
+
+/* A wizard's step content (the shell is src/ui/patterns/WizardShell.tsx, D-326): templates to start from, the preview's table. */
+.mini {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: var(--w-text-sm);
+}
+
+.mini th,
+.mini td {
+  overflow: hidden;
+  padding: var(--space-1);
+  border-bottom: var(--line-w) solid var(--line);
+  color: var(--fg-muted);
+  font-weight: var(--weight-regular);
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mini tbody th {
+  width: 40%;
+  color: var(--fg);
+  font-family: var(--font-display);
+  text-align: left;
+}
+
+.mini td .square {
+  width: var(--dot-lg);
+  height: var(--dot-lg);
+  margin: 0 auto;
+}
+
+@media (max-width: 760px) {
+  .kinds {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Open on the canvas (D-228) the matrix's view stays at 1 under the canvas's zoom: the bar under a cell is brought back
+   to the screen's size by the piece's `--z`. */
+.layer[data-on-canvas='true'] .cellBar {
+  transform: scale(calc(1 / var(--z, 1)));
+  transform-origin: 0 0;
+}
+
+/* Far out, the cells as squares on one canvas (CellDots), under the heads. */
+.dots {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.layer[data-live='true'] .dots {
+  cursor: pointer;
+}
+
+/* What a card unfolds into (D-249): a step in under it, on its own faint line in the card's colour, numbered, in mono;
+   no paper. Its head's `[+] 3` / `[−]`, and `◇ N open` (what nobody meets) in magenta. */
+.rowHead[data-sub],
+.colHead[data-sub] {
+  border-bottom: 0;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.rowHead[data-sub] {
+  padding-left: calc(var(--space-3) * 2);
+}
+
+.colHead[data-sub] {
+  padding-top: var(--space-3);
+}
+
+.rowHead[data-sub]::before,
+.colHead[data-sub]::before {
+  content: '';
+  position: absolute;
+  background: var(--type);
+  opacity: var(--o-faint);
+}
+
+.rowHead[data-sub]::before {
+  top: 0;
+  bottom: 0;
+  left: var(--space-3);
+  width: var(--line-w);
+}
+
+.colHead[data-sub]::before {
+  top: var(--space-2);
+  left: 0;
+  right: 0;
+  height: var(--line-w);
+}
+
+.subN {
+  flex-shrink: 0;
+  color: var(--fg-faint);
+}
+
+.openMark {
+  flex-shrink: 0;
+  color: var(--accent-magenta);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.unfold {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* `[−]` / `[+] 3`: a Button, no padding of its own on the axis. */
+.fold[data-tone],
+.fold:not([data-tone]) {
+  padding: 0;
+}
+
+.endCell[data-sub] {
+  opacity: var(--o-soft);
+}
+
+/* A card's cell read from its parts: a small square each, filled to its step in its colour (D-133's blocks). */
+.parts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1);
+  max-width: calc(100% - var(--space-4));
+}
+
+.parts > i {
+  display: block;
+  width: var(--space-2);
+  height: var(--space-2);
+  box-shadow: inset 0 0 0 var(--line-w) var(--tone);
+  background: linear-gradient(90deg, var(--tone) var(--fill), transparent var(--fill));
+}
+
+.parts > i[data-empty] {
+  box-shadow: inset 0 0 0 var(--line-w) var(--line-hover);
+  background: none;
+}
+
+.parts > i[data-out] {
+  height: var(--line-w);
+  margin-block: auto;
+  box-shadow: none;
+  background: var(--fg-faint);
+}
+
+.barNote {
+  color: var(--fg-dim);
+}
