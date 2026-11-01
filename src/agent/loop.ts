@@ -417,9 +417,13 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     }
     // Append-only: the last step's note is kept (the answer after it is bound to it).
     if (final && appendOnly) mine.push({ role: 'system', tag: 'final', content: FINAL_STEP_NOTE })
-    const messages: ModelMessage[] = appendOnly
-      ? [...head, ...past, ask, ...context, ...mine]
-      : [...head, ...past, { role: 'system', content: where }, ...guide, ask, ...mine, ...(final ? [{ role: 'system' as const, content: FINAL_STEP_NOTE }] : [])]
+    // A model's own items (reasoning, thinking blocks) go back only to that model: a pipeline may have switched it.
+    const own = (list: ModelMessage[]) => list.map((m) => (m.role === 'assistant' && m.providerItems && m.model && m.model !== model.name ? { ...m, providerItems: undefined, model: undefined } : m))
+    const messages: ModelMessage[] = own(
+      appendOnly
+        ? [...head, ...past, ask, ...context, ...mine]
+        : [...head, ...past, { role: 'system', content: where }, ...guide, ask, ...mine, ...(final ? [{ role: 'system' as const, content: FINAL_STEP_NOTE }] : [])],
+    )
     let res: ModelResponse
     try {
       res = await callModel(model, { messages, tools: defs, signal, ...(final ? { toolChoice: 'none' as const } : {}) }, (delta) => emit({ type: 'text', n, delta }))
@@ -454,7 +458,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
       return { id: c.id, name: c.name, label, args: argsBrief(c.args) }
     })
     const items = res.providerItems && (calls.length || !res.toolCalls.length) ? res.providerItems : undefined
-    mine.push({ role: 'assistant', content: res.text, ...(calls.length ? { toolCalls: calls } : {}), ...(items ? { providerItems: items, ...(model.provider ? { provider: model.provider } : {}) } : {}), ...(res.responseId ? { responseId: res.responseId } : {}) })
+    mine.push({ role: 'assistant', content: res.text, ...(calls.length ? { toolCalls: calls } : {}), ...(items ? { providerItems: items, ...(model.provider ? { provider: model.provider } : {}), model: model.name } : {}), ...(res.responseId ? { responseId: res.responseId } : {}) })
 
     if (calls.length && signal?.aborted) {
       // Stopped between the model's answer and the tools: nothing runs, each call says so.

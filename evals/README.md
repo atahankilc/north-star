@@ -19,7 +19,15 @@ npm run eval -- --replay evals/results/<run>   a past run's transcripts played a
                                   nothing (no model): replay.md says per task what passed then and now, and which
                                   attempts diverged (today's code answered a call differently: their grade is a hint).
                                   Judges are left out on both sides unless --judge is given. Run it after any grader change.
+npm run eval -- --model openai:gpt-5.4-mini --pipeline routed --strong openai:gpt-5.6-terra
+                                  a pipeline (docs/specs/agent-pipeline.md): a model per turn role, --model for chat,
+                                  --strong for planner/executor (routed) or the planner only (plan-strong); one provider
+npm run eval -- --compare <run A> <run B>   per group pass and $/attempt, and every task that moved
 ```
+
+Every run's report.json carries a `manifest` (git sha, dirty, command, pipeline, model, judge, prompt and tools
+hashes) and a `summary` (pass, cost, tokens overall, by group, by model and by role), and adds a line to
+`evals/results/index.jsonl` (evals/records.ts).
 
 `npm run eval` runs `evals/run.ts` in node through Vite's module runner (`evals/cli.mjs`); no extra dependency. The
 report goes to `evals/results/<timestamp>/` (gitignored): `report.md` (summary table, then every task with each

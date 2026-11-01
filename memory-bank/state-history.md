@@ -1229,3 +1229,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   the bare name), the API's "please retry" mid-stream retried once, shortened titles, advice about the planted note,
   edit-16's start state, a card marked once counts as marked. Verified: tsc, vitest 976, stub evals 0 failed, `--wrong`
   116 failed; replays 94 → 98 (sonnet) and 19 → 20 of 27 (terra ×3).
+
+## Done (2026-11-01): the agent pipeline's foundation (D-341, P0)
+- src/agent/pipeline.ts (roles from facts, a model per role, single/routed/plan-strong), the evals' `--pipeline` and
+  `--strong` (each turn records its model and role; cost per turn's model), loop.ts sends a model's own items only to
+  it, evals/records.ts (manifest + summary in report.json, evals/results/index.jsonl), evals/compare.ts (`--compare`),
+  docs/specs/agent-pipeline.md (why, principles, roles, record, experiment loop, levers, stages P0–P5).
+- Verified: tsc (app, evals), vitest (agentPipeline.test.ts: roles, models, a pipeline run turn by turn, the record's
+  sums, items kept to their model), stub evals 0 failed, `--wrong` 116 failed, a recorded run and a compare of terra
+  and sonnet (old zero-cost attempts priced from tokens).

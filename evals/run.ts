@@ -30,6 +30,9 @@ import { openaiModel } from '../src/agent/openai'
 import { anthropicModel } from '../src/agent/anthropic'
 import { effortFor } from '../src/agent/models'
 import { chooseAt, nextMove, previewOf, settled, type Job } from '../src/agent/job'
+import { modelFor, pipelineProblems, planThenCheap, roleOf, routed, single, type Pipeline, type Role as TurnRole } from '../src/agent/pipeline'
+import { gitState, hashOf, recordRun } from './records'
+import { compareRuns, readRun } from './compare'
 import { reportOf, withOutcome } from '../src/agent/workflow'
 import { nodeRender } from './render'
 import { EVAL_TOOLS, WRITE_TOOLS } from './tools'
@@ -71,6 +74,8 @@ export type RunOpts = {
   // The model for a task's attempt (default: the stub playing its reference).
   model?: (task: Task, attempt: number) => AgentModel
   backend?: Backend
+  // A pipeline's model per turn role (docs/specs/agent-pipeline.md): a fresh model per attempt and model id.
+  pick?: () => (role: TurnRole) => AgentModel
 }
 
 export const referenceModel = (task: Task): AgentModel => stubModel(task.reference, { name: 'stub' })
@@ -91,7 +96,8 @@ const WRITE_CALLS = new RegExp(`\\b(${[...WRITE_TOOLS].join('|')})\\b`)
 // The emulator mode's backend (evals/emulator.ts' emulate), handed in by evals/cli.mjs: run.ts never loads Firebase.
 export type Backend = (start: AgentWs, o: { role: Role; tag?: string }) => Promise<{ start: AgentWs; write: Writer; undo: () => Promise<AgentWs>; close: () => void; readBody: (id: string) => Promise<DocBody | null> }>
 
-export async function attempt(task: Task, model: AgentModel, o: { backend?: Backend } = {}): Promise<{ result?: RunResult; attempt: Attempt }> {
+// `pick`: a pipeline's model for a turn's role (docs/specs/agent-pipeline.md); left out, `model` runs every turn.
+export async function attempt(task: Task, model: AgentModel, o: { backend?: Backend; pick?: (role: TurnRole) => AgentModel } = {}): Promise<{ result?: RunResult; attempt: Attempt }> {
   const t0 = performance.now()
   const defs = EVAL_TOOLS.map((t) => t.def)
   let close = () => {}
@@ -114,13 +120,24 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
     // S16: what each turn's model was given as the agent notes, and where each chat of the run starts (its turns).
     const notesSeen: string[] = []
     let seenThisTurn: string | null = null
+    // The model of the turn under way: the pipeline's for its role, else the one model.
+    let current = model
+    let role: TurnRole = 'chat'
     const watched: AgentModel = {
-      name: model.name,
+      get name() {
+        return current.name
+      },
+      get provider() {
+        return current.provider
+      },
+      get appendOnly() {
+        return current.appendOnly
+      },
       respond: (req: ModelRequest) => {
         seenThisTurn ??= req.messages.find((m) => m.role === 'system' && m.content.startsWith(NOTES_HEAD))?.content ?? ''
-        return model.respond(req)
+        return current.respond(req)
       },
-      ...(model.stream ? { stream: (req: ModelRequest) => ((seenThisTurn ??= req.messages.find((m) => m.role === 'system' && m.content.startsWith(NOTES_HEAD))?.content ?? ''), model.stream!(req)) } : {}),
+      ...(model.stream ? { stream: (req: ModelRequest) => ((seenThisTurn ??= req.messages.find((m) => m.role === 'system' && m.content.startsWith(NOTES_HEAD))?.content ?? ''), (current.stream ?? model.stream)!(req)) } : {}),
     }
     const who = { uid: env.actor.uid, member: true }
     const chatIds: string[] = []
@@ -180,13 +197,17 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
         continue
       }
       seenThisTurn = null
+      if (o.pick) {
+        role = roleOf({ message: ask, job: env.job?.get() ?? null })
+        current = o.pick(role)
+      }
       // A message on a planned job takes the preview the model suggested, as the app's send does (D-328).
       const planned = env.job?.get()
       if (planned?.status === 'planned' && !planned.preview) env.job!.set(chooseAt(planned))
       const r = await runTurn(watched, env, EVAL_TOOLS, history, ask, { transcript, turnId: `${turns.length + 1}` })
       notesSeen.push(seenThisTurn ?? '')
       history = r.history
-      turns.push(r.turn)
+      turns.push(o.pick ? Object.assign(r.turn, { model: current.name, role }) : r.turn)
       // What the preview showed at this turn's end (agent.md §4.5).
       env.proposed.push([...(env.changes?.items ?? [])])
       if (r.turn.end !== 'answered') break
@@ -239,7 +260,7 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
     const verdict = verdictOf(grades)
     return {
       result,
-      attempt: { verdict, pass: verdict === 'pass', grades, steps: stepsOf(transcript), undoSteps: env.steps.length, usage, cost: costOf(model.name, usage), ms: performance.now() - t0, end: turn.end, changes: diffLines(start, result.end), ...(turn.error ? { error: turn.error } : {}), transcript },
+      attempt: { verdict, pass: verdict === 'pass', grades, steps: stepsOf(transcript), undoSteps: env.steps.length, usage, cost: transcript.turns.reduce((c, t) => c + costOf(t.model ?? model.name, t.usage), 0), ms: performance.now() - t0, end: turn.end, changes: diffLines(start, result.end), ...(turn.error ? { error: turn.error } : {}), transcript },
     }
   } catch (e) {
     close()
@@ -252,7 +273,7 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
 
 export async function runTask(task: Task, o: RunOpts = {}): Promise<TaskResult> {
   const attempts: Attempt[] = []
-  for (let i = 0; i < Math.max(1, o.repeat ?? 1); i++) attempts.push((await attempt(task, (o.model ?? referenceModel)(task, i), { ...(o.backend ? { backend: o.backend } : {}) })).attempt)
+  for (let i = 0; i < Math.max(1, o.repeat ?? 1); i++) attempts.push((await attempt(task, (o.model ?? referenceModel)(task, i), { ...(o.backend ? { backend: o.backend } : {}), ...(o.pick ? { pick: o.pick() } : {}) })).attempt)
   return { id: task.id, group: task.group, set: task.set, ask: task.ask, attempts }
 }
 
@@ -336,7 +357,7 @@ export function replayLines(r: Replayed[]): string[] {
 
 // ---- The command line
 
-type Args = { set?: string; group?: string; task?: string[]; repeat: number; wrong: boolean; emulator: boolean; writeFixtures: boolean; out?: string; model: string; judge?: string; replay?: string }
+type Args = { set?: string; group?: string; task?: string[]; repeat: number; wrong: boolean; emulator: boolean; writeFixtures: boolean; out?: string; model: string; judge?: string; replay?: string; pipeline?: string; strong?: string; compare?: [string, string] }
 
 export function parseArgs(argv: string[]): Args {
   const a: Args = { repeat: 1, wrong: false, emulator: false, writeFixtures: false, model: 'stub' }
@@ -354,6 +375,9 @@ export function parseArgs(argv: string[]): Args {
     else if (k === '--model') a.model = v()
     else if (k === '--judge') a.judge = v()
     else if (k === '--replay') a.replay = v()
+    else if (k === '--pipeline') a.pipeline = v()
+    else if (k === '--strong') a.strong = v()
+    else if (k === '--compare') a.compare = [v(), v()]
     else throw new Error(`unknown option ${k}`)
   }
   return a
@@ -396,6 +420,16 @@ export function realModel(spec: string, env: Record<string, string | undefined>,
   return { name: tested.name, make: tested.make, judge, judgeName: judging.name }
 }
 
+// `--pipeline single|routed|plan-strong` (docs/specs/agent-pipeline.md): `--model` is the cheap one (chat), `--strong`
+// the one for big jobs.
+export function pipelineFor(name: string, model: string, strong?: string): Pipeline {
+  if (name === 'single') return single(model)
+  if (!strong) throw new Error(`--pipeline ${name} needs --strong <provider:model> (the model for big jobs)`)
+  if (name === 'routed') return routed(model, strong)
+  if (name === 'plan-strong') return planThenCheap(model, strong)
+  throw new Error(`--pipeline ${name}: use single, routed or plan-strong`)
+}
+
 // npm runs scripts from the repo's root.
 const ROOT = process.cwd()
 
@@ -430,20 +464,54 @@ export async function main(argv: string[], o: { backend?: Backend } = {}): Promi
     return 0
   }
   if (a.emulator && !o.backend) throw new Error('--emulator runs through evals/cli.mjs (it loads evals/emulator.ts with VITE_USE_EMULATORS=true); start the emulators first: npm run emulators')
+  if (a.compare) {
+    console.log(compareRuns(readRun(a.compare[0]), readRun(a.compare[1])).join('\n'))
+    return 0
+  }
   const real = a.model === 'stub' ? null : realModel(a.model, process.env, a.judge)
+  // A pipeline (docs/specs/agent-pipeline.md): a model per turn role; `single` (the default) is one model throughout.
+  const pipeline = !real ? null : pipelineFor(a.pipeline ?? 'single', a.model, a.strong)
+  const problems = pipeline ? pipelineProblems(pipeline) : []
+  if (problems.length) throw new Error(`--pipeline ${pipeline!.name}: ${problems.join('; ')}`)
+  const pick = pipeline && pipeline.name !== 'single' ? () => {
+    // One model object per id per attempt (an adapter keeps no state across attempts).
+    const made = new Map<string, AgentModel>()
+    return (role: TurnRole) => {
+      const id = modelFor(pipeline, role)
+      if (!made.has(id)) made.set(id, realModel(id, process.env, a.judge).make())
+      return made.get(id)!
+    }
+  } : undefined
   const tasks = selectTasks(a)
   if (!tasks.length) throw new Error('no task matches')
   if (real) setJudge(real.judge)
   // Pictures are part of what's measured (`look`, the picture judge, D-327): say loudly when none can be drawn.
   const pictures = !!(await nodeRender('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"/>', { w: 4, h: 4 }))
   if (!pictures) console.warn('WARNING: no picture can be drawn (resvg did not load): look answers in words only and picture judges are skipped.')
-  const results = await runTasks(tasks, { repeat: a.repeat, model: real ? () => real.make() : a.wrong ? wrongModel : referenceModel, ...(a.emulator && o.backend ? { backend: o.backend } : {}) })
+  const results = await runTasks(tasks, { repeat: a.repeat, model: real ? () => real.make() : a.wrong ? wrongModel : referenceModel, ...(a.emulator && o.backend ? { backend: o.backend } : {}), ...(pick ? { pick } : {}) })
   if (real) setJudge(null)
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   const dir = a.out ? resolve(a.out) : join(ROOT, 'evals/results', stamp)
   mkdirSync(dir, { recursive: true })
   const { summary } = writeReport(dir, results, { model: `${real ? `${real.name} (judge ${real.judgeName})` : a.wrong ? 'stub (wrong)' : 'stub'}${a.emulator ? ' · emulator' : ''}`, repeat: a.repeat, argv, pictures })
+  // The run's record (docs/specs/agent-pipeline.md §4): its manifest and summary, one line in the results' index.
+  const t0 = results[0]?.attempts[0]?.transcript
+  const rec = recordRun(dir, join(ROOT, 'evals/results'), {
+    run: dir.split('/').pop() ?? dir,
+    at: new Date().toISOString(),
+    git: gitState(ROOT),
+    command: `npm run eval -- ${argv.join(' ')}`,
+    pipeline,
+    model: real ? real.name : a.wrong ? 'stub (wrong)' : 'stub',
+    judge: real ? real.judgeName : null,
+    promptHash: hashOf(t0?.system ?? systemPrompt()),
+    toolsHash: t0?.toolsHash ?? '-',
+    tasks: results.length,
+    repeat: a.repeat,
+    pictures,
+  }, results)
   console.log(summary)
+  if (pipeline && pipeline.name !== 'single') console.log(`\nby role: ${Object.entries(rec.roles).map(([r, t]) => `${r} $${t.cost.toFixed(3)}`).join(' · ')}`)
   console.log(`\nreport: ${join(dir, 'report.md')}`)
   const failed = results.filter((r) => r.attempts.some((x) => x.verdict === 'fail')).length
   return a.wrong ? 0 : failed ? 1 : 0

@@ -50,8 +50,9 @@ export type ModelMessage =
   | { role: 'system'; content: string; tag?: ContextTag }
   | { role: 'user'; content: string; images?: ImagePart[] }
   // `providerItems`: the provider's own output items (reasoning items, encrypted or not; Claude's whole content with
-  // its thinking blocks) to send back unchanged on the next request, only to the same `provider`; `responseId`: the provider's id for the response (OpenAI's previous_response_id).
-  | { role: 'assistant'; content: string; toolCalls?: ToolCall[]; providerItems?: unknown[]; provider?: Provider; responseId?: string }
+  // its thinking blocks) to send back unchanged on the next request, only to the same `provider` and `model` (a
+  // pipeline may switch models between turns, docs/specs/agent-pipeline.md); `responseId`: the provider's id for the response (OpenAI's previous_response_id).
+  | { role: 'assistant'; content: string; toolCalls?: ToolCall[]; providerItems?: unknown[]; provider?: Provider; model?: string; responseId?: string }
   | { role: 'tool'; callId: string; name: string; content: string; image?: ImagePart }
 
 // `toolChoice: 'none'`: the tools stay listed (the prompt cache's prefix stays the same) but the model must answer in
@@ -157,7 +158,8 @@ export type AgentStep = { n: number; text: string; toolCalls: ToolCall[]; result
 // provider's filter or the model refused; the person stopped it; the provider (or the loop) failed.
 export type TurnEnd = 'answered' | 'budget' | 'length' | 'refused' | 'stopped' | 'error'
 
-export type AgentTurn = { ask: string; steps: AgentStep[]; answer: string; end: TurnEnd; usage: Usage; ms: number; error?: string }
+// `model`, `role`: which model ran the turn and in what role, when a pipeline chose it (docs/specs/agent-pipeline.md).
+export type AgentTurn = { ask: string; steps: AgentStep[]; answer: string; end: TurnEnd; usage: Usage; ms: number; error?: string; model?: string; role?: string }
 
 // `system`: the prompt the turns ran with; `toolsHash`: a hash of the tool definitions (a changed tool shows in the
 // report even when its name didn't change).

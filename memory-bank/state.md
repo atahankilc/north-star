@@ -35,8 +35,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - **The agent, where it stands (2026-11-01; D-327, D-328, D-329 built and pushed):**
   1. Evals trusted now (agent-bugs 33: every task audited, `--replay`). Single runs 2026-11-01: terra 78 % ($7.73),
      sonnet 75 % (≈ $11.4), gpt-5.4-mini 73 % ($3.37); prompt fixes 19, 20, 23, 24 + plan-waits guard measured
-     (agent-bugs "Prompt changes"). Next: organising without a plan (build-04), marking linked problems (23), ×3 runs
-     of terra and sonnet to write `fit` in models.ts.
+     (agent-bugs "Prompt changes"). Pipeline foundation built (D-341, docs/specs/agent-pipeline.md: roles, a model
+     per role, run records, `--compare`); next is its P1: mini ×3 baseline, Claude's cache, then routing measured.
   2. In the app: a big job (`/restructure Segments`), and the two go buttons (not looked at in a browser yet).
   3. Left in code: the preview pick saved with the chat (a rules change).
   4. The local harness stays an idea (Q-031).
