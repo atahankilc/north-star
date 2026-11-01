@@ -231,17 +231,14 @@ service cloud.firestore {
     // A kanban's columns (D-251, src/data/tasks.ts): one to twelve, each an id, a name and whether it's the finished one.
     function validTimeline(t) {
       return t is map
-        && t.keys().hasOnly(['kanbans', 'rows'])
-        && (!('kanbans' in t) || (t.kanbans is list && t.kanbans.size() <= 20))
+        && t.keys().hasOnly(['rows'])
         && optIn(t, 'rows', ['kanban', 'assignee', 'card']);
     }
 
     function validKanban(k) {
       return k is map
-        && k.keys().hasOnly(['cols', 'everyPlane', 'rows', 'holds', 'source', 'colField', 'rowField', 'names'])
+        && k.keys().hasOnly(['cols', 'rows', 'holds', 'source', 'colField', 'rowField', 'names'])
         && k.cols is list && k.cols.size() >= 1 && k.cols.size() <= 12
-        // Stuck to a plane, every task shown, not only that plane's (D-255).
-        && optBool(k, 'everyPlane')
         // Its lanes (D-258).
         && optIn(k, 'rows', ['assignee', 'card'])
         // Cards instead of tasks (D-268): which (a lens's source), its columns from one of their fields.
@@ -372,20 +369,33 @@ service cloud.firestore {
         && d.createdAt is number;
     }
 
+    // Each kind's fields, and no others (Q-029): the same lists src/model/clean.ts keeps. Old docs with other fields
+    // aren't kept working (the user, 2026-11-01: no backwards compatibility).
+    function cardKeys() {
+      return ['pieceId', 'title', 'body', 'x', 'y', 'tags', 'folded', 'validation', 'createdAt', 'updatedAt'];
+    }
+
+    function onlyKeys(d, keys) {
+      return d.keys().hasOnly(keys);
+    }
+
     function valid(wid, collection, id, d) {
-      return (collection == 'labels' && validLabel(d))
-        || (collection == 'customers' && validCard(d))
-        || (collection == 'problems' && validCard(d))
-        || (collection == 'ideas' && validCard(d))
-        || (collection == 'features' && validFeature(d))
-        || (collection == 'competitors' && validCompetitor(d))
-        || (collection == 'competitorFeatures' && validCompetitorFeature(d))
-        || (collection == 'comparisons' && validComparison(id, d))
-        || (collection == 'edges' && validEdge(d))
-        || (collection == 'evidence' && validEvidence(d))
-        || (collection == 'packages' && validPackage(d))
-        || (collection == 'pieces' && validPiece(d))
-        || (collection == 'cells' && validCell(id, d))
+      return (collection == 'labels' && validLabel(d)
+          && onlyKeys(d, ['pieceId', 'canvasId', 'text', 'x', 'y', 'kind', 'size', 'color', 'bold', 'italic', 'caps', 'rotate', 'kicker', 'side', 'scale', 'uid', 'author', 'folded', 'w', 'h', 'createdAt', 'updatedAt']))
+        || (collection in ['customers', 'problems', 'ideas'] && validCard(d) && onlyKeys(d, cardKeys()))
+        || (collection == 'features' && validFeature(d) && onlyKeys(d, cardKeys().concat(['priority', 'status', 'criteria', 'impact', 'effort'])))
+        || (collection == 'competitors' && validCompetitor(d)
+          && onlyKeys(d, ['pieceId', 'name', 'notes', 'url', 'description', 'pricing', 'audience', 'regions', 'tags', 'folded', 'x', 'y', 'createdAt', 'updatedAt']))
+        || (collection == 'competitorFeatures' && validCompetitorFeature(d)
+          && onlyKeys(d, ['competitorId', 'name', 'description', 'category', 'availability', 'url', 'createdAt', 'updatedAt']))
+        || (collection == 'comparisons' && validComparison(id, d) && onlyKeys(d, ['featureId', 'competitorId', 'competitorFeatureId', 'criteria', 'updatedAt']))
+        || (collection == 'edges' && validEdge(d) && onlyKeys(d, ['fromId', 'fromType', 'toId', 'toType', 'kind', 'label']))
+        || (collection == 'evidence' && validEvidence(d)
+          && onlyKeys(d, ['nodeId', 'nodeType', 'kind', 'text', 'stance', 'source', 'url', 'date', 'createdAt', 'updatedAt']))
+        || (collection == 'packages' && validPackage(d) && onlyKeys(d, cardKeys().concat(['memberIds', 'impact', 'effort'])))
+        || (collection == 'pieces' && validPiece(d)
+          && onlyKeys(d, ['kind', 'x', 'y', 'w', 'h', 'name', 'matrix', 'table', 'documents', 'docId', 'kanban', 'timeline', 'stuckTo', 'open', 'canvasId', 'createdAt', 'updatedAt']))
+        || (collection == 'cells' && validCell(id, d) && onlyKeys(d, ['matrixId', 'row', 'col', 'value', 'notes', 'notRelevant', 'confidence', 'updatedAt']))
         || (collection == 'tasks' && validTask(d))
         || (collection == 'places' && validPlace(id, d))
         || (collection == 'canvases' && validCanvas(d))
@@ -515,35 +525,11 @@ service cloud.firestore {
             || (resource.data.keySource == 'workspace' && isOwner(wid)));
       }
 
-      // Research reports (D-090) from before documents (D-232): each is moved to `documents` once, by its author's browser
-      // or an owner's (documents.ts' moveReports), then deleted here. Nothing writes new ones. Read by whoever may see it
-      // (its author, or everyone once shared); deleted by its author, an owner a shared one. A report's content is in
-      // content/body, or, saved before D-098, inline.
-      match /reports/{id} {
-        function mayRead(d) {
-          return isMember(wid) && (d.shared == true || d.uid == request.auth.uid);
-        }
-        function mayDelete(d) {
-          return isMember(wid) && (d.uid == request.auth.uid || (d.shared == true && isOwner(wid)));
-        }
-        allow read: if resource == null ? isMember(wid) : mayRead(resource.data);
-        allow delete: if mayDelete(resource.data);
-
-        function summary() {
-          return get(/databases/$(database)/documents/workspaces/$(wid)/reports/$(id)).data;
-        }
-        match /content/{part} {
-          allow read: if part == 'body' && mayRead(summary());
-          allow delete: if part == 'body' && isMember(wid)
-            && (!exists(/databases/$(database)/documents/workspaces/$(wid)/reports/$(id)) || mayDelete(summary()));
-        }
-      }
-
-      // Documents (D-232): every file the workspace keeps (.md, images, PDFs, the old reports moved over). Seen only by
+      // Documents (D-232): every file the workspace keeps (.md, images, PDFs, reports). Seen only by
       // whoever added it until they share it; then by every member. Any member adds their own (viewers too, as they kept
       // reports, D-098); only its author shares, unshares or renames it, and nothing else in it changes. The author
-      // deletes it, an owner a shared one. Undoing an owner's delete restores someone else's shared document, and moving
-      // old reports writes them as their author's, so an owner may create a shared one for anyone.
+      // deletes it, an owner a shared one. Undoing an owner's delete restores someone else's shared document, so an owner may create
+      // a shared one for anyone.
       // The content is in content/body, read by whoever reads the summary. Shapes mirror src/data/documents.ts.
       match /documents/{id} {
         function validDoc(d) {
@@ -556,7 +542,7 @@ service cloud.firestore {
             && d.kind in ['markdown', 'image', 'pdf', 'report']
             && isText(d.title, 300) && d.title.size() > 0
             && optText(d, 'excerpt', 400)
-            && d.origin in ['upload', 'assistant', 'moved']
+            && d.origin in ['upload', 'assistant']
             && isText(d.uid, 128) && isText(d.name, 200)
             && d.shared is bool
             && optIn(d, 'contentType', ['text/markdown', 'image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'])

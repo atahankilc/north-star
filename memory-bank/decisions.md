@@ -8,8 +8,8 @@ New decision: append its `### D-xxx` entry to the log, then add or edit its line
 stack a second one). Spec detail belongs in `/docs`, not here.
 
 **1.0 is gone (D-177, D-248):** the canvas with its pieces is live, besides landing, workspaces, settings and presence.
-1.0's code is deleted (in git at `493bf87`: `git show 493bf87:src/archive/<path>`) and its data unsupported; only old
-reports move to documents. Its rules are in [decisions-1.0.md](decisions-1.0.md) (not auto-loaded): read them when a
+1.0's code is deleted (in git at `493bf87`: `git show 493bf87:src/archive/<path>`) and its data unsupported; old
+reports too (D-335). Its rules are in [decisions-1.0.md](decisions-1.0.md) (not auto-loaded): read them when a
 feature comes back as a piece, and check them with the user then.
 
 ---
@@ -67,8 +67,9 @@ feature comes back as a piece, and check them with the user then.
   Yjs (D-071).
 - No 1.0 data (D-248): cards and text always have a space (`pieceId`), threads a space (`planeId`) and a component;
   `domains`, `groups` (D-048, D-049), old `planes`/`placements`, `attachments`, `board` pieces, old presence views and
-  1.0 exports are refused by the rules. Old `reports` (summary + `content/body`, private until `shared`, D-090) are only
-  read and deleted, until moved to documents (D-232).
+  1.0 exports are refused by the rules; old `reports` are gone (no rule, no move, D-335).
+- No backwards compatibility (D-335): each content kind's rule takes its own fields and no others (`onlyKeys`, the
+  same lists as src/model/clean.ts), on create and update; code kept only for old data is deleted.
 - Only the workspace's content loads up front; documents, people and usage load where shown, paged (`usePaged`), with a
   `Loading` line (D-083, D-098).
 

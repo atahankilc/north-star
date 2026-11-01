@@ -10,7 +10,6 @@
 //     tasks/{id}                             Task (D-251): one of a kanban's tasks (src/data/tasks.ts)
 //     members/{uid}                          Member (D-098): a member's name and email, for the people list
 //     threads/{id}, messages/{id}            Thread, ThreadMessage (D-159, D-192)
-//     reports/{id}                           an old research report, moved to documents once (documents.ts' moveReports)
 //   inviteCodes/{code}                       InviteCode (D-012)
 //   invites/{workspaceId}_{email}            Invite (D-323)
 //   joinRequests/{workspaceId}_{uid}         JoinRequest (D-062)

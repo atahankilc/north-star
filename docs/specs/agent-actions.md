@@ -299,7 +299,6 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 | Delete (confirm CanvasView.tsx:1196; from row :359, right-click :565, dock DocumentPiece.tsx:285) | `documents.ts:deleteDocument` | `delete` (document) | R5: piece and spot refs passed. |
 | Place on the canvas (row Documents.tsx:351, right-click CanvasView.tsx:560, dock DocumentPiece.tsx:283, dragged out CanvasView.tsx:~593 → DocumentPiece.tsx:392) | `pieces.ts:placeDocument` | `create_piece` (`kind: document`) | R1. Shares a private one in the same write. |
 | Download .md (Documents.tsx:355, DocumentPiece.tsx:284, CanvasView.tsx:564) | `documents.ts:downloadDocument` | none (a read: `read_document`) | Writes nothing. |
-| (automatic on open, CanvasView.tsx:622) | `documents.ts:moveReports` | none | One-time move of 1.0 reports; no person action. |
 
 ## 16. Comments and threads
 
@@ -355,7 +354,6 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 | Presence | `presence.ts:setCursor`, `setPresencePlane`, `setPresenceSelection`, `setPresenceDrag`, `setPresenceTasks` | Live state in RTDB (collab.tsx, MyTasks.tsx). |
 | Read markers | `threads.ts:markSeen`, `markTasksSeen` | Yours. |
 | Canvas on screen | `canvases.ts:setCanvasHere`, `setShownHere` | R1 module state; removed by R1. |
-| 1.0 reports move | `documents.ts:moveReports` | Automatic, once. |
 | Display (theme, motion, background) | localStorage, `src/ui/patterns/Settings.tsx` | Yours, per browser. |
 
 **View state → UI tools (§4.4: never write data; S9: `src/agent/ui.ts`, async, one call at a time (queued), counted by `agentDriving()` from asked to 500 ms after it settles):**

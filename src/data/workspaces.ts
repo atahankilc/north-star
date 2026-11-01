@@ -231,18 +231,16 @@ export function uninviteEmail(wid: string, email: string) {
   return batch.commit()
 }
 
-// Owner only, when the people page opens: every invited address has its invite (those from before D-323 had none), with
-// the name and member count of now, and no invite is left for an address taken off.
+// Owner only, when the people page opens: every invite has the name and member count of now, and no invite is left for
+// an address taken off.
 export async function syncInvites(w: WithId<Workspace>) {
-  const by = firebase?.auth.currentUser?.uid ?? ''
   const invited = new Set(w.invitedEmails ?? [])
   const have = new Map((await invitesOf(w.id)).docs.map((d) => [(d.data() as Invite).email, d.data() as Invite]))
   const batch = writeBatch(db())
   let n = 0
   for (const email of invited) {
     const i = have.get(email)
-    if (!i) (batch.set(inviteRef(w.id, email), inviteOf(w, email, by)), n++)
-    else if (i.name !== w.name.slice(0, 200) || i.memberCount !== w.memberIds.length)
+    if (i && (i.name !== w.name.slice(0, 200) || i.memberCount !== w.memberIds.length))
       (batch.update(inviteRef(w.id, email), { name: w.name.slice(0, 200), memberCount: w.memberIds.length }), n++)
   }
   for (const email of have.keys()) if (!invited.has(email)) (batch.delete(inviteRef(w.id, email)), n++)
@@ -295,17 +293,13 @@ export function describeWorkspace(wid: string, description: string) {
 
 // Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.
 const WORKSPACE_COLLECTIONS = ['pieces', 'labels', 'customers', 'problems', 'competitors', 'ideas', 'features', 'packages', 'edges', 'competitorFeatures', 'comparisons', 'evidence', 'cells', 'tasks', 'places', 'canvases', 'pieceSpots']
-// A report body's delete rule reads its summary (twice), and a batch's rules may read at most 20 documents, more and the
-// whole batch is refused: so reports go a few to a batch.
-const REPORTS_PER_BATCH = 6
+// A body's delete rule reads its summary (twice), and a batch's rules may read at most 20 documents, more and the
+// whole batch is refused: so documents and chats go a few to a batch.
+const BODIES_PER_BATCH = 6
 
 // Owners only. Children go first: their rules check membership on the workspace doc.
 export async function deleteWorkspace(wid: string, inviteCode: string, uid: string) {
   const reports = await Promise.all([
-    // Reports (D-090) not moved to documents yet (moveReports): the shared ones and yours. Others' private reports
-    // can't be read here; the cleanUpWorkspaceAi function takes them once functions are deployed.
-    getDocs(query(collection(db(), 'workspaces', wid, 'reports'), where('shared', '==', true))),
-    getDocs(query(collection(db(), 'workspaces', wid, 'reports'), where('uid', '==', uid))),
     // Documents (D-232) the same way: shared and yours; a body before its summary.
     getDocs(query(collection(db(), 'workspaces', wid, 'documents'), where('shared', '==', true))),
     getDocs(query(collection(db(), 'workspaces', wid, 'documents'), where('uid', '==', uid))),
@@ -323,12 +317,12 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
     getDocs(collection(db(), 'workspaces', wid, 'changes')),
     getDocs(collection(db(), 'workspaces', wid, 'members')),
   ])
-  // Once each: your own shared reports come back from both report queries. A report's body (D-098) goes before its
-  // summary, which its rule reads.
+  // Once each: your own shared documents and chats come back from both queries. A body goes before its summary, which
+  // its rule reads.
   const reportRefs = [...new Map(reports.flatMap((r) => r.docs.map((d) => [d.ref.path, d.ref] as const))).values()]
-  for (let i = 0; i < reportRefs.length; i += REPORTS_PER_BATCH) {
+  for (let i = 0; i < reportRefs.length; i += BODIES_PER_BATCH) {
     const batch = writeBatch(db())
-    for (const ref of reportRefs.slice(i, i + REPORTS_PER_BATCH)) batch.delete(doc(ref, 'content', 'body')).delete(ref)
+    for (const ref of reportRefs.slice(i, i + BODIES_PER_BATCH)) batch.delete(doc(ref, 'content', 'body')).delete(ref)
     await batch.commit()
   }
   // Comment threads (D-159): each with all its messages (threads.ts: an owner may take others' messages only once

@@ -36,8 +36,6 @@ export type KanbanCol = {
 }
 export type KanbanSetup = {
   cols: KanbanCol[]
-  // Once let a deck stuck to a plane show every task (D-255); ignored since D-303, kept so old data reads.
-  everyPlane?: boolean
   // Its rows (D-258): none, or lanes by who a task is given to or by the card it's for (src/views/workspace/table/rows.ts).
   rows?: KanbanRows
   // What it holds (D-268): tasks (unset) or cards; for cards, which (a source) and the field its columns come from.
@@ -56,11 +54,10 @@ export type { CardField } from '../model/shapes'
 import type { CardField } from '../model/shapes'
 import { BOX_NAMES_MAX, BOX_NAME_MAX, KANBAN_COLS_MAX, COL_NAME_MAX, TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, LIMIT_MAX } from '../model/limits'
 export { BOX_NAMES_MAX, BOX_NAME_MAX, KANBAN_COLS_MAX, COL_NAME_MAX, TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, LIMIT_MAX }
-// A timeline (D-262): its rows. The kanbans it shows are the one it's linked to, else every kanban (D-289); `kanbans`, a
-// list once picked by hand (its `shows ▾`, gone), is still read from old data and exports but never used.
+// A timeline (D-262): its rows. The kanbans it shows are the one it's linked to, else every kanban (D-289).
 export const TIMELINE_ROWS = ['kanban', 'assignee', 'card'] as const
 export type TimelineRows = (typeof TIMELINE_ROWS)[number]
-export type TimelineSetup = { kanbans?: string[]; rows?: TimelineRows }
+export type TimelineSetup = { rows?: TimelineRows }
 
 // Which decks a timeline shows (D-289, D-300): always the days of something. Linked to a deck, that deck. Linked to a
 // plane, the deck linked to that plane when it has one (the first in reading order; one linked later too: read here,
@@ -256,7 +253,7 @@ export function moveTasksAway(wid: string, moves: TaskMove[], pieceId: string, p
 }
 
 // What a kanban shows (D-255): stuck to a plane, the tasks for that plane's cards and those for no card (or for one
-// that's gone), until it's unlinked (D-303: an old `everyPlane` is ignored); otherwise all of them.
+// that's gone), until it's unlinked (D-303); otherwise all of them.
 // A card brought to that plane from another counts as its (D-281).
 export function shownTasks(tasks: Task[], piece: { stuckTo?: string; kanban?: KanbanSetup; cardsOnly?: boolean }, cards: Pick<Card, 'id' | 'pieceId' | 'planes'>[]) {
   const plane = piece.stuckTo

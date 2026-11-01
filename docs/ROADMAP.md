@@ -4,8 +4,8 @@ Live progress is tracked in [../memory-bank/state.md](../memory-bank/state.md).
 
 ## 1.0 ✅ done, then dropped (D-177, D-248)
 Phases 0–6 were built as pages: one board with every card type, Flow, Table, Matrix, Priorities, Overview, Reports, the
-assistant, attachments and export/import. In 1.5 that code and its data shapes were deleted (in git at `493bf87`); only
-old reports move to documents. Its specs stay as reference for when a feature comes back:
+assistant, attachments and export/import. In 1.5 that code and its data shapes were deleted (in git at `493bf87`); old
+reports too (D-335). Its specs stay as reference for when a feature comes back:
 [specs/board.md](specs/board.md), [specs/usefulness.md](specs/usefulness.md), [specs/planes.md](specs/planes.md).
 
 - Phase 0, foundations ✅: scaffold, GitHub Pages deploy, tokens, fonts, the ASCII effect and backdrop.

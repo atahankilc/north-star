@@ -6316,3 +6316,18 @@ CSS-only callers need it). Verified: build keeps `:where`; no screenshots (the u
 own colour or size now shows as written: wherever a caller set one (e.g. Settings' section heads, `--fg-muted`).
 Not yet: the other kit CSS files (Field, Chip, Tabs…) are not composed elsewhere, so they don't need it yet.
 
+### D-335 · 2026-11-01 · Accepted (Q-029; the user: "eskiyi boşver dostum. Şu an kullanan bir ben varım ve backwards compatibility umrumda değil. Hatta eskiden kalan ne varsa sil koddan")
+No backwards compatibility with old data. (1) Each content kind's rule takes its own fields and no others, on create
+and update (`onlyKeys` in firestore.rules: labels, customers/problems/ideas, features, packages, competitors,
+competitorFeatures, comparisons, edges, evidence, pieces, cells; tasks, places, canvases and pieceSpots had it), the
+same lists src/model/clean.ts keeps; a doc holding an old field can't be updated until it's rewritten whole. (2) Code
+kept only for old data is deleted: the old reports (their rule, `moveReports` on canvas open, their part of a
+workspace delete, a document's `origin: 'moved'`), a deck's `everyPlane` (ignored since D-303), a timeline's
+hand-picked `kanbans`, the invites back-fill for invitations from before D-323, the people list's filter for entries
+from before D-098, the export's filter for cards without a `pieceId`. Not touched: the agent's own leftovers
+(chats.ts, models.ts: told the agent session), the `report` document kind (the agent reads it), refusing 1.0 export
+files. Why: one person uses the app; old data isn't worth the code. Verified: rules tests 616/0 (37 new: an unknown
+field refused per kind, create and update), vitest 968, tsc (app + evals), build, every check.
+Not yet: deploying the rules (asked first, D-322); the live data isn't read (the permission check refused it), so a
+live doc with an old field would refuse its next partial update.
+

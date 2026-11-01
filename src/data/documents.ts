@@ -9,9 +9,9 @@
 //
 // The pieces (pieces.ts): a `documents` piece lists them (a table or a shelf of sheets, `DocumentsSetup`); a `document`
 // piece shows one (`docId`).
-import { collection, doc, getDoc, getDocs, query, updateDoc, where, writeBatch, type DocumentReference } from 'firebase/firestore'
+import { collection, doc, getDoc, query, updateDoc, where, writeBatch, type DocumentReference } from 'firebase/firestore'
 import { useMemo } from 'react'
-import { db, isDemo, useEmulators } from './firebase'
+import { db, useEmulators } from './firebase'
 import { absent, tracked } from './history'
 import { useDoc, useQuery, type WithId } from './hooks'
 
@@ -19,8 +19,8 @@ export { DOC_KINDS, DOC_COLS, DOC_LIMITS } from '../model/shapes'
 export type { DocKind, DocCol } from '../model/shapes'
 import { DOC_LIMITS, type DocCol, type DocKind } from '../model/shapes'
 
-// Where it came from: uploaded by someone, written by the assistant, or an old report moved over.
-export type DocOrigin = 'upload' | 'assistant' | 'moved'
+// Where it came from: uploaded by someone, or written by the assistant.
+export type DocOrigin = 'upload' | 'assistant'
 
 // The file types a document may be; the same list is in firestore.rules (and storage.rules for files).
 export const DOC_TYPES = ['text/markdown', 'image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'] as const
@@ -283,74 +283,3 @@ function reportAsMarkdown(title: string, b: DocBody) {
   return out.join('\n')
 }
 
-// ---- Moving the old reports over (D-232), once
-
-type OldReport = {
-  kind?: ReportKind
-  title: string
-  answer: string
-  topic: string
-  uid: string
-  name: string
-  model: string
-  shared: boolean
-  createdAt: number
-} & Partial<ReportBody>
-
-const moved = new Set<string>()
-
-// Each old report becomes a document of kind `report` with the same id, who wrote it, when and whether it was shared,
-// then the old one goes. Run when a workspace opens: a member's browser moves their own reports, an owner's the shared
-// ones too (the only ones the rules let each of them read and write). One report a batch: a body's rules read its summary.
-// Not an undo step: nothing anyone did. Safe to run twice: a report already moved is only deleted.
-export async function moveReports(wid: string, uid: string, owner: boolean) {
-  // The demo realm (D-315) has no reports and no Firestore.
-  if (isDemo || moved.has(wid)) return
-  moved.add(wid)
-  const reports = collection(db(), 'workspaces', wid, 'reports')
-  const [mine, shared] = await Promise.all([
-    getDocs(query(reports, where('uid', '==', uid))),
-    owner ? getDocs(query(reports, where('shared', '==', true))) : Promise.resolve(null),
-  ])
-  const all = new Map([...mine.docs, ...(shared?.docs ?? [])].map((d) => [d.id, d]))
-  for (const [id, snap] of all) {
-    const r = snap.data() as OldReport
-    const oldBody = doc(reports, id, 'content', 'body')
-    const inline = r.sections !== undefined
-    const b: Partial<ReportBody> = inline ? r : ((await getDoc(oldBody).catch(() => null))?.data() as Partial<ReportBody> | undefined) ?? {}
-    const body: DocBody = {
-      answer: (r.answer ?? '').slice(0, 4000),
-      sections: b.sections ?? [],
-      implications: b.implications ?? [],
-      openQuestions: b.openQuestions ?? [],
-      sources: b.sources ?? [],
-    }
-    const excerpt = (r.answer ?? '').replace(/\s+/g, ' ').trim().slice(0, DOC_LIMITS.excerpt)
-    const summary: Doc = {
-      kind: 'report',
-      title: (r.title || 'untitled report').slice(0, DOC_LIMITS.title),
-      ...(excerpt ? { excerpt } : {}),
-      origin: 'moved',
-      uid: r.uid,
-      name: (r.name || 'someone').slice(0, 200),
-      shared: r.shared === true,
-      size: bytes(JSON.stringify(body)),
-      sections: body.sections!.length,
-      sources: body.sources!.length,
-      ...(r.topic ? { topic: r.topic.slice(0, 500) } : {}),
-      ...(r.model ? { model: r.model.slice(0, 100) } : {}),
-      reportKind: r.kind ?? 'research',
-      createdAt: r.createdAt || Date.now(),
-      updatedAt: Date.now(),
-    }
-    const there = await getDoc(docRef(wid, id)).then((s) => s.exists(), () => false)
-    const batch = writeBatch(db())
-    if (!there) {
-      batch.set(docRef(wid, id), summary)
-      batch.set(bodyRef(wid, id), body)
-    }
-    if (!inline) batch.delete(oldBody)
-    batch.delete(snap.ref)
-    await batch.commit().catch((e) => console.warn(`[documents] couldn't move report ${id}`, e))
-  }
-}

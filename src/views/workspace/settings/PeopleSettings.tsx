@@ -91,8 +91,7 @@ function Members({ wid, workspace, run }: { wid: string; workspace: WorkspaceCtx
   const isOwner = isOwnerOf(workspace, user?.id)
   const owners = ownerCount(workspace)
   const [confirm, setConfirm] = useState<string | null>(null)
-  // Only people still in it: an entry can outlive a member who was removed before D-098.
-  const listed = members.data.filter((m) => workspace.memberIds.includes(m.id))
+  const listed = members.data
   // Members without an entry yet (they haven't opened it since the list began), once the whole list is in.
   const unlisted = members.hasMore || members.isLoading ? [] : workspace.memberIds.filter((uid) => !members.data.some((m) => m.id === uid))
   const total = workspace.memberIds.length

@@ -1,7 +1,7 @@
 # North Star: Architecture
 
 > **D-177, D-248:** since 1.5 (on `main` since 2026-10-27) the 1.0 code (board, views, assistant, their data layer) is deleted
-> (in git at `493bf87`), and no 1.0 data shape is supported: only old reports are moved to documents. Live: auth,
+> (in git at `493bf87`), and no 1.0 data shape is supported (old reports went too, D-335). Live: auth,
 > workspaces, members, presence, settings, export/import and the canvas with its pieces. §8's assistant describes 1.0,
 > for when it comes back as a piece; its server side (`functions/`) is kept.
 

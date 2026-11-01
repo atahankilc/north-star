@@ -45,7 +45,7 @@ async function client(name) {
   return { fs, rt, st, uid }
 }
 
-// Writes a doc as the emulator's owner, past the rules: for what no client may write any more (old reports, D-248).
+// Writes a doc as the emulator's owner, past the rules: for what no client may write.
 const enc = (v) =>
   typeof v === 'string' ? { stringValue: v }
     : typeof v === 'boolean' ? { booleanValue: v }
@@ -318,15 +318,15 @@ await deny('a plane with kanban columns', () => addDoc(sub(bob.fs, 'pieces'), { 
 await deny('a kanban without columns', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { cols: [] } }))
 await deny('a kanban with something else in its setup', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, swimlanes: [] } }))
 await allow('a kanban stuck to a plane (D-255)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban, stuckTo: 'p1' }))
-await allow('a stuck kanban showing every task', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, everyPlane: true }, stuckTo: 'p1' }))
+await deny('a kanban with the old every-plane switch (D-303)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, everyPlane: true }, stuckTo: 'p1' }))
 await allow('a timeline on the canvas (D-262)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'timeline' }))
-await allow('a timeline showing two kanbans, rows by who, stuck to a kanban', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'timeline', timeline: { kanbans: ['kb1', 'kb2'], rows: 'assignee' }, stuckTo: 'kb1' }))
+await allow('a timeline with rows by who, stuck to a kanban', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'timeline', timeline: { rows: 'assignee' }, stuckTo: 'kb1' }))
+await deny('a timeline with the old hand-picked kanbans', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'timeline', timeline: { kanbans: ['kb1'] } }))
 await allow('a timeline opened onto the canvas (D-289)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'timeline', open: true }))
 await deny('a timeline with rows by something unknown', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'timeline', timeline: { rows: 'weather' } }))
 await deny('a plane with a timeline setup', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, timeline: {} }))
 await allow('a kanban in lanes by who (D-258)', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, rows: 'assignee' } }))
 await deny('a kanban in lanes by something unknown', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, rows: 'mood' } }))
-await deny('a kanban whose every-plane switch is not a switch', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'kanban', kanban: { ...kanban, everyPlane: 'yes' } }))
 await deny('a documents list stuck to a plane', () => addDoc(sub(bob.fs, 'pieces'), { ...piece, kind: 'documents', stuckTo: 'p1' }))
 const task = { pieceId: 'kb1', col: 'k1', order: 1, title: 'Call three bakeries', uid: bob.uid, createdAt: 1, updatedAt: 1 }
 await allow('a task', () => addDoc(sub(bob.fs, 'tasks'), task))
@@ -545,31 +545,9 @@ await allow('member lists their own usage', () => getDocs(query(usage(bob.fs), w
 await deny('member lists everyone\'s usage', () => getDocs(usage(bob.fs)))
 await deny('member lists workspace-key usage', () => getDocs(query(usage(bob.fs), where('keySource', '==', 'workspace'))))
 
-// Research reports (D-090) from before documents: read and deleted while they're moved over (D-232); nothing writes them.
-const reports = (fs) => collection(fs, 'workspaces', wid, 'reports')
-const repDoc = (fs, id) => doc(fs, 'workspaces', wid, 'reports', id)
-const bodyDoc = (fs, id) => doc(fs, 'workspaces', wid, 'reports', id, 'content', 'body')
-const summaryOf = (uid, extra = {}) => ({ title: 'Market', answer: 'Small.', topic: 'market', uid, name: 'x', model: 'm', shared: false, createdAt: 1, sectionCount: 1, sourceCount: 1, ...extra })
-const body = { sections: [{ question: 'Who?', points: [{ text: 'A', sources: [1] }] }], implications: [], openQuestions: [], sources: [{ title: 'S', url: 'https://example.com' }] }
-const seedReport = async (id, uid, extra) => {
-  await seed(`workspaces/${wid}/reports/${id}`, summaryOf(uid, extra))
-  await seed(`workspaces/${wid}/reports/${id}/content/body`, body)
-}
-await seedReport('r1', bob.uid)
-await seedReport('r2', bob.uid, { shared: true })
-await deny('member writes a report', () => setDoc(repDoc(bob.fs, 'r3'), summaryOf(bob.uid)))
-await deny('author shares their old report', () => updateDoc(repDoc(bob.fs, 'r1'), { shared: true }))
-await allow('author reads their private report and its body', async () => { await getDoc(repDoc(bob.fs, 'r1')); await getDoc(bodyDoc(bob.fs, 'r1')) })
-await deny('another member reads a private report', () => getDoc(repDoc(dave.fs, 'r1')))
-await deny('owner reads a private report', () => getDoc(repDoc(alice.fs, 'r1')))
-await deny('member lists every report', () => getDocs(reports(dave.fs)))
-await allow('member lists their own reports', () => getDocs(query(reports(bob.fs), where('uid', '==', bob.uid))))
-await allow('member lists shared reports', () => getDocs(query(reports(dave.fs), where('shared', '==', true))))
-await allow('member reads a shared report', () => getDoc(repDoc(dave.fs, 'r2')))
-await deny('outsider reads a shared report', () => getDoc(repDoc(carol.fs, 'r2')))
-await deny('another member deletes a shared report', () => deleteDoc(repDoc(dave.fs, 'r2')))
-await deny('owner deletes a private report', () => deleteDoc(repDoc(alice.fs, 'r1')))
-await allow('author deletes their report and its body (moved over)', () => { const b = writeBatch(bob.fs); b.delete(bodyDoc(bob.fs, 'r1')); b.delete(repDoc(bob.fs, 'r1')); return b.commit() })
+// Research reports (D-090) are gone: no rule for them, so nothing reads or writes one.
+await deny('nobody reads the old reports', () => getDocs(query(collection(bob.fs, 'workspaces', wid, 'reports'), where('uid', '==', bob.uid))))
+await deny('nobody writes a report', () => setDoc(doc(bob.fs, 'workspaces', wid, 'reports', 'r1'), { title: 'x', uid: bob.uid }))
 
 // Roles (D-098): viewers read only; any number of owners, never none.
 const role = (who, uid, r) => join(who, { [`roles.${uid}`]: r })
@@ -644,7 +622,7 @@ await deny('another member deletes a shared document', () => deleteDoc(docDoc(da
 await allow('owner deletes a shared document with its text', () => { const w = writeBatch(alice.fs); w.delete(docBody(alice.fs, 'd1')); w.delete(docDoc(alice.fs, 'd1')); return w.commit() })
 await allow("owner's undo restores someone's shared document", () => saveDoc(alice, 'd1', { uid: bob.uid, shared: true }))
 await deny('owner restores someone else\'s document as private', () => saveDoc(alice, 'd11', { uid: bob.uid }))
-await allow('owner moves an old shared report over as its author\'s', () => saveDoc(alice, 'd12', { kind: 'report', origin: 'moved', uid: bob.uid, shared: true, reportKind: 'research', sections: 1, sources: 1 }, { answer: 'Small.', sections: [], implications: [], openQuestions: [], sources: [] }))
+await deny('a document from the old reports\' move (origin moved, gone)', () => saveDoc(alice, 'd12', { kind: 'report', origin: 'moved', uid: bob.uid, shared: true, reportKind: 'research', sections: 1, sources: 1 }, { answer: 'Small.', sections: [], implications: [], openQuestions: [], sources: [] }))
 await allow('author deletes their document', () => { const w = writeBatch(bob.fs); w.delete(docBody(bob.fs, 'd10')); w.delete(docDoc(bob.fs, 'd10')); return w.commit() })
 await deny('viewer puts a document on the canvas', () => addDoc(sub(dave.fs, 'pieces'), { kind: 'document', docId: 'd1', x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
 await allow('editor puts a document on the canvas', () => addDoc(sub(alice.fs, 'pieces'), { kind: 'document', docId: 'd1', x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
@@ -862,26 +840,11 @@ await allow('starter deletes their unanswered thread', async () => {
   await deleteDoc(msg(dave.fs, 't5', 'm1'))
   await deleteDoc(thr(dave.fs, 't5'))
 })
-await seedReport('r20', bob.uid)
-await deny('body written for an old report', () => setDoc(bodyDoc(bob.fs, 'r21'), body))
-await allow('author reads the body', () => getDoc(bodyDoc(bob.fs, 'r20')))
-await deny('another member reads a private body', () => getDoc(bodyDoc(dave.fs, 'r20')))
-await seedReport('r20', bob.uid, { shared: true })
-await allow('member reads a shared body', () => getDoc(bodyDoc(dave.fs, 'r20')))
-await deny('another member deletes a shared body', () => deleteDoc(bodyDoc(dave.fs, 'r2')))
-await allow('owner deletes a shared report and its body', () => {
-  const b = writeBatch(alice.fs)
-  b.delete(bodyDoc(alice.fs, 'r2'))
-  b.delete(repDoc(alice.fs, 'r2'))
-  return b.commit()
-})
-await seedReport('r20', bob.uid, { shared: true })
 
 // Several owners.
 await allow('owner makes a member a co-owner', () => role(alice, bob.uid, 'owner'))
 await allow("co-owner lists the workspace's requests", () => getDocs(query(collection(bob.fs, 'joinRequests'), where('workspaceId', '==', wid))))
 await allow('co-owner invites an email', () => join(bob, { invitedEmails: arrayUnion('frank@example.com') }))
-await allow('co-owner deletes a shared report', () => deleteDoc(repDoc(bob.fs, 'r20')))
 await deny('editor lists the workspace\'s requests', async () => {
   await role(alice, dave.uid, 'editor')
   await getDocs(query(collection(dave.fs, 'joinRequests'), where('workspaceId', '==', wid)))
@@ -967,28 +930,6 @@ await allow('owner deletes children, invite code, then workspace', async () => {
   await b2.commit()
 })
 
-// Many reports at once. Deleting a body reads its summary twice, and a batch's rules may read at most 20 documents, so a
-// workspace delete takes reports a few to a batch (REPORTS_PER_BATCH in src/data/workspaces.ts).
-{
-  const w = doc(collection(alice.fs, 'workspaces'))
-  await setDoc(w, { name: 'Many', ownerId: alice.uid, memberIds: [alice.uid], roles: { [alice.uid]: 'owner' }, inviteCode: 'MANYCODE', createdAt: Date.now() })
-  const rep = (id) => doc(alice.fs, 'workspaces', w.id, 'reports', id)
-  const ids = Array.from({ length: 25 }, (_, i) => `m${i}`)
-  const inBatches = async (n, write) => {
-    for (let i = 0; i < ids.length; i += n) {
-      const b = writeBatch(alice.fs)
-      for (const id of ids.slice(i, i + n)) write(b, id)
-      await b.commit()
-    }
-  }
-  for (const id of ids) {
-    await seed(`workspaces/${w.id}/reports/${id}`, summaryOf(alice.uid))
-    await seed(`workspaces/${w.id}/reports/${id}/content/body`, body)
-  }
-  const remove = (b, id) => b.delete(doc(rep(id), 'content', 'body')).delete(rep(id))
-  await deny('one batch deletes 25 reports (over the 20 reads a batch may make)', () => inBatches(25, remove))
-  await allow('owner deletes 25 reports six to a batch (workspace delete)', () => inBatches(6, remove))
-}
 
 // ---- The onboarding's seen-state (D-315): users/{uid}/private/onboarding, the person's own only ----
 {
@@ -1033,6 +974,40 @@ await allow('owner deletes children, invite code, then workspace', async () => {
   await deny('onboarding: listing users', () => getDocs(collection(dave.fs, 'users')))
   await allow('onboarding: delete own seen-state', () => deleteDoc(seenDoc(dave)))
   await allow('onboarding: delete own (erin)', () => deleteDoc(seenDoc(erin)))
+}
+// Q-029: each content kind takes its own fields and no others, on create and on update.
+{
+  const qRef = doc(collection(alice.fs, 'workspaces'))
+  const q = qRef.id
+  await allow('Q-029: a workspace for the field checks', async () => {
+    const b = writeBatch(alice.fs)
+    b.set(qRef, { name: 'Fields', ownerId: alice.uid, memberIds: [alice.uid], roles: { [alice.uid]: 'owner' }, inviteCode: 'FIELDSQ1', createdAt: Date.now() })
+    b.set(doc(alice.fs, 'inviteCodes', 'FIELDSQ1'), { workspaceId: q, createdBy: alice.uid })
+    await b.commit()
+  })
+  const at = (coll, id) => doc(alice.fs, 'workspaces', q, coll, id)
+  const kinds = [
+    ['labels', 'l1', { pieceId: 'canvas', text: 'Hello', x: 0, y: 0, createdAt: 1, updatedAt: 1 }],
+    ['customers', 'c1', { title: 'Office workers', body: 'notes', pieceId: 'p1', x: 0, y: 0, tags: ['b2c'], validation: 'testing', createdAt: 1, updatedAt: 1 }],
+    ['features', 'f1', { title: 'Pickup', pieceId: 'p1', x: 0, y: 0, priority: 'P1', status: 'idea', impact: 'high', effort: 'S', criteria: [], createdAt: 1, updatedAt: 1 }],
+    ['packages', 'k1', { title: 'Launch', pieceId: 'p1', x: 0, y: 0, memberIds: [], impact: 'low', effort: 'M', createdAt: 1, updatedAt: 1 }],
+    ['competitors', 'r1', { name: 'Wolt', notes: 'n', url: 'https://wolt.com', regions: ['Germany'], pieceId: 'p1', x: 0, y: 0, createdAt: 1, updatedAt: 1 }],
+    ['competitorFeatures', 'cf1', { competitorId: 'r1', name: 'Order ahead', availability: 'free', createdAt: 1, updatedAt: 1 }],
+    ['comparisons', 'f1_r1', { featureId: 'f1', competitorId: 'r1', competitorFeatureId: 'cf1', criteria: {}, updatedAt: 1 }],
+    ['edges', 'e1', { fromId: 'c1', fromType: 'customer', toId: 'f1', toType: 'feature', kind: 'for', label: 'x' }],
+    ['evidence', 'v1', { nodeId: 'c1', nodeType: 'customer', kind: 'quote', text: 'Too dear', stance: 'supports', createdAt: 1, updatedAt: 1 }],
+    ['pieces', 'p1', { kind: 'plane', name: 'Lunch', x: 0, y: 0, w: 960, h: 600, createdAt: 1, updatedAt: 1 }],
+    ['cells', 'm1_a_b', { matrixId: 'm1', row: 'a', col: 'b', value: 3, updatedAt: 1 }],
+  ]
+  for (const [coll, id, data] of kinds) {
+    await deny(`Q-029: ${coll} created with an unknown field`, () => setDoc(at(coll, id), { ...data, junk: 1 }))
+    await allow(`Q-029: ${coll} created with its own fields`, () => setDoc(at(coll, id), data))
+    await deny(`Q-029: ${coll} updated with an unknown field`, () => updateDoc(at(coll, id), { junk: 1 }))
+  }
+  // A field of another kind is unknown too: a customer has no priority, a competitor no title.
+  await deny('Q-029: a customer with a feature\'s priority', () => updateDoc(at('customers', 'c1'), { priority: 'P1' }))
+  await deny('Q-029: a competitor with a title', () => updateDoc(at('competitors', 'r1'), { title: 'Wolt' }))
+  await deny('Q-029: a link with bend points (D-292)', () => updateDoc(at('edges', 'e1'), { bends: [] }))
 }
 console.log(`\n${passed} passed, ${failed} failed`)
 process.exit(failed ? 1 : 0)

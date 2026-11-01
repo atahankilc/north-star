@@ -64,7 +64,7 @@ import { Beside, type EscNext } from './Beside'
 import { TasksSide } from '../deck/TasksSide'
 import { closeTasksSide, escapeTasksSide, toggleDaysOf, toggleFromPlane, toggleTasksSide, useTasksSide } from '../deck/sideState'
 import { isOpen, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
-import { deleteDocument, downloadDocument, moveReports, unshareDocument, type Doc } from '../../../data/documents'
+import { deleteDocument, downloadDocument, unshareDocument, type Doc } from '../../../data/documents'
 import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from '../documents/Documents'
 import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from '../documents/DocumentPiece'
 import { clearFound, useFind } from '../find/find'
@@ -627,12 +627,6 @@ export function CanvasView() {
     const ids = await uploadFiles(wid, { uid: user.id, name: user.name || user.email || 'someone' }, files)
     if (at && editor && ids[0]) useDocUi.setState({ placing: { docId: ids[0], at } })
   }
-
-  // The old reports move over as documents once (D-232): yours, and the shared ones if you own the workspace.
-  useEffect(() => {
-    if (user?.id) void moveReports(wid, user.id, isOwnerOf(workspace, user.id)).catch((e) => console.warn('[documents] moving reports', e))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wid, user?.id])
 
   // From the threads panel: to its space, the pin in the middle, open.
   const goTo = (t: WithId<Thread>) => {

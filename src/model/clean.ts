@@ -206,7 +206,7 @@ export function cleanPiece(d: Raw, now: number, ids: Ids) {
     table,
     documents: kind === 'documents' ? cleanDocumentsSetup(d.documents) : undefined,
     kanban: kind === 'kanban' ? cleanKanban(d.kanban, ids) : undefined,
-    timeline: kind === 'timeline' ? cleanTimeline(d.timeline, ids) : undefined,
+    timeline: kind === 'timeline' ? cleanTimeline(d.timeline) : undefined,
     docId,
     stuckTo: lens || kind === 'kanban' || kind === 'timeline' ? ids.piece(d.stuckTo) : undefined,
     open: kind !== 'plane' ? bool(d.open) : undefined,
@@ -338,10 +338,9 @@ function cleanDocumentsSetup(v: unknown) {
 }
 
 // A kanban's columns (D-251; rules: 1–12, these keys only); none left, it starts over.
-// A timeline's setup (D-262): the kanbans it shows that came over, its rows.
-export function cleanTimeline(v: unknown, ids: Ids) {
-  const kanbans = list(obj(v)?.kanbans, 20).flatMap((k) => ids.piece(k) ?? [])
-  return compact({ kanbans: kanbans.length ? kanbans : undefined, rows: oneOf(obj(v)?.rows, ['kanban', 'assignee', 'card'] as const) })
+// A timeline's setup (D-262): its rows.
+export function cleanTimeline(v: unknown) {
+  return compact({ rows: oneOf(obj(v)?.rows, ['kanban', 'assignee', 'card'] as const) })
 }
 
 // Holding cards (D-268): which (its source) and the field its columns come from.
@@ -359,7 +358,6 @@ export function cleanKanban(v: unknown, ids: Ids) {
   const cards = oneOf(obj(v)?.holds, ['cards'] as const)
   return compact({
     cols: cols.length ? cols : [{ id: newId(), name: 'todo' }],
-    everyPlane: yes(obj(v)?.everyPlane),
     rows: oneOf(obj(v)?.rows, ['assignee', 'card'] as const),
     holds: cards,
     source: obj(v)?.source ? cleanSource(obj(v)!.source, ids) : undefined,
@@ -436,7 +434,7 @@ export function cleanDocument(d: BundleDocument, now: number, ids: Ids) {
     kind,
     title,
     excerpt: str(d.excerpt, DOC_LIMITS.excerpt),
-    origin: oneOf(d.origin, ['upload', 'assistant', 'moved'] as const) ?? 'upload',
+    origin: oneOf(d.origin, ['upload', 'assistant'] as const) ?? 'upload',
     // Whoever added it, by name (the importer's when the file has none).
     name: str(d.name, 200) || undefined,
     shared: d.shared === true,
