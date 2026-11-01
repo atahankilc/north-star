@@ -347,3 +347,21 @@ describe('the runner goes on with a job as the app does (D-328)', () => {
     expect(a.grades.find((g) => g.name === 'undoRestores')).toMatchObject({ pass: true, why: expect.stringMatching(/the job's 2 steps/) })
   })
 })
+
+// agent-bugs 33: a past run replayed on today's graders and code; where today's code answers a call differently the
+// attempt is marked diverged.
+describe('replay', () => {
+  it('a recorded run plays again as it went; a call answered differently today is the divergence', async () => {
+    const { scriptOf, divergence } = await import('../../evals/run')
+    const task = byId('edit-01-add-problem-for')
+    const { attempt: a } = await attempt(task, referenceModel(task))
+    const rec = a.transcript as never
+    const again = (await attempt(task, stubModel(scriptOf(rec)))).attempt
+    expect(again.pass).toBe(true)
+    expect(divergence(rec, again.transcript)).toBeNull()
+    const flipped = JSON.parse(JSON.stringify(a.transcript))
+    const r = flipped.turns.flatMap((t: { steps: { results: { ok: boolean }[] }[] }) => t.steps.flatMap((s) => s.results)).at(-1)
+    r.ok = !r.ok
+    expect(divergence(flipped, again.transcript)).toMatch(/^call \d+: \w+:(ok|refused) then, \w+:(ok|refused) now$/)
+  })
+})

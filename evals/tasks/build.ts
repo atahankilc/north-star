@@ -3,11 +3,23 @@
 // were made or moved, groups and headings laid out as asked, links wired, one undo step; the judge (capability only)
 // for what only a reader can tell. Each has a plausible wrong script. A big job (a new piece filled with things, agent.md
 // §4.10) is two turns: a plan that writes nothing, then "go" (`followUps`, `noWritesInTurn(1)`).
-import { MADE, count, deletesHaveWhy, exists, field, grouped, judge, linked, made, noOverlaps, noWritesInTurn, onPlane, onlyChanged, under, undoRestores } from '../graders'
-import type { Task } from '../types'
+import { MADE, count, deletesHaveWhy, madeIds, exists, field, grouped, judge, linked, made, noOverlaps, noWritesInTurn, onPlane, onlyChanged, under, undoRestores } from '../graders'
+import type { Grader, Task } from '../types'
 import { answer, call, change, realOf } from './util'
 
 const R = (s: string) => realOf('medium', s)
+// Every task on the deck this run made sits in a column that isn't its finished one (`done`), and there are some.
+const tasksOpen: Grader = {
+  name: 'the new deck\'s tasks start open',
+  grade: (r) => {
+    const deck = madeIds(r, 'piece', { kind: 'deck' }).map((id) => r.end.pieces.find((p) => p.id === id)).find(Boolean)
+    if (!deck) return { pass: false, why: 'no deck made' }
+    const done = new Set((deck.kanban?.cols ?? []).filter((c) => c.done).map((c) => c.id))
+    const tasks = r.end.tasks.filter((t) => t.pieceId === deck.id)
+    const closed = tasks.filter((t) => done.has(t.col))
+    return tasks.length && !closed.length ? { pass: true, why: `${tasks.length} tasks, none in the finished column` } : { pass: false, why: tasks.length ? `${closed.length} of ${tasks.length} start in the finished column` : 'no tasks on it' }
+  },
+}
 const IDEAS_ON_BETS = Array.from({ length: 22 }, (_, i) => `c${55 + i}`)
 const MATRIX = MADE('piece', { kind: 'matrix' })
 const DECK = MADE('piece', { kind: 'deck' })
@@ -93,8 +105,8 @@ export const BUILD: Task[] = [
       made('piece', { kind: 'deck' }),
       count('task', { deck: DECK, card: 'Pre-order bread for pickup' }, { min: 3 }),
       count('task', { deck: DECK }, { min: 3, max: 10 }),
-      // New tasks start in the to-do column, however the deck writes it ("todo", "To do").
-      count('task', { deck: DECK, column: /^to[ -]?do$/i }, { min: 3 }),
+      // The new tasks start open: in a column that isn't the finished one, whatever the deck calls its columns.
+      tasksOpen,
       onlyChanged({ add: { pieces: 1, tasks: { min: 3, max: 10 } } }),
       undoRestores(),
     ],

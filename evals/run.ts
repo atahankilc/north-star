@@ -18,10 +18,10 @@
 //                                     undo read back from it (evals/emulator.ts; README "Emulator mode")
 //
 // The report goes to evals/results/<timestamp>/ (report.md, report.json, transcripts/).
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { answerOf, stepsOf, toolsHash, transcriptUsage, type AgentModel, type AgentTurn, type Transcript, type Usage } from '../src/agent/contract'
-import { stubModel, wrongScript } from '../src/agent/stubModel'
+import { stubModel, wrongScript, type Script } from '../src/agent/stubModel'
 import { FIXTURES, loadFixture, toBundle } from './fixtures'
 import { makeEnv } from './env'
 import { runTurn } from '../src/agent/loop'
@@ -262,9 +262,81 @@ export async function runTasks(tasks: Task[], o: RunOpts = {}): Promise<TaskResu
   return out
 }
 
+// ---- Replay (agent-bugs 33): a past run's transcripts played again by the stub on today's graders, ops and harness,
+// so a grader fix is measured on real models' answers for nothing. The model's calls and answers are replayed in order;
+// where today's code answers a call differently than the run did (a refusal fixed, a new refusal), the model would
+// have gone on differently: that attempt is marked `diverged` and its grade is only a hint.
+
+type Recorded = { turns: { answer: string; steps: { toolCalls: { name: string; args: Record<string, unknown> }[]; results: { name: string; ok: boolean }[] }[] }[] }
+
+export function scriptOf(t: Recorded): Script {
+  const out: Script = []
+  for (const turn of t.turns) {
+    for (const s of turn.steps) if (s.toolCalls.length) out.push({ calls: s.toolCalls.map((c) => ({ name: c.name, args: c.args })) })
+    out.push({ answer: turn.answer })
+  }
+  return out
+}
+
+// The calls' ok flags in order, recorded vs replayed: the first place they part.
+export function divergence(was: Recorded, now: Transcript): string | null {
+  const a = was.turns.flatMap((t) => t.steps.flatMap((s) => s.results.map((r) => `${r.name}:${r.ok ? 'ok' : 'refused'}`)))
+  const b = now.turns.flatMap((t) => t.steps.flatMap((s) => s.results.map((r) => `${r.name}:${r.ok ? 'ok' : 'refused'}`)))
+  for (let i = 0; i < Math.max(a.length, b.length); i++) if (a[i] !== b[i]) return `call ${i + 1}: ${a[i] ?? 'none'} then, ${b[i] ?? 'none'} now`
+  return null
+}
+
+// `was`/`now`: passed then and now; without a judge both leave the judge's grades out (no grader failed).
+export type Replayed = { result: TaskResult; was: boolean[]; now: boolean[]; diverged: (string | null)[] }
+const JUDGED = /^(judge|pictureJudge)\(/
+const passed = (grades: { name: string; pass: boolean | 'skipped' }[], judged: boolean) => !grades.some((g) => g.pass === false && (judged || !JUDGED.test(g.name)))
+
+export async function replayRun(dir: string, tasks: Task[], o: { judged?: boolean } = {}): Promise<Replayed[]> {
+  const judged = !!o.judged
+  const old = JSON.parse(readFileSync(join(dir, 'report.json'), 'utf8')) as { tasks: { id: string; attempts: { grades: { name: string; pass: boolean | 'skipped' }[] }[] }[] }
+  const out: Replayed[] = []
+  for (const t of old.tasks) {
+    const task = tasks.find((x) => x.id === t.id)
+    if (!task) continue
+    const attempts: Attempt[] = []
+    const diverged: (string | null)[] = []
+    for (let i = 1; i <= t.attempts.length; i++) {
+      const f = join(dir, 'transcripts', `${t.id}-${i}.json`)
+      if (!existsSync(f)) continue
+      const rec = JSON.parse(readFileSync(f, 'utf8')) as Recorded & { model?: string }
+      const a = (await attempt(task, stubModel(scriptOf(rec), { name: `replay of ${rec.model ?? 'a run'}` }))).attempt
+      attempts.push(a)
+      diverged.push(divergence(rec, a.transcript))
+    }
+    out.push({ result: { id: task.id, group: task.group, set: task.set, ask: task.ask, attempts }, was: t.attempts.map((x) => passed(x.grades, judged)), now: attempts.map((x) => passed(x.grades, judged)), diverged })
+  }
+  return out
+}
+
+// What changed against the run: per task its passes then and now, and the attempts that diverged.
+export function replayLines(r: Replayed[]): string[] {
+  const n = (xs: boolean[]) => xs.filter(Boolean).length
+  const all = r.flatMap((x) => x.now)
+  const diverged = r.flatMap((x) => x.diverged).filter(Boolean).length
+  const lines = [
+    `# Replay`,
+    '',
+    `Attempts with no grader failing: then ${n(r.flatMap((x) => x.was))}/${all.length}, now ${n(all)}/${all.length}; ${diverged} diverged (today's code answered a call differently: only a hint). Without --judge, judges are left out on both sides.`,
+    '',
+    '| task | then | now | diverged |',
+    '|---|---|---|---|',
+  ]
+  for (const x of r) {
+    const now = x.now
+    if (n(now) === n(x.was) && !x.diverged.some(Boolean)) continue
+    lines.push(`| ${x.result.id} | ${n(x.was)}/${x.was.length} | ${n(now)}/${now.length} | ${x.diverged.map((d, i) => (d ? `#${i + 1} ${d}` : '')).filter(Boolean).join('; ')} |`)
+  }
+  return lines
+}
+
 // ---- The command line
 
-type Args = { set?: string; group?: string; task?: string[]; repeat: number; wrong: boolean; emulator: boolean; writeFixtures: boolean; out?: string; model: string; judge?: string }
+type Args = { set?: string; group?: string; task?: string[]; repeat: number; wrong: boolean; emulator: boolean; writeFixtures: boolean; out?: string; model: string; judge?: string; replay?: string }
 
 export function parseArgs(argv: string[]): Args {
   const a: Args = { repeat: 1, wrong: false, emulator: false, writeFixtures: false, model: 'stub' }
@@ -281,6 +353,7 @@ export function parseArgs(argv: string[]): Args {
     else if (k === '--out') a.out = v()
     else if (k === '--model') a.model = v()
     else if (k === '--judge') a.judge = v()
+    else if (k === '--replay') a.replay = v()
     else throw new Error(`unknown option ${k}`)
   }
   return a
@@ -338,6 +411,22 @@ export async function main(argv: string[], o: { backend?: Backend } = {}): Promi
       writeFileSync(p, JSON.stringify(toBundle(loadFixture(f)), null, 1))
       console.log(`wrote ${p}`)
     }
+    return 0
+  }
+  if (a.replay) {
+    const from = resolve(a.replay)
+    const judge = a.judge ? realModel(a.judge, process.env, a.judge) : null
+    if (judge) setJudge(judge.judge)
+    const r = await replayRun(from, selectTasks(a), { judged: !!judge })
+    if (judge) setJudge(null)
+    const dir = a.out ? resolve(a.out) : join(ROOT, 'evals/results', `${new Date().toISOString().replace(/[:.]/g, '-')}-replay`)
+    mkdirSync(dir, { recursive: true })
+    const { summary } = writeReport(dir, r.map((x) => x.result), { model: `replay of ${from.split('/').pop()}${judge ? ` (judge ${judge.judgeName})` : ''}`, repeat: Math.max(1, ...r.map((x) => x.result.attempts.length)), argv })
+    const lines = replayLines(r)
+    writeFileSync(join(dir, 'replay.md'), lines.join('\n'))
+    console.log(summary)
+    console.log(`\n${lines[2]}`)
+    console.log(`\nreport: ${join(dir, 'report.md')} · what changed: ${join(dir, 'replay.md')}`)
     return 0
   }
   if (a.emulator && !o.backend) throw new Error('--emulator runs through evals/cli.mjs (it loads evals/emulator.ts with VITE_USE_EMULATORS=true); start the emulators first: npm run emulators')

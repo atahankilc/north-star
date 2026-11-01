@@ -15,6 +15,10 @@ OPENAI_API_KEY=… npm run eval -- --model openai:gpt-5.6-terra   a real model (
 ANTHROPIC_API_KEY=… OPENAI_API_KEY=… npm run eval -- --model anthropic:claude-opus-5-5   a Claude model (D-329)
 npm run eval -- … --judge openai:gpt-5.6-terra   the judge: one for every provider (default: that one when
                                   OPENAI_API_KEY is set, else the model tested; the report names it)
+npm run eval -- --replay evals/results/<run>   a past run's transcripts played again on today's graders and code, for
+                                  nothing (no model): replay.md says per task what passed then and now, and which
+                                  attempts diverged (today's code answered a call differently: their grade is a hint).
+                                  Judges are left out on both sides unless --judge is given. Run it after any grader change.
 ```
 
 `npm run eval` runs `evals/run.ts` in node through Vite's module runner (`evals/cli.mjs`); no extra dependency. The
