@@ -115,6 +115,21 @@
   --out: var(--mark-l-hover);
 }
 
+/* While the stepper is on an item, everything else goes quiet (agent-bugs 3): faint, so the item stands out. */
+.mark,
+.ghost,
+.tag,
+.badge,
+.linkTag,
+.link,
+.trail {
+  transition: opacity var(--dur-fast);
+}
+
+.layer [data-quiet] {
+  opacity: var(--o-faint);
+}
+
 /* Struck: one magenta line through it, corner to corner of its middle band. */
 .strike {
   position: absolute;

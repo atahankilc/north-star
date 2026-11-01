@@ -51,7 +51,7 @@ something is finished, add its entry to state-history.md and leave at most one l
      fixed 2026-11-01, not pushed.
   3. Done 2026-11-01, not pushed: 28's done is checked (a refused `change` keeps its step from done); 27's leftover
      (place_on's result names the cards it brought along).
-     Bug 7 (a plane's preview spilling onto the canvas) fixed 2026-11-01, not pushed.
+     Bugs 7 (a plane's preview spilling onto the canvas) and 3 (the stepper's item) fixed 2026-11-01, not pushed.
   4. Waiting on the user: reference planes for the agent's taste (Q-032); the local harness stays an idea (Q-031).
   Order and status of every agent bug: docs/specs/agent-bugs.md (its table).
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks

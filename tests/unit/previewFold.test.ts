@@ -3,7 +3,7 @@
 // one mark on the plane (nothing drawn outside it); in the plane's focus, or beside it, every mark is drawn as before.
 // Other pieces (decks, tables) draw their real contents on the canvas and keep their own marks.
 import { afterEach, describe, expect, it } from 'vitest'
-import { folded, pictureOf, type Drawn } from '../../src/agent/ui/PreviewMarks'
+import { folded, pictureOf, stepperMarks, type Drawn } from '../../src/agent/ui/PreviewMarks'
 import type { Target } from '../../src/agent/preview'
 
 function canvas() {
@@ -49,5 +49,23 @@ describe('a plane only as a picture folds its marks (bug 7)', () => {
     // The same target while its words stay (the layer redraws only on a change).
     expect(folded(d.plane, [mark('a', 'added', '+ new problem', 'i1'), mark('b', 'added', '+ new customer', 'i2'), mark('c', 'removed', '− deleted', 'i3')]).t).toBe(f.t)
     expect(folded(d.plane, [mark('a', 'added', '+ new problem', 'i1')]).t.tag).toBe('1 change inside +1')
+  })
+})
+
+describe('the stepper\'s item stands out (bug 3)', () => {
+  const marks = [mark('a', 'added', '+', 'i1'), mark('b', 'changed', '~', 'i2'), mark('c', 'removed', '−', 'i3')]
+  it('the rest go quiet while it is on an item with a mark', () => {
+    const { isLit, quiet } = stepperMarks(marks, 'i2')
+    expect(marks.map(isLit)).toEqual([false, true, false])
+    expect(marks.map(quiet)).toEqual([true, undefined, true])
+  })
+  it('a folded plane holding the item is lit', () => {
+    const d = canvas()
+    const f = folded(d.plane, [mark('x', 'added', '+', 'i7')])
+    expect(stepperMarks([...marks, f], 'i7').isLit(f)).toBe(true)
+  })
+  it('no item, or an item with no mark here: nothing quiet', () => {
+    expect(marks.map(stepperMarks(marks, null).quiet)).toEqual([undefined, undefined, undefined])
+    expect(marks.map(stepperMarks(marks, 'i9').quiet)).toEqual([undefined, undefined, undefined])
   })
 })

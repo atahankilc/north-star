@@ -36,6 +36,14 @@ export function usePreview(): PreviewState | null {
 
 type Rect = { x: number; y: number; w: number; h: number }
 // `inside`: a plane's folded mark (the items it stands for, so the stepper's current one lights it).
+// The stepper's item stands out, the rest go quiet (agent-bugs 3): every other mark, chip, line and ghost faint; only
+// while the item has a mark here (evidence, say, has none of its own), else all stay as they are.
+export function stepperMarks(drawn: Drawn[], current: string | null) {
+  const isLit = (d: Drawn) => !!current && (d.t.item === current || !!d.inside?.includes(current))
+  const stepping = drawn.some(isLit)
+  return { isLit, quiet: (d: Drawn) => (stepping && !isLit(d)) || undefined }
+}
+
 export type Drawn = { key: string; t: Target; r: Rect; ghost?: Rect; line?: [number, number, number, number]; away?: boolean; was: string[]; tag: string; inside?: string[] }
 type Chip = { key: string; d: Drawn; x: number; y: number; text: string; inside: boolean }
 
@@ -244,14 +252,19 @@ export function PreviewMarks() {
     return () => setBeforeOpen(null)
   }, [])
 
+  // The layer runs again only when the marks change, never when the stepper moves (agent-bugs 3): a new run forgets
+  // which elements it has seen, so every added thing built in again and, for 500 ms, everything passed as fresh,
+  // the canvas under a focus included.
+  const stTargets = st?.targets
+  const stWs = st?.ws
   useEffect(() => {
-    if (!st) {
+    if (!stTargets || !stWs) {
       setDrawn([])
       last.current = []
       return
     }
     // Within targets first: an element two changes mark gets one chip, the other's words joined to it.
-    const targets = [...st.targets].sort((a, b) => Number(!!b.within) - Number(!!a.within))
+    const targets = [...stTargets].sort((a, b) => Number(!!b.within) - Number(!!a.within))
     let found: { t: Target; els: Element[]; was: string[] }[] = []
     let ends = new Map<string, [Element, Element]>()
     const firstSeen = new Map<Element, number>()
@@ -266,7 +279,10 @@ export function PreviewMarks() {
       const next: typeof found = []
       for (const t of targets) {
         if (t.line) continue
+        const focused = !!new URLSearchParams(location.search).get('focus')
         const els = elementsOf(t).filter((el) => {
+          // Under a focus the canvas is behind it: nothing there is marked, fresh or not.
+          if (focused && el.closest('[data-canvas-world]')) return false
           const r = rectOf(el)
           const fresh = now - (firstSeen.get(el) ?? now) < 500 && r.w > 1
           return fresh || seen(el, r)
@@ -361,8 +377,8 @@ export function PreviewMarks() {
           if (!inPicture(d, el)) out.push(d)
         })
         // Gone to another canvas: where it was on this one (the canvas's transform read off a plane drawn here).
-        if (t.away && st && !new URLSearchParams(location.search).get('focus') && st.ws.canvas === t.away.to) {
-          const ref = st.ws.pieces.find((p) => p.kind === 'plane' && p.id !== t.id && document.querySelector(`[data-target="plane:${p.id}"]`))
+        if (t.away && !new URLSearchParams(location.search).get('focus') && stWs.canvas === t.away.to) {
+          const ref = stWs.pieces.find((p) => p.kind === 'plane' && p.id !== t.id && document.querySelector(`[data-target="plane:${p.id}"]`))
           const el = ref && document.querySelector(`[data-target="plane:${ref.id}"]`)
           if (ref && el) {
             const rr = rectOf(el)
@@ -407,7 +423,7 @@ export function PreviewMarks() {
       window.removeEventListener('scroll', moving, true)
       for (const el of marked) el.removeAttribute('data-preview')
     }
-  }, [st])
+  }, [stTargets, stWs])
 
   // `was → now` and the agent's reason on hover: the smallest mark under the pointer that has something to say. The
   // layer takes no pointer events (the app under it is locked anyway, and a pan still works).
@@ -424,6 +440,7 @@ export function PreviewMarks() {
 
   if (!st || !app) return null
   const current = st.current
+  const { isLit, quiet } = stepperMarks(drawn, current)
   const chips = placeChips(drawn, boxes.all)
   const o = (x: number, y: number) => [x - app.x, y - app.y]
   return (
@@ -442,23 +459,23 @@ export function PreviewMarks() {
           if (d.line) {
             const [x1, y1] = o(d.line[0], d.line[1])
             const [x2, y2] = o(d.line[2], d.line[3])
-            return <line key={`l${d.key}`} mask="url(#preview-link-mask)" className={styles.link} data-change={d.t.change} data-current={(current && d.t.item === current) || undefined} x1={x1} y1={y1} x2={x2} y2={y2} />
+            return <line key={`l${d.key}`} mask="url(#preview-link-mask)" className={styles.link} data-change={d.t.change} data-current={isLit(d) || undefined} data-quiet={quiet(d)} x1={x1} y1={y1} x2={x2} y2={y2} />
           }
           if (!d.ghost) return null
           const [ax, ay] = o(d.ghost.x + d.ghost.w / 2, d.ghost.y + d.ghost.h / 2)
           const [bx, by] = o(d.r.x + d.r.w / 2, d.r.y + d.r.h / 2)
           // A long trail would cross half the screen: the ghost alone says where it was.
           if (Math.hypot(bx - ax, by - ay) > 600) return null
-          return <line key={`g${d.key}`} className={styles.trail} x1={ax} y1={ay} x2={bx} y2={by} />
+          return <line key={`g${d.key}`} className={styles.trail} data-quiet={quiet(d)} x1={ax} y1={ay} x2={bx} y2={by} />
         })}
       </svg>
       {drawn.map((d) => {
         if (d.line) return null
-        const lit = (current && (d.t.item === current || d.inside?.includes(current))) || undefined
+        const lit = isLit(d) || undefined
         return (
           <div key={d.key}>
-            {d.ghost && <div className={styles.ghost} style={{ left: d.ghost.x - app.x, top: d.ghost.y - app.y, width: d.ghost.w, height: d.ghost.h }} />}
-            <div className={styles.mark} data-change={d.away ? 'away' : d.t.change} data-tier={d.t.tier} data-current={lit} data-folded={d.inside ? true : undefined} style={{ left: d.r.x - app.x, top: d.r.y - app.y, width: d.r.w, height: d.r.h }}>
+            {d.ghost && <div className={styles.ghost} data-quiet={quiet(d)} style={{ left: d.ghost.x - app.x, top: d.ghost.y - app.y, width: d.ghost.w, height: d.ghost.h }} />}
+            <div className={styles.mark} data-change={d.away ? 'away' : d.t.change} data-tier={d.t.tier} data-current={lit} data-quiet={quiet(d)} data-folded={d.inside ? true : undefined} style={{ left: d.r.x - app.x, top: d.r.y - app.y, width: d.r.w, height: d.r.h }}>
               <i />
               <i />
               <i />
@@ -473,7 +490,8 @@ export function PreviewMarks() {
           key={`c${c.key}`}
           className={c.inside ? styles.badge : c.d.line ? styles.linkTag : styles.tag}
           data-change={c.d.away ? 'away' : c.d.t.change}
-          data-current={(current && (c.d.t.item === current || c.d.inside?.includes(current))) || undefined}
+          data-current={isLit(c.d) || undefined}
+          data-quiet={quiet(c.d)}
           style={{ left: c.x - app.x, top: c.y - app.y }}
         >
           {c.text}

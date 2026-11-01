@@ -1049,3 +1049,11 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - A hidden tab or 5 minutes untouched is `away`: faint grey square, last, not followable, no cursor, selection hidden;
   away people get 180 s before being hidden. Rule `away == true`; rules 599/0 (private emulators).
 - Verified with Alice and Bob in headless Chrome (decisions-log D-331); vitest 917, build, gallery, lessons.
+
+## Done (2026-11-01): agent-bugs 3, the stepper's item stands out
+- Reproduced in headless Chrome (flow demo, next in Segments' focus, frames every 150 ms): each step the mark layer
+  started over (its effect hung on the whole preview state), so added cards built in again and the canvas's copy under
+  the focus was marked for ~400 ms. Now it runs again only when the marks change; nothing in the canvas world is
+  marked under a focus; the other marks go faint while the stepper is on an item that has one.
+- Verified: frames before and after (mark count 16 → 7 on each step before, 7 throughout after), tsc, vitest 920,
+  check:tokens 0, stub evals 0 failed.

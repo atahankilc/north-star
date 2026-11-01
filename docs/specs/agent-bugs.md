@@ -46,7 +46,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 22 | bare ids in documents                            | Plumbing     | mid      | code             | open   |
 | 9  | skills list doesn't scroll                       | Plumbing     | low      | code             | open   |
 | 7  | preview inside a piece spills onto the canvas    | Preview      | high     | code             | fixed  |
-| 3  | the stepper's item doesn't stand out             | Preview      | mid      | code             | open   |
+| 3  | the stepper's item doesn't stand out             | Preview      | mid      | code             | fixed  |
 | 4  | plane layouts ignore links                       | Layout       | high     | code + prompt    | built (flow, D-327); no real-model eval yet |
 | 10 | can't rearrange a canvas                         | Layout       | mid      | unknown (repro)  | open   |
 | 15 | lists answered from the map                      | Judgment     | mid      | code, then prompt| open   |
@@ -220,6 +220,14 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     first before it reaches the item (the stepper's `goTo` in preview.ts, or canvas marks drawn while in focus). Cause
     not looked at.
 
+    *Fixed 2026-11-01:* reproduced in headless Chrome (the `flow` demo, next pressed in Segments' focus, a frame every
+    150 ms). The second half's cause: the mark layer's effect ran again on every step (moving the stepper made a new
+    preview state), so it forgot which elements it had seen: every added card built in again, and for 500 ms every
+    element passed as fresh without the visibility check, the canvas's copy under the focus included (9 extra marks
+    at the left edge for ~400 ms). Now the layer runs again only when the marks change, and under a focus nothing in
+    the canvas world is marked. The first half: while the stepper is on an item with a mark, every other mark, chip,
+    line and ghost goes faint (`--o-faint`); an item with no mark of its own (evidence) leaves them all as they are.
+    previewFold.test.ts holds `stepperMarks`.
 ## Layout: where things go
 
 4.  **It can't lay out a plane in a way that makes sense** (said twice, the second time about arranging an existing
