@@ -57,7 +57,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 24 | points at an existing piece instead of making it | Judgment     | low      | prompt           | open   |
 | 13 | no coverage map for a big document               | New parts    | mid      | new              | open   |
 | 14 | one plane or several, never weighed              | New parts    | mid      | code + prompt    | numbers built (`structure`, D-327) |
-| 28 | a big job stops after one preview                | New parts    | high     | new (workflow)   | built (job, steering; not saved) |
+| 28 | a big job stops after one preview                | New parts    | high     | new (workflow)   | built (job, steering, saved with the chat; done checked) |
 | 27 | organising never changes the structure           | New parts    | high     | new (read + skill)| phases 1–2 built; reference pictures, real-model run next |
 | 8  | no web access                                    | New parts    | mid      | new (Phase 9)    | open   |
 

@@ -1086,3 +1086,14 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   new in both themes (each from its own checkout, a second old for noise): the changes are the snaps in D-326's log,
   looked at in their crops; the rest the real-time canvas. Canvas speed: nothing inside the world changed shape;
   chips stay in the memoised card and link; not measured.
+
+## Done (2026-11-01): agent-bugs 9, 18, 16, 26, 11, 12 (code), 6, 10
+- 9: the / menu scrolls to its pick and steps in its drawn order. 18: the loop drops write tools and adds the
+  read-only note for a viewer (the evals hadn't). 16: an arrange that only puts cards just made near one thing folds
+  into their where; the prompt proposes only what was asked. 26: create_card's from_text keeps a note's words (a
+  reworded title shows `was "…"` in the preview). 11/12: the change warnings name links drawn on no plane, cardless
+  new tasks and overlaps (src/model/overlaps.ts, shared with noOverlaps). 6: labelBox wraps text word by word at its
+  width, checked against the drawn texts in headless Chrome (a 600-character paragraph: 32 px before, 272 now, 264
+  drawn). 10: an arrange beside something keeps its side when pushed clear; view takes a canvas.
+- Evals: edit-15 (a long paragraph by a card), edit-16 (the canvas row; fails without the fix).
+- Verified: tsc (app, evals), vitest 945, check:tokens 0, stub evals 116 tasks 0 failed, `--wrong` 116 failed.
