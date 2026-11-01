@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { makeEnv } from '../../evals/env'
 import { loadFixture } from '../../evals/fixtures'
 import { AGENT_TOOLS } from '../../src/agent/tools'
-import { namedShort, withNames } from '../../src/agent/read/names'
+import { namedShort, plainCites, withNames } from '../../src/agent/read/names'
 
 const ws = loadFixture('medium')
 const env = () => makeEnv(ws)
@@ -54,6 +54,19 @@ describe('withNames: bare ids get their names', () => {
     const name = ws.members![0].name
     expect(withNames(`${u} ${name} wrote it`, ws, e.ids)).toBe(`${u} ${name} wrote it`)
     expect(withNames(`by ${u}.`, ws, e.ids)).toBe(`by ${u} ${name}.`)
+  })
+})
+
+describe('plainCites: ids written as Markdown links or in brackets read as plain ids', () => {
+  it('[c58](c58), [c58 "Bread"](c58) and [p6] become plain; a real link and a bracketed word stay', () => {
+    expect(plainCites('See [c58](c58), [c58 "Bread"](c58) and [p6] and [p13].')).toBe('See c58, c58 "Bread" and p6 and p13.')
+    expect(plainCites('[the site](https://pazar.example) and [note] and [c5](https://x.y)')).toBe('[the site](https://pazar.example) and [note] and [c5](https://x.y)')
+  })
+  it('withNames names them once', () => {
+    const e = env()
+    const card = ws.cards[0]
+    const s = e.ids.short('card', card.id)
+    expect(withNames(`[${s}](${s})`, ws, e.ids)).toBe(`${s} ${namedShort(ws, e.ids, s)!.name}`)
   })
 })
 

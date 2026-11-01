@@ -3,7 +3,7 @@
 // were made or moved, groups and headings laid out as asked, links wired, one undo step; the judge (capability only)
 // for what only a reader can tell. Each has a plausible wrong script. A big job (a new piece filled with things, agent.md
 // §4.10) is two turns: a plan that writes nothing, then "go" (`followUps`, `noWritesInTurn(1)`).
-import { MADE, count, exists, field, grouped, judge, linked, made, noOverlaps, noWritesInTurn, onPlane, onlyChanged, under, undoRestores } from '../graders'
+import { MADE, count, deletesHaveWhy, exists, field, grouped, judge, linked, made, noOverlaps, noWritesInTurn, onPlane, onlyChanged, under, undoRestores } from '../graders'
 import type { Task } from '../types'
 import { answer, call, change, realOf } from './util'
 
@@ -47,20 +47,20 @@ export const BUILD: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: 'Turn the sticky notes on Bets into idea cards and group them.',
-    followUps: ['go'],
+    // A small job (two cards and a package): no plan needed (prompt.ts' big jobs); the runner says go if it plans.
+    // The stickies may stay, or go through the preview with why (D-333: accepting is the yes).
     graders: [
-      noWritesInTurn(1),
       exists('card', { type: 'idea', title: 'Who owns the stall data?', plane: 'Bets' }),
       exists('card', { type: 'idea', title: 'Maybe start with bread', plane: 'Bets' }),
       made('card', { type: 'package', plane: 'Bets', memberIds: (v: unknown) => Array.isArray(v) && v.length === 2 }),
-      onlyChanged({ add: { ideas: 2, packages: 1 } }),
+      onlyChanged({ allow: [R('x13'), R('x14')], add: { ideas: 2, packages: 1 } }),
+      deletesHaveWhy(),
       noOverlaps('Bets'),
       undoRestores(),
-      judge('The two sticky notes became idea cards with their words, grouped together; the stickies were left alone or the person was asked before removing them.'),
+      judge('The two sticky notes became idea cards with their words, grouped together; the stickies were either left alone or removed in the preview with a reason (the person accepts the preview, so no separate question is needed).'),
     ],
     reference: [
       call('query', { kind: 'text', type: 'sticky', plane: 'Bets' }),
-      answer('Plan: 1. make two ideas on p3 Bets from its sticky notes x13 "Who owns the stall data?" and x14 "Maybe start with bread"; 2. package them as "From the sticky notes"; 3. leave the stickies where they are. Say go, or change the plan.'),
       change(
         [
           ['create_card', { type: 'idea', plane: 'p3', title: 'Who owns the stall data?', handle: '$a' }],
@@ -71,12 +71,12 @@ export const BUILD: Task[] = [
       ),
       answer('Made two ideas on p3 Bets from its sticky notes ("Who owns the stall data?" and "Maybe start with bread") and packaged them as "From the sticky notes". I left x13 and x14 where they are; say if they should go.'),
     ],
-    // The stickies deleted without asking, and no package.
+    // The stickies deleted with no why, and no package.
     wrong: [
       change([
         ['create_card', { type: 'idea', plane: 'p3', title: 'Who owns the stall data?' }],
         ['create_card', { type: 'idea', plane: 'p3', title: 'Maybe start with bread' }],
-        ['delete', { ids: ['x13', 'x14'] }, 'they are cards now'],
+        ['delete', { ids: ['x13', 'x14'] }],
       ]),
       answer('Turned the stickies into ideas.'),
     ],

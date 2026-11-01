@@ -300,3 +300,48 @@ describe('fixtures, options and the report', () => {
     expect(existsSync(join(dir, 'transcripts', 'find-05-validated-ideas-1.json'))).toBe(true)
   })
 })
+
+// D-328: a job under way goes on in the evals as in the app, once the scripted asks are used up: one preview at the
+// end, the next step starts with the preview waiting (one apply, one undo step); one per step, each is applied first.
+describe('the runner goes on with a job as the app does (D-328)', () => {
+  const task = byId('skill-test-01')
+  const script = (preview: 'all' | 'each') => [
+    { calls: [{ name: 'plan', args: { title: 'Test the pre-order idea', preview, steps: [{ title: 'Make the deck' }, { title: 'Add the tasks and set testing' }] } }] },
+    { answer: 'Plan: 1. the deck, 2. the tasks. Say go.' },
+    { calls: [{ name: 'progress', args: { step: 1, state: 'doing' } }] },
+    { calls: [{ name: 'change', args: { ops: [{ op: 'create_piece', args: { kind: 'deck', canvas: 'k1', name: 'Test: Pre-order bread for pickup' } }] } }] },
+    { calls: [{ name: 'progress', args: { step: 1, state: 'done' } }] },
+    // Ends its turn after step 1 (one per step's way, or a model that stopped early).
+    { answer: 'Step 1 is in the preview.' },
+    { calls: [{ name: 'progress', args: { step: 2, state: 'doing' } }] },
+    {
+      calls: [
+        {
+          name: 'change',
+          args: {
+            ops: [
+              ...['Pick one stall', 'Put up the sign', 'Count the pre-orders'].map((title, i) => ({ op: 'create_task', args: { deck: 'Test: Pre-order bread for pickup', title, card: 'c58', start: `2026-11-0${4 + i}`, due: `2026-11-0${5 + i}` } })),
+              { op: 'update_card', args: { card: 'c58', fields: { validation: 'testing' } } },
+            ],
+          },
+        },
+      ],
+    },
+    { calls: [{ name: 'progress', args: { step: 2, state: 'done' } }] },
+    { answer: 'Done: the deck, three tasks, c58 testing.' },
+  ]
+
+  it('one preview at the end: step 2 runs with step 1 still waiting; one apply, one undo step; the task passes', async () => {
+    const { attempt: a } = await attempt(task, stubModel(script('all')))
+    for (const g of a.grades) expect(g.pass, `${g.name}: ${g.why}`).not.toBe(false)
+    expect(a.undoSteps).toBe(1)
+    expect(a.transcript.turns.map((t) => t.ask)).toEqual([task.ask, 'go', expect.stringMatching(/^The preview holds the steps so far.*step 2 of 2/)])
+  })
+
+  it('one per step: step 1 is applied, then step 2 runs; two undo steps', async () => {
+    const { attempt: a } = await attempt(task, stubModel(script('each')))
+    expect(a.undoSteps).toBe(2)
+    expect(a.transcript.turns.map((t) => t.ask)).toEqual([task.ask, 'go', expect.stringMatching(/^The changes were applied \(1\)\. Go on with step 2 of 2/)])
+    expect(a.grades.find((g) => g.name.startsWith('count('))?.pass).toBe(true)
+  })
+})

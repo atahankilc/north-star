@@ -82,11 +82,21 @@ function namedReal(ws: ReadWs, id: string): string | undefined {
   return undefined
 }
 
+// A short id the model wrote as a Markdown link or in brackets (`[c58](c58)`, `[p6]`, `[c58 "Bread"](c58)`) as the plain
+// id it is: the chat and documents name and link ids themselves (agent-bugs 2), so a link around one would show it
+// twice. A real link (`[site](https://…)`) stays.
+export function plainCites(text: string): string {
+  const id = SHORT_ID.source.replace(/^\\b|\\b$/g, '')
+  return text
+    .replace(new RegExp(`\\[(${id})((?:\\s+"[^"\\n]{1,90}")?)\\]\\(\\s*\\1\\s*\\)`, 'g'), '$1$2')
+    .replace(new RegExp(`\\[(${id})\\](?!\\()`, 'g'), '$1')
+}
+
 // Every bare short id in a text followed by its name (`c12` → `c12 "Bread club"`); one already followed by a quoted
 // title (or a person's name after `u3`) stays; an id the chat doesn't know, or that's gone, stays as written. Code
 // spans and fenced blocks are left alone.
 export function withNames(text: string, ws: ReadWs, ids: Ids): string {
-  const parts = text.split(/(```[\s\S]*?```|`[^`\n]*`)/)
+  const parts = plainCites(text).split(/(```[\s\S]*?```|`[^`\n]*`)/)
   return parts
     .map((part, i) =>
       i % 2

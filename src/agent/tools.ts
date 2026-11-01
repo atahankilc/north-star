@@ -196,6 +196,7 @@ const planTool: AgentTool = {
       properties: {
         title: { type: 'string', description: 'the job in a few words' },
         steps: { type: 'array', items: { type: 'object', properties: { title: { type: 'string' }, scope: { type: 'string', description: 'what it covers, e.g. "the 14 competitors on Rivals"' }, check: { type: 'string', description: 'how you will know it is right' } }, required: ['title'] } },
+        preview: { type: 'string', enum: ['all', 'each'], description: 'the preview you suggest; the person picks at go. all: one preview when every step is done (the job makes one piece and fills it, or no step reads what an earlier one made); each: one per step (a later step reads what an earlier one made, or it is too much to review at once)' },
       },
       required: ['title', 'steps'],
     },

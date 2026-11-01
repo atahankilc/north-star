@@ -21,7 +21,8 @@ import { useWs } from '../../views/workspace/context'
 import { isTyping } from '../../views/workspace/useEditKeys'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
 import { pickerRows } from '../models'
-import type { Job, JobStep } from '../job'
+import { previewOf, type Job, type JobStep } from '../job'
+import { plainCites } from '../read/names'
 import { pickable, suggested, useAgentSettings } from './settings'
 import { firstAsks } from './suggest'
 import { agentUi } from '../ui'
@@ -534,7 +535,7 @@ function JobPanel({ job, phase }: { job: Job; phase: string }) {
       </ol>
       <footer className={styles.jobFoot}>
         <span className={styles.jobUsed} data-over={over || undefined}>
-          {job.status === 'paused' && job.paused ? `paused: ${job.paused} · ` : job.status === 'planned' ? 'waiting for go · ' : job.status === 'done' ? 'done · ' : job.stopAfter ? 'stops after this step · ' : ''}
+          {job.status === 'paused' && job.paused ? `paused: ${job.paused} · ` : job.status === 'planned' ? 'waiting for go · ' : job.status === 'running' && !job.stopAfter ? `${previewOf(job) === 'all' ? 'one preview' : 'step by step'} · ` : job.status === 'done' ? 'done · ' : job.stopAfter ? 'stops after this step · ' : ''}
           {kTok(job.tokens)} / {kTok(job.budget)} tokens
         </span>
         <span className={styles.jobTools}>
@@ -548,7 +549,16 @@ function JobPanel({ job, phase }: { job: Job; phase: string }) {
               keep going
             </Button>
           )}
-          {(job.status === 'paused' || job.status === 'planned') && !running && phase !== 'previewing' && (
+          {/* A planned job: go, with the preview the person picks (D-328); the agent's suggestion is the primary one. */}
+          {job.status === 'planned' &&
+            !running &&
+            phase !== 'previewing' &&
+            (['all', 'each'] as const).map((p) => (
+              <Button key={p} className={styles.action} tone={(job.suggest ?? 'each') === p ? 'primary' : undefined} onClick={() => agentActions.jobGo(p)} title={p === 'all' ? 'every step, then one preview to accept' : 'a preview after each step; the next starts once you accept'}>
+                {p === 'all' ? 'go · one preview' : 'go · step by step'}
+              </Button>
+            ))}
+          {job.status === 'paused' && !running && phase !== 'previewing' && (
             <Button className={styles.action} tone="primary" onClick={() => agentActions.jobGoOn(over)}>
               {over ? 'raise budget and go on' : 'go on'}
             </Button>
@@ -744,7 +754,7 @@ function inline(line: string): ReactNode[] {
 }
 
 function Answer({ text }: { text: string }) {
-  const blocks = text.split(/\n{2,}/)
+  const blocks = plainCites(text).split(/\n{2,}/)
   return (
     <>
       {blocks.map((b, bi) => {

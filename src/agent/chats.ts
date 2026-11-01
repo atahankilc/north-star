@@ -52,7 +52,10 @@ export type ChatBody = { turns: SavedTurn[]; ids: IdsState; job?: Job }
 // A job as it is saved: plain values only, the step count and texts as firestore.rules allows them.
 export function savedJob(j: Job | null | undefined): Job | undefined {
   if (!j || j.steps.length < 2) return undefined
-  return JSON.parse(JSON.stringify({ ...j, title: j.title.slice(0, 120), steps: j.steps.slice(0, 12), ...(j.paused ? { paused: j.paused.slice(0, 200) } : {}), tokens: Math.max(0, Math.round(j.tokens)), budget: Math.max(1, Math.round(j.budget)), settledAt: Math.max(-1, Math.min(12, j.settledAt)) })) as Job
+  // The preview choice (`suggest`, `preview`) isn't saved: firestore.rules' job keys are closed, and a reopened job
+  // waits for the person anyway (reopenedJob), who picks again.
+  const { suggest: _s, preview: _p, ...kept } = j
+  return JSON.parse(JSON.stringify({ ...kept, title: j.title.slice(0, 120), steps: j.steps.slice(0, 12), ...(j.paused ? { paused: j.paused.slice(0, 200) } : {}), tokens: Math.max(0, Math.round(j.tokens)), budget: Math.max(1, Math.round(j.budget)), settledAt: Math.max(-1, Math.min(12, j.settledAt)) })) as Job
 }
 
 // A job as a reopened chat holds it: one that was under way waits for the person (nothing runs by itself on opening).

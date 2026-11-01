@@ -19,6 +19,7 @@ import { notesOf } from '../src/model/notes'
 import type { AgentWs, ImagePart } from '../src/agent/contract'
 import { LEGEND, planePicture } from '../src/agent/picture'
 import { clean } from '../src/agent/read/derive'
+import { withNames } from '../src/agent/read/names'
 import { nodeRender } from './render'
 import type { Grade, Grader, RunResult } from './types'
 
@@ -675,6 +676,15 @@ export const proposedIn = (turn: number, want: ProposedWant): Grader => ({
   },
 })
 
+// Every delete the previews held came with its why (D-333: a delete goes through the preview with why); none is fine.
+export const deletesHaveWhy = (): Grader => ({
+  name: 'deletesHaveWhy',
+  grade: (r) => {
+    const bare = (r.proposed ?? []).flat().filter((i) => i.delete && !i.why?.trim())
+    return bare.length ? ok(false, `deletes without why: ${bare.map((i) => i.line).join(' | ').slice(0, 200)}`) : ok(true, 'every delete has its why (or none)')
+  },
+})
+
 // Only dry runs: every change call had dry_run, nothing was proposed or written.
 export const dryRunOnly = (): Grader => ({
   name: 'dryRunOnly',
@@ -705,6 +715,10 @@ export const undoRestores = (): Grader => ({
   },
 })
 
+// The answer as the chat shows it: Markdown-linked ids plain, every short id followed by its name (agent-bugs 2), read
+// against the end state. Graders that check ids read the raw answer; the judge reads this.
+const shownAnswer = (r: RunResult) => withNames(r.answer, r.end, r.ids)
+
 // ---- The judge (an LLM grading the answer against a rubric; interface only until a model is configured)
 
 // `context`: what the run changed, in words (diffLines), so the judge grades the answer against what happened.
@@ -733,7 +747,8 @@ export const judge = (rubric: string): Grader => ({
     const app =
       'How the app works: the agent never writes directly; it proposes changes that open as a preview the person accepts (here accepted, so they are listed below), so "waiting in the preview" is true. A new document is private until shared. Short ids (c12 a card, d5 a document, x3 a text, t4 a task) are how the agent names things; an answer may point to the document it wrote by its id, and the document\'s own text (below) is where its claims and card citations are.'
     const context = [app, lines.length ? `What the run changed:\n${lines.join('\n')}` : 'The run changed nothing.', ...docs].join('\n\n')
-    const v = await judgeFn({ rubric, ask: r.transcript.turns[0]?.ask ?? '', answer: r.answer, context })
+    // The answer as the person reads it in the chat: every short id with its name (agent-bugs 2's renderer).
+    const v = await judgeFn({ rubric, ask: r.transcript.turns[0]?.ask ?? '', answer: shownAnswer(r), context })
     return ok(v.pass, v.why)
   },
 })
@@ -754,7 +769,7 @@ export const pictureJudge = (plane: Ref, rubric: string): Grader => ({
     const [before, after] = await Promise.all([r.start.pieces.some((p) => p.id === pid) ? draw(r.start) : null, draw(r.end)])
     if (!after) return { pass: 'skipped', why: 'no picture could be drawn here' }
     const context = `${LEGEND}\n${before ? 'The first picture is the plane before the run, the second after it.' : 'The plane is new: the picture is it after the run.'}`
-    const v = await judgeFn({ rubric, ask: r.transcript.turns[0]?.ask ?? '', answer: r.answer, context, images: before ? [before, after] : [after] })
+    const v = await judgeFn({ rubric, ask: r.transcript.turns[0]?.ask ?? '', answer: shownAnswer(r), context, images: before ? [before, after] : [after] })
     return ok(v.pass, v.why)
   },
 })

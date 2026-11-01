@@ -29,7 +29,7 @@ import { systemPrompt } from '../src/agent/prompt'
 import { openaiModel } from '../src/agent/openai'
 import { anthropicModel } from '../src/agent/anthropic'
 import { effortFor } from '../src/agent/models'
-import { nextMove, settled, type Job } from '../src/agent/job'
+import { chooseAt, nextMove, previewOf, settled, type Job } from '../src/agent/job'
 import { reportOf, withOutcome } from '../src/agent/workflow'
 import { nodeRender } from './render'
 import { EVAL_TOOLS, WRITE_TOOLS } from './tools'
@@ -135,6 +135,7 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
       chatFrom = transcript.turns.length
     }
     let autoGone = false
+    let jobGoOns = 0
     let acceptError: string | undefined
     const untickMissed: string[] = []
     for (let i = 0; i < asks.length; i++) {
@@ -179,6 +180,9 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
         continue
       }
       seenThisTurn = null
+      // A message on a planned job takes the preview the model suggested, as the app's send does (D-328).
+      const planned = env.job?.get()
+      if (planned?.status === 'planned' && !planned.preview) env.job!.set(chooseAt(planned))
       const r = await runTurn(watched, env, EVAL_TOOLS, history, ask, { transcript, turnId: `${turns.length + 1}` })
       notesSeen.push(seenThisTurn ?? '')
       history = r.history
@@ -186,6 +190,24 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
       // What the preview showed at this turn's end (agent.md §4.5).
       env.proposed.push([...(env.changes?.items ?? [])])
       if (r.turn.end !== 'answered') break
+      // A job under way goes on as the app goes on with it, once the scripted asks are used up (D-328): one preview
+      // per step, the person applies it and the next starts; one at the end, the next step starts with the preview
+      // still waiting. Bounded, never more go-ons than the plan has steps.
+      const job = env.job?.get() ?? null
+      if (i === asks.length - 1 && job?.status === 'running' && jobGoOns < job.steps.length) {
+        if (env.changes?.items.length && previewOf(job) === 'each') {
+          jobGoOns++
+          asks.push({ goOn: true })
+          continue
+        }
+        const move = nextMove(job, env.changes?.items.length ? { pending: true } : { waits: true })
+        if (move && 'go' in move) {
+          jobGoOns++
+          env.job!.set({ ...job, settledAt: settled(job) })
+          asks.push(move.go)
+          continue
+        }
+      }
       // The last turn planned and wrote nothing: say go, once (unless the task keeps plans as plans).
       if (i === asks.length - 1 && !autoGone && task.autoGo !== false && looksLikePlan(r.turn, env.job?.get() ?? null) && !env.changes?.items.length) {
         autoGone = true

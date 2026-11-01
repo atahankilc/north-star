@@ -2,7 +2,7 @@
 // that decides whether the app goes on; the plan and progress tools on an env; the workflow turning a message sent while
 // a turn runs into steering; the loop handing it to the model between steps; the job's checklist in the context.
 import { describe, expect, it } from 'vitest'
-import { finished, JOB_BUDGET, jobText, MAX_STEPS, nextMove, nextStep, planJob, progressJob, settled, type Job } from '../../src/agent/job'
+import { chooseAt, finished, JOB_BUDGET, jobText, MAX_STEPS, nextMove, nextStep, planJob, PREVIEW_NOTE, previewOf, progressJob, settled, type Job } from '../../src/agent/job'
 import { step as wfStep, initialWorkflow } from '../../src/agent/workflow'
 import { runTurn, STEER } from '../../src/agent/loop'
 import { stubModel } from '../../src/agent/stubModel'
@@ -46,9 +46,9 @@ describe('the plan as state', () => {
 
   it('the checklist the model reads: marks, what is next, waiting for go', () => {
     expect(jobText(plan())).toMatch(/^## The job: Organise Pazar \(planned; 0\/3 settled\)\n\[ \] 1\. Read the plane/)
-    expect(jobText(plan())).toMatch(/Waiting for the person to say go\.$/)
+    expect(jobText(plan())).toMatch(/Waiting for the person to say go and to pick the preview \(you suggested nothing\)\.$/)
     const j = progressJob(plan(), { step: 1, state: 'doing' }) as Job
-    expect(jobText(j)).toMatch(/\[>\] 1\. Read the plane[\s\S]*Next: step 1\.$/)
+    expect(jobText(j)).toMatch(/\[>\] 1\. Read the plane[\s\S]*Next: step 1\.\nPreview: one per step/)
   })
 })
 
@@ -143,5 +143,41 @@ describe('the job saved with the chat (firestore.rules: body.job)', () => {
     expect(reopenedJob(saved)).toMatchObject({ status: 'paused', paused: 'the chat was reopened' })
     expect(reopenedJob({ ...saved, status: 'done' })?.status).toBe('done')
     expect(reopenedJob(undefined)).toBeNull()
+  })
+})
+
+describe('the preview, picked at go (D-328: one at the end or one per step)', () => {
+  const suggested = (preview?: string) => planJob({ title: 'Test the bread idea', steps: [{ title: 'Make the deck' }, { title: 'Add the tasks' }], ...(preview ? { preview } : {}) }, null) as Job
+  const running = (j: Job) => progressJob(progressJob(j, { step: 1, state: 'doing' }) as Job, { step: 1, state: 'done' }) as Job
+
+  it('the model suggests one; the person picks at go (a button) or a message takes the suggestion; one per step if none', () => {
+    expect(suggested('all')).toMatchObject({ suggest: 'all', status: 'planned' })
+    expect(suggested('some')).toEqual({ error: expect.stringMatching(/preview is all .* or each/) })
+    expect(chooseAt(suggested('all')).preview).toBe('all')
+    expect(chooseAt(suggested('all'), 'each').preview).toBe('each')
+    expect(previewOf(suggested())).toBe('each')
+    // A changed plan keeps the person's pick and the suggestion.
+    const picked = chooseAt(suggested('all'), 'each')
+    expect(planJob({ title: 'Test the bread idea', steps: [{ title: 'Make the deck' }, { title: 'Add the tasks' }, { title: 'Report' }] }, picked)).toMatchObject({ suggest: 'all', preview: 'each' })
+  })
+
+  it('the model reads the suggestion while it waits, then how to run the steps once picked', () => {
+    expect(jobText(suggested('all'))).toMatch(/you suggested one at the end\)\.$/)
+    expect(jobText(chooseAt(suggested('all')))).toMatch(/The person picked the preview: on go, start with step 1\.\nPreview: one at the end/)
+    expect(jobText(running(chooseAt(suggested(), 'each')))).toContain(PREVIEW_NOTE.each)
+  })
+
+  it('a turn that ends with its changes waiting: one at the end goes on (no apply), one per step waits for the person', () => {
+    expect(nextMove(running(chooseAt(suggested(), 'all')), { pending: true })).toEqual({ go: 'The preview holds the steps so far and waits until every step is done. Go on with step 2 of 2: Add the tasks.' })
+    expect(nextMove(running(chooseAt(suggested(), 'each')), { pending: true })).toBeNull()
+    // One at the end, but nothing settled in that turn: it pauses with why, the preview still there.
+    const stuck = { ...running(chooseAt(suggested(), 'all')), settledAt: 1 }
+    expect(nextMove(stuck, { pending: true })).toEqual({ pause: 'no step was finished since the last go-on' })
+  })
+
+  it('the pick is not saved (firestore.rules\' job keys are closed); a reopened job waits for a new pick', async () => {
+    const { savedJob } = await import('../../src/agent/chats')
+    const saved = savedJob(running(chooseAt(suggested('all'))))!
+    expect('suggest' in saved || 'preview' in saved).toBe(false)
   })
 })

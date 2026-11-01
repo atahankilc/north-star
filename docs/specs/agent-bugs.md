@@ -60,6 +60,9 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 28 | a big job stops after one preview                | New parts    | high     | new (workflow)   | built (job, steering, saved with the chat; done checked) |
 | 27 | organising never changes the structure           | New parts    | high     | new (read + skill)| phases 1–2 built; real-model run next |
 | 8  | no web access                                    | New parts    | mid      | new (Phase 9)    | open   |
+| 29 | small jobs split into steps the evals never ran  | Plumbing     | blocker  | code (job, evals)| fixed  |
+| 30 | ids written as Markdown links                    | Plumbing     | mid      | code             | fixed  |
+| 31 | an arrange of new cards is its own preview item  | Guards       | low      | code (changeset) | open   |
 
 ## Order
 
@@ -180,6 +183,11 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     no card, and new or moved things landing on each other, plane by plane (src/model/overlaps.ts, the same boxes as
     the evals' noOverlaps). Left out: "items outside their plane" (a plane fits its content, D-186/D-187), and empty
     key fields and table rows repeating a card (judgment: step 2, the model's own look).
+31. **An arrange of cards just made is its own preview item.** edit-09, edit-13 (0/3): "add three ideas" comes with an
+    `arrange` (a row below a heading) as a fourth item, so the preview holds 4 and unticking one card takes the arrange
+    with it (its handle is gone). Bug 16's fold only takes an arrange with nothing but `where: { near }`. Fix (code,
+    changeset): an arrange of cards made in the same call rides with them (no item of its own), and an unticked card
+    leaves the arrange without it instead of taking it off.
 
 ## Plumbing: wiring the app to what was built
 
@@ -234,6 +242,18 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     picked row goes below the list's edge. Fix: `scrollIntoView({ block: 'nearest' })` on the picked row when `at`
     changes. *Fixed 2026-11-01:* that, and with nothing typed the list is now in its drawn order (group by group), so
     ↑↓ step down the rows as seen; before, they followed the ungrouped order and the pick jumped between groups.
+29. **Small jobs split into steps, and the evals stopped after the first one.** The second real run: the prompt's big-job
+    examples ("make a competitor matrix", "make a deck of tasks to test this idea") sent /test, /compare, /prioritize
+    and build tasks into `plan` jobs with one preview per step, against those skills' "on go, in one change"; and the
+    evals, unlike the app, never went on after a step's preview (only scripted `{ goOn: true }`), so ~15 tasks ended
+    after step 1 ("counted 0 tasks"). *Fixed 2026-11-01 (D-328's preview picked at go):* `plan` takes the preview the
+    agent suggests, the person picks at go (`[go · one preview]` / `[go · step by step]`; a typed message takes the
+    suggestion), one at the end goes on with the preview waiting; the evals go on with a job as the app does once the
+    scripted asks are used up. Evals: evalRunner.test.ts runs a two-step job both ways.
+30. **Ids written as Markdown links.** The model writes `[c58](c58)` and `[p6]`; the chat's renderer named both ids in
+    the link (`[c58 "…"](c58 "…")`) and the judge read bare ids (pitch-04: "cites ids without names"). *Fixed
+    2026-11-01:* read/names.ts' `plainCites` makes them plain ids before the chat draws them and before `withNames`
+    (documents too); the judge reads the answer as the chat shows it (`withNames`).
 
 ## Preview: what the person sees before applying
 
@@ -300,6 +320,14 @@ From the first eval run on a real model: `npm run eval -- --model openai:gpt-5.6
 fixed in 6c9cc13 (big jobs without their `go` turn, a fixture that already held the matrix, a judge that couldn't see
 the document, exact-word note checks, an ambiguous yes); the judge's app context came after. Strongest: context 6/6,
 injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 % is not a baseline: rerun first.
+
+**The second real run (2026-11-01, after 15/21/25's code parts): gpt-5.6-terra, three runs** (report
+`evals/results/2026-11-01T10-58-25-484Z/report.md`, gitignored): pass@1 77/116 (66 %), pass^3 60/116 (52 %),
+$15.20, 69 min; context 6/6, memory 3/3, edit 13/16, find 7/10, injection 4/5, skills 41/65, build 2/8, refuse 1/3.
+Not a baseline either: about fifteen failures were the harness's (29, 30, build-02 against D-333), fixed the same day.
+Measured there, per bug: 15 find-05/10 1/3 (extra cards cited); 19 edit-12 0/3; 20 refuse-02 1/3; 23 swot-02,
+one-pager-02, next-03 0/3; 21 compare-01 `rows.plane` 0/3, swot threats 0/3, dedupe-01 and learn-01 0/3; build-06
+cards 262 px under their heading 0/3; build-08 a Berlin competitor's region typed `Berlin`, not Germany 0/3.
 
 15. **It answers lists from the map without querying.** find-02 "competitors in Germany": one step, no tool call, only
     the three cards whose map line says Germany; it missed the nine Europe and global ones that count (D-145). `query`
