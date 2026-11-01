@@ -17,6 +17,12 @@ where it's first met in code), [onboarding-research.md](onboarding-research.md) 
 - Everything **except the AI agent** (being built by another session, D-312).
 - Built overnight by another agent with **checks and agent pipelines**; this file and the run file prepare that.
 
+> **D-349 (2026-11-02), what changed since this plan:** every lesson is the centred modal (§4.1's window), never
+> a card beside its anchor (§4.3's card and the nudges, §4.5, are no longer drawn); one lesson per screen, panel or
+> piece, step by step, ≤ 6 pages of ≤ 40 words; no lesson over a menu, the finder, a wizard, typing or Settings; the
+> welcome is about the canvas only (6 pages); keys shown nowhere in the app, all of them in `?`. The words and the
+> list: lessons.ts and the table at the top of onboarding-lessons.md. Where this file says otherwise, D-349 wins.
+
 ---
 
 ## 1. The idea in one picture
@@ -73,7 +79,7 @@ lessons is large (~60): a person meets them over days, one at a time, as they di
    transition, typing, or following someone is going on. It waits in a queue (§5.4) and shows when the person is free.
    A lesson *about* one of those surfaces says so (`within`: `wizard`, `finder`, `menu`, `setup`, `settings`,
    `threads`, `following`, `typing`) and shows on it: that one busy source (and typing inside it) doesn't hold it back.
-3. **Short.** ≤ 4 pages a lesson (the welcome 4; the kind guide replayed from `?` pages through its rows, one per kind), a title ≤ 6 words, a body ≤ 25 words, one demo or none. Keys are
+3. **Short.** ≤ 6 pages a lesson, ≤ 40 words a page (D-349; was 4 and 25) (the welcome 6; the kind guide replayed from `?` pages through its rows, one per kind), a title ≤ 6 words, one demo or none. Keys are
    written as the app writes them (`⌘F`, `esc`, `0`). Lowercase actions, uppercase labels, the app's two voices.
 4. **Next to what it explains, never over it.** An anchored lesson sits beside its anchor (`src/ui/foundation/floating.ts`), and
    never covers the anchor, the piece being taught, or the right panel. When there's no room, it goes to the middle

@@ -164,8 +164,8 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
           onClose={() => setSelection([])}
           actions={
             <>
-              <PanelAction label="copy" title="⌘C" onClick={() => Object.assign(clipboard, { cards: many, labels: texts, edges, pasted: 0 })} />
-              {editor && plane && <PanelAction label="duplicate" title="⌘D" onClick={() => setSelection(copyCards(wid, plane, many, edges, [2 * GRID, 2 * GRID], texts))} />}
+              <PanelAction label="copy" onClick={() => Object.assign(clipboard, { cards: many, labels: texts, edges, pasted: 0 })} />
+              {editor && plane && <PanelAction label="duplicate" onClick={() => setSelection(copyCards(wid, plane, many, edges, [2 * GRID, 2 * GRID], texts))} />}
               {editor && plane && (
                 <PanelAction
                   label={shared.length ? (shared.length === count ? 'take off this plane' : 'remove') : 'delete'}

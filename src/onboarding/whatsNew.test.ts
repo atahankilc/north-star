@@ -17,7 +17,7 @@ const LATER: Release = {
   id: '2026-12',
   date: '2026-12-10',
   title: 'Later',
-  items: [{ title: 'Finder', line: 'Find anything.', lessons: ['finder'] }],
+  items: [{ title: 'Comments', line: 'Talk on things.', lessons: ['comment'] }],
 }
 const THREE = [LATER, ...SAMPLE_RELEASES]
 
@@ -77,7 +77,7 @@ describe('who gets what', () => {
     expect(plan.lastRelease).toBe('2026-11')
     expect(plan.releases.map((r) => r.id)).toEqual(['2026-11'])
     expect(plan.arm.sort()).toEqual(
-      ['side-view', 'tasks-given', 'timeline', 'canvases', 'move-canvas', 'plane-filter', 'deck-filter'].map((id) => `${id}@${v(id)}`).sort(),
+      ['side-view', 'tasks-given', 'timeline', 'canvases', 'focus-plane', 'deck'].map((id) => `${id}@${v(id)}`).sort(),
     )
   })
 
@@ -85,9 +85,9 @@ describe('who gets what', () => {
     const plan = planNews(known('launch'), THREE, v)
     if (plan.kind !== 'news') throw new Error(plan.kind)
     expect(plan.lastRelease).toBe('2026-12')
-    expect(plan.arm).toContain(`finder@${v('finder')}`)
+    expect(plan.arm).toContain(`comment@${v('comment')}`)
     expect(new Set(plan.arm).size).toBe(plan.arm.length)
-    expect(newsPages(plan.releases).map((p) => p.title)).toEqual(['Finder', 'Decks and days', 'Timeline as a strip', 'And 3 more'])
+    expect(newsPages(plan.releases).map((p) => p.title)).toEqual(['Comments', 'Decks and days', 'Timeline as a strip', 'And 3 more'])
   })
 
   it('a lesson that no longer exists is not armed', () => {
@@ -152,8 +152,8 @@ describe('arming', () => {
   })
 
   it('the dot counts only what `?` lists for this role: an editor-only lesson armed for a viewer leaves it off', () => {
-    const p = { seen: {}, armed: ['move-canvas@1'] }
-    expect(lessonById('move-canvas')!.roles).not.toContain('viewer')
+    const p = { seen: {}, armed: [`piece-made@${v('piece-made')}`] }
+    expect(lessonById('piece-made')!.roles).not.toContain('viewer')
     expect(hasNew(p, LESSONS, 'viewer')).toBe(false)
     expect(hasNew(p, LESSONS, 'editor')).toBe(true)
     // Armed nudges or empty states (never listed in `?`) don't light it either.

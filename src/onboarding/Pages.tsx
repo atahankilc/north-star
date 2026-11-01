@@ -1,4 +1,4 @@
-// The welcome and what's new (D-315, docs/specs/onboarding.md §4.1, §4.4): one paged modal, the wizard's shade, z 40,
+// The welcome, every lesson (D-349) and what's new (D-315, docs/specs/onboarding.md §4.1, §4.4): one paged modal, the wizard's shade, z 40,
 // the dialog role, focus inside and back where it was on close; `←` `→` `Enter` page, `esc` skips. The wizard window
 // (D-316): the matrix/table/deck wizards' frame, the pages as tabs, the demo on top, words on black.
 // What's new is the same frame: the pages are the changes, `[show me]` where an item has somewhere to go, the last
@@ -60,12 +60,14 @@ function setRef<T>(ref: React.Ref<T>, v: T | null) {
 export { keepFocus, stopCanvas, trapTab, useDialogFocus } from '../ui/patterns/Window'
 
 type Props = {
-  kind: 'welcome' | 'news'
+  // `lesson`: any other note (D-349: every lesson is this modal), named by `name` (its area).
+  kind: 'welcome' | 'news' | 'lesson'
   pages: PageModel[]
   onEnd: (end: PagesEnd) => void
+  name?: string
 }
 
-export function Pages({ kind, pages, onEnd }: Props) {
+export function Pages({ kind, pages, onEnd, name: called }: Props) {
   const [i, setI] = useState(0)
   const root = useRef<HTMLElement>(null)
   const next = useRef<HTMLButtonElement>(null)
@@ -95,8 +97,8 @@ export function Pages({ kind, pages, onEnd }: Props) {
     }
   }
 
-  const name = kind === 'welcome' ? 'welcome' : "what's new"
-  const out = kind === 'welcome' ? 'skip' : 'close'
+  const name = kind === 'welcome' ? 'welcome' : kind === 'news' ? "what's new" : (called ?? 'note')
+  const out = kind === 'news' ? 'close' : 'skip'
   const end = 'done'
   const titleId = `coach-${kind}-title`
   const scene = pages.find((p, k) => k >= i && p.scene)?.scene ?? pages.find((p) => p.scene)?.scene
@@ -192,7 +194,7 @@ function NewsList({ page, over }: { page: PageModel; over: boolean }) {
       ))}
       </div>
       <div className={styles.nf}>
-        Their notes show the first time you meet them, marked <span className={styles.newChip}>NEW</span> in <kbd className={styles.kbd}>?</kbd>.
+        Their notes show the first time you meet them, marked <span className={styles.newChip}>NEW</span> in the guide.
       </div>
     </div>
   )
@@ -216,12 +218,6 @@ const Body = ({ page, className }: { page: PageModel; className: string }) =>
       )}
     </p>
   ) : null
-
-const Keys = () => (
-  <span className={styles.keys} aria-hidden>
-    ← → ↵
-  </span>
-)
 
 // A tab's room in characters: its share of the window, less its padding (14 + 14) and its `01 ` (two digits + 8 px), at
 // about 7.9 px a character (11 px mono, 0.12 em tracking).
@@ -267,7 +263,6 @@ function PageWindow({ page, pages, i, n, last, go, forward, skip, showMe, name, 
           {out}
         </Btn>
         <span className={styles.sp} />
-        <Keys />
         <Btn onClick={() => go(i - 1)} disabled={i === 0}>
           ‹ back
         </Btn>

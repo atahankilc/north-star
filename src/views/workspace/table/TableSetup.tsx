@@ -297,7 +297,7 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
                   )}
                 </>
               )}
-              <Button icon tone="danger" title="take the column out (its values go; ⌘Z brings them back)" aria-label={`Take ${colName(c)} out`} onClick={() => drop(c)}>
+              <Button icon tone="danger" title="take the column out (its values go; you can undo it)" aria-label={`Take ${colName(c)} out`} onClick={() => drop(c)}>
                 ×
               </Button>
             </li>

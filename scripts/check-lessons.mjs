@@ -2,7 +2,8 @@
 // releases.sample.ts, loaded as they are (Node's type stripping).
 // - ids unique and kebab-case, versions ≥ 1, roles and areas valid, every trigger/doneWhen an event of EVENTS;
 // - every `after`/`unless` names a lesson, and `after` has no cycles;
-// - titles ≤ 6 words, bodies ≤ 25 (with their extra line), ≤ 4 pages for any role and audience, at least one;
+// - titles ≤ 6 words, bodies ≤ 40 (with their extra line), ≤ 6 pages for any role and audience, at least one (D-349);
+//   the kind guide's rows, the empty states' lines and choices, and release lines ≤ 25;
 // - every `when` key is in PAYLOADS for its event, every `within` in WITHIN, every `{placeholder}` in PLACEHOLDERS,
 //   every D-number in `since` a `### D-xxx` of memory-bank/decisions-log.md;
 // - every piece kind (PIECE_SIZE, src/model/pieces.ts or src/data/pieces.ts) but NOT_IN_PLUS and every card type
@@ -25,7 +26,9 @@ const { LESSONS, EVENTS, ANCHORS, ROLES, AREAS, FORMATS, PAYLOADS, WITHIN, PLACE
 const { RELEASES } = await import(at('src/onboarding/releases.ts'))
 const { SAMPLE_RELEASES } = await import(at('src/onboarding/releases.sample.ts'))
 
-const MAX = { title: 6, body: 25, pages: 4 }
+// D-349: every lesson a centred modal, fuller and step by step (was 25 words, 4 pages; the kind guide's rows and the
+// empty states' lines stay short, at 25).
+const MAX = { title: 6, body: 40, pages: 6, line: 25 }
 // Piece kinds made elsewhere than the `+` menu: a document comes out of a documents list or a dropped file (D-232).
 const NOT_IN_PLUS = ['document']
 const PENDING_FILE = 'scripts/lessons-pending.json'
@@ -157,7 +160,7 @@ for (const l of LESSONS) {
       if (!Array.isArray(r.lines) || r.lines.length !== 2) bad(`${where} needs two lines`)
       else {
         const n = words(r.lines.join(' '))
-        if (n > MAX.body) bad(`${where} lines are ${n} words (max ${MAX.body})`)
+        if (n > MAX.line) bad(`${where} lines are ${n} words (max ${MAX.line})`)
         r.lines.forEach((line, i) => say(`${where} line ${i + 1}`, line))
       }
       shown(`${where} label`, r.label ?? '')
@@ -169,13 +172,13 @@ for (const l of LESSONS) {
     if (!l.line && !l.choices?.length) bad(`${l.id} has neither a line nor choices`)
     if (l.line !== undefined) {
       const n = words(l.line)
-      if (n > MAX.body) bad(`${l.id} line is ${n} words (max ${MAX.body})`)
+      if (n > MAX.line) bad(`${l.id} line is ${n} words (max ${MAX.line})`)
       say(`${l.id} line`, l.line)
     }
     for (const c of l.choices ?? []) {
       shown(`${l.id} choice "${c.label}"`, `${c.label} ${c.line}`)
       const n = words(`${c.label} ${c.line}`)
-      if (n > MAX.body) bad(`${l.id} choice "${c.label}" is ${n} words (max ${MAX.body})`)
+      if (n > MAX.line) bad(`${l.id} choice "${c.label}" is ${n} words (max ${MAX.line})`)
     }
   }
 }
@@ -329,7 +332,7 @@ for (const [name, list] of [['releases.ts', RELEASES], ['releases.sample.ts', SA
       shown(`${w} line`, it.line)
       if (it.go) shown(`${w} go`, it.go.label)
       const n = words(it.line)
-      if (n > MAX.body) bad(`${w} line is ${n} words (max ${MAX.body})`)
+      if (n > MAX.line) bad(`${w} line is ${n} words (max ${MAX.line})`)
       for (const id of it.lessons ?? []) if (!ids.has(id)) bad(`${w} arms "${id}", which isn't a lesson`)
       if (it.scene !== undefined && !scenes.has(it.scene) && !builtScenes.has(it.scene)) bad(`${w} shows scene "${it.scene}", which no lesson has and src/demo/scenes/ doesn't`)
     }

@@ -1258,3 +1258,14 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - The user closed all three ("ilk üç decisionı kapa"): the workspaces page (no release entry, light theme looked at),
   the backdrop at 70 % in workspaces, one Console for every console, dock and bar (pushed with another session's push,
   Pages deployed). Their *Not yet* lines in decisions-log.md say so.
+
+## Done (onboarding content rewritten, D-349, 2026-11-02)
+- lessons.ts: about 60 lessons → 33 (27 paged, the welcome, the kind guide, 4 empty states); one per screen, panel or
+  piece, ≤ 6 pages of ≤ 40 words, each page a one-word `tab`; the welcome about the canvas only (6 pages); a
+  workspaces-page lesson; the five nudges gone. check-lessons.mjs limits 6/40 (short lines 25).
+- Coach.tsx draws every lesson with Pages (`kind="lesson"`, named by its area, `new ·` when armed); the anchored
+  Lesson card, its esc handler and the Nudge no longer drawn (files kept). Pages lost its `← → ↵` row; three tooltips
+  lost their keys (CardPanel copy/duplicate, Threads close, TableSetup). keys.ts rows point at the new lessons.
+- Verified: tsc, vitest 992/0, check:lessons/gallery/kit/tokens/memory, build; headless Chrome on emulators
+  (`?onboarding=reset`): the workspaces lesson, the welcome's 6 tabs, piece-made after `+ → plane`, focus-plane with its
+  demo at full width, the settings lesson after Settings closes (a native dialog: shown over it, it was hidden).

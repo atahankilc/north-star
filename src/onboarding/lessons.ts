@@ -6,7 +6,7 @@
 // - `…` in backticks is a key or an on-screen word as the app writes it (`⌘F`, `esc`, `0`, `done`): drawn as a chip.
 // - `{owner}` (the workspace's maker), `{peer}` (a person here), `{piece}` (the piece the event is about): filled in
 //   when shown.
-// - A title ≤ 6 words, a body ≤ 25 (its `extra` line counted in), ≤ 4 pages for anyone. Never "board" or "kanban" on
+// - A title ≤ 6 words, a body ≤ 40 (its `extra` line counted in), ≤ 6 pages for anyone (D-349). Never "board" or "kanban" on
 //   screen: "plane", "deck" (D-180, D-301). Payload values in `when` are the code's names (`kind: 'kanban'`), never shown.
 //
 // A changed feature bumps its lesson's `v` (and a line in releases.ts): it then shows once more, as `NEW`.
@@ -143,6 +143,8 @@ export type Trigger = { event: LessonEvent; when?: Match }
 export type Page = {
   title: string
   body: string
+  // Its tab in the modal's row of pages: one short word (else the title's last word, words.ts tabFor).
+  tab?: string
   // The demo (`src/demo/scenes/<scene>.tsx`). None: words only.
   scene?: string
   // Only for these roles (default: the lesson's).
@@ -209,30 +211,29 @@ const LENSES = ['matrix', 'table', 'kanban', 'timeline', 'documents']
 const STICKING = ['matrix', 'table', 'kanban', 'timeline']
 
 export const LESSONS: readonly Lesson[] = [
-  // 1. Start
+  // 1. Start: the canvas's welcome, the workspaces page, asking to join. The welcome is about the canvas only: what's
+  // inside a piece is taught when that piece is first opened (D-349).
   {
-    id: 'welcome', v: 1, format: 'welcome', roles: ALL, area: 'start', since: 'D-174',
+    id: 'welcome', v: 2, format: 'welcome', roles: ALL, area: 'start', since: 'D-174, D-349',
     trigger: [{ event: 'canvas-open', when: { first: true } }],
     pages: [
-      { audience: 'new', title: 'This is your canvas', body: 'Everything for your startup lives on this canvas. Drag to move around, scroll to zoom, `0` shows everything.', scene: 'canvas-fit' },
-      { audience: 'invited', title: '{owner} started this workspace', body: 'Everything for this startup lives on this canvas. Drag to move, scroll to zoom, press `0` to see it all.', scene: 'canvas-fit' },
-      { title: 'Pieces hold the work', body: 'Planes hold cards: customers, problems, competitors, ideas, features, linked into one chain. Tables, matrices, decks and timelines read them.', scene: 'pieces-tour' },
-      { roles: EDITORS, title: 'Add anything with +', body: 'The magenta `+` adds a piece. The first time you meet something, a short note explains it.', scene: 'plus-adds-plane' },
-      { roles: VIEWERS, title: 'Find your way', body: '`⌘F` finds anything. Double-click a piece to go inside it; `esc` comes back out.', scene: 'finder-go' },
-      {
-        title: 'Together, live', body: "Who's here shows bottom left. Right-click anything to comment. `?` shows any note again.", scene: 'peers-comment',
-        extra: { roles: VIEWERS, line: 'As a viewer you read, comment and keep your own documents.' },
-      },
+      { audience: 'new', title: 'This is your canvas', tab: 'canvas', body: "A canvas is an endless surface for your startup's work. Drag the empty space to move around, scroll to zoom round the pointer, press `0` to see everything at once.", scene: 'canvas-fit' },
+      { audience: 'invited', title: '{owner} started this workspace', tab: 'canvas', body: "You're on its canvas: an endless surface for this startup's work. Drag the empty space to move around, scroll to zoom, press `0` to see everything at once.", scene: 'canvas-fit' },
+      { title: 'Tools on the left', tab: 'tools', body: 'The side nav holds the canvas tools: fit shows everything, the compass finds anything, `?` opens this guide again. A decks button joins them once the canvas has a deck.', scene: 'sidenav-fit' },
+      { roles: EDITORS, title: 'Add pieces with +', tab: 'add', body: "Everything on a canvas is a piece: a plane for your cards, a table, a matrix, a deck of tasks, a timeline, documents, or text. Press the magenta `+` and pick one.", scene: 'plus-adds-plane' },
+      { roles: VIEWERS, title: "You're here to read", tab: 'reading', body: 'As a viewer you look around, comment, and keep your own documents. Changing the work stays with owners and editors; ask one if you need to edit.', scene: 'lens-focus' },
+      { title: 'Every piece has a console', tab: 'piece', body: 'Point at a piece and a bar appears on its bottom edge: go inside, edit it, link it, read its comments. Pieces only move in edit mode, so nothing shifts by accident.', scene: 'console-appear' },
+      { title: 'Go inside a piece', tab: 'inside', body: 'Double-click a piece, or press `focus` on its console, to work inside it on the whole screen. `esc` brings you back out to the canvas.', scene: 'focus-ink' },
+      { title: 'Find it, together', tab: 'people', body: 'Who is here shows as squares bottom left. Right-click anything to comment on it. `⌘F` finds any card, heading or task. `?` shows every note again and all the shortcuts.', scene: 'peers-comment' },
     ],
   },
   {
-    id: 'side-nav', v: 1, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-178, D-202, D-196, D-314',
-    trigger: [{ event: 'sidenav-rest' }], anchor: 'sidenav', after: ['welcome'],
+    id: 'workspaces', v: 1, format: 'lesson', roles: ALL, area: 'start', since: 'D-338, D-345, D-349',
+    trigger: [{ event: 'workspaces-open' }],
     pages: [
-      { roles: EDITORS, title: 'Add', body: '`+` adds a piece: a plane, a table, a deck…', scene: 'sidenav-plus' },
-      { title: 'Fit', body: 'Shows everything on the canvas at once. Key: `0`.', scene: 'sidenav-fit' },
-      { title: 'Find', body: 'Find any card, heading or task, and go there. Key: `⌘F`.', scene: 'sidenav-find' },
-      { if: 'has-tasks-button', title: 'Decks and days', body: 'Opens tasks beside you, from anywhere. Key: `t`.', scene: 'sidenav-side' },
+      { title: 'Your workspaces', tab: 'workspaces', body: "A workspace is one startup: its canvases, cards, tasks and people. The one you worked in last sits on top, with what changed since you left and who's in it now." },
+      { title: 'Start, join or bring one', tab: 'start', body: "Type a name in the line at the top to start one. Paste a teammate's code there to ask to join theirs. Drop an exported .zip anywhere on the page to bring one in." },
+      { title: 'Each one', tab: 'actions', body: "Open a workspace with a click. Its `⋯`, or a right-click on it, holds the rest: rename it, copy its invite code, leave or delete it. What needs you shows on this page too." },
     ],
   },
   {
@@ -242,7 +243,7 @@ export const LESSONS: readonly Lesson[] = [
   },
   {
     id: 'workspaces-empty', v: 3, format: 'empty', roles: ALL, area: 'start', since: 'D-062, D-338',
-    trigger: [{ event: 'workspaces-open', when: { empty: true } }], doneWhen: [{ event: 'ws-made' }, { event: 'join-requested' }], anchor: 'workspaces-empty',
+    trigger: [{ event: 'workspaces-open', when: { empty: true } }], doneWhen: [{ event: 'ws-made' }, { event: 'join-requested' }], anchor: 'workspaces-empty', after: ['workspaces'],
     choices: [
       { label: 'Start one', line: 'Type its name in the line above.' },
       { label: "Join a teammate's", line: 'Paste the code they gave you above. An owner lets you in.' },
@@ -250,9 +251,9 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'join-pending', v: 1, format: 'lesson', roles: ALL, area: 'start', since: 'D-062',
-    trigger: [{ event: 'join-requested' }], anchor: 'pending-row',
-    pages: [{ title: 'Waiting for an owner', body: 'Your code asked to join. An owner lets you in from Settings; this page updates by itself.' }],
+    id: 'join-pending', v: 2, format: 'lesson', roles: ALL, area: 'start', since: 'D-062, D-349',
+    trigger: [{ event: 'join-requested' }],
+    pages: [{ title: 'Waiting for an owner', body: 'Your code asked to join. An owner lets you in from Settings, under people. This page updates by itself the moment they do; meanwhile you can close it.' }],
   },
 
   // 2. The `+` and the pieces
@@ -281,29 +282,37 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'piece-made', v: 1, format: 'lesson', roles: EDITORS, area: 'canvas', since: 'D-180, D-182',
-    trigger: [{ event: 'piece-made' }], doneWhen: [{ event: 'edit-off' }], anchor: 'piece',
+    id: 'piece-made', v: 2, format: 'lesson', roles: EDITORS, area: 'canvas', since: 'D-180, D-182, D-210, D-228, D-289, D-349',
+    trigger: [{ event: 'piece-made' }],
     pages: [
-      { title: "It's in edit mode", body: 'Drag it to move, pull an edge to resize, type its name in the top edge.', scene: 'edit-move-resize' },
-      { title: "Done when you're done", body: 'Press `done` on its console. Pieces only move in edit mode, so nothing shifts by accident.', scene: 'edit-done' },
+      { title: "It's in edit mode", tab: 'edit', body: 'A new piece starts in edit mode. Drag it to move it, pull an edge or a corner to resize it, and type its name in its top edge. Hold `alt` to move off the grid.', scene: 'edit-move-resize' },
+      { kinds: [...LENSES, 'document'], title: 'Framed or unframed', tab: 'frame', body: "Framed, it's a window you open to work in. `unframe` on its console lays it on the canvas at its own size, live: click and type in it right there. `frame` puts it back.", scene: 'unframe' },
+      { kinds: STICKING, title: 'Stick it to a plane', tab: 'stick', body: "Drop it near a plane's edge and it sticks: it reads only that plane's cards and moves with it. The `⇆` on its console unsticks it; hold `alt` while dropping to stay free.", scene: 'stick' },
+      { title: "Done when you're done", tab: 'done', body: 'Press `done` on its console to leave edit mode. Pieces only move in edit mode, so nothing shifts by accident; `edit` on the console brings it back.', scene: 'edit-done' },
+      { title: 'Nothing is lost', tab: 'undo', body: 'Deleting a piece asks first, and takes what it holds with it. Every change, a delete too, can be undone with `⌘Z` and done again with `⇧⌘Z`.' },
     ],
   },
   {
-    id: 'piece-console', v: 2, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-264, D-347',
-    // Not the edit-mode console (a piece just made): its words are about the console shown on pointing.
-    trigger: [{ event: 'console-shown', when: { editing: false } }], doneWhen: [{ event: 'focus-in' }], anchor: 'console',
+    id: 'beside', v: 2, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-211, D-349',
+    trigger: [{ event: 'beside-open' }],
     pages: [
-      { title: 'Every piece has a console', body: 'Point at a piece and its console appears on its bottom edge: go inside, edit, link it, see its comments.', scene: 'console-appear' },
-      { title: 'Go inside with focus', body: 'Press `focus` or double-click. Inside, the piece is yours to work in; `esc` comes back.', scene: 'focus-ink' },
+      { title: 'Side by side', tab: 'beside', body: 'A piece stuck to the plane opens beside it, sharing the screen. Drag the line between them to give one side more room. Each side has its own dock.', scene: 'beside' },
+      { title: 'They follow each other', tab: 'follow', body: 'Pick a row beside, and the plane glides to its card. Select a card on the plane, and its row lights up. `esc` closes the side.', scene: 'beside-pick' },
     ],
   },
+
+  // 3. Planes and cards
   {
-    id: 'focus-plane', v: 1, format: 'lesson', roles: ALL, area: 'planes', since: 'D-184, D-185',
-    trigger: [{ event: 'focus-in', when: { kind: 'plane' } }], anchor: 'dock',
+    id: 'focus-plane', v: 2, format: 'lesson', roles: ALL, area: 'planes', since: 'D-184, D-185, D-187, D-207, D-227, D-233, D-349',
+    trigger: [{ event: 'focus-in', when: { kind: 'plane' } }],
     pages: [
-      { roles: EDITORS, title: "You're inside the plane", body: 'Drag to look around. `+` (or right-click) adds cards here. `esc` or `unfocus` goes back.', scene: 'plane-inside' },
-      { roles: VIEWERS, title: "You're inside the plane", body: 'Drag to look around; click a card to read it. `esc` or `unfocus` goes back.', scene: 'plane-inside' },
-      { roles: EDITORS, title: 'Make your first card', body: '`+` → customer, problem, competitor, idea or feature. Type its name, Enter keeps it.', scene: 'card-make-name' },
+      { title: "You're inside a plane", tab: 'plane', body: 'A plane is a space for cards. Drag to look around, scroll to zoom, `0` fits it all. The dock at the bottom holds its tools; `esc` goes back to the canvas.', scene: 'plane-inside' },
+      { roles: EDITORS, title: 'Five kinds of card', tab: 'kinds', body: 'Customers have problems. Competitors solve them today; your ideas solve them better; features build the ideas. Add a card with `+`, or right-click the plane.', scene: 'kind-plane' },
+      { roles: EDITORS, title: 'Make a card', tab: 'make', body: 'Pick a type: the card appears with its panel open. Type its name; Enter keeps it, Tab keeps it and starts the next of its type, `esc` takes it away.', scene: 'card-make-name' },
+      { roles: EDITORS, title: 'Link cards', tab: 'links', body: "Point at a card and drag its `›` onto another. The link's kind says what it means: solves, for, competes, depends on. Links make the chain from customer to feature.", scene: 'link-draw' },
+      { roles: EDITORS, title: 'Several at once', tab: 'many', body: 'Shift-click cards, or hold `alt` and drag a box round them. Move them together, copy, duplicate, line them up, tag them, or bundle them into a package.', scene: 'multi-select' },
+      { roles: VIEWERS, title: 'Read a card', tab: 'cards', body: 'Click a card to open its panel on the right: what it is, the evidence for and against it, its links and notes.', scene: 'card-panel' },
+      { title: 'Show only some', tab: 'filter', body: "The dock's filter shows only some types, one customer's cards, a tag or a region. It passes: leaving the plane clears it.", scene: 'plane-filter' },
     ],
   },
   {
@@ -312,251 +321,143 @@ export const LESSONS: readonly Lesson[] = [
     line: 'press + or right-click to add a card',
   },
   {
-    id: 'focus-lens', v: 1, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-206',
-    trigger: [{ event: 'focus-in', when: { kind: LENSES } }], anchor: 'dock',
-    pages: [{ title: 'Working in a window', body: 'This piece opened in the middle. Its tools are in the dock below; `esc` goes back.', scene: 'lens-focus' }],
-  },
-  {
-    id: 'hazard-undo', v: 1, format: 'lesson', roles: EDITORS, area: 'canvas', since: 'D-182',
-    trigger: [{ event: 'deleted', when: { confirmed: true } }], anchor: 'toast',
-    pages: [{ title: '⌘Z brings it back', body: 'Every change can be undone with `⌘Z`, and done again with `⇧⌘Z`.' }],
-  },
-  {
-    id: 'unframe', v: 1, format: 'lesson', roles: EDITORS, area: 'canvas', since: 'D-228, D-289',
-    trigger: [{ event: 'edit-on', when: { kind: [...LENSES, 'document'] } }], doneWhen: [{ event: 'unframed' }], anchor: 'console-unframe', after: ['piece-made'],
-    pages: [{ title: 'Framed or unframed', body: "Framed, it's a window. Unframed, it lies on the canvas at its own size and you work on it right there.", scene: 'unframe' }],
-  },
-  {
-    id: 'unframed', v: 1, format: 'lesson', roles: EDITORS, area: 'canvas', since: 'D-228',
-    trigger: [{ event: 'unframed' }], anchor: 'piece',
-    pages: [{ title: 'Live on the canvas', body: 'No focus needed: click and type in it here. `frame` in edit mode puts it back in a window.', scene: 'unframed-live' }],
-  },
-  {
-    id: 'stick-hint', v: 1, format: 'lesson', roles: EDITORS, area: 'canvas', since: 'D-210',
-    trigger: [{ event: 'piece-moved', when: { kind: STICKING, editing: true } }], doneWhen: [{ event: 'stuck' }], anchor: 'piece',
-    pages: [{ title: 'Stick it to a plane', body: "Drop it near a plane's edge and it links: it then reads only that plane's cards. Hold `alt` to stay free.", scene: 'stick' }],
-  },
-  {
-    id: 'stuck', v: 1, format: 'lesson', roles: EDITORS, area: 'canvas', since: 'D-210, D-211, D-300, D-303',
-    trigger: [{ event: 'stuck' }], anchor: 'bond',
+    id: 'card-panel', v: 2, format: 'lesson', roles: ALL, area: 'planes', since: 'D-221, D-137, D-044, D-225, D-226, D-254, D-349',
+    trigger: [{ event: 'card-selected' }],
     pages: [
-      { title: 'Linked to the plane', body: 'It now follows that plane: rules read its cards, and it moves with it.', scene: 'stick-follow' },
-      { kinds: ['table', 'matrix'], title: 'Open it beside', body: "In the plane's focus, `⇆ {piece}` opens it next to the plane. Pick a row, the plane shows the card.", scene: 'beside-pick' },
-      { kinds: ['kanban'], title: 'Open it in the side view', body: "In the plane's focus, `⇆ deck` opens it in the side view, with only this plane's tasks.", scene: 'side-view' },
+      { title: 'Everything about a card', tab: 'panel', body: 'The panel on the right holds what a card is, what backs it, its links by meaning, its tags and notes, all edited in place. `esc` closes it.', scene: 'card-panel' },
+      { title: 'Is it true?', tab: 'evidence', body: 'Customers, problems and ideas have a status: hypothesis, testing, validated, invalidated. Evidence for or against shows on the card as cells, filled for, hollow against; `!` when they disagree.', scene: 'evidence' },
+      { title: "Who it's for", tab: 'for', body: "A `for` link tags a card with a customer, so each customer is a segment. The plane's filter, FOR, then shows only that customer's cards.", scene: 'for-filter' },
+      { kinds: ['competitor'], title: 'Their features inside', tab: 'features', body: "A competitor holds its features as small cards inside it. Point at it to see them; open its panel to add more and match them to ours.", scene: 'competitor-features' },
+      { kinds: ['feature'], roles: EDITORS, title: 'Parts fold inside', tab: 'parts', body: 'A feature can hold parts, linked as part of. `−` folds them into the card as a tree; a part’s panel shows its parent.', scene: 'parts' },
+      { roles: EDITORS, title: 'Tasks test cards', tab: 'tasks', body: 'The panel lists a card’s tasks and adds new ones. A card being tested offers `+ test it`; once that task is done, `+ log what it taught` turns its result into evidence.', scene: 'task-learned' },
     ],
   },
   {
-    id: 'beside', v: 1, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-211',
-    trigger: [{ event: 'beside-open' }], anchor: 'split',
-    pages: [{ title: 'Side by side', body: 'Drag the line to share the screen. Each side has its own dock; `esc` closes the side.', scene: 'beside' }],
-  },
-  {
-    id: 'move-canvas', v: 1, format: 'lesson', roles: EDITORS, area: 'canvases', since: 'D-306, D-307, D-313',
-    trigger: [{ event: 'to-canvas' }], anchor: 'prompt', within: 'menu',
+    id: 'link-made', v: 2, format: 'lesson', roles: EDITORS, area: 'links', since: 'D-207, D-128, D-233, D-349',
+    trigger: [{ event: 'link-made' }],
     pages: [
-      { title: 'Move or share a piece', body: '`move to canvas…` takes it to another canvas. `also on canvas…` puts the same piece there too; `⧉ 2` says where.', scene: 'canvases-share' },
-      { title: 'Deleting a shared piece', body: 'Delete then asks: `only from here` keeps it on the other canvases, `delete everywhere` removes it from all.' },
-    ],
-  },
-
-  // 3. Planes and cards
-  {
-    id: 'card-made', v: 1, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-250',
-    trigger: [{ event: 'card-made' }], anchor: 'card-panel', within: 'typing',
-    pages: [
-      { title: 'Name it here', body: 'Enter keeps it. Tab makes the next one of its type. `esc` takes it away again.', scene: 'card-make-name' },
-      { title: 'Its panel', body: 'What it is, what backs it, its links, tags and notes, all edited here.', scene: 'card-panel' },
-      { title: 'Link it', body: "Point at a card, drag its `›` onto another. The link's kind says what it means.", scene: 'link-draw' },
+      { title: 'What does it mean?', tab: 'kind', body: 'The bar under a selected link picks its kind: solves, for, competes, depends on, part of. Give it a label, turn it round, or remove it.', scene: 'link-bar' },
+      { title: 'Shown when it matters', tab: 'shown', body: "`for` and `relates` links stay hidden until one of their cards is selected, so the plane stays readable. The filter's LINKS shows them all.", scene: 'for-filter' },
     ],
   },
   {
-    id: 'card-panel', v: 1, format: 'lesson', roles: ALL, area: 'planes', since: 'D-221',
-    trigger: [{ event: 'card-selected' }], anchor: 'card-panel', unless: ['card-made'],
-    pages: [{ title: 'Everything about a card', body: 'What it is, what backs it, its links by meaning, tags and notes. `esc` closes it.', scene: 'card-panel' }],
-  },
-  {
-    id: 'status-evidence', v: 1, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-137',
-    trigger: [{ event: 'status-set' }, { event: 'evidence-added' }], anchor: 'panel-status',
-    pages: [{ title: 'Is it true?', body: 'Hypothesis, testing, validated, invalidated. Evidence shows on the card as cells: filled for it, hollow against.', scene: 'evidence' }],
-  },
-  {
-    id: 'link-made', v: 1, format: 'lesson', roles: EDITORS, area: 'links', since: 'D-207',
-    trigger: [{ event: 'link-made' }], anchor: 'link-bar', within: 'typing',
-    pages: [{ title: 'What does it mean?', body: 'Pick its kind: solves, for, competes, depends on… Give it a label, or turn it round.', scene: 'link-bar' }],
-  },
-  {
-    id: 'for-links', v: 1, format: 'lesson', roles: ALL, area: 'links', since: 'D-044, D-128',
-    trigger: [{ event: 'link-made', when: { kind: 'for' } }, { event: 'filter-set', when: { kind: 'for' } }], anchor: 'link-bar', within: 'typing', after: ['link-made'],
-    pages: [{ title: "Who it's for", body: "A `for` link tags a card with a customer. The filter's FOR shows one customer's cards.", scene: 'for-filter' }],
-  },
-  {
-    id: 'multi-select', v: 1, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-227',
-    trigger: [{ event: 'cards-multi' }], anchor: 'card-panel',
-    pages: [{ title: 'Several at once', body: 'Shift-click or alt-drag a box. Move them together, copy, line up, tag or package them.', scene: 'multi-select' }],
-  },
-  {
-    id: 'package-made', v: 1, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-239',
-    trigger: [{ event: 'package-made' }], anchor: 'package-band',
-    pages: [{ title: 'A package', body: 'It bundles cards under one name. Drag its band to move them all; `−` folds it into one card.', scene: 'package' }],
-  },
-  {
-    id: 'brought', v: 1, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-281',
-    trigger: [{ event: 'brought' }], anchor: 'card',
+    id: 'package-made', v: 2, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-239, D-245, D-349',
+    trigger: [{ event: 'package-made' }],
     pages: [
-      { title: 'The same card, twice', body: "Edit it here or there: it's one card. `⧉ 2` says where else it is.", scene: 'shared-card' },
-      { title: 'Deleting a shared card', body: 'Delete takes it off this plane only; it stays on the others. `delete everywhere` removes it from every plane.' },
+      { title: 'A package', tab: 'package', body: 'A package bundles cards under one name and a rating. Drag its band to move them all; `−` folds it into one card listing what it holds, `+` opens it again.', scene: 'package' },
+      { title: 'Packages in a plan', tab: 'plan', body: 'Packages nest, and their confidence comes from what they hold. A priorities deck ranks features and packages side by side.', scene: 'priorities' },
     ],
   },
   {
-    id: 'competitor-features', v: 1, format: 'lesson', roles: ALL, area: 'planes', since: 'D-225',
-    trigger: [{ event: 'card-selected', when: { kind: 'competitor' } }], anchor: 'card', after: ['card-panel'],
+    id: 'brought', v: 2, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-281, D-349',
+    trigger: [{ event: 'brought' }],
     pages: [
-      { roles: EDITORS, title: 'Their features inside', body: 'Point at a competitor to see its features; open it to add them and match them to ours.', scene: 'competitor-features' },
-      { roles: VIEWERS, title: 'Their features inside', body: 'Point at a competitor to see its features; select it to keep them open.', scene: 'competitor-features' },
+      { title: 'The same card, twice', tab: 'shared', body: "It's one card in two places: edit it here or there and both change. `⧉ 2` on it, and its panel's PLANES, say where else it is.", scene: 'shared-card' },
+      { title: 'Deleting a shared card', tab: 'delete', body: 'Delete takes it off this plane only; it stays on the others. `delete everywhere` removes it from every plane.' },
     ],
-  },
-  {
-    id: 'parts', v: 1, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-226',
-    trigger: [{ event: 'link-made', when: { kind: 'part-of' } }, { event: 'parts-folded' }], anchor: 'card', after: ['link-made'],
-    pages: [{ title: 'Parts fold inside', body: 'A feature can hold parts. `−` folds them into the card as a tree.', scene: 'parts' }],
-  },
-  {
-    id: 'plane-filter', v: 2, format: 'lesson', roles: ALL, area: 'planes', since: 'D-233, D-308, D-347',
-    trigger: [{ event: 'filter-open', when: { kind: 'plane' } }], anchor: 'filter-strip',
-    pages: [{ title: 'Filters pass', body: 'Show only some types, one customer, a tag or a region. Leaving the plane clears it.', scene: 'plane-filter' }],
-  },
-  {
-    id: 'guides-snap', v: 1, format: 'lesson', roles: EDITORS, area: 'planes', since: 'D-231',
-    trigger: [{ event: 'card-moved', when: { focus: true } }], anchor: 'dock-view',
-    pages: [{ title: 'Lines up by itself', body: 'Magenta guides show while dragging. `g` turns snapping off, `a` the guides; `alt` moves freely.', scene: 'guides' }],
-  },
-  {
-    id: 'right-click', v: 1, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-237, D-222',
-    trigger: [{ event: 'context-menu' }], anchor: 'menu', within: 'menu', linger: true,
-    pages: [{ title: 'Right-click is a prompt', body: 'Type to narrow it, Enter picks the first, a letter jumps. Every menu works like this.', scene: 'prompt-type' }],
   },
 
   // 4. Text
   {
-    id: 'text-made', v: 2, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-188, D-190, D-330',
-    trigger: [{ event: 'text-made', when: { kind: ['heading', 'paragraph'] } }], anchor: 'text-bar', within: 'typing',
-    pages: [{ title: 'Writing on the canvas', body: 'Double-click to type. It saves as you type; `esc` or a click away ends it. The bar under it sets size, style and colour.', scene: 'text-edit' }],
+    id: 'text-made', v: 3, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-188, D-190, D-330, D-050, D-196, D-349',
+    trigger: [{ event: 'text-made', when: { kind: ['heading', 'paragraph'] } }],
+    pages: [
+      { title: 'Writing on the canvas', tab: 'writing', body: 'Double-click text to type in it. It saves as you type; `esc` or a click away ends it. The bar under selected text sets its size, style and colour.', scene: 'text-edit' },
+      { kinds: ['heading'], title: 'Headings are places', tab: 'places', body: 'Every heading shows in the finder as a place to go: pick it and the canvas glides there. Use them to name the areas of your canvas.', scene: 'finder-heading' },
+    ],
   },
   {
-    id: 'sticky-made', v: 1, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-257',
-    trigger: [{ event: 'text-made', when: { kind: 'sticky' } }], anchor: 'sticky', within: 'typing',
-    pages: [{ title: 'A sticky note', body: 'Paper in a colour, with who wrote it and when. `▾` folds a long one back to its first lines.', scene: 'sticky' }],
+    id: 'sticky-made', v: 2, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-257, D-349',
+    trigger: [{ event: 'text-made', when: { kind: 'sticky' } }],
+    pages: [{ title: 'A sticky note', body: 'Paper in a colour, with who wrote it and when on its band. It grows with its text; `▾` folds a long one back to its first lines.', scene: 'sticky' }],
   },
   {
-    id: 'section-draw', v: 1, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-130',
-    trigger: [{ event: 'drawing-section' }], anchor: 'crosshair',
-    pages: [{ title: 'Draw a section', body: "Drag a frame round things. Name it; it carries what's inside when it moves.", scene: 'section' }],
-  },
-  {
-    id: 'headings-places', v: 1, format: 'lesson', roles: ALL, area: 'text', since: 'D-050, D-196',
-    trigger: [{ event: 'text-made', when: { kind: 'heading' } }, { event: 'finder-open', when: { headings: true } }], anchor: 'heading', after: ['text-made', 'finder'], within: 'finder',
-    pages: [{ title: 'Headings are places', body: 'The finder lists them; Enter glides you there.', scene: 'finder-heading' }],
+    id: 'section-draw', v: 2, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-130, D-349',
+    trigger: [{ event: 'text-made', when: { kind: 'section' } }],
+    pages: [{ title: 'A section', body: 'A section frames things that belong together. Name it in its edge. Moving it carries everything fully inside it; its corner resizes it.', scene: 'section' }],
   },
 
-  // 5. Matrix and table
+  // 5. Matrix and table: taught when first made or opened, wizard and setup included (D-349).
   {
-    id: 'matrix-wizard', v: 1, format: 'lesson', roles: EDITORS, area: 'lenses', since: 'D-216',
-    trigger: [{ event: 'wizard', when: { kind: 'matrix' } }], anchor: 'wizard', within: 'wizard',
-    pages: [{ title: 'Four questions', body: 'What to start from, rows, columns, and what a cell holds. The preview shows it as you choose.', scene: 'matrix-wizard' }],
-  },
-  {
-    id: 'matrix-keys', v: 1, format: 'lesson', roles: ALL, area: 'lenses', since: 'D-212',
-    trigger: [{ event: 'focus-in', when: { kind: 'matrix' } }, { event: 'cell-picked', when: { kind: 'matrix', framed: false } }], anchor: 'dock', after: ['focus-lens'],
+    id: 'matrix', v: 1, format: 'lesson', roles: ALL, area: 'lenses', since: 'D-204, D-212, D-216, D-133, D-249, D-349',
+    trigger: [{ event: 'piece-made', when: { kind: 'matrix' } }, { event: 'focus-in', when: { kind: 'matrix' } }], after: ['piece-made'],
     pages: [
-      { roles: EDITORS, title: 'Scoring cells', body: "Click a cell, click again to step it, or type `1`–`9`. Arrows move, `-` means doesn't apply.", scene: 'matrix-keys' },
-      { roles: VIEWERS, title: 'Reading the scores', body: 'Each cell scores a row against a column. `~` is inferred, `?` a guess, `—` doesn\'t apply.', scene: 'matrix-keys' },
-      { roles: EDITORS, title: 'How sure?', body: '`~` inferred, `?` a guess. A note explains the score.', scene: 'matrix-sure' },
+      { title: 'A matrix', tab: 'matrix', body: 'A matrix scores one list against another: competitors against features, ideas against criteria. Its rows and columns come from your cards, typed names, or single cards.', scene: 'kind-matrix' },
+      { title: 'Working in a window', tab: 'window', body: '`focus` opens it in the middle with its dock below; `esc` goes back. Unframed, it lies on the canvas and you work on it right there.', scene: 'lens-focus' },
+      { roles: EDITORS, title: 'Scoring cells', tab: 'score', body: "Click a cell, click again to step it, or type `1`–`9`. Arrows move between cells, `-` means it doesn't apply, Backspace clears it.", scene: 'matrix-keys' },
+      { roles: VIEWERS, title: 'Reading the scores', tab: 'reading', body: "Each cell scores a row against a column. `—` means it doesn't apply. Totals, when shown, add up a row or a column.", scene: 'matrix-keys' },
+      { title: 'How sure?', tab: 'sure', body: 'A score can say how sure it is: documented, `~` inferred, or `?` a guess, with a note that explains it.', scene: 'matrix-sure' },
+      { roles: EDITORS, title: 'Judged on', tab: 'judged', body: "A feature can list what it's judged on. Unfold its axis and those criteria open as rows; score them and the feature's cell reads from them.", scene: 'criteria' },
+      { roles: EDITORS, title: 'Change it any time', tab: 'setup', body: "`setup` in the dock has every choice the wizard asked, and more: the axes, what a cell holds, totals.", scene: 'matrix-wizard' },
     ],
   },
   {
-    id: 'matrix-criteria', v: 1, format: 'lesson', roles: EDITORS, area: 'lenses', since: 'D-133, D-249',
-    trigger: [{ event: 'axis-unfold' }], anchor: 'axis',
-    pages: [{ title: 'Judged on', body: "A feature's criteria open as rows. Score them; the feature's cell reads from them.", scene: 'criteria' }],
-  },
-  {
-    id: 'table-wizard', v: 1, format: 'lesson', roles: EDITORS, area: 'lenses', since: 'D-209',
-    trigger: [{ event: 'wizard', when: { kind: 'table' } }], anchor: 'wizard', within: 'wizard',
-    pages: [{ title: 'Rows by rules', body: 'A table picks its rows by rules: a plane, a type, a status. New cards join by themselves.', scene: 'table-rules' }],
-  },
-  {
-    id: 'table-keys', v: 1, format: 'lesson', roles: ALL, area: 'lenses', since: 'D-218',
-    trigger: [{ event: 'focus-in', when: { kind: 'table' } }], anchor: 'dock', after: ['focus-lens'],
+    id: 'table', v: 1, format: 'lesson', roles: ALL, area: 'lenses', since: 'D-209, D-213, D-218, D-224, D-349',
+    trigger: [{ event: 'piece-made', when: { kind: 'table' } }, { event: 'focus-in', when: { kind: 'table' } }], after: ['piece-made'],
     pages: [
-      { roles: EDITORS, title: 'Working in a table', body: "Click a cell; `Enter` or a double-click types. Arrows move, a head sorts, a head's edge widens.", scene: 'table-keys' },
-      { roles: VIEWERS, title: 'Reading a table', body: "Each row is a card, picked by the table's rules. Drag to look around; `esc` goes back.", scene: 'table-keys' },
-      { roles: EDITORS, title: 'Your own columns', body: '`setup` adds columns of its own: a mark, a number, a few words, a check.', scene: 'table-setup' },
+      { title: 'A table', tab: 'table', body: 'A table lists cards as rows, picked by rules: a plane, a type, a status, a tag. New cards that match join it by themselves.', scene: 'table-rules' },
+      { title: 'Working in a window', tab: 'window', body: '`focus` opens it in the middle with its dock below; `esc` goes back. Unframed, it lies on the canvas and you work on it right there.', scene: 'lens-focus' },
+      { roles: EDITORS, title: 'Working in cells', tab: 'cells', body: "Click a cell; Enter or a double-click types in it. Arrows move, `space` ticks a check. A head's click sorts; drag its edge to widen the column.", scene: 'table-keys' },
+      { roles: VIEWERS, title: 'Reading a table', tab: 'reading', body: "Each row is a card. Click a head to sort by it; click a card's name to open its panel.", scene: 'table-keys' },
+      { roles: EDITORS, title: 'Your own columns', tab: 'columns', body: "`setup` in the dock adds columns of your own beside the cards' fields: a scale, a number, a few words, a check. It changes the rules too.", scene: 'table-setup' },
     ],
-  },
-  {
-    id: 'setup-open', v: 1, format: 'lesson', roles: EDITORS, area: 'lenses', since: 'D-217',
-    trigger: [{ event: 'setup-open' }], anchor: 'setup', within: 'setup',
-    pages: [{ title: 'Change it any time', body: 'Setup has every choice the wizard asked, and more.' }],
   },
 
   // 6. Documents
   {
-    id: 'documents', v: 1, format: 'lesson', roles: ALL, area: 'documents', since: 'D-232',
-    trigger: [{ event: 'focus-in', when: { kind: 'documents' } }, { event: 'piece-made', when: { kind: 'documents' } }], anchor: 'piece', after: ['focus-lens', 'piece-made'],
+    id: 'documents', v: 2, format: 'lesson', roles: ALL, area: 'documents', since: 'D-232, D-349',
+    trigger: [{ event: 'focus-in', when: { kind: 'documents' } }, { event: 'piece-made', when: { kind: 'documents' } }], after: ['piece-made'],
     pages: [
-      { title: 'Your files', body: "Upload `.md` notes or drop them here. They're private until you share them.", scene: 'documents' },
-      { title: 'Read beside', body: 'In focus, a click opens a document next to the list, to read as a page.', scene: 'doc-beside' },
+      { title: 'Your files', tab: 'files', body: "A documents list holds notes, research and reports. Upload `.md` files or drop them on it. Each one is private until you share it.", scene: 'documents' },
+      { title: 'Read beside', tab: 'beside', body: 'In focus, a click opens a document next to the list, to read as a page, with its headings to jump between. Open several side by side.', scene: 'doc-beside' },
     ],
   },
   {
-    id: 'doc-place', v: 1, format: 'lesson', roles: EDITORS, area: 'documents', since: 'D-234',
-    trigger: [{ event: 'piece-made', when: { kind: 'document' } }], anchor: 'piece', after: ['piece-made'],
-    pages: [{ title: 'On the canvas', body: 'A placed document is a window anyone here can read. Unframe it to read it on the canvas.', scene: 'doc-place' }],
+    id: 'doc-place', v: 2, format: 'lesson', roles: EDITORS, area: 'documents', since: 'D-234, D-349',
+    trigger: [{ event: 'piece-made', when: { kind: 'document' } }], after: ['piece-made'],
+    pages: [{ title: 'A document on the canvas', body: 'A placed document is a window anyone here can read. Unframe it to read it on the canvas itself.', scene: 'doc-place' }],
   },
 
   // 7. Decks and days
   {
-    id: 'deck-wizard', v: 1, format: 'lesson', roles: EDITORS, area: 'decks', since: 'D-251, D-268',
-    trigger: [{ event: 'wizard', when: { kind: 'kanban' } }], anchor: 'wizard', within: 'wizard',
-    pages: [{ title: 'Tasks or cards', body: 'A deck holds tasks, or your cards sorted by a field: status, impact, effort.', scene: 'deck-kinds' }],
-  },
-  {
-    id: 'deck', v: 1, format: 'lesson', roles: ALL, area: 'decks', since: 'D-252',
+    id: 'deck', v: 2, format: 'lesson', roles: ALL, area: 'decks', since: 'D-252, D-256, D-300, D-349',
     // A deck of tasks: a deck holding cards has its own lesson (card-deck).
-    trigger: [{ event: 'focus-in', when: { kind: 'kanban', holds: 'tasks' } }, { event: 'unframed', when: { kind: 'kanban', holds: 'tasks' } }], doneWhen: [{ event: 'task-moved' }], anchor: 'dock', after: ['focus-lens', 'unframed'],
+    trigger: [
+      { event: 'piece-made', when: { kind: 'kanban', holds: 'tasks' } },
+      { event: 'focus-in', when: { kind: 'kanban', holds: 'tasks' } },
+      { event: 'unframed', when: { kind: 'kanban', holds: 'tasks' } },
+    ],
+    after: ['piece-made'],
     pages: [
-      { roles: EDITORS, title: 'Moving work along', body: 'Drag a task to another column: that is its step now.', scene: 'deck-drag' },
-      { roles: EDITORS, title: 'Adding tasks', body: '`+ add a task` under a column types one; Enter adds it and keeps the field for the next.', scene: 'deck-add' },
-      { roles: VIEWERS, title: 'Where the work is', body: "Each column is a step; each task sits in one. Click a task to read who has it, its day and card.", scene: 'deck-drag' },
-      { roles: EDITORS, title: "A task's panel", body: 'Click a task: give it to someone, a due day, a card, a checklist.', scene: 'task-panel' },
+      { title: 'A deck of tasks', tab: 'deck', body: 'Columns are steps, and each task sits in one. Drag a task to another column to move it along; a cyan line shows where it lands.', scene: 'deck-drag' },
+      { roles: EDITORS, title: 'Adding tasks', tab: 'add', body: '`+ task` under a column types one. Enter adds it and keeps the field open for the next.', scene: 'deck-add' },
+      { title: "A task's panel", tab: 'task', body: 'Click a task to open it: who it is given to, its due day, its card, a checklist and notes. Overdue days turn magenta.', scene: 'task-panel' },
+      { title: 'Only some tasks', tab: 'filter', body: "The dock's filter shows tasks given to someone, due soon, for a card, or with a label. `lanes` splits the deck by person or by card.", scene: 'deck-filter' },
+      { title: 'Decks beside you', tab: 'beside', body: "The side nav's decks button opens your decks beside whatever you are on, from anywhere. A deck's `days ›` puts its tasks on days.", scene: 'side-view' },
     ],
   },
   {
-    id: 'task-card', v: 1, format: 'lesson', roles: EDITORS, area: 'decks', since: 'D-254',
-    trigger: [{ event: 'task-for-card' }], anchor: 'card-panel',
-    pages: [{ title: 'Tasks test cards', body: 'A task for a card is listed on it. Finished, `+ log what it taught` puts what it found on the card, as evidence.', scene: 'task-learned' }],
-  },
-  {
-    id: 'card-deck', v: 1, format: 'lesson', roles: EDITORS, area: 'decks', since: 'D-253, D-271',
-    trigger: [{ event: 'piece-made', when: { kind: 'kanban', holds: 'cards' } }], anchor: 'piece', after: ['piece-made'],
+    id: 'card-deck', v: 2, format: 'lesson', roles: EDITORS, area: 'decks', since: 'D-253, D-271, D-349',
+    trigger: [{ event: 'piece-made', when: { kind: 'kanban', holds: 'cards' } }, { event: 'focus-in', when: { kind: 'kanban', holds: 'cards' } }], after: ['piece-made'],
     pages: [
-      { title: 'Cards on a deck', body: "Columns are one field's values. Drop a card in a column and the field changes.", scene: 'card-deck' },
-      { title: 'Suggested order', body: '`order` ranks by impact × confidence ÷ effort, as P1–P3. It never writes anything.', scene: 'priorities' },
+      { title: 'Cards on a deck', tab: 'cards', body: "Here the columns are one field's values: status, impact, effort or priority. Drop a card in a column and that field changes.", scene: 'card-deck' },
+      { title: 'Suggested order', tab: 'order', body: '`order` ranks cards by impact × confidence ÷ effort, as P1–P3. It only suggests: it never writes anything.', scene: 'priorities' },
     ],
   },
   {
-    id: 'side-view', v: 1, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314',
-    trigger: [{ event: 'side-view' }], anchor: 'side-view',
+    id: 'side-view', v: 2, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314, D-349',
+    trigger: [{ event: 'side-view' }],
     pages: [
-      { title: 'Decks and days, beside you', body: '`t` opens your decks beside what you are on, from anywhere; a deck\'s `days ›` adds its days.', scene: 'side-view' },
-      { title: 'Yours', body: '`MINE` lists the tasks given to you; `ALL · DAYS` puts every deck on days.', scene: 'side-mine' },
+      { title: 'Decks and days, beside you', tab: 'side view', body: "This opens from anywhere, beside what you are on: the plane, its deck, then the deck's days with `days ›`. The tabs are the canvas's decks.", scene: 'side-view' },
+      { title: 'Yours', tab: 'mine', body: '`MINE` lists the tasks given to you, from every deck. `ALL · DAYS` puts every deck on days.', scene: 'side-mine' },
     ],
   },
   {
-    id: 'timeline', v: 1, format: 'lesson', roles: ALL, area: 'decks', since: 'D-304, D-314',
-    trigger: [{ event: 'focus-in', when: { kind: 'timeline' } }, { event: 'piece-made', when: { kind: 'timeline' } }], anchor: 'piece', after: ['focus-lens', 'piece-made'],
+    id: 'timeline', v: 2, format: 'lesson', roles: ALL, area: 'decks', since: 'D-262, D-304, D-314, D-349',
+    trigger: [{ event: 'focus-in', when: { kind: 'timeline' } }, { event: 'piece-made', when: { kind: 'timeline' } }], after: ['piece-made'],
     pages: [
-      { title: 'Days without end', body: 'Drag sideways through time; pinch or pick day, week, month, quarter.', scene: 'timeline-scroll' },
-      { roles: EDITORS, title: 'Plan by drawing', body: 'Draw across days on a row, then pick its card: a task. Drag its ends to change its days.', scene: 'timeline-draw' },
+      { title: 'Days without end', tab: 'days', body: "A timeline shows a deck's tasks on a strip of days. Drag sideways through time; pinch, or pick day, week, month or quarter.", scene: 'timeline-scroll' },
+      { roles: EDITORS, title: 'Plan by drawing', tab: 'draw', body: 'Draw across days on a row, then pick its card: that makes a task. Drag a task to move it, or its ends to change its days.', scene: 'timeline-draw' },
     ],
   },
   {
@@ -565,93 +466,61 @@ export const LESSONS: readonly Lesson[] = [
     line: 'no tasks yet: draw across days to plan one',
   },
   {
-    id: 'deck-filter', v: 2, format: 'lesson', roles: ALL, area: 'decks', since: 'D-256, D-308, D-347',
-    trigger: [{ event: 'filter-open', when: { kind: 'kanban' } }], anchor: 'filter-strip',
-    pages: [{ title: 'Only some tasks', body: 'Given to, due, for a card, a label. It lasts while the deck is open.', scene: 'deck-filter' }],
-  },
-  {
-    id: 'tasks-given', v: 1, format: 'lesson', roles: ALL, area: 'decks', since: 'D-261',
-    trigger: [{ event: 'task-given', when: { byOther: true } }], anchor: 'tasks',
-    pages: [{ title: 'Given to you', body: 'The count by the side nav is tasks given to you since you last looked.' }],
+    id: 'tasks-given', v: 2, format: 'lesson', roles: ALL, area: 'decks', since: 'D-261, D-349',
+    trigger: [{ event: 'task-given', when: { byOther: true } }],
+    pages: [{ title: 'A task for you', body: "Someone gave you a task. The count by the decks button is tasks given to you since you last looked; `MINE` in the side view lists them all." }],
   },
 
   // 8. Together
   {
-    id: 'people-here', v: 2, format: 'lesson', roles: ALL, area: 'together', since: 'D-169, D-331',
-    trigger: [{ event: 'peer-joined' }], anchor: 'people',
-    pages: [{ title: '{peer} is here', body: 'Their square is bottom left, their cursor on the canvas. Click the square to follow them. A faint square is away.', scene: 'peers-cursors' }],
-  },
-  {
-    id: 'following', v: 1, format: 'lesson', roles: ALL, area: 'together', since: 'D-067, D-191',
-    trigger: [{ event: 'following' }], anchor: 'follow-label', within: 'following',
-    pages: [{ title: 'Following', body: 'You see what they see, wherever they go. `esc`, a pan of your own, or their square again stops it.', scene: 'follow' }],
-  },
-  {
-    id: 'comment', v: 1, format: 'lesson', roles: ALL, area: 'together', since: 'D-192',
-    trigger: [{ event: 'thread-open' }], anchor: 'thread', within: 'threads',
-    pages: [{ title: 'Comments stay on things', body: "A chip marks what's been talked about. `@` tells someone; resolve it when it's done.", scene: 'thread' }],
-  },
-  {
-    id: 'threads-panel', v: 1, format: 'lesson', roles: ALL, area: 'together', since: 'D-197',
-    trigger: [{ event: 'threads-open' }], anchor: 'threads', within: 'threads',
-    pages: [{ title: 'Every conversation', body: "New, mentions, resolved. In a thread, `on … ↗` (or `go there ↗`) takes you to what it's about.", scene: 'threads-panel' }],
-  },
-
-  // 9. Finding, canvases, settings
-  {
-    id: 'finder', v: 1, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-196, D-236',
-    trigger: [{ event: 'finder-open' }], anchor: 'finder', within: 'finder',
-    pages: [{ title: 'Find anything', body: 'Empty, it lists places. Type to find cards, text, tasks. Tab widens it: here, this canvas, everywhere.', scene: 'finder-go' }],
-  },
-  {
-    id: 'canvases', v: 1, format: 'lesson', roles: ALL, area: 'canvases', since: 'D-302, D-305',
-    trigger: [{ event: 'crumb-open' }], anchor: 'crumb', within: 'menu',
-    pages: [{ title: 'More than one canvas', body: 'Big work splits into canvases: this name lists them. `⌥1`–`⌥9` jump between them.', scene: 'canvases' }],
-  },
-  {
-    id: 'settings', v: 2, format: 'lesson', roles: ALL, area: 'settings', since: 'D-097, D-348',
-    trigger: [{ event: 'settings-open' }], anchor: 'settings-menu', within: 'settings',
-    pages: [{ title: 'Settings', body: 'You: account and display (theme, motion, background and its strength, HUD size). Workspace: name, people, export.' }],
-  },
-  {
-    id: 'people-settings', v: 1, format: 'lesson', roles: OWNERS, area: 'settings', since: 'D-062, D-098',
-    trigger: [{ event: 'settings-open', when: { page: 'people' } }], anchor: 'settings-people', after: ['settings'], within: 'settings',
+    id: 'people-here', v: 3, format: 'lesson', roles: ALL, area: 'together', since: 'D-169, D-331, D-067, D-191, D-349',
+    trigger: [{ event: 'peer-joined' }],
     pages: [
-      { title: "Who's in", body: 'Owners let people in with a code or an email invite, and choose who edits and who only reads.' },
-      { title: 'Asking to join', body: 'Someone who enters your code waits under `asking to join`. `let in` adds them as an editor; `deny` turns them away.' },
+      { title: '{peer} is here', tab: 'here', body: 'Their square is bottom left, their cursor on the canvas, their selection marked in their colour. A faint square means they are away.', scene: 'peers-cursors' },
+      { title: 'Follow them', tab: 'follow', body: 'Click their square to see what they see, wherever they go, into a plane and out. `esc`, a pan of your own, or their square again stops it.', scene: 'follow' },
     ],
   },
   {
-    id: 'viewer', v: 1, format: 'lesson', roles: VIEWERS, area: 'settings', since: 'D-098',
-    trigger: [{ event: 'edit-refused' }], anchor: 'toast',
-    pages: [{ title: "You're reading here", body: 'You can look, comment and keep your own documents. Ask an owner to edit.' }],
+    id: 'comment', v: 2, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349',
+    trigger: [{ event: 'thread-open' }, { event: 'threads-open' }], within: 'threads',
+    pages: [
+      { title: 'Comments stay on things', tab: 'comments', body: 'Right-click a plane, card, text, link or task and pick `comment`. A chip under it counts the messages; magenta means new, `@` means you were mentioned.', scene: 'thread' },
+      { title: 'Every conversation', tab: 'threads', body: "The threads tab at the bottom lists them all: new, mentions, resolved. In a thread, `on the canvas ↗` takes you to what it's about.", scene: 'threads-panel' },
+    ],
   },
 
-  // 10. Nudges: at most one a session (onboarding.md §4.5), retired by doing the thing.
+  // 9. Canvases and settings
   {
-    id: 'nudge-focus', v: 1, format: 'nudge', roles: ALL, area: 'canvas', since: 'D-184',
-    trigger: [{ event: 'idle', when: { pieces: { min: 1 } } }], doneWhen: [{ event: 'focus-in' }], anchor: 'sidenav',
-    line: 'double-click a piece to go inside',
+    id: 'canvases', v: 2, format: 'lesson', roles: ALL, area: 'canvases', since: 'D-302, D-305, D-306, D-307, D-313, D-349',
+    // After the menu closes (no `within`): a modal never covers an open menu.
+    trigger: [{ event: 'crumb-open' }, { event: 'canvas-made' }, { event: 'canvas-switch' }, { event: 'to-canvas' }],
+    pages: [
+      { title: 'More than one canvas', tab: 'canvases', body: "Big work splits into canvases. The workspace's name at the top left lists them; pick one to go there, or make a new one.", scene: 'canvases' },
+      { roles: EDITORS, title: 'Move or share a piece', tab: 'move', body: '`move to canvas…` takes a piece to another canvas. `also on canvas…` puts the same piece there too; `⧉ 2` says it is on two.', scene: 'canvases-share' },
+      { roles: EDITORS, title: 'Deleting a shared piece', tab: 'delete', body: 'Delete then asks: `only from here` keeps it on the other canvases, `delete everywhere` removes it from all of them.' },
+    ],
   },
   {
-    id: 'nudge-finder', v: 1, format: 'nudge', roles: ALL, area: 'canvas', since: 'D-196',
-    trigger: [{ event: 'idle', when: { cards: { min: 15 } } }], doneWhen: [{ event: 'finder-open' }], anchor: 'finder',
-    line: '`⌘F` finds anything',
+    id: 'settings', v: 3, format: 'lesson', roles: ALL, area: 'settings', since: 'D-097, D-348, D-349',
+    // Shown once Settings closes: it's a native dialog, nothing shows over it (D-349).
+    trigger: [{ event: 'settings-open' }],
+    pages: [
+      { title: 'Settings', tab: 'you', body: 'YOU holds your account and the display: theme, motion, the background and its strength, the size of the tools. It is kept in this browser.' },
+      { title: 'This workspace', tab: 'workspace', body: 'WORKSPACE holds its name and what you are building, the people in it, and export: the whole workspace as a .zip.' },
+    ],
   },
   {
-    id: 'nudge-help', v: 1, format: 'nudge', roles: ALL, area: 'start', since: 'D-315',
-    trigger: [{ event: 'idle', when: { seen: { min: 5 } } }], doneWhen: [{ event: 'guide-open' }], anchor: 'sidenav',
-    line: '`?` shows every note again',
+    id: 'people-settings', v: 2, format: 'lesson', roles: OWNERS, area: 'settings', since: 'D-062, D-098, D-349',
+    trigger: [{ event: 'settings-open', when: { page: 'people' } }], after: ['settings'],
+    pages: [
+      { title: "Who's in", tab: 'people', body: 'Owners let people in with a code or an email invite, and choose who edits and who only reads. A new code turns the old one off.' },
+      { title: 'Asking to join', tab: 'asking', body: 'Someone who enters your code waits under `asking to join`. `let in` adds them as an editor; `deny` turns them away.' },
+    ],
   },
   {
-    id: 'nudge-side', v: 1, format: 'nudge', roles: ALL, area: 'decks', since: 'D-300, D-314',
-    trigger: [{ event: 'idle', when: { decks: { min: 1 } } }], doneWhen: [{ event: 'side-view' }], anchor: 'tasks',
-    line: '`t` opens decks and days beside you',
-  },
-  {
-    id: 'nudge-follow', v: 1, format: 'nudge', roles: ALL, area: 'together', since: 'D-067, D-191',
-    trigger: [{ event: 'idle', when: { peerFor: { min: 60_000 } } }], doneWhen: [{ event: 'following' }], anchor: 'people',
-    line: "click {peer}'s square to follow them",
+    id: 'viewer', v: 2, format: 'lesson', roles: VIEWERS, area: 'settings', since: 'D-098, D-349',
+    trigger: [{ event: 'edit-refused' }],
+    pages: [{ title: "You're reading here", body: 'As a viewer you can look, comment and keep your own documents, but not change the work. Ask an owner to make you an editor.' }],
   },
 ]
 

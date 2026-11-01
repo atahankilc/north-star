@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-01 (check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-02 (onboarding content D-349; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -46,8 +46,9 @@ something is finished, add its entry to state-history.md and leave at most one l
   rules deployed.
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.
 - The agent (D-312, docs/specs/agent.md; the overnight build: docs/specs/agent-run.md): see the first item above.
-- Onboarding (D-315, D-316): **built and live** (O0–O16; state-history.md); its rules (and the agent run's) deployed
-  2026-10-31 (firestore:rules + database; rules tests 586/0; indexes not). The agent's lessons wait for its redesign.
+- Onboarding (D-315, D-316): **built and live** (O0–O16; state-history.md). D-349 (2026-11-02, committed, not pushed):
+  content rewritten, every lesson the centred modal, ~30 lessons by screen/piece, no nudges; checked headless on
+  emulators. Left: delete Lesson.tsx/Nudge.tsx (no longer drawn). The agent's lessons wait for its redesign.
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).

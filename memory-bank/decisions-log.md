@@ -5826,6 +5826,8 @@ subagents (onboarding-run.md), beside the agent's run (D-312).
 - *Answered:* Q-028 by D-316 (look `a` for every frame, the others deleted).
 - *Not yet:* everything: onboarding-run.md's steps O0–O16.
 
+Later (D-349): every lesson the centred modal, one per screen, panel or piece, ≤ 6 pages of ≤ 40 words; the nudges
+and the card beside an anchor gone.
 ### D-316 · 2026-10-29 · The onboarding's look: `a` for every frame (Q-028)
 **Each coach frame keeps its look `a`; the other options are deleted.** The welcome and what's new are the wizard
 window (the wizards' frame, the pages as tabs, the demo on top, words on black); a lesson is the prompt card
@@ -5847,6 +5849,8 @@ twin (a list).
 - *Verified:* tsc, vitest 397/397, build; headless shots of the welcome, a lesson (beside, played, done, no demo),
   the kind guide and `?` in dark and light match the earlier `a` shots (O5-final-*).
 
+Later: the lesson's prompt card beside its anchor and the nudge are no longer drawn: every lesson is the welcome's
+window in the middle (D-349). The kind guide's column and `?` stand.
 ### D-317 · 2026-10-29 · Accepted (audit K1; the user: "Şimdi client, sonra RTDB")
 **Presence: filtered by membership in the client now, bound to membership in RTDB once Blaze is live.** Now: the
 client shows presence only for uids in the workspace's `memberIds`, and a presence `photo` must be an
@@ -6682,3 +6686,35 @@ cursors, grid dots on/off (not picked).
 Looked at in the app by the user after the deploy (2026-11-01): "baktım iyi".
 Closes Q-033 (the user: "kapa o open questionı"): the strength setting is the answer; Q-033's other ideas (the
 glyph atlas drawn at the real cell size, a floor under the faintest glyphs, a minimum cell size) are not planned.
+
+### D-349 · 2026-11-02 · Accepted (the user: "ana canvasdayken neden pieces holds the work görüyorum? … küçük onboardinler çıkıyor ancak onların içindeki demoyu görmek nerdeyse imkansız … Yeni bir ekran, panel, componenti view gördüğümde ana ekrana onbaording modeli çıksın istiyorum. Küçük olanlar yetersiz … shortcutların hepsi onbardingde bir sayfanın altına taşınsın"; picked "Hepsi ortada modal", "≤ 6 sayfa, ≤ 40 kelime", no key hints anywhere)
+The onboarding's content, rewritten (the look stays D-316's wizard window; no new component):
+- **Every lesson is the centred modal** (Pages, the welcome's window), never a small card beside its anchor: the
+  demo shows at the modal's full width. The anchored `Lesson` card and the nudges are no longer drawn (Coach.tsx);
+  the five nudges are gone from lessons.ts. Kept small: the kind guide beside the `+` menu (it explains the rows as
+  you move through them) and the empty states (`press + to add your first piece`).
+- **One lesson per screen, panel or piece, step by step**, shown the first time it's opened or made: the canvas
+  (welcome), the workspaces page, a new piece (edit mode, framed/unframed, sticking, done, undo), a plane (inside,
+  the five card kinds, making, linking, several at once, the filter), a card's panel (status and evidence, `for`,
+  a competitor's features, parts, tasks), a link, a package, a shared card, text, sticky, section, matrix (wizard,
+  scoring, how sure, criteria, setup), table, documents, a document, a deck of tasks (adding, its panel, filter and
+  lanes, decks beside you), a deck of cards, the side view, a timeline, tasks given to you, people here + following,
+  comments + threads, canvases (+ moving and sharing a piece), settings, people settings, viewer. About 60 lessons → 33 (27 paged, the welcome, the kind guide, 4 empty states).
+- **The welcome is about the canvas only** (the user: plane things on the main canvas made no sense): the canvas,
+  the side nav, `+` (viewers: what they can do), a piece's console, going inside, finding and working together.
+- **Limits**: ≤ 6 pages, a body ≤ 40 words (was 4 and 25); the kind guide's rows, empty lines and release lines stay
+  ≤ 25 (check-lessons.mjs).
+- **No modal over a menu, the finder or a wizard**: those lessons are gone or wait (no `within: 'menu' | 'finder' |
+  'wizard' | 'typing'`): a wizard is taught by its piece's lesson once made, the finder and right-click by the
+  welcome, canvases after the breadcrumb's prompt closes, Settings' two after Settings closes (a native `<dialog>`
+  sits in the top layer: nothing shows over it). `within` stays only for threads.
+- **Keys**: shown nowhere in the app (D-344's rule, finished: the modal's `← → ↵` row and the last tooltips with keys
+  went); a lesson may name a key in its words; all of them are in `?` → keys.
+Merged away (their pages live in the lessons above): side-nav, piece-console, focus-lens, hazard-undo, unframe,
+unframed, stick-hint, stuck, move-canvas, card-made, status-evidence, for-links, multi-select, competitor-features,
+parts, plane-filter, guides-snap, right-click, headings-places, matrix-wizard, matrix-keys, matrix-criteria,
+table-wizard, table-keys, setup-open, deck-wizard, task-card, deck-filter, following, threads-panel, finder, the
+nudges. A lesson kept whose words changed got a new `v`, so it shows once more.
+Alternatives offered: modal for big surfaces with a few small cards kept; the old limits; no limit.
+Not yet: Lesson.tsx and Nudge.tsx (with their galleries, place.ts and the queue's nudge budget) are no longer drawn
+but not deleted; EmptyHint and the kind guide still use Lesson.tsx's `findAnchor`/`MENUS`.

@@ -367,14 +367,15 @@ feature comes back as a piece, and check them with the user then.
   next step starting by itself; no fixed step count (a person's budget and `[stop]`); a message sent while it runs
   steers it at the next step; done is checked from the job's state.
 
-## Onboarding (planned, docs/specs/onboarding.md)
-- Onboarding (D-315, not started): taught at the moment of use, one at a time, short (≤ 4 pages, ≤ 25 words): a
-  welcome on the first canvas, the kind guide beside the `+` menu, ~60 one-time lessons beside what was just opened,
-  what's new after later releases (at launch everyone, old accounts too, starts new), ≤ 1 nudge a session, `?`
-  replays all; seen-state per person in Firestore; demos are the real
+## Onboarding (built, docs/specs/onboarding.md)
+- Onboarding (D-315, D-349): taught at the moment of use, one at a time: a welcome on the first canvas (the canvas
+  only), the kind guide beside the `+` menu, one lesson per screen, panel or piece the first time it's opened or made
+  (~30), step by step (≤ 6 pages, ≤ 40 words), what's new after later releases (at launch everyone, old accounts too,
+  starts new), no nudges, `?` replays all and lists every key; seen-state per person in Firestore; demos are the real
   components on made-up data in a sealed iframe (`demo.html`), looping, paused/still under reduced motion.
-- Its look (D-316, Q-028): `a` for every frame: the welcome the wizard window, the lesson the prompt card, the kind
-  guide the glued column, `?` the finder's twin; the other options deleted (onboarding-preview/ keeps them).
+- Its look (D-316, D-349): every lesson the welcome's wizard window in the middle (no card beside an anchor), never
+  over a menu, the finder, a wizard, typing or Settings; the kind guide the glued column, `?` the finder's twin;
+  keys shown nowhere in the app (D-344), only in `?`.
 
 ## Workspaces page
 - The page is for going back to work (D-338, docs/specs/workspaces-page.md): centred; the big title with its count, one

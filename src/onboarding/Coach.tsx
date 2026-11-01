@@ -1,6 +1,6 @@
 // The coach (D-315, docs/specs/onboarding.md §5.1, §5.6): mounted once inside a workspace (and once on the workspaces
 // page, where there's no workspace), it starts the seen-state, the events and the busy watch, runs the queue, and draws
-// whatever is due: the welcome or what's new (a paged modal, z 40), a lesson (z 20, beside its anchor), a nudge, the
+// whatever is due: the welcome, a lesson or what's new (one paged modal, z 40; D-349: no card beside an anchor), the
 // teaching empty states, the kind guide beside the `+` menu (O5b's KindGuide) and the `?` guide (O5b's Guide).
 // Everything portals to <body>; every surface stops presses from reaching the canvas.
 //
@@ -25,15 +25,14 @@ import { LESSONS, lessonById, type GuideLesson, type Lesson as LessonData, type 
 import { newest, releases, setReleases, type Release } from './releases'
 import { fitsRole, planNews, roleHere, whoIs } from './audience'
 import type { Audience } from './seenMerge'
-import { fill, newsPages, plain, welcomePages, type Fill } from './words'
+import { newsPages, welcomePages, type Fill } from './words'
 import { Pages, type PagesEnd } from './Pages'
-import { Lesson } from './Lesson'
 import { disposeDemoPool, preloadDemo } from './Demo'
-import { Nudge } from './Nudge'
 import { EmptyHint } from './EmptyHint'
 import { Choices } from './Choices'
 import { KindGuide } from './KindGuide'
 import { Guide, useGuideRole, useGuideShown } from './Guide'
+import { AREA_NAME } from './guideModel'
 
 // Off the queue (see above).
 const OFF_QUEUE = (l: LessonData) => l.format === 'guide' || l.format === 'empty'
@@ -305,7 +304,7 @@ export function Coach() {
     return () => clearInterval(t)
   }, [news, newsShowing, cur, queue])
 
-  useEffect(() => setPagesOpen(cur?.lesson.format === 'welcome' || cur?.via === 'play' || newsShowing), [cur, newsShowing])
+  useEffect(() => setPagesOpen((!!cur && (cur.lesson.format === 'welcome' || (cur.lesson.format === 'lesson' && cur.doneAt === undefined))) || newsShowing), [cur, newsShowing])
 
   // ── `?`, and the side nav's rest ───────────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -345,34 +344,6 @@ export function Coach() {
       if (guideToggle.current === toggle) guideToggle.current = null
     }
   }, [])
-
-  // `esc` closes a lesson showing beside something first, and only it: when nothing is typed (outside the lesson) and
-  // nothing over the canvas (a menu, the finder, a dialog) would take the `esc` itself. Capture on the window, so the
-  // canvas's own `esc` (unfocus, deselect) never also hears it.
-  const curRef = useRef<Shown | null>(null)
-  curRef.current = cur
-  const anchored = !!cur && cur.lesson.format === 'lesson' && cur.via !== 'play' && cur.doneAt === undefined
-  useEffect(() => {
-    if (!anchored) return
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || e.defaultPrevented) return
-      const active = document.activeElement
-      const inCoach = !!active?.closest?.('[data-coach]')
-      if (!inCoach && editable(active)) return
-      if (guideOpenRef.current || modalRef.current) return
-      if (useFind.getState().open || document.querySelector('[aria-modal="true"], dialog[open], [role="alertdialog"], [role="menu"], [role="listbox"]')) return
-      const c = curRef.current
-      if (!c) return
-      // A lesson that lingers after its menu (right-click's, `linger`): an `esc` its menu already took (the menu closes
-      // in its own window handler, which may run first) closes the menu only; the lesson stays a moment after it.
-      if (c.lesson.linger && e.cancelBubble) return
-      e.preventDefault()
-      e.stopImmediatePropagation()
-      closeRef.current('closed')
-    }
-    addEventListener('keydown', onEsc, true)
-    return () => removeEventListener('keydown', onEsc, true)
-  }, [anchored])
 
   // ── The kind guide's menu and row ──────────────────────────────────────────────────────────────────────────────────
   // Whether it shows is decided once, when the `+` menu opens, and holds until the menu closes (so `[hide guide]`'s
@@ -449,8 +420,6 @@ export function Coach() {
     // A note played from `?` gives focus back to where it was before the guide (unless it goes back to the guide).
     if (cur.via === 'play' && !toGuide) restoreFocus()
   }
-  const closeRef = useRef(close)
-  closeRef.current = close
   const endWelcome = ({ how }: PagesEnd) => {
     if (!cur) return
     if (!forced) useProgress.getState().setWelcome(how === 'skipped' ? 'skipped' : 'done')
@@ -493,11 +462,6 @@ export function Coach() {
     }
     queue.play(id)
   }
-  const backToGuide = () => {
-    close('closed', true)
-    setGuideResume(true)
-    setGuideOpen(true)
-  }
   const closeGuide = () => {
     setGuideOpen(false)
     restoreFocus()
@@ -508,8 +472,8 @@ export function Coach() {
     returnTo.current = null
     requestAnimationFrame(() => reachRef.current?.())
   }
-  const now =
-    anchored && cur && cur.lesson.format === 'lesson' && cur.pages[0] ? { title: plain(fill(cur.pages[0].title, names)) } : null
+  // A lesson is a modal now (D-349): `?` never opens over one, so there's no `# showing now` row to reach.
+  const now = null
 
   // Dev only: devMount.tsx forces any surface (the shots), O6 mounts this for real.
   useEffect(() => {
@@ -582,19 +546,15 @@ export function Coach() {
         {cur?.lesson.format === 'welcome' && (
           <Pages key={`welcome-${cur.since}`} kind="welcome" pages={welcomePages(cur.pages, role, names)} onEnd={endWelcome} />
         )}
-        {cur?.lesson.format === 'lesson' && (
-          <Lesson
+        {/* Every lesson is the centred modal (D-349): the welcome's window, its demo at full width. */}
+        {cur?.lesson.format === 'lesson' && cur.doneAt === undefined && (
+          <Pages
             key={`${cur.lesson.id}-${cur.since}`}
-            shown={cur}
-            names={names}
-            onClose={close}
-            onTipsOff={() => useProgress.getState().setTipsOff(true)}
-            onGuide={cur.via === 'play' ? backToGuide : undefined}
-            reachRef={reachRef}
+            kind="lesson"
+            name={`${cur.isNew ? 'new · ' : ''}${AREA_NAME[cur.lesson.area]}`}
+            pages={welcomePages(cur.pages, role, names)}
+            onEnd={({ how }) => close(how === 'skipped' ? 'skipped' : 'done')}
           />
-        )}
-        {cur?.lesson.format === 'nudge' && cur.doneAt === undefined && (
-          <Nudge key={`${cur.lesson.id}-${cur.since}`} line={(cur.lesson as LineLesson).line ?? ''} anchor={cur.lesson.anchor} names={names} onClose={() => close('closed')} />
         )}
         {news && newsShowing && <Pages key="news" kind="news" pages={newsPages(news, (a) => a !== 'side-view' || hasDecks(store))} onEnd={endNews} />}
         {hintIds.map((id) => {

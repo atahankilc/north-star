@@ -39,7 +39,7 @@ export default example({
   name: 'Coach',
   place: 'screens/onboarding in place',
   file: 'src/onboarding/Coach.tsx',
-  note: 'not a look of its own: the coach decides what shows when and draws the onboarding surfaces (Pages, Lesson, Nudge, EmptyHint, Guide) over the real canvas; here one is forced at a time. The surfaces alone are under onboarding.',
+  note: 'not a look of its own: the coach decides what shows when and draws the onboarding surfaces (Pages for the welcome and every lesson, D-349; EmptyHint, the kind guide, Guide) over the real canvas; here one is forced at a time. The surfaces alone are under onboarding.',
   states: {
     welcome: withCoach({ only: [P.lunch] }, (d) => d.force(shown('welcome'))),
     'lesson in focus': withCoach({ only: [P.lunch], focus: P.lunch }, (d) => d.force(shown('focus-plane'))),

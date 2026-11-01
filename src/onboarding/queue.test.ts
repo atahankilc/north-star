@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { LESSONS, type Lesson } from './lessons'
-import { CALM_MS, COOLDOWN_MS, GIVE_UP_MS, PAUSE_CAP_MS, countsAsMenu, createQueue, hintWaits, matches, resetNudgeBudget, type Busy, type ProgressView } from './queue'
+import { CALM_MS, COOLDOWN_MS, GIVE_UP_MS, PAUSE_CAP_MS, countsAsMenu, createQueue, hintWaits, resetNudgeBudget, type Busy, type ProgressView } from './queue'
 import type { Role } from './lessons'
 
 const ALL: Role[] = ['owner', 'editor', 'viewer']
@@ -369,15 +369,22 @@ describe('queue with the real lessons', () => {
     expect(s.shown()).toBe('empty-canvas')
   })
 
-  it('focus-in a table: the general lesson, then the table one', () => {
+  it('focus-in a table: its one lesson, its viewer pages (D-349)', () => {
     const s = setup(LESSONS as Lesson[], { role: 'viewer' })
     s.q.onEvent({ event: 'focus-in', payload: { kind: 'table', empty: false } })
     s.wait(500)
-    expect(s.shown()).toBe('focus-lens')
-    s.q.close('focus-lens', 'closed')
+    expect(s.shown()).toBe('table')
+    expect(s.q.current()?.pages.map((p) => p.title)).toEqual(['A table', 'Working in a window', 'Reading a table'])
+  })
+  it('a piece made: edit mode first, then what that kind is', () => {
+    const s = setup(LESSONS as Lesson[], { role: 'editor' })
+    s.q.onEvent({ event: 'piece-made', payload: { kind: 'matrix' } })
     s.wait(500)
-    expect(s.shown()).toBe('table-keys')
-    expect(s.q.current()?.pages.map((p) => p.title)).toEqual(['Reading a table'])
+    expect(s.shown()).toBe('piece-made')
+    expect(s.q.current()?.pages.map((p) => p.tab)).toEqual(['edit', 'frame', 'stick', 'done', 'undo'])
+    s.q.close('piece-made', 'done')
+    s.wait(60_000)
+    expect(s.shown()).toBe('matrix')
   })
 })
 
@@ -617,16 +624,8 @@ describe('empty states beside the queue (O16c)', () => {
   })
 })
 
-describe('piece-console only for the console shown on pointing (O16c)', () => {
-  const l = LESSONS.find((x) => x.id === 'piece-console')!
-  it('not from a piece in edit mode', () => {
-    expect(l.trigger.some((t) => matches(t, { event: 'console-shown', payload: { kind: 'plane', editing: true } }))).toBe(false)
-    expect(l.trigger.some((t) => matches(t, { event: 'console-shown', payload: { kind: 'plane', editing: false } }))).toBe(true)
-  })
-})
-
-describe('only the right-click lesson lingers after its menu (O16c review)', () => {
-  it('linger is set on right-click alone', () => {
-    expect(LESSONS.filter((l) => l.linger).map((l) => l.id)).toEqual(['right-click'])
+describe('no lesson lingers after a menu now (D-349: none shows over a menu)', () => {
+  it('linger is set on none', () => {
+    expect(LESSONS.filter((l) => l.linger).map((l) => l.id)).toEqual([])
   })
 })

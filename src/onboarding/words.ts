@@ -42,7 +42,7 @@ export type PageModel = {
   list?: { title: string; line: string }[]
 }
 
-// The welcome's tabs by scene (the mock's `01 CANVAS 02 PIECES 03 ADD 04 TOGETHER`); else the title's last word.
+// A page's tab: its own `tab` (one short word, D-349), else by scene (the welcome's first mock), else the title's last word.
 const TABS: Record<string, string> = {
   'canvas-fit': 'canvas',
   'pieces-tour': 'pieces',
@@ -50,7 +50,7 @@ const TABS: Record<string, string> = {
   'finder-go': 'find',
   'peers-comment': 'together',
 }
-export const tabFor = (p: Pick<Page, 'scene' | 'title'>) => (p.scene && TABS[p.scene]) || plain(p.title).split(/\s+/).pop()!.toLowerCase()
+export const tabFor = (p: Pick<Page, 'scene' | 'title' | 'tab'>) => p.tab || (p.scene && TABS[p.scene]) || plain(p.title).split(/\s+/).pop()!.toLowerCase()
 
 export function welcomePages(pages: readonly Page[], role: string | null, f: Fill): PageModel[] {
   return pages.map((p) => ({

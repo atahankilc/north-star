@@ -26,11 +26,10 @@ describe('words', () => {
   it("names the welcome's tabs", () => {
     const welcome = LESSONS.find((l) => l.id === 'welcome') as PagedLesson
     const pages = welcomePages(welcome.pages.filter((p) => p.audience !== 'invited' && !p.roles?.includes('viewer')), 'editor', {})
-    expect(pages.map((p) => p.tab)).toEqual(['canvas', 'pieces', 'add', 'together'])
-    expect(pages[3].extra).toBeUndefined()
-    const viewer = welcomePages(welcome.pages.slice(-1), 'viewer', {})
-    expect(viewer[0].extra).toMatch(/viewer/)
+    expect(pages.map((p) => p.tab)).toEqual(['canvas', 'tools', 'add', 'piece', 'inside', 'people'])
+    expect(pages[5].extra).toBeUndefined()
     expect(tabFor({ title: 'Make your first card' })).toBe('card')
+    expect(tabFor({ title: 'Make your first card', tab: 'make' })).toBe('make')
   })
 
   it("makes what's new: three pages and `+ N more` past four", () => {

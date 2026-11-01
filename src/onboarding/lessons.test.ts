@@ -20,19 +20,24 @@ describe('lessons', () => {
       for (const a of [...(l.after ?? []), ...(l.unless ?? [])]) expect(ids).toContain(a)
     }
   })
-  it('give the welcome four pages to everyone, by role and audience', () => {
-    for (const role of ['owner', 'editor', 'viewer'] as const) for (const a of ['new', 'invited'] as const) expect(pagesFor('welcome', role, a)).toHaveLength(4)
-    expect(pagesFor('welcome', 'viewer', 'new')[2].title).toBe('Find your way')
-    expect(pagesFor('welcome', 'editor', 'new')[2].title).toBe('Add anything with +')
+  it('give the welcome six pages to everyone, by role and audience, about the canvas only (D-349)', () => {
+    for (const role of ['owner', 'editor', 'viewer'] as const) for (const a of ['new', 'invited'] as const) expect(pagesFor('welcome', role, a)).toHaveLength(6)
+    expect(pagesFor('welcome', 'viewer', 'new')[2].title).toBe("You're here to read")
+    expect(pagesFor('welcome', 'editor', 'new')[2].title).toBe('Add pieces with +')
     expect(pagesFor('welcome', 'owner', 'invited')[0].title).toContain('{owner}')
+    // What's inside a plane is the plane's own lesson, never the canvas's welcome.
+    for (const p of pagesFor('welcome', 'editor', 'new')) expect(p.body).not.toMatch(/customers?, problems/i)
   })
   it('keep editing pages from viewers', () => {
-    expect(pagesFor('side-nav', 'viewer', 'new').map((p) => p.title)).not.toContain('Add')
-    for (const id of ['focus-plane', 'matrix-keys', 'table-keys', 'deck', 'competitor-features']) {
+    for (const id of ['focus-plane', 'matrix', 'table', 'deck', 'card-panel']) {
       expect(pagesFor(id, 'viewer', 'new').length).toBeGreaterThan(0)
       for (const p of pagesFor(id, 'viewer', 'new')) expect(p.body).not.toMatch(/`\+|type `|Drag tasks|add them/)
     }
     expect(LESSONS.filter((l) => l.roles.length === 1 && l.roles[0] === 'viewer').map((l) => l.id)).toEqual(['viewer'])
+  })
+  it('are all paged modals or the few small helpers: no nudges, no lesson inside a menu, the finder, a wizard or typing (D-349)', () => {
+    expect(LESSONS.filter((l) => l.format === 'nudge')).toEqual([])
+    for (const l of LESSONS) if (l.format !== 'guide') expect(['menu', 'finder', 'wizard', 'typing']).not.toContain(l.within)
   })
 })
 

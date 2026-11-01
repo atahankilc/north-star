@@ -59,10 +59,10 @@ describe('the ? guide model', () => {
 
   it('typing narrows across notes and keys and opens what matches', () => {
     const m = guideModel(none, 'owner')
-    const rows = guideRows(m, null, 'focus')
+    const rows = guideRows(m, null, 'plane')
     const notes = rows.filter((r): r is Extract<Row, { kind: 'note' }> => r.kind === 'note')
     expect(notes.length).toBeGreaterThan(0)
-    expect(notes.every((n) => `${n.note.title} ${n.note.body}`.toLowerCase().includes('focus') || n.area)).toBe(true)
+    expect(notes.every((n) => `${n.note.title} ${n.note.body}`.toLowerCase().includes('plane') || n.area)).toBe(true)
     expect(rows.filter((r) => r.kind === 'area').every((r) => r.kind === 'area' && r.open)).toBe(true)
     const keyRows = guideRows(m, null, 'undo').filter((r) => r.kind === 'key')
     expect(keyRows.length).toBeGreaterThan(0)
@@ -85,7 +85,7 @@ describe('the ? guide model', () => {
   it('keys name lessons that exist; first lines are a sentence', () => {
     for (const k of KEYS) if (k.lesson) expect(lessonById(k.lesson), k.lesson).toBeTruthy()
     const m = guideModel(none, 'owner')
-    expect(keyLesson(m, KEYS.find((k) => k.lesson === 'finder')!)).toBe('finder')
+    expect(keyLesson(m, KEYS.find((k) => k.lesson === 'matrix')!)).toBe('matrix')
     expect(firstLine('Press `focus` or double-click. Inside it is yours.')).toBe('Press `focus` or double-click')
     expect(firstLine('No stop at all')).toBe('No stop at all')
   })

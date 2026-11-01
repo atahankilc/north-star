@@ -288,7 +288,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
               delete
             </Button>
           )}
-          <Button icon aria-label="Close thread" title="close (esc)" onClick={closeThread}>
+          <Button icon aria-label="Close thread" title="close" onClick={closeThread}>
             ×
           </Button>
         </ButtonGroup>
