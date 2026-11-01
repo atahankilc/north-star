@@ -1008,3 +1008,16 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Verified: tsc, vitest 906, check:tokens 0, check:gallery 84, check:lessons; 102 gallery states old against new
   (separate checkouts, a second old for noise): the changes are the four kit snaps listed in D-326's log, looked at
   in their crops; the rest the canvas behind.
+
+## Done (2026-11-01): agent-bugs 25, 1 and 5: the evals load and tell as the app does
+- The evals' store starts as the app's: only the agent notes' text (`asTheAppLoads`, evals/env.ts). `read_document`
+  asks for a missing text (`needs`); the tool wrapper loads it through `AgentEnv.loadBody` and reads again. The app and
+  the emulator mode load through `readDocBody` (src/data/documents.ts, under the rules; the emulator now seeds documents
+  and their text), the in-memory evals from the fixture. Apply, discard and undo reach the model through workflow.ts'
+  `withOutcome` in both drivers.
+- Found on the way: the loop builds its own env and dropped `loadBody`; a unit test calling the tool directly passed
+  while every eval still read "isn't loaded". tests/unit/agentPlumbing.test.ts now goes through the loop too (fails
+  without the fix); find-09 checks that `read_document` gave the report's text.
+- Verified: tsc (app, evals), check:tokens 0, vitest (mine pass; 8 onboarding failures belong to another session's
+  uncommitted D-330 work), stub evals 114 tasks 0 failed, `--wrong` 114 failed, `--emulator` 0 failed with every text
+  read through Firestore.

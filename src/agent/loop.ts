@@ -309,6 +309,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     ...(env.newId ? { newId: () => env.newId!() } : {}),
     ...(env.job ? { job: env.job } : {}),
     ...(env.render ? { render: env.render } : {}),
+    ...(env.loadBody ? { loadBody: env.loadBody } : {}),
     get changes() {
       return env.changes
     },

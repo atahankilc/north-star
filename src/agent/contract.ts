@@ -140,6 +140,9 @@ export type AgentEnv = {
   // An SVG drawn into a PNG for the model (D-327, `look`): the browser's canvas in the app, resvg in the evals. Left
   // out (or null back): the tool answers in words alone.
   render?: (svg: string, size: { w: number; h: number }) => Promise<ImagePart | null>
+  // Loads a document's text into the snapshot (`getWs().bodies` has it after), as the app does: only the agent notes'
+  // text comes up front, the others when `read_document` asks (agent-bugs 1, 25). Left out: what the snapshot holds.
+  loadBody?: (docId: string) => Promise<void>
 }
 
 // A tool the loop can run: its definition for the model and how it runs. Read tools never write; write tools go

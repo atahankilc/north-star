@@ -33,4 +33,5 @@ export type ReadWs = WorkspaceData & {
 }
 
 // Every tool's answer: text for the model, and when there's more, how to get it or narrow it.
-export type ToolResult = { text: string; more?: string }
+// `needs`: a document whose text isn't in the snapshot; the driver loads it (AgentEnv.loadBody) and runs the tool again.
+export type ToolResult = { text: string; more?: string; needs?: string }

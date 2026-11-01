@@ -30,6 +30,7 @@ import { openaiModel } from '../src/agent/openai'
 import { anthropicModel } from '../src/agent/anthropic'
 import { effortFor } from '../src/agent/models'
 import { nextMove, settled } from '../src/agent/job'
+import { reportOf, withOutcome } from '../src/agent/workflow'
 import { nodeRender } from './render'
 import { EVAL_TOOLS, WRITE_TOOLS } from './tools'
 import { diffLines, gradeAll, setJudge } from './graders'
@@ -41,6 +42,7 @@ import type { Judge } from './graders'
 import type { Writer } from './env'
 import type { AgentWs, ModelRequest } from '../src/agent/contract'
 import type { Role } from '../src/data/model'
+import type { DocBody } from '../src/data/documents'
 import { makeIds } from '../src/agent/read'
 import { NOTES_HEAD } from '../src/agent/loop'
 import { chatDocs, turnsOfTranscript } from '../src/agent/chats'
@@ -88,7 +90,7 @@ const WRITE_CALLS = new RegExp(`\\b(${[...WRITE_TOOLS].join('|')})\\b`)
 // One attempt: a fresh env on the fixture, one turn, the graders over what it left. Anything that throws (the model,
 // the loop, a fixture) fails this attempt with its message, never the run.
 // The emulator mode's backend (evals/emulator.ts' emulate), handed in by evals/cli.mjs: run.ts never loads Firebase.
-export type Backend = (start: AgentWs, o: { role: Role; tag?: string }) => Promise<{ start: AgentWs; write: Writer; undo: () => Promise<AgentWs>; close: () => void }>
+export type Backend = (start: AgentWs, o: { role: Role; tag?: string }) => Promise<{ start: AgentWs; write: Writer; undo: () => Promise<AgentWs>; close: () => void; readBody: (id: string) => Promise<DocBody | null> }>
 
 export async function attempt(task: Task, model: AgentModel, o: { backend?: Backend } = {}): Promise<{ result?: RunResult; attempt: Attempt }> {
   const t0 = performance.now()
@@ -99,7 +101,7 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
     const em = o.backend ? await o.backend(fixture, { role: task.role ?? 'editor', tag: task.id }) : null
     if (em) close = em.close
     const start = em ? em.start : fixture
-    const env = makeEnv(start, { role: task.role ?? 'editor', view: task.view, ...(em ? { writer: em.write } : {}) })
+    const env = makeEnv(start, { role: task.role ?? 'editor', view: task.view, ...(em ? { writer: em.write, readBody: em.readBody } : {}) })
     // `look`'s pictures (D-327): drawn by resvg, as the browser draws them.
     env.render = nodeRender
     const startedAt = env.now()
@@ -158,7 +160,8 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
           if (!a.ok) acceptError = a.said
           else {
             applied = a.applied.length
-            history = [...history, { role: 'system', tag: 'outcome', content: `The person applied your proposed changes (${applied}).` }]
+            // The same line the app's driver adds (workflow.ts' withOutcome, bugs 5, 25), from the same report.
+            history = withOutcome(history, { applied: reportOf({ applied: a.applied, notDone: a.notDone, step: a.step }) })
           }
         }
         const job = env.job?.get() ?? null

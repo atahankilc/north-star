@@ -2,7 +2,7 @@
 
 What trying the agent (D-312) turned up, 2026-10-31: 1–10 the user in the app, 11–14 its import of the Founder
 Discovery Study set against the hand-made one, 15–24 the first eval run on a real model, 25 a review of this list,
-26 split out of 17 and 27–28 the user's asks in a second review read against the code (the same day). None fixed yet. A fixed one
+26 split out of 17 and 27–28 the user's asks in a second review read against the code (the same day). A fixed one
 moves to `memory-bank/state-history.md` with how it was checked, and its row here says `fixed`.
 
 Numbers never change (state.md and the log cite them); a new one takes the next number, goes in the group it belongs
@@ -39,9 +39,9 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 6  | items land on top of each other                  | Guards       | mid      | code             | place_on fixed (text); paragraphs open |
 | 11 | links no plane can draw                          | Guards       | mid      | code (`lint`)    | open   |
 | 12 | no last look before the preview                  | Guards       | mid      | code, then model | open   |
-| 25 | evals build their store apart from the app's     | Plumbing     | blocker  | code (evals)     | open   |
-| 1  | document text never loaded                       | Plumbing     | high     | code             | open   |
-| 5  | an apply is never told to the model              | Plumbing     | mid      | code             | app fixed; evals with 25 |
+| 25 | evals build their store apart from the app's     | Plumbing     | blocker  | code (evals)     | fixed  |
+| 1  | document text never loaded                       | Plumbing     | high     | code             | fixed  |
+| 5  | an apply is never told to the model              | Plumbing     | mid      | code             | fixed  |
 | 2  | bare short ids in the chat                       | Plumbing     | mid      | code             | open   |
 | 22 | bare ids in documents                            | Plumbing     | mid      | code             | open   |
 | 9  | skills list doesn't scroll                       | Plumbing     | low      | code             | open   |
@@ -163,6 +163,12 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     Fix (code): one body loader through `src/data/`, used by both; one function that writes an apply, discard or
     undo into the model's history, called by both drivers. Comes before 1 and 5, which then fail in the evals first and
     are fixed against them.
+    *Fixed 2026-11-01, with 1 and 5:* the evals' store starts as the app's (`asTheAppLoads` in evals/env.ts: only the
+    agent notes' text); `read_document` answers `needs` when a text isn't there, the tool wrapper calls
+    `AgentEnv.loadBody` and reads again (the loop hands it on); the app and the emulator mode load through
+    `readDocBody` (src/data/documents.ts) under the rules, the in-memory evals from the fixture. The outcome line is
+    workflow.ts' `withOutcome`, the same words in agentStore.ts and evals/run.ts. Left: a reopened saved chat still gets
+    chats.ts' shorter `[the proposed changes were applied (N)]` (only a count is saved).
 1.  **It can't read a document's text in the app.** `liveWs()` (src/agent/ui/agentStore.ts) puts only the agent notes
     in `bodies`; documents' `content/body` is never fetched, so `read_document` answers "its text isn't loaded here"
     with the excerpt. The evals pass because their store holds bodies. Fix: fetch a body (through `src/data/`) when

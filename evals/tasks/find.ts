@@ -2,7 +2,7 @@
 // the right set: `only` on every closed set) and words in the answer; the judge reads the answer once a model is
 // configured. Each has a plausible wrong script (a partial set, a wrong item, a wrong count) so `--wrong` tests
 // precision, not only that something was said.
-import { answerIncludes, cites, judge, noWrites } from '../graders'
+import { answerIncludes, cites, judge, noWrites, toolSaid } from '../graders'
 import type { Task } from '../types'
 import { answer, call, realOf } from './util'
 
@@ -169,7 +169,7 @@ export const FIND: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: 'What does the pilot week 2 report say about card payments?',
-    graders: [noWrites(), answerIncludes(['1 in 8']), cites(['Pilot week 2 report']), judge('States that only 1 in 8 stalls takes cards, quoting or citing the report, and adds nothing the report does not say.')],
+    graders: [noWrites(), answerIncludes(['1 in 8']), cites(['Pilot week 2 report']), toolSaid('read_document', [/│ ## Numbers/]), judge('States that only 1 in 8 stalls takes cards, quoting or citing the report, and adds nothing the report does not say.')],
     reference: [call('search', { query: 'pilot week 2' }), call('read_document', { id: 'd3' }), answer('d3 "Pilot week 2 report" says only 1 in 8 stalls takes cards, and that most stalls run on cash and WhatsApp, so anything we build has to fit that first.')],
     wrong: [call('search', { query: 'pilot week 2' }), answer('d3 "Pilot week 2 report" says most stalls take cards now, about 1 in 2.')],
   },

@@ -114,6 +114,17 @@ export function useDocBody(wid: string, d: WithId<Doc> | null | undefined, enabl
   return useDoc<DocBody>(enabled && textual ? `workspaces/${wid}/documents/${d.id}/content/body` : null)
 }
 
+// A document's content read once, for the agent's `read_document` (agent-bugs 1, 25): the app and the evals' emulator
+// mode both load it here. Null when there is none or the rules refuse it (someone else's private document).
+export async function readDocBody(wid: string, id: string): Promise<DocBody | null> {
+  try {
+    const s = await getDoc(bodyRef(wid, id))
+    return s.exists() ? (s.data() as DocBody) : null
+  } catch {
+    return null
+  }
+}
+
 // ---- Upload
 
 export class DocumentError extends Error {}

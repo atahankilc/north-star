@@ -59,7 +59,7 @@ export function view(ws: ReadWs, ids: Ids, a: ViewArgs): ToolResult {
 // Keeps a result under the ceiling whatever happened above.
 export function finish(r: ToolResult): ToolResult {
   const f = fit(r.text)
-  return f.cut ? { text: f.text, more: r.more ?? 'The answer was cut: ask for a page, or narrow it.' } : r
+  return f.cut ? { ...r, text: f.text, more: r.more ?? 'The answer was cut: ask for a page, or narrow it.' } : r
 }
 
 const title = (ids: Ids, d: Derived, p: P) => `# ${ids.short('piece', p.id)} ${KIND_NAME[kindOfPiece(p)]} ${pieceTitle(d, p)}`
@@ -363,7 +363,9 @@ export function readDocument(ws: ReadWs, ids: Ids, a: ReadDocArgs): ToolResult {
   const head = `# ${s} ${doc.kind} ${q(doc.title, 120)} · by ${doc.name}${doc.shared ? '' : ' · private'}${doc.words ? ` · ${doc.words} words` : ''}`
   const body = ws.bodies?.[doc.id]
   if (!body) {
+    const textual = doc.kind === 'markdown' || doc.kind === 'report'
     return finish({
+      ...(textual ? { needs: doc.id } : {}),
       text: [head, `Its text isn't loaded here${doc.kind === 'image' || doc.kind === 'pdf' ? ` (a ${doc.kind}: files come with Storage)` : ''}; what the list shows:`, wrap(doc.name, doc.excerpt ? oneLine(doc.excerpt, 400) : '(no excerpt)')].join('\n'),
     })
   }

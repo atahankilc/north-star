@@ -1,3 +1,4 @@
+import type { ModelMessage } from './contract'
 // The agent's turn lifecycle (S13, D-312; docs/specs/agent.md §4.5, §4.10): what the chat (S14) and the preview (S15)
 // drive. Pure: a state, an event, the next state and the effects the driver carries out. No React, no Firebase.
 //
@@ -173,4 +174,18 @@ export function reportOf(o: { applied: { line: string; where: string }[]; notDon
     ...(o.notDone.length ? [`Not done: ${o.notDone.length} (${o.notDone.map((i) => i.line).slice(0, 3).join('; ')}${o.notDone.length > 3 ? '; …' : ''}).`] : []),
   ].join(' ')
   return { text, done: o.applied.map((i) => i.line), notDone: o.notDone.map((i) => i.line), step: o.step }
+}
+
+// What the person did with a preview, told to the model (agent-bugs 5, 25): one line in its history, read with its
+// next turn, so "what's next" never answers as if the changes still waited. The app's driver and the evals' runner
+// both add it here, with the same words.
+export type Outcome = { applied: Report } | { discarded: Report } | { undone: true }
+export function withOutcome(history: ModelMessage[], o: Outcome): ModelMessage[] {
+  const content =
+    'applied' in o
+      ? `The person applied your proposed changes. ${o.applied.text}`
+      : 'discarded' in o
+        ? `The person discarded your proposed changes: nothing was written. ${o.discarded.text}`
+        : 'The person undid the changes they had applied: the workspace is back as it was before them.'
+  return [...history, { role: 'system', tag: 'outcome', content }]
 }

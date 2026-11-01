@@ -22,7 +22,7 @@ import { create } from 'zustand'
 import { AGENT_TOOLS } from '../tools'
 import { runTurn, type LoopEvent } from '../loop'
 import { devStubWanted, makeModel, providerOf } from '../models'
-import { initialWorkflow, reportOf, step as wfStep, type Effect, type Report, type WorkflowEvent, type WorkflowState } from '../workflow'
+import { initialWorkflow, reportOf, step as wfStep, withOutcome, type Effect, type Outcome, type Report, type WorkflowEvent, type WorkflowState } from '../workflow'
 import { browserApply, lockPreview, lockTurn, releaseAgentLocks, undoAgentStep, unlockPreview, unlockTurn } from '../browser'
 import { accept as acceptChanges, discard as discardChanges, emptyChangeset, pendingCount, untick as untickChange, type Changeset, type ChangeItem } from '../changeset'
 import { closePreview, goOf, openPreview, previewState, setCurrent, updatePreview } from '../preview'
@@ -40,6 +40,7 @@ import { JOB_BUDGET, nextMove, nextStep, settled, type Job, type JobHost, type M
 import { plainError, NO_KEY } from './errors'
 import { subscribeWs } from '../../state/wsStore'
 import { NOTES_ID, saveNotes as saveNotesData, watchNotes } from '../../data/agentNotes'
+import { readDocBody, type DocBody } from '../../data/documents'
 import { startChangeLog, watchChanges, watchMembers, type ChangeEntry } from '../../data/changeLog'
 import { chatsAvailable, deleteChat, listChats, newChatId, openChat as openChatData, renameChat as renameChatData, saveChat, shareChat as shareChatData, type ChatListItem } from '../../data/agentChats'
 import { chatDocs, historyOf, reopenedJob, type ChatCursor, type ChatSummary } from '../chats'
@@ -202,10 +203,9 @@ const jobHost = (chatId: string, rt: Runtime): JobHost => ({
   },
 })
 
-// What the person did with a preview, told to the model (bug 5, D-328): a line kept in its history, read with its
-// next turn, so "what's next" never answers as if the changes still waited.
-const tellModel = (rt: Runtime, text: string) => {
-  rt.history = [...rt.history, { role: 'system', tag: 'outcome', content: text }]
+// What the person did with a preview, told to the model (bugs 5, 25; D-328): workflow.ts' withOutcome, as the evals.
+const tellModel = (rt: Runtime, o: Outcome) => {
+  rt.history = withOutcome(rt.history, o)
 }
 
 // The app goes on with the job by itself, or pauses it with why (D-328, job.ts' nextMove). Run after the effects of
@@ -253,6 +253,11 @@ function envOf(chat: Chat, rt: Runtime): AgentEnv {
     job: jobHost(chat.id, rt),
     // `look`'s pictures (D-327), drawn in this browser.
     render: svgToPng,
+    // A document's text, read once through src/data (the evals' emulator mode reads it the same way).
+    loadBody: async (id) => {
+      const b = await readDocBody(wid, id)
+      if (b && extra?.wid === wid) bump((x) => ({ bodies: { ...x.bodies, [id]: b } }))
+    },
     get changes() {
       return rt.changes
     },
@@ -264,7 +269,8 @@ function envOf(chat: Chat, rt: Runtime): AgentEnv {
 
 // ---- What the agent reads beside the store (S16): the notes' text, the change log, the people
 
-type Extra = { wid: string; notes: string | null; changeLog: ChangeEntry[] | null; members: MemberInfo[] | null; version: number }
+// `bodies`: documents' texts `read_document` loaded (bugs 1, 25), kept while the workspace is open.
+type Extra = { wid: string; notes: string | null; changeLog: ChangeEntry[] | null; members: MemberInfo[] | null; bodies: Record<string, DocBody>; version: number }
 let extra: Extra | null = null
 let unwatch: (() => void)[] = []
 let notesOff: (() => void) | null = null
@@ -281,7 +287,7 @@ export function liveWs(wid: string): AgentWs | null {
   if (made && made.from === ws && made.version === version) return made.ws
   const out: AgentWs = {
     ...ws,
-    ...(x?.notes != null ? { bodies: { ...(ws.bodies ?? {}), [NOTES_ID]: { text: x.notes } } } : {}),
+    ...(x && (x.notes != null || Object.keys(x.bodies).length) ? { bodies: { ...(ws.bodies ?? {}), ...x.bodies, ...(x.notes != null ? { [NOTES_ID]: { text: x.notes } } : {}) } } : {}),
     ...(x?.changeLog?.length ? { changeLog: x.changeLog } : {}),
     ...(x?.members?.length ? { members: x.members } : {}),
     ...(me?.uid ? { me: me.uid } : {}),
@@ -316,7 +322,7 @@ function followNotes(wid: string) {
 
 function watchExtra(wid: string) {
   stopExtra()
-  extra = { wid, notes: null, changeLog: null, members: null, version: 0 }
+  extra = { wid, notes: null, changeLog: null, members: null, bodies: {}, version: 0 }
   startChangeLog()
   unwatch = [
     watchChanges(wid, (list) => bump(() => ({ changeLog: list }))),
@@ -498,7 +504,7 @@ function run(chatId: string, e: Effect) {
       push({ id: uid('rep'), kind: 'report', report: e.report, wheres, count: e.report.done.length })
       // The model hears what happened (bug 5); a job goes on after an apply, pauses after a discard.
       const applied = get().chat.wf.phase === 'applied'
-      tellModel(rt, applied ? `The person applied your proposed changes. ${e.report.text}` : `The person discarded your proposed changes: nothing was written. ${e.report.text}`)
+      tellModel(rt, applied ? { applied: e.report } : { discarded: e.report })
       const move = nextMove(rt.job, applied ? { applied: e.report.done.length } : { discarded: true })
       setTimeout(() => moveJob(chat, move), 0)
       return
@@ -508,7 +514,7 @@ function run(chatId: string, e: Effect) {
         if (get().chat.id !== chatId) return
         dispatch({ type: 'undo_done', ok })
         if (!ok) return
-        tellModel(rt, 'The person undid the changes they had applied: the workspace is back as it was before them.')
+        tellModel(rt, { undone: true })
         const list = [...get().chat.entries].reverse().find((x) => x.kind === 'changes' && x.state === 'applied')
         if (list) patchEntry(list.id, (x) => ({ ...x, state: 'undone' }) as Entry)
       })

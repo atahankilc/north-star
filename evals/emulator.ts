@@ -24,12 +24,13 @@ import type { Role } from '../src/data/model'
 import type { AgentWs } from '../src/agent/contract'
 import type { Writer } from './env'
 import { NOTES_ID } from '../src/model/notes'
+import { readDocBody, type DocBody } from '../src/data/documents'
 
 const PROJECT = 'demo-north-star'
 const FIRESTORE = 'http://127.0.0.1:8080'
 const BASE = `projects/${PROJECT}/databases/(default)/documents`
 
-export type Emulated = { start: AgentWs; write: Writer; undo: () => Promise<AgentWs>; close: () => void; wid: string }
+export type Emulated = { start: AgentWs; write: Writer; undo: () => Promise<AgentWs>; close: () => void; wid: string; readBody: (id: string) => Promise<DocBody | null> }
 
 // A JS value as Firestore's REST API writes it.
 function toValue(v: unknown): Record<string, unknown> {
@@ -54,6 +55,15 @@ async function seed(wid: string, start: AgentWs, uid: string, role: Role) {
       const { id: _i, ...fields } = d as Record<string, unknown>
       writes.push({ update: { name: `${BASE}/workspaces/${wid}/${c}/${id}`, fields: fieldsOf(fields) } })
     }
+  // Documents and their text (agent-bugs 25): read_document loads a body from here, through the rules, as the app does.
+  for (const [id, d] of store.get('documents') ?? []) {
+    const { id: _i, ...fields } = d as Record<string, unknown>
+    writes.push({ update: { name: `${BASE}/workspaces/${wid}/documents/${id}`, fields: fieldsOf(fields) } })
+  }
+  for (const [id, b] of store.get('docBodies') ?? []) {
+    const { id: _i, ...fields } = b as Record<string, unknown>
+    writes.push({ update: { name: `${BASE}/workspaces/${wid}/documents/${id}/content/body`, fields: fieldsOf(fields) } })
+  }
   for (let i = 0; i < writes.length; i += 400) {
     const r = await fetch(`${FIRESTORE}/v1/${BASE}:commit`, { method: 'POST', headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }, body: JSON.stringify({ writes: writes.slice(i, i + 400) }) })
     if (!r.ok) throw new Error(`seeding the emulator failed (${r.status}): ${(await r.text()).slice(0, 300)}`)
@@ -133,6 +143,7 @@ export async function emulate(start: AgentWs, o: { role: Role; uid?: string; tag
     start: back,
     wid,
     write,
+    readBody: (id) => readDocBody(wid, id),
     undo: async () => {
       await undo()
       await waitForPendingWrites(db())

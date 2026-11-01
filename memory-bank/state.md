@@ -45,7 +45,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - **The agent, where it stands (2026-11-01; D-327, D-328, D-329 built and pushed, none tried with a real model):**
   1. A real-model run: the user's key, `npm run eval -- --model <openai|anthropic>:<id>` (judge: `--judge`), and in the
      app a big job (`/restructure Segments`): does it call `plan` and `look`, one step per turn? Tune the prompt on it.
-  2. agent-bugs 25 then the baseline (three runs, two models) before any prompt change is measured.
+  2. The baseline (three runs, two models) before any prompt change is measured; agent-bugs 25 (with 1 and 5)
+     fixed 2026-11-01, not pushed.
   3. Small, ready: 28's "done is checked" (`progress` done refused or warned when the step's `change` was refused);
      27's leftover: cards place_on brings along aren't in a later arrange unless named (name them in the result).
   4. Waiting on the user: reference planes for the agent's taste (Q-032); the local harness stays an idea (Q-031).

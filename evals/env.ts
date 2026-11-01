@@ -17,6 +17,8 @@ import { accept as acceptChanges, emptyChangeset, untick as untickItem, type Acc
 import { memoryChats, type ChatStore } from '../src/agent/chats'
 import { changeEntry } from '../src/model/changeLog'
 import { REGISTRY } from '../src/ops/registry'
+import { NOTES_ID } from '../src/model/notes'
+import type { DocBody } from '../src/data/documents'
 
 // One undo step (a turn's applies) as the undo stack would hold it: who, the plans, the plan that puts back what they
 // touched, how many applies it joined, and the turn it belongs to.
@@ -70,9 +72,22 @@ export function inverseOf(ws: AgentWs, plans: Plan[]): Plan {
 // the workspace read back from Firestore. Left out: in memory (validate + project).
 export type Writer = (plans: Plan[], as: ApplyAs, ws: AgentWs) => Promise<{ ok: true; ws: AgentWs; step: { key: string; label: string } | null } | { ok: false; errors: OpError[] }>
 
-export type EnvOpts = { role?: Role; uid?: string; view?: Partial<WhereView>; now?: number; settings?: AgentSettings; writer?: Writer }
+// `readBody`: where a document's text comes from when `read_document` asks (the emulator: src/data's readDocBody under
+// the rules); left out, the fixture's texts.
+export type EnvOpts = { role?: Role; uid?: string; view?: Partial<WhereView>; now?: number; settings?: AgentSettings; writer?: Writer; readBody?: (id: string) => Promise<DocBody | null> }
 
-export function makeEnv(start: AgentWs, o: EnvOpts = {}): EvalEnv {
+// The snapshot as the app's starts (agent-bugs 25): only the agent notes' text is loaded up front; every other
+// document's text is held back until `read_document` loads it (AgentEnv.loadBody), as liveWs() in the app.
+export function asTheAppLoads(ws: AgentWs): { ws: AgentWs; held: Record<string, DocBody> } {
+  const all = (ws.bodies ?? {}) as Record<string, DocBody | undefined>
+  const held: Record<string, DocBody> = {}
+  for (const [id, b] of Object.entries(all)) if (b && id !== NOTES_ID) held[id] = b
+  const notes = all[NOTES_ID]
+  return { ws: { ...ws, bodies: notes ? { [NOTES_ID]: notes } : {} } as AgentWs, held }
+}
+
+export function makeEnv(full: AgentWs, o: EnvOpts = {}): EvalEnv {
+  const { ws: start, held } = asTheAppLoads(full)
   let ws = start
   const uid = o.uid ?? start.me ?? start.workspace.ownerId
   const role: Role = o.role ?? 'editor'
@@ -144,6 +159,10 @@ export function makeEnv(start: AgentWs, o: EnvOpts = {}): EvalEnv {
     now: () => now,
     newTurn: () => void turn++,
     getWs: () => ws,
+    loadBody: async (id) => {
+      const b = o.readBody ? await o.readBody(id) : (held[id] ?? null)
+      if (b) ws = { ...ws, bodies: { ...(ws.bodies ?? {}), [id]: b } } as AgentWs
+    },
     async apply(plans: Plan[], as: ApplyAs): Promise<Applied> {
       const actorNow: OpActor = { ...actor, agent: as.actor === 'agent' }
       const v = validate(plans, ws, actorNow)

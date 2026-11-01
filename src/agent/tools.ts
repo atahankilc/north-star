@@ -31,7 +31,12 @@ const read: AgentTool[] = READ_TOOLS.map((t) => ({
   def: toolDef(t.name, t.summary, t.args),
   kind: 'read',
   run: async (env, args) => {
-    const r = t.run(env.getWs(), env.ids, args as never)
+    let r = t.run(env.getWs(), env.ids, args as never)
+    // A document's text is loaded when it's read (bugs 1, 25), the same way in the app and the evals, then read again.
+    if (r.needs && env.loadBody) {
+      await env.loadBody(r.needs)
+      r = t.run(env.getWs(), env.ids, args as never)
+    }
     return { ok: true, text: r.more && !r.text.includes(r.more) ? `${r.text}\n${r.more}` : r.text }
   },
 }))

@@ -559,7 +559,7 @@ export function describe(ws: ReadWs, ids: Ids, kind: IdKind, id: string, full: b
     }
     case 'document': {
       const x = d.docs.get(id)!
-      return { author: x.name, text: [`## ${ids.short('document', x.id)} ${x.kind} ${q(x.title, 120)}`, `by ${x.name} · ${x.shared ? 'shared' : 'private'} · added ${dayOf(x.createdAt)}${x.words ? ` · ${x.words} words` : ''}${x.pages ? ` · ${x.pages} pages` : ''}`, ...(x.excerpt ? [`starts: ${oneLine(x.excerpt, full ? 400 : 120)}`] : []), `read it: read_document(${ids.short('document', x.id)})${ws.bodies?.[x.id] ? '' : ' (its text is not loaded here)'}`].join('\n') }
+      return { author: x.name, text: [`## ${ids.short('document', x.id)} ${x.kind} ${q(x.title, 120)}`, `by ${x.name} · ${x.shared ? 'shared' : 'private'} · added ${dayOf(x.createdAt)}${x.words ? ` · ${x.words} words` : ''}${x.pages ? ` · ${x.pages} pages` : ''}`, ...(x.excerpt ? [`starts: ${oneLine(x.excerpt, full ? 400 : 120)}`] : []), `read it: read_document(${ids.short('document', x.id)})`].join('\n') }
     }
     case 'canvas': {
       const c = ws.canvases.find((x) => x.id === id)!
