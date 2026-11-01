@@ -24,6 +24,9 @@ export type Picture = { svg: string; w: number; h: number; text: string }
 // The longest side of a picture, px: big enough to read a card's id, small enough to cost little (~1–2k tokens).
 export const PICTURE_MAX = 1400
 const MARGIN = 40
+// The app's own font (D-013): the renderers embed it, since neither sees the page's web fonts (src/agent/ui/render.ts,
+// evals/render.ts).
+export const PICTURE_FONT = 'Geist'
 
 const TONE: Record<string, string> = { customer: colors.green, problem: colors.magenta, competitor: colors.yellow, idea: colors.fg, feature: colors.cyan, package: colors.blue }
 export const LEGEND = 'Colours: customer green, problem magenta, competitor yellow, idea white, feature cyan, package blue (a frame round its members when unfolded). Lines are links (dashed: for and relates, which the app hides until a card is picked). Grey frames are sections.'
@@ -46,7 +49,7 @@ function frame(bounds: Box) {
   const k = Math.min(1, PICTURE_MAX / Math.max(b.w, b.h))
   const w = Math.max(1, Math.round(b.w * k))
   const h = Math.max(1, Math.round(b.h * k))
-  return { b, k, w, h, open: `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${b.x} ${b.y} ${b.w} ${b.h}" font-family="Helvetica, Arial, sans-serif"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="${colors.bg}"/>` }
+  return { b, k, w, h, open: `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${b.x} ${b.y} ${b.w} ${b.h}" font-family="${PICTURE_FONT}, sans-serif"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="${colors.bg}"/>` }
 }
 
 // Text that stays readable after scaling: at least ~9 px on the picture.
