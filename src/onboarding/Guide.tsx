@@ -45,6 +45,8 @@ const keepKeys = (e: React.KeyboardEvent) => void (e.key !== '?' && e.stopPropag
 
 // This person's role in the open workspace, as the coach knows it (null: none known, every note counts).
 export const useGuideRole = create<{ role: Role | null }>(() => ({ role: null }))
+// Whether the guide is open, set by the coach: the side nav's `?` turns cyan while it is, as every HUD tool does (D-343).
+export const useGuideShown = create<{ open: boolean }>(() => ({ open: false }))
 
 // The magenta dot on the side nav's `?` (O6): something armed is still unseen, and `?` lists it here (as `NEW`).
 export function useGuideDot(): boolean {

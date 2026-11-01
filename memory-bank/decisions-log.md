@@ -6519,6 +6519,8 @@ that read like a button kind was a feature wrapping one of them, and is now name
   1.2–1.6, the gear a text glyph `⚙` (smaller).
 - The gear is a ToolButton: cyan while settings are open, like the threads button (was its own copy of ToolButton's
   CSS with a magenta bar under it when open), its count via `badgeTone="cyan"`; it still turns 45° on hover.
+- Every HUD tool is cyan while what it opens is open, the `?` too (the guide's open state in `useGuideShown`, set by
+  the coach; it had no `pressed`).
 - HazardConfirm's actions are `Button` (were raw `<button>`s composing AsciiButton's CSS); Button takes a `ref`.
 - check:kit's `small` counts composing Button.module.css outside src/ui.
 Alternatives: a new `HudButton`: not needed, ToolButton is it; what was missing was one icon size and set.

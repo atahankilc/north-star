@@ -33,7 +33,7 @@ import { Nudge } from './Nudge'
 import { EmptyHint } from './EmptyHint'
 import { Choices } from './Choices'
 import { KindGuide } from './KindGuide'
-import { Guide, useGuideRole } from './Guide'
+import { Guide, useGuideRole, useGuideShown } from './Guide'
 
 // Off the queue (see above).
 const OFF_QUEUE = (l: LessonData) => l.format === 'guide' || l.format === 'empty'
@@ -114,6 +114,7 @@ export function Coach() {
   const [guideOpen, setGuideOpen] = useState(false)
   const guideOpenRef = useRef(false)
   guideOpenRef.current = guideOpen
+  useEffect(() => useGuideShown.setState({ open: guideOpen }), [guideOpen])
   // Opened again from a played note's `‹ guide`: where it was.
   const [guideResume, setGuideResume] = useState(false)
   // Where focus was before `?` (or a note played from it): it goes back there when that's done.
