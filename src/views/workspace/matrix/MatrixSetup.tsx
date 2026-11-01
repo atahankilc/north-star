@@ -39,6 +39,7 @@ import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
 import { Select } from '../../../ui/primitives/Select'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { useWs } from '../canvas/context'
+import { useSetupOnDock } from '../canvas/FocusDock'
 import { closeMatrixSetup, openMatrixSetup, setupOf, setupTab, SETUP_TABS, StepSquare, useMatrixUi, type SetupTab } from './Matrix'
 import { TYPE_ACCENT } from '../plane/PlaneCards'
 import styles from './Matrix.module.css'
@@ -57,6 +58,7 @@ const TAB_NAME: Record<SetupTab, string> = { rows: 'rows', cols: 'columns', cell
 export type SetPart = <K extends keyof MatrixSetup>(part: K, value: MatrixSetup[K] | undefined, key?: string) => void
 
 export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
+  useSetupOnDock()
   const { wid, cards, cells } = useWs()
   const setup = setupOf(piece)
   const tab = setupTab(useMatrixUi((s) => s.setup)) ?? 'rows'

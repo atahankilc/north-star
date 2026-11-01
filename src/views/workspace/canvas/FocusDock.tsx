@@ -2,12 +2,27 @@
 // holds what can be done there, `unfocus` last; what opens from it (filters, what's linked) opens as its upper floor
 // (ConsoleFloor). No plane name: the breadcrumb has it. The same dock is a pane's beside a plane (D-211), named. No keys
 // shown (Escape closes what's open next; onboarding teaches it).
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { isReducedMotion } from '../../../state/motion'
 import styles from './FocusDock.module.css'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Console } from '../../../ui/patterns/Console'
+
+// A setup open on the dock (matrix, table, deck): it's the dock's floor, so the dock's own top L's go. Said by a mark on
+// <html> while one is open, not by `body:has(…)`: that made every change of text anywhere restyle the whole page, and a
+// focus left (each card fitting its title) froze for a second.
+export function useSetupOnDock() {
+  useEffect(() => {
+    const root = document.documentElement
+    root.dataset.setupOpen = String(Number(root.dataset.setupOpen ?? 0) + 1)
+    return () => {
+      const n = Number(root.dataset.setupOpen ?? 1) - 1
+      if (n > 0) root.dataset.setupOpen = String(n)
+      else delete root.dataset.setupOpen
+    }
+  }, [])
+}
 
 // `center`: where its middle sits (screen px); its box's middle when unset (the screen's, or a pane's beside a plane:
 // each part has its own dock, D-211). `name`: what it's the dock of, first (a pane's: `TABLE · costs`).

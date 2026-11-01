@@ -21,6 +21,6 @@
 }
 
 /* A setup open on it (matrix, table, deck): the setup is its floor, so its own top L's go. */
-body:has(section[data-learn='setup']) .dock {
+:root[data-setup-open] .dock {
   --mkt: transparent;
 }

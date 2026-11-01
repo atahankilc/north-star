@@ -10,6 +10,11 @@
   max-width: 100%;
 }
 
+/* Nothing in it (a console's optional tools all off): no room, so no gap beside it either. */
+.group:empty {
+  display: none;
+}
+
 /* Stacked (the HUD's columns): the seam between rows. */
 .group[data-vertical] {
   flex-direction: column;

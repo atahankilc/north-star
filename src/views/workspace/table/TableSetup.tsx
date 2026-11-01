@@ -33,6 +33,7 @@ import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
 import { Select } from '../../../ui/primitives/Select'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { useWs } from '../canvas/context'
+import { useSetupOnDock } from '../canvas/FocusDock'
 import { AddPill, Choices, Row, Toggle } from '../matrix/MatrixSetup'
 import { followTable, tableOf, useTableUi, TABLE_TABS, type TableTab } from './Table'
 import { TYPE_ACCENT } from '../plane/PlaneCards'
@@ -51,6 +52,7 @@ const TAB_NAME: Record<TableTab, string> = { rows: 'rows', cols: 'columns', view
 export type SetTable = <K extends keyof TableSetup>(part: K, value: TableSetup[K] | undefined, key?: string) => void
 
 export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
+  useSetupOnDock()
   const { wid, cards, cells } = useWs()
   const setup = tableOf(piece)
   const tab = useTableUi((s) => s.tab)

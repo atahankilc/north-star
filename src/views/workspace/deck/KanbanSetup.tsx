@@ -22,6 +22,7 @@ import { columnsOf, FIELD_NAME, heldCards, KANBAN_TEMPLATES, NO_VALUE, rowFieldO
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import styles from './Kanban.module.css'
 import { useWs } from '../canvas/context'
+import { useSetupOnDock } from '../canvas/FocusDock'
 import m from '../matrix/Matrix.module.css'
 import { Tabs } from '../../../ui/primitives/Tabs'
 import { Button } from '../../../ui/primitives/Button'
@@ -36,6 +37,7 @@ export type SetKanban = (patch: KanbanPatch, what: string, key?: string) => void
 export const CARDS_START = KANBAN_TEMPLATES[1].setup() as Required<Pick<KanbanPatch, 'colField' | 'source'>>
 
 export function KanbanSetupPanel({ piece }: { piece: WithId<Piece> }) {
+  useSetupOnDock()
   const { wid, cards, tasks } = useWs()
   const held = tasks.filter((t) => t.pieceId === piece.id)
   // Cards picked while it holds tasks: where they go is asked first (D-300).
