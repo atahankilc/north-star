@@ -39,3 +39,11 @@ provider; (2) subscriptions, checked 2026-10-31: Claude's sign-in is not allowed
 the evals, not by the provider: every provider and model runs the same suite (`--model anthropic:<id>`), three
 times, with `fit` in models.ts written from it; nothing ships as `works well` without that run. After 25 and the
 baseline.
+
+### Q-032 · later · Label's (and Button's) rules repeated in the live CSS
+Files that `composes` Label.module.css or Button.module.css bring the kit's rules again (4 copies of Label's in the
+live build: main, learn, Coach, WorkspaceLayout), so a caller's own colour or size on a label can lose to it (seen:
+Settings' section heads ask `--fg-muted` and show `--fg-dim`). Tried 2026-11-01: Label's rules in `:where()` fixes it,
+but visibly changes those labels app-wide. **Recommendation:** do it as its own step (Label, then Button), listing the
+labels whose colour changes; until then a caller's override outweighs the kit's (`.board .month`, `.x[data-icon]`).
+

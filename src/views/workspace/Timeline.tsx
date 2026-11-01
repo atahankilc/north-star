@@ -868,7 +868,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
         </Label>
         {layout.tray.map((t) =>
           t.id === trayHeld?.id ? null : (
-            <button key={t.id} className={styles.pill} data-task={t.id} data-selected={selected === t.id || undefined} style={tone(t) ? ({ ['--tone' as string]: tone(t) } as CSSProperties) : undefined} tabIndex={live ? 0 : -1} onPointerDown={pressTray(t)}>
+            <button /* kit-ok: a task in the no-day tray, dragged onto the strip */ key={t.id} className={styles.pill} data-task={t.id} data-selected={selected === t.id || undefined} style={tone(t) ? ({ ['--tone' as string]: tone(t) } as CSSProperties) : undefined} tabIndex={live ? 0 : -1} onPointerDown={pressTray(t)}>
               <span className={styles.line}>☐ {t.title}</span>
               {live && <Marks tier="s" tone={tone(t)} selected={selected === t.id} />}
             </button>
@@ -934,12 +934,12 @@ function Edges({ piece, layout, ppd, shown }: { piece: WithId<Piece>; layout: La
         return (
           <span key={r.key}>
             {left.length > 0 && (
-              <button className={styles.edge} style={{ left: T.left + 4, top: y }} onPointerDown={go(left.reduce((a, b) => (b.e > a.e ? b : a)))} title="earlier tasks: glide to the nearest">
+              <button /* kit-ok: a framed marker on the strip's edge, gliding to the nearest task */ className={styles.edge} style={{ left: T.left + 4, top: y }} onPointerDown={go(left.reduce((a, b) => (b.e > a.e ? b : a)))} title="earlier tasks: glide to the nearest">
                 ‹ {left.length}
               </button>
             )}
             {right.length > 0 && (
-              <button className={styles.edge} style={{ right: 'var(--space-1)', top: y }} onPointerDown={go(right.reduce((a, b) => (b.s < a.s ? b : a)))} title="later tasks: glide to the nearest">
+              <button /* kit-ok: a framed marker on the strip's edge, gliding to the nearest task */ className={styles.edge} style={{ right: 'var(--space-1)', top: y }} onPointerDown={go(right.reduce((a, b) => (b.s < a.s ? b : a)))} title="later tasks: glide to the nearest">
                 {right.length} ›
               </button>
             )}
@@ -977,7 +977,7 @@ function DraftPick({ left, top, width, plane, onCard, onText, onCancel }: { left
     <>
       <span ref={anchor} className={styles.pickAt} style={{ left, top, width }} aria-hidden />
       {at &&
-        createPortal(
+        createPortal( // kit-ok: the card picker floats over the strip at the screen's place (a popover, not a Window)
           <div className={styles.pick} style={{ left: at.x, top: at.y, width: at.w }} onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
             <CardPicker
               card={NO_CARD}

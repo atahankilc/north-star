@@ -91,12 +91,6 @@
   "src/views/workspace/FocusDock.module.css": {
     "caps": 1
   },
-  "src/views/workspace/Kanban.module.css": {
-    "caps": 8
-  },
-  "src/views/workspace/Kanban.tsx": {
-    "button": 5
-  },
   "src/views/workspace/KanbanSetup.tsx": {
     "button": 2
   },
@@ -177,12 +171,5 @@
     "button": 2,
     "dialog": 1,
     "textarea": 2
-  },
-  "src/views/workspace/Timeline.module.css": {
-    "caps": 4
-  },
-  "src/views/workspace/Timeline.tsx": {
-    "button": 3,
-    "portal": 1
   }
 }

@@ -79,15 +79,18 @@
 }
 
 .overMonth {
+  composes: label from '../../ui/Label.module.css';
   position: absolute;
   top: calc(var(--space-4) + var(--space-1));
   padding-left: var(--space-1);
   border-left: var(--line-w) solid var(--line);
+  line-height: var(--space-3);
+}
+
+/* Its own colour and world size over the kit's label (which can come again later): outweighs it */
+.board .overMonth {
   color: var(--fg-faint);
   font-size: var(--w-text-xs);
-  letter-spacing: var(--track-label);
-  line-height: var(--space-3);
-  text-transform: uppercase;
 }
 
 .overToday {
@@ -131,17 +134,20 @@
 }
 
 .month {
+  composes: label from '../../ui/Label.module.css';
   position: absolute;
   top: var(--space-half);
   height: calc(var(--head) - var(--space-half));
   padding-left: var(--space-2);
   border-left: var(--line-w) solid var(--line-hover);
-  color: var(--fg);
   font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
   line-height: calc(var(--space-3) + var(--space-half));
-  text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* Its own colour over the kit's label, which can come again later (a file composing it): outweighs it */
+.board .month {
+  color: var(--fg);
 }
 
 .month b {
@@ -151,14 +157,11 @@
 }
 
 .dayHead {
+  composes: label from '../../ui/Label.module.css';
   position: absolute;
   top: var(--space-6);
   padding-left: var(--space-1);
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
   line-height: calc(var(--space-3) + var(--space-half));
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -482,19 +485,22 @@
 
 /* The days a held or drawn task would get. */
 .readout {
+  composes: label from '../../ui/Label.module.css';
   position: absolute;
   z-index: var(--z-world-ui);
   margin-top: calc(-1 * var(--space-2));
   padding: var(--space-half) var(--space-2);
   border: var(--line-w) solid var(--accent-cyan);
   background: var(--bg);
-  color: var(--accent-cyan);
-  font-size: var(--w-text-sm);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
   white-space: nowrap;
   transform: translateY(-100%);
   pointer-events: none;
+}
+
+/* Its own colour and world size over the kit's label (which can come again later): outweighs it */
+.board .readout {
+  color: var(--accent-cyan);
+  font-size: var(--w-text-sm);
 }
 
 /* An empty day's `+`: pressed and drawn across days, a new task. */

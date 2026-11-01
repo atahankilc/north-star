@@ -83,6 +83,7 @@
 }
 
 .laneHead {
+  composes: label from '../../ui/Label.module.css';
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -92,11 +93,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--fg-dim);
   font: inherit;
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -156,15 +153,12 @@
 /* A column's head, the right panel's section rule (D-219): `01 TODO ──── 5`. Its line a step brighter than a panel's
    (`--rule-line`): on the page's black it's what parts the columns. */
 .head {
+  composes: label from '../../ui/Label.module.css';
   --rule-line: var(--line-hover);
   display: flex;
   align-items: center;
   gap: var(--space-2);
   height: var(--head);
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -215,7 +209,7 @@
   min-width: 4ch;
   field-sizing: content;
   letter-spacing: inherit;
-  text-transform: uppercase;
+  text-transform: inherit;
 }
 
 /* Its tools, after the count, while it's hovered: they take no room until then. */
@@ -437,28 +431,24 @@
 }
 
 /* `+ add a task`: a faint line, not a box. `+ column`: a head of its own, as faint. */
-.add,
-.addCol {
+/* `+ add a task`, `+ column`: Button icons, faint until pointed at. `[data-icon]` outweighs the Button's own padding
+   and colour, however the kit's CSS is ordered. */
+.add[data-icon],
+.addCol[data-icon] {
   padding: var(--space-1) 0 var(--space-1) var(--space-4);
-  border: 0;
-  background: none;
   color: var(--fg-faint);
-  font: inherit;
-  font-size: var(--text-xs);
   text-align: left;
-  cursor: pointer;
 }
 
-.addCol {
+.addCol[data-icon] {
   height: var(--head);
   padding: 0;
-  white-space: nowrap;
 }
 
-.add:hover,
-.add:focus-visible,
-.addCol:hover,
-.addCol:focus-visible {
+.add[data-icon]:hover,
+.add[data-icon]:focus-visible,
+.addCol[data-icon]:hover,
+.addCol[data-icon]:focus-visible {
   color: var(--fg);
   outline: none;
 }
@@ -520,13 +510,11 @@
   white-space: nowrap;
 }
 
-.soonFold {
+/* A Button icon: `▾ SOON`. */
+.soonFold[data-icon] {
   padding: 0;
-  border: 0;
-  background: none;
   color: var(--fg-faint);
-  font: inherit;
-  cursor: pointer;
+  font-size: inherit;
 }
 
 .soonFold:hover .soonName,
@@ -535,9 +523,12 @@
 }
 
 .soonName {
+  composes: label from '../../ui/Label.module.css';
+}
+
+/* Its own colour over the kit's label, which can come again later (a file composing it): outweighs it */
+.soonFold .soonName {
   color: var(--fg);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .soonCounts {
@@ -602,13 +593,11 @@
 
 /* A card: a task's sheet, always edged in its type's colour; its type on top in that colour, its priority on the right. */
 .sheetHead {
+  composes: label from '../../ui/Label.module.css';
   display: flex;
   align-items: center;
   gap: var(--space-2);
   margin-bottom: calc(-1 * var(--space-1));
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .sheetType {
@@ -671,12 +660,9 @@
 }
 
 .boxName {
+  composes: label from '../../ui/Label.module.css';
   display: block;
   margin-bottom: var(--space-2);
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 /* `good`: the box washed green, its name green; `bad`: its name magenta. */
@@ -709,12 +695,14 @@
 
 .boxes th {
   padding: var(--space-1) var(--space-2);
-  color: var(--fg-dim);
   font-weight: var(--weight-regular);
-  letter-spacing: var(--track-label);
   text-align: left;
-  text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* A head of the boxes' table: the kit's label. */
+.boxHead {
+  composes: label from '../../ui/Label.module.css';
 }
 
 .boxes td {
@@ -848,9 +836,12 @@
 }
 
 .heldWhat {
+  composes: label from '../../ui/Label.module.css';
+}
+
+/* Its own colour over the kit's label, which can come again later (a file composing it): outweighs it */
+.held .heldWhat {
   color: var(--accent-yellow);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .heldWhy {

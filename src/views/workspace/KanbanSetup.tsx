@@ -261,14 +261,14 @@ function BoxesEditor({ setup, onChange }: { setup: KanbanSetup; onChange: SetKan
         <tr>
           <th />
           {cols.map((c) => (
-            <th key={c.id}>{c.name}</th>
+            <th key={c.id} className={styles.boxHead}>{c.name}</th>
           ))}
         </tr>
       </thead>
       <tbody>
         {rows.map((r) => (
           <tr key={r.id}>
-            <th>{r.id === NO_VALUE ? `no ${FIELD_NAME[row]}` : r.name}</th>
+            <th className={styles.boxHead}>{r.id === NO_VALUE ? `no ${FIELD_NAME[row]}` : r.name}</th>
             {cols.map((c) => {
               const n = at(c.id, r.id)
               const i = TONES.findIndex((t) => t.tone === n?.tone)

@@ -554,9 +554,9 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
           </div>
         ))}
         {live && editor && cols.length < KANBAN_COLS_MAX && (
-          <button className={styles.addCol} onPointerDown={own} onClick={addCol} title="add a column">
+          <Button icon className={styles.addCol} onPointerDown={own} onClick={addCol} title="add a column">
             + column
-          </button>
+          </Button>
         )}
       </div>
       {lanes.map((lane) => {
@@ -670,16 +670,16 @@ function SoonBand({ piece, tasks, live, picked, onPick, onPress }: { piece: With
   const weekday = (due: string) => new Date(Date.UTC(+due.slice(0, 4), +due.slice(5, 7) - 1, +due.slice(8, 10))).toLocaleString('en', { weekday: 'short', timeZone: 'UTC' }).toLowerCase()
   return (
     <div className={styles.soon} onPointerDown={live ? onPress : undefined}>
-      <button className={styles.soonFold} onClick={live ? fold : undefined} aria-expanded={!folded} title={folded ? 'show what’s due' : 'fold it'}>
+      <Button icon className={styles.soonFold} onClick={live ? fold : undefined} aria-expanded={!folded} title={folded ? 'show what’s due' : 'fold it'}>
         {folded ? '▸' : '▾'} <span className={styles.soonName}>soon</span>
-      </button>
+      </Button>
       {folded ? (
         <span className={styles.soonCounts}>{[past && `${past} past`, now && `${now} today`, soon.length - past - now && `${soon.length - past - now} this week`].filter(Boolean).join(' · ')}</span>
       ) : (
         soon.map((t) => {
           const late = t.due! < day
           return (
-            <button key={t.id} className={styles.soonPill} data-late={late || undefined} data-today={t.due === day || undefined} data-selected={picked(t.id) || undefined} onClick={live ? () => onPick(t) : undefined} tabIndex={live ? 0 : -1} title={t.title}>
+            <button /* kit-ok: a task drawn small in the SOON band (its day, title, marks), not a [verb] */ key={t.id} className={styles.soonPill} data-late={late || undefined} data-today={t.due === day || undefined} data-selected={picked(t.id) || undefined} onClick={live ? () => onPick(t) : undefined} tabIndex={live ? 0 : -1} title={t.title}>
               <span className={styles.soonDay}>{late ? `was ${dueText(t.due!)}` : t.due === day ? 'today' : weekday(t.due!)}</span>
               <span className={styles.soonTitle}>{t.title}</span>
               <Marks tier="s" tone={t.cardType ? TYPE_ACCENT[t.cardType] : undefined} live={live} selected={picked(t.id)} />
@@ -697,7 +697,7 @@ function SoonBand({ piece, tasks, live, picked, onPick, onPress }: { piece: With
 // rule, how many it holds. A click folds it or opens it.
 export function LaneHead({ lane, count, folded, onFold, onPress }: { lane: Lane; count: number; folded: boolean; onFold: () => void; onPress?: (e: ReactPointerEvent) => void }) {
   return (
-    <button className={styles.laneHead} onPointerDown={onPress} onClick={onFold} aria-expanded={!folded} title={folded ? 'open it' : 'fold it'} style={lane.tone ? ({ ['--tone' as string]: lane.tone } as CSSProperties) : undefined}>
+    <button /* kit-ok: a lane's whole head (fold mark, who or what, name, count) that folds it */ className={styles.laneHead} onPointerDown={onPress} onClick={onFold} aria-expanded={!folded} title={folded ? 'open it' : 'fold it'} style={lane.tone ? ({ ['--tone' as string]: lane.tone } as CSSProperties) : undefined}>
       <span className={styles.laneFold} aria-hidden>
         {folded ? '▸' : '▾'}
       </span>
@@ -983,9 +983,9 @@ function AddTask({ open, quiet, onPress, onOpen, onClose, onAdd }: AddProps) {
   const [draft, setDraft] = useState('')
   if (!open)
     return (
-      <button className={styles.add} data-quiet={quiet || undefined} onPointerDown={onPress} onClick={onOpen}>
+      <Button icon className={styles.add} data-quiet={quiet || undefined} onPointerDown={onPress} onClick={onOpen}>
         + add a task
-      </button>
+      </Button>
     )
   // The kit's prompt (D-326), a `>` and a field as tall as its text, on a sheet in the task's place: Enter makes it and
   // keeps the field for the next, Escape or leaving it empty stops; leaving it with words keeps them as a task.

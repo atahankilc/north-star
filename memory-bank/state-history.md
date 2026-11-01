@@ -1161,3 +1161,11 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   nothing to propose (it had paused as if asked a question); `undoRestores` undoes a job's per-step applies last first;
   build-03 takes "To do"; the report's price label read the model with its judge. Verified: tsc, vitest agent* +
   evalRunner 200, stub evals 116 tasks 0 failed, `--wrong` 116 failed.
+
+## Done (2026-11-01): the deck and timeline on the kit (D-326, check:kit lower)
+- Kanban/Timeline (+ KanbanSetup's box heads): 12 caps rules compose Label (own colours scoped to outweigh it),
+  `+ column`, `+ add a task`, the SOON fold Button icons, five drawn things `kit-ok`. 152 → 131 (52 files).
+- Verified: tsc, build, check:kit/tokens/gallery/lessons; gallery: 54 deck/timeline states × 2 themes old/old2/new,
+  pixel-equal where stable (the rest moved between runs). Label in `:where()` tried and undone (Q-032). vitest: 2
+  failures in evals/ops from the agent session's uncommitted work, not this.
+

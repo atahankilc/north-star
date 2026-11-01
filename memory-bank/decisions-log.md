@@ -6070,6 +6070,9 @@ docs/foundation-audit-2026-10-31.md).
   a link's name underlined on hover. Kept as they were: rows of switches (padding pulled out), `×`, `+ add`, the title
   and value fields' size. Learned: files that `composes` Button.module.css or Label.module.css bring their rules again
   after a caller's CSS in dev, so a caller's override must outweigh them (`.x[data-icon]`, `.parent .parentTo[data-link]`).
+  The deck and timeline done 2026-11-01 (152 → 131): their caps compose Label, `+ column`/`+ add a task`/the SOON fold
+  Button icons, five drawn things `kit-ok`; no visible change. Label's rule is in 4 CSS files of the live build too
+  (Q-032).
   (4) Folders by layer (src/ui foundation/primitives/patterns; src/views/workspace by area) in one commit when no
   other session works. Also still open (what each copy still needs is in those forks' notes: a world size for
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
