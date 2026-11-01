@@ -15,7 +15,6 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import { KIND_NAME, kindOfPiece } from '../../model/pieces'
 import { Appear } from '../../ui/Appear'
-import { useAutoGrow } from '../../ui/autoGrow'
 import { Select } from '../../ui/Select'
 import { openSettingsAt } from '../../ui/Settings'
 import { useWs } from '../../views/workspace/context'
@@ -32,7 +31,11 @@ import { ChatsView, NotesDiff, NotesView } from './AgentMemory'
 import styles from './Agent.module.css'
 import { skillChip, useSkillMenu } from './SkillMenu'
 import { SKILLS } from '../skills'
+import { Button } from '../../ui/Button'
 import { Spinner } from '../../ui/Spinner'
+import { PromptField } from '../../ui/PromptField'
+import { Num, Rule } from '../../ui/Rule'
+import { Label } from '../../ui/Label'
 
 const WIDTH_STORE = 'northstar.agent.width'
 const W_MIN = 340
@@ -140,7 +143,6 @@ function Box() {
   const open = mode === 'box'
   const [text, setText] = useState('')
   const input = useRef<HTMLTextAreaElement>(null)
-  useAutoGrow(input, text)
   const skills = useSkillMenu(text, setText)
   const viewer = isViewer(useAgent.getState().wid)
   // Closed, the box's prompt never keeps the keyboard.
@@ -182,9 +184,11 @@ function Box() {
               <AgentMark /> agent
             </span>
             <span className={styles.boxModel}>{chatModel()}</span>
-            <button className={styles.close} onClick={() => closeAgent()} title="Close (Esc)">
-              <span className={styles.br}>[</span>×<span className={styles.br}>]</span> esc
-            </button>
+            <span className={styles.close}>
+              <Button keyHint="esc" onClick={() => closeAgent()} title="Close (Esc)">
+                ×
+              </Button>
+            </span>
           </div>
           <FirstAsks focus={focus} onAsk={(t) => agentActions.send(t)} compact />
           <p className={styles.note}>changes are shown first · one undo step</p>
@@ -192,29 +196,30 @@ function Box() {
         </div>
       )}
       {open && <div className={styles.skillAnchor}>{skills.menu}</div>}
-      <label className={styles.prompt} data-running={running || undefined}>
-        <span className={styles.ps} aria-hidden>
-          {running ? <Spinner className={styles.spinner} /> : '>'}
-        </span>
-        <textarea
-          ref={input}
-          data-agent-input
-          className={styles.input}
-          rows={1}
-          value={text}
-          placeholder={running ? 'working…' : pending ? 'changes are waiting: open the chat' : entries ? 'go on with the chat…' : `ask about ${ask}… (/ for skills)`}
-          aria-label="Ask the agent"
-          onFocus={(e) => {
-            remember(e.relatedTarget)
-            if (entries) agentActions.open()
-            else if (!open) agentActions.open()
-            if (entries) requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-agent-input]')?.focus())
-          }}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={onKey}
-        />
+      {/* The kit's `>` line (PromptField, D-326): the agent's own keys decide (the / menu, Enter), so its submit does
+          nothing; every key still reaches the column (passKeys). */}
+      <PromptField
+        ref={input as never}
+        className={styles.prompt}
+        multiline
+        passKeys
+        running={running}
+        data={{ 'data-agent-input': true }}
+        value={text}
+        placeholder={running ? 'working…' : pending ? 'changes are waiting: open the chat' : entries ? 'go on with the chat…' : `ask about ${ask}… (/ for skills)`}
+        label="Ask the agent"
+        onFocus={(e) => {
+          remember(e.relatedTarget)
+          if (entries) agentActions.open()
+          else if (!open) agentActions.open()
+          if (entries) requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-agent-input]')?.focus())
+        }}
+        onChange={setText}
+        onSubmit={() => {}}
+        onKeyDown={onKey as never}
+      >
         {!open && <kbd className={styles.kbd}>⌘J</kbd>}
-      </label>
+      </PromptField>
     </Appear>
   )
 }
@@ -230,7 +235,6 @@ function Column() {
   const [text, setText] = useState('')
   const input = useRef<HTMLTextAreaElement>(null)
   const log = useRef<HTMLDivElement>(null)
-  useAutoGrow(input, text)
   const skills = useSkillMenu(text, setText)
   const viewer = isViewer(chat.wid)
 
@@ -287,18 +291,20 @@ function Column() {
         </span>
         <ModelSwitch />
         <span className={styles.headTools}>
-          <button className={styles.action} data-on={view === 'chats' || undefined} onClick={() => agentActions.show(view === 'chats' ? 'chat' : 'chats')} disabled={running} aria-pressed={view === 'chats'} title="Your saved chats and the shared ones">
+          <Button className={styles.action} pressed={view === 'chats'} onClick={() => agentActions.show(view === 'chats' ? 'chat' : 'chats')} disabled={running} title="Your saved chats and the shared ones">
             chats
-          </button>
-          <button className={styles.action} data-on={view === 'notes' || undefined} onClick={() => agentActions.show(view === 'notes' ? 'chat' : 'notes')} aria-pressed={view === 'notes'} title="The agent notes: the workspace's memory">
+          </Button>
+          <Button className={styles.action} pressed={view === 'notes'} onClick={() => agentActions.show(view === 'notes' ? 'chat' : 'notes')} title="The agent notes: the workspace's memory">
             notes
-          </button>
-          <button className={styles.action} onClick={() => agentActions.newChat()} disabled={running} title="A new chat (this one is saved)">
+          </Button>
+          <Button className={styles.action} onClick={() => agentActions.newChat()} disabled={running} title="A new chat (this one is saved)">
             new
-          </button>
-          <button className={styles.close} onClick={() => closeAgent()} title="Fold it back to the box (Esc); the chat stays">
-            <span className={styles.br}>[</span>×<span className={styles.br}>]</span> esc
-          </button>
+          </Button>
+          <span className={styles.close}>
+            <Button keyHint="esc" onClick={() => closeAgent()} title="Fold it back to the box (Esc); the chat stays">
+              ×
+            </Button>
+          </span>
         </span>
       </header>
       <div
@@ -315,36 +321,35 @@ function Column() {
         {viewer && <p className={styles.viewer}>you're a viewer here: the agent reads and answers, it changes nothing</p>}
         {chat.job && view === 'chat' && <JobPanel job={chat.job} phase={phase} />}
         <div className={styles.skillAnchor}>{skills.menu}</div>
-        <label className={styles.prompt} data-running={running || undefined}>
-          <span className={styles.ps} aria-hidden>
-            {running ? <Spinner className={styles.spinner} /> : '>'}
-          </span>
-          <textarea
-            ref={input}
-            data-agent-input
-            className={styles.input}
-            rows={1}
-            value={text}
-            placeholder={running ? 'tell it something while it works… (it reads it at its next step)' : phase === 'previewing' ? 'change something… (↵ on empty applies)' : `ask about ${ask}… (/ for skills)`}
-            aria-label="Ask the agent"
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={onInputKey}
-          />
+        <PromptField
+          ref={input as never}
+          className={styles.prompt}
+          multiline
+          passKeys
+          running={running}
+          data={{ 'data-agent-input': true }}
+          value={text}
+          placeholder={running ? 'tell it something while it works… (it reads it at its next step)' : phase === 'previewing' ? 'change something… (↵ on empty applies)' : `ask about ${ask}… (/ for skills)`}
+          label="Ask the agent"
+          onChange={setText}
+          onSubmit={() => {}}
+          onKeyDown={onInputKey as never}
+        >
           {running && (
-            <button
+            <Button
               className={styles.action}
-              data-tone="danger"
+              tone="danger"
               onClick={() => {
                 agentActions.stop()
                 input.current?.focus()
               }}
             >
               stop
-            </button>
+            </Button>
           )}
-        </label>
+        </PromptField>
         <p className={styles.scope}>
-          <span className={styles.scopeLabel}>sees</span> whole workspace{here ? <> · you're in <span className={styles.scopeHere}>"{here}"</span></> : <> · {workspace}</>}
+          <Label tone="faint" className={styles.scopeLabel}>sees</Label> whole workspace{here ? <> · you're in <span className={styles.scopeHere}>"{here}"</span></> : <> · {workspace}</>}
         </p>
       </footer>
     </Appear>
@@ -443,10 +448,7 @@ function FirstSkills() {
   const list = FIRST_SKILLS.map((n) => SKILLS.find((s) => s.name === n)!).filter(Boolean)
   return (
     <div className={styles.asks}>
-      <div className={styles.rule}>
-        <span>skills</span>
-        <span className={styles.ruleLine} data-tone="magenta" aria-hidden />
-      </div>
+      <Rule as="div" name="skills" />
       {list.map((s) => (
         <button key={s.name} className={styles.ask} data-skill-ask onClick={() => agentActions.send(`/${s.name}`)}>
           <span className={styles.skillName}>/{s.name}</span>
@@ -464,9 +466,9 @@ function KeyNeeded() {
   return (
     <p className={styles.note} data-tone="error">
       add your key first (OpenAI or Anthropic): it stays in this browser.{' '}
-      <button className={styles.action} data-tone="primary" onClick={() => openSettingsAt('agent')}>
+      <Button className={styles.action} tone="primary" onClick={() => openSettingsAt('agent')}>
         settings → the agent
-      </button>
+      </Button>
     </p>
   )
 }
@@ -477,10 +479,7 @@ function FirstAsks({ focus, onAsk, compact }: { focus: string | null; onAsk: (t:
   if (!asks.length) return null
   return (
     <div className={styles.asks} data-compact={compact || undefined}>
-      <div className={styles.rule}>
-        <span>try</span>
-        <span className={styles.ruleLine} aria-hidden />
-      </div>
+      <Rule as="div" name="try" />
       {asks.map((a) => (
         <button key={a} className={styles.ask} onClick={() => onAsk(a)}>
           <span className={styles.askMark} aria-hidden>
@@ -525,7 +524,7 @@ function JobPanel({ job, phase }: { job: Job; phase: string }) {
             <span className={styles.jobMark} aria-label={x.state}>
               [{MARKS[x.state]}]
             </span>
-            <span className={styles.jobN}>{String(x.n).padStart(2, '0')}</span>
+            <Num n={x.n} className={styles.jobN} />
             <span className={styles.jobText}>
               {x.title}
               {x.why && <span className={styles.jobWhy}> · {x.why}</span>}
@@ -540,24 +539,24 @@ function JobPanel({ job, phase }: { job: Job; phase: string }) {
         </span>
         <span className={styles.jobTools}>
           {job.status === 'running' && !job.stopAfter && (
-            <button className={styles.action} onClick={() => agentActions.jobStopAfter()}>
+            <Button className={styles.action} onClick={() => agentActions.jobStopAfter()}>
               stop after this step
-            </button>
+            </Button>
           )}
           {job.status === 'running' && job.stopAfter && (
-            <button className={styles.action} onClick={() => agentActions.jobStopAfter(false)}>
+            <Button className={styles.action} onClick={() => agentActions.jobStopAfter(false)}>
               keep going
-            </button>
+            </Button>
           )}
           {(job.status === 'paused' || job.status === 'planned') && !running && phase !== 'previewing' && (
-            <button className={styles.action} data-tone="primary" onClick={() => agentActions.jobGoOn(over)}>
+            <Button className={styles.action} tone="primary" onClick={() => agentActions.jobGoOn(over)}>
               {over ? 'raise budget and go on' : 'go on'}
-            </button>
+            </Button>
           )}
           {!running && (
-            <button className={styles.action} onClick={() => agentActions.jobDrop()}>
+            <Button className={styles.action} onClick={() => agentActions.jobDrop()}>
               drop
-            </button>
+            </Button>
           )}
         </span>
       </footer>
@@ -588,7 +587,7 @@ const EntryView = memo(function EntryView({ entry, n }: { entry: Entry; n: numbe
       return (
         <div className={styles.you}>
           <span className={styles.turn} aria-label={`turn ${n}`}>
-            <span className={styles.n}>{String(n).padStart(2, '0')}</span>
+            <Num n={n} />
             <span className={styles.turnLine} aria-hidden />
           </span>
           <span className={styles.youText}>
@@ -609,9 +608,9 @@ const EntryView = memo(function EntryView({ entry, n }: { entry: Entry; n: numbe
           {entry.settings && (
             <>
               {' '}
-              <button className={styles.action} data-tone="primary" onClick={() => openSettingsAt('agent')}>
+              <Button className={styles.action} tone="primary" onClick={() => openSettingsAt('agent')}>
                 open settings
-              </button>
+              </Button>
             </>
           )}
         </p>
@@ -660,9 +659,9 @@ function AgentAnswer({ entry }: { entry: Extract<Entry, { kind: 'agent' }> }) {
           {entry.errorSettings && (
             <>
               {' '}
-              <button className={styles.action} data-tone="primary" onClick={() => openSettingsAt('agent')}>
+              <Button className={styles.action} tone="primary" onClick={() => openSettingsAt('agent')}>
                 open settings
-              </button>
+              </Button>
             </>
           )}
         </p>
@@ -802,9 +801,10 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
   const groups = byWhereLines(items)
   const on = useMemo(() => entry.items.filter((i) => i.on), [entry.items])
   const [at, setAt] = useState(-1)
-  const apply = useRef<HTMLButtonElement>(null)
+  // Button takes no ref: the apply button is found in its box.
+  const apply = useRef<HTMLSpanElement>(null)
   useEffect(() => {
-    if (live) apply.current?.focus({ preventScroll: true })
+    if (live) apply.current?.querySelector('button')?.focus({ preventScroll: true })
   }, [live])
   // An item unticked under the stepper: it stays on the same number (or the last one).
   useEffect(() => {
@@ -825,15 +825,16 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
   const deletes = on.filter((i) => i.delete).length
   return (
     <section className={styles.changes} data-state={entry.state} onKeyDown={onKey} aria-label="The changes">
-      <h3 className={styles.rule}>
-        <span className={styles.n}>01</span>
-        <span>{live ? 'changes' : on.length === 1 ? 'change' : 'changes'}</span>
-        <span className={styles.ruleLine} data-tone="magenta" aria-hidden />
-        <span className={styles.changesState}>
-          {live && on.length !== entry.items.length ? `${on.length} of ${entry.items.length} · ` : `${on.length} · `}
-          {STATE_WORDS[entry.state]}
-        </span>
-      </h3>
+      <Rule
+        n={1}
+        name={live ? 'changes' : on.length === 1 ? 'change' : 'changes'}
+        aside={
+          <span className={styles.changesState}>
+            {live && on.length !== entry.items.length ? `${on.length} of ${entry.items.length} · ` : `${on.length} · `}
+            {STATE_WORDS[entry.state]}
+          </span>
+        }
+      />
       {groups.map(([where, list]) => (
         <div key={where} className={styles.where}>
           <div className={styles.whereName}>
@@ -863,7 +864,7 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
               ‹
             </button>
             <span className={styles.stepAt} aria-live="polite">
-              <span className={styles.n}>{at >= 0 ? at + 1 : '–'}</span> / {on.length}
+              <Num n={at >= 0 ? String(at + 1) : '–'} /> / {on.length}
             </span>
             <button className={styles.stepBtn} onClick={() => go(at + 1)} disabled={!on.length} aria-label="The next change">
               ›
@@ -873,12 +874,14 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
           <div className={styles.changesFoot}>
             {/* The deletes it holds named on the button (agent-bugs 17, D-333): accepting is the yes to them, so none goes
                 unseen in a long list. */}
-            <button ref={apply} className={styles.action} data-tone="primary" onClick={() => agentActions.accept()}>
-              apply{deletes > 0 && <span className={styles.applyDeletes}> · {deletes} delete{deletes === 1 ? '' : 's'}</span>} ↵
-            </button>
-            <button className={styles.action} data-tone="danger" onClick={() => agentActions.discard()}>
+            <span ref={apply} className={styles.applyBox}>
+              <Button className={styles.action} tone="primary" onClick={() => agentActions.accept()}>
+                apply{deletes > 0 && <span className={styles.applyDeletes}> · {deletes} delete{deletes === 1 ? '' : 's'}</span>} ↵
+              </Button>
+            </span>
+            <Button className={styles.action} tone="danger" onClick={() => agentActions.discard()}>
               discard esc
-            </button>
+            </Button>
             <span className={styles.changesHint}>{on.length ? 'one undo step · the app waits till then' : 'nothing ticked: apply closes it'}</span>
           </div>
         </>
@@ -973,9 +976,9 @@ function ReportLine({ entry }: { entry: Extract<Entry, { kind: 'report' }> }) {
       <span className={styles.statusWord}>{shown.undone ? 'undone' : 'applied'}</span>
       <span className={styles.statusText}>· {what.join(' · ')}</span>
       {current && !shown.undone && (
-        <button className={styles.action} onClick={() => agentActions.undo()} disabled={shown.undoing}>
+        <Button className={styles.action} onClick={() => agentActions.undo()} disabled={shown.undoing}>
           {shown.undoing ? 'undoing…' : 'undo'}
-        </button>
+        </Button>
       )}
       {current && wf.error && <span className={styles.reportError}>{wf.error}</span>}
     </div>

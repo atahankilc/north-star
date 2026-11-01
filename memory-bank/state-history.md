@@ -1108,3 +1108,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   `go` turn never saw its "on go" steps (OpenAI; Claude's append-only history kept it); now sent again after a plan skill.
 - Verified: tsc, vitest agent* 165 (agentSkillChecks new), stub evals 116 tasks 0 failed (prioritize-03's reference
   got its reply to the check), `--wrong` 116 failed. Pushed 2026-11-01.
+
+## Done (2026-11-01): onboarding, the agent's UI and the piece console on the kit (D-326)
+- src/onboarding (Pages, Lesson, Guide, KindGuide, Choices, Coach CSS), src/agent/ui (Agent, AgentMemory,
+  AgentSettings, PreviewMarks CSS), CanvasView's console onto Button, PromptField, Tabs, Num, Rule, Field, Label,
+  Empty (three forks, after asking the three other sessions; the agent session listed what had to survive).
+- Verified: tsc, vitest 954, previewFold + agentSkills + agentNames 18/18, eval 116 tasks 0 failed, check:tokens 0,
+  check:gallery 84, check:lessons, lint; gallery states old against new (each from its own checkout, a second old for
+  noise), the agent's UI through a throwaway example in the comparison checkouts only: the changes are the snaps in
+  D-326's log. One fork deleted the shared scratch `out` folder mid-run (screenshots only; nothing else lost).

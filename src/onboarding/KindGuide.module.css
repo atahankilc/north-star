@@ -116,27 +116,6 @@
 
 .hide {
   margin-left: auto;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-muted);
-  font: inherit;
-  font-size: var(--text-xs);
-  cursor: pointer;
-}
-
-.hide::before {
-  content: '[';
-  color: var(--line-hover);
-}
-
-.hide::after {
-  content: ']';
-  color: var(--line-hover);
-}
-
-.hide:hover {
-  color: var(--fg-strong);
 }
 
 /* ── After [hide guide]: one line under the menu ── */

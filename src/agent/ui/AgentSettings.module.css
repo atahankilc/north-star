@@ -1,8 +1,4 @@
 /* Settings → the agent (S14): the rows' controls, in Settings' look (Settings.module.css). Tokens only. */
-.action {
-  composes: small from '../../ui/AsciiButton.module.css';
-}
-
 .action:disabled {
   color: var(--fg-faint);
   cursor: default;

@@ -54,56 +54,16 @@
   letter-spacing: var(--track-label);
 }
 
-.btn,
-.bare {
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  color: var(--fg-dim);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.btn::before {
-  content: '[';
-  color: var(--line-hover);
-}
-
-.btn::after {
-  content: ']';
-  color: var(--line-hover);
-}
-
-.btn[data-tone='hot'],
-.bare[data-tone='hot'] {
-  color: var(--fg-strong);
-}
-
-.btn[data-tone='go'],
-.bare[data-tone='go'] {
-  color: var(--accent-cyan);
-}
-
-/* Ways out: quiet by where they sit, never by contrast (≥ 4.5:1, onboarding.md §4). */
-.btn[data-tone='out'],
-.bare[data-tone='out'] {
+/* `[verb]`s are the kit's Button (D-326); a way out is --fg-muted, quiet by where it sits (onboarding.md §4). */
+.out {
   color: var(--fg-muted);
 }
 
-.btn:disabled,
-.bare:disabled {
-  color: var(--fg-faint);
-  cursor: default;
+/* Holds a button only to hand it to a ref: no box of its own. */
+.btnRef {
+  display: contents;
 }
 
-.btn:not(:disabled):hover,
-.bare:not(:disabled):hover {
-  color: var(--fg-strong);
-}
-
-.btn:focus-visible,
-.bare:focus-visible,
 .step:focus-visible {
   outline: var(--line-w) solid var(--accent-cyan);
   outline-offset: var(--space-half);
@@ -254,7 +214,7 @@
   text-transform: uppercase;
 }
 
-.count span {
+.count > span:last-child {
   color: var(--fg-dim);
 }
 
@@ -293,4 +253,8 @@
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-3) var(--space-6) var(--space-4);
+}
+
+.foot button {
+  white-space: nowrap;
 }

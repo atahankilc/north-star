@@ -12,6 +12,8 @@ import { clearUsage, readUsage, sumUsage } from '../usage'
 import { EFFORTS, pickable, readKey, suggested, useAgentSettings } from './settings'
 import { plainError } from './errors'
 import styles from './AgentSettings.module.css'
+import { Button } from '../../ui/Button'
+import { Field } from '../../ui/Field'
 
 const k = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 
@@ -114,12 +116,12 @@ function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text
           <span className={styles.hint} aria-label={`your ${p.name} key, shortened`}>
             {hint}
           </span>
-          <button className={styles.action} data-tone="primary" onClick={() => void check()} disabled={busy}>
+          <Button className={styles.action} tone="primary" onClick={() => void check()} disabled={busy}>
             {busy ? 'checking' : 'check'}
-          </button>
-          <button className={styles.action} data-tone="danger" onClick={() => (s.removeKey(provider), onSaid({ text: 'Removed from this browser.' }))}>
+          </Button>
+          <Button className={styles.action} tone="danger" onClick={() => (s.removeKey(provider), onSaid({ text: 'Removed from this browser.' }))}>
             remove
-          </button>
+          </Button>
         </>
       ) : (
         <form
@@ -129,19 +131,19 @@ function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text
             save()
           }}
         >
-          <input
+          <Field
             className={styles.input}
             type="password"
             autoComplete="off"
             spellCheck={false}
             placeholder={p.placeholder}
-            aria-label={`your ${p.name} key`}
+            label={`your ${p.name} key`}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={setDraft}
           />
-          <button className={styles.action} data-tone="primary" type="submit" disabled={!draft.trim()}>
+          <Button className={styles.action} tone="primary" type="submit" disabled={!draft.trim()}>
             save
-          </button>
+          </Button>
         </form>
       )}
     </Row>
@@ -219,9 +221,9 @@ function UsageSection() {
           {u.answers} answer{u.answers === 1 ? '' : 's'} · {k(u.input)} in{u.cached ? ` (${k(u.cached)} cached)` : ''} · {k(u.output)} out
         </span>
         {u.answers > 0 && (
-          <button className={styles.action} onClick={() => (clearUsage(), redraw((n) => n + 1))}>
+          <Button className={styles.action} onClick={() => (clearUsage(), redraw((n) => n + 1))}>
             clear
-          </button>
+          </Button>
         )}
       </Row>
     </Section>

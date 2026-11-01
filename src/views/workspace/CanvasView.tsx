@@ -15,6 +15,7 @@ import { canOpen, deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAM
 import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
+import { Button } from '../../ui/Button'
 import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, setFitter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs, useWsNow } from './context'
@@ -2027,9 +2028,9 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
     <>
     {fresh && (
       <div className={`${styles.console} ${className ?? ''}`} data-fresh data-screen-sized onPointerDown={(e) => e.stopPropagation()}>
-        <button className={styles.tool} data-new title={`something new in the conversations inside this ${noun}`} aria-label={`Comments inside, ${comments!.count}, something new`} onClick={comments!.onOpen}>
+        <Button className={styles.tool} data-new title={`something new in the conversations inside this ${noun}`} aria-label={`Comments inside, ${comments!.count}, something new`} onClick={comments!.onOpen}>
           {comments!.mentioned ? '@' : <CommentIcon size={11} />} {comments!.count}
-        </button>
+        </Button>
       </div>
     )}
     <div
@@ -2052,12 +2053,12 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
             {size.w} × {size.h}
           </span>
           {open && (
-            <button className={styles.tool} data-learn="console-unframe" title={open.on ? 'back into its window' : 'out of its window onto the canvas, live there'} onClick={open.onToggle}>
+            <Button className={styles.tool} data-learn="console-unframe" title={open.on ? 'back into its window' : 'out of its window onto the canvas, live there'} onClick={open.onToggle}>
               {open.on ? 'frame' : 'unframe'}
-            </button>
+            </Button>
           )}
           {onMove && (
-            <button
+            <Button
               className={styles.tool}
               title={`move the ${noun} to another canvas`}
               onClick={(e) => {
@@ -2066,33 +2067,33 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
               }}
             >
               move to…
-            </button>
+            </Button>
           )}
           {onAlso && (
-            <button className={styles.tool} title={`put the same ${noun} on another canvas as well`} onClick={(e) => onAlso(under(e))}>
+            <Button className={styles.tool} title={`put the same ${noun} on another canvas as well`} onClick={(e) => onAlso(under(e))}>
               also on…
-            </button>
+            </Button>
           )}
           {onDelete && (
-            <button className={styles.tool} data-tone="danger" title={`delete the ${noun} (Delete)`} onClick={onDelete}>
+            <Button className={styles.tool} tone="danger" title={`delete the ${noun} (Delete)`} onClick={onDelete}>
               delete
-            </button>
+            </Button>
           )}
           {onEdit && (
-            <button className={styles.tool} aria-pressed title="stop moving, resizing and renaming" onClick={onEdit}>
+            <Button className={styles.tool} pressed title="stop moving, resizing and renaming" onClick={onEdit}>
               done
-            </button>
+            </Button>
           )}
         </>
       ) : (
         <>
           {shared && (
-            <button className={styles.tool} title={`on ${shared.count} canvases: where`} aria-label={`On ${shared.count} canvases`} onClick={(e) => shared.onWhere(under(e))}>
+            <Button className={styles.tool} title={`on ${shared.count} canvases: where`} aria-label={`On ${shared.count} canvases`} onClick={(e) => shared.onWhere(under(e))}>
               ⧉ {shared.count}
-            </button>
+            </Button>
           )}
           {comments && comments.count > 0 && (
-            <button
+            <Button
               className={styles.tool}
               data-new={comments.fresh || undefined}
               title={`${comments.count} conversation${comments.count === 1 ? '' : 's'} inside this ${noun}${comments.fresh ? ', something new' : ''}`}
@@ -2100,7 +2101,7 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
               onClick={comments.onOpen}
             >
               {comments.mentioned ? '@' : <CommentIcon size={11} />} {comments.count} inside
-            </button>
+            </Button>
           )}
           {link &&
             (link.editor ? (
@@ -2118,13 +2119,13 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
               link.at && <span className={styles.linkAt}>⇆ {link.planes.find((p) => p.id === link.at)?.name || 'plane'}</span>
             ))}
           {extra}
-          <button className={styles.tool} aria-pressed={false} title={`make the ${noun} the view`} onClick={onFocus}>
+          <Button className={styles.tool} pressed={false} title={`make the ${noun} the view`} onClick={onFocus}>
             focus
-          </button>
+          </Button>
           {onEdit && (
-            <button className={styles.tool} aria-pressed={false} title={noun === 'plane' ? 'move, resize or rename the plane' : `move, rename or open the ${noun}`} onClick={onEdit}>
+            <Button className={styles.tool} pressed={false} title={noun === 'plane' ? 'move, resize or rename the plane' : `move, rename or open the ${noun}`} onClick={onEdit}>
               edit
-            </button>
+            </Button>
           )}
         </>
       )}
@@ -2154,9 +2155,9 @@ function OpenTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean })
     <>
       {kind === 'table' && <TablePager piece={piece} editor={editor} />}
       {editor && (
-        <button className={styles.tool} aria-pressed={on} title={matrix ? 'its rows, columns and cells' : kind === 'kanban' ? 'what it holds: tasks, or cards by a field' : 'where its rows come from, its columns'} onClick={toggle}>
+        <Button className={styles.tool} pressed={on} title={matrix ? 'its rows, columns and cells' : kind === 'kanban' ? 'what it holds: tasks, or cards by a field' : 'where its rows come from, its columns'} onClick={toggle}>
           setup
-        </button>
+        </Button>
       )}
     </>
   )

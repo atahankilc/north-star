@@ -13,17 +13,13 @@ import { useAuth } from '../../data/auth'
 import { diffShown, NOTES_MAX, NOTES_TITLE, type DiffLine } from '../../model/notes'
 import { agentActions, isViewer, liveWs, useAgent } from './agentStore'
 import styles from './AgentMemory.module.css'
+import { Button } from '../../ui/Button'
+import { Rule as KitRule } from '../../ui/Rule'
 
 // `01 ── CHATS` as the column's other views start.
+// A section's head: the kit's Rule (D-326), its words faint after the line.
 function Rule({ n, label, aside }: { n: string; label: string; aside?: string }) {
-  return (
-    <h3 className={styles.rule}>
-      <span className={styles.n}>{n}</span>
-      <span>{label}</span>
-      <span className={styles.ruleLine} aria-hidden />
-      {aside && <span className={styles.aside}>{aside}</span>}
-    </h3>
-  )
+  return <KitRule n={n} name={label} aside={aside} />
 }
 
 // ---- The saved chats
@@ -148,12 +144,12 @@ export function NotesView() {
         <div className={styles.edit}>
           <textarea ref={area} className={styles.area} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={onKey} aria-label="The agent notes" spellCheck />
           <div className={styles.foot}>
-            <button className={styles.action} data-tone="primary" onClick={() => void save()}>
+            <Button className={styles.action} tone="primary" onClick={() => void save()}>
               save ⌘↵
-            </button>
-            <button className={styles.action} onClick={() => setEditing(false)}>
+            </Button>
+            <Button className={styles.action} onClick={() => setEditing(false)}>
               cancel esc
-            </button>
+            </Button>
             <span className={styles.count} data-over={draft.length > NOTES_MAX || undefined}>
               {draft.length}/{NOTES_MAX}
             </span>
@@ -166,13 +162,13 @@ export function NotesView() {
           <div className={styles.foot}>
             {!viewer && (
               // Not before the text is loaded: saving would overwrite notes not seen.
-              <button className={styles.action} data-tone="primary" onClick={start} disabled={!!doc && text == null}>
+              <Button className={styles.action} tone="primary" onClick={start} disabled={!!doc && text == null}>
                 {text ? 'edit' : 'write'}
-              </button>
+              </Button>
             )}
-            <button className={styles.action} onClick={() => agentActions.show('chat')}>
+            <Button className={styles.action} onClick={() => agentActions.show('chat')}>
               back to the chat
-            </button>
+            </Button>
             <span className={styles.count}>{viewer ? "you're a viewer: read only" : 'one undo step'}</span>
           </div>
         </>

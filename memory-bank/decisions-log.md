@@ -6038,6 +6038,15 @@ docs/foundation-audit-2026-10-31.md).
   editors (Field is screen-sized), the card's type label and meta and fold toggles, documents' icon buttons, the
   console buttons and a piece's name field (CanvasView.module.css, another session's work then: next), the colour
   swatches. Beside, collab, ContextMenu, FocusedPlane, SideNav already had nothing hand-made.
+- *Built:* onboarding, the agent's UI and the piece console on the kit (2026-11-01, coordinated with the agent session,
+  which handed src/agent/ui over with what must survive: PreviewMarks' exports and effect deps, the apply button's
+  `N deletes`, the citations, SkillMenu's order and scroll). Onboarding's buttons (Pages' Btn draws Button), the
+  guide's `>` line → PromptField and tips → Tabs, numbers → Num; the agent's buttons, both `>` lines → PromptField,
+  its heads → Rule / Num, the key → Field; the console's 11 buttons → Button (its delete stays magenta, D-182).
+  Snapped: the prompts without the page's focus box and with a magenta `>`, the guide's TIPS caps, small spacing in
+  the welcome's and a lesson's feet. Kept: a piece's name field (D-223's cyan frame, zoom-sized, `17/80`), the change
+  ticks (Checkbox has no hidden-label mode), the wizard window's steps (patterns). Found: Button `sm` wraps in a
+  narrow row (a lesson's foot broke; kept on one line there): a kit `nowrap` is next.
 - *Not yet:* moving the other areas onto the kit (what each copy still needs is in those forks' notes: a world size for
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
   MenuPanel, the settings gear's badge 4 px higher once moved); patterns (Dialog/Window, WizardShell, SetupPanel,

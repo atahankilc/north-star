@@ -176,6 +176,13 @@
   border-top: var(--line-w) solid var(--line);
 }
 
+/* Each of the foot's parts (the count, the kit's buttons) keeps to one line; only the spacer gives way. */
+.foot > :not(.sp),
+.top button {
+  flex: none;
+  white-space: nowrap;
+}
+
 /* Squeezed beside a wizard (no demo, narrower): the foot wraps, its count and buttons each kept on one line. */
 .card[data-squeezed] .foot {
   flex-wrap: wrap;

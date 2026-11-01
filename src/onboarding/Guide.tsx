@@ -16,6 +16,10 @@ import type { KeyRow } from './keys'
 import type { Role } from './lessons'
 import { useProgress } from './progress'
 import styles from './Guide.module.css'
+import { PromptField } from '../ui/PromptField'
+import { Tabs } from '../ui/Tabs'
+import { Label } from '../ui/Label'
+import { Empty } from '../ui/Empty'
 
 type Props = {
   onClose: () => void
@@ -69,6 +73,11 @@ export function Guide({ onClose, onPlay, role = null, now = null, onReach, resum
   )
 }
 
+const TIPS = [
+  { value: 'on' as const, label: 'on' },
+  { value: 'off' as const, label: 'off' },
+]
+
 // The `>` line: the field and the tips switch.
 function Line({ field, query, setQuery, onKeyDown }: { field: React.RefObject<HTMLInputElement | null>; query: string; setQuery: (q: string) => void; onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void }) {
   const tipsOff = useProgress((s) => s.tipsOff)
@@ -77,32 +86,24 @@ function Line({ field, query, setQuery, onKeyDown }: { field: React.RefObject<HT
     setTipsOff(off)
     field.current?.focus()
   }
+  // The kit's prompt line (D-326): Enter, the arrows, Tab and Escape are the guide's own (onKeyDown), so its submit
+  // does nothing of its own.
   return (
-    <label className={styles.line}>
-      <span className={styles.sign} aria-hidden>
-        &gt;
+    <PromptField
+      ref={field as React.Ref<HTMLInputElement | HTMLTextAreaElement | null>}
+      className={styles.line}
+      value={query}
+      onChange={setQuery}
+      onSubmit={() => {}}
+      label="Find a note or a key"
+      placeholder="find a note or a key…"
+      onKeyDown={onKeyDown as (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void}
+    >
+      <Label tone="faint">tips</Label>
+      <span onMouseDown={(e) => e.preventDefault()}>
+        <Tabs look="segments" label="Tips (⇥ switches)" options={TIPS} value={tipsOff ? 'off' : 'on'} onChange={(v) => set(v === 'off')} />
       </span>
-      <input
-        ref={field}
-        className={styles.field}
-        value={query}
-        placeholder="find a note or a key…"
-        aria-label="Find a note or a key"
-        spellCheck={false}
-        autoComplete="off"
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={onKeyDown}
-      />
-      <span className={styles.tipsLabel}>tips</span>
-      <span className={styles.seg} role="group" aria-label="Tips (⇥ switches)">
-        <button type="button" tabIndex={-1} aria-pressed={!tipsOff} onMouseDown={(e) => e.preventDefault()} onClick={() => set(false)}>
-          on
-        </button>
-        <button type="button" tabIndex={-1} aria-pressed={tipsOff} onMouseDown={(e) => e.preventDefault()} onClick={() => set(true)}>
-          off
-        </button>
-      </span>
-    </label>
+    </PromptField>
   )
 }
 
@@ -246,7 +247,7 @@ function ListGuide({ model, onClose, onPlay, reach, resume }: { model: GuideMode
       <div className={styles.body}>
         <div ref={list} className={styles.list} role="listbox" aria-label="Notes and keys">
           {nowShown && <NowRow reach={reach!} picked={nowPicked} onClick={() => reach!.go()} />}
-          {rows.length === 0 && <p className={styles.none}>nothing matches · esc closes</p>}
+          {rows.length === 0 && <Empty className={styles.none}>nothing matches · esc closes</Empty>}
           {rows.map((r, i) => (
             <RowView
               key={r.key}

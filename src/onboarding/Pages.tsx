@@ -11,6 +11,8 @@ import { Demo } from './Demo'
 import { bits, fitTab, plain, two, type PageModel } from './words'
 import type { ReleaseItem } from './releases'
 import styles from './Pages.module.css'
+import { Button } from '../ui/Button'
+import { Num } from '../ui/Rule'
 
 export type PagesEnd = { how: 'done' | 'skipped'; go?: NonNullable<ReleaseItem['go']>['action'] }
 
@@ -31,13 +33,26 @@ export function Words({ text }: { text: string }) {
   )
 }
 
-// A `[verb]` button, lowercase; `tone`: hot (white), go (cyan), out (a way out, --fg-muted).
+// A `[verb]` button: the kit's Button (D-326). `tone`: hot the strong one (`main`), go cyan (`primary`), out a way out
+// (--fg-muted: quiet by where it sits, never by contrast, onboarding.md §4); `bare` without brackets. `elRef` is the
+// button itself, for the focus a dialog starts on (Button takes no ref: a wrapper that is no box hands it over).
 export function Btn({ children, onClick, tone, disabled, bare, label, elRef }: { children: ReactNode; onClick?: () => void; tone?: 'hot' | 'go' | 'out'; disabled?: boolean; bare?: boolean; label?: string; elRef?: React.Ref<HTMLButtonElement> }) {
-  return (
-    <button ref={elRef} type="button" className={bare ? styles.bare : styles.btn} data-tone={tone} disabled={disabled} onClick={onClick} aria-label={label}>
+  const button = (
+    <Button tone={tone === 'hot' ? 'main' : tone === 'go' ? 'primary' : undefined} icon={bare} className={tone === 'out' ? styles.out : undefined} disabled={disabled} onClick={onClick} aria-label={label}>
       {children}
-    </button>
+    </Button>
   )
+  if (!elRef) return button
+  return (
+    <span className={styles.btnRef} ref={(s) => setRef(elRef, s?.querySelector('button') ?? null)}>
+      {button}
+    </span>
+  )
+}
+
+function setRef<T>(ref: React.Ref<T>, v: T | null) {
+  if (typeof ref === 'function') ref(v)
+  else if (ref) (ref as React.MutableRefObject<T | null>).current = v
 }
 
 // Focus inside while open (Tab wraps), and back where it was on close.
@@ -270,7 +285,7 @@ function Window({ page, pages, i, n, last, go, forward, skip, showMe, name, out,
       <Stage page={page} scene={scene} width={demoW} />
       <div className={styles.text}>
         <div className={styles.count}>
-          {two(i + 1)} <span>/ {two(n)} · {name}</span>
+          <Num n={i + 1} /> <span>/ {two(n)} · {name}</span>
         </div>
         {/* Every page's words in one cell, the others unseen: the window is as tall as its tallest page throughout, so
             its top never moves as the pages turn. */}

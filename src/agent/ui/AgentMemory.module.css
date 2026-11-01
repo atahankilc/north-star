@@ -8,34 +8,9 @@
   min-height: 0;
 }
 
-/* `01 ── CHATS` with the magenta lead of something numbered (D-277). */
-.rule {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-regular);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-}
 
-.n {
-  color: var(--accent-magenta);
-}
 
-.ruleLine {
-  flex: 1;
-  height: var(--line-w);
-  background: linear-gradient(to right, var(--accent-magenta) 0 var(--lead), var(--line) var(--lead));
-}
 
-.aside {
-  color: var(--fg-dim);
-  letter-spacing: normal;
-  text-transform: none;
-}
 
 .lead {
   margin: 0;
@@ -102,9 +77,6 @@
   gap: var(--space-3);
 }
 
-.action {
-  composes: small from '../../ui/AsciiButton.module.css';
-}
 
 .count {
   color: var(--fg-dim);

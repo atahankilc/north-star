@@ -267,9 +267,7 @@
 }
 
 .wasHead {
-  color: var(--fg-dim);
-  text-transform: uppercase;
-  letter-spacing: var(--track-label);
+  composes: label from '../../ui/Label.module.css';
 }
 
 .why {

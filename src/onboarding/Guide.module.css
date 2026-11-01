@@ -47,69 +47,13 @@
   border-right: var(--line-w) solid var(--accent-magenta);
 }
 
-/* The `>` line, with the tips switch where the finder's scopes sit. */
+/* The `>` line (the kit's PromptField), with the tips switch where the finder's scopes sit. */
 .line {
-  display: flex;
   flex: none;
-  align-items: center;
   gap: var(--space-3);
   height: var(--head-h);
   padding: 0 var(--space-3);
   border-bottom: var(--line-w) solid var(--line);
-  cursor: text;
-}
-
-.sign {
-  color: var(--accent-magenta);
-  font-size: var(--text-sm);
-}
-
-.field {
-  flex: 1;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-strong);
-  font: inherit;
-  font-size: var(--text-sm);
-  caret-color: var(--accent-magenta);
-}
-
-.field::placeholder {
-  color: var(--fg-faint);
-}
-
-.field:focus {
-  outline: none;
-}
-
-.tipsLabel {
-  color: var(--fg-faint);
-}
-
-.seg {
-  display: inline-flex;
-  flex: none;
-  border: var(--line-w) solid var(--line-hover);
-}
-
-.seg button {
-  padding: var(--space-half) var(--space-2);
-  border: 0;
-  background: none;
-  color: var(--fg-muted);
-  font: inherit;
-  cursor: pointer;
-}
-
-.seg button:hover {
-  color: var(--fg-strong);
-}
-
-.seg button[aria-pressed='true'] {
-  background: var(--accent-cyan);
-  color: var(--on-accent);
 }
 
 .body {
@@ -127,9 +71,7 @@
 }
 
 .none {
-  margin: 0;
   padding: var(--space-2) var(--space-3);
-  color: var(--fg-faint);
 }
 
 .hd {

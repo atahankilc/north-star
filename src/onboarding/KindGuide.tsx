@@ -19,6 +19,7 @@ import { lessonById, type GuideLesson, type GuideRow } from './lessons'
 import { useProgress } from './progress'
 import styles from './KindGuide.module.css'
 import { CARD_TONE } from '../ui/cardTone'
+import { Button } from '../ui/Button'
 
 type Props = { menu: DOMRect; row: string | null; where: 'canvas' | 'plane'; onHide: () => void }
 
@@ -217,9 +218,9 @@ function Column({ host, row, seenN, total, onHide }: { host: HTMLElement | null;
 function HideButton({ onHide }: { onHide: () => void }) {
   return (
     <>
-      <button type="button" className={styles.hide} tabIndex={-1} onMouseDown={keepFocus} onClick={onHide}>
+      <Button className={styles.hide} tabIndex={-1} onMouseDown={keepFocus} onClick={onHide}>
         hide guide
-      </button>
+      </Button>
       <span className={styles.hideKeys}>
         keys: <kbd className={styles.k}>?</kbd> → tips off
       </span>

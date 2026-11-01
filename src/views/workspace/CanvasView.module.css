@@ -397,11 +397,8 @@
   color: var(--fg);
 }
 
-.tool {
-  composes: small from '../../ui/AsciiButton.module.css';
-  padding: 0 calc(var(--space-half) * var(--cs, 1));
-}
-
+/* The console's buttons are the kit's Button (D-326) at the kit's padding; `.tool` only lets their text grow with the
+   console (`--cs`, D-264). */
 .console .tool {
   font-size: inherit;
 }

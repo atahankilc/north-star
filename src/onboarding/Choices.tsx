@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom'
 import { Appear } from '../ui/Appear'
 import type { Choice } from './lessons'
 import styles from './Coach.module.css'
+import { Num } from '../ui/Rule'
 
 // What each choice goes to on the page (Workspaces.tsx's fields), by its place in the list.
 const GO: (() => void)[] = [
@@ -21,7 +22,7 @@ export function Choices({ into, choices }: { into: Element; choices: readonly Ch
       {choices.map((c, i) => (
         <Appear as="li" key={c.label} className={styles.choiceItem}>
           <button type="button" className={styles.choice} onClick={() => GO[i]?.()}>
-            <span className={styles.choiceNo}>{String(i + 1).padStart(2, '0')}</span>
+            <Num n={i + 1} className={styles.choiceNo} />
             <span className={styles.choiceLabel}>{c.label}</span>
             <span className={styles.choiceLine}>{c.line}</span>
           </button>

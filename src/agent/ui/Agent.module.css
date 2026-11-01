@@ -219,32 +219,16 @@
   margin-left: auto;
 }
 
+/* `[×] esc`: the kit's Button with its key (D-326), pushed to the right of the head. */
 .close {
   margin-left: auto;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
 }
 
 .headTools .close {
   margin-left: 0;
 }
 
-.close:hover,
-.close:focus-visible {
-  color: var(--fg-strong);
-}
 
-.br {
-  color: var(--fg-faint);
-}
-
-.action {
-  composes: small from '../../ui/AsciiButton.module.css';
-}
 
 /* `apply · 2 deletes`: the deletes in the danger colour. */
 .applyDeletes {
@@ -309,11 +293,6 @@
   background: var(--accent-magenta);
 }
 
-.ps {
-  flex: none;
-  min-width: 1ch;
-  color: var(--accent-cyan);
-}
 
 .youText {
   min-width: 0;
@@ -538,28 +517,8 @@
   flex-direction: column;
 }
 
-/* `TRY ────` with a cyan lead. */
-.rule {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-1);
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-}
 
-.ruleLine {
-  flex: 1;
-  height: var(--line-w);
-  background: linear-gradient(to right, var(--accent-cyan) 0 var(--lead), var(--line) var(--lead));
-}
 
-/* A numbered start: the magenta lead (D-277). */
-.ruleLine[data-tone='magenta'] {
-  background: linear-gradient(to right, var(--accent-magenta) 0 var(--lead), var(--line) var(--lead));
-}
 
 /* One ask per line, the prompt's row: a `›` where it goes, lit under the pointer. */
 .ask {
@@ -625,14 +584,7 @@
   margin-left: 2ch;
 }
 
-.changes .rule {
-  margin: 0;
-  font-weight: var(--weight-regular);
-}
 
-.n {
-  color: var(--accent-magenta);
-}
 
 .changesState {
   color: var(--fg-dim);
@@ -641,11 +593,8 @@
 }
 
 .whereName {
+  composes: label from '../../ui/Label.module.css';
   margin-top: var(--space-1);
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .items {
@@ -882,26 +831,17 @@
   padding: var(--space-2) 0;
 }
 
-.input {
-  flex: 1;
-  min-width: 0;
+/* The prompt grows with its text up to here, then scrolls. */
+.prompt textarea {
   max-height: 40vh;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-strong);
-  font: inherit;
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  line-height: var(--space-4);
-  resize: none;
-  outline: none;
-  caret-color: var(--accent-cyan);
 }
 
-.input::placeholder {
-  color: var(--fg-dim);
+/* The apply button's box: the column finds the button in it to focus (Button takes no ref). */
+.applyBox {
+  display: contents;
 }
+
+
 
 .kbd {
   flex: none;
@@ -919,9 +859,6 @@
 
 .scopeLabel {
   margin-right: 1ch;
-  color: var(--fg-faint);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .scopeHere {
@@ -1219,10 +1156,8 @@
 }
 
 .jobKind {
+  composes: label from '../../ui/Label.module.css';
   flex: none;
-  color: var(--fg-dim);
-  text-transform: uppercase;
-  letter-spacing: var(--track-label);
 }
 
 .jobTitle {
