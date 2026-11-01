@@ -35,6 +35,10 @@ describe('the picture', () => {
     expect(Math.max(p.w, p.h)).toBeLessThanOrEqual(1400)
     expect(p.text).toMatch(/^A picture of p1 "Segments" as it is now \(with your pending changes\): 33 cards, 0 unfolded packages, 11 links drawn/)
     expect(p.text).toContain(LEGEND)
+    // A plane has no edge for its content (D-186, D-187): the words say how it fits the window, never "outside".
+    expect(p.text).toMatch(/the app fits it into the plane's 2050 × 1125 window, shown there at \d+ %/)
+    expect(p.text).not.toMatch(/outside/)
+    expect(p.svg).not.toContain('stroke-dasharray="12')
     expect(planePicture(ws, ids, 'nope')).toBeNull()
   })
 

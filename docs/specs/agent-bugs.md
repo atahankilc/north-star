@@ -345,8 +345,8 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
     things; at the end I put it on the main plane", each only when it's needed.
     Agreed (D-327); phases 1 and 2 built 2026-11-01 (decisions-log D-327 *Built*). What the pictures showed at once,
     left to do: cards place_on brings along (parts, members) aren't in a later arrange unless named, so they stay where
-    they landed (the model sees it in `look`; the change result could name them); a flow too big for its plane runs
-    past its bottom (the plane doesn't grow).
+    they landed (the model sees it in `look`; the change result could name them). (A plane has no edge for its content:
+    the app fits it into the plane's window, D-186/D-187; nothing is "outside" a plane.)
     Before it: it could only move things: `/organize` is "cluster by type, one arrange" (4). The ops for
     structure exist (`create_piece` plane, `place_on`/`take_off`, `create_package`, sections, headings, `stuck_to`), but
     the agent sees nothing that would tell it when to use them, and no skill uses them together.

@@ -45,8 +45,3 @@ D-327 wants taste from examples, not rules: planes the user made or liked, as re
 with a line on why each works, read by the agent when it organises. The user hasn't picked them. **Recommendation:**
 the user names two or three planes (the hand import of the Founder Discovery Study was one candidate); they are kept as
 pictures plus a sentence each in the agent notes or a document the agent reads, and an eval checks a run against them.
-
-### Q-033 · later · Should a plane grow when a layout doesn't fit it
-A `flow` (or cluster) of more cards than a plane holds runs past its bottom (seen in the Rivals picture, D-327): the
-plane's box stays as it was. **Recommendation:** arrange grows the plane (its w/h, snapped, one undo step with the
-moves) when the block can't fit, and says so in the preview; never shrinks it. Ask before: a plane's size is the user's.

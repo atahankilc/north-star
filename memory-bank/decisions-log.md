@@ -6060,8 +6060,12 @@ several planes, a main plane with detail planes beside it, sections), each only 
   skill-restructure-04 judged by it. Checked: 906 unit tests (agentLook.test.ts new), stub evals 114 tasks 0 failed,
   every wrong script failing; the Rivals pictures before and after looked at by eye. Found by it: place_on's landing
   avoided cards but not text (a card on a sticky, bug 6), fixed with the plane's text as obstacles.
-- *Not yet:* the user's planes as reference pictures (which ones is the user's call); a run with a real model; a
-  flow that doesn't fit its plane still runs past its bottom (the plane doesn't grow; seen in the Rivals picture).
+- *Not yet:* the user's planes as reference pictures (which ones is the user's call, Q-032); a run with a real model.
+- *Corrected (2026-11-01, the user):* a plane has no edge for its content: the app fits what's on it into the plane's
+  window, on the canvas (D-187) and in focus (D-186), so nothing is "outside the plane" and a plane never needs to
+  grow (a question about growing it was withdrawn). `look` no longer draws the plane's box nor counts cards outside
+  it; it says how the content fits the window (content shaped like the window reads largest). The flow layout still
+  takes the plane's width and height as the shape to aim for, not as a limit.
 - *Spec:* docs/specs/agent-bugs.md item 27.
 
 ### D-328 · 2026-10-31 · Accepted (agent-bugs 28; the user: "bişey istiyorum, bana bitti al diyo… 5-6-10 kere sırada ne varsa onu yap demek zorunda kalıyorum"; "hardcoded bir 25 adımda bitire gerek yok… step by step kullanıcın onayını ala ala ilerleyebilir… agentı çalışırken bölemiyoruz da"; then "27 ve 28'i kabul ediyorum")

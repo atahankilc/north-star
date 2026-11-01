@@ -26,7 +26,7 @@ export const PICTURE_MAX = 1400
 const MARGIN = 40
 
 const TONE: Record<string, string> = { customer: colors.green, problem: colors.magenta, competitor: colors.yellow, idea: colors.fg, feature: colors.cyan, package: colors.blue }
-export const LEGEND = 'Colours: customer green, problem magenta, competitor yellow, idea white, feature cyan, package blue (a frame round its members when unfolded). Lines are links (dashed: for and relates, which the app hides until a card is picked). Grey frames are sections; the dashed outline is the plane\'s own box.'
+export const LEGEND = 'Colours: customer green, problem magenta, competitor yellow, idea white, feature cyan, package blue (a frame round its members when unfolded). Lines are links (dashed: for and relates, which the app hides until a card is picked). Grey frames are sections.'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 const cut = (s: string, n: number) => {
@@ -69,12 +69,13 @@ export function planePicture(ws: ReadWs, ids: Ids, planeId: string): Picture | n
     boxes.push({ c, box: { x: c.x, y: c.y, w: CARD.w, h: CARD.h } })
   }
   const labels = ws.labels.filter((l) => l.pieceId === plane.id)
-  const own = { x: 0, y: 0, w: plane.w, h: plane.h }
-  const all = [own, ...boxes.map((b) => b.box), ...frames.map((f) => f.box), ...labels.map((l) => labelBox(l))]
+  // A plane has no edge for its content: the app fits whatever is on it into the plane's window, on the canvas and in
+  // focus (D-186, D-187). So the picture is the content, and the words say how it fits that window.
+  const all = [...boxes.map((b) => b.box), ...frames.map((f) => f.box), ...labels.map((l) => labelBox(l))]
+  if (!all.length) return null
   const f = frame(around(all))
   const small = fontFor(f.k, 13)
   const out: string[] = [f.open]
-  out.push(`<rect x="0" y="0" width="${plane.w}" height="${plane.h}" fill="none" stroke="${colors.fgDim}" stroke-width="${2 / f.k}" stroke-dasharray="${12 / f.k} ${8 / f.k}"/>`)
   // Sections and text under everything else.
   for (const l of labels) {
     const b = labelBox(l)
@@ -114,9 +115,11 @@ export function planePicture(ws: ReadWs, ids: Ids, planeId: string): Picture | n
     out.push(`<text x="${box.x + 6}" y="${box.y + 2 * fs + 8}" fill="${colors.fg}" font-size="${fs}">${esc(cut(c.title ?? '', 26))}</text>`)
   }
   out.push('</svg>')
-  const outside = boxes.filter(({ box }) => box.x < 0 || box.y < 0 || box.x + box.w > plane.w || box.y + box.h > plane.h).length
+  // How the content fits the plane's window: the closer its shape to the window's, the larger it reads there.
+  const content = around(all)
+  const fit = Math.min(plane.w / content.w, plane.h / content.h)
   const text = [
-    `A picture of ${ids.short('piece', plane.id)} "${cut(plane.name ?? '', 40)}" as it is now (with your pending changes): ${boxes.length} cards, ${frames.length} unfolded packages, ${links} links drawn, ${labels.length} texts; ${outside} cards outside the plane's box. ${f.w} × ${f.h} px.`,
+    `A picture of ${ids.short('piece', plane.id)} "${cut(plane.name ?? '', 40)}" as it is now (with your pending changes): ${boxes.length} cards, ${frames.length} unfolded packages, ${links} links drawn, ${labels.length} texts. Its content is ${Math.round(content.w)} × ${Math.round(content.h)}; the app fits it into the plane's ${plane.w} × ${plane.h} window, shown there at ${Math.round(Math.min(1, fit) * 100)} % (content shaped like the window reads largest). ${f.w} × ${f.h} px.`,
     LEGEND,
   ].join('\n')
   return { svg: out.join(''), w: f.w, h: f.h, text }
