@@ -1021,3 +1021,11 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Verified: tsc (app, evals), check:tokens 0, vitest (mine pass; 8 onboarding failures belong to another session's
   uncommitted D-330 work), stub evals 114 tasks 0 failed, `--wrong` 114 failed, `--emulator` 0 failed with every text
   read through Firestore.
+
+## Done (2026-11-01): agent-bugs 28's done check and 27's leftover
+- `progress` done is refused when the step's last `change` this turn was refused (the step under way, else the next
+  to do; a dry run doesn't count; skipped with why stays open); kept in tools.ts per turn, never saved.
+- place_on's change result names the cards it brought along (parts, members) by short id and title, so a later
+  arrange can name them (change.ts' `broughtAlong`).
+- Verified: tsc (app, evals), vitest 914 (agentPlumbing.test.ts: both new tests fail without the fix), stub evals 114
+  tasks 0 failed, `--wrong` 114 failed.

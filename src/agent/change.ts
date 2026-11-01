@@ -23,7 +23,7 @@ import { checkArgs } from './schema'
 import { ID_KEYS } from './idKeys'
 import { makeIds, resolve, resolvePerson, unclear, view, type IdKind, type Ids } from './read'
 import { clean, derive } from './read/derive'
-import { norm, wrap } from './read/text'
+import { norm, q, wrap } from './read/text'
 import type { AgentEnv, AgentWs } from './contract'
 import type { OpError } from '../ops/types'
 
@@ -234,6 +234,25 @@ function shortView(ws: AgentWs, ids: Ids, items: ChangeItem[]): string {
   return out.join('\n')
 }
 
+// place_on brings a card's parts and a package's members along (agent-bugs 27): named here, since a later arrange
+// moves only the cards it names, and those left unnamed stay where they landed.
+function broughtAlong(cs: Changeset, added: ChangeItem[], ws: AgentWs, ids: Ids): string[] {
+  const steps = new Map(cs.groups.flatMap((g) => g.steps).map((st) => [st.item, st]))
+  const out: string[] = []
+  for (const i of added) {
+    if (i.op !== 'place_on') continue
+    const args = (steps.get(i.id)?.args ?? {}) as { cards?: unknown; plane?: unknown }
+    const asked = new Set(Array.isArray(args.cards) ? args.cards.map(String) : [])
+    const plane = typeof args.plane === 'string' ? args.plane : ''
+    const came = i.ids.map((id) => (plane && id.startsWith(`${plane}_`) ? id.slice(plane.length + 1) : id)).filter((id) => ws.cards.some((c) => c.id === id))
+    const along = [...new Set(came)].filter((id) => !asked.has(id))
+    if (!along.length) continue
+    const names = along.slice(0, 20).map((id) => `${ids.short('card', id)} ${q(ws.cards.find((c) => c.id === id)!.title, 40)}`)
+    out.push(`${i.id} also brought along (parts and members): ${names.join(', ')}${along.length > 20 ? `, … ${along.length - 20} more` : ''}. A later arrange moves only the cards it names: name these too.`)
+  }
+  return out
+}
+
 // The tool's answer: the items grouped by where, the new ids, warnings, the short view.
 export function describeResult(o: { cs: Changeset; added: ChangeItem[]; handles: Record<string, string>; ws: AgentWs; ids: Ids; head: string }): string {
   const { cs, added, handles, ws, ids } = o
@@ -253,6 +272,7 @@ export function describeResult(o: { cs: Changeset; added: ChangeItem[]; handles:
     return []
   })
   if (made.length) lines.push(`New: ${made.join(', ')}.`)
+  lines.push(...broughtAlong(cs, added, ws, ids))
   if (cs.warnings.length) lines.push('Warnings:', ...cs.warnings.map((w) => `- ${w}`))
   const v = shortView(ws, ids, added)
   if (v) lines.push('After the change:', v)

@@ -301,8 +301,9 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
     "do what's next" five to ten times over. It feels like a chat box, not an agent that's part of the app.
     Agreed (D-328); the job and steering built 2026-11-01 (decisions-log D-328 *Built*: what, how checked, not yet).
     Found while building 27's evals: a step can be marked done after its `change` was refused (the stub did; a real
-    model may too). "Done is checked" isn't enforced yet: `progress` done should be refused, or warned, when the
-    turn's last `change` for it failed.
+    model may too). *Fixed 2026-11-01:* `progress` done is refused when the step's last `change` this turn was refused
+    (the step under way, else the next to do; a dry run doesn't count); skipping with why stays open. Kept in
+    tools.ts for the turn, never saved (the job's saved shape is the rules').
     The cause is in the design, not the model: a turn ends in one preview (workflow.ts:
     running → previewing → applied → idle), and nothing carries the job past it. The plan of a big job is only text
     in an answer (prompt.ts, "A big job…"); no state holds its steps, so after an apply nothing knows what's left; the
@@ -350,8 +351,8 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
     package on a sub-plane, and I'll use it on another plane later, because at a wider view it links to other
     things; at the end I put it on the main plane", each only when it's needed.
     Agreed (D-327); phases 1 and 2 built 2026-11-01 (decisions-log D-327 *Built*). What the pictures showed at once,
-    left to do: cards place_on brings along (parts, members) aren't in a later arrange unless named, so they stay where
-    they landed (the model sees it in `look`; the change result could name them). (A plane has no edge for its content:
+    cards place_on brings along (parts, members) aren't in a later arrange unless named, so they stayed where they
+    landed: *fixed 2026-11-01*, the change result names them (`i3 also brought along (parts and members): c12 "…"`). (A plane has no edge for its content:
     the app fits it into the plane's window, D-186/D-187; nothing is "outside" a plane.)
     Before it: it could only move things: `/organize` is "cluster by type, one arrange" (4). The ops for
     structure exist (`create_piece` plane, `place_on`/`take_off`, `create_package`, sections, headings, `stuck_to`), but

@@ -11,6 +11,8 @@ import { stubModel } from '../../src/agent/stubModel'
 import { reportOf, withOutcome } from '../../src/agent/workflow'
 import { NOTES_ID } from '../../src/model/notes'
 import type { AgentWs } from '../../src/agent/contract'
+import { placeOnPlan } from '../../src/ops/places'
+import { counterIds } from '../../src/ops/newId'
 
 const readDoc = AGENT_TOOLS.find((t) => t.def.name === 'read_document')!
 
@@ -61,5 +63,63 @@ describe('the model hears what the person did with a preview (bugs 5, 25)', () =
     expect(withOutcome([], { applied: report })).toEqual([{ role: 'system', tag: 'outcome', content: 'The person applied your proposed changes. Applied 1 change on Segments · plane (1), one undo step.' }])
     expect(withOutcome([], { discarded: { text: 'Discarded: nothing changed.', done: [], notDone: [], step: null } })[0].content).toBe('The person discarded your proposed changes: nothing was written. Discarded: nothing changed.')
     expect(withOutcome([{ role: 'user', content: 'q' }], { undone: true })).toHaveLength(2)
+  })
+})
+
+describe('place_on names what it brings along (bug 27)', () => {
+  it('parts and members it brought, by short id and title', async () => {
+    const ws = loadFixture('medium')
+    const planes = ws.pieces.filter((p) => p.kind === 'plane')
+    // A card that brings others with it, onto a plane where none of them is.
+    let found: { card: string; plane: string; along: string[] } | null = null
+    for (const c of ws.cards) {
+      for (const p of planes) {
+        const r = placeOnPlan({ ws, actor: { uid: 'u', role: 'editor', agent: true }, now: 0, newId: counterIds('t') }, { cards: [c.id], plane: p.id })
+        if (r.list.length > 1 && r.list.some((x) => x.id === c.id)) found = { card: c.id, plane: p.id, along: r.list.filter((x) => x.id !== c.id).map((x) => x.id) }
+        if (found) break
+      }
+      if (found) break
+    }
+    expect(found).not.toBeNull()
+    const env = makeEnv(ws)
+    const change = AGENT_TOOLS.find((t) => t.def.name === 'change')!
+    const r = await change.run(env, { ops: [{ op: 'place_on', args: { cards: [env.ids.short('card', found!.card)], plane: env.ids.short('piece', found!.plane) } }] })
+    expect(r.ok, r.text).toBe(true)
+    const line = r.text.split('\n').find((l) => l.includes('also brought along'))!
+    expect(line).toBeDefined()
+    for (const id of found!.along) expect(line).toContain(env.ids.short('card', id))
+    expect(line).not.toContain(`${env.ids.short('card', found!.card)} `)
+  })
+
+  it('nothing said when only the cards asked for came', async () => {
+    const env = makeEnv(loadFixture('medium'))
+    const change = AGENT_TOOLS.find((t) => t.def.name === 'change')!
+    const r = await change.run(env, { ops: [{ op: 'place_on', args: { cards: ['c53'], plane: 'p1' } }] })
+    expect(r.ok, r.text).toBe(true)
+    expect(r.text).not.toContain('also brought along')
+  })
+})
+
+describe("a step whose last change was refused can't be marked done (bug 28)", () => {
+  const tool = (n: string) => AGENT_TOOLS.find((t) => t.def.name === n)!
+  it('refused, then fixed: done only after the change went in', async () => {
+    const env = makeEnv(loadFixture('medium'))
+    expect((await tool('plan').run(env, { title: 'Two steps', steps: [{ title: 'Add a problem' }, { title: 'Link it' }] })).ok).toBe(true)
+    await tool('progress').run(env, { step: 1, state: 'doing' })
+    const bad = await tool('change').run(env, { ops: [{ op: 'create_card', args: { type: 'problem', title: 'Bags run out', plane: 'no such plane' } }] })
+    expect(bad.ok).toBe(false)
+    const refused = await tool('progress').run(env, { step: 1, state: 'done' })
+    expect(refused.ok).toBe(false)
+    expect(refused.text).toMatch(/last change was refused/)
+    // A dry run doesn't count either way.
+    await tool('change').run(env, { ops: [{ op: 'create_card', args: { type: 'problem', title: 'Bags run out', plane: 'p1' } }], dry_run: true })
+    expect((await tool('progress').run(env, { step: 1, state: 'done' })).ok).toBe(false)
+    const good = await tool('change').run(env, { ops: [{ op: 'create_card', args: { type: 'problem', title: 'Bags run out', plane: 'p1' } }] })
+    expect(good.ok, good.text).toBe(true)
+    expect((await tool('progress').run(env, { step: 1, state: 'done' })).ok).toBe(true)
+    // Skipping stays open after a refusal.
+    await tool('progress').run(env, { step: 2, state: 'doing' })
+    await tool('change').run(env, { ops: [{ op: 'link', args: { from: 'nothing', to: 'nobody' } }] })
+    expect((await tool('progress').run(env, { step: 2, state: 'skipped', why: 'no card to link to' })).ok).toBe(true)
   })
 })

@@ -47,8 +47,8 @@ something is finished, add its entry to state-history.md and leave at most one l
      app a big job (`/restructure Segments`): does it call `plan` and `look`, one step per turn? Tune the prompt on it.
   2. The baseline (three runs, two models) before any prompt change is measured; agent-bugs 25 (with 1 and 5)
      fixed 2026-11-01, not pushed.
-  3. Small, ready: 28's "done is checked" (`progress` done refused or warned when the step's `change` was refused);
-     27's leftover: cards place_on brings along aren't in a later arrange unless named (name them in the result).
+  3. Done 2026-11-01, not pushed: 28's done is checked (a refused `change` keeps its step from done); 27's leftover
+     (place_on's result names the cards it brought along).
   4. Waiting on the user: reference planes for the agent's taste (Q-032); the local harness stays an idea (Q-031).
   Order and status of every agent bug: docs/specs/agent-bugs.md (its table).
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks

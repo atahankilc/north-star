@@ -10,7 +10,7 @@ import { kindOfPiece } from '../model/pieces'
 import { REGISTRY, type ArgSchema } from '../ops/registry'
 import { toolDef, type AgentEnv, type AgentTool } from './contract'
 import { agentArgs, ID_KEYS, runChange } from './change'
-import { jobText, planJob, progressJob } from './job'
+import { jobText, planJob, progressJob, type JobHost } from './job'
 
 export { NO_COORDS, COORDS_FIX, agentArgs, ID_KEYS } from './change'
 
@@ -155,7 +155,23 @@ const changeTool: AgentTool = {
     },
   }),
   kind: 'write',
-  run: runChange,
+  run: async (env, args) => {
+    const r = await runChange(env, args)
+    // The step it was for (the one under way, else the next to do) remembers whether its last change was refused.
+    const j = env.job?.get()
+    const step = j?.steps.find((x) => x.state === 'doing') ?? j?.steps.find((x) => x.state === 'todo')
+    if (env.job && step && args.dry_run !== true) lastChangeOf(env.job).set(step.n, r.ok)
+    return r
+  },
+}
+
+// Done is checked, not said (agent-bugs 28): whether each step's last `change` this turn was refused, per job host
+// (one a turn). Kept here, never saved (the job's saved shape is the rules').
+const lastChanges = new WeakMap<JobHost, Map<number, boolean>>()
+function lastChangeOf(host: JobHost) {
+  let m = lastChanges.get(host)
+  if (!m) lastChanges.set(host, (m = new Map()))
+  return m
 }
 
 // ---- UI tools (the facade; the eval records them)
@@ -203,6 +219,9 @@ const progressTool: AgentTool = {
   run: async (env, a) => {
     const host = jobOf(env)
     if (!host) return { ok: false, text: 'there is no plan in this chat' }
+    const n = Math.floor(Number(a.step))
+    if (a.state === 'done' && lastChangeOf(host).get(n) === false)
+      return { ok: false, text: `step ${n} isn't done: its last change was refused, so nothing of it is in the preview. Fix the change and propose it again, or mark the step skipped with why.` }
     const j = progressJob(host.get(), a)
     if ('error' in j) return { ok: false, text: j.error }
     host.set(j)
