@@ -69,7 +69,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Next: Q-033 (dark
   backdrop faint on some screens; ask the user which screens, then (a) + (b)).
 - D-346 (2026-11-01, committed): backdrop 70 % in workspaces (sceneClock.ts, Backdrop.tsx, App.tsx); value checked headless, the user not yet.
-- D-348 (2026-11-01, committed): Settings → display: hud size and background strength; the user to look at it.
+- D-348 (2026-11-01, pushed): Settings → display: hud size and background strength; the user checked it in the app.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers

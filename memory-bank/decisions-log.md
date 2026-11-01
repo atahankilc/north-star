@@ -6632,4 +6632,5 @@ Settings → display gets two rows, saved in this browser like theme, motion and
 The settings lesson bumped to v2. No release entry: the first "what's new" is still the user's call (state.md).
 Alternatives offered: two steps (normal / large), four (up to 48 px); also an interface text size, hiding others'
 cursors, grid dots on/off (not picked).
-*Not yet:* looked at in the app by the user; Q-033's own fixes (a), (b) still open.
+Looked at in the app by the user after the deploy (2026-11-01): "baktım iyi".
+*Not yet:* Q-033's own fixes (a), (b) still open.
