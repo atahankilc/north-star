@@ -50,8 +50,7 @@ export type ModelMessage =
   | { role: 'system'; content: string; tag?: ContextTag }
   | { role: 'user'; content: string; images?: ImagePart[] }
   // `providerItems`: the provider's own output items (reasoning items, encrypted or not; Claude's whole content with
-  // its thinking blocks) to send back unchanged on the next request, only to the same `provider` (left out: OpenAI's,
-  // as saved before D-329); `responseId`: the provider's id for the response (OpenAI's previous_response_id).
+  // its thinking blocks) to send back unchanged on the next request, only to the same `provider`; `responseId`: the provider's id for the response (OpenAI's previous_response_id).
   | { role: 'assistant'; content: string; toolCalls?: ToolCall[]; providerItems?: unknown[]; provider?: Provider; responseId?: string }
   | { role: 'tool'; callId: string; name: string; content: string; image?: ImagePart }
 

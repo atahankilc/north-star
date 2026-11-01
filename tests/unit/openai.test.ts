@@ -68,7 +68,7 @@ describe('the request', () => {
       { role: 'user', content: 'which problems?' },
       { role: 'assistant', content: '', toolCalls: [{ id: 'call_1', name: 'search', args: { query: 'x' }, rawArgs: '{"query":"x"}' }] },
       { role: 'tool', callId: 'call_1', name: 'search', content: 'RESULT' },
-      { role: 'assistant', content: '', toolCalls: [{ id: 'call_2', name: 'where_am_i', args: {} }], providerItems: [{ id: 'rs_9', type: 'reasoning', encrypted_content: 'enc' }, { id: 'fc_9', type: 'function_call', call_id: 'call_2', name: 'where_am_i', arguments: '{}' }], responseId: 'resp_9' },
+      { role: 'assistant', content: '', toolCalls: [{ id: 'call_2', name: 'where_am_i', args: {} }], providerItems: [{ id: 'rs_9', type: 'reasoning', encrypted_content: 'enc' }, { id: 'fc_9', type: 'function_call', call_id: 'call_2', name: 'where_am_i', arguments: '{}' }], provider: 'openai', responseId: 'resp_9' },
       { role: 'tool', callId: 'call_2', name: 'where_am_i', content: 'HERE' },
     ]
     expect(requestBody(req(messages), { model: 'gpt-5.6-terra', reasoning: 'medium', cacheKey: 'ws-hash' })).toEqual({

@@ -6324,8 +6324,9 @@ same lists src/model/clean.ts keeps; a doc holding an old field can't be updated
 kept only for old data is deleted: the old reports (their rule, `moveReports` on canvas open, their part of a
 workspace delete, a document's `origin: 'moved'`), a deck's `everyPlane` (ignored since D-303), a timeline's
 hand-picked `kanbans`, the invites back-fill for invitations from before D-323, the people list's filter for entries
-from before D-098, the export's filter for cards without a `pieceId`. Not touched: the agent's own leftovers
-(chats.ts, models.ts: told the agent session), the `report` document kind (the agent reads it), refusing 1.0 export
+from before D-098, the export's filter for cards without a `pieceId`. The agent's own leftovers went in its
+session (a discard's report read from the list before it, chats.ts; OpenAI items with no provider taken as OpenAI's,
+openai.ts). Not touched: the `report` document kind (the agent reads it), refusing 1.0 export
 files. Why: one person uses the app; old data isn't worth the code. Verified: rules tests 616/0 (37 new: an unknown
 field refused per kind, create and update), vitest 968, tsc (app + evals), build, every check.
 Not yet: deploying the rules (asked first, D-322); the live data isn't read (the permission check refused it), so a

@@ -120,7 +120,7 @@ export function toInput(messages: ModelMessage[]): { instructions?: string; inpu
       input.push({ role: 'user', content: m.images?.length ? [{ type: 'input_text', text: m.content }, ...m.images.map(dataPart)] : m.content })
     else if (m.role === 'assistant') {
       // Another provider's items (a chat switched from Claude) never go to OpenAI: its text and calls do (D-329).
-      if (m.providerItems?.length && (m.provider ?? 'openai') === 'openai') {
+      if (m.providerItems?.length && m.provider === 'openai') {
         // The response's own items, as they came (reasoning items carry their encrypted content).
         for (const it of m.providerItems) input.push(it as Item)
         continue

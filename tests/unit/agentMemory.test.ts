@@ -212,8 +212,7 @@ describe('saved chats', () => {
     const report = { text: rep, done: [], notDone: [], step: null }
     const applied = historyOf([turn('user', 'q'), { ...turn('changes', '+ x\tline'), applied: { state: 'applied', count: 2 } }, { ...turn('report', rep), applied: { state: 'applied', count: 2 } }])
     expect(applied).toEqual([{ role: 'user', content: 'q' }, live({ applied: report })])
-    // A discard's report saved as `applied` by older code: the list before it says discarded.
-    const discarded = historyOf([turn('user', 'q'), { ...turn('changes', '+ x\tline'), applied: { state: 'discarded', count: 1 } }, { ...turn('report', 'Applied 0 changes.'), applied: { state: 'applied', count: 0 } }])
+    const discarded = historyOf([turn('user', 'q'), { ...turn('changes', '+ x\tline'), applied: { state: 'discarded', count: 1 } }, { ...turn('report', 'Applied 0 changes.'), applied: { state: 'discarded', count: 0 } }])
     expect(discarded[1]).toEqual(live({ discarded: { ...report, text: 'Applied 0 changes.' } }))
     const undone = historyOf([turn('user', 'q'), { ...turn('changes', '+ x\tline'), applied: { state: 'undone', count: 2 } }, { ...turn('report', `${rep} Undone.`), applied: { state: 'undone', count: 2 } }])
     expect(undone.slice(1)).toEqual([live({ applied: report }), live({ undone: true })])

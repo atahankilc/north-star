@@ -144,7 +144,7 @@ export function chatProblems(summary: Record<string, unknown>, body?: Record<str
 // The model's history from a kept chat: the person's messages and the agent's answers, in order (no tool calls or
 // results: they were never kept). What became of a preview is told as the live chat told it (agent-bugs 25:
 // workflow.ts' withOutcome, from the status line's report: what was applied where, what wasn't, then an undo); a change
-// list with no status line after it (older chats) becomes a short line of the agent's, so it still knows.
+// list still open when the chat was saved (no status line after it) becomes a short line of the agent's.
 export function historyOf(turns: SavedTurn[]): ModelMessage[] {
   const out: ModelMessage[] = []
   turns.forEach((t, i) => {
@@ -152,9 +152,7 @@ export function historyOf(turns: SavedTurn[]): ModelMessage[] {
     else if (t.role === 'agent' && t.text) out.push({ role: 'assistant', content: t.text })
     else if (t.role === 'changes' && t.applied && !reportAfter(turns, i)) out.push({ role: 'assistant', content: `[the proposed changes were ${t.applied.state}${t.applied.count !== undefined ? ` (${t.applied.count})` : ''}]` })
     else if (t.role === 'report') {
-      // The list before it says what became of it (a discard's report was once saved as `applied`).
-      const list = [...turns.slice(0, i)].reverse().find((x) => x.role === 'changes')
-      const state = list?.applied?.state === 'discarded' || t.applied?.state === 'discarded' ? 'discarded' : list?.applied?.state === 'undone' || t.applied?.state === 'undone' ? 'undone' : 'applied'
+      const state = t.applied?.state === 'discarded' || t.applied?.state === 'undone' ? t.applied.state : 'applied'
       const report = { text: t.text.replace(/ Undone\.$/, ''), done: [], notDone: [], step: null }
       const told = state === 'discarded' ? withOutcome([], { discarded: report }) : withOutcome([], { applied: report })
       out.push(...(state === 'undone' ? withOutcome(told, { undone: true }) : told))

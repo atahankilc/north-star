@@ -5,7 +5,7 @@
 // The person picks; nothing here chooses for them. `SUGGESTED` is only the row pre-selected in the picker when they
 // have picked nothing yet, and it is never the cheapest model (1.0 ran the cheapest on low reasoning: §1 cause 1).
 //
-// Two providers (D-329): OpenAI's ids bare (`gpt-5.6-terra`, as saved before D-329), Anthropic's with their provider in
+// Two providers (D-329): OpenAI's ids bare (`gpt-5.6-terra`), Anthropic's with their provider in
 // front (`anthropic:claude-opus-5-5`), so a saved pick, a chat's model and the eval's `--model` say whose key it needs.
 //
 // `makeModel` builds the model the loop talks to: the OpenAI or the Anthropic adapter (lazily, its SDK a chunk of its
