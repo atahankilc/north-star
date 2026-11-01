@@ -377,7 +377,7 @@ feature comes back as a piece, and check them with the user then.
 ## Workspaces page
 - The page is for going back to work (D-338, docs/specs/workspaces-page.md): centred; the big title with its count, one
   prompt (filter, a new name ↵, an invite code ↵, a dropped .zip imports), the continue piece (picture, since you left,
-  here now), what needs you, others as small pieces, the three ways in while ≤ 2; a first visit on the same skeleton;
+  here now), what needs you, others as small pieces, the three ways in while you have one (D-345); a first visit on the same skeleton;
   actions in `⋯`/right-click; pictures from one `summary/main` doc per workspace, never its content.
 
 ## Settings

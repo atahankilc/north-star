@@ -96,7 +96,7 @@ export default example({
   states: {
     'a few': page({ workspaces: FEW, invites: INVITES, requests: REQUESTS, asking: { 'w-pazar': 2 } }),
     'first visit': page({}),
-    one: { ...page({ workspaces: [FEW[2]] }), note: 'the three ways in stay while you have two or fewer' },
+    one: { ...page({ workspaces: [FEW[2]] }), note: 'the three ways in stay while you have one; from two on, only the import piece among the others (D-345)' },
     many: page({ workspaces: MANY }),
     'typed a name': page({ workspaces: FEW }, { setup: typed('pa') }),
     'typed a name you have': { ...page({ workspaces: FEW }, { setup: typed('Pazar') }), note: 'the match first (↵ opens it); `+ new` can still make a second one by that name' },

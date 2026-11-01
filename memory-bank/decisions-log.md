@@ -6597,3 +6597,10 @@ check:memory, vitest 983/0, build; headless Chrome on the gallery (Button, Butto
 HazardConfirm, WizardShell, FocusDock, card panel, matrix, deck, threads, documents, the HUD corner) in dark and light.
 Fixed on the way: a group wraps when narrower than its cells (the confirm with three actions), Rule's `+ add` a word
 cell (was a glyph, larger), `link` laid out as text (was centred). Not looked at in the running app (needs emulators).
+
+### D-345 · 2026-11-01 · Accepted (the user: "Workspaces sayfasında iki tane workspace im olmasına ramen start another şeyi çıktı karşıma. Zaten start etmişim neden bana bunu gösteriyor workspaces sayfam boş değilken"; then "sadece bir veya 0 tane warken gözüksün")
+The three ways in (new / join / import) show on a first visit and, as the `START ANOTHER` row, while you have one
+workspace; from two on they're gone (D-338 kept them up to two), and the `IMPORT` piece sits last among the others; a
+new one or a code is typed in the prompt, a .zip dropped anywhere. Why: with two, you've clearly started; being asked
+to start reads as the page not knowing you. Alternative: none at all once you have one (the user chose one or none).
+Spec: docs/specs/workspaces-page.md.

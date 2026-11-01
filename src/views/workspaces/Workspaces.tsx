@@ -57,8 +57,8 @@ const Coach = lazy(() => import('../../onboarding/Coach').then((m) => ({ default
 
 // An invite code as typed (workspaces.ts): with the dash it reads as a code first; without, a name first (`Pazarlar`).
 const CODE = INVITE_CODE_TYPED
-// While you have this many or fewer, the three ways in stay under your workspaces.
-const START_ROW_UNTIL = 2
+// While you have this many or fewer, the three ways in stay under your workspaces (D-345: one, not two).
+const START_ROW_UNTIL = 1
 const NAME_MAX = WORKSPACE_NAME_MAX
 
 type Row = { kind: 'ws'; w: WithId<Workspace> } | { kind: 'new'; name: string; again: boolean } | { kind: 'code'; code: string }

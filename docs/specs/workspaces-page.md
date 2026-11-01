@@ -20,7 +20,7 @@ Workspaces 05                                        ← hero title, count magen
 OTHERS ─────────────────────────────────── 04
 ┌02 EDITOR┐ ┌03 OWNER┐ … ┌IMPORT┐                         ← picture, name, people, here, new, last visit, ⋯;
                                                              the import piece last once the start row is gone
-START ANOTHER ───────                                      ← only while you have ≤ 2
+START ANOTHER ───────                                      ← only while you have one (D-345)
 ┌ NEW ┐ ┌ JOIN ┐ ┌ IMPORT [choose file] ┐
 ```
 
