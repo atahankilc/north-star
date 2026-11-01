@@ -134,8 +134,7 @@ feature comes back as a piece, and check them with the user then.
   headline and page 400, text decode 260 (D-034, D-035); `<Appear>`, `src/ui/foundation/cellReveal.ts`.
 - Loading = the flowing backdrop, then a cell-by-cell rebuild; nothing in the backdrop depends on per-canvas state (D-025).
 - Backdrop: flows by itself (no pointer) in generations every ~9 s (D-026, D-028); 30 fps on demand, one texel per cell
-  (D-063); a cell is 9 device px, stars by a sine-free hash, light ink near-black (D-172); dimmed to 8 % in workspaces
-  (D-110). Welcome intro: stars, sunrise, the north star, 10 s; the light landing gets a night sky with tone sweeps (D-072).
+  (D-063); a cell is 9 device px, stars by a sine-free hash, light ink near-black (D-172); 70 % in workspaces (D-346). Welcome intro: stars, sunrise, the north star, 10 s; the light landing gets a night sky with tone sweeps (D-072).
 - Landing (D-340): the backdrop on the whole screen (no scrim), the name in JetBrains Mono, no HUD, sign-in a `Button` `md`.
 - Motion `full | reduced | system` (default full), read through `useMotion().reduced`; background on/off (D-030, D-063).
 
@@ -144,7 +143,7 @@ feature comes back as a piece, and check them with the user then.
   pieces and canvas text, `?canvas=`, the breadcrumb's prompt, a camera each, finder `here | this canvas | everywhere`;
   items shared; pieces moved with what's stuck to them, D-306; one piece on several, `pieceSpots/`, `⧉ 2`, D-307;
   plane names with their canvas, threads and following across canvases, ⌥1–⌥9, export/import, D-309; checked, D-311:
-  the first canvas is never deleted; deleting a shared piece asks `only from here` or `delete everywhere`, D-313). Each canvas (`/workspaces/<id>`, D-174): backdrop at full strength, no pages, no view tabs; 1.0's views
+  the first canvas is never deleted; deleting a shared piece asks `only from here` or `delete everywhere`, D-313). Each canvas (`/workspaces/<id>`, D-174): backdrop at 70 % (D-346), no pages, no view tabs; 1.0's views
   come back as pieces (D-177, D-248). Settings keep you, general, people and export.
 - Pieces (D-176): `pieces/{id}`, x/y/w/h in canvas px, a name. The side nav's `+` puts one at the screen's middle or the
   nearest clear spot, in edit mode (D-238); drawn oldest first, the newest on top (D-310). Drag pans, the wheel zooms round the pointer (0.1–4); over a plane too,

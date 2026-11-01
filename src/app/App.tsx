@@ -8,6 +8,7 @@ import { useHoldCurtain } from '../state/curtain'
 import { useDisplay } from '../state/display'
 import { useMotion } from '../state/motion'
 import { Backdrop } from '../three/Backdrop'
+import { WORKSPACE_BACKDROP_DIM } from '../three/sceneClock'
 import { Curtain } from '../ui/patterns/Curtain'
 import { Landing } from '../views/landing/Landing'
 import { Workspaces } from '../views/workspaces/Workspaces'
@@ -38,6 +39,7 @@ function Shell() {
     if (!isLoading) wasSignedIn.current = Boolean(user)
   }, [isLoading, user])
   const fontsReady = useFontsReady()
+  const inWorkspace = useLocation().pathname.startsWith(`${WORKSPACES}/`)
   // Switching the background off applies to signed-in pages only; the landing always flows (D-063). While auth
   // is still loading, assume the choice applies, so a signed-in user who turned it off never sees it flash in.
   const field = useDisplay((s) => s.background) === 'on' || (!isLoading && !user)
@@ -50,8 +52,8 @@ function Shell() {
 
   return (
     <>
-      {/* The canvas shows the field at full strength (D-174); its pieces carry their own backgrounds (D-176). */}
-      {field && <Backdrop />}
+      {/* The canvas shows the field a step dimmer than the landing (D-346); its pieces carry their own backgrounds (D-176). */}
+      {field && <Backdrop dim={user && inWorkspace ? WORKSPACE_BACKDROP_DIM : 1} />}
       {!isLoading && (
         <Routes>
           {user ? (

@@ -67,6 +67,8 @@ export function nightHalfway(position: number): number {
 // Backdrop brightness (1 = full, lower on the board so cards stay legible). Eased by the backdrop
 // each frame and read by the curtain copy, so both stay in step during the transition.
 export const backdropDim = { target: 1, current: 1 }
+// Inside a workspace the field steps back a little behind the pieces (the user, 2026-11-01).
+export const WORKSPACE_BACKDROP_DIM = 0.7 // tokens-ok: a brightness factor, not a size or colour
 
 // Dev-only handle for inspecting the clock from automation.
 if (import.meta.env.DEV) {

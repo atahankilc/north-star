@@ -6612,3 +6612,9 @@ workspace; from two on they're gone (D-338 kept them up to two), and the `IMPORT
 new one or a code is typed in the prompt, a .zip dropped anywhere. Why: with two, you've clearly started; being asked
 to start reads as the page not knowing you. Alternative: none at all once you have one (the user chose one or none).
 Spec: docs/specs/workspaces-page.md.
+
+### D-346 · 2026-11-01 · Accepted (the user: "workspace içinde arkada oynayan ascii animasyonunun parlaklığı bi tık azalsın")
+Inside a workspace (`/workspaces/<id>`) the backdrop runs at 70 % brightness (`WORKSPACE_BACKDROP_DIM` in
+src/three/sceneClock.ts, passed as `<Backdrop dim>` from App.tsx); the landing and the workspaces page stay at full.
+It eases there through the existing `backdropDim` (the curtain reads the same value). Replaces D-174's "full strength"
+on the canvas. *Not yet:* looked at in a browser by the user; 0.8 at first, then 0.7 (the user: "biraz daha azalt, 0.7 yap").

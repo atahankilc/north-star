@@ -74,10 +74,10 @@ function Pace() {
   return null
 }
 
-export function Backdrop({ dim = false }: { dim?: boolean }) {
-  // The field steps back in a workspace so cards stay legible (D-061, D-110).
+export function Backdrop({ dim = 1 }: { dim?: number }) {
+  // The field steps back in a workspace so pieces stay legible (D-061, D-110); 1 = full strength.
   useEffect(() => {
-    backdropDim.target = dim ? 0.08 : 1
+    backdropDim.target = dim
   }, [dim])
 
   return (
