@@ -7,6 +7,8 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { firebase } from '../data/firebase'
 import {
   readLocalSeen,
+  readSandboxSeen,
+  writeSandboxSeen,
   seenWriter,
   watchLocalSeen,
   watchRemoteSeen,
@@ -14,6 +16,7 @@ import {
   type RemoteSeen,
   type SeenWriter,
 } from '../data/onboarding'
+import { sandboxOn } from './devSandbox'
 import {
   armKey,
   cleanArmed,
@@ -105,6 +108,11 @@ export const useProgress = create<Progress>((set, get) => {
   const keep = (next: SeenState) => {
     const uid = get().uid
     if (!uid) return
+    if (sandbox()) {
+      writeSandboxSeen(next)
+      set(view(next))
+      return
+    }
     const kept = writeLocalSeen(uid, next)
     set(view(kept))
     if (remoteReady) writer?.push(kept)
@@ -183,6 +191,12 @@ export const useProgress = create<Progress>((set, get) => {
       const mine = ++session
       remoteReady = false
       provisional = false
+      if (sandbox()) {
+        // Dev's test copy: loaded at once, nothing watched or written but this tab's sessionStorage.
+        const test = readSandboxSeen()
+        set({ ...empty, ...view(test), uid, hadDoc: Boolean(test), loaded: true })
+        return
+      }
       writer = seenWriter(uid)
       const local = readLocalSeen(uid)
       set({ ...empty, ...view(local), uid, hadDoc: Boolean(local) })
@@ -271,3 +285,6 @@ export const useProgress = create<Progress>((set, get) => {
     },
   }
 })
+
+// Dev only: this tab in test mode (devSandbox.ts, `?onboarding=reset`) keeps its seen-state in sessionStorage alone.
+const sandbox = () => import.meta.env.DEV && sandboxOn()

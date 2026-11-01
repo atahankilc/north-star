@@ -264,6 +264,13 @@ scripts/check-lessons.mjs    the lint (§8)
   If Firestore refuses (rules not deployed yet, offline), the app runs on localStorage alone and says nothing.
 - Rules + tests are written in the run (`npm run test:rules`), **deployed only by the user** (morning).
 - Export/import never carry it (it's a person's, not the workspace's).
+- **Dev: seeing it again as a new person** (src/onboarding/devSandbox.ts): add `?onboarding=reset` to any address (or
+  `__onboarding.reset()` in the console). That tab then runs on an empty test copy in its sessionStorage: the welcome
+  and every lesson show again, what it sees there is kept across its reloads, and the real seen-state is never read or
+  written. The address goes back to normal at once (the parameter is read in main.tsx and taken out); that's expected.
+  `?onboarding=reset` again starts over; `?onboarding=real`, `__onboarding.real()` or a new tab leaves it. Not by
+  deleting the real doc: any other tab of the person (the live site's too) writes its copy straight back.
+  Production builds never read the parameter.
 
 ### 5.4 The queue (queue.ts)
 - Inputs: events (`learn('piece-made', {kind, id})`), the progress store, the busy state.

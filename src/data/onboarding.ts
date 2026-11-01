@@ -6,6 +6,7 @@
 import { doc, onSnapshot, setDoc, type DocumentSnapshot } from 'firebase/firestore'
 import { firebase } from './firebase'
 import { cleanSeenState, mergeSeenState, type SeenState } from '../onboarding/seenMerge'
+import { SANDBOX_KEY } from '../onboarding/devSandbox'
 
 const localKey = (uid: string) => `north-star:onboarding:${uid}`
 
@@ -32,6 +33,24 @@ export function writeLocalSeen(uid: string, s: SeenState): SeenState {
     // Not kept in this browser; Firestore still has it.
   }
   return out
+}
+
+// Dev only: the test copy of the seen-state while src/onboarding/devSandbox.ts has this tab in test mode.
+export function readSandboxSeen(): SeenState | null {
+  try {
+    const raw = sessionStorage.getItem(SANDBOX_KEY)
+    return raw ? cleanSeenState(JSON.parse(raw)) : null
+  } catch {
+    return null
+  }
+}
+
+export function writeSandboxSeen(s: SeenState): void {
+  try {
+    sessionStorage.setItem(SANDBOX_KEY, JSON.stringify(s))
+  } catch {
+    // Not kept: the test copy lasts for this page only.
+  }
 }
 
 // Another tab of this browser changed the kept copy (the `storage` event fires only in the other tabs).

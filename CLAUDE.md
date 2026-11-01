@@ -38,6 +38,8 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 - `npm run check:kit`: hand-made UI outside src/ui no more than scripts/kit-baseline.json (D-326)
 - `npm run check:memory`: the memory bank agrees with itself (log numbering, every standing decision has a line in
   decisions.md or decisions-1.0.md, nothing superseded cited as a rule, state.md ≤ 120 lines); run after editing memory-bank/
+- Onboarding again as a new person (dev only): add `?onboarding=reset` to the address; that tab gets an empty test
+  seen-state, the real one untouched; `?onboarding=real` or a new tab leaves it (docs/specs/onboarding.md §5.3)
 - `npm run build`: typecheck + production build; `npm run build:functions`, `npm run deploy:functions` (needs the Blaze plan)
 
 ## Hard rules

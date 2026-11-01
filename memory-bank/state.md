@@ -109,5 +109,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   A write draws what it changed (D-287): read what you show from `useWs()` (each field read is listened to), use
   `useWsNow()` in handlers; keep row/head/task components memoised with handlers through a ref, lists via `useKept`.
   Measuring a write: state-history D-287.
-- Dev hooks: `window.__kanbanUi` (D-260), `__sceneTime`, `__backdrop`, `__curtain`, `__sweep`, `__advance`.
+- Dev hooks: `window.__kanbanUi` (D-260), `__sceneTime`, `__backdrop`, `__curtain`, `__sweep`, `__advance`, `__onboarding.reset()`
+  (or `?onboarding=reset`: this tab sees the onboarding as a new person, on a sessionStorage copy, real seen-state
+  untouched; the address drops it at once, expected; `?onboarding=real` back; `?release=sample` for what's new).
 - Chrome extension screenshots are scaled: viewport 2560 px vs 1568 px frame, so clientX/Y needs ×(innerWidth/1568).
