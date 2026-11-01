@@ -180,7 +180,7 @@ export function parseChange(ws: AgentWs, ids: Ids, args: Record<string, unknown>
     if (bad.length) return void errors.push(...bad.slice(0, 8).map((b) => `ops[${i}] ${b}`))
     const why = typeof entry.why === 'string' ? entry.why.trim() : ''
     if (entry.why !== undefined && typeof entry.why !== 'string') return void errors.push(`ops[${i}].why: text, the reason the person reads`)
-    if (DELETE_OPS.has(def.name) && !why) return void errors.push(`ops[${i}] ${def.name} needs a why: the reason the person reads beside it in the preview (and only after they said yes in this chat)`)
+    if (DELETE_OPS.has(def.name) && !why) return void errors.push(`ops[${i}] ${def.name} needs a why: the reason the person reads beside it in the preview`)
     const r = resolveIds(ws, ids, def.name, a, `ops[${i}] ${def.name}.args`)
     if (r.errors.length) return void errors.push(...r.errors)
     ops.push({ op: def.name, args: withNames(ws, r.value as Record<string, unknown>), ...(why ? { why } : {}) })

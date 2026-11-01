@@ -1,8 +1,8 @@
-// Small edits (agent.md §8, 8 tasks; S13 added 5 on the preview: tick off, delete after a yes, revise, dry run, a person's untick): one
+// Small edits (agent.md §8, 8 tasks; S13 added 5 on the preview: tick off, a delete in the preview, revise, dry run, a person's untick): one
 // or two ops, graded on the end state: what was asked is there, nothing else
 // changed (`onlyChanged`), one undo step that gives the start back. Each has a plausible wrong script (the wrong card,
 // the wrong column, the wrong direction, an extra write) so `--wrong` tests precision.
-import { absent, answerIncludes, cell, count, dryRunOnly, exists, field, linked, noDeletes, noOverlaps, noWritesInTurn, onlyChanged, proposedIn, task, undoRestores } from '../graders'
+import { absent, answerIncludes, cell, count, dryRunOnly, exists, field, linked, noDeletes, noOverlaps, onlyChanged, proposedIn, task, undoRestores } from '../graders'
 import type { Task } from '../types'
 import { answer, call, change, realOf } from './util'
 
@@ -158,7 +158,7 @@ export const EDIT: Task[] = [
     // On the other deck.
     wrong: [change([['create_task', { deck: 'p13', title: 'Call the Freshgo founder', card: 'c36', priority: 'P1' }]]), answer('Added it to Research.')],
   },
-  // ---- S13: the preview (agent.md §4.5, §4.10): an item ticked off by a note, a delete only after a yes (with its why),
+  // ---- S13: the preview (agent.md §4.5, §4.10): an item ticked off by a note, a delete in the preview (with its why),
   // a revision during the preview, a dry run.
   {
     id: 'edit-09-untick-third',
@@ -199,19 +199,18 @@ export const EDIT: Task[] = [
       answer('Done, only two.'),
     ],
   },
+  // D-333 (agent-bugs 17): a delete asked for goes straight into the preview with its why; accepting it is the yes,
+  // and the app never reads the chat's words for one. Asking "shall I?" first is the wrong path now.
   {
-    id: 'edit-10-delete-after-yes',
+    id: 'edit-10-delete-in-preview',
     group: 'edit',
     set: 'regression',
     autoGo: false,
     fixture: 'medium',
-    ask: "Delete the duplicate 'Cash only is a big deal' sticky note on Rivals.",
-    // Two stickies say it (x8 Ayşe, x9 Jonas): the yes names which, so it answers "shall I delete x9?" and "which one?" alike.
-    followUps: ["yes, delete Jonas's one and keep Ayşe's"],
+    ask: "Delete Jonas's 'Cash only is a big deal' sticky note on Rivals.",
+    // Two stickies say it (x8 Ayşe, x9 Jonas): the ask names which.
     graders: [
-      noWritesInTurn(1),
-      proposedIn(1, { n: 0 }),
-      proposedIn(2, { n: 1, ops: ['delete'], deletesWithWhy: true }),
+      proposedIn(1, { n: 1, ops: ['delete'], deletesWithWhy: true }),
       absent('text', { id: R('x9') }),
       exists('text', { id: R('x8') }),
       onlyChanged({ allow: [R('x9')] }),
@@ -219,12 +218,28 @@ export const EDIT: Task[] = [
     ],
     reference: [
       call('search', { query: 'Cash only is a big deal', kinds: ['text'], scope: 'Rivals' }),
-      answer('Rivals has two sticky notes saying "Cash only is a big deal": x8 and x9. Shall I delete x9 and keep x8? Say yes and I will.'),
-      change([['delete', { ids: ['x9'] }, 'the same words as x8 on Rivals; you said yes']], 'delete a duplicate sticky'),
-      answer('Proposed deleting x9 (a duplicate of x8); it waits in the preview, struck, with the reason.'),
+      change([['delete', { ids: ['x9'] }, "Jonas's copy of x8's words on Rivals, as asked"]], 'delete a duplicate sticky'),
+      answer("Proposed deleting x9 (Jonas's sticky; x8, Ayşe's, stays): it waits in the preview, struck, with the reason."),
     ],
-    // Deleted at once, without asking.
-    wrong: [change([['delete', { ids: ['x9'] }, 'a duplicate']]), answer('Deleted the duplicate.'), answer('Done.')],
+    // Asks for a yes it doesn't need, and proposes nothing.
+    wrong: [call('search', { query: 'Cash only is a big deal', kinds: ['text'], scope: 'Rivals' }), answer('Shall I delete x9? Say yes and I will.')],
+  },
+  {
+    id: 'edit-14-delete-plane-in-preview',
+    group: 'edit',
+    set: 'capability',
+    autoGo: false,
+    fixture: 'medium',
+    ask: 'Delete the Interviews plane.',
+    // Only removals (the plane and what's only on it), and cards also on another plane taking a new home there.
+    graders: [proposedIn(1, { ops: ['delete'], deletesWithWhy: true }), absent('piece', { id: R('p4') }), onlyChanged({ allow: [(_, c) => c.change === 'removed' || (c.fields ?? []).every((f) => ['pieceId', 'planes', 'updatedAt', 'x', 'y'].includes(f))] }), undoRestores()],
+    reference: [
+      call('view', { piece: 'p4' }),
+      change([['delete', { ids: ['p4'] }, 'asked to delete the Interviews plane']], 'delete Interviews'),
+      answer('Proposed deleting p4 Interviews with its 21 cards and 4 texts (c105 Bread chat stays on Roadmap): it waits in the preview; applying it is one undo step.'),
+    ],
+    // Asks for a yes it doesn't need, and proposes nothing.
+    wrong: [call('view', { piece: 'p4' }), answer('p4 Interviews holds 21 cards. Delete it with all of that? Yes or no?')],
   },
   {
     id: 'edit-11-revise-in-preview',

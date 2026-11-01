@@ -222,7 +222,7 @@ function moveJob(chat: Chat, move: Move) {
   jobHost(chat.id, rt).set({ ...rt.job, settledAt: settled(rt.job) })
   setTimeout(() => {
     const c = get().chat
-    if (c.id !== chat.id || (c.wf.phase !== 'idle' && c.wf.phase !== 'applied' && c.wf.phase !== 'asking')) return
+    if (c.id !== chat.id || (c.wf.phase !== 'idle' && c.wf.phase !== 'applied')) return
     push({ id: uid('you'), kind: 'user', text: move.go, auto: true })
     if (canRun()) dispatch({ type: 'send', text: move.go })
   }, 0)
@@ -602,7 +602,8 @@ function afterTurn(chat: Chat, end: TurnEnd) {
     return
   }
   if (phase === 'previewing') return
-  const move = nextMove(rt.job, { asked: phase === 'asking', stopped: end === 'stopped' })
+  // Ended with nothing proposed: the agent waits for the person (D-333: what happened, never its words).
+  const move = nextMove(rt.job, { waits: true, stopped: end === 'stopped' })
   setTimeout(() => moveJob(chat, move), 0)
 }
 

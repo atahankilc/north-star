@@ -1,7 +1,7 @@
 // S12's system prompt (D-312, src/agent/prompt.ts) against agent.md §7.3's checklist, mechanically: ≤ 4k estimated
 // tokens; every tool it names exists and every tool is named; no snake_case word that isn't a tool; and the
 // contradiction checks that can be automated (always/never pairs, ask rules, coordinates only as a "never", deletes only
-// with a yes, North Star only as the app, no 1.0 leftovers). The eval regression set (`npm run eval:quick`) is the rest.
+// through the preview with why, North Star only as the app, no 1.0 leftovers). The eval regression set (`npm run eval:quick`) is the rest.
 import { describe, expect, it } from 'vitest'
 import { promptSections, systemPrompt } from '../../src/agent/prompt'
 import { AGENT_TOOLS, TOOL_NAMES } from '../../src/agent/tools'
@@ -46,8 +46,10 @@ describe('the system prompt (§7.3)', () => {
     for (const s of about) expect(s, s).toMatch(/\bnever\b|\bnot\b|\bno\b/i)
   })
 
-  it('mentions deleting only with a yes (or as never)', () => {
-    for (const s of sentences(P).filter((x) => /\bdelet/i.test(x))) expect(s, s).toMatch(/\byes\b|\bnever\b/i)
+  // D-333 (agent-bugs 17): a delete goes through the preview with why, never gated on reading a yes in the chat.
+  it('mentions deleting only through the preview with why (or as never), never as waiting for a yes in the chat', () => {
+    for (const s of sentences(P).filter((x) => /\bdelet/i.test(x))) expect(s, s).toMatch(/\bpreview\b|\bwhy\b|\bnever\b/i)
+    expect(/say yes in this chat|said yes in this chat|without a yes/i.test(P)).toBe(false)
   })
 
   it('names North Star only as the app, the startup by the workspace\'s name; the name is data (cut, quoted, defanged)', () => {

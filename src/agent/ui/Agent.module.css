@@ -246,6 +246,11 @@
   composes: small from '../../ui/AsciiButton.module.css';
 }
 
+/* `apply · 2 deletes`: the deletes in the danger colour. */
+.applyDeletes {
+  color: var(--accent-magenta);
+}
+
 .action:disabled {
   color: var(--fg-faint);
   cursor: default;

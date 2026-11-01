@@ -29,7 +29,7 @@ import { systemPrompt } from '../src/agent/prompt'
 import { openaiModel } from '../src/agent/openai'
 import { anthropicModel } from '../src/agent/anthropic'
 import { effortFor } from '../src/agent/models'
-import { nextMove, settled } from '../src/agent/job'
+import { nextMove, settled, type Job } from '../src/agent/job'
 import { reportOf, withOutcome } from '../src/agent/workflow'
 import { nodeRender } from './render'
 import { EVAL_TOOLS, WRITE_TOOLS } from './tools'
@@ -78,12 +78,11 @@ export const wrongModel = (task: Task): AgentModel => stubModel(task.wrong ?? wr
 
 export const verdictOf = (grades: Grade[]): Verdict => (grades.some((g) => g.pass === false) ? 'fail' : grades.some((g) => g.pass === 'skipped') ? 'unjudged' : 'pass')
 
-// A turn that ended with a plan waiting for the person: no write asked for, and an answer that asks to go ahead or
-// lays out a numbered plan.
-export function looksLikePlan(turn: AgentTurn): boolean {
+// A turn that ended with a plan waiting for the person: no write asked for, and the chat's job written with `plan`
+// and not started. Told from what happened, never from the answer's words (agent-bugs 17: any language).
+export function looksLikePlan(turn: AgentTurn, job: Job | null): boolean {
   if (WRITE_CALLS.test(turn.steps.flatMap((s) => s.toolCalls.map((c) => c.name)).join(' '))) return false
-  const a = turn.answer
-  return /\bsay go\b|\bshall I (go|start|proceed)\b|\bwant me to (go|start|proceed)\b/i.test(a) || (/\bplan\b/i.test(a) && /^\s*1[.)]/m.test(a))
+  return job?.status === 'planned'
 }
 const WRITE_CALLS = new RegExp(`\\b(${[...WRITE_TOOLS].join('|')})\\b`)
 
@@ -188,7 +187,7 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
       env.proposed.push([...(env.changes?.items ?? [])])
       if (r.turn.end !== 'answered') break
       // The last turn planned and wrote nothing: say go, once (unless the task keeps plans as plans).
-      if (i === asks.length - 1 && !autoGone && task.autoGo !== false && looksLikePlan(r.turn) && !env.changes?.items.length) {
+      if (i === asks.length - 1 && !autoGone && task.autoGo !== false && looksLikePlan(r.turn, env.job?.get() ?? null) && !env.changes?.items.length) {
         autoGone = true
         asks.push('go')
       }

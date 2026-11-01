@@ -2,12 +2,11 @@ import type { ModelMessage } from './contract'
 // The agent's turn lifecycle (S13, D-312; docs/specs/agent.md §4.5, §4.10): what the chat (S14) and the preview (S15)
 // drive. Pure: a state, an event, the next state and the effects the driver carries out. No React, no Firebase.
 //
-//   idle ──send──▶ running ──turn ends──▶ asking      (no change pending; the agent asked or showed a plan: waiting)
+//   idle ──send──▶ running ──turn ends──▶ idle        (nothing pending: it answered, asked or showed a plan; the app
+//                    │                                never reads the answer's words to tell which, agent-bugs 17)
 //                    │ ◀──send (steering, D-328)── the message is queued for the model's next step, the turn goes on
 //                    │                    previewing  (changes pending: the preview opens by itself)
-//                    │                    idle        (it answered; nothing pending)
 //                    └──stop──▶ previewing if anything is pending, else idle (what was applied stays)
-//   asking ──send ("go", an answer)──▶ running
 //   previewing ──accept──▶ applying ──applied──▶ applied (a report line: what was done, what wasn't, [undo])
 //                                  └─failed──▶ previewing (with the error)
 //              ──discard──▶ discarded (a report line: nothing changed)
@@ -28,7 +27,7 @@ import type { ModelMessage } from './contract'
 // the preview the app is locked anyway (S15, §4.5 point 5); `run` a turn; `preview` / `close_preview`; `accept` the
 // changeset; `discard` it; `report` a line in the chat; `undo` the applied step.
 
-export type Phase = 'idle' | 'running' | 'asking' | 'previewing' | 'applying' | 'applied' | 'discarded'
+export type Phase = 'idle' | 'running' | 'previewing' | 'applying' | 'applied' | 'discarded'
 
 export type Report = { text: string; done: string[]; notDone: string[]; step: { key: string; label: string } | null; undone?: boolean; undoing?: boolean }
 
@@ -40,8 +39,6 @@ export type WorkflowState = {
   pending: number
   // A running turn that revises a pending preview (the person's note).
   revising?: boolean
-  // asking: why it waits (a plan for a big job, or a question).
-  waiting?: 'plan' | 'question'
   report?: Report
   error?: string
 }
@@ -80,18 +77,6 @@ export const AGENT_LOCK = 'the agent is working — stop it to edit'
 
 export const initialWorkflow = (): WorkflowState => ({ phase: 'idle', turn: 0, pending: 0 })
 
-// How a turn that changed nothing ended: a numbered plan waiting for go, a question, or a plain answer.
-export function waitingFor(answer: string): 'plan' | 'question' | null {
-  const a = answer.trim()
-  if (!a) return null
-  if (/\bsay go\b|\bshall I (go|start|proceed)\b|\bwant me to (go|start|proceed)\b/i.test(a) || (/\bplan\b/i.test(a) && /^\s*1[.)]/m.test(a))) return 'plan'
-  // A real question: a sentence ending in "?" with a question word in it (quoted text taken out), or "say yes".
-  const plain = a.replace(/"[^"]*"|“[^”]*”/g, '""')
-  if (/\bsay yes\b/i.test(plain)) return 'question'
-  const asks = plain.split(/(?<=[.!?])\s+/).some((x) => /\?\s*$/.test(x) && /\b(should|shall|do|does|did|which|what|who|where|when|how|is|are|can|could|would|will|want|delete|remove|ok|okay)\b/i.test(x))
-  return asks ? 'question' : null
-}
-
 const same = (s: WorkflowState, e: WorkflowEvent): { state: WorkflowState; effects: Effect[] } => ({ state: { ...s, error: `can't ${e.type} while ${s.phase}` }, effects: [] })
 
 export function step(s: WorkflowState, e: WorkflowEvent): { state: WorkflowState; effects: Effect[] } {
@@ -111,8 +96,7 @@ export function step(s: WorkflowState, e: WorkflowEvent): { state: WorkflowState
     case 'turn_end': {
       if (s.phase !== 'running') return same(s, e)
       if (e.pending > 0) return { state: { phase: 'previewing', turn: s.turn, pending: e.pending }, effects: [{ type: 'preview' }] }
-      const w = e.end === 'answered' ? waitingFor(e.answer) : null
-      return { state: { phase: w ? 'asking' : 'idle', turn: s.turn, pending: 0, ...(w ? { waiting: w } : {}) }, effects: [{ type: 'unlock' }] }
+      return { state: { phase: 'idle', turn: s.turn, pending: 0 }, effects: [{ type: 'unlock' }] }
     }
     case 'stop': {
       if (s.phase !== 'running') return same(s, e)

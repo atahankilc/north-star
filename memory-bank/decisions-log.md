@@ -6201,3 +6201,25 @@ several planes, a main plane with detail planes beside it, sections), each only 
   vitest 917, build, check:tokens, check:gallery (PeopleHere: one away, away in the list, all away), check:lessons.
 - *Lessons:* `people-here` v2 ("A faint square is away."); no release entry, as D-330.
 
+### D-333 · 2026-11-01 · Accepted (agent-bugs 17; the user: "go gibi tek dile uygun kalıplar kullanmak istemiyorum. Delete eger undo yapılabiliyosa yada bir onay butonu arkasında kalıyorsa sorun yok. Onay butonundan kastım agentın propose edip bizim accept dememiz")
+**Decision:** a delete is safe when it waits behind the preview's accept or can be undone, so the agent no longer asks
+"shall I delete…?" first: a delete, unlink or axis entry taken off goes in the preview like any change, with why, and
+accepting the preview is the person's yes (an apply is one undo step; auto-apply too). It deletes only what the ask
+covers, and asks one short question only when the ask is unclear (which things, how many). The code never reads the
+person's or the agent's words in any one language: `waitingFor` (English patterns on the agent's answer) and the
+`asking` phase are gone; a job's turn that ends with nothing proposed pauses the job (what happened, not what was
+said); the eval runner's automatic "go" follows a `plan` waiting to start, not words in the answer. The apply button
+names the deletes it holds (`apply · 2 deletes`, the count in magenta), so none goes unseen in a long list.
+**Why:** a word list matches one language and guesses at the rest ("tamam, devam" passes or fails any list); the
+preview's accept already is the confirm, and undo the net. Asking first cost a turn and still wasn't safer.
+**Alternatives:** matching yes/go words (rejected by the user: one language); a delete held back until the chat names
+it (a guess on the words again); a second confirm on deletes inside the preview (the accept is already one).
+**Changed:** prompt.ts (the delete line and rule 5), the `change` tool's description and its why error, workflow.ts
+(no `asking`), job.ts (`waits`), agentStore.ts, Agent.tsx (placeholder, apply button), evals/run.ts' `looksLikePlan`,
+edit-10 (now `edit-10-delete-in-preview`: proposes at once), refuse-04 → `edit-14-delete-plane-in-preview`,
+build-04's reference calls `plan`; docs/specs/agent.md §7.1 rule 5 and the Phase 5 gate.
+**Checked:** vitest 920 (workflow: idle whatever the answer says, Turkish too; the prompt test: every delete sentence
+names the preview, why or never, no "yes in this chat"), stub evals 114 tasks 0 failed, `--wrong` 114 failed.
+**Not yet:** a real-model run of edit-10 and edit-14; the dev stub still picks its scripts by English words (a scripted
+stand-in for a model in dev, never the app's logic).
+**Spec:** docs/specs/agent.md §7.1; docs/specs/agent-bugs.md item 17.

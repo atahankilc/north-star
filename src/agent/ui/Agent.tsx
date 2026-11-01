@@ -325,7 +325,7 @@ function Column() {
             className={styles.input}
             rows={1}
             value={text}
-            placeholder={running ? 'tell it something while it works… (it reads it at its next step)' : phase === 'previewing' ? 'change something… (↵ on empty applies)' : phase === 'asking' ? 'answer, or say go…' : `ask about ${ask}… (/ for skills)`}
+            placeholder={running ? 'tell it something while it works… (it reads it at its next step)' : phase === 'previewing' ? 'change something… (↵ on empty applies)' : `ask about ${ask}… (/ for skills)`}
             aria-label="Ask the agent"
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onInputKey}
@@ -813,6 +813,7 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
     else if (e.key === 'ArrowLeft' || e.key === 'k') (e.preventDefault(), go(at < 0 ? on.length - 1 : at - 1))
   }
   const current = live && at >= 0 ? on[at]?.id : undefined
+  const deletes = on.filter((i) => i.delete).length
   return (
     <section className={styles.changes} data-state={entry.state} onKeyDown={onKey} aria-label="The changes">
       <h3 className={styles.rule}>
@@ -861,8 +862,10 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
             <span className={styles.changesHint}>{at >= 0 && on[at] ? on[at].where : '← → goes to each one'}</span>
           </div>
           <div className={styles.changesFoot}>
+            {/* The deletes it holds named on the button (agent-bugs 17, D-333): accepting is the yes to them, so none goes
+                unseen in a long list. */}
             <button ref={apply} className={styles.action} data-tone="primary" onClick={() => agentActions.accept()}>
-              apply ↵
+              apply{deletes > 0 && <span className={styles.applyDeletes}> · {deletes} delete{deletes === 1 ? '' : 's'}</span>} ↵
             </button>
             <button className={styles.action} data-tone="danger" onClick={() => agentActions.discard()}>
               discard esc

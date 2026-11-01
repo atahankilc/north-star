@@ -96,15 +96,16 @@ export function jobText(j: Job): string {
 }
 
 // What a finished turn means for the job: go on (the next step's message), stop with why (the job pauses), or
-// nothing (no job running). `applied`: the turn's changes were just applied; `asked`: the model's answer waits for
-// the person (a question or a plan); `stopped`: the person stopped the turn.
+// nothing (no job running). `applied`: the turn's changes were just applied; `waits`: the turn ended with nothing
+// proposed, so the agent waits for the person (an answer, a question; never told from its words, agent-bugs 17);
+// `stopped`: the person stopped the turn.
 export type Move = { go: string } | { pause: string } | null
 
-export function nextMove(j: Job | null, o: { applied?: number; asked?: boolean; stopped?: boolean; discarded?: boolean }): Move {
+export function nextMove(j: Job | null, o: { applied?: number; waits?: boolean; stopped?: boolean; discarded?: boolean }): Move {
   if (!j || j.status !== 'running') return null
   if (o.stopped) return { pause: 'stopped by the person' }
   if (o.discarded) return { pause: 'the step\'s changes were discarded' }
-  if (o.asked) return { pause: 'waiting for the person\'s answer' }
+  if (o.waits) return { pause: 'waiting for the person\'s answer' }
   if (j.stopAfter) return { pause: 'stopped after the step, as asked' }
   if (j.tokens >= j.budget) return { pause: `the budget (${Math.round(j.budget / 1000)}k tokens) is used up` }
   if (settled(j) <= j.settledAt) return { pause: 'no step was finished since the last go-on' }

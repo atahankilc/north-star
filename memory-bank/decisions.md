@@ -330,6 +330,8 @@ feature comes back as a piece, and check them with the user then.
   the real components, one undo step; in the bottom-right corner growing into a column; knowledge base as wide as it
   can be, never other workspaces, PDFs/images last;
   full workflows with parity to a person plus skills; phases gated by evals built before the UI.
+- Deletes (D-333): through the preview with why, no "yes?" first (accepting is the yes, an apply one undo step); only
+  what the ask covers; the apply button names them; the code never reads anyone's words in one language.
 - Organising (D-327): by understanding what a structure says to a person, never a rule table: the app's purpose and
   each element's meaning in the prompt, a `look` tool (a picture of the plane and of its own proposal), a `structure`
   read tool (numbers on the link graph), the user's planes as examples; it may change the structure itself.

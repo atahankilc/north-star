@@ -32,7 +32,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 
 | #  | What                                             | Group        | Severity | Layer            | Status |
 |----|--------------------------------------------------|--------------|----------|------------------|--------|
-| 17 | `go` taken as yes to a delete                    | Guards       | mid      | code (preview)   | open   |
+| 17 | `go` taken as yes to a delete                    | Guards       | mid      | code (preview)   | fixed  |
 | 26 | turning text into cards rewrites its words       | Guards       | mid      | code + prompt    | open   |
 | 18 | a viewer's agent calls `change`                  | Guards       | low      | code             | open   |
 | 16 | ops nobody asked for                             | Guards       | mid      | code + prompt    | open   |
@@ -97,6 +97,11 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     message's (`go`/`ok`/`yes`: "sounds good" or "tamam, devam" passes any such list) nor whether a message "named" the
     thing (does "remove the stickies" name x13?): any such match is a guess, and a guess on deletes is the bug itself.
     Fix (prompt, small): a plan proposes the safe version (keep what's there) and offers a delete as an option.
+    *Fixed 2026-11-01 (D-333), the user's way:* a delete is fine behind the preview's accept or an undo, so no yes is
+    asked for at all: deletes go in the preview with why, accepting is the yes, the apply button names them
+    (`apply · 2 deletes`). No code reads words in one language: `waitingFor` and the `asking` phase are gone, a job
+    pauses when a turn proposes nothing, the eval runner's go follows a waiting `plan`. edit-10 and the new edit-14
+    expect the delete proposed at once.
 26. **Turning text into cards rewrites its words.** build-02, the same run as 17: a sticky "Who owns the stall
     data?" became the idea "Own the stall data". A question became a statement, and the person's words are lost
     without being asked. Split out of 17, so it stays open when 17's preview fix closes that one. Fix (code): an op

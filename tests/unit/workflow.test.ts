@@ -2,7 +2,7 @@
 // accept (one step, a report with [undo]) or discard; a note during the preview revises with the changes kept; stop;
 // untick to nothing; the lock held from a turn's start to its end (through the preview) and released after.
 import { describe, expect, it } from 'vitest'
-import { initialWorkflow, reportOf, step, waitingFor, type Effect, type WorkflowEvent, type WorkflowState } from '../../src/agent/workflow'
+import { initialWorkflow, reportOf, step, type Effect, type WorkflowEvent, type WorkflowState } from '../../src/agent/workflow'
 
 const run = (events: WorkflowEvent[], from: WorkflowState = initialWorkflow()) => {
   let s = from
@@ -19,9 +19,9 @@ const end = (answer: string, pending = 0, e: 'answered' | 'stopped' = 'answered'
 const STEP = { key: 'agent-turn:3', label: 'agent: two clubs' }
 
 describe('the workflow', () => {
-  it('a big job: plan → asking; go → running → preview → accept → applied with a report; undo once', () => {
+  it('a big job: plan → idle; go → running → preview → accept → applied with a report; undo once', () => {
     const plan = run([{ type: 'send', text: 'make a competitor matrix' }, end('Here is my plan:\n1. Read p1\n2. Make a matrix\nSay go.')])
-    expect([plan.s.phase, plan.s.waiting]).toEqual(['asking', 'plan'])
+    expect(plan.s.phase).toBe('idle')
     expect(plan.kinds).toEqual(['lock', 'run', 'unlock'])
     const go = run([{ type: 'send', text: 'go' }, end('Ready.', 12)], plan.s)
     expect([go.s.phase, go.s.pending, go.s.turn]).toEqual(['previewing', 12, 2])
@@ -82,10 +82,9 @@ describe('the workflow', () => {
     expect(busy.s.error).toBeUndefined()
   })
 
-  it('a question waits; a plain answer goes idle', () => {
-    expect(run([{ type: 'send', text: 'delete the duplicate' }, end('Delete c12 "Bread club" (a duplicate of c11)? Say yes and I will.')]).s).toMatchObject({ phase: 'asking', waiting: 'question' })
-    expect(run([{ type: 'send', text: 'how many' }, end('There are 12 problems.')]).s.phase).toBe('idle')
-    expect(waitingFor('It says "what now?" in the note.')).toBe(null)
+  it('nothing pending: idle, whatever the answer says, in any language (agent-bugs 17: words are never read)', () => {
+    for (const a of ['Delete c12 "Bread club"? Say yes and I will.', 'There are 12 problems.', 'c12 silinsin mi? Onaylarsan öneririm.'])
+      expect(run([{ type: 'send', text: 'x' }, end(a)]).s).toEqual({ phase: 'idle', turn: 1, pending: 0 })
   })
 
   it('the report says what was not done', () => {

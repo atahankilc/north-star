@@ -72,7 +72,7 @@ describe('every task', () => {
 
   it('has §8\'s groups and unique ids', () => {
     const count = (g: string) => TASKS.filter((t) => t.group === g).length
-    expect([count('find'), count('edit'), count('build'), count('context'), count('refuse'), count('injection'), count('memory'), count('skills')]).toEqual([10, 13, 8, 6, 4, 5, 3, 65])
+    expect([count('find'), count('edit'), count('build'), count('context'), count('refuse'), count('injection'), count('memory'), count('skills')]).toEqual([10, 14, 8, 6, 3, 5, 3, 65])
     expect(new Set(TASKS.map((t) => t.id)).size).toBe(TASKS.length)
     expect(TASKS.filter((t) => t.set === 'regression').length).toBeGreaterThan(15)
   })
@@ -277,7 +277,7 @@ describe('fixtures, options and the report', () => {
 
   it('selects by set, group and id; parses options', () => {
     expect(selectTasks({ set: 'regression' }).every((t) => t.set === 'regression')).toBe(true)
-    expect(selectTasks({ group: 'refuse' })).toHaveLength(4)
+    expect(selectTasks({ group: 'refuse' })).toHaveLength(3)
     expect(selectTasks({ task: ['find-01-no-evidence'] })).toHaveLength(1)
     expect(parseArgs(['--repeat', '3', '--set', 'regression'])).toMatchObject({ repeat: 3, set: 'regression' })
     expect(() => parseArgs(['--nope'])).toThrow()

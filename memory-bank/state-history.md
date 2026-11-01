@@ -1057,3 +1057,10 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   marked under a focus; the other marks go faint while the stepper is on an item that has one.
 - Verified: frames before and after (mark count 16 → 7 on each step before, 7 throughout after), tsc, vitest 920,
   check:tokens 0, stub evals 0 failed.
+
+## Done (2026-11-01): agent-bugs 17, deletes through the preview with no word lists (D-333)
+- The user: no patterns tied to one language; a delete is fine behind the preview's accept or an undo. The prompt's
+  yes-gate is gone (deletes proposed with why, only what was asked); `waitingFor` and the `asking` phase are gone, a
+  job pauses when a turn proposes nothing; the eval runner's go follows a waiting `plan`; the apply button names the
+  deletes. edit-10 rewritten, refuse-04 became edit-14, build-04's reference calls `plan`.
+- Verified: tsc (app, evals), vitest 920, check:tokens 0, stub evals 114 tasks 0 failed, `--wrong` 114 failed.
