@@ -13,10 +13,12 @@ type Props = {
   tone?: string
   // The label struck through when checked (a done checklist item).
   strike?: boolean
+  // `xs` in a dense panel set in --text-xs (a setup's options); `sm` elsewhere.
+  size?: 'sm' | 'xs'
   className?: string
 }
 
-export function Checkbox({ checked, onChange, label, hint, disabled, tone, strike, className }: Props) {
+export function Checkbox({ checked, onChange, label, hint, disabled, tone, strike, size, className }: Props) {
   return (
     <button
       type="button"
@@ -25,6 +27,7 @@ export function Checkbox({ checked, onChange, label, hint, disabled, tone, strik
       disabled={disabled}
       className={[styles.check, className].filter(Boolean).join(' ')}
       data-strike={strike || undefined}
+      data-size={size === 'xs' ? 'xs' : undefined}
       style={tone ? ({ '--tone': tone } as React.CSSProperties) : undefined}
       onClick={() => onChange(!checked)}
     >

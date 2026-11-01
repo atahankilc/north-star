@@ -56,6 +56,5 @@
 }
 
 .reset {
-  composes: small from '../../ui/AsciiButton.module.css';
   margin-left: var(--space-1);
 }

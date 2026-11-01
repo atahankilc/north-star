@@ -40,26 +40,12 @@
   border-right: var(--line-w) solid var(--accent-blue);
 }
 
-.kind {
-  color: var(--accent-blue);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-}
-
-.make {
-  composes: small from '../../ui/AsciiButton.module.css';
+/* The package's colour on its kind and its make (the rest the kit's: Label, Button), in the strip so it wins over the
+   kit's own colour whatever order the stylesheets load in. */
+.strip .kind {
   color: var(--accent-blue);
 }
 
-.make:disabled {
-  color: var(--fg-faint);
-  cursor: default;
-}
-
-.stop {
-  composes: small from '../../ui/AsciiButton.module.css';
-}
-
-.esc {
-  color: var(--fg-faint);
+.strip .make:not(:disabled) {
+  color: var(--accent-blue);
 }

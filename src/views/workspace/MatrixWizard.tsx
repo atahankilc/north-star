@@ -14,6 +14,8 @@ import { wizardEnter } from './wizardKeys'
 import { StepSquare, useMatrixUi } from './Matrix'
 import { AxisEditor, CellsEditor, type SetPart } from './MatrixSetup'
 import styles from './Matrix.module.css'
+import { Button } from '../../ui/Button'
+import { Label } from '../../ui/Label'
 
 const STEPS = ['start from', 'rows', 'columns', 'cells'] as const
 const QUESTION = ['Start from', 'What goes down the side?', 'What goes across the top?', 'What goes in a cell?']
@@ -117,7 +119,7 @@ function Wizard() {
             )}
           </div>
           <aside className={styles.wizardPreview} aria-label="Preview">
-            <span className={styles.setupLabel}>preview</span>
+            <Label>preview</Label>
             <table className={styles.mini}>
               <thead>
                 <tr>
@@ -147,19 +149,19 @@ function Wizard() {
           </aside>
         </div>
         <footer className={styles.wizardFoot}>
-          <span>{step > 0 && <button className={styles.tool} onClick={() => setStep(step - 1)}>back</button>}</span>
+          <span>{step > 0 && <Button onClick={() => setStep(step - 1)}>back</Button>}</span>
           <span className={styles.setupEnd}>
-            <button className={styles.tool} onClick={close}>
+            <Button onClick={close}>
               cancel
-            </button>
+            </Button>
             {step < STEPS.length - 1 && (
-              <button className={styles.tool} onClick={() => setStep(step + 1)}>
+              <Button onClick={() => setStep(step + 1)}>
                 next
-              </button>
+              </Button>
             )}
-            <button className={styles.tool} data-main onClick={() => void make()}>
+            <Button tone="main" onClick={() => void make()}>
               make the matrix
-            </button>
+            </Button>
           </span>
         </footer>
       </section>

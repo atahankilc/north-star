@@ -14,6 +14,8 @@ import { useKanbanUi, type KanbanTab } from './Kanban'
 import { KanbanEditor, type SetKanban } from './KanbanSetup'
 import { boxKey, byBox, byColumn, columnsOf, heldCards, KANBAN_TEMPLATES, NO_VALUE, rowFieldOf, rowsOfField, type CardCol } from './kanbanCards'
 import m from './Matrix.module.css'
+import { Button } from '../../ui/Button'
+import { Label } from '../../ui/Label'
 
 const STEPS = ['start from', 'holds', 'columns · rows'] as const
 const QUESTION = ['Start from', 'What does it hold?', 'Its columns and rows']
@@ -118,7 +120,7 @@ function Wizard() {
             {step === 2 && <KanbanEditor tab={tab} setup={draft} onChange={change} />}
           </div>
           <aside className={m.wizardPreview} aria-label="Preview">
-            <span className={m.setupLabel}>preview</span>
+            <Label>preview</Label>
             <table className={m.mini}>
               <thead>
                 <tr>
@@ -157,19 +159,19 @@ function Wizard() {
           </aside>
         </div>
         <footer className={m.wizardFoot}>
-          <span>{step > 0 && <button className={m.tool} onClick={() => setStep(step - 1)}>back</button>}</span>
+          <span>{step > 0 && <Button onClick={() => setStep(step - 1)}>back</Button>}</span>
           <span className={m.setupEnd}>
-            <button className={m.tool} onClick={close}>
+            <Button onClick={close}>
               cancel
-            </button>
+            </Button>
             {step < STEPS.length - 1 && (
-              <button className={m.tool} onClick={() => setStep(step + 1)}>
+              <Button onClick={() => setStep(step + 1)}>
                 next
-              </button>
+              </Button>
             )}
-            <button className={m.tool} data-main onClick={() => void make()}>
+            <Button tone="main" onClick={() => void make()}>
               make the deck
-            </button>
+            </Button>
           </span>
         </footer>
       </section>

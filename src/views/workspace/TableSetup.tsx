@@ -38,6 +38,9 @@ import { followTable, tableOf, useTableUi, TABLE_TABS, type TableTab } from './T
 import { TYPE_ACCENT } from './PlaneCards'
 import m from './Matrix.module.css'
 import styles from './Table.module.css'
+import { Tabs } from '../../ui/Tabs'
+import { Button } from '../../ui/Button'
+import { Empty } from '../../ui/Empty'
 
 const TAB_NAME: Record<TableTab, string> = { rows: 'rows', cols: 'columns', view: 'view' }
 
@@ -61,19 +64,12 @@ export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
   return (
     <section className={m.setup} data-learn="setup" aria-label="Set up the table" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
       <header className={m.setupHead}>
-        <nav className={m.tabs} role="tablist" aria-label="Setup">
-          {TABLE_TABS.map((t) => (
-            <button key={t} role="tab" aria-selected={t === tab} className={m.tab} onClick={() => useTableUi.setState({ tab: t })}>
-              {TAB_NAME[t]}
-              {t !== 'view' && <span className={m.tabCount}>{count[t]}</span>}
-            </button>
-          ))}
-        </nav>
+        <Tabs<TableTab> label="Setup" value={tab} onChange={(t) => useTableUi.setState({ tab: t })} options={TABLE_TABS.map((t) => ({ value: t, label: TAB_NAME[t], count: t !== 'view' ? count[t] : undefined }))} />
         <span className={m.setupEnd}>
           <Menu label="start over from" up quiet prompt="a template…" noun="templates" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows and columns' }, ...restart]} />
-          <button className={m.tool} title="close (Esc)" onClick={close}>
+          <Button title="close (Esc)" onClick={close}>
             done
-          </button>
+          </Button>
         </span>
       </header>
       <div className={m.setupBody} role="tabpanel">
@@ -114,9 +110,9 @@ export function RowsEditor({ setup, onChange, onRemoveItem, cardsOnly }: EditorP
       <Row label="cards" hint="they join and leave by themselves as cards are made, changed or deleted">
         {cardsOnly ? <span className={m.checkHint}>{rows.rules.length ? 'the cards that meet these rules: every rule must hold' : 'no rules: every card on every plane'}</span> : <Toggle on={!setup.manual} label="the cards that meet these rules" hint={rows.rules.length ? 'every rule must hold' : 'no rules: every card on every plane'} onChange={(v) => onChange('manual', v ? undefined : true)} />}
         {hidden > 0 && (
-          <button className={m.tool} title="bring back the cards taken out" onClick={() => set({ ...rows, hide: undefined })}>
+          <Button title="bring back the cards taken out" onClick={() => set({ ...rows, hide: undefined })}>
             {hidden} hidden · show
-          </button>
+          </Button>
         )}
       </Row>
       {!setup.manual &&
@@ -194,7 +190,7 @@ function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: bool
             </button>
           ))
         ) : (
-          <span className={m.checkHint}>{rule.field === 'tag' ? 'no tags yet' : 'nothing to pick yet'}</span>
+          <Empty as="span">{rule.field === 'tag' ? 'no tags yet' : 'nothing to pick yet'}</Empty>
         )}
         {rule.auto && (
           <span className={styles.auto} title="set by itself: the plane it's linked to. Change it and it's yours">
@@ -270,12 +266,12 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
           </li>
           {cols.map((c, i) => (
             <li key={c.id} className={styles.colItem}>
-              <button className={m.tool} disabled={i === 0} title="move it left" aria-label="Move left" onClick={() => move(i, -1)}>
+              <Button disabled={i === 0} title="move it left" aria-label="Move left" onClick={() => move(i, -1)}>
                 ‹
-              </button>
-              <button className={m.tool} disabled={i === cols.length - 1} title="move it right" aria-label="Move right" onClick={() => move(i, 1)}>
+              </Button>
+              <Button disabled={i === cols.length - 1} title="move it right" aria-label="Move right" onClick={() => move(i, 1)}>
                 ›
-              </button>
+              </Button>
               {c.field ? (
                 <span className={styles.colFixed}>{colName(c)}</span>
               ) : (

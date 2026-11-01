@@ -1000,3 +1000,11 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   old and new each served from a checkout of its own (served from the main tree, every glyph's antialiasing differs:
   a first run showed that), a second old as the noise floor: 97 identical, 11 flagged, all of them in the canvas
   behind (cropped: the panels themselves 0 px).
+
+## Done (2026-11-01): the docks, setups, wizards and pickers on the kit (D-326)
+- MatrixSetup, TableSetup, KanbanSetup, FilterDock, KanbanFilterDock, PackPick and the three wizards onto Tabs,
+  Checkbox, Button, Label, Empty (two forks, reports in their folders); ViewMenu, BringCards, MoveToCanvas already on
+  the kit; DrawSection's hint box has no kit piece.
+- Verified: tsc, vitest 906, check:tokens 0, check:gallery 84, check:lessons; 102 gallery states old against new
+  (separate checkouts, a second old for noise): the changes are the four kit snaps listed in D-326's log, looked at
+  in their crops; the rest the canvas behind.

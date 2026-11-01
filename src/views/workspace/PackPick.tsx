@@ -8,6 +8,8 @@ import type { Card } from '../../data/cards'
 import { useWs } from './context'
 import { packageThese, setSelection } from './selection'
 import styles from './PackPick.module.css'
+import { Button } from '../../ui/Button'
+import { Label } from '../../ui/Label'
 
 export function PackPick({ cards }: { cards: Card[] }) {
   const { wid, cards: every } = useWs()
@@ -37,15 +39,14 @@ export function PackPick({ cards }: { cards: Card[] }) {
   useEffect(() => () => void setTimeout(() => !document.querySelector('[data-packing]') && stop()), [])
   return (
     <Appear className={styles.strip} role="group" aria-label="Pick a package's cards">
-      <span className={styles.kind}>package</span>
+      <Label className={styles.kind}>package</Label>
       <span>{picked.length ? `${picked.length} picked` : 'click cards or drag a box round them'}</span>
-      <button className={styles.make} disabled={!picked.length} onClick={make}>
+      <Button className={styles.make} disabled={!picked.length} onClick={make}>
         package {picked.length || ''}
-      </button>
-      <button className={styles.stop} onClick={stop}>
+      </Button>
+      <Button keyHint="esc" onClick={stop}>
         cancel
-      </button>
-      <span className={styles.esc}>esc</span>
+      </Button>
     </Appear>
   )
 }

@@ -15,6 +15,10 @@
   transition: color var(--dur-fast) var(--ease-out);
 }
 
+.check[data-size='xs'] {
+  font-size: var(--text-xs);
+}
+
 .check:hover {
   color: var(--fg-strong);
 }

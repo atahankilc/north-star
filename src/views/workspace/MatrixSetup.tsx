@@ -42,6 +42,9 @@ import { useWs } from './context'
 import { closeMatrixSetup, openMatrixSetup, setupOf, setupTab, SETUP_TABS, StepSquare, useMatrixUi, type SetupTab } from './Matrix'
 import { TYPE_ACCENT } from './PlaneCards'
 import styles from './Matrix.module.css'
+import { Tabs } from '../../ui/Tabs'
+import { Checkbox } from '../../ui/Checkbox'
+import { Button } from '../../ui/Button'
 
 const ANY = 'any'
 const TAB_NAME: Record<SetupTab, string> = { rows: 'rows', cols: 'columns', cells: 'cells', options: 'options' }
@@ -62,19 +65,12 @@ export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
   return (
     <section className={styles.setup} data-learn="setup" aria-label="Set up the matrix" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), closeMatrixSetup())}>
       <header className={styles.setupHead}>
-        <nav className={styles.tabs} role="tablist" aria-label="Setup">
-          {SETUP_TABS.map((t) => (
-            <button key={t} role="tab" aria-selected={t === tab} className={styles.tab} onClick={() => openMatrixSetup(t)}>
-              {TAB_NAME[t]}
-              {(t === 'rows' || t === 'cols') && <span className={styles.tabCount}>{count[t]}</span>}
-            </button>
-          ))}
-        </nav>
+        <Tabs<SetupTab> label="Setup" value={tab} onChange={openMatrixSetup} options={SETUP_TABS.map((t) => ({ value: t, label: TAB_NAME[t], count: t === 'rows' || t === 'cols' ? count[t] : undefined }))} />
         <span className={styles.setupEnd}>
           <Menu label="start over from" up quiet prompt="a template…" noun="templates" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows, columns and cells' }, ...restart]} />
-          <button className={styles.tool} title="close (Esc)" onClick={closeMatrixSetup}>
+          <Button title="close (Esc)" onClick={closeMatrixSetup}>
             done
-          </button>
+          </Button>
         </span>
       </header>
       <div className={styles.setupBody} role="tabpanel">
@@ -99,16 +95,9 @@ export function Row({ label, hint, children }: { label: string; hint?: string; c
   )
 }
 
+// A setup's switch with a line under it saying what it does: the kit's Checkbox, in the setup's size.
 export function Toggle({ on, label, hint, onChange }: { on: boolean; label: string; hint: string; onChange: (v: boolean) => void }) {
-  return (
-    <button className={styles.check} aria-pressed={on} onClick={() => onChange(!on)}>
-      <span className={styles.box}>{on ? '[x]' : '[ ]'}</span>
-      <span>
-        {label}
-        <small className={styles.checkHint}>{hint}</small>
-      </span>
-    </button>
-  )
+  return <Checkbox size="xs" checked={on} label={label} hint={hint} onChange={onChange} />
 }
 
 // Pick one of a few: framed choices, the picked one cyan.
@@ -171,9 +160,9 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
             onChange={(v) => onChange({ ...axis, plane: v === ANY ? undefined : v })}
           />
           {hidden > 0 && (
-            <button className={styles.tool} title="bring back the cards taken out" onClick={() => onChange({ ...axis, hide: undefined })}>
+            <Button title="bring back the cards taken out" onClick={() => onChange({ ...axis, hide: undefined })}>
               {hidden} hidden · show
-            </button>
+            </Button>
           )}
         </Row>
       )}
@@ -226,12 +215,12 @@ function Unfold({ axis, onChange }: { axis: Axis; onChange: (a: Axis, key?: stri
       />
       {on && all.length > 0 && (
         <>
-          <button className={styles.tool} disabled={shown === all.length} onClick={() => onChange({ ...axis, open: all })}>
+          <Button disabled={shown === all.length} onClick={() => onChange({ ...axis, open: all })}>
             open all
-          </button>
-          <button className={styles.tool} disabled={!shown} onClick={() => onChange({ ...axis, open: undefined })}>
+          </Button>
+          <Button disabled={!shown} onClick={() => onChange({ ...axis, open: undefined })}>
             fold all
-          </button>
+          </Button>
         </>
       )}
     </Row>
@@ -352,9 +341,9 @@ export function CellsEditor({ setup, onChange }: { setup: MatrixSetup; onChange:
         <>
           <Row label="start from">
             {SCALES.map((sc) => (
-              <button key={sc.key} className={styles.tool} title="replace the steps" onClick={() => onChange('steps', sc.steps)}>
+              <Button key={sc.key} title="replace the steps" onClick={() => onChange('steps', sc.steps)}>
                 {sc.name}
-              </button>
+              </Button>
             ))}
           </Row>
           <StepsEditor steps={setup.steps} marks={!!setup.marks} onChange={(steps, key) => onChange('steps', steps, key)} />
@@ -412,9 +401,9 @@ function StepsEditor({ steps, marks, onChange }: { steps: Step[]; marks: boolean
       {steps.length < MAX_STEPS && (
         <li className={styles.step}>
           <span className={styles.stepKey} />
-          <button className={styles.tool} onClick={() => onChange([...steps, { id: newId(), glyph: '◆', label: 'new step', tone: 'fg' }])}>
+          <Button onClick={() => onChange([...steps, { id: newId(), glyph: '◆', label: 'new step', tone: 'fg' }])}>
             + step
-          </button>
+          </Button>
         </li>
       )}
     </ol>

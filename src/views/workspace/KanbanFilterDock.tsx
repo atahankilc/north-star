@@ -19,6 +19,7 @@ import { NO_FILTER, narrowing, setKanbanFilter, useHoldKanbanFilter, useKanbanFi
 import { TYPE_ACCENT } from './PlaneCards'
 import { learn } from '../../onboarding/learn'
 import styles from './FilterDock.module.css'
+import { Button } from '../../ui/Button'
 
 // The kanban whose strip is open.
 const useOpen = create<{ piece: string | null }>(() => ({ piece: null }))
@@ -113,9 +114,9 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
       <Menu label="due" up summary={named(f.due, (d) => DUE.find((x) => x.key === d)!.label)} active={f.due.length > 0} items={due} ariaLabel="Only tasks due" noun="days" />
       <Menu label="for" up summary={named(f.for, forName)} active={f.for.length > 0} items={forItems} ariaLabel="Only tasks for" noun="cards" />
       <Menu label="label" up summary={named(f.labels, (l) => `#${l}`)} active={f.labels.length > 0} items={labels.length ? labelItems : []} ariaLabel="Only tasks with these labels" empty="No labels on its tasks" noun="labels" />
-      <button className={styles.reset} onClick={() => setKanbanFilter(piece.id, NO_FILTER)} title="show every task">
+      <Button className={styles.reset} onClick={() => setKanbanFilter(piece.id, NO_FILTER)} title="show every task">
         reset
-      </button>
+      </Button>
     </Appear>
   )
 }

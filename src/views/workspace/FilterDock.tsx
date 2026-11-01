@@ -17,6 +17,7 @@ import { linkTone } from './PlaneLinks'
 import { LINK_GROUPS, narrowing, setFilter, START, useFilter, useHoldFilter, type Filter } from './planeFilter'
 import styles from './FilterDock.module.css'
 import { CARD_TONE } from '../../ui/cardTone'
+import { Button } from '../../ui/Button'
 
 // What opens over the focus dock (D-233, D-235): each its own strip in the console's look, stacked with a gap; Escape
 // closes the top one (once no menu in it is open).
@@ -122,9 +123,9 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
         ariaLabel="Show links by kind"
         noun="kinds"
       />
-      <button className={styles.reset} onClick={() => setFilter(plane, START)} title="back to how it starts">
+      <Button className={styles.reset} onClick={() => setFilter(plane, START)} title="back to how it starts">
         reset
-      </button>
+      </Button>
     </Appear>
   )
 }

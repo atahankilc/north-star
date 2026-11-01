@@ -23,6 +23,8 @@ import { AutosaveField } from '../../ui/AutosaveField'
 import styles from './Kanban.module.css'
 import { useWs } from './context'
 import m from './Matrix.module.css'
+import { Tabs } from '../../ui/Tabs'
+import { Button } from '../../ui/Button'
 
 const TAB_NAME: Record<KanbanTab, string> = { holds: 'holds', cards: 'cards', cols: 'columns', boxes: 'boxes' }
 
@@ -52,18 +54,11 @@ export function KanbanSetupPanel({ piece }: { piece: WithId<Piece> }) {
   return (
     <section className={m.setup} data-learn="setup" aria-label="Set up the deck" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
       <header className={m.setupHead}>
-        <nav className={m.tabs} role="tablist" aria-label="Setup">
-          {KANBAN_TABS.map((t) => (
-            <button key={t} role="tab" aria-selected={t === tab} className={m.tab} onClick={() => useKanbanUi.setState({ tab: t })}>
-              {TAB_NAME[t]}
-              {count[t] !== undefined && <span className={m.tabCount}>{count[t]}</span>}
-            </button>
-          ))}
-        </nav>
+        <Tabs<KanbanTab> label="Setup" value={tab} onChange={(t) => useKanbanUi.setState({ tab: t })} options={KANBAN_TABS.map((t) => ({ value: t, label: TAB_NAME[t], count: count[t] }))} />
         <span className={m.setupEnd}>
-          <button className={m.tool} title="close (Esc)" onClick={close}>
+          <Button title="close (Esc)" onClick={close}>
             done
-          </button>
+          </Button>
         </span>
       </header>
       <div className={m.setupBody} role="tabpanel">

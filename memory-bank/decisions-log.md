@@ -6012,6 +6012,13 @@ docs/foundation-audit-2026-10-31.md).
   where they were hand-made; 234 lines out, 125 in, mostly CSS). The tasks button and CountBadge stayed as they were.
   108 gallery states old against new, each served from its own checkout, both themes: the panels identical; the 11
   flagged differ only in the real-time canvas behind them.
+- *Built:* the docks, setups, wizards and pickers on the kit (2026-11-01): the three setups' tabs → Tabs (arrow keys
+  now), their `Toggle` → Checkbox (Checkbox got `size`), 25 buttons → Button, the setup and preview labels → Label,
+  empty lines → Empty; FilterDock, KanbanFilterDock, PackPick and the three wizards' feet. Small looks snapped to the
+  kit, as the user asked ("birebir uymak zorunda değil", 2026-11-01): `[ cancel ]` → `[cancel]`, a wizard's make in
+  `main` ink, PackPick's `[package N]` blue as its CSS always meant (the stylesheet order had kept it grey), a
+  checkbox's hint 10 → 11 px (`--text-xs`). Left for later: the framed option boxes (card type, cell kind, rule
+  values: the kit has no framed option yet), AddPill, the wizards' steps and templates (the wizard shell, patterns).
 - *Not yet:* moving the other areas onto the kit (what each copy still needs is in those forks' notes: a world size for
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
   MenuPanel, the settings gear's badge 4 px higher once moved); patterns (Dialog/Window, WizardShell, SetupPanel,
