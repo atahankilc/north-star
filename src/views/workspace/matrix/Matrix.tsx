@@ -74,8 +74,7 @@ export const M = MATRIX_PX
 const UNCLIPPED = '-10000px' // tokens-ok: means "no edge"
 
 // In focus the heads stick (D-214): panned or zoomed so they'd leave the screen, the column heads stay this far from its
-// top (under the breadcrumb's bar) and the row heads this far from its left (just past the side nav's tools, D-217; the
-// nav's shade fades while they're held, `html[data-held-heads]`, Hud.module.css), the cells moving under them. Never
+// top (under the breadcrumb's bar) and the row heads this far from its left (just past the side nav's tools, D-217), the cells moving under them. Never
 // further in than where fit puts them (fitPlane's 96 px round), so a fitted table's heads don't cover its first row or
 // column.
 const STICK = { top: 64, left: 56 }
@@ -425,14 +424,6 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   const dy = stick ? Math.min(Math.max(0, (stickTop - view.oy) / view.zoom), Math.max(0, L.addY - M.top)) : 0
   const dx = stick ? Math.min(Math.max(0, (stickLeft - view.ox) / view.zoom), Math.max(0, L.addX - M.head)) : 0
   const added = (which: 'rows' | 'cols') => (centre.current = which)
-  const main = live && useCanvasView.getState().planeCam === view
-  // While the row heads are held at the left, the side nav's shade steps aside so it doesn't dim them.
-  const held = main && dx > 0
-  useEffect(() => {
-    if (!held) return
-    document.documentElement.dataset.heldHeads = ''
-    return () => void delete document.documentElement.dataset.heldHeads
-  }, [held])
 
   return (
     <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>

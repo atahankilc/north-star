@@ -4,13 +4,21 @@
   flex: none;
   flex-wrap: wrap;
   align-items: stretch;
-  gap: var(--line-w);
+  /* `--seam`: a scaled place sets it (a console inside the zoomed canvas, so it doesn't shrink away as you zoom out). */
+  gap: var(--seam, var(--line-w));
   /* Narrower than its cells (a confirm with three actions, a thin pane): it wraps, the same seam between its rows. */
   max-width: 100%;
 }
 
-/* What isn't a button in the strip (a status, a number) sits on the same shade, so the strip stays one piece. */
-.group > :not(button) {
+/* Stacked (the HUD's columns): the seam between rows. */
+.group[data-vertical] {
+  flex-direction: column;
+  flex-wrap: nowrap;
+}
+
+/* What isn't a button in the strip (a status, a number, a menu's root) lines up with the cells; a closed <dialog>
+   rendered beside its button (Settings') stays hidden. */
+.group > :not(button, dialog) {
   display: inline-flex;
   align-items: center;
 }

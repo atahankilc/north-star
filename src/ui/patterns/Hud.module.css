@@ -55,32 +55,6 @@ a.link:hover {
   text-overflow: ellipsis;
 }
 
-/* Behind the side nav: the page's colour down the left edge, solid under the icons, fading out to the right, so what
-   moves on the canvas or in the backdrop doesn't hide them. Takes no clicks. */
-.hud > .shade {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  /* Under everything else in the bar, the breadcrumb too (the bar is its own layer, so this stays over the canvas). */
-  z-index: var(--z-under);
-  width: var(--hud-shade-w);
-  background: linear-gradient(
-    to right,
-    color-mix(in srgb, var(--bg) var(--mix-near), transparent) 0,
-    color-mix(in srgb, var(--bg) var(--mix-near), transparent) 42%,
-    color-mix(in srgb, var(--bg) var(--mix-soft), transparent) 68%,
-    transparent
-  );
-  pointer-events: none;
-  transition: opacity var(--dur-fast) var(--ease-out);
-}
-
-/* A focused matrix's row heads held at the left edge (D-217) sit on their own paper: the shade would only dim them. */
-:global(html[data-held-heads]) .hud > .shade {
-  opacity: 0;
-}
-
 /* The side nav's tools (D-176, D-178): middle of the left edge, level with the corner below it. */
 .side {
   position: fixed;
@@ -91,11 +65,10 @@ a.link:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
 }
 
-/* Bottom left (D-175), stacked like the foot of a side nav (the HUD becomes one), close to the edge: a rule, your
-   square, the gear. */
+/* Bottom left (D-175), stacked like the foot of a side nav (the HUD becomes one), close to the edge: who's here,
+   the threads, then yours in one strip (D-344): your square, the gear. */
 .corner {
   position: fixed;
   left: var(--space-3);
@@ -106,12 +79,6 @@ a.link:hover {
   align-items: center;
   gap: var(--space-2);
   color: var(--fg-dim);
-}
-
-.rule {
-  width: var(--control-sm);
-  height: var(--line-w);
-  background: var(--line);
 }
 
 .right {

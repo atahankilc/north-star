@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import styles from './Hud.module.css'
 import { SettingsButton, type WorkspacePage } from './Settings'
+import { ButtonGroup } from '../primitives/ButtonGroup'
 
 export type Crumb = {
   label: ReactNode
@@ -23,13 +24,15 @@ type Props = {
   settingsBadge?: number
   // The top of the side nav, under the breadcrumb (D-176): the canvas's `+`.
   side?: ReactNode
-  // In the bottom-left corner, just above your square (D-193): the threads button.
+  // In the bottom-left corner, above the corner's tools: who's here (D-193).
   corner?: ReactNode
+  // The workspace's tools in the corner, above yours (the threads button, D-193).
+  tools?: ReactNode
   // Under the rule, by your square: what's yours (the tasks given to you, D-261).
   mine?: ReactNode
 }
 
-export function Hud({ crumbs = [], right, settings, settingsName, settingsBadge, side, corner, mine }: Props) {
+export function Hud({ crumbs = [], right, settings, settingsName, settingsBadge, side, corner, tools, mine }: Props) {
   const atRoot = crumbs.length === 0
   const { user } = useAuth()
 
@@ -70,18 +73,26 @@ export function Hud({ crumbs = [], right, settings, settingsName, settingsBadge,
       <div className={styles.right} data-glide>
         {right}
       </div>
-      {/* A shade of the page down the left edge, so the side nav's icons read over the canvas and the backdrop. */}
-      {(side || user) && <div className={styles.shade} aria-hidden />}
-      {side && <div className={styles.side} data-learn="sidenav">{side}</div>}
+      {side && (
+        <div className={styles.side} data-learn="sidenav">
+          {/* The side nav's tools, one vertical strip (D-344). */}
+          <ButtonGroup vertical label="Tools">
+            {side}
+          </ButtonGroup>
+        </div>
+      )}
       {/* You and settings (motion, theme, background) in the bottom-left corner (D-175), only once signed in; the
           landing has no controls. */}
       {user && (
         <div className={styles.corner}>
           {corner}
-          {/* The rule just above your square (D-175): what's above it is others' and the workspace's. */}
-          <span className={styles.rule} aria-hidden />
-          {mine}
-          <SettingsButton workspace={settings} workspaceName={settingsName} badge={settingsBadge} />
+          {tools}
+          {/* Yours, apart from the workspace's threads above (D-175's split, a gap now): your square and the gear, one
+              vertical strip (D-344). */}
+          <ButtonGroup vertical label="You and settings">
+            {mine}
+            <SettingsButton workspace={settings} workspaceName={settingsName} badge={settingsBadge} />
+          </ButtonGroup>
         </div>
       )}
     </header>

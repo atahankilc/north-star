@@ -325,6 +325,8 @@
   align-items: center;
   gap: calc(var(--space-2) * var(--cs, 1));
   padding: calc(var(--space-1) * var(--cs, 1));
+  /* Its ButtonGroup's seam, scaled like everything in it: 1 px on the screen at any zoom (D-344). */
+  --seam: calc(var(--line-w) * var(--cs, 1));
   border: calc(var(--line-w) * var(--cs, 1)) solid var(--piece-edge);
   border-bottom: 0;
   background: var(--bg);

@@ -6570,6 +6570,14 @@ D-343's unframed HUD icons; the two buttons (Button, ToolButton) stay.
   the agent's `(↵ on empty applies)`, and the delete confirms' `⌘Z brings it back` (now `You can undo it.`). Kept, on
   purpose: onboarding itself (the welcome pages, the guide's key list, the kind guide's `?`), the agent settings' `keys`
   row, the `/` that starts a skill (typed text, not a shortcut), and keys in tooltips (`title`).
+- Later the same day (the user: "button stacking vertical da olmalı ve hud elemenlerinde de"; "Consoleda… çok zoom out
+  olduysak bu düğmeler arası boşluk kayboluyo"; "ana düğme ve yan düğmeler arasında çok renk farkı yok"): ButtonGroup
+  `vertical`; the side nav's tools are one vertical strip, your square and the gear another; the threads button stands
+  apart above them (Hud's `tools` slot), a gap in place of D-175's rule (the user: "kişi ve thread arasındaki boşluk…
+  kalması gerekiyordu"). The HUD's shade down the left edge is gone (the user: "buttonların arkasına bg geldi"), with
+  `--hud-shade-w` and Matrix's `data-held-heads`; the people buttons are 30 px tall like their squares. The seam is `--seam` (default
+  `--line-w`), which a console scales by `--cs` so it stays 1 px on screen at any zoom. `main` is `--wash-4` (hover the new
+  `--wash-5`), clearly lighter than a normal button's `--wash-2`.
 - New tokens: `--wash-4` (main's hover), `--wash-magenta` (danger's hover), `--press-scale`.
 - A person's square is one kit `Avatar` (the user: "user badgeleri ile buttonlar aynı genişliğe ve yüksekliğe sahip
   değiller"): `hud` 30 px like a ToolButton (people here, your square), `sm` 24 px like a Button (rows); PeopleHere,

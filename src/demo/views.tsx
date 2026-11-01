@@ -81,12 +81,8 @@ export function CanvasScreen() {
           ...(focused ? [{ label: focused.name || KIND_NAME[kindOfPiece(focused)] }] : []),
         ]}
         settingsName={workspace.name}
-        corner={
-          <>
-            <PeopleHere />
-            <ThreadsTool wid={wid} threads={threads} />
-          </>
-        }
+        corner={<PeopleHere />}
+        tools={<ThreadsTool wid={wid} threads={threads} />}
         side={<SideNav wid={wid} focused={focused} editor />}
       />
       <CanvasView key={shown} />

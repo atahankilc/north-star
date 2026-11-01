@@ -55,6 +55,8 @@
 
 .stack .person {
   position: relative;
+  /* As tall as the square in it (Avatar's hud size, a ToolButton's 30 px, D-344). */
+  height: var(--control);
   max-width: none;
   padding: 0;
   border: 0;

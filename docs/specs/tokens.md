@@ -146,8 +146,8 @@ up" may need to give way to "round down" in dense lists (kanban sheets, the tabl
 - **Boxes on screen: one ladder** `--size-xs` 160, `--size-sm` 260, `--size-md` 340, `--size-lg` 420, `--size-xl` 560
   (off-ladder widths snap: 220–300 → sm, 300–360 → md, 400–440 → lg, 500–620 → xl). Named aliases read from it:
   `--menu-w` (sm), `--menu-max-w` (md), `--confirm-w` (lg), `--name-max-w` (xs). Kept as their own: `--panel-w` 400
-  (D-219), `--menu-h` 460, `--list-h` 320, `--modal-w` 960 / `--modal-h` 720 / `--modal-nav-w` 216, `--hud-shade-w`
-  120, `--page-w` 1100, `--measure` 760. Small labels' and columns' widths are in `ch` (10ch–13ch).
+  (D-219), `--menu-h` 460, `--list-h` 320, `--modal-w` 960 / `--modal-h` 720 / `--modal-nav-w` 216,
+  `--page-w` 1100, `--measure` 760. Small labels' and columns' widths are in `ch` (10ch–13ch).
 - **Marks on edges:** `--corner-mark` 7 (the magenta L's on panel, console and dock corners), `--lead` 12 (a numbered
   rule's magenta lead), `--underline-offset` 3 (2–4).
 - **Breakpoints** can't be variables: `@media` lines are left to themselves, and they are 760 and 640 px only.

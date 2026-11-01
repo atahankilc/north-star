@@ -79,7 +79,8 @@
   --wash-2: rgba(255, 255, 255, 0.05);
   --wash-3: rgba(255, 255, 255, 0.08);
   --wash-cyan: rgba(45, 226, 230, 0.06);
-  --wash-4: rgba(255, 255, 255, 0.14); /* a main button's hover (D-344) */
+  --wash-4: rgba(255, 255, 255, 0.14); /* a main button, clearly above a normal one's --wash-2 (D-344) */
+  --wash-5: rgba(255, 255, 255, 0.2); /* a main button's hover (D-344) */
   --wash-magenta: rgba(255, 61, 154, 0.14); /* a danger button's hover (D-344) */
   --scrim: rgba(0, 0, 0, 0.7);
   --menu: rgba(22, 22, 22, 0.92);
@@ -189,7 +190,6 @@
   --modal-h: 720px;
   --modal-nav-w: 216px;
   --name-max-w: var(--size-xs); /* a person's chip */
-  --hud-shade-w: 120px; /* the HUD's fade at the left edge */
 
   /* Shadows (D-319): what a shadow is, the colour given where it's used, so it follows a piece's own --bg:
      box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent). */
@@ -350,6 +350,7 @@
   --wash-3: rgba(0, 0, 0, 0.07);
   --wash-cyan: rgba(10, 151, 156, 0.08);
   --wash-4: rgba(0, 0, 0, 0.11);
+  --wash-5: rgba(0, 0, 0, 0.16);
   --wash-magenta: rgba(219, 26, 122, 0.1);
   --scrim: rgba(0, 0, 0, 0.3);
   --menu: rgba(255, 255, 255, 0.96);

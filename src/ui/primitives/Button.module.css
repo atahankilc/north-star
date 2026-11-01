@@ -42,15 +42,15 @@
   transform: scale(var(--press-scale));
 }
 
-/* main: a row's strong one (a dock's `unfocus`, a wizard's `next`). */
+/* main: a row's strong one (a dock's `unfocus`, a wizard's `next`): a clearly lighter grey than the others' (D-344). */
 :where(.sm[data-tone='main']) {
-  background: var(--wash-3);
-  color: var(--fg);
+  background: var(--wash-4);
+  color: var(--fg-strong);
 }
 
 :where(.sm[data-tone='main']:hover),
 :where(.sm[data-tone='main']:focus-visible) {
-  background: var(--wash-4);
+  background: var(--wash-5);
   color: var(--fg-strong);
 }
 

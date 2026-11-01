@@ -124,13 +124,9 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
           settings={(page) => <WorkspaceSettings page={page} wid={wid} workspace={workspace} requests={requests.data} />}
           settingsName={workspace.name}
           settingsBadge={requests.data.length}
-          corner={
-            <>
-              {/* Who's here, then the threads, just above your square (D-193). */}
-              <PeopleHere />
-              <ThreadsTool wid={wid} threads={data.threads} />
-            </>
-          }
+          // Who's here, then the threads on their own above your square and the gear (D-193, D-344).
+          corner={<PeopleHere />}
+          tools={<ThreadsTool wid={wid} threads={data.threads} />}
           side={<SideNav wid={wid} focused={focused} editor={editor} />}
         />
         {/* One per canvas (D-302): going to another builds it anew, its camera its own. */}
