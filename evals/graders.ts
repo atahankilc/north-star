@@ -352,6 +352,26 @@ export const under = (heading: Ref, cards: Ref[], o: { plane?: Ref; within?: num
 // ---- Things in pieces
 
 // A card is on a plane (home or placed).
+// Pieces on a canvas in one row (their tops level, side by side, none on another), every one below a text (its box's
+// bottom), the canvas's own layout (agent-bugs 10).
+export const rowBelow = (pieces: Ref[], text: Ref): Grader => ({
+  name: `rowBelow(${pieces.map(showRef).join(', ')} under ${showRef(text)})`,
+  grade: (r) => {
+    const ps = pieces.map((x) => r.end.pieces.find((p) => p.id === ref1(r.end, resolveRef(r, x), ['piece'])))
+    if (ps.some((p) => !p)) return ok(false, 'a piece is gone')
+    const l = r.end.labels.find((x) => x.id === ref1(r.end, resolveRef(r, text), ['text']))
+    if (!l) return ok(false, `no text ${showRef(text)}`)
+    const bottom = labelBox(l).y + labelBox(l).h
+    const bad: string[] = []
+    const ys = new Set(ps.map((p) => p!.y))
+    if (ys.size > 1) bad.push(`tops at ${[...ys].join(', ')}`)
+    for (const p of ps) if (p!.y < bottom) bad.push(`${p!.id} above the text's bottom (${p!.y} < ${Math.round(bottom)})`)
+    const sorted = [...ps].sort((a, b) => a!.x - b!.x)
+    for (let i = 1; i < sorted.length; i++) if (sorted[i]!.x < sorted[i - 1]!.x + sorted[i - 1]!.w) bad.push(`${sorted[i]!.id} on ${sorted[i - 1]!.id}`)
+    return ok(!bad.length, bad.length ? bad.slice(0, 4).join('; ') : `${ps.length} in a row under it`)
+  },
+})
+
 export const onPlane = (card: Ref, plane: Ref): Grader => ({
   name: `onPlane(${showRef(card)}, ${showRef(plane)})`,
   grade: (r) => {

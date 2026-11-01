@@ -274,14 +274,20 @@ function offsets(reach: number, step: number): [number, number][] {
 
 // The nearest move (on the grid) that puts the boxes clear of what stays: none when they're clear; else the nearest
 // clear spot inside `bounds` first, then anywhere within reach; failing both, straight down under everything there.
-export function clearOffset(boxes: Box[], obstacles: Obstacle[], bounds?: Box, reach = 2500): { dx: number; dy: number } {
+// `toward`: the side asked for (arrange's `where: { near, side }`): pushed clear only that way or along it, never back
+// across what it goes beside (agent-bugs 10: a row asked below a heading landed above it).
+export function clearOffset(boxes: Box[], obstacles: Obstacle[], bounds?: Box, reach = 2500, toward?: Side): { dx: number; dy: number } {
   if (!boxes.length) return { dx: 0, dy: 0 }
   const b = boundsOf(boxes)
-  const ok = (dx: number, dy: number, keep: boolean) => (!keep || inside({ ...b, x: b.x + dx, y: b.y + dy }, bounds)) && !clashes(boxes, obstacles, dx, dy)
+  const way = (dx: number, dy: number) => toward === undefined || (toward === 'below' ? dy >= 0 : toward === 'above' ? dy <= 0 : toward === 'right' ? dx >= 0 : dx <= 0)
+  const ok = (dx: number, dy: number, keep: boolean) => way(dx, dy) && (!keep || inside({ ...b, x: b.x + dx, y: b.y + dy }, bounds)) && !clashes(boxes, obstacles, dx, dy)
   // Where it is, when that's clear (a plane's content may lie past its box: it isn't pulled in).
   if (ok(0, 0, false)) return { dx: 0, dy: 0 }
-  const tries = offsets(reach, GAP)
-  for (const keep of bounds ? [true, false] : [false]) for (const [dx, dy] of tries) if (ok(dx, dy, keep)) return { dx, dy }
+  const all = offsets(reach, GAP)
+  // With a side asked for, straight on that way first (further below, further right…), then anywhere on that side.
+  const straight = toward === 'below' || toward === 'above' ? all.filter(([dx]) => dx === 0) : toward ? all.filter(([, dy]) => dy === 0) : []
+  for (const tries of straight.length ? [straight, all] : [all])
+    for (const keep of bounds ? [true, false] : [false]) for (const [dx, dy] of tries) if (ok(dx, dy, keep)) return { dx, dy }
   return under(b, obstacles, bounds)
 }
 

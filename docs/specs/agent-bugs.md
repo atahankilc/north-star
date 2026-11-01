@@ -48,7 +48,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 7  | preview inside a piece spills onto the canvas    | Preview      | high     | code             | fixed  |
 | 3  | the stepper's item doesn't stand out             | Preview      | mid      | code             | fixed  |
 | 4  | plane layouts ignore links                       | Layout       | high     | code + prompt    | built (flow, D-327); no real-model eval yet |
-| 10 | can't rearrange a canvas                         | Layout       | mid      | unknown (repro)  | open   |
+| 10 | can't rearrange a canvas                         | Layout       | mid      | code             | fixed  |
 | 15 | lists answered from the map                      | Judgment     | mid      | code, then prompt| open   |
 | 19 | "would it work" not dry-run                      | Judgment     | low      | prompt           | open   |
 | 20 | vague verb run without asking                    | Judgment     | mid      | prompt           | open   |
@@ -285,6 +285,11 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     does the model call `arrange` (or say it can't), is it refused (one call can't mix a canvas's pieces with a plane's
     cards: "the items are in more than one space"), do the moves fail to show in the preview, does carrying what's
     stuck to a piece block it. Fix: reproduce it in an eval on a canvas first, then fix what it shows.
+    *Fixed 2026-11-01:* arrange takes a canvas's pieces and text fine; what broke was the push clear. "The planes in a
+    row below the heading" put them above it: p5 is stuck to p1 and, carried, met the Working area, and clearOffset
+    took the nearest clear spot, back across the heading. It now keeps an explicit side (only that way or along it,
+    straight on first). And `view` takes a canvas (its text and pieces in reading order, sections holding theirs);
+    it refused one before. edit-16 fails without the fix (all four at y −650, the heading's bottom −215).
 
 ## Judgment: prompt and skill methods, measured on the evals
 

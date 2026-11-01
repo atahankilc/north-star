@@ -16,7 +16,7 @@ import type { Card } from '../../model/cards'
 import { derive, nameOf, shownTasks, timelineDecks, type Derived, type P, clean } from './derive'
 import { resolve, unclear, type Ids } from './ids'
 import { cardLine, pieceSays, pieceTitle, taskLine, textLine } from './lines'
-import { planeNodes, flatten } from './space'
+import { canvasNodes, planeNodes, flatten } from './space'
 import { estimateTokens, fit, oneLine, pageLine, pageOf, q, wrap } from './text'
 import type { ReadWs, ToolResult } from './types'
 
@@ -24,9 +24,10 @@ export type ViewArgs = { piece: string; page?: number; col_page?: number }
 
 export function view(ws: ReadWs, ids: Ids, a: ViewArgs): ToolResult {
   ws = clean(ws)
-  const r = resolve(ws, ids, a.piece, ['piece', 'document'], undefined, 'piece')
+  const r = resolve(ws, ids, a.piece, ['piece', 'document', 'canvas'], undefined, 'piece')
   if (!('id' in r)) return { text: unclear(a.piece, r) }
   if (r.kind === 'document') return readDocument(ws, ids, { id: r.id })
+  if (r.kind === 'canvas') return finish(canvasView(ws, ids, r.id, a.page))
   const d = derive(ws)
   const p = d.pieces.get(r.id)!
   let res: ToolResult
@@ -54,6 +55,26 @@ export function view(ws: ReadWs, ids: Ids, a: ViewArgs): ToolResult {
       break
   }
   return finish(res)
+}
+
+// A canvas (agent-bugs 10): its text and its pieces in reading order, a section holding what's wholly inside it, as a
+// plane's view lists its text and cards; what it needs to arrange the canvas by meaning (`look` draws it).
+function canvasView(ws: ReadWs, ids: Ids, canvas: string, page = 1): ToolResult {
+  const d = derive(ws)
+  const k = ws.canvases.find((c) => c.id === canvas)
+  const lines: string[] = []
+  for (const { node, depth } of flatten(canvasNodes(ws, canvas))) {
+    const at = '  '.repeat(depth)
+    if (node.kind === 'section' || node.kind === 'text') lines.push(`${at}${textLine(ws, ids, node.label, 120)}`)
+    else if (node.kind === 'piece') {
+      const p = node.piece as P
+      lines.push(`${at}${ids.short('piece', p.id)} ${KIND_NAME[kindOfPiece(p)]} ${q(d.pieceName(p), 60)} · ${pieceSays(ws, ids, p)}${p.stuckTo ? ` · stuck to ${ids.short('piece', p.stuckTo)}` : ''}`)
+    }
+  }
+  const pg = pageOf(lines, page, PLANE_PAGE)
+  const more = pageLine(lines.length, pg, 'Lines', '')
+  const head = `# ${ids.short('canvas', canvas)} canvas ${q(k?.name, 60)} · ${lines.length} things, top to bottom, left to right`
+  return { text: [head, wrap('workspace', pg.items.join('\n') || '(empty)'), ...(more ? [more] : [])].join('\n'), more }
 }
 
 // Keeps a result under the ceiling whatever happened above.

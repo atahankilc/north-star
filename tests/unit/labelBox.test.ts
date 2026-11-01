@@ -28,3 +28,16 @@ describe('labelBox: as tall as the text is drawn (bug 6)', () => {
     expect(wrappedLines('one\n\ntwo', 1000, 10, 0.5)).toBe(2.5)
   })
 })
+
+describe('clearOffset keeps the side asked for (agent-bugs 10)', () => {
+  it('below a thing: never pushed back up across it', async () => {
+    const { clearOffset } = await import('../../src/model/layout')
+    // The block wants to sit at y 100; something is in the way right under it.
+    const block = [{ x: 0, y: 100, w: 200, h: 100 }]
+    const wall = [{ x: -1000, y: 150, w: 2400, h: 300 }]
+    const free = clearOffset(block, wall)
+    const below = clearOffset(block, wall, undefined, undefined, 'below')
+    expect(below.dy).toBeGreaterThanOrEqual(0)
+    expect(free.dy).toBeLessThan(0)
+  })
+})

@@ -1069,8 +1069,8 @@ export const READ_TOOLS: ReadTool[] = [
   },
   {
     name: 'view',
-    summary: 'A piece as markdown: a plane by sections and headings with its cards, text and links; a matrix or table as a table; a deck as columns; a timeline by days; documents as a list; a document as text. Paged.',
-    args: obj({ piece: str('a piece (id or name)'), page: int('which page (rows, lines)'), col_page: int("a matrix's columns, 8 a page") }, ['piece']),
+    summary: 'A piece or a canvas as markdown: a plane by sections and headings with its cards, text and links; a canvas by its sections and headings with its pieces and text; a matrix or table as a table; a deck as columns; a timeline by days; documents as a list; a document as text. Paged.',
+    args: obj({ piece: str('a piece or a canvas (id or name)'), page: int('which page (rows, lines)'), col_page: int("a matrix's columns, 8 a page") }, ['piece']),
     run: view as ReadTool['run'],
   },
   {

@@ -2,7 +2,7 @@
 // or two ops, graded on the end state: what was asked is there, nothing else
 // changed (`onlyChanged`), one undo step that gives the start back. Each has a plausible wrong script (the wrong card,
 // the wrong column, the wrong direction, an extra write) so `--wrong` tests precision.
-import { absent, answerIncludes, cell, count, dryRunOnly, exists, field, linked, noDeletes, noOverlaps, onlyChanged, proposedIn, task, undoRestores } from '../graders'
+import { absent, answerIncludes, cell, count, dryRunOnly, exists, field, linked, noDeletes, noOverlaps, onlyChanged, proposedIn, rowBelow, task, undoRestores } from '../graders'
 import type { Task } from '../types'
 import { answer, call, change, realOf } from './util'
 
@@ -257,6 +257,23 @@ export const EDIT: Task[] = [
     ],
     // On another plane.
     wrong: [change([['create_text', { kind: 'paragraph', plane: 'p2', text: "Office lunch groups decide by eleven what they will eat, and most of them already order through one person in a WhatsApp group: if the stall posts what is left at half past ten, the person who orders can pre-book a box for the group, the stall stops throwing greens away in the evening, and the group gets a better price than walking past at noon. We tried it with two groups in Kreuzberg in the pilot week and both ordered twice; the third group never answered because nobody in it owned the ordering.", where: { near: 'c49' } }]]), answer('Added the note on Bets.')],
+  },
+  // agent-bugs 10: rearranging a canvas. A row asked below a heading landed above it (the push clear went back across the
+  // heading when the stuck matrix met the Working area); view now takes a canvas.
+  {
+    id: 'edit-16-canvas-row',
+    group: 'edit',
+    set: 'regression',
+    fixture: 'medium',
+    ask: "On the Discovery canvas, line the four planes up in one row below the 'Open questions' heading.",
+    graders: [rowBelow([R('p1'), R('p2'), R('p3'), R('p4')], R('x28')), onlyChanged({ allow: [(_, c) => c.kind === 'pieces' && (c.fields ?? []).every((f) => ['x', 'y', 'updatedAt'].includes(f))] }), undoRestores()],
+    reference: [
+      call('view', { piece: 'k1' }),
+      change([['arrange', { items: ['p1', 'p2', 'p3', 'p4'], layout: 'row', where: { near: 'x28', side: 'below' } }]], 'the planes in a row'),
+      answer('Proposed p1 Segments, p2 Rivals, p3 Bets and p4 Interviews in one row below x28 "Open questions" (p5 Pain map moves with p1, stuck to it): it waits in the preview.'),
+    ],
+    // Above the heading.
+    wrong: [change([['arrange', { items: ['p1', 'p2', 'p3', 'p4'], layout: 'row', where: { near: 'x28', side: 'above' } }]]), answer('Lined them up below the heading.')],
   },
   {
     id: 'edit-11-revise-in-preview',

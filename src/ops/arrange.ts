@@ -257,7 +257,7 @@ export function arrangeAny(ctx: OpCtx, args: LayoutArgs): Plan {
     let placed = at(o)
     // In a section it only goes down (the section grows); elsewhere to the nearest clear spot.
     if (!(w && 'in_section' in w)) {
-      const d = clearOffset(placed.boxes, obstacles, bounds)
+      const d = clearOffset(placed.boxes, obstacles, bounds, undefined, w && 'near' in w ? w.side : undefined)
       if (d.dx || d.dy) placed = at({ x: o.x + d.dx, y: o.y + d.dy })
     }
     units.forEach((u, i) => delta.set(u.id, placed.ds[i]))
