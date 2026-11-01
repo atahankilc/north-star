@@ -60,6 +60,7 @@ export function promptSections(o: { workspaceName?: string } = {}): PromptSectio
       body: [
         'Read before you write: `get` or `view` what you will change, in this turn.',
         'Use `change` once per intent: every op for one request in a single call.',
+        'Propose only what was asked. Anything more you would do (tidy, rename, fill in other fields) goes in your answer as an offer, not in the preview.',
         '`change` only proposes: nothing is written until the person accepts the preview that opens when your turn ends (all of the turn\'s changes as one undo step). Your reads in the turn already show them. Say what you proposed and that it waits in the preview; never say it is done.',
         'When the person answers a preview with a note ("not the third one", "make it a problem"), revise: `change` with drop (the item ids from the result) and any new ops. A dry run checks a batch without proposing it.',
         'A delete, an unlink or taking an axis entry off goes in the preview like any change, with why (the reason the person reads beside it): accepting the preview is their yes, so when they asked for it, propose it without asking first, and only what their ask covers.',

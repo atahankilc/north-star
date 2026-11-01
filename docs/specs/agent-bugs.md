@@ -35,7 +35,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 17 | `go` taken as yes to a delete                    | Guards       | mid      | code (preview)   | fixed  |
 | 26 | turning text into cards rewrites its words       | Guards       | mid      | code + prompt    | open   |
 | 18 | a viewer's agent calls `change`                  | Guards       | low      | code             | fixed  |
-| 16 | ops nobody asked for                             | Guards       | mid      | code + prompt    | open   |
+| 16 | ops nobody asked for                             | Guards       | mid      | code + prompt    | fixed  |
 | 6  | items land on top of each other                  | Guards       | mid      | code             | place_on fixed (text); paragraphs open |
 | 11 | links no plane can draw                          | Guards       | mid      | code (`lint`)    | open   |
 | 12 | no last look before the preview                  | Guards       | mid      | code, then model | open   |
@@ -128,6 +128,10 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     a card takes it out of the arrange, the last one takes the arrange). The code fix covers only edit-09/13: the rest
     of the family (prioritize-03, learn-03, dedupe-01) is judgment, the prompt's. Fix (prompt, "Changing things"): do
     only what was asked; anything more is offered in the answer, not proposed.
+    *Fixed 2026-11-01:* change.ts' `foldArranges`: an arrange that is only `where: { near }` over cards made earlier in
+    the same call (none with its own where) goes into their `where`, with a note in the result; every op's default
+    handle is pinned first so nothing after it shifts. Anything else stays an arrange. The prompt line is in. The
+    judgment half (prioritize-03, learn-03, dedupe-01) waits for a real-model run.
 6.  **Things it puts on a canvas or plane often land on top of each other, paragraphs most.** Not reproduced yet.
     Not raw coordinates: `change` already refuses x/y from the agent (src/agent/change.ts, NO_COORDS), though
     `create_text` itself still takes them for the UI. The likely cause, read in the code (second review): `labelBox`

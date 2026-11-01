@@ -158,7 +158,37 @@ const ENTRY_KEYS = new Set(['op', 'args', 'why'])
 // Ops in one call (a bigger job goes in several calls into the same preview).
 export const MAX_OPS = 80
 
-export type ParsedChange = { ok: true; ops: ChangeOp[]; drop: string[]; summary?: string; dryRun: boolean } | { ok: false; text: string }
+// `notes`: what parsing rewrote, told to the model with the result (an arrange folded into the cards it placed).
+export type ParsedChange = { ok: true; ops: ChangeOp[]; drop: string[]; summary?: string; dryRun: boolean; notes?: string[] } | { ok: false; text: string }
+
+// An `arrange` that only puts cards made in the same call next to one thing (`where: { near }`, nothing else) folds into
+// those cards' own `where` (agent-bugs 16): the preview then holds the 3 cards asked for, not 3 and an arrange, and
+// unticking one leaves nothing behind. A rewrite, not a refusal, so no turn is lost. An arrange with a layout, a side,
+// groups or anything else stays (a create op's `where` holds only near). Every op first keeps the handle its place in
+// the call gave it (`$3`), so taking the arrange out shifts no one's handle.
+export function foldArranges(ops: ChangeOp[]): { ops: ChangeOp[]; notes: string[] } {
+  const handleOf = (o: ChangeOp, i: number) => (typeof o.args.handle === 'string' ? o.args.handle : `$${i + 1}`)
+  const pinned = ops.map((o, i) => ('handle' in o.args ? o : { ...o, args: { ...o.args, handle: handleOf(o, i) } }))
+  const cards = new Map<string, number>()
+  pinned.forEach((o, i) => o.op === 'create_card' && !o.args.where && cards.set(String(o.args.handle), i))
+  const notes: string[] = []
+  const gone = new Set<number>()
+  pinned.forEach((o, i) => {
+    if (o.op !== 'arrange') return
+    const a = o.args
+    const extra = Object.keys(a).filter((k) => !['items', 'where', 'plane', 'handle'].includes(k))
+    const where = a.where as Record<string, unknown> | undefined
+    const items = Array.isArray(a.items) ? a.items.map(String) : []
+    if (extra.length || !where || Object.keys(where).join() !== 'near' || !items.length) return
+    const made = items.map((h) => cards.get(h))
+    if (made.some((m) => m === undefined || m > i)) return
+    if (made.some((m) => a.plane !== undefined && pinned[m!].args.plane !== a.plane)) return
+    for (const m of made) pinned[m!] = { ...pinned[m!], args: { ...pinned[m!].args, where: { near: where.near } } }
+    gone.add(i)
+    notes.push(`The arrange of ${items.join(', ')} was folded into ${items.length === 1 ? 'that card\'s' : 'those cards\''} own where (near ${String(where.near)}): the preview holds only the cards.`)
+  })
+  return { ops: pinned.filter((_, i) => !gone.has(i)), notes }
+}
 
 // The call's arguments checked and turned into ops with real ids (nothing built yet).
 export function parseChange(ws: AgentWs, ids: Ids, args: Record<string, unknown>): ParsedChange {
@@ -191,7 +221,8 @@ export function parseChange(ws: AgentWs, ids: Ids, args: Record<string, unknown>
     ops.push({ op: def.name, args: value, ...(why ? { why } : {}) })
   })
   if (errors.length) return { ok: false, text: `change refused, nothing added:\n${errors.slice(0, 10).join('\n')}` }
-  return { ok: true, ops, drop, ...(typeof args.summary === 'string' && args.summary.trim() ? { summary: args.summary.trim() } : {}), dryRun: args.dry_run === true }
+  const folded = foldArranges(ops)
+  return { ok: true, ops: folded.ops, ...(folded.notes.length ? { notes: folded.notes } : {}), drop, ...(typeof args.summary === 'string' && args.summary.trim() ? { summary: args.summary.trim() } : {}), dryRun: args.dry_run === true }
 }
 
 // ---- The result in words
@@ -319,15 +350,16 @@ export async function runChange(env: AgentEnv, args: Record<string, unknown>): P
     // Refused at apply: it stays pending for the preview.
   }
   const pending = pendingCount(r.cs)
+  const notes = parsed.notes?.length ? `\n${parsed.notes.map((n) => `Note: ${n}`).join('\n')}` : ''
   return {
     ok: true,
-    text: describeResult({
+    text: `${describeResult({
       cs: r.cs,
       added: r.added,
       handles: r.handles,
       ws: after,
       ids: env.ids,
       head: `${dropped}Proposed ${r.added.length} change${r.added.length === 1 ? '' : 's'} (${pending} pending in all). Nothing is written yet: the person sees them as a preview when your turn ends, and accepts them as one undo step or not. Your reads now show them.`,
-    }),
+    })}${notes}`,
   }
 }

@@ -140,3 +140,43 @@ describe("a viewer's agent is offered no write tool (bug 18)", () => {
     expect(seen[1].system).not.toContain(READ_ONLY)
   })
 })
+
+describe('an arrange of the cards just made folds into their own where (bug 16)', () => {
+  it('three ideas near a card: three items, no arrange, a note; handles pinned', async () => {
+    const { foldArranges } = await import('../../src/agent/change')
+    const ops = [
+      { op: 'create_card', args: { type: 'idea', plane: 'P', title: 'A', handle: '$a' } },
+      { op: 'create_card', args: { type: 'idea', plane: 'P', title: 'B' } },
+      { op: 'arrange', args: { items: ['$a', '$2'], where: { near: 'C' } } },
+      { op: 'link', args: { from: '$2', to: 'C' } },
+    ]
+    const r = foldArranges(ops)
+    expect(r.ops.map((o) => o.op)).toEqual(['create_card', 'create_card', 'link'])
+    expect(r.ops[0].args.where).toEqual({ near: 'C' })
+    expect(r.ops[1].args).toMatchObject({ handle: '$2', where: { near: 'C' } })
+    expect(r.ops[2].args).toMatchObject({ handle: '$4', from: '$2' })
+    expect(r.notes).toHaveLength(1)
+  })
+  it('a layout, a side, an existing card, or a card with its own where: the arrange stays', async () => {
+    const { foldArranges } = await import('../../src/agent/change')
+    const make = (where?: unknown) => ({ op: 'create_card', args: { type: 'idea', plane: 'P', title: 'A', handle: '$a', ...(where ? { where } : {}) } })
+    for (const [card, arrange] of [
+      [make(), { items: ['$a'], where: { near: 'C' }, layout: 'row' }],
+      [make(), { items: ['$a'], where: { near: 'C', side: 'below' } }],
+      [make(), { items: ['$a', 'c12'], where: { near: 'C' } }],
+      [make({ near: 'D' }), { items: ['$a'], where: { near: 'C' } }],
+    ] as const) expect(foldArranges([card, { op: 'arrange', args: arrange as Record<string, unknown> }]).ops.map((o) => o.op)).toEqual(['create_card', 'arrange'])
+  })
+  it('through change: the preview holds the cards only', async () => {
+    const env = makeEnv(loadFixture('medium'))
+    const change = AGENT_TOOLS.find((t) => t.def.name === 'change')!
+    const r = await change.run(env, { ops: [
+      { op: 'create_card', args: { type: 'idea', plane: 'p3', title: 'Bread pick-up lockers', handle: '$a' } },
+      { op: 'create_card', args: { type: 'idea', plane: 'p3', title: 'Cash-back on pre-orders', handle: '$b' } },
+      { op: 'arrange', args: { items: ['$a', '$b'], where: { near: 'c50' } } },
+    ] })
+    expect(r.ok, r.text).toBe(true)
+    expect(env.changes!.items.map((i) => i.op)).toEqual(['create_card', 'create_card'])
+    expect(r.text).toMatch(/Note: The arrange of \$a, \$b was folded/)
+  })
+})
