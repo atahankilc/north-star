@@ -12,7 +12,7 @@ const given = (ws: Ws): Ws => ({
 
 export default example({
   name: 'TasksTool',
-  place: 'hud/corner',
+  place: 'hud/navigation',
   file: 'src/views/workspace/deck/TasksTool.tsx',
   note: 'the side nav’s tasks button: shown with a deck or timeline on the canvas; it counts tasks given to you since you last looked',
   states: {

@@ -17,7 +17,7 @@ function Open() {
 export default example({
   name: 'GuideTool',
   place: 'onboarding/guides',
-  also: ['hud/corner'],
+  also: ['hud/navigation'],
   file: 'src/onboarding/GuideTool.tsx',
   note: 'the side nav’s `?`, a magenta dot while something new is unseen; a click does nothing here (no coach mounted)',
   states: {

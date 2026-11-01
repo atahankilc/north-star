@@ -35,17 +35,6 @@
   font-size: var(--text-xs);
 }
 
-/* The gear: the HUD's ToolButton (cyan while settings are open, like the threads button above it); it turns on hover. */
-.trigger > svg {
-  transition: transform var(--dur-med) var(--ease-out);
-}
-
-.trigger:hover > svg,
-.trigger:focus-visible > svg,
-.trigger[data-on='true'] > svg {
-  transform: rotate(45deg);
-}
-
 @media (max-width: 760px) {
   .account {
     padding-left: var(--space-2);

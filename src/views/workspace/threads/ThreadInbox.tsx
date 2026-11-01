@@ -16,8 +16,6 @@ import { runCells } from '../../../ui/primitives/Appear'
 import { DURATION_MS, CELLS_SHUT } from '../../../ui/foundation/cellReveal'
 import { CommentIcon, myUid, ThreadPanel, toggleInbox, useThreadView } from './Threads'
 import { Button } from '../../../ui/primitives/Button'
-import { ToolButton } from '../../../ui/primitives/ToolButton'
-import { ThreadsIcon } from '../../../ui/primitives/hudIcons'
 import styles from './Threads.module.css'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
@@ -72,29 +70,6 @@ type Props = {
   // The thread half (D-197): owners delete any thread; the target in its header shows it where it is.
   isOwner: boolean
   onShow: (t: WithId<Thread>) => void
-}
-
-// The button in the bottom-left corner, just above your square (D-193): the comment mark; a magenta count of new
-// mentions in its corner, or a magenta dot while anything else is new.
-export function ThreadsTool({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
-  const open = useThreadView((s) => s.inbox)
-  const me = myUid()
-  const seen = useReads(wid, me || null).data?.seen
-  const fresh = threads.filter((t) => !t.resolved && isNew(t, seen, t.id, me))
-  const mentions = fresh.filter((t) => t.mentions?.includes(me)).length
-  return (
-    <ToolButton
-      pressed={open}
-      badge={mentions}
-      dot={fresh.length > 0}
-      label={`Threads${mentions ? `, ${mentions} new mention${mentions === 1 ? '' : 's'}` : fresh.length ? `, ${fresh.length} new` : ''}`}
-      title={mentions ? `${mentions} new mention${mentions === 1 ? '' : 's'}` : fresh.length ? `${fresh.length} thread${fresh.length === 1 ? '' : 's'} with something new` : 'Threads'}
-      data-viewer-ok
-      onClick={() => toggleInbox()}
-    >
-      <ThreadsIcon />
-    </ToolButton>
-  )
 }
 
 export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf, here, goneOf, scopeName, canvasScope, isOwner, onShow }: Props) {

@@ -11,8 +11,7 @@ import { themeAccent, useTheme, type ThemePref } from '../../state/theme'
 import { AgentSettings } from '../../agent/ui/AgentSettings'
 import { Button } from '../primitives/Button'
 import { Choice } from '../primitives/Choice'
-import { ToolButton } from '../primitives/ToolButton'
-import { GearIcon } from '../primitives/hudIcons'
+import { SettingsTool } from './SettingsTool'
 import styles from './Settings.module.css'
 
 const MOTION: readonly MotionPref[] = ['full', 'reduced', 'system']
@@ -99,17 +98,7 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
           {who.trim()[0]?.toUpperCase()}
         </span>
       </button>
-      <ToolButton
-        className={styles.trigger}
-        pressed={open}
-        badge={badge}
-        badgeTone="cyan"
-        onClick={() => show()}
-        aria-haspopup="dialog"
-        label={`Settings${badge > 0 ? `, ${badge} waiting` : ''}`}
-      >
-        <GearIcon />
-      </ToolButton>
+      <SettingsTool open={open} waiting={badge} onClick={() => show()} />
       <dialog
         ref={dialog}
         className={styles.dialog}

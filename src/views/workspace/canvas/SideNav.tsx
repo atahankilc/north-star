@@ -10,7 +10,7 @@ import { addCard, CARD_TYPES, type CardType } from '../../../data/cards'
 import { cardsOn } from '../../../data/places'
 import { addLabel, CANVAS, PARA_W, STICKY_H, STICKY_W, TITLE_W } from '../../../data/labels'
 import { snap } from '../../../data/grid'
-import { canvasCenter, fitHere, setEditing, useCanvasView } from '../../../state/canvasView'
+import { canvasCenter, setEditing, useCanvasView } from '../../../state/canvasView'
 import { Menu } from '../../../ui/patterns/Menu'
 import { learn } from '../../../onboarding/learn'
 import { GuideTool } from '../../../onboarding/GuideTool'
@@ -24,11 +24,10 @@ import { shownPieces } from './shownBox'
 import { useAuthor } from '../text/TextItems'
 import { TYPE_ACCENT } from '../plane/PlaneCards'
 import { TasksTool } from '../deck/TasksTool'
-import { openFinder, useFind } from '../find/find'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import { useWs } from './context'
-import { ToolButton } from '../../../ui/primitives/ToolButton'
-import { CompassIcon, FitIcon } from '../../../ui/primitives/hudIcons'
+import { FitTool } from './FitTool'
+import { FinderTool } from './FinderTool'
 
 // `focused`: the piece in focus, if any; `editor`: whether you may make things (viewers make nothing, D-098).
 export function SideNav({ wid, focused, editor }: { wid: string; focused?: WithId<Piece>; editor: boolean }) {
@@ -38,36 +37,8 @@ export function SideNav({ wid, focused, editor }: { wid: string; focused?: WithI
       {editor && !(focused && isBare(focused)) && <AddToCanvas wid={wid} plane={focused?.id ?? null} />}
       <FitTool plane={focused?.id ?? null} />
       <FinderTool />
-      <TasksTool />
-    </>
-  )
-}
-
-// The side nav's fit (D-186), under the `+`; the same as `0` (CanvasView's fit): everything on the canvas in view, or in
-// focus the piece's contents centred and fitted, whatever kind it is.
-function FitTool({ plane }: { plane: string | null }) {
-  const focused = plane !== null
-  return (
-    <ToolButton
-      label={focused ? 'Fit the plane to the screen' : 'Fit everything on the canvas'}
-      title={focused ? 'fit the plane (0)' : 'fit everything (0)'}
-      onClick={fitHere}
-    >
-      <FitIcon />
-    </ToolButton>
-  )
-}
-
-// The side nav's compass, under fit: the finder (D-236), which is go to too (D-196): the places with nothing typed (↓),
-// anything in the workspace once something is. ⌘F does the same. Under it the guide's `?` (D-315).
-function FinderTool() {
-  const open = useFind((s) => s.open)
-  return (
-    <>
-      <ToolButton pressed={open} label="Find and go to" title="find, go to (⌘F)" onClick={openFinder} data-learn="finder">
-        <CompassIcon />
-      </ToolButton>
       <GuideTool />
+      <TasksTool />
     </>
   )
 }

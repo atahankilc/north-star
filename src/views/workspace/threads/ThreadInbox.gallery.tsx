@@ -1,8 +1,7 @@
 import { example } from '../../../gallery/example'
-import { onCanvas, P, PAZAR } from '../../../gallery/canvas'
-import { threadMessages, THREADS, withThreads } from '../../../gallery/panels'
+import { onCanvas, P } from '../../../gallery/canvas'
+import { threadMessages, withThreads } from '../../../gallery/panels'
 import { toggleInbox } from './Threads'
-import { ThreadsTool } from './ThreadInbox'
 
 // The list open, then one of its filters pressed as a person would (`[new 3]`, `[mentions 1]`, `[resolved 1]`).
 const list = (filter?: string) => async () => {
@@ -16,7 +15,6 @@ const list = (filter?: string) => async () => {
 export default example({
   name: 'Threads panel',
   place: 'panels/comments',
-  also: ['hud/corner'],
   file: 'src/views/workspace/threads/ThreadInbox.tsx',
   note: 'every conversation in the workspace (D-197): the list and a thread, two halves',
   states: {
@@ -25,7 +23,5 @@ export default example({
     mentions: onCanvas({ only: [P.lunch, P.product], change: withThreads, then: list('mentions') }),
     'inside a plane': onCanvas({ only: [P.lunch, P.product], focus: P.lunch, change: withThreads, then: () => (threadMessages(), toggleInbox(true, P.lunch)) }),
     empty: onCanvas({ only: [P.lunch], then: list() }),
-    button: { fixture: withThreads(PAZAR), render: () => <ThreadsTool wid={PAZAR.wid} threads={THREADS} />, setup: () => threadMessages(), note: 'the corner’s button: magenta with new ones, `@` with a mention' },
-    'button: nothing new': { fixture: PAZAR, render: () => <ThreadsTool wid={PAZAR.wid} threads={[]} /> },
   },
 })

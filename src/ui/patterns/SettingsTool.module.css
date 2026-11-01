@@ -1,0 +1,10 @@
+/* The settings gear (SettingsTool.tsx): it turns on hover and while settings are open. */
+.gear > svg {
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.gear:hover > svg,
+.gear:focus-visible > svg,
+.gear[data-on='true'] > svg {
+  transform: rotate(45deg);
+}

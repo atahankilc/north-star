@@ -6513,7 +6513,10 @@ that read like a button kind was a feature wrapping one of them, and is now name
 - AsciiButton deleted (it was `Button size="md"`; commit e1b86de).
 - The HUD's features that wrap ToolButton are `*Tool`: `FitTool`, `FinderTool` (SideNav.tsx), `TasksTool`
   (deck/TasksTool.tsx, was MyTasks.tsx's TasksButton), `GuideTool` (onboarding/GuideTool.tsx), `ThreadsTool`
-  (ThreadInbox.tsx, was InboxButton). `SettingsButton` keeps its name: it is the gear, your square and the modal.
+  (threads/ThreadsTool.tsx, was ThreadInbox.tsx's InboxButton), `SettingsTool` (patterns/SettingsTool.tsx, the gear,
+  out of SettingsButton, which keeps your square and the modal). Each in its own file with its own gallery page (the
+  user: "neden tasks ve guide toollarını galleryde görürken diğerlerini göremiyorum?"); the `+` stays in SideNav.tsx
+  (the Side nav's gallery shows it).
 - One icon set: every HUD tool's icon is in `src/ui/primitives/hudIcons.tsx`, one 18-unit grid, 1.5 strokes, square
   ends; ToolButton sizes them (`--tool-icon` 18 px), no icon sets its own size. Before: 18, 20 and 16 units, strokes
   1.2–1.6, the gear a text glyph `⚙` (smaller).

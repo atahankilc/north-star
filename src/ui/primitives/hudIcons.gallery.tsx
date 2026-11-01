@@ -14,7 +14,7 @@ const SET = [
 
 export default example({
   name: 'hudIcons',
-  place: 'hud/side-nav',
+  place: 'hud/navigation',
   also: ['hud/corner'],
   file: 'src/ui/primitives/hudIcons.tsx',
   note: 'the HUD’s icons (D-343): one 18-unit grid, 1.5 strokes, sized by ToolButton; top to bottom as on the screen',
