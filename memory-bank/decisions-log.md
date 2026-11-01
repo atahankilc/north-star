@@ -6303,3 +6303,15 @@ names the preview, why or never, no "yes in this chat"), stub evals 114 tasks 0 
 **Not yet:** a real-model run of edit-10 and edit-14; the dev stub still picks its scripts by English words (a scripted
 stand-in for a model in dev, never the app's logic).
 **Spec:** docs/specs/agent.md §7.1; docs/specs/agent-bugs.md item 17.
+
+### D-334 · 2026-11-01 · Accepted (Q-032; the user: "do the 2 and 3")
+The kit's Button and Label rules are written in `:where()`, so they weigh nothing: a caller's own class (a padding, a
+colour, a size, by `className` or `composes`) always wins. Why: files that `composes` Button.module.css or
+Label.module.css bring the kit's rules again (Label's was in 4 CSS files of the live build), after the caller's CSS,
+so a caller's colour could lose (Settings' section heads asked `--fg-muted` and showed `--fg-dim`). Inside each kit
+file the rules go general → specific, so their order still decides between them. Alternatives: outweighing the kit
+at every caller (`.x[data-icon]`, kept where already written, harmless) or removing every `composes` of kit CSS (the
+CSS-only callers need it). Verified: build keeps `:where`; no screenshots (the user: no pixel checks). Labels whose
+own colour or size now shows as written: wherever a caller set one (e.g. Settings' section heads, `--fg-muted`).
+Not yet: the other kit CSS files (Field, Chip, Tabs…) are not composed elsewhere, so they don't need it yet.
+

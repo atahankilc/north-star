@@ -1,8 +1,8 @@
 /* The one button (src/ui/Button.tsx, D-326): `md` the page's `[ LABEL ]` (docs/DESIGN.md §6), its accent wiping in on
    hover; `sm` the small `[verb]`. AsciiButton.module.css's `small` and `button` compose these, for the CSS that still
-   composes them. Because other files compose this one, in dev its rules can be injected again after a caller's CSS:
-   a caller's class that changes a Button's padding or colour must outweigh it (`.x[data-icon]`, `.row .x`), not tie. */
-.md {
+   composes them. Every rule is in `:where()` (D-334): it weighs nothing, so a caller's class (a padding, a colour) always
+   wins, even though files composing this one bring these rules again after the caller's CSS. */
+:where(.md) {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -21,7 +21,7 @@
 }
 
 /* Fill wipes in from the left on hover. */
-.md::before {
+:where(.md)::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -32,42 +32,42 @@
   transition: transform var(--dur-med) var(--ease-out);
 }
 
-.md:hover::before,
-.md:focus-visible::before {
+:where(.md:hover)::before,
+:where(.md:focus-visible)::before {
   transform: scaleX(1);
 }
 
-.md:hover,
-.md:focus-visible {
+:where(.md:hover),
+:where(.md:focus-visible) {
   color: var(--on-accent);
 }
 
-.bracket {
+:where(.bracket) {
   color: var(--accent);
   transition: color var(--dur-fast) var(--ease-out);
 }
 
-.md:hover .bracket,
-.md:focus-visible .bracket {
+:where(.md:hover .bracket),
+:where(.md:focus-visible .bracket) {
   color: var(--on-accent);
 }
 
-.md:disabled {
+:where(.md:disabled) {
   opacity: var(--o-faint);
   cursor: not-allowed;
 }
 
-.md:disabled::before {
+:where(.md:disabled)::before {
   display: none;
 }
 
-.label {
+:where(.label) {
   white-space: nowrap;
 }
 
 /* `sm`: the small `[verb]` for row and inline actions (D-093): lowercase, dim, faint brackets. `data-tone="primary"`
    is cyan, `"danger"` turns magenta on hover, `"main"` is a row's strong one; pressed (a switch on) is cyan. */
-.sm {
+:where(.sm) {
   padding: var(--space-half) var(--space-1);
   border: 0;
   background: none;
@@ -83,56 +83,56 @@
   transition: color var(--dur-fast) var(--ease-out);
 }
 
-.sm::before {
+:where(.sm)::before {
   content: '[';
   color: var(--line-hover);
 }
 
-.sm::after {
+:where(.sm)::after {
   content: ']';
   color: var(--line-hover);
 }
 
-.sm:hover,
-.sm:focus-visible {
+:where(.sm:hover),
+:where(.sm:focus-visible) {
   color: var(--fg-strong);
 }
 
-.sm[data-tone='primary'] {
+:where(.sm[data-tone='primary']) {
   color: var(--accent-cyan);
 }
 
-.sm[data-tone='danger']:hover,
-.sm[data-tone='danger']:focus-visible {
+:where(.sm[data-tone='danger']:hover),
+:where(.sm[data-tone='danger']:focus-visible) {
   color: var(--accent-magenta);
 }
 
-.sm:disabled {
+:where(.sm:disabled) {
   opacity: var(--o-faint);
   cursor: not-allowed;
 }
 
-.sm[data-tone='main'] {
+:where(.sm[data-tone='main']) {
   color: var(--fg);
 }
 
-.sm[data-tone='main']:hover,
-.sm[data-tone='main']:focus-visible {
+:where(.sm[data-tone='main']:hover),
+:where(.sm[data-tone='main']:focus-visible) {
   color: var(--fg-strong);
 }
 
-.sm[aria-pressed='true'] {
+:where(.sm[aria-pressed='true']) {
   color: var(--accent-cyan);
 }
 
 /* `icon`: a glyph alone, no brackets. */
-.sm[data-icon]::before,
-.sm[data-icon]::after {
+:where(.sm[data-icon])::before,
+:where(.sm[data-icon])::after {
   content: none;
 }
 
 /* `link`: a name that goes somewhere, in the text around it (no brackets, see `icon`). */
-.sm[data-link] {
+:where(.sm[data-link]) {
   padding: 0;
   color: inherit;
   font-family: inherit;
@@ -141,8 +141,8 @@
   white-space: normal;
 }
 
-.sm[data-link]:hover,
-.sm[data-link]:focus-visible {
+:where(.sm[data-link]:hover),
+:where(.sm[data-link]:focus-visible) {
   color: var(--fg-strong);
   text-decoration: underline;
   text-decoration-color: var(--fg-faint);
@@ -150,12 +150,12 @@
 }
 
 /* With its key after it, quieter than the action (a dock's `esc`). */
-.withKey {
+:where(.withKey) {
   display: inline-flex;
   align-items: baseline;
   gap: var(--space-1);
 }
 
-.key {
+:where(.key) {
   color: var(--fg-faint);
 }

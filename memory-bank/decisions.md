@@ -45,7 +45,7 @@ feature comes back as a piece, and check them with the user then.
   folder. Motion's numbers and the tween in src/ui/motionTokens.ts and motion.ts (held to tokens.css by a test), card
   colours in `--type-*` and src/ui/cardTone.ts; one Spinner, the small entrances in src/ui/Enter.module.css, one
   cell-path builder. The kit in src/ui: Button (`sm`, `md`, `icon`, `link`), ToolButton (the HUD's icon tools), Steps (a wizard's tabs), Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge. The gallery's `[tree]` shows what each
-  component draws and where it's used. Patterns: Options, Window, WizardShell. `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
+  component draws and where it's used. Patterns: Options, Window, WizardShell. Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
   from coming back. Everything but the agent's column is on it (13 left, all src/agent/ui); next: the agent's column, Q-032, folders.
 - ESLint with only `eslint-plugin-react-hooks`, as warnings: `npm run lint` counts them, CI never fails on them (D-320).
 
