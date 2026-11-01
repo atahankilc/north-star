@@ -345,12 +345,15 @@ export async function main(argv: string[], o: { backend?: Backend } = {}): Promi
   const tasks = selectTasks(a)
   if (!tasks.length) throw new Error('no task matches')
   if (real) setJudge(real.judge)
+  // Pictures are part of what's measured (`look`, the picture judge, D-327): say loudly when none can be drawn.
+  const pictures = !!(await nodeRender('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"/>', { w: 4, h: 4 }))
+  if (!pictures) console.warn('WARNING: no picture can be drawn (resvg did not load): look answers in words only and picture judges are skipped.')
   const results = await runTasks(tasks, { repeat: a.repeat, model: real ? () => real.make() : a.wrong ? wrongModel : referenceModel, ...(a.emulator && o.backend ? { backend: o.backend } : {}) })
   if (real) setJudge(null)
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   const dir = a.out ? resolve(a.out) : join(ROOT, 'evals/results', stamp)
   mkdirSync(dir, { recursive: true })
-  const { summary } = writeReport(dir, results, { model: `${real ? `${real.name} (judge ${real.judgeName})` : a.wrong ? 'stub (wrong)' : 'stub'}${a.emulator ? ' · emulator' : ''}`, repeat: a.repeat, argv })
+  const { summary } = writeReport(dir, results, { model: `${real ? `${real.name} (judge ${real.judgeName})` : a.wrong ? 'stub (wrong)' : 'stub'}${a.emulator ? ' · emulator' : ''}`, repeat: a.repeat, argv, pictures })
   console.log(summary)
   console.log(`\nreport: ${join(dir, 'report.md')}`)
   const failed = results.filter((r) => r.attempts.some((x) => x.verdict === 'fail')).length

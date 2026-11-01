@@ -91,6 +91,23 @@ describe('create_card finds room clear of everything', () => {
     expect(Math.hypot(c.x - 300, c.y - 225)).toBeLessThan(400)
   })
 
+  it('near a heading: under it, clear of everything; a text elsewhere, or a sticky, is refused', () => {
+    const d = fixtureDocs()
+    d.labels.push({ id: 'lablHead000000000009', pieceId: ID.planeA, text: 'Next experiments', kind: 'heading', x: 600, y: 600, createdAt: T, updatedAt: T })
+    const ctx = ctxOf(wsFrom(d))
+    const p = createCard(ctx, { type: 'idea', plane: ID.planeA, title: 'Saturday bread club', where: { near: 'lablHead000000000009' } })
+    const ws = run(ctx, [p])
+    expect(clearOfAll(ws, ID.planeA, p.ids.$new)).toEqual([])
+    const c = ws.cards.find((x) => x.id === p.ids.$new)!
+    const h = labelBox(ws.labels.find((l) => l.id === 'lablHead000000000009')!)
+    // Under the heading, close by.
+    expect(c.y).toBeGreaterThanOrEqual(h.y + h.h)
+    expect(Math.hypot(c.x - h.x, c.y - (h.y + h.h))).toBeLessThan(200)
+    expect(() => createCard(ctx, { type: 'idea', plane: ID.planeB, where: { near: 'lablHead000000000009' } })).toThrow(/isn't a card, heading or paragraph on plane/)
+    d.labels.push({ id: 'lablStik000000000009', pieceId: ID.planeA, text: 'Ask about Sundays', kind: 'sticky', x: 900, y: 600, createdAt: T, updatedAt: T })
+    expect(() => createCard(ctxOf(wsFrom(d)), { type: 'idea', plane: ID.planeA, where: { near: 'lablStik000000000009' } })).toThrow(/isn't a card, heading or paragraph/)
+  })
+
   it('its parts land clear too', () => {
     const ctx = ctxOf(crowded())
     const p = createCard(ctx, { type: 'feature', plane: ID.planeA, title: 'Pickup', parts: ['Slot', 'Reminder', 'Receipt'] })

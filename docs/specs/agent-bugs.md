@@ -63,6 +63,8 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 29 | small jobs split into steps the evals never ran  | Plumbing     | blocker  | code (job, evals)| fixed  |
 | 30 | ids written as Markdown links                    | Plumbing     | mid      | code             | fixed  |
 | 31 | an arrange of new cards is its own preview item  | Guards       | low      | code (changeset) | open   |
+| 32 | a section round new cards cuts what's beside it  | Layout       | mid      | code (ops)       | open   |
+| 33 | the evals' own errors, found by reading every failure | Plumbing | blocker  | evals            | fixed  |
 
 ## Order
 
@@ -261,6 +263,29 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     2026-11-01:* read/names.ts' `plainCites` makes them plain ids before the chat draws them and before `withNames`
     (documents too); the judge reads the answer as the chat shows it (`withNames`).
 
+33. **The evals' own errors, found by reading every failure of the third run, not only the 0/3 ones** (2026-11-01; the
+    user: "are we sure now? we did the same a moment ago and find bugs again"). The stub plays only each task's happy
+    path, so paths a real model takes first meet the harness in a paid run. What reading all of them found:
+    - **No pictures, ever, in `npm run eval`:** evals/cli.mjs loads through Vite's module runner, which can't load
+      resvg's native binding, so `look` answered in words in all 37 transcripts that called it and every picture
+      judge was skipped (restructure-04 could never pass). render.ts now loads it with Node's require; a run that
+      can't draw says so on the console and at the report's head.
+    - **The judge never saw what the agent read:** find-09's "Most stalls run on cash and WhatsApp" is in the report
+      the agent quoted, yet judged "unsupported". The judge now gets the run's read results (≤ 24k chars), and is told
+      the answer was written before the accept ("waiting in the preview" is true; build-02, lean-canvas-04).
+    - **Graders stricter than the guides or the decisions:** `noOverlaps` flagged "far outside the plane" (nothing is
+      outside a plane, D-186/D-187); `noDeletes` counted a card taken off one plane while on another (a move, D-327);
+      compare-01 wanted Roadmap where `/compare` with no plane means every feature (the guide); prioritize-03 refused
+      the estimates the guide asks for; sort-stickies' open question "Who owns the stall data?" had to be an idea
+      (by meaning, an idea or a problem; a section per type); find-04 missed "22 solution ideas" / "6 pains",
+      dedupe-03 "no clear duplicate", build-08 a Berlin competitor typed `Berlin`.
+    - **Code it showed (not the harness):** create_card's `where: { near }` took only a card, so cards for a heading
+      landed at the first clear spot (build-06's 262–512 px): now under a heading or paragraph (a sticky stays
+      refused: 32). The arrange into a fresh section refused (sort-stickies-03 then proposed nothing): 32.
+    Replaying the run's 348 transcripts on the fixed graders (judges left out): 249 → 262 attempts with no failure.
+    What's left is the model's (19, 20, 23, 21's swot and compare cells, dedupe-01's merge, pitch-02's sentence) and
+    31, 32.
+
 ## Preview: what the person sees before applying
 
 7.  **On the canvas, a preview of changes inside a piece spills out of it.** With the person on the canvas (not in the
@@ -318,6 +343,14 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     took the nearest clear spot, back across the heading. It now keeps an explicit side (only that way or along it,
     straight on first). And `view` takes a canvas (its text and pieces in reading order, sections holding theirs);
     it refused one before. edit-16 fails without the fix (all four at y −650, the heading's bottom −215).
+
+32. **A section drawn round new cards cuts what's beside it; arranging into it is refused.** create_text `section`
+    `around` pads the cards (2 grid steps, 3 on top for the name) and checks nothing outside, so round a card put next
+    to a sticky it cuts the sticky (sort-stickies-01 once create_card could sit under a sticky, so that stays refused);
+    an arrange `in_section` of the card the section was just drawn round grows it and is refused as covering things
+    outside (sort-stickies-03: the model then proposed nothing). Fix (code, ops): a section round things lands clear
+    (it and what it holds moved together to the nearest clear spot, a rewrite, not a refusal), and an arrange of what
+    a section already holds lays it out inside it without growing past its neighbours.
 
 ## Judgment: prompt and skill methods, measured on the evals
 

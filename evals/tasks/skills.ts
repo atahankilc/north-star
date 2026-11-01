@@ -34,6 +34,8 @@ const withLog = (ws: AgentWs): AgentWs => ({
 const withNotes = (line: string) => (ws: AgentWs): AgentWs => project(ws, [updateNotes({ ws, actor: { uid: 'u-ayse', role: 'owner', name: 'Ayşe Demir' }, now: NOW - 24 * H, newId: () => 'unused' }, { add: [line] })]) as AgentWs
 
 // A near-duplicate of c16 (in the run's map it is c55: the short ids after it move up by one) "Bakers carry heavy bags home on foot" on Bets, with its own evidence and a task on Research.
+// "Who owns the stall data?" is an open question: by meaning (the guide) an idea or a problem; each type its section.
+const IDEA_OR_PROBLEM = (v: unknown) => v === 'idea' || v === 'problem'
 const DUP = 'dupe0000000000000001'
 const withDup = (ws: AgentWs): AgentWs => {
   const bets = R('p3')
@@ -59,6 +61,12 @@ const touchesOnly = (...cards: string[]): ChangeTest => (id, c, r) => {
   const item = c.was ?? [...r.end.cards, ...r.end.edges, ...r.end.places, ...r.end.pieces, ...r.end.cells, ...r.end.evidence, ...r.end.tasks, ...r.end.comparisons].find((x) => (x as { id?: string }).id === id)
   const json = JSON.stringify(item ?? {})
   return real.some((x) => json.includes(x))
+}
+// /prioritize estimates what's missing (its guide): a feature or package whose impact or effort was empty may get them,
+// and nothing else of it changes.
+const estimated: ChangeTest = (id, c, r) => {
+  const was = r.start.cards.find((x) => x.id === id)
+  return c.change === 'changed' && !!was && (was.type === 'feature' || was.type === 'package') && (c.fields ?? []).every((f) => (f === 'impact' && !was.impact) || (f === 'effort' && !was.effort) || f === 'updatedAt')
 }
 // Impact/effort written as the cards' facts allow, not every gap filled as the best case (high impact, small effort).
 const notAllBestCase = (cards: string[]): Grader => ({
@@ -510,12 +518,13 @@ export const SKILL_TASKS: Task[] = [
     graders: [
       noWritesInTurn(1),
       made('piece', { kind: 'matrix' }),
-      field(MATRIX, 'matrix.rows.plane', R('p9'), ['piece']),
+      // No plane named: every feature (the /compare guide) or Roadmap's; the documented matches either way.
+      field(MATRIX, 'matrix.rows.plane', (v: unknown) => v === undefined || v === R('p9'), ['piece']),
       field(MATRIX, 'matrix.cols.type', 'competitor', ['piece']),
       cell(MATRIX, 'Bread pickup slots', 'Tarlamate', 'full'),
       cell(MATRIX, 'Market maps chat', 'Bazaarmate', 'full'),
       cell(MATRIX, 'Cheese map', 'Freshgo', null),
-      onlyChanged({ add: { pieces: 1, cells: 7 } }),
+      onlyChanged({ add: { pieces: 1, cells: { min: 7, max: 10 } } }),
       undoRestores(),
     ],
     reference: [
@@ -712,7 +721,7 @@ export const SKILL_TASKS: Task[] = [
     setup: withoutPriorities,
     ask: '/prioritize',
     followUps: ['go'],
-    graders: [noWritesInTurn(1), made('piece', { kind: 'deck' }), field(DECK, 'kanban.holds', 'cards', ['piece']), field(DECK, 'kanban.colField', 'effort', ['piece']), field(DECK, 'kanban.rowField', 'impact', ['piece']), onlyChanged({ add: { pieces: 1 } }), undoRestores()],
+    graders: [noWritesInTurn(1), made('piece', { kind: 'deck' }), field(DECK, 'kanban.holds', 'cards', ['piece']), field(DECK, 'kanban.colField', 'effort', ['piece']), field(DECK, 'kanban.rowField', 'impact', ['piece']), onlyChanged({ allow: [estimated], add: { pieces: 1 } }), undoRestores()],
     reference: [
       calls(['query', { kind: 'piece', type: 'deck' }], ['query', { kind: 'card', type: 'feature', limit: 5 }]),
       answer('Plan: there is no priorities deck yet.\n1. Make one on k2 Build (template priorities: features and packages, effort × impact, corners named).\n2. Then explain the order from what is filled in.\nSay go, or tell me what to change in the plan.'),
@@ -930,12 +939,12 @@ export const SKILL_TASKS: Task[] = [
     followUps: ['go'],
     graders: [
       noWritesInTurn(1),
-      exists('card', { type: 'idea', title: 'Who owns the stall data?', plane: 'Bets' }),
+      exists('card', { type: IDEA_OR_PROBLEM, title: 'Who owns the stall data?', plane: 'Bets' }),
       exists('card', { type: 'idea', title: 'Maybe start with bread', plane: 'Bets' }),
-      made('text', { kind: 'section', plane: 'Bets' }),
+      count('text', { kind: 'section', plane: 'Bets' }, { min: 1, max: 2 }, { delta: true }),
       exists('text', { id: R('x13') }),
       exists('text', { id: R('x14') }),
-      onlyChanged({ add: { ideas: 2, labels: 1 } }),
+      onlyChanged({ add: { ideas: { min: 1, max: 2 }, problems: { min: 0, max: 1 }, labels: { min: 1, max: 2 } } }),
       noOverlaps('Bets'),
       undoRestores(),
     ],
@@ -970,7 +979,7 @@ export const SKILL_TASKS: Task[] = [
     fixture: 'medium',
     ask: '/sort-stickies Interviews',
     followUps: ['go'],
-    graders: [noWritesInTurn(1), exists('card', { type: 'idea', title: 'Who owns the stall data?', plane: 'Interviews' }), absent('card', { titleHas: 'Rain = no market' }), cites([R('c92')]), onlyChanged({ add: { ideas: 1, labels: { min: 0, max: 1 } } }), undoRestores()],
+    graders: [noWritesInTurn(1), exists('card', { type: IDEA_OR_PROBLEM, title: 'Who owns the stall data?', plane: 'Interviews' }), absent('card', { titleHas: 'Rain = no market' }), cites([R('c92')]), onlyChanged({ add: { ideas: { min: 0, max: 1 }, problems: { min: 0, max: 1 }, labels: { min: 0, max: 1 } } }), undoRestores()],
     reference: [
       calls(['query', { kind: 'text', type: 'sticky', plane: 'p4' }], ['search', { query: 'rain market', limit: 8 }]),
       answer('Plan for p4 Interviews:\n1. x26 "Who owns the stall data?" becomes an idea.\n2. x27 "Rain = no market?" repeats c92 "Stall owners miss the market when it rains", already here: no new card.\nSay go, or tell me what to change in the plan.'),
@@ -1130,7 +1139,7 @@ export const SKILL_TASKS: Task[] = [
     fixture: 'medium',
     ask: '/dedupe competitors',
     autoGo: false,
-    graders: [noWriteAttempts(), answerIncludes([/\bno (near-)?duplicates?\b|\bnone\b/i])],
+    graders: [noWriteAttempts(), answerIncludes([/\bno\b[^.\n]{0,30}\bduplicates?\b|\bnone\b/i])],
     reference: [
       call('query', { kind: 'card', type: 'competitor', limit: 20 }),
       answer('No near-duplicates among the 14 competitors: c37 Bazaarcart, c38 Bazaarmate and c44 Bazaarrun share a start but are different companies (other regions, other features). Nothing to merge.'),

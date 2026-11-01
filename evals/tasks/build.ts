@@ -252,7 +252,7 @@ export const BUILD: Task[] = [
     fixture: 'medium',
     ask: "Add three Berlin competitors to Rivals (Kiezkorb, Marktschwärmer, Frischepost), each competing on 'Stall owners can't take card payments'.",
     graders: [
-      count('card', { type: 'competitor', plane: 'Rivals', regions: { has: 'Germany' } }, 3, { delta: true }),
+      count('card', { type: 'competitor', plane: 'Rivals', regions: (v: unknown) => Array.isArray(v) && v.some((r) => /^(germany|berlin)$/i.test(String(r))) }, 3, { delta: true }),
       linked('Kiezkorb', "Stall owners can't take card payments", 'competes-with'),
       linked('Marktschwärmer', "Stall owners can't take card payments", 'competes-with'),
       linked('Frischepost', "Stall owners can't take card payments", 'competes-with'),

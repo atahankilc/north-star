@@ -47,7 +47,7 @@ export function summarise(results: TaskResult[], repeat: number): string {
   return table([['all', rates(results)], ...by((t) => `set ${t.set}`), ...by((t) => `group ${t.group}`)], repeat)
 }
 
-export function writeReport(dir: string, results: TaskResult[], meta: { model: string; repeat: number; argv: string[] }): { summary: string } {
+export function writeReport(dir: string, results: TaskResult[], meta: { model: string; repeat: number; argv: string[]; pictures?: boolean }): { summary: string } {
   mkdirSync(join(dir, 'transcripts'), { recursive: true })
   const summary = summarise(results, meta.repeat)
   const t0 = results[0]?.attempts[0]?.transcript
@@ -55,6 +55,7 @@ export function writeReport(dir: string, results: TaskResult[], meta: { model: s
     `# Eval report`,
     '',
     `Model: ${meta.model}${priced(meta.model.split(' ')[0]) ? '' : ' (no price known: cost shows 0)'} · repeat ${meta.repeat} · ${new Date().toISOString()} · \`npm run eval -- ${meta.argv.join(' ')}\` · tools ${t0?.toolsHash ?? '-'}`,
+    ...(meta.pictures === false ? ['', '**No pictures in this run** (resvg did not load): `look` answered in words only, picture judges were skipped.'] : []),
     '',
     summary,
     '',

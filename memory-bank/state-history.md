@@ -1169,3 +1169,10 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   pixel-equal where stable (the rest moved between runs). Label in `:where()` tried and undone (Q-032). vitest: 2
   failures in evals/ops from the agent session's uncommitted work, not this.
 
+- Every failure of the third run read one by one (agent-bugs 33): render.ts loads resvg with Node's require (under
+  Vite's runner `look` never had a picture and picture judges were skipped; a run without pictures now says so); the
+  judge gets the run's read results and knows the answer came before the accept; noOverlaps grades no "outside"
+  (D-186/D-187), noDeletes skips a card taken off one of its planes (D-327); compare-01, prioritize-03, sort-stickies
+  01/02, find-04, dedupe-03, build-08 graded as their guides say; create_card `near` a heading or paragraph (bug 32 for
+  a sticky). Verified: tsc (app, evals), vitest 964, stub evals 116 tasks 0 failed, `--wrong` 116 failed, the 348
+  transcripts replayed on the new graders (249 → 262 with no non-judge failure; the rest diverge where ops changed).

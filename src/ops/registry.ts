@@ -239,7 +239,7 @@ export const OPS: OpDef[] = [
         title: s('left out with from_text: the text\'s own words'),
         from_text: s('the text (a sticky note, a paragraph) this card is made from: its title keeps those words'),
         fields: cardFields,
-        where: obj({ near: s('right of this card') }, [], 'left out: the first clear spot on the plane'),
+        where: obj({ near: s('right of this card, or under this heading or paragraph, on the plane') }, [], 'left out: the first clear spot on the plane'),
         links: { type: 'array', items: obj({ to: s('a card'), kind: kindArg('as drawn when left out'), label: s(), reverse: b('the link points at the new card') }, ['to']) },
         parts: { type: 'array', description: 'parts: new cards of its type, each part of it', items: { anyOf: [s('its title'), obj({ title: s(), fields: cardFields }, ['title'])] } },
         evidence: { type: 'array', items: obj(evidenceArgs, ['kind', 'text', 'stance']) },

@@ -9,7 +9,7 @@ import { isOnPlane, CARD, type Card } from '../src/model/cards'
 import { kindOf, type Label } from '../src/model/labels'
 import { kindOfPiece } from '../src/model/pieces'
 import { labelBox } from '../src/model/labelBox'
-import { hit, overlaps, planeBoxes, wholly } from '../src/model/overlaps'
+import { hit, overlaps, planeBoxes } from '../src/model/overlaps'
 import { entriesOf, readCell, type MatrixSetup } from '../src/model/matrix'
 import { colName, type TableSetup } from '../src/model/table'
 import { statusOf } from '../src/model/source'
@@ -248,7 +248,9 @@ export const noWrites = (): Grader => ({
 export const noDeletes = (): Grader => ({
   name: 'noDeletes',
   grade: (r) => {
-    const gone = [...diff(r.start, r.end)].filter(([, c]) => c.change === 'removed')
+    // A card taken off one plane while it stays on another moved (D-281, D-327): its place going isn't a delete.
+    const onAPlane = (cardId: string) => r.end.cards.some((c) => c.id === cardId)
+    const gone = [...diff(r.start, r.end)].filter(([id, c]) => c.change === 'removed' && !(c.kind === 'places' && onAPlane(id.split('_').slice(1).join('_'))))
     return ok(gone.length === 0, gone.length ? `${gone.length} removed: ${gone.slice(0, 5).map(([id, c]) => `${c.kind}/${id}`).join(', ')}` : 'nothing removed')
   },
 })
@@ -289,8 +291,8 @@ const around = (bs: Box[]): Box => {
 }
 
 // No two things on the plane overlap where at least one of them was made or moved by the run (what was already there
-// may overlap: the fixture's own layout isn't graded); a section only when cut through. And nothing made or moved lands
-// far outside the plane (more than its own width or height past an edge).
+// may overlap: the fixture's own layout isn't graded); a section only when cut through. Nothing is "outside" a plane:
+// the app fits its content into its window (D-186, D-187), so where on the plane things land isn't graded here.
 export const noOverlaps = (plane: Ref): Grader => ({
   name: `noOverlaps(${showRef(plane)})`,
   grade: (r) => {
@@ -300,8 +302,6 @@ export const noOverlaps = (plane: Ref): Grader => ({
     const boxes = planeBoxes(r.end, id)
     const { touched, found } = overlaps(planeBoxes(r.start, id), boxes)
     const bad = found.map((o) => (o.cuts ? `${o.a} cuts ${o.b}` : `${o.a} × ${o.b}`))
-    const far = { x: -p.w, y: -p.h, w: 3 * p.w, h: 3 * p.h }
-    for (const b of boxes) if (touched.has(b.id) && !wholly(b, far)) bad.push(`${b.id} far outside the plane (${b.x}, ${b.y})`)
     return ok(bad.length === 0, bad.length ? `${bad.length} problems: ${bad.slice(0, 4).join(', ')}` : `${touched.size} made or moved, none overlapping`)
   },
 })
@@ -724,6 +724,21 @@ export const undoRestores = (): Grader => ({
   },
 })
 
+// The read tools' results of the run, newest last, cut to fit a judge's prompt.
+const READS = new Set(['search', 'query', 'get', 'view', 'neighbours', 'read_document', 'whats_new', 'where_am_i', 'structure'])
+function readsOf(r: RunResult, max = 24000): string {
+  const out: string[] = []
+  let n = 0
+  for (const x of r.transcript.turns.flatMap((t) => t.steps.flatMap((s) => s.results))) {
+    if (!READS.has(x.name) || !x.ok) continue
+    const t = `### ${x.name}\n${x.text}`
+    if (n + t.length > max) break
+    out.push(t)
+    n += t.length
+  }
+  return out.join('\n\n')
+}
+
 // The answer as the chat shows it: Markdown-linked ids plain, every short id followed by its name (agent-bugs 2), read
 // against the end state. Graders that check ids read the raw answer; the judge reads this.
 const shownAnswer = (r: RunResult) => withNames(r.answer, r.end, r.ids)
@@ -754,8 +769,11 @@ export const judge = (rubric: string): Grader => ({
       })
     // How the app works, so true statements about it aren't read as made up: the agent only proposes, the person accepts.
     const app =
-      'How the app works: the agent never writes directly; it proposes changes that open as a preview the person accepts (here accepted, so they are listed below), so "waiting in the preview" is true. A new document is private until shared. Short ids (c12 a card, d5 a document, x3 a text, t4 a task) are how the agent names things; an answer may point to the document it wrote by its id, and the document\'s own text (below) is where its claims and card citations are.'
-    const context = [app, lines.length ? `What the run changed:\n${lines.join('\n')}` : 'The run changed nothing.', ...docs].join('\n\n')
+      'How the app works: the agent never writes directly; it proposes changes that open as a preview the person accepts. The answer was written before the person accepted, so "waiting in the preview" or "awaiting your approval" is true, never a false claim (the accepted changes are listed below). A new document is private until shared. Short ids (c12 a card, d5 a document, x3 a text, t4 a task) are how the agent names things; an answer may point to the document it wrote by its id, or just say it wrote it, and the document\'s own text (below) is where its claims and card citations are.'
+    // What the agent read, as its tools showed it: the facts the answer may use (a judge without them takes a true
+    // quote for a made-up one, find-09).
+    const read = readsOf(r)
+    const context = [app, lines.length ? `What the run changed:\n${lines.join('\n')}` : 'The run changed nothing.', ...docs, ...(read ? [`What the agent read (its tools' results; a claim found here is backed):\n${read}`] : [])].join('\n\n')
     // The answer as the person reads it in the chat: every short id with its name (agent-bugs 2's renderer).
     const v = await judgeFn({ rubric, ask: r.transcript.turns[0]?.ask ?? '', answer: shownAnswer(r), context })
     return ok(v.pass, v.why)

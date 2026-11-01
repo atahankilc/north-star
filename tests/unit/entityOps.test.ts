@@ -341,7 +341,7 @@ describe('refused with a fix', () => {
     expect(refused(ctx, [placeOn(ctx, { cards: [ID.barista], plane: ID.matrix })])[0].message).toMatch(/is a matrix, not a plane/)
     throwsRefused(() => takeOff(ctx, { cards: ['ghost'], plane: ID.planeA }), /no card ghost/)
     throwsRefused(() => updateCard(ctx, { card: ID.anna, fields: { title: 'x' } as never }), /isn't one of a card's fields/)
-    throwsRefused(() => createCard(ctx, { type: 'idea', plane: ID.planeB, where: { near: ID.queue } }), /isn't on plane/)
+    throwsRefused(() => createCard(ctx, { type: 'idea', plane: ID.planeB, where: { near: ID.queue } }), /isn't a card, heading or paragraph on plane/)
     throwsRefused(() => updateEvidence(ctx, { evidence: 'ghost', fields: {} }), /no piece of evidence ghost/)
     throwsRefused(() => createEvidence(ctx, { card: 'ghost', kind: 'data', text: 'x', stance: 'supports' }), /no card ghost/)
   })

@@ -99,7 +99,8 @@ export const FIND: Task[] = [
     ask: 'Summarise plane Bets for me.',
     graders: [
       noWrites(),
-      answerIncludes([/\b(22|twenty[- ]two)\s+ideas\b/i, /\b(6|six)\s+problems\b/i]),
+      // The counts, however worded ("22 solution ideas", "6 pains").
+      answerIncludes([/\b(22|twenty[- ]two)\s+(\w+\s+)?(ideas|bets)\b/i, /\b(6|six)\s+(\w+\s+)?(problems|pains)\b/i]),
       cites(['Rate cheese from the stall', 'Bundle leftover produce by WhatsApp', 'Swap market maps in one tap']),
       judge('A short, faithful summary of the Bets plane: what it holds (problems and ideas), which ideas are validated or invalidated, and no claims the plane does not support.'),
     ],

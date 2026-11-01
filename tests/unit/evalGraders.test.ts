@@ -251,9 +251,19 @@ describe('onlyChanged, made, layout', () => {
     await expectGrade(G.under('Next experiments', ['A one', 'B two'], { plane: 'Bets' }), await make(false), false)
   })
 
-  it('noOverlaps also flags what lands far outside the plane', async () => {
+  it('noOverlaps grades no "outside": a plane fits its content (D-186, D-187)', async () => {
     const far = await run([[{ op: 'update_card', args: { card: R('c55'), x: 20000, y: 20000 } }]])
-    expect((await expectGrade(G.noOverlaps('Bets'), far, false)).why).toContain('far outside')
+    await expectGrade(G.noOverlaps('Bets'), far, true)
+  })
+
+  it('noDeletes: a card taken off a plane it is also elsewhere on moved, it was not deleted (D-281, D-327)', async () => {
+    // A card the fixture already shows on a second plane (a place), taken off that plane: it stays on its home.
+    const pl = loadFixture('medium').places[0]
+    const moved = await run([[{ op: 'take_off', args: { cards: [pl.cardId], plane: pl.planeId } }]])
+    expect(moved.end.places.some((x) => x.cardId === pl.cardId && x.planeId === pl.planeId)).toBe(false)
+    await expectGrade(G.noDeletes(), moved, true)
+    const gone = await run([[{ op: 'delete', args: { ids: [R('c55')] } }]])
+    await expectGrade(G.noDeletes(), gone, false)
   })
 
   it('tableCell reads a table\'s own column by name', async () => {

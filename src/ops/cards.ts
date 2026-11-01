@@ -3,6 +3,7 @@
 import { CARD, CARD_TYPES, TITLE_MAX, type AnyType, type Card, type CardFields, type CardType } from '../model/cards'
 import { defaultKind, type Edge, type EdgeKind } from '../model/edges'
 import { CANVAS, kindOf, type Label } from '../model/labels'
+import { labelBox } from '../model/labelBox'
 import { TEXT_NAMES } from './text'
 import { MAIN } from '../model/canvases'
 import { GRID, snap } from '../model/grid'
@@ -73,10 +74,14 @@ export function createCard(ctx: OpCtx, args: CreateCardArgs): Plan {
   if (w && 'x' in w) spot = { x: w.x, y: w.y }
   else if (w && 'at' in w) spot = clearSpot(w.at, w.avoid ?? here)
   else if (w && 'near' in w) {
+    // Right of a card, or under a heading or paragraph on the plane: a heading's cards go under it (build-06 was refused
+    // for its heading). Not a sticky: a section drawn round a card tucked under one cuts it (agent-bugs 32).
     const c = here.find((x) => x.id === w.near)
-    if (!c) refuse(OP, `card ${String(w.near)} isn't on plane ${args.plane}`, 'name a card on that plane, or leave `where` out for the first clear spot')
-    const anchor = room!.scene.things.find((t) => t.id === c.id)?.shown ?? { x: c.x, y: c.y, w: CARD.w, h: CARD.h }
-    spot = nudged(besideSpot(anchor, CARD, 'right'), room!)
+    const l = c ? undefined : ctx.ws.labels.find((x) => x.id === w.near && x.pieceId === args.plane && kindOf(x) !== 'sticky' && kindOf(x) !== 'section')
+    if (!c && !l) refuse(OP, `${String(w.near)} isn't a card, heading or paragraph on plane ${args.plane}`, 'name a card, heading or paragraph on that plane, or leave `where` out for the first clear spot')
+    const id = (c ?? l)!.id
+    const anchor = room!.scene.things.find((t) => t.id === id)?.shown ?? (c ? { x: c.x, y: c.y, w: CARD.w, h: CARD.h } : labelBox(l!))
+    spot = nudged(besideSpot(anchor, CARD, c ? 'right' : 'below'), room!)
   } else spot = firstClear(CARD, room!.obstacles, room!.bounds)
   const now = ctx.now
   const ids: Record<string, string> = { [h]: id }
