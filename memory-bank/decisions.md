@@ -341,9 +341,10 @@ feature comes back as a piece, and check them with the user then.
   monthly API credits pay when the key is from its linked Console organisation; never a Claude sign-in), on a loop
   that only appends for that provider (context appended per turn, clearing and compaction server-side); the same
   evals and one judge for every provider.
-- Big jobs (D-328): a plan kept as state (`plan` tool, a live checklist, saved with the chat), run step by step, each
-  previewed and approved, the next starting by itself; no fixed step count (a person's budget and `[stop]`); a
-  message sent while it runs steers it at the next step; done is checked from the job's state.
+- Big jobs (D-328): a plan kept as state (`plan` tool, a live checklist, saved with the chat), run step by step; at go
+  the person picks one preview at the end or one per step (the agent suggests, a message takes the suggestion), the
+  next step starting by itself; no fixed step count (a person's budget and `[stop]`); a message sent while it runs
+  steers it at the next step; done is checked from the job's state.
 
 ## Onboarding (planned, docs/specs/onboarding.md)
 - Onboarding (D-315, not started): taught at the moment of use, one at a time, short (≤ 4 pages, ≤ 25 words): a

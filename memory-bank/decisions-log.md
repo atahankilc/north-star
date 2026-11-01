@@ -6156,9 +6156,19 @@ several planes, a main plane with detail planes beside it, sections), each only 
   status from a closed set, 2–12 steps bounded like the turns, ints for tokens, budget and settledAt, `paused` ≤ 200,
   `stopAfter` bool); chats.ts' `savedJob` (plain values) and `reopenedJob` (a job under way reopens paused); rules
   tests 596/0 (10 new). Rules deployed 2026-11-01 (firestore:rules, the user's go), then the client pushed.
-- *Not yet:* one preview for the whole job (only per step now); the evals'
-  side of telling the model about an apply (with bug 25); evals for big jobs (turns until done, what's left); a
-  steering message is drawn after the answer it interrupted, not where it was sent.
+- *Built (2026-11-01): the preview picked at go* (the user, after the first real-model run showed small jobs split
+  into steps against the skills' "in one change": "Choose at go"). `plan` takes the preview the agent suggests
+  (`all`: one preview when every step is done; `each`: one per step); the checklist of a planned job shows
+  `[go · one preview]` and `[go · step by step]`, the suggestion primary; a message instead takes the suggestion (no
+  reading of words). job.ts' `chooseAt`, `previewOf`, `PREVIEW_NOTE` (the model reads how to run the steps), and
+  `nextMove({ pending })`: one at the end, a turn ending with steps left goes on with the preview still waiting (a
+  revising turn); one per step, the preview waits for the apply. The prompt's "Big jobs" says both. The evals go on
+  with a job as the app does once the scripted asks are used up (evals/run.ts), and a typed `go` takes the
+  suggestion. The pick isn't saved (the rules' job keys are closed): a reopened job waits and is picked again.
+  Checked: tsc, vitest 962 (agentJob's preview tests, evalRunner's job going on both ways), stub evals 116 tasks
+  0 failed, `--wrong` 116 failed; the two buttons not looked at in a browser yet.
+- *Not yet:* evals for big jobs (turns until done, what's left); a steering message is drawn after the answer it
+  interrupted, not where it was sent; the pick saved with the chat (a rules change).
 - *Spec:* docs/specs/agent-bugs.md item 28, agent.md §4.10.
 
 ### D-329 · 2026-10-31 · Accepted (Q-031 (1); the user: "evet, claude adapter'ını planla"; then "planı onaylıyorum, D-numarası ver ve commit et")

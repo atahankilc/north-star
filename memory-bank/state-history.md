@@ -1135,3 +1135,14 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   owner / co-owner / editor / viewer workspaces, an invite, a request; Carol empty), 9 states × 2 themes from old,
   a second old and new worktrees: noise 0; the only changes the fields' snaps in D-326's log (with the 4 px shift
   taken out, everything else pixel-equal).
+
+## Done (2026-11-01): the first real-model run read; D-328's preview picked at go; agent-bugs 29, 30
+- The run (gpt-5.6-terra ×3, 66 % / 52 %, $15.20) read task by task: ~15 failures were the harness's. 29: small jobs
+  went into `plan` with one preview per step (the prompt's big-job examples against the skills' "in one change"),
+  and the evals never went on after a step. The user chose D-328's "choose at go": `plan` takes a suggested preview,
+  `[go · one preview]` / `[go · step by step]` on the checklist, a message takes the suggestion; one at the end goes
+  on with the preview waiting (job.ts `nextMove({ pending })`, agentStore's afterTurn); the evals go on with a job as
+  the app does. 30: `[c58](c58)` ids made plain (`plainCites`) in the chat, documents and the judge's copy (the judge
+  reads the answer as the chat shows it). build-02 now takes the stickies deleted with why (D-333, `deletesHaveWhy`).
+- Verified: tsc, vitest 962, check:tokens/gallery/lessons, stub evals 116 tasks 0 failed, `--wrong` 116 failed.
+  The go buttons not looked at in a browser.
