@@ -6062,7 +6062,14 @@ docs/foundation-audit-2026-10-31.md).
   222. Its snaps: the page's two fields at the Field's size (text-sm, 4 px shorter forms, everything under them 4 px
   up), no focus box round a field, the underline cyan with the keyboard (rename's was magenta). (2) The agent's column (Agent.tsx) on Window,
   only after the user's browser test of a big job; the agent session asked that its job checklist, [stop], steering,
-  the stepper, `apply · N deletes` and the `/` menu stay exactly as they are. (3) Lower check:kit area by area.
+  the stepper, `apply · N deletes` and the `/` menu stay exactly as they are. (3) Lower check:kit area by area;
+  the card and task panels done 2026-11-01 (CardPanel, CardPanelKinds, TaskPanel, CardTasks: 222 → 152; Button got
+  `link`, a name that goes somewhere). Their snaps: a picked switch (`[validated]`, `[P1]`, a deck) cyan, not white;
+  a panel's notes 5 px shorter (the Field is a block: no gap under it); a field cyan with the keyboard; a card's new
+  task is the PromptField (magenta `>`, a rule under the row, as a deck's add-task); `[full]`'s other face `[‹ back]`;
+  a link's name underlined on hover. Kept as they were: rows of switches (padding pulled out), `×`, `+ add`, the title
+  and value fields' size. Learned: files that `composes` Button.module.css or Label.module.css bring their rules again
+  after a caller's CSS in dev, so a caller's override must outweigh them (`.x[data-icon]`, `.parent .parentTo[data-link]`).
   (4) Folders by layer (src/ui foundation/primitives/patterns; src/views/workspace by area) in one commit when no
   other session works. Also still open (what each copy still needs is in those forks' notes: a world size for
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and

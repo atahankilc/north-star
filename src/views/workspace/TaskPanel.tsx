@@ -13,7 +13,6 @@ import { CHECK_MAX, LABEL_MAX, LABELS_MAX, TASK_PRIORITIES, deleteTask, deleteTa
 import type { Evidence } from '../../data/evidence'
 import { useMembers } from '../../data/workspaces'
 import { useCanvasView } from '../../state/canvasView'
-import { useAutoGrow } from '../../ui/autoGrow'
 import { PanelAction, PanelSection, SidePanel } from '../../ui/SidePanel'
 import { Select } from '../../ui/Select'
 import { CardPicker, EvidenceForm, Pills, PLACEHOLDER, useCommit } from './CardPanel'
@@ -24,6 +23,9 @@ import { useTasksSide } from './sideState'
 import styles from './CardPanel.module.css'
 import own from './TaskPanel.module.css'
 import { Chip } from '../../ui/Chip'
+import { Button } from '../../ui/Button'
+import { Field } from '../../ui/Field'
+import { Label } from '../../ui/Label'
 
 const TONE = 'var(--accent-cyan)'
 
@@ -51,9 +53,9 @@ export function TaskPanel({ editor }: { editor: boolean }) {
   const right = inSide ? 0 : beside
   const width = inSide ? (full ? beside : Math.min(SIDE_TASK_W, beside)) : undefined
   const tools = inSide && (
-    <button className={own.tool} onClick={() => useTasksSide.setState({ taskFull: !full })} title={full ? 'narrow again, the board beside it' : 'fill the side view'}>
-      {full ? '‹ back' : '[full]'}
-    </button>
+    <Button onClick={() => useTasksSide.setState({ taskFull: !full })} title={full ? 'narrow again, the board beside it' : 'fill the side view'}>
+      {full ? '‹ back' : 'full'}
+    </Button>
   )
   // A card picked closes it (its panel takes the place). Going into a space or out of one lets go (CanvasView's focus
   // and unfocus), not this panel going: it's mounted per space, and remounted in development.
@@ -152,17 +154,17 @@ function Title({ task, editor }: { task: Task; editor: boolean }) {
     const t = v.trim().slice(0, TASK_TITLE_MAX)
     if (t) void updateTask(wid, task, { title: t }, 'rename a task')
   })
-  useAutoGrow(field, draft)
   if (!editor) return <span className={styles.title}>{task.title}</span>
   return (
-    <textarea
+    <Field
       ref={field}
+      multiline
       className={`${styles.title} ${styles.titleField}`}
       value={draft}
       rows={1}
       maxLength={TASK_TITLE_MAX}
-      aria-label="Title"
-      onChange={(e) => setDraft(e.target.value)}
+      label="Title"
+      onChange={setDraft}
       onBlur={() => (draft.trim() ? commit() : revert())}
       onKeyDown={(e) => {
         e.stopPropagation()
@@ -219,19 +221,20 @@ function ManyInside({ tasks: picked, cols, editor }: { tasks: Task[]; cols: { id
       </PanelSection>
       <PanelSection n={3} name="due" count={due === SEVERAL ? 'several' : due ? dueText(due) : undefined}>
         <div className={own.row}>
-          <input
-            className={`${styles.input} ${own.date}`}
+          <Field
+            size="sm"
+            className={own.date}
             type="date"
             value={due === SEVERAL ? '' : due}
             readOnly={!editor}
-            aria-label="Due"
-            onChange={(e) => editor && void updateTasks(wid, ids, { due: e.target.value || undefined }, `set ${ids.length} tasks’ due day`)}
+            label="Due"
+            onChange={(v) => editor && void updateTasks(wid, ids, { due: v || undefined }, `set ${ids.length} tasks’ due day`)}
             onKeyDown={(e) => e.stopPropagation()}
           />
           {editor && due !== '' && (
-            <button className={styles.pill} onClick={() => void updateTasks(wid, ids, { due: undefined }, `clear ${ids.length} tasks’ due day`)}>
+            <Button onClick={() => void updateTasks(wid, ids, { due: undefined }, `clear ${ids.length} tasks’ due day`)}>
               clear
-            </button>
+            </Button>
           )}
         </div>
       </PanelSection>
@@ -317,32 +320,34 @@ function Due({ task, finished, editor, n }: { task: Task; finished: boolean; edi
   return (
     <PanelSection n={n} name="when" count={task.due ? `${task.start ? `${dueText(task.start)} → ` : ''}${dueText(task.due)}${days > 1 ? ` · ${days} days` : ''}` : undefined}>
       <div className={own.row}>
-        <input
-          className={`${styles.input} ${own.date}`}
+        <Field
+          size="sm"
+          className={own.date}
           type="date"
           value={task.start ?? ''}
           max={task.due}
           readOnly={!editor}
-          aria-label="First day"
+          label="First day"
           title="its first day (optional)"
-          onChange={(e) => editor && setStart(e.target.value)}
+          onChange={(v) => editor && setStart(v)}
           onKeyDown={(e) => e.stopPropagation()}
         />
         <span className={own.to}>→</span>
-        <input
-          className={`${styles.input} ${own.date}`}
+        <Field
+          size="sm"
+          className={own.date}
           type="date"
           value={task.due ?? ''}
           readOnly={!editor}
-          aria-label="Due"
+          label="Due"
           title="its due day"
-          onChange={(e) => editor && setDue(e.target.value)}
+          onChange={(v) => editor && setDue(v)}
           onKeyDown={(e) => e.stopPropagation()}
         />
         {editor && (task.due || task.start) && (
-          <button className={styles.pill} onClick={() => void updateTask(wid, task, { start: undefined, due: undefined }, 'clear a task’s days')}>
+          <Button onClick={() => void updateTask(wid, task, { start: undefined, due: undefined }, 'clear a task’s days')}>
             clear
-          </button>
+          </Button>
         )}
       </div>
       {late && <p className={styles.warn}>past its day: was due {dueText(task.due!)}</p>}
@@ -393,9 +398,9 @@ function Learned({ task, finished, editor, n }: { task: Task; finished: boolean;
       ) : (
         <p className={own.offer}>
           Finished. What did it teach about “{card.title || PLACEHOLDER[card.type]}”?{' '}
-          <button className={styles.pill} onClick={() => void updateTask(wid, task, { learned: 'skip' }, 'not log a task')}>
+          <Button onClick={() => void updateTask(wid, task, { learned: 'skip' }, 'not log a task')}>
             not now
-          </button>
+          </Button>
         </p>
       )}
     </PanelSection>
@@ -436,13 +441,15 @@ function Labels({ task, editor, n }: { task: Task; editor: boolean; n: number })
           </Chip>
         ))}
         {draft !== null && (
-          <input
-            className={`${styles.input} ${styles.tagInput}`}
+          <Field
+            size="sm"
+            className={styles.tagInput}
+            label="Label"
             autoFocus
             placeholder="label"
             value={draft}
             maxLength={LABEL_MAX}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={setDraft}
             onBlur={() => setDraft(null)}
             onKeyDown={(e) => {
               e.stopPropagation()
@@ -455,9 +462,9 @@ function Labels({ task, editor, n }: { task: Task; editor: boolean; n: number })
       {offer.length > 0 && (
         <div className={styles.pills}>
           {offer.map((l) => (
-            <button key={l} className={styles.pill} onMouseDown={(e) => e.preventDefault()} onClick={() => add(l)}>
+            <Button key={l} onMouseDown={(e) => e.preventDefault()} onClick={() => add(l)}>
               #{l}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -496,8 +503,8 @@ function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }
       {task.cardId && (
         <div className={own.row}>
           {card ? (
-            <button className={own.card} style={{ ['--tone' as string]: TYPE_ACCENT[card.type] }} onClick={() => open(card)} title="open its panel">
-              <span className={own.cardType}>▌{card.type}</span>
+            <button /* kit-ok: the card it's for, drawn small (type, title, ↗), that opens its panel */ className={own.card} style={{ ['--tone' as string]: TYPE_ACCENT[card.type] }} onClick={() => open(card)} title="open its panel">
+              <Label className={own.cardType}>▌{card.type}</Label>
               <span className={own.cardTitle}>{card.title || PLACEHOLDER[card.type]}</span>
               <span className={own.go} aria-hidden>
                 ↗
@@ -507,9 +514,9 @@ function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }
             <span className={own.gone}>its card is gone</span>
           )}
           {editor && (
-            <button className={styles.chipX} style={{ display: 'inline' }} title="let go of it" onClick={() => void updateTask(wid, task, { cardId: undefined, cardType: undefined }, 'unlink a task')}>
+            <Button icon tone="danger" className={styles.chipX} style={{ display: 'inline' }} title="let go of it" onClick={() => void updateTask(wid, task, { cardId: undefined, cardType: undefined }, 'unlink a task')}>
               ×
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -547,7 +554,7 @@ function Checklist({ task, editor, n }: { task: Task; editor: boolean; n: number
       <ul className={own.checks}>
         {checks.map((c) => (
           <li key={c.id} className={own.check} data-done={c.done || undefined}>
-            <button className={own.box} aria-pressed={!!c.done} disabled={!editor} aria-label={c.done ? 'untick' : 'tick'} onClick={() => set(checks.map((x) => (x.id === c.id ? { ...x, done: !x.done || undefined } : x)))}>
+            <button /* kit-ok: the checklist's [x], beside its text typed in place (a Checkbox's label would tick it) */ className={own.box} aria-pressed={!!c.done} disabled={!editor} aria-label={c.done ? 'untick' : 'tick'} onClick={() => set(checks.map((x) => (x.id === c.id ? { ...x, done: !x.done || undefined } : x)))}>
               [{c.done ? 'x' : ' '}]
             </button>
             {typing === c.id ? (
@@ -565,21 +572,22 @@ function Checklist({ task, editor, n }: { task: Task; editor: boolean; n: number
               </span>
             )}
             {editor && (
-              <button className={styles.chipX} title="take it away" onClick={() => set(checks.filter((x) => x.id !== c.id))}>
+              <Button icon tone="danger" className={styles.chipX} title="take it away" onClick={() => set(checks.filter((x) => x.id !== c.id))}>
                 ×
-              </button>
+              </Button>
             )}
           </li>
         ))}
       </ul>
       {adding && (
-        <input
-          className={styles.input}
+        <Field
+          size="sm"
+          label="A step"
           autoFocus
           placeholder="a step"
           value={draft}
           maxLength={CHECK_MAX}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={setDraft}
           onBlur={() => {
             if (draft.trim()) set([...checks, newCheck(draft.trim())])
             setAdding(false)
@@ -609,13 +617,13 @@ function CheckField({ value, onDone }: { value: string; onDone: (text: string | 
     onDone(v === null ? null : v.trim())
   }
   return (
-    <input
-      className={styles.input}
+    <Field
+      size="sm"
       autoFocus
       value={draft}
       maxLength={CHECK_MAX}
-      aria-label="Step"
-      onChange={(e) => setDraft(e.target.value)}
+      label="Step"
+      onChange={setDraft}
       onBlur={() => done(draft)}
       onKeyDown={(e) => {
         e.stopPropagation()
@@ -629,21 +637,19 @@ function CheckField({ value, onDone }: { value: string; onDone: (text: string | 
 // Notes: Geist, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
 function Notes({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
   const { wid } = useWs()
-  const field = useRef<HTMLTextAreaElement>(null)
   const { draft, setDraft, commit } = useCommit(task.notes ?? '', (v) => void updateTask(wid, task, { notes: v.trim() ? v : undefined }, 'edit a task’s notes'))
-  useAutoGrow(field, draft)
   return (
     <PanelSection n={n} name="notes">
-      <textarea
-        ref={field}
+      <Field
+        multiline
         className={styles.notes}
         rows={2}
         value={draft}
         readOnly={!editor}
         placeholder="What it takes, what done looks like."
         maxLength={20000}
-        aria-label="Notes"
-        onChange={(e) => setDraft(e.target.value)}
+        label="Notes"
+        onChange={setDraft}
         onBlur={commit}
         onKeyDown={(e) => {
           e.stopPropagation()

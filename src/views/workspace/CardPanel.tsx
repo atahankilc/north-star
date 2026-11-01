@@ -31,7 +31,6 @@ import { CompetitorProfile, CompetitorFeatures, Criteria, hasMatches, InPackages
 import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } from '../../data/edges'
 import { addEvidence, EVIDENCE_KINDS, mismatch, removeEvidence, tally, updateEvidence, type Evidence, type EvidenceKind, type Stance } from '../../data/evidence'
 import { glide, useCanvasView } from '../../state/canvasView'
-import { useAutoGrow } from '../../ui/autoGrow'
 import { MenuPanel, type MenuEntry } from '../../ui/Menu'
 import { PanelAction, PanelSection, SIDE_PANEL_W, SidePanel } from '../../ui/SidePanel'
 import { factsOf } from './cardFacts'
@@ -52,6 +51,7 @@ import styles from './CardPanel.module.css'
 import { DUR } from '../../ui/motion'
 import { CARD_TONE } from '../../ui/cardTone'
 import { Button } from '../../ui/Button'
+import { Field } from '../../ui/Field'
 import { Chip } from '../../ui/Chip'
 import { Label as UiLabel } from '../../ui/Label'
 
@@ -312,20 +312,20 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
       <PanelSection n={1} name="line up">
         <div className={styles.pills}>
           {ALIGN.map(([name, to]) => (
-            <button key={name} className={styles.pill} disabled={!editor} onClick={() => moveTo(to)}>
+            <Button key={name} disabled={!editor} onClick={() => moveTo(to)}>
               {name}
-            </button>
+            </Button>
           ))}
         </div>
       </PanelSection>
       <PanelSection n={2} name="space out">
         <div className={styles.pills}>
-          <button className={styles.pill} disabled={!editor || items.length < 3} onClick={() => spread(0)}>
+          <Button disabled={!editor || items.length < 3} onClick={() => spread(0)}>
             ↔ across
-          </button>
-          <button className={styles.pill} disabled={!editor || items.length < 3} onClick={() => spread(1)}>
+          </Button>
+          <Button disabled={!editor || items.length < 3} onClick={() => spread(1)}>
             ↕ down
-          </button>
+          </Button>
         </div>
       </PanelSection>
       <PanelSection
@@ -342,13 +342,15 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
             </Chip>
           ))}
           {adding !== null && (
-            <input
-              className={`${styles.input} ${styles.tagInput}`}
+            <Field
+              size="sm"
+              className={styles.tagInput}
+              label="Tag"
               autoFocus
               placeholder="tag"
               value={adding}
               maxLength={40}
-              onChange={(e) => setAdding(e.target.value)}
+              onChange={setAdding}
               onBlur={() => setAdding(null)}
               onKeyDown={(e) => {
                 e.stopPropagation()
@@ -363,9 +365,9 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
       {editor && packable.length > 0 && (
         <PanelSection n={4} name="package">
           <div className={styles.pills}>
-            <button className={styles.pill} onClick={() => setSelection([packageThese(wid, packable, every)])} title="One thing to rate and rank, holding these cards (D-239)">
+            <Button onClick={() => setSelection([packageThese(wid, packable, every)])} title="One thing to rate and rank, holding these cards (D-239)">
               package these {packable.length}
-            </button>
+            </Button>
           </div>
         </PanelSection>
       )}
@@ -518,13 +520,12 @@ function Holds({ n, card, cards, editor }: P) {
           <span className={styles.tree} style={depth ? undefined : { color: TONE[c.type] }}>
             {depth ? '└' : '▌'}
           </span>
-          <button className={styles.to} onClick={() => goToCard(c)}>
+          <Button link className={styles.to} onClick={() => goToCard(c)}>
             {c.title || PLACEHOLDER[c.type]}
-          </button>
+          </Button>
           <span className={styles.type}>{c.validation ?? c.priority ?? c.type}</span>
           {editor && depth === 0 && (
-            <button
-              className={styles.x}
+            <Button icon tone="danger" className={styles.x}
               title="Take it out of the package, with its parts (the cards stay)"
               onClick={() => {
                 // It and what's under it in the tree.
@@ -535,7 +536,7 @@ function Holds({ n, card, cards, editor }: P) {
               }}
             >
               ×
-            </button>
+            </Button>
           )}
         </div>
       ))}
@@ -593,7 +594,6 @@ function Title({ card, editor }: { card: Card; editor: boolean }) {
   }, [opening])
   const [draft, setDraft] = useState(card.title)
   const field = useRef<HTMLTextAreaElement>(null)
-  useAutoGrow(field, draft)
   useEffect(() => setDraft(card.title), [card.title, card.id])
   // Once per time typing: Escape or Enter ends it before the field's blur would.
   const over = useRef(false)
@@ -643,16 +643,17 @@ function Title({ card, editor }: { card: Card; editor: boolean }) {
   }
   return (
     <>
-      <textarea
+      <Field
         ref={field}
+        multiline
         className={`${styles.title} ${styles.titleField}`}
         value={draft}
         rows={1}
         maxLength={TITLE_MAX}
         placeholder={PLACEHOLDER[card.type]}
-        aria-label="Title"
+        label="Title"
         autoFocus
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={setDraft}
         // Going down to `use that one` isn't leaving.
         onBlur={(e) => !same.current?.contains(e.relatedTarget) && done(true)}
         onKeyDown={(e) => {
@@ -672,7 +673,8 @@ function Title({ card, editor }: { card: Card; editor: boolean }) {
               </span>
               <span className={styles.sameTitle}>{c.title}</span>
               <span className={styles.type}>{planesOf(c, places).map(nameOf).join(', ')}</span>
-              <button
+              <Button
+                tone="primary"
                 className={styles.sameUse}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => useThat(c)}
@@ -685,7 +687,7 @@ function Title({ card, editor }: { card: Card; editor: boolean }) {
                 }}
               >
                 use that one
-              </button>
+              </Button>
             </div>
           ))}
         </div>
@@ -708,9 +710,9 @@ export function Pills<T extends string>({ values, value, editor, onPick, label }
   return (
     <div className={styles.pills} role="group" aria-label={label}>
       {values.map((v) => (
-        <button key={v} className={styles.pill} aria-pressed={v === value} disabled={!editor} onClick={() => onPick(v === value ? undefined : v)}>
+        <Button key={v} pressed={v === value} disabled={!editor} onClick={() => onPick(v === value ? undefined : v)}>
           {v}
-        </button>
+        </Button>
       ))}
     </div>
   )
@@ -773,7 +775,7 @@ function EvidenceRow({ e, editor }: { e: Evidence; editor: boolean }) {
     )
   return (
     <div className={styles.ev}>
-      <button
+      {/* kit-ok: the drawn square that is the evidence's stance, filled or empty, not a [verb] */}<button
         className={styles.cell}
         data-filled={e.stance === 'supports' || undefined}
         disabled={!editor}
@@ -784,9 +786,9 @@ function EvidenceRow({ e, editor }: { e: Evidence; editor: boolean }) {
         {e.text}
       </span>
       {editor && (
-        <button className={styles.x} title="Remove" onClick={() => void removeEvidence(wid, e.id)}>
+        <Button icon tone="danger" className={styles.x} title="Remove" onClick={() => void removeEvidence(wid, e.id)}>
           ×
-        </button>
+        </Button>
       )}
       {(src || e.url) && (
         <span className={styles.src}>
@@ -807,8 +809,6 @@ export type EvidenceFields = { text: string; stance: Stance; kind: EvidenceKind;
 
 export function EvidenceForm({ start, onDone }: { start?: Partial<Evidence>; onDone: (fields: EvidenceFields | null) => void }) {
   const [f, setF] = useState<EvidenceFields>({ text: start?.text ?? '', stance: start?.stance ?? 'supports', kind: start?.kind ?? 'interview', source: start?.source, date: start?.date, url: start?.url })
-  const text = useRef<HTMLTextAreaElement>(null)
-  useAutoGrow(text, f.text)
   const save = () => onDone(f.text.trim() ? { ...f, text: f.text.trim() } : null)
   const keys = (e: React.KeyboardEvent) => {
     e.stopPropagation()
@@ -817,14 +817,14 @@ export function EvidenceForm({ start, onDone }: { start?: Partial<Evidence>; onD
   }
   return (
     <div className={styles.form}>
-      <textarea ref={text} className={styles.input} rows={1} autoFocus placeholder="What was learned, in a sentence or a quote" value={f.text} maxLength={2000} onChange={(e) => setF({ ...f, text: e.target.value })} onKeyDown={keys} />
+      <Field multiline size="sm" rows={1} label="What was learned" autoFocus placeholder="What was learned, in a sentence or a quote" value={f.text} maxLength={2000} onChange={(v) => setF({ ...f, text: v })} onKeyDown={keys} />
       <Pills values={['supports', 'contradicts'] as const} value={f.stance} editor label="For or against" onPick={(v) => setF({ ...f, stance: v ?? f.stance })} />
       <Pills values={EVIDENCE_KINDS} value={f.kind} editor label="Kind" onPick={(v) => setF({ ...f, kind: v ?? f.kind })} />
       <div className={styles.formRow}>
-        <input className={styles.input} placeholder="from (who, where)" value={f.source ?? ''} maxLength={200} onChange={(e) => setF({ ...f, source: e.target.value })} onKeyDown={keys} />
-        <input className={styles.input} type="date" value={f.date ?? ''} onChange={(e) => setF({ ...f, date: e.target.value || undefined })} onKeyDown={keys} aria-label="When" />
+        <Field size="sm" label="From" placeholder="from (who, where)" value={f.source ?? ''} maxLength={200} onChange={(v) => setF({ ...f, source: v })} onKeyDown={keys} />
+        <Field size="sm" type="date" label="When" value={f.date ?? ''} onChange={(v) => setF({ ...f, date: v || undefined })} onKeyDown={keys} />
       </div>
-      <input className={styles.input} placeholder="link (optional)" value={f.url ?? ''} maxLength={2000} onChange={(e) => setF({ ...f, url: e.target.value })} onKeyDown={keys} />
+      <Field size="sm" label="Link" placeholder="link (optional)" value={f.url ?? ''} maxLength={2000} onChange={(v) => setF({ ...f, url: v })} onKeyDown={keys} />
       <div className={styles.formActions}>
         <Button tone="primary" onClick={save}>
           {start?.id ? 'save' : 'add'}
@@ -865,14 +865,14 @@ export function LinkSection({ n, name, card, cards, editor, links, add, count, e
           <div key={e.id} className={styles.link} style={{ ['--tone' as string]: linkTone(e.kind) }}>
             <span className={styles.swatch} aria-hidden />
             <span className={styles.kind}>{out ? `${kind} →` : `← ${kind}`}</span>
-            <button className={styles.to} onClick={() => goToCard(other)} title={e.label ? `"${e.label}"` : undefined}>
+            <Button link className={styles.to} onClick={() => goToCard(other)} title={e.label ? `"${e.label}"` : undefined}>
               {other.title || PLACEHOLDER[other.type]}
-            </button>
+            </Button>
             <span className={styles.type}>{other.type === 'feature' ? [other.priority, other.status].filter(Boolean).join(' · ') || 'feature' : other.type}</span>
             {editor && (
-              <button className={styles.x} title="Unlink" onClick={() => void deleteEdge(wid, e.id)}>
+              <Button icon tone="danger" className={styles.x} title="Unlink" onClick={() => void deleteEdge(wid, e.id)}>
                 ×
-              </button>
+              </Button>
             )}
           </div>
         )
@@ -1060,23 +1060,23 @@ function PlanesSection({ n, card, editor }: P) {
       {on.map((id) => (
         <div key={id} className={styles.link} style={{ ['--tone' as string]: 'var(--fg)' }}>
           <span className={styles.swatch} aria-hidden />
-          <button className={styles.to} onClick={() => go(id)} title={id === focus ? 'Show it' : 'Go there'}>
+          <Button link className={styles.to} onClick={() => go(id)} title={id === focus ? 'Show it' : 'Go there'}>
             <PlaneName name={name(id)} />
-          </button>
+          </Button>
           {id === focus && <span className={styles.type}>here</span>}
           {editor && on.length > 1 && (
-            <button className={styles.x} title="Take it off this plane (it stays on the others)" onClick={() => off(id)}>
+            <Button icon tone="danger" className={styles.x} title="Take it off this plane (it stays on the others)" onClick={() => off(id)}>
               ×
-            </button>
+            </Button>
           )}
         </div>
       ))}
       {picking &&
         others.map((p) => (
           <div key={p.id} className={styles.link}>
-            <button className={styles.inlineAdd} onClick={() => placeOn(p.id)}>
-              <PlaneName name={name(p.id)} />
-            </button>
+            <Button icon className={styles.inlineAdd} onClick={() => placeOn(p.id)}>
+              <span className={styles.plus}>+</span> <PlaneName name={name(p.id)} />
+            </Button>
           </div>
         ))}
     </PanelSection>
@@ -1099,13 +1099,15 @@ function TagsSection({ n, card, editor }: P) {
           </Chip>
         ))}
         {adding && (
-          <input
-            className={`${styles.input} ${styles.tagInput}`}
+          <Field
+            size="sm"
+            className={styles.tagInput}
+            label="Tag"
             autoFocus
             placeholder="tag"
             value={draft}
             maxLength={40}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={setDraft}
             onBlur={() => (setAdding(false), setDraft(''))}
             onKeyDown={(e) => {
               e.stopPropagation()
@@ -1126,21 +1128,19 @@ function TagsSection({ n, card, editor }: P) {
 // Notes: Geist, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
 function NotesSection({ n, card, editor }: P) {
   const { wid } = useWs()
-  const field = useRef<HTMLTextAreaElement>(null)
   const { draft, setDraft, commit } = useCommit(card.notes ?? '', (v) => void updateCard(wid, card, { notes: v.trim() ? v : undefined }, 'notes of'))
-  useAutoGrow(field, draft)
   return (
     <PanelSection n={n} name="notes">
-      <textarea
-        ref={field}
+      <Field
+        multiline
         className={styles.notes}
         rows={2}
         value={draft}
         readOnly={!editor}
         placeholder={NOTES_HINT[card.type]}
         maxLength={20000}
-        aria-label="Notes"
-        onChange={(e) => setDraft(e.target.value)}
+        label="Notes"
+        onChange={setDraft}
         onBlur={commit}
         onKeyDown={(e) => {
           e.stopPropagation()

@@ -1146,3 +1146,14 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   reads the answer as the chat shows it). build-02 now takes the stickies deleted with why (D-333, `deletesHaveWhy`).
 - Verified: tsc, vitest 962, check:tokens/gallery/lessons, stub evals 116 tasks 0 failed, `--wrong` 116 failed.
   The go buttons not looked at in a browser.
+
+## Done (2026-11-01): the card and task panels on the kit (D-326, check:kit lower)
+- CardPanel, CardPanelKinds, TaskPanel, CardTasks: switches and actions Buttons, `×` Button icon (danger), names that go
+  somewhere Button `link` (new in the kit, with its gallery state), every input/textarea a Field (titles, notes and
+  values keep their look), the card's new task a PromptField, the caps labels Label. `kit-ok`: the evidence square,
+  a competitor feature's row, the task's card, the checklist's `[x]`, a card's task row. Their CSS lost what the kit
+  draws. check:kit 222 → 152 (56 files). Asked both other sessions first.
+- Verified: tsc, build, vitest 962, check:kit/tokens/gallery/lessons, eslint (one old warning); gallery shots of 37
+  states × 2 themes (panels, open forms, hovers) from old, a second old and new worktrees (noise ≤ 1 px), each
+  difference read; three rounds of fixes until only the snaps in D-326's log were left; the title being typed
+  measured equal (font, size, line height, height).

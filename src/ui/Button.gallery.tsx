@@ -35,6 +35,11 @@ export default example({
         ['on a bar (a dock)', <span style={{ display: 'flex', gap: 'var(--space-3)' }}><Button keyHint="c" onClick={none}>comment</Button><Button pressed onClick={none}>⇆ deck</Button><Button keyHint="esc" tone="main" onClick={none}>unfocus</Button></span>],
         ['icon', <Button icon title="close" onClick={none}>×</Button>],
       ]),
+    link: () =>
+      row([
+        ['in a row', <span style={{ color: 'var(--fg)', fontSize: 'var(--text-xs)' }}>relates → <Button link onClick={none}>Busy parents who travel for work</Button></span>],
+      ]),
+    'link hover': { render: () => <span style={{ color: 'var(--fg)', fontSize: 'var(--text-xs)' }}><Button link data-g="l" onClick={none}>Pet-sitting marketplace</Button></span>, hover: '[data-g="l"]' },
     hover: { render: () => <Button data-g="b" onClick={none}>edit</Button>, hover: '[data-g="b"]' },
     'md accents': () =>
       row((['magenta', 'cyan', 'yellow', 'blue', 'green'] as const).map((a) => [a, <Button size="md" accent={a} onClick={none}>create workspace</Button>])),

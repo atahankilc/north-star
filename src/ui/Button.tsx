@@ -5,6 +5,8 @@
 //   `keyHint` is its key, faint, after it.
 // - `md`: the page's button, the accent wiping in from the left on hover (`accent`).
 // - `icon`: no brackets, for a glyph alone.
+// - `link`: no brackets, in the row's own colour and size, wrapping, underlined faint on hover: a name that goes
+//   somewhere (a card's links, parts and planes in its panel).
 // AsciiButton, PanelAction and DockAction draw this; so should every new button (check:kit, D-326).
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react'
 import styles from './Button.module.css'
@@ -20,9 +22,10 @@ type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {
   pressed?: boolean
   keyHint?: string
   icon?: boolean
+  link?: boolean
 }
 
-export function Button({ children, size = 'sm', tone, accent = 'magenta', pressed, keyHint, icon, className, style, type = 'button', ...rest }: Props) {
+export function Button({ children, size = 'sm', tone, accent = 'magenta', pressed, keyHint, icon, link, className, style, type = 'button', ...rest }: Props) {
   const md = size === 'md'
   const button = (
     <button
@@ -30,7 +33,8 @@ export function Button({ children, size = 'sm', tone, accent = 'magenta', presse
       type={type}
       className={[md ? styles.md : styles.sm, className].filter(Boolean).join(' ')}
       data-tone={tone}
-      data-icon={icon || undefined}
+      data-icon={icon || link || undefined}
+      data-link={link || undefined}
       aria-pressed={pressed}
       style={md ? ({ '--accent': `var(--accent-${accent})`, ...style } as CSSProperties) : style}
     >

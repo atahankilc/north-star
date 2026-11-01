@@ -8,7 +8,8 @@
   color: var(--placeholder);
 }
 
-.titleField {
+/* `.title.titleField`: outweighs the Field's own `textarea.field` (its line height), so the title stays the title. */
+.title.titleField {
   width: 100%;
   padding: 0;
   border: 0;
@@ -28,41 +29,18 @@
   font-size: var(--text-xs);
 }
 
+/* A row of `[verb]` Buttons: their own side padding makes the space between them, the row pulled out by it so
+   the first bracket lines up with the text above; no padding above and below, so a row is a line high. Kit CSS can
+   come again after this file (another module composing it), hence `> button` for the padding. */
 .pills {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-half) var(--space-3);
+  gap: var(--space-half) var(--space-1);
+  margin: 0 calc(-1 * var(--space-1));
 }
 
-.pill {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
-}
-
-.pill::before {
-  content: '[';
-  color: var(--fg-faint);
-}
-
-.pill::after {
-  content: ']';
-  color: var(--fg-faint);
-}
-
-.pill:hover:not(:disabled) {
-  color: var(--fg);
-}
-
-.pill[aria-pressed='true'] {
-  color: var(--fg-strong);
-}
-
-.pill:disabled {
-  cursor: default;
+.pills > button {
+  padding-block: 0;
 }
 
 .warn {
@@ -113,23 +91,18 @@
 }
 
 /* A row's `×`: only while the row is hovered. */
+/* (a Button icon, tone danger) */
 .x {
   align-self: start;
-  padding: 0 var(--space-half);
-  border: 0;
-  background: none;
-  color: var(--fg-faint);
-  font: inherit;
   opacity: 0;
-  cursor: pointer;
+}
+
+.x[data-icon] {
+  padding: 0 var(--space-half);
 }
 
 :is(.ev, .link):hover .x {
   opacity: 1;
-}
-
-.x:hover {
-  color: var(--accent-magenta);
 }
 
 /* A link row: swatch, kind with its arrow, the other card, its type. */
@@ -154,23 +127,10 @@
   color: var(--tone);
 }
 
+/* The other card, a Button link. */
 .to {
   flex: 1;
   min-width: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.to:hover {
-  color: var(--fg-strong);
-  text-decoration: underline;
-  text-decoration-color: var(--fg-faint);
-  text-underline-offset: var(--underline-offset);
 }
 
 .type {
@@ -186,18 +146,13 @@
   gap: var(--space-1);
 }
 
+/* A row's `×` shown on hover (a Button icon, tone danger). */
 .chipX {
   display: none;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-faint);
-  font: inherit;
-  cursor: pointer;
 }
 
-.chipX:hover {
-  color: var(--accent-magenta);
+.chipX[data-icon] {
+  padding: 0;
 }
 
 .notes {
@@ -214,14 +169,8 @@
 }
 
 .notes:focus-visible,
-.input:focus-visible,
-.titleField:focus-visible {
+.title.titleField:focus-visible {
   outline: none;
-}
-
-.notes::placeholder,
-.input::placeholder {
-  color: var(--placeholder);
 }
 
 /* Small forms in sections: evidence, the card picker, a tag. */
@@ -238,24 +187,6 @@
 .formRow {
   display: flex;
   gap: var(--space-3);
-}
-
-.input {
-  width: 100%;
-  min-width: 0;
-  padding: var(--space-half) 0;
-  border: 0;
-  border-bottom: var(--line-w) solid var(--line);
-  background: none;
-  color: var(--fg-strong);
-  font: inherit;
-  outline: none;
-  resize: none;
-  color-scheme: dark;
-}
-
-.input:focus {
-  border-bottom-color: var(--accent-cyan);
 }
 
 .formActions {
@@ -294,13 +225,10 @@
 }
 
 
-.field {
-  border-bottom-color: transparent;
-}
-
-.field:hover,
-.field:focus {
-  border-bottom-color: var(--line);
+/* A value shown as a quiet Field (CardPanelKinds' ValueField): the panel's own line height, not the Field's taller
+   textarea one (`[data-size]` outweighs `textarea.field`). */
+.field[data-size] {
+  line-height: inherit;
 }
 
 .field[data-link='true'] {
@@ -316,27 +244,20 @@
   text-decoration: none;
 }
 
-.inlineAdd {
+/* `+ region`, `+ a feature`, `+ <plane>`: a Button icon, its `+` magenta as a Rule's add. `[data-icon]` so it
+   outweighs the Button's padding however the kit's CSS is ordered. */
+.inlineAdd[data-icon] {
   padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
 }
 
-.inlineAdd::before {
-  content: '+ ';
+.plus {
   color: var(--accent-magenta);
 }
 
 /* A competitor's features: a category in grey caps over its rows; a match has a cyan bar and `≈ our …`. */
 .cat {
+  display: block;
   margin: var(--space-3) 0 var(--space-1);
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .cf {
@@ -404,20 +325,21 @@
   font-size: var(--text-xs);
 }
 
+/* A Button link in the part's colour (`.parent` and `[data-link]` outweigh the link's own `color: inherit`). */
 .parentTo {
   flex: 1;
-  padding: 0;
-  border: 0;
-  background: none;
+}
+
+.parent .parentTo[data-link] {
   color: var(--link-part);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
 }
 
 /* The package it's in (D-240): blue, side by side when several. */
 .parentTo[data-package] {
   flex: none;
+}
+
+.parent .parentTo[data-link][data-package] {
   color: var(--accent-blue);
 }
 
@@ -574,26 +496,4 @@
 .sameUse {
   flex: none;
   margin-left: auto;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent-cyan);
-  font: inherit;
-  cursor: pointer;
-}
-
-.sameUse::before {
-  content: '[';
-  color: var(--fg-faint);
-}
-
-.sameUse::after {
-  content: ']';
-  color: var(--fg-faint);
-}
-
-.sameUse:hover,
-.sameUse:focus-visible {
-  outline: none;
-  color: var(--fg-strong);
 }

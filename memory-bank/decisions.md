@@ -44,9 +44,9 @@ feature comes back as a piece, and check them with the user then.
   src/ui, patterns, then features; the gallery's map by what a thing is (`place` category/group, `also`), never by
   folder. Motion's numbers and the tween in src/ui/motionTokens.ts and motion.ts (held to tokens.css by a test), card
   colours in `--type-*` and src/ui/cardTone.ts; one Spinner, the small entrances in src/ui/Enter.module.css, one
-  cell-path builder. The kit in src/ui: Button, Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge. The gallery's `[tree]` shows what each
+  cell-path builder. The kit in src/ui: Button (`sm`, `md`, `icon`, `link`), Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge. The gallery's `[tree]` shows what each
   component draws and where it's used. Patterns: Options, Window, WizardShell. `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
-  from coming back. Landing and workspaces are on it; next: the agent's column, folders.
+  from coming back. Landing, workspaces and the card/task panels are on it; next: other areas, the agent's column, folders.
 - ESLint with only `eslint-plugin-react-hooks`, as warnings: `npm run lint` counts them, CI never fails on them (D-320).
 
 ## Accounts, sharing, roles

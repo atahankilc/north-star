@@ -10,6 +10,8 @@ import { useAuth } from '../../data/auth'
 import { addTask, orderBetween, overdue, tasksIn, TASK_TITLE_MAX, untested, type Task } from '../../data/tasks'
 import { useCanvasView } from '../../state/canvasView'
 import { PanelSection } from '../../ui/SidePanel'
+import { Button } from '../../ui/Button'
+import { PromptField } from '../../ui/PromptField'
 import { useWs } from './context'
 import { dueText, kanbanOf, selectTask } from './Kanban'
 import { kindOfPiece } from '../../data/pieces'
@@ -70,7 +72,7 @@ export function TasksSection({ n, card, editor }: { n: number; card: Card; edito
       {mine.map(({ t, col, on }) => {
         const late = overdue(t, !!col?.done)
         return (
-          <button key={t.id} className={own.row} data-done={col?.done || undefined} onClick={() => openTask(t)} title="open the task">
+          <button /* kit-ok: a task's whole row (its column, title, where) that opens it */ key={t.id} className={own.row} data-done={col?.done || undefined} onClick={() => openTask(t)} title="open the task">
             <span className={own.box}>[{col?.done ? 'x' : ' '}]</span>
             <span className={own.title}>{t.title}</span>
             {t.due && !col?.done && (
@@ -87,40 +89,32 @@ export function TasksSection({ n, card, editor }: { n: number; card: Card; edito
           {kanbans.length > 1 && (
             <div className={styles.pills} role="group" aria-label="Into which deck">
               {kanbans.map((k) => (
-                <button key={k.id} className={styles.pill} aria-pressed={k.id === kanban?.id} onMouseDown={(e) => e.preventDefault()} onClick={() => setInto(k.id)}>
+                <Button key={k.id} pressed={k.id === kanban?.id} onMouseDown={(e) => e.preventDefault()} onClick={() => setInto(k.id)}>
                   {k.name || 'deck'}
-                </button>
+                </Button>
               ))}
             </div>
           )}
-          <label className={own.field}>
-            <span className={own.prompt} aria-hidden>
-              &gt;
-            </span>
-            <input
-              className={styles.input}
-              autoFocus
-              placeholder={`a task, into ${kanban ? kanbanOf(kanban).cols[0].name : ''}`}
-              value={draft}
-              maxLength={TASK_TITLE_MAX}
-              aria-label="New task"
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={() => setDraft(null)}
-              onKeyDown={(e) => {
-                e.stopPropagation()
-                if (e.key === 'Enter' && draft.trim()) (make(draft), setDraft(''))
-                if (e.key === 'Escape') setDraft(null)
-              }}
-            />
-          </label>
+          <PromptField
+            framed
+            autoFocus
+            placeholder={`a task, into ${kanban ? kanbanOf(kanban).cols[0].name : ''}`}
+            value={draft}
+            maxLength={TASK_TITLE_MAX}
+            label="New task"
+            onChange={setDraft}
+            onBlur={() => setDraft(null)}
+            onSubmit={(v) => v.trim() && (make(v), setDraft(''))}
+            onEscape={() => setDraft(null)}
+          />
           <span className={styles.hint}>enter makes it · esc</span>
         </div>
       )}
       {testable && draft === null && (
         <div className={styles.pills}>
-          <button className={styles.pill} onClick={testIt} title="A task to find out whether this holds">
+          <Button onClick={testIt} title="A task to find out whether this holds">
             + test it
-          </button>
+          </Button>
         </div>
       )}
       {editor && !kanbans.length && <p className={own.none}>no deck yet: put one on the canvas from its +</p>}

@@ -69,24 +69,6 @@
   "src/views/workspace/CardKanban.tsx": {
     "button": 1
   },
-  "src/views/workspace/CardPanel.module.css": {
-    "bracket": 4,
-    "caps": 1
-  },
-  "src/views/workspace/CardPanel.tsx": {
-    "button": 15,
-    "input": 5,
-    "textarea": 3
-  },
-  "src/views/workspace/CardPanelKinds.tsx": {
-    "textarea": 2,
-    "input": 5,
-    "button": 13
-  },
-  "src/views/workspace/CardTasks.tsx": {
-    "button": 3,
-    "input": 1
-  },
   "src/views/workspace/DocContent.module.css": {
     "caps": 2
   },
@@ -170,14 +152,6 @@
   },
   "src/views/workspace/TableWizard.tsx": {
     "button": 2
-  },
-  "src/views/workspace/TaskPanel.module.css": {
-    "caps": 1
-  },
-  "src/views/workspace/TaskPanel.tsx": {
-    "button": 9,
-    "textarea": 2,
-    "input": 6
   },
   "src/views/workspace/TasksSide.module.css": {
     "caps": 1

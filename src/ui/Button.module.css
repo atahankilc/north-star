@@ -1,6 +1,7 @@
 /* The one button (src/ui/Button.tsx, D-326): `md` the page's `[ LABEL ]` (docs/DESIGN.md §6), its accent wiping in on
    hover; `sm` the small `[verb]`. AsciiButton.module.css's `small` and `button` compose these, for the CSS that still
-   composes them. */
+   composes them. Because other files compose this one, in dev its rules can be injected again after a caller's CSS:
+   a caller's class that changes a Button's padding or colour must outweigh it (`.x[data-icon]`, `.row .x`), not tie. */
 .md {
   position: relative;
   display: inline-flex;
@@ -128,6 +129,24 @@
 .sm[data-icon]::before,
 .sm[data-icon]::after {
   content: none;
+}
+
+/* `link`: a name that goes somewhere, in the text around it (no brackets, see `icon`). */
+.sm[data-link] {
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  white-space: normal;
+}
+
+.sm[data-link]:hover,
+.sm[data-link]:focus-visible {
+  color: var(--fg-strong);
+  text-decoration: underline;
+  text-decoration-color: var(--fg-faint);
+  text-underline-offset: var(--underline-offset);
 }
 
 /* With its key after it, quieter than the action (a dock's `esc`). */
