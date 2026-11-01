@@ -99,7 +99,7 @@ function SkillList({ q, list, at, onPick, onHover }: { q: string; list: Skill[];
         })}
       </div>
       <div className={styles.skillFoot} aria-hidden>
-        {list.length} {list.length === 1 ? 'skill' : 'skills'} · ↵ picks{q ? '' : ' · type to narrow'} · esc closes
+        {list.length} {list.length === 1 ? 'skill' : 'skills'}{q ? '' : ' · type to narrow'}
       </div>
     </div>
   )

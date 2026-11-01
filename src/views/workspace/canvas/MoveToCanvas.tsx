@@ -129,7 +129,7 @@ function Prompt({ asked, canvas, canvases, onClose }: { asked: { pieces: string[
       items={items}
       onClose={onClose}
       prompt={asked.share ? (n > 1 ? `put ${n} things on…` : 'put it on… as well') : n > 1 ? `move ${n} things to…` : 'move to…'}
-      keys={asked.share ? '↵ puts it there too · type a name for a new canvas' : '↵ moves · type a name for a new canvas'}
+      foot="or type a name for a new canvas"
       more={(typed) => (typed && !taken(typed) ? [{ key: 'make', label: `new canvas "${typed.slice(0, CANVAS_NAME_MAX)}"`, glyph: '+', onSelect: () => void go(typed) }] : [])}
     />
   )

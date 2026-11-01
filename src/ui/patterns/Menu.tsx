@@ -1,5 +1,5 @@
 // A dropdown menu (D-053) in the prompt look (D-222): `[ show ▾ ]` opens a list with a `>` line on top. Typing narrows the
-// list (matches in magenta) and Enter picks the first; an item's letter (`[p]`) puts it first, so `+` then `p` Enter makes
+// list (matches in magenta) and Enter picks the first; an item's letter (not shown: onboarding teaches it, D-344) puts it first, so `+` then `p` Enter makes
 // a plane. Checkbox items toggle and keep it open; action items run and close it. Arrow keys move, Home/End jump, Escape
 // closes and returns focus, a click outside closes. `MenuPanel` is the list alone, for the right-click menu too.
 import { AnimatePresence } from 'motion/react'
@@ -110,14 +110,15 @@ type PanelProps = {
   // Closes the menu; `refocus` = give focus back to what opened it.
   onClose: (refocus?: boolean) => void
   id?: string
-  // What the keys do, in the foot after the count (the default: `↵ picks the first` while searching).
-  keys?: string
+  // What else it can do, in the foot after the count (`or type a name to make it`); never keys (D-344: onboarding
+  // teaches them).
+  foot?: string
   // Items made from what's typed, after what it finds (the card picker's `new idea "…"`).
   more?: (typed: string) => MenuEntry[]
 }
 
 // The list with its `>` line and foot (D-222): a dropdown's panel, or the right-click menu's.
-export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…', noun = 'things', onClose, id, keys, more }: PanelProps) {
+export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…', noun = 'things', onClose, id, foot, more }: PanelProps) {
   const [query, setQuery] = useState('')
   const field = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLDivElement>(null)
@@ -127,8 +128,6 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
   const count = shown.filter((i) => !('heading' in i) && !i.browse).length
   // The `>` line stays while what's typed can make something.
   const any = items.length > 0 || !!more
-  // A column for `[k]` only when some item has a letter.
-  const keyed = items.some((i) => 'letter' in i && i.letter)
 
   useEffect(() => {
     requestAnimationFrame(() => (field.current ?? list.current?.querySelector<HTMLElement>('[role^=menuitem]'))?.focus())
@@ -190,7 +189,7 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
       )}
       <div ref={list} id={id} className={styles.list} role="menu" aria-label={ariaLabel}>
         {!any && <p className={styles.empty}>{empty ?? 'Nothing here yet'}</p>}
-        {any && count === 0 && <p className={styles.empty}>{q || items.length ? 'no match · esc closes' : (empty ?? 'Nothing here yet')}</p>}
+        {any && count === 0 && <p className={styles.empty}>{q || items.length ? 'no match' : (empty ?? 'Nothing here yet')}</p>}
         {shown.map((item, i) =>
           'heading' in item ? (
             item.heading ? (
@@ -223,17 +222,7 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
                 <span className={styles.check} data-on={item.checked} aria-hidden>
                   {item.checked ? '✓' : ''}
                 </span>
-              ) : (
-                keyed && (
-                  <span className={styles.letter} aria-hidden>
-                    {item.letter ? (
-                      <>
-                        [<b>{item.letter}</b>]
-                      </>
-                    ) : null}
-                  </span>
-                )
-              )}
+              ) : null}
               {item.glyph && (
                 <span className={styles.glyph} aria-hidden>
                   {item.glyph}
@@ -265,9 +254,9 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
         <div className={styles.foot} aria-hidden>
           {q
             ? count
-              ? `${count} found · ${keys ?? '↵ picks the first'}`
+              ? `${count} found${foot ? ` · ${foot}` : ''}`
               : ''
-            : `${count} ${count === 1 ? noun.replace(/s$/, '') : noun} · ${keys ?? `type to find${keyed ? ' · a letter goes first' : ''}`}`}
+            : `${count} ${count === 1 ? noun.replace(/s$/, '') : noun} · ${foot ?? 'type to find'}`}
         </div>
       )}
     </div>

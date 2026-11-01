@@ -6563,8 +6563,13 @@ D-343's unframed HUD icons; the two buttons (Button, ToolButton) stay.
 - No keys next to or inside a button: Button's `keyHint` prop deleted (the docks' moving `esc`, Window's, the agent's
   close), `apply ↵`, `discard esc`, `save ⌘↵`, `cancel esc`, the agent box's `⌘J`, the panels' `enter adds · esc`, the
   follow tag's `esc to stop` (now `stop`), the right panel's `esc`. Keys stay in `title`; onboarding teaches them. The
-  key lines not beside a button (prompt feet, the finder's and guide's foot, DrawSection's hint) are the separate
-  "key hints out" item in state.md.
+  rest went too (the user: "remove the remaining key hints too"): menu and prompt feet (`↵ picks the first`, `esc
+  closes`, the bring list's `⇧↵ more · ⌥↵ move here`; Menu's `keys` prop is `foot`, words only), the letter marks `[p]`
+  on menu rows (typing a letter still works), the finder's and the guide's foot lines, the skill menu's foot,
+  DrawSection's `esc to stop`, the panels' and the matrix's `enter adds`, a canvas's `⌥1`, the workspaces page's `↵`,
+  the agent's `(↵ on empty applies)`, and the delete confirms' `⌘Z brings it back` (now `You can undo it.`). Kept, on
+  purpose: onboarding itself (the welcome pages, the guide's key list, the kind guide's `?`), the agent settings' `keys`
+  row, the `/` that starts a skill (typed text, not a shortcut), and keys in tooltips (`title`).
 - New tokens: `--wash-4` (main's hover), `--wash-magenta` (danger's hover), `--press-scale`.
 - A person's square is one kit `Avatar` (the user: "user badgeleri ile buttonlar aynı genişliğe ve yüksekliğe sahip
   değiller"): `hud` 30 px like a ToolButton (people here, your square), `sm` 24 px like a Button (rows); PeopleHere,

@@ -748,7 +748,6 @@ function AddEntry({ which, label, style, piece, setup, shown, onPress, onAdded }
           if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) setOpen(false)
         }}
       />
-      <span className={styles.addHint}>{matches.length ? 'enter adds the name · or a card' : 'enter adds it'}</span>
       {matches.length > 0 && (
         <div className={styles.picks} role="listbox" aria-label="Cards that match">
           {matches.map((c) => (

@@ -105,7 +105,7 @@ feature comes back as a piece, and check them with the user then.
   `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge, cells (D-344); its `+` a drawn
   20 px magenta `+`, its menu opening right (D-178).
 - Menus, pickers and right-click are a **prompt** (D-222; an empty heading is a plain rule, D-291): a `>` line narrowing the list (Enter picks the first), `#
-  section` lines, rows `› [p] ▦ label  hint`, a letter puts its item first, a counting foot; Select: `•` current, the
+  section` lines, rows `› ▦ label  hint`, a letter puts its item first (not shown, D-344), a counting foot; Select: `•` current, the
   `>` line past 7 options.
 - One look and behaviour across the canvas (consistency.md; agreed D-263–D-267, built D-270, D-272–D-277):
   - Surface (D-263, D-274, D-289): pieces graphite (`--piece*`, white in light) with a 2 px band in their kind's colour

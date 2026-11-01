@@ -89,7 +89,6 @@ export function ChatsView() {
           prompt={open ? 'find, or type a new name…' : 'find a chat…'}
           noun="entries"
           empty="No saved chats yet: they're kept after the first answer."
-          keys="↵ opens · esc back"
           more={(typed) => (open ? [{ key: 'a-rename', letter: 'r', label: `rename this chat to "${typed.slice(0, 120)}"`, onSelect: () => (void agentActions.renameChat(chat.id, typed), 'keep') }] : [])}
           onClose={() => agentActions.show('chat')}
         />

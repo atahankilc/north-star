@@ -16,7 +16,6 @@ import { PromptField } from '../../../ui/primitives/PromptField'
 import { useWs } from '../canvas/context'
 import { dueText, kanbanOf, selectTask } from '../deck/Kanban'
 import { kindOfPiece } from '../../../data/pieces'
-import styles from './CardPanel.module.css'
 import own from './CardTasks.module.css'
 import { CheckMark } from '../../../ui/primitives/Checkbox'
 
@@ -109,7 +108,6 @@ export function TasksSection({ n, card, editor }: { n: number; card: Card; edito
             onSubmit={(v) => v.trim() && (make(v), setDraft(''))}
             onEscape={() => setDraft(null)}
           />
-          <span className={styles.hint}>enter makes it · esc</span>
         </div>
       )}
       {testable && draft === null && (

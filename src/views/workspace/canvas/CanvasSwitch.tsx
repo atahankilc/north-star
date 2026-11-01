@@ -16,7 +16,6 @@ import { ContextMenu } from '../../../ui/patterns/ContextMenu'
 import { useWs, useWsNow } from './context'
 import styles from './CanvasSwitch.module.css'
 
-const UNDO_HINT = navigator.platform.toLowerCase().includes('mac') ? '⌘Z' : 'Ctrl+Z'
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`
 
 type Mode = 'list' | 'new' | 'rename'
@@ -47,7 +46,7 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
       glyph: c.id === canvas ? '•' : ' ',
       letter: i < 9 ? String(i + 1) : undefined,
       // ⌥1–⌥9 go there from anywhere (MoveToCanvas' CanvasKeys).
-      hint: `${plural(piecesOn(c.id, pieces, spots).length, 'piece')}${i < 9 && canvases.length > 1 ? ` · ⌥${i + 1}` : ''}`,
+      hint: `${plural(piecesOn(c.id, pieces, spots).length, 'piece')}`,
       onSelect: () => c.id !== canvas && go(c.id),
     })),
     ...(editor
@@ -108,7 +107,7 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
                 items={[]}
                 onClose={close}
                 prompt={open.mode === 'new' ? 'name the new canvas…' : `rename "${shown.name}"…`}
-                empty={`a name, up to ${CANVAS_NAME_MAX} letters · ↵`}
+                empty={`a name, up to ${CANVAS_NAME_MAX} letters`}
                 more={naming}
               />
             )}
@@ -123,7 +122,7 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
             ...(goes.stay.length ? [`${plural(goes.stay.length, 'card')} also on planes elsewhere ${goes.stay.length === 1 ? 'stays' : 'stay'} there.`] : []),
             // A piece also on another canvas stays there (D-302's session 3).
             ...(goes.kept.length ? [`${plural(goes.kept.length, 'piece')} also on other canvases ${goes.kept.length === 1 ? 'stays' : 'stay'} there.`] : []),
-            `${UNDO_HINT} brings it back.`,
+            'You can undo it.',
           ]}
           confirm="delete"
           onCancel={() => setDeleting(null)}

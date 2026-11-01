@@ -250,12 +250,12 @@ function ListGuide({ model, onClose, onPlay, reach, resume }: { model: GuideMode
       <div className={styles.body}>
         <div ref={list} className={styles.list} role="listbox" aria-label="Notes and keys">
           {nowShown && <NowRow reach={reach!} picked={nowPicked} onClick={() => reach!.go()} />}
-          {rows.length === 0 && <Empty className={styles.none}>nothing matches · esc closes</Empty>}
+          {rows.length === 0 && <Empty className={styles.none}>nothing matches</Empty>}
           {rows.map((r, i) => (
             <RowView
               key={r.key}
               row={r}
-              model={model}
+             
               picked={!nowPicked && i === at}
               typed={!!query.trim()}
               onClick={() => {
@@ -272,10 +272,6 @@ function ListGuide({ model, onClose, onPlay, reach, resume }: { model: GuideMode
       </div>
       {below && <div className={styles.more}>{belowLine(below)}</div>}
       <div className={styles.foot}>
-        <span>
-          <b>→ ↵</b> open · <b>←</b> fold · <b>↵</b> on a note plays it · <b>⇥</b> tips · <b>esc</b>
-        </span>
-        <span className={styles.sp} />
         <span>
           {model.total} notes · {model.seen} seen
         </span>
@@ -301,8 +297,6 @@ function NowRow({ reach, picked, onClick }: { reach: NonNullable<Reach>; picked:
           ◆
         </span>
         <span className={styles.title}>{reach.title}</span>
-        <span className={styles.dot}>·</span>
-        <span className={styles.what}>↵ goes to it</span>
       </div>
     </>
   )
@@ -318,7 +312,7 @@ function Status({ seen }: { seen: boolean }) {
 
 const New = () => <span className={styles.new}>NEW</span>
 
-function RowView({ row: r, model, picked, typed, onClick, onFold }: { row: Row; model: GuideModel; picked: boolean; typed: boolean; onClick: () => void; onFold: () => void }) {
+function RowView({ row: r, picked, typed, onClick, onFold }: { row: Row; picked: boolean; typed: boolean; onClick: () => void; onFold: () => void }) {
   if (r.kind === 'head') {
     return (
       <div className={styles.hd} role="presentation">
@@ -395,7 +389,6 @@ function RowView({ row: r, model, picked, typed, onClick, onFold }: { row: Row; 
     )
   }
   const k: KeyRow = r.row
-  const plays = !!keyLesson(model, k)
   return (
     <div {...common} data-ind data-key-row>
       {cur}
@@ -407,7 +400,6 @@ function RowView({ row: r, model, picked, typed, onClick, onFold }: { row: Row; 
           <span className={styles.what}>{k.where}</span>
         </>
       )}
-      {plays && picked && <span className={styles.hint}>↵ its note</span>}
     </div>
   )
 }

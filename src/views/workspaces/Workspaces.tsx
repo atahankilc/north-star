@@ -409,7 +409,7 @@ function Found({ rows, pick, q, visits, tasks, onPick, onRun, onMenu }: {
                 </>
               ) : (
                 <>
-                  <span className={styles.rowN} data-make>↵</span>
+                  <span className={styles.rowN} data-make>→</span>
                   <span className={styles.rowName} data-make>ask to join {r.code}</span>
                   <span className={styles.rowSub}>an owner lets you in; it waits on this page until then</span>
                 </>
@@ -544,7 +544,7 @@ function StartRow({ small, onFile }: { small?: boolean; onFile: () => void }) {
       <Appear>
         <PieceCard band="var(--accent-magenta)" name="new" className={styles.info}>
           <span className={styles.needT}>{small ? 'Another idea' : 'Start one'}</span>
-          <span className={styles.needS}>Type its name in the line above and press ↵.</span>
+          <span className={styles.needS}>Type its name in the line above.</span>
         </PieceCard>
       </Appear>
       <Appear>

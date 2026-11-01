@@ -34,7 +34,7 @@ export default example({
   name: 'Window',
   place: 'overlays/dialogs',
   file: 'src/ui/patterns/Window.tsx',
-  note: 'the one window (D-326): role=dialog, focus in and back, Escape, the scrim, [×] esc, the wizard window’s frame',
+  note: 'the one window (D-326): role=dialog, focus in and back, Escape, the scrim, the × cell, the wizard window’s frame',
   states: {
     'modal, with its close': () => (
       <Shown label="A window" close>

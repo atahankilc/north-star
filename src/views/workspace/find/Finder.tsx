@@ -422,22 +422,6 @@ function Panel() {
         )}
 
         <div className={styles.foot} style={{ height: FOOT }}>
-          <span>
-            {going ? (
-              <>
-                <b>↑↓</b> pick · <b>enter</b> go there · <b>→ ←</b> a plane's places · type to find · <b>esc</b>
-              </>
-            ) : (
-              <>
-                <b>↑↓</b> or a click: preview · <b>enter</b> or a double-click: go there · {scopes.length > 1 && (
-                  <>
-                    <b>⇥</b> {scopes.map((s) => SCOPE_NAME[s]).join(' / ')} ·{' '}
-                  </>
-                )}
-                <b>esc</b>
-              </>
-            )}
-          </span>
           <span>{searching ? 'searching…' : query && found instanceof RegExp ? `${total} ${total === 1 ? 'match' : 'matches'}${more > 0 ? ` (${rows.length} shown: type more)` : ''} · ${SCOPE_NAME[scope]}` : ''}</span>
         </div>
       </Window>

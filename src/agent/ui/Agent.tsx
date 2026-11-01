@@ -333,7 +333,7 @@ function Column() {
           running={running}
           data={{ 'data-agent-input': true }}
           value={text}
-          placeholder={running ? 'tell it something while it works… (it reads it at its next step)' : phase === 'previewing' ? 'change something… (↵ on empty applies)' : `ask about ${ask}… (/ for skills)`}
+          placeholder={running ? 'tell it something while it works… (it reads it at its next step)' : phase === 'previewing' ? 'change something…' : `ask about ${ask}… (/ for skills)`}
           label="Ask the agent"
           onChange={setText}
           onSubmit={() => {}}

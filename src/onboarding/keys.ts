@@ -28,7 +28,7 @@ export const KEYS: readonly KeyRow[] = [
   { keys: 'esc', what: 'back out: close, let go, leave a focus' },
   { keys: 'delete  ⌫', what: 'delete what is selected (a piece: in edit mode, and it asks first)', editors: true },
   // The `+` and every menu
-  { keys: '+ p ↵', what: 'a plane (any letter in [ ] puts its row first)', where: 'the + menu', lesson: 'kind-guide', editors: true },
+  { keys: '+ p ↵', what: 'a plane (a kind’s letter puts its row first)', where: 'the + menu', lesson: 'kind-guide', editors: true },
   { keys: 'type', what: 'narrow a menu; ↵ picks the first', where: 'menus' },
   { keys: '↑ ↓', what: 'move through the rows', where: 'menus, finder, this guide' },
   { keys: 'home end', what: 'the first or the last row', where: 'menus' },

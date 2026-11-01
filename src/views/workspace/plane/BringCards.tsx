@@ -93,7 +93,6 @@ export function BringCards({ here, origin }: { here: string; origin: { left: num
       items={items}
       what="Cards from other planes"
       prompt="bring a card from another plane…"
-      keys="↵ bring · ⇧↵ more · ⌥↵ move here"
       noun="cards"
       empty="No cards on other planes yet"
       wide

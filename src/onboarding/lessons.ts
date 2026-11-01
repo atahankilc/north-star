@@ -241,10 +241,10 @@ export const LESSONS: readonly Lesson[] = [
     line: 'press + to add your first piece',
   },
   {
-    id: 'workspaces-empty', v: 2, format: 'empty', roles: ALL, area: 'start', since: 'D-062, D-338',
+    id: 'workspaces-empty', v: 3, format: 'empty', roles: ALL, area: 'start', since: 'D-062, D-338',
     trigger: [{ event: 'workspaces-open', when: { empty: true } }], doneWhen: [{ event: 'ws-made' }, { event: 'join-requested' }], anchor: 'workspaces-empty',
     choices: [
-      { label: 'Start one', line: 'Type its name in the line above and press ↵.' },
+      { label: 'Start one', line: 'Type its name in the line above.' },
       { label: "Join a teammate's", line: 'Paste the code they gave you above. An owner lets you in.' },
       { label: 'Bring one in', line: 'A .zip exported from North Star: drop it anywhere on this page.' },
     ],

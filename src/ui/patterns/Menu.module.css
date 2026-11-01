@@ -273,18 +273,6 @@
   color: var(--fg-strong);
 }
 
-/* `[p]`: the item's letter. */
-.letter {
-  font-family: var(--font-mono);
-  flex: none;
-  width: 3ch;
-  color: var(--fg-faint);
-}
-
-.letter b {
-  color: var(--fg-dim);
-  font-weight: inherit;
-}
 
 .match {
   background: none;

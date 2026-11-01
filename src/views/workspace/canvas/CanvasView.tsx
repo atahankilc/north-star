@@ -1161,7 +1161,7 @@ export function CanvasView() {
           title={`unshare "${unsharingDoc.title.length > 40 ? `${unsharingDoc.title.slice(0, 39)}…` : unsharingDoc.title}"?`}
           lines={[
             `It's on the canvas ${unsharingPieces.length === 1 ? 'once' : `${unsharingPieces.length} times`}. Only you would see it, so ${unsharingPieces.length === 1 ? 'that piece is' : 'those pieces are'} taken off the canvas.`,
-            editor ? `${UNDO_HINT} brings it back.` : 'An editor has to take it off the canvas first: you can only read here.',
+            editor ? 'You can undo it.' : 'An editor has to take it off the canvas first: you can only read here.',
           ]}
           confirm="unshare"
           onCancel={() => useDocUi.setState({ unsharing: null })}
@@ -1179,7 +1179,7 @@ export function CanvasView() {
           title={`delete "${deletingDoc.title.length > 40 ? `${deletingDoc.title.slice(0, 39)}…` : deletingDoc.title}"?`}
           lines={[
             everyPiece.some((p) => p.docId === deletingDoc.id) ? 'The document goes, and every piece showing it on the canvas.' : 'The document goes from every list.',
-            `${UNDO_HINT} brings it back.`,
+            'You can undo it.',
           ]}
           confirm="delete"
           onCancel={() => useDocUi.setState({ deleting: null })}
@@ -1197,7 +1197,7 @@ export function CanvasView() {
           lines={[
             `${deletingCards.ids.length > 1 ? 'They go' : 'It goes'} from every plane ${deletingCards.ids.length > 1 ? "they're" : "it's"} on, with ${deletingCards.ids.length > 1 ? 'their' : 'its'} links.`,
             `To take ${deletingCards.ids.length > 1 ? 'them' : 'it'} off this plane only: ⌫.`,
-            `${UNDO_HINT} brings it back.`,
+            'You can undo it.',
           ]}
           confirm="delete everywhere"
           onCancel={() => useCanvasView.setState({ deleting: null })}
@@ -1242,7 +1242,7 @@ export function CanvasView() {
                   : 'The plane and everything on it goes.',
             ),
             ...(isBare(confirming) ? [] : sharedOnOf(cards, places, confirming)),
-            `${UNDO_HINT} brings it back.`,
+            'You can undo it.',
           ]}
           confirm={confirming.canvases ? 'delete everywhere' : 'delete'}
           onCancel={() => useCanvasView.setState({ confirming: null })}
@@ -1341,7 +1341,6 @@ function DocPlaceHere({ wid, ...props }: Omit<Parameters<typeof DocPlace>[0], 'z
   return <DocPlace {...props} zoom={cam?.zoom ?? 1} />
 }
 
-const UNDO_HINT = navigator.platform.toLowerCase().includes('mac') ? '⌘Z' : 'Ctrl+Z'
 
 type BoxProps = {
   piece: WithId<Piece>

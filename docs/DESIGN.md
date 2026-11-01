@@ -68,7 +68,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Big size contrast: huge display titles, small mono labels.
 - *Which face (D-337, replacing D-093's split):* Inter is the page's default: titles, reading text, rows, hints, meta
   lines, fields, settings, menus' items, tasks, table cells. JetBrains Mono only where the system speaks: caps labels
-  (Label, Rule, kinds, piece names, column heads), numbers and counts, buttons, keys (`[p]`, `⌘F`), the
+  (Label, Rule, kinds, piece names, column heads), numbers and counts, buttons, the
   prompt's `>` and `›`, glyphs, cells, consoles and docks, readouts, tags, sticky notes, and the landing's name (D-340). A rule that sets mono on a
   whole container is wrong now: set it on the bit.
 - *Scale (tokens.css; no raw px sizes):* `--text-xs` 12 (labels, meta, small buttons; nothing smaller), `--text-sm` 14 (body
@@ -253,9 +253,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Dropdowns (`src/ui/patterns/Menu.tsx`) are a **prompt** (D-222): a trigger cell `SHOW all ▾` (D-344) (or a side nav icon), a list on
   page black with a `--line-hover` edge, built cell by cell. On top a `>` line with focus (a placeholder saying what it
   does: `add…`, `find a place…`): typing narrows the list, the typed part lit magenta, Enter picks the first. `# text`
-  section lines. A row: a magenta `›` where Enter goes, the item's letter `[p]` (typed alone it goes first: `+` `p` Enter
-  makes a plane), its glyph, the label, a faint hint; dangerous ones red; `[x]`/`[ ]` checks. A foot counts what's shown
-  (`8 things · type to find · a letter goes first`). The right-click menu (`ContextMenu.tsx`) is the same panel at the
+  section lines. A row: a magenta `›` where Enter goes, its glyph, the label, a faint hint; dangerous ones red; ticked rows
+  `✓` on a wash (D-344). An item's letter still puts it first when typed alone (`+` `p` Enter makes a plane), but isn't
+  shown: no keys are shown anywhere in the app (D-344), onboarding teaches them. A foot counts what's shown
+  (`8 things · type to find`). The right-click menu (`ContextMenu.tsx`) is the same panel at the
   pointer, its `>` line saying what it's on (`do with this customer…`).
 - One-of pickers (`src/ui/primitives/Select.tsx`, D-093), never the browser's `<select>`: an inline `value ▾` opens a compact list in
   the prompt's look, a cyan `•` on the current value, the magenta `›` + wash under the pointer or keys; past 7 options the
