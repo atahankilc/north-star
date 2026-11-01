@@ -7,6 +7,7 @@ Project: "Pazar" — building "Pre-orders from neighbourhood market stalls, pick
 People: u1 Ayşe Demir (owner) · u2 Jonas Weber (editor) · u3 Mert Kaya (editor) · u4 Lea Hoffmann (viewer)
 Holds: 2 canvases · 15 pieces · 148 cards · 260 links · 60 tasks · 31 texts · 4 documents · 8 comment threads
 Comments: 8 threads (2 resolved) on c23, c38, c7, c131, c17, c138, c37, c16 · query({kind: "comment"}) lists them
+Regions below are as typed: a place counts inside the bigger ones (Germany is in DACH, EU, Europe, Global), so a competitor list or count by region comes from query({region}), never from these lines.
 
 ## k1 canvas "Discovery"
 x1 project title "Pazar — Pre-orders from neighbourhood market stalls, picked up on the way home"

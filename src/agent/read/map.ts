@@ -64,6 +64,10 @@ function render(ws: ReadWs, ids: Ids, L: Level): string {
     const on = [...new Set([...open, ...ws.threads.filter((t) => t.resolved)].sort((a, b) => b.lastAt - a.lastAt).map((t) => (t.on === 'card' ? ids.short('card', t.targetId) : t.on === 'task' ? ids.short('task', t.targetId) : t.on === 'plane' ? ids.short('piece', t.targetId) : t.on === 'label' ? ids.short('text', t.targetId) : ids.short('link', t.targetId))))]
     out.push(`Comments: ${count(ws.threads.length, 'thread')} (${ws.threads.length - open.length} resolved) on ${on.slice(0, 12).join(', ')}${on.length > 12 ? '…' : ''} · query({kind: "comment"}) lists them`)
   }
+  // agent-bugs 15: the map's regions are as typed, so a list read off them misses the competitors a bigger region
+  // covers; the note says where the containment is done.
+  if (ws.cards.some((c) => c.type === 'competitor' && c.regions?.length))
+    out.push(`Regions below are as typed: a place counts inside the bigger ones (Germany is in DACH, EU, Europe, Global), so a competitor list or count by region comes from query({region}), never from these lines.`)
   if (L.n > 0) out.push(`(Summed up to fit: level ${L.n}. Use view, query and search for the rest.)`)
 
   for (const canvas of ws.canvases) {

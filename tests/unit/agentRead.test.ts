@@ -103,6 +103,12 @@ describe('the read layer: sizes', () => {
     const m = workspaceMap(ws, ids)
     for (const c of ws.cards) expect(m).toContain(`${ids.short('card', c.id)} · ${c.type}`)
   })
+  it('agent-bugs 15: a map with regions says they are as typed and that query({region}) lists by region', () => {
+    const ws = mediumWs()
+    expect(workspaceMap(ws, makeIds())).toMatch(/Regions below are as typed.*query\(\{region\}\)/)
+    const none = { ...ws, cards: ws.cards.map((c) => ({ ...c, regions: undefined })) }
+    expect(workspaceMap(none, makeIds())).not.toMatch(/Regions below/)
+  })
   it('every result on the big workspace stays under 8k tokens, and a long one says how to get more', () => {
     const ws = bigWs()
     const ids = makeIds()

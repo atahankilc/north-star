@@ -7,6 +7,7 @@ Project: "Tablebook" — building "Ordering ahead for small cafés"
 People: u1 Alice (owner) · u2 Bob (editor) · u3 Carol (viewer)
 Holds: 2 canvases · 10 pieces · 10 cards · 4 links · 4 tasks · 4 texts · 1 document · 1 comment thread
 Comments: 1 thread (0 resolved) on c3 · query({kind: "comment"}) lists them
+Regions below are as typed: a place counts inside the bigger ones (Germany is in DACH, EU, Europe, Global), so a competitor list or count by region comes from query({region}), never from these lines.
 
 ## k1 canvas "Main"
 x4 project title "Tablebook — Ordering ahead for small cafés"

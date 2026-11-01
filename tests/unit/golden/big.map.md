@@ -7,6 +7,7 @@ Project: "Ledgerly" — building "Bookkeeping and tax for freelancers across Eur
 People: u1 Lena Fischer (owner) · u2 Omar Haddad (owner) · u3 Claire Martin (editor) · u4 Tobias Braun (editor) · u5 Sofia Rossi (editor) · u6 Ben Okafor (viewer)
 Holds: 3 canvases · 31 pieces · 1511 cards · 3000 links · 400 tasks · 191 texts · 20 documents · 40 comment threads
 Comments: 40 threads (14 resolved) on c9, c673, c175, c737, c786, c1093, c710, c868, c1442, c1377, c1408, c990… · query({kind: "comment"}) lists them
+Regions below are as typed: a place counts inside the bigger ones (Germany is in DACH, EU, Europe, Global), so a competitor list or count by region comes from query({region}), never from these lines.
 (Summed up to fit: level 3. Use view, query and search for the rest.)
 
 ## k1 canvas "Discovery"
