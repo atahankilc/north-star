@@ -28,7 +28,7 @@ export type Skill = {
   plan?: boolean
 }
 
-const CITE = 'Every claim about the workspace names its card: short id and title, as c12 "Title". A claim the workspace doesn\'t back says "unknown" instead. For a plane: its own cards first; a card from another plane only as context, marked with its plane, as c47 "Localmate" (on Rivals).'
+const CITE = 'Every claim about the workspace names its card: short id and title, as c12 "Title". A claim the workspace doesn\'t back says "unknown" instead. When the person asks about one plane ("for Pricing", "on Roadmap"): that plane\'s cards first; a card from another plane only as context, marked with its plane, as c47 "Localmate" (on Rivals). A document about the whole workspace needs no such mark.'
 const DOC = 'Write it with create_document (one call, Markdown, private unless the person asks to share it): a title, short sections with headings, bullet lines. ' + CITE + ' Then answer in two or three lines: what the document holds and that it waits in the preview.'
 
 export const SKILLS: Skill[] = [

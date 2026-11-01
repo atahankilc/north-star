@@ -1212,3 +1212,6 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   beside the changes and the cited items' facts. Replay 95 → 96 (judges left out). Verified: tsc, vitest 968, stub
   evals 0 failed, `--wrong` 116 failed. Earlier the same day: the stub evals through D-335's deployed field lists on
   the emulators (`--emulator`): 116 tasks, 0 failed.
+- terra ×1 (91/116, 78 %, $7.73) read failure by failure: dedupe-03's wording, CITE's "(on X)" only for an ask about
+  one plane. The evals' picture font swapped to Inter (D-337; evals/fonts, render.ts; with no font file resvg draws no
+  text, with them it does). Sonnet's run refused: a key not scoped to an Anthropic workspace.

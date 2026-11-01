@@ -208,6 +208,12 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     (the regex now takes a word after "positioning"), build-01's axes either way round, and the judge (it now gets the
     short ids beside the run's changes and the facts of every item the answer or document cites, so a card known from
     the map isn't "invented").
+    Then terra ×1 on all of it (2026-11-01, report 2026-11-01T15-17-29-027Z): 91/116 (78 %), $7.73; its failures read:
+    the model's (19, 20, build-04/05 planning, compare's missed matches, test-03 asking who owns the tasks mid-job,
+    import-01 rewording the pasted lines, sort-stickies-01 making no cards) and two of the evals' (dedupe-03's "no
+    competitor pair safe to merge"; the judge reading the "(on Rivals)" mark into whole-workspace documents: CITE now
+    says it is for an ask about one plane). claude-sonnet-5-5 didn't run: the key wasn't scoped to an Anthropic
+    workspace (400, "must include the anthropic-workspace-id header"); a key made inside a Console workspace works.
 
 ## Plumbing: wiring the app to what was built
 

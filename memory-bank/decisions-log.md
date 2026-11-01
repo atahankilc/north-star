@@ -6367,12 +6367,12 @@ The agent's column too (the user: "coordinate with the other agent and update ag
 nothing open there): its box, column, `/` menu, job, go-on line, notes field, settings hint and `was` box in Inter;
 its model name, step marks and tool labels, timings, tokens, ticks, counts, keys, the skill menu's marks mono.
 The agent's picture too (the user: "yup change it too"): PICTURE_FONT 'Inter', the browser's renderer
-embeds Inter's opsz woff2 (latin + latin-ext), `@fontsource-variable/geist` removed; the evals' side (evals/render.ts,
-evals/fonts: Inter Regular/Bold static TTFs) left to the agent's session, as the user asked (a terra eval was
-running). labelBox's
+embeds Inter's opsz woff2 (latin + latin-ext), `@fontsource-variable/geist` removed; the evals' side swapped by the agent's session
+after that run (evals/fonts: Inter Regular/Bold static TTFs from Google Fonts' v20, Inter's OFL; evals/render.ts loads
+them; checked: with no font file resvg draws no text, with them it draws the Turkish test line). labelBox's
 PROSE_EM stays 0.46 (Inter measured 0.463 vs Geist 0.451; the estimate ran 3–8 % over in Geist, so it still rounds
 up; its test passes).
 Verified: build, vitest 968, check:tokens 0, check:kit 13, check:gallery; headless shots of the gallery (card panel,
 deck, table, menu typed, settings, plane; dark and light) against a worktree of the code before.
 Not yet: `--fg-faint`'s 129 uses not read one by one (some hold words that should be `--fg-dim`); the world's smallest
-sizes (`--w-text-3xs` 7, `-2xs` 8) unchanged; evals/fonts still Geist until the agent's session swaps them.
+sizes (`--w-text-3xs` 7, `-2xs` 8) unchanged.

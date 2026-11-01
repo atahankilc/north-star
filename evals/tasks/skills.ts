@@ -1266,7 +1266,7 @@ export const SKILL_TASKS: Task[] = [
     fixture: 'medium',
     ask: '/dedupe competitors',
     autoGo: false,
-    graders: [noWriteAttempts(), answerIncludes([/\bno\b[^.\n]{0,30}\bduplicates?\b|\bnone\b/i])],
+    graders: [noWriteAttempts(), answerIncludes([/\bno\b[^.\n]{0,40}\b(duplicates?|pairs?)\b|\bnot duplicates\b|\bnone\b|\bno merges?\b|nothing to merge/i])],
     reference: [
       call('query', { kind: 'card', type: 'competitor', limit: 20 }),
       answer('No near-duplicates among the 14 competitors: c37 Bazaarcart, c38 Bazaarmate and c44 Bazaarrun share a start but are different companies (other regions, other features). Nothing to merge.'),
