@@ -1064,3 +1064,9 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   job pauses when a turn proposes nothing; the eval runner's go follows a waiting `plan`; the apply button names the
   deletes. edit-10 rewritten, refuse-04 became edit-14, build-04's reference calls `plan`.
 - Verified: tsc (app, evals), vitest 920, check:tokens 0, stub evals 114 tasks 0 failed, `--wrong` 114 failed.
+
+## Done (2026-11-01): agent-bugs 2 and 22, short ids shown with their names
+- read/names.ts resolves a short id of any letter to its name (and where it goes); the chat shows every short id with
+  its name, linked where there's a place; create_document writes `c12 "title"` for a bare `c12`.
+- Verified: an answer of bare ids of eight letters in headless Chrome (dev hook `__agent`), tsc, vitest 925
+  (agentNames.test.ts), check:tokens 0, stub evals 0 failed, `--wrong` 114 failed.

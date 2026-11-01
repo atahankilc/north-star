@@ -27,6 +27,7 @@ import { browserApply, lockPreview, lockTurn, releaseAgentLocks, undoAgentStep, 
 import { accept as acceptChanges, discard as discardChanges, emptyChangeset, pendingCount, untick as untickChange, type Changeset, type ChangeItem } from '../changeset'
 import { closePreview, goOf, openPreview, previewState, setCurrent, updatePreview } from '../preview'
 import { makeIds, type Ids } from '../read'
+import { namedShort, type Named } from '../read/names'
 import { agentUi, leaveGoneCanvas } from '../ui'
 import { recordTurn } from '../usage'
 import { systemPrompt } from '../prompt'
@@ -633,8 +634,13 @@ async function accept(chat: Chat) {
   if (r.stale) dispatch({ type: 'untick', pending: pendingCount(r.cs) })
 }
 
-// The real id behind a short id the chat's answers cite (`c12`), for a link that goes there.
-export const realOf = (short: string): string | undefined => rtOf(get().chat).ids.real(short)?.id
+// What a short id in the chat names (agent-bugs 2): its name, and where it goes when there is a place (read/names.ts,
+// the same resolver documents use), on the workspace as it is now.
+export function namedOfShort(short: string): Named | undefined {
+  const c = get().chat
+  const ws = c.wid ? liveWs(c.wid) : null
+  return ws ? namedShort(ws, rtOf(c).ids, short) : undefined
+}
 
 // The change lines grouped by where they are, in the order first touched (changeset.ts' byWhere for the UI's lines).
 export function byWhereLines(items: ChangeLine[]): [string, ChangeLine[]][] {

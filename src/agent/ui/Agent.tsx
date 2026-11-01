@@ -20,7 +20,7 @@ import { Select } from '../../ui/Select'
 import { openSettingsAt } from '../../ui/Settings'
 import { useWs } from '../../views/workspace/context'
 import { isTyping } from '../../views/workspace/useEditKeys'
-import { agentActions, byWhereLines, canRun, chatModel, isViewer, realOf, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
+import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
 import { pickerRows } from '../models'
 import type { Job, JobStep } from '../job'
 import { pickable, suggested, useAgentSettings } from './settings'
@@ -690,8 +690,9 @@ function Step({ s }: { s: StepLine }) {
 }
 
 // The answer in light Markdown (paragraphs, `- ` bullets, **bold**, `code`), with cited things as links: `c12 "title"`
-// goes there (the UI facade's goTo).
-const CITE = /\*\*[^*]+\*\*|`[^`]+`|\b[cptxd]\d+\b(?:\s+"[^"\n]{1,90}")?/g
+// goes there (the UI facade's goTo). Every short id, of every letter, shows its name (agent-bugs 2): a bare `c12` reads
+// `c12 "Bread club"`; one with no place to go to (a document, a person) is named but not a link.
+const CITE = /\*\*[^*]+\*\*|`[^`]+`|\b[cptxkevfdmu]\d+\b(?:\s+"[^"\n]{1,90}")?/g
 
 function inline(line: string): ReactNode[] {
   const out: ReactNode[] = []
@@ -703,10 +704,15 @@ function inline(line: string): ReactNode[] {
     if (t.startsWith('**')) out.push(<strong key={i}>{t.slice(2, -2)}</strong>)
     else if (t.startsWith('`')) out.push(<code key={i}>{t.slice(1, -1)}</code>)
     else {
-      const short = /^[cptxd]\d+/.exec(t)![0]
-      const real = realOf(short)
+      const short = /^[a-z]\d+/.exec(t)![0]
+      const named = namedOfShort(short)
+      const real = named?.go
+      // The model's own title when it gave one, else the name.
+      const rest = t.length > short.length ? t.slice(short.length) : named ? ` ${named.name}` : ''
       out.push(
-        real ? (
+        !named ? (
+          t
+        ) : real ? (
           // A span, not a button: a button is inline-block, so a wrapped title's underline ran to the edge.
           <span
             key={i}
@@ -722,10 +728,13 @@ function inline(line: string): ReactNode[] {
             title="go there"
           >
             <span className={styles.citeId}>{short}</span>
-            {t.slice(short.length)}
+            {rest}
           </span>
         ) : (
-          t
+          <span key={i}>
+            <span className={styles.citeId}>{short}</span>
+            {rest}
+          </span>
         ),
       )
     }

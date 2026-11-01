@@ -42,8 +42,8 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 25 | evals build their store apart from the app's     | Plumbing     | blocker  | code (evals)     | fixed  |
 | 1  | document text never loaded                       | Plumbing     | high     | code             | fixed  |
 | 5  | an apply is never told to the model              | Plumbing     | mid      | code             | fixed  |
-| 2  | bare short ids in the chat                       | Plumbing     | mid      | code             | open   |
-| 22 | bare ids in documents                            | Plumbing     | mid      | code             | open   |
+| 2  | bare short ids in the chat                       | Plumbing     | mid      | code             | fixed  |
+| 22 | bare ids in documents                            | Plumbing     | mid      | code             | fixed  |
 | 9  | skills list doesn't scroll                       | Plumbing     | low      | code             | open   |
 | 7  | preview inside a piece spills onto the canvas    | Preview      | high     | code             | fixed  |
 | 3  | the stepper's item doesn't stand out             | Preview      | mid      | code             | fixed  |
@@ -198,6 +198,12 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     renamed card leaves the document on its old name. A reference resolved when the document is drawn would stay
     current, but documents are exported and read outside the app; that choice is for the documents' writing session
     (D-232), the rewrite stands until then.
+    *2 and 22 fixed 2026-11-01:* one resolver, src/agent/read/names.ts (`namedShort`: every letter, with where it goes
+    when it has a place; `withNames`: a bare id followed by its name, a titled one, code and unknown ids left). The
+    chat draws every short id with its name (a link for cards, pieces, text, tasks, canvases, and links, evidence and
+    features through their card; documents, threads and people named, not linked), checked in headless Chrome with an
+    answer of bare ids; `create_document`'s text goes through `withNames` in change.ts. docWritten already fails a
+    `c12` without its title, so the document tasks guard 22; tests/unit/agentNames.test.ts holds the resolver.
 9.  **The skills list (`/`) doesn't scroll with the arrow keys.** ↑/↓ move the pick (SkillMenu.tsx `setAt`) but the
     picked row goes below the list's edge. Fix: `scrollIntoView({ block: 'nearest' })` on the picked row when `at`
     changes.

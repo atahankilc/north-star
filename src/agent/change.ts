@@ -24,6 +24,7 @@ import { ID_KEYS } from './idKeys'
 import { makeIds, resolve, resolvePerson, unclear, view, type IdKind, type Ids } from './read'
 import { clean, derive } from './read/derive'
 import { norm, q, wrap } from './read/text'
+import { withNames as textWithNames } from './read/names'
 import type { AgentEnv, AgentWs } from './contract'
 import type { OpError } from '../ops/types'
 
@@ -183,7 +184,11 @@ export function parseChange(ws: AgentWs, ids: Ids, args: Record<string, unknown>
     if (DELETE_OPS.has(def.name) && !why) return void errors.push(`ops[${i}] ${def.name} needs a why: the reason the person reads beside it in the preview`)
     const r = resolveIds(ws, ids, def.name, a, `ops[${i}] ${def.name}.args`)
     if (r.errors.length) return void errors.push(...r.errors)
-    ops.push({ op: def.name, args: withNames(ws, r.value as Record<string, unknown>), ...(why ? { why } : {}) })
+    let value = withNames(ws, r.value as Record<string, unknown>)
+    // A document is read outside the agent: a bare `c12` in it becomes `c12 "title"` (agent-bugs 22). The title is the
+    // one it has now (a renamed card leaves the document on its old name).
+    if (def.name === 'create_document' && typeof value.text === 'string') value = { ...value, text: textWithNames(value.text, ws, ids) }
+    ops.push({ op: def.name, args: value, ...(why ? { why } : {}) })
   })
   if (errors.length) return { ok: false, text: `change refused, nothing added:\n${errors.slice(0, 10).join('\n')}` }
   return { ok: true, ops, drop, ...(typeof args.summary === 'string' && args.summary.trim() ? { summary: args.summary.trim() } : {}), dryRun: args.dry_run === true }
