@@ -3,8 +3,9 @@
   display: inline-grid;
   flex-shrink: 0;
   place-items: center;
-  width: var(--control);
-  height: var(--control);
+  /* `hud`: as big as the HUD's tools, which the HUD's size sets (D-348). */
+  width: var(--hud-tool);
+  height: var(--hud-tool);
   overflow: hidden;
   background: var(--peer);
   color: var(--on-accent);

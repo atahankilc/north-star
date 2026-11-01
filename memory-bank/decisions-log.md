@@ -6618,3 +6618,18 @@ Inside a workspace (`/workspaces/<id>`) the backdrop runs at 70 % brightness (`W
 src/three/sceneClock.ts, passed as `<Backdrop dim>` from App.tsx); the landing and the workspaces page stay at full.
 It eases there through the existing `backdropDim` (the curtain reads the same value). Replaces D-174's "full strength"
 on the canvas. *Not yet:* looked at in a browser by the user; 0.8 at first, then 0.7 (the user: "biraz daha azalt, 0.7 yap").
+
+### D-348 · 2026-11-01 · Accepted (the user: "hud ın büyüklüğünü ayarlara geçirmek istiyorum, display ayarlarına geçebilir. Eğer başka önerilerin varsa da dinlemek isterim"; picked "small / normal / large" and, of the other ideas, "Arka plan yoğunluğu")
+Settings → display gets two rows, saved in this browser like theme, motion and background:
+- **hud size** `small | normal | large` (default normal, today's size): the HUD's tools (every ToolButton), the side
+  nav's `+` (Menu's new `hud` prop), people's squares and `+N`, your square, and the breadcrumb's text, through
+  `--hud-tool` (24 / 30 / 36 px), `--tool-icon` (14 / 18 / 22), `--hud-plus` (16 / 20 / 24) and `--hud-text`
+  (12 / 14 / 15) under `[data-hud]` on `<html>` (tokens.css); `--corner-h` follows. index.html sets it before the first
+  paint. The side nav's and corner's lane stays 36 px. Panels, menus, consoles and pieces keep their size.
+- **background strength** `soft | normal | strong` (0.7 / 1 / 1.35, `STRENGTH_FACTOR` in src/state/display.ts), only
+  while the background is on and only on signed-in pages, times the workspace's own dim (D-346); strong lifts the faint
+  glyphs some screens crush (Q-033, from the user's side). The light-theme shader caps ink cover at 1.
+The settings lesson bumped to v2. No release entry: the first "what's new" is still the user's call (state.md).
+Alternatives offered: two steps (normal / large), four (up to 48 px); also an interface text size, hiding others'
+cursors, grid dots on/off (not picked).
+*Not yet:* looked at in the app by the user; Q-033's own fixes (a), (b) still open.

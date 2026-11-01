@@ -92,6 +92,17 @@
   color: inherit;
 }
 
+/* In the HUD (the side nav's `+`), it follows the HUD's size (D-348), its drawn `+` with it. */
+.icon[data-hud] {
+  width: var(--hud-tool);
+  height: var(--hud-tool);
+}
+
+.icon[data-hud] .label svg {
+  width: var(--hud-plus);
+  height: var(--hud-plus);
+}
+
 .icon:hover,
 .icon:focus-visible {
   color: var(--accent-magenta);

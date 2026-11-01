@@ -55,8 +55,8 @@
 
 .stack .person {
   position: relative;
-  /* As tall as the square in it (Avatar's hud size, a ToolButton's 30 px, D-344). */
-  height: var(--control);
+  /* As tall as the square in it (Avatar's hud size, a ToolButton's cell, D-344, D-348). */
+  height: var(--hud-tool);
   max-width: none;
   padding: 0;
   border: 0;
@@ -123,8 +123,8 @@
   display: grid;
   place-items: center;
   /* As big as the squares and the HUD's tools (D-344), a cell like theirs. */
-  min-width: var(--control);
-  height: var(--control);
+  min-width: var(--hud-tool);
+  height: var(--hud-tool);
   margin-top: var(--space-1);
   padding: 0 var(--space-1);
   border: 0;

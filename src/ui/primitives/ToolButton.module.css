@@ -4,8 +4,9 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: var(--control);
-  height: var(--control);
+  /* The HUD's size (D-348): 24, 30 or 36 px, its icon with it. */
+  width: var(--hud-tool);
+  height: var(--hud-tool);
   padding: 0;
   border: 0;
   background: var(--wash-2);

@@ -6,8 +6,8 @@
   align-items: center;
   gap: var(--space-2);
   justify-content: center;
-  width: var(--control);
-  height: var(--control);
+  width: var(--hud-tool);
+  height: var(--hud-tool);
   /* Bottom left (D-175): only your square; the name shows on hover. */
   padding: 0;
   border: 0;

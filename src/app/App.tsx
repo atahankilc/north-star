@@ -5,7 +5,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from '../data/auth'
 import { useHoldCurtain } from '../state/curtain'
-import { useDisplay } from '../state/display'
+import { STRENGTH_FACTOR, useDisplay } from '../state/display'
 import { useMotion } from '../state/motion'
 import { Backdrop } from '../three/Backdrop'
 import { WORKSPACE_BACKDROP_DIM } from '../three/sceneClock'
@@ -43,6 +43,8 @@ function Shell() {
   // Switching the background off applies to signed-in pages only; the landing always flows (D-063). While auth
   // is still loading, assume the choice applies, so a signed-in user who turned it off never sees it flash in.
   const field = useDisplay((s) => s.background) === 'on' || (!isLoading && !user)
+  // Softer or stronger (D-348), on signed-in pages only, like the switch above; times the canvas's own dim (D-346).
+  const strength = STRENGTH_FACTOR[useDisplay((s) => s.strength)]
   useHoldCurtain('auth', isLoading)
   useHoldCurtain('fonts', !fontsReady)
   // Signed in, a workspace is likely next: its code is fetched while the page is idle.
@@ -53,7 +55,7 @@ function Shell() {
   return (
     <>
       {/* The canvas shows the field a step dimmer than the landing (D-346); its pieces carry their own backgrounds (D-176). */}
-      {field && <Backdrop dim={user && inWorkspace ? WORKSPACE_BACKDROP_DIM : 1} />}
+      {field && <Backdrop dim={user ? (inWorkspace ? WORKSPACE_BACKDROP_DIM : 1) * strength : 1} />}
       {!isLoading && (
         <Routes>
           {user ? (

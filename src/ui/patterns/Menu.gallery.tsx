@@ -48,5 +48,17 @@ export default example({
     plain: () => <Menu label="lanes" summary="none" plain items={[{ key: 'p', label: 'person', onSelect: none }, { key: 'c', label: 'card', onSelect: none }]} ariaLabel="lanes" />,
     primary: () => <Menu label="+ new" primary items={ADD} ariaLabel="add" />,
     icon: () => <Menu label="+" icon items={ADD} ariaLabel="add" />,
+    'icon in the hud': {
+      render: () => (
+        <div style={{ display: 'flex', gap: 'var(--space-8)', alignItems: 'center' }}>
+          {(['small', 'normal', 'large'] as const).map((s) => (
+            <div key={s} data-hud={s}>
+              <Menu label={<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden><path d="M10 2v16M2 10h16" stroke="currentColor" strokeWidth="1.5" /></svg>} icon hud items={ADD} ariaLabel={`add, ${s}`} />
+            </div>
+          ))}
+        </div>
+      ),
+      note: 'the side nav’s `+`: `hud` sizes it with the HUD’s tools (D-348)',
+    },
   },
 })

@@ -245,6 +245,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Bottom-left corner, `--space-3` from the edges, top to bottom (D-175, D-193): people here (D-169: squares, no names,
   overlapping, name on hover, `+N` past four; a click follows), the threads button, a short rule, your square (initial,
   name on hover), the ⚙ (a cyan count when people wait to join). Anything else bottom left stays `--corner-h` above.
+- Its size (D-348): Settings → display → `hud size` small / normal / large: the tools', squares' and `+N`'s cell 24 / 30
+  / 36 px (`--hud-tool`), icons 14 / 18 / 22 (`--tool-icon`), the drawn `+` 16 / 20 / 24 (`--hud-plus`), the breadcrumb
+  12 / 14 / 15 (`--hud-text`); `data-hud` on `<html>`, set before the first paint; normal by default. Panels, menus and
+  pieces keep their size.
 - Settings (D-064, D-097): your square opens it on the account page, the gear on the last page used. A modal with a side
   menu in groups, `YOU` (account, display) and `WORKSPACE <name>` (general, people, export; only inside a workspace),
   the current page with a cyan left bar; on the right a title, a one-line description and framed sections (label in the

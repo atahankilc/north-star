@@ -12,7 +12,8 @@
   height: var(--hud-h);
   padding: 0 var(--hud-x);
   background: linear-gradient(to bottom, var(--bg) 20%, transparent);
-  font-size: var(--text-sm);
+  /* The HUD's size (D-348) sets the breadcrumb's text too. */
+  font-size: var(--hud-text);
   /* Only the bar's contents take clicks, so the board under it still pans. */
   pointer-events: none;
 }

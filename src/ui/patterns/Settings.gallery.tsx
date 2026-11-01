@@ -39,6 +39,9 @@ export default example({
           <Row label="theme" hint="this browser">
             <Choice label="theme" bare options={['dark', 'light', 'system'] as const} value="dark" onChange={() => {}} />
           </Row>
+          <Row label="hud size" hint="the tools on the left edge, the corner and the path at the top">
+            <Choice label="hud size" bare options={['small', 'normal', 'large'] as const} value="normal" onChange={() => {}} />
+          </Row>
           <Row label="leave" hint="you can be invited back">
             <Button size="md">leave</Button>
           </Row>

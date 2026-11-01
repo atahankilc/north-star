@@ -105,6 +105,7 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
     <>
       <Menu
         icon
+        hud
         right
         label={
           // Drawn, not a glyph: a font's `+` is small and sits off centre.

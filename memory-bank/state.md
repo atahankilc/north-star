@@ -65,11 +65,11 @@ something is finished, add its entry to state-history.md and leave at most one l
   loads `.claude/settings.json` after `/hooks` or a new session.
 - Landing (D-340, 2026-11-01, committed): full-screen backdrop, mono name, no HUD, Button; the user is working
   through more landing changes. AsciiButton deleted (e1b86de).
-- D-344 (not committed): buttons are cells, ButtonGroup (G1), Avatar, controls as toggle cells (F3), one component
-  each. Open: filters as always-open toggle strips (asked, not built).
+- D-344 (committed): buttons and controls as cells. Open: filters as always-open toggle strips (asked, not built).
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Next: Q-033 (dark
   backdrop faint on some screens; ask the user which screens, then (a) + (b)).
 - D-346 (2026-11-01, committed): backdrop 70 % in workspaces (sceneClock.ts, Backdrop.tsx, App.tsx); value checked headless, the user not yet.
+- D-348 (2026-11-01, committed): Settings → display: hud size and background strength; the user to look at it.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers

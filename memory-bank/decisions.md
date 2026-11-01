@@ -91,7 +91,8 @@ feature comes back as a piece, and check them with the user then.
   surface (D-024); shared `Page.module.css`, `fieldLabel` (D-093). Actions lowercase, labels uppercase; no
   native `<select>` (`src/ui/primitives/Select.tsx`) (D-093). `▸`/`▾` only open or fold something, never lead a row of actions (D-189).
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063,
-  D-069). Light theme via tokens under `[data-theme='light']` and `usePalette()` (three.js too;
+  D-069), which also holds the background's strength (soft / normal / strong) and the HUD's size (small / normal /
+  large), normal by default (D-348). Light theme via tokens under `[data-theme='light']` and `usePalette()` (three.js too;
   `Palette` only what WebGL reads, D-321), bg `#f3f3f3` (D-342), no-flash script (D-069); the backdrop prints bolder, darker glyphs in light (D-342).
 - Buttons are cells (D-344, DESIGN.md §6): every button the same cell (`--wash-2`, a step brighter on hover), its kind
   only fill and ink: `main`, `primary` the one go of a surface (solid cyan, at most one), `danger`, `hazard` (solid

@@ -61,6 +61,8 @@ type Props = {
   icon?: boolean
   // That icon grey like the side nav's fit, not magenta (go to, D-196).
   quiet?: boolean
+  // That icon in the HUD: sized with the HUD's tools, which Settings → display sets (D-348).
+  hud?: boolean
   // Plain text, `lanes none ▾`, no frame or fill: in a console or a dock, beside its bracketed actions and the link
   // dropdown (a Select), which it looks like (D-289).
   plain?: boolean
@@ -263,7 +265,7 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
   )
 }
 
-export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, plain, active, ariaLabel, empty, prompt, noun, 'data-learn': learnAs, panelLearn, onOpen }: Props) {
+export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, hud, plain, active, ariaLabel, empty, prompt, noun, 'data-learn': learnAs, panelLearn, onOpen }: Props) {
   const [open, setOpen] = useState(false)
   const onOpenRef = useRef(onOpen)
   onOpenRef.current = onOpen
@@ -297,6 +299,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
         aria-expanded={open}
         data-active={active || undefined}
         data-quiet={quiet || undefined}
+        data-hud={(icon && hud) || undefined}
         aria-controls={open ? id : undefined}
         aria-label={ariaLabel}
         data-learn={learnAs}

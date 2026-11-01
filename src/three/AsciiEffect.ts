@@ -78,7 +78,8 @@ void main() {
     // Blended in display (sRGB) space: in linear light 30% ink over paper reads only ~15% darker on screen, so the
     // printed backdrop came out far paler than the dark one. This way ink darkness on screen matches glyph brightness in dark.
     // Thin glyph edges count for more than in dark: a small glyph is mostly antialiased edge.
-    float cover = pow(clamp(l * uGain, 0.0, 1.0) * glyph, 0.6) * uDim;
+    // uDim may pass 1 (a strong backdrop, D-348): ink never covers more than all of the cell.
+    float cover = min(pow(clamp(l * uGain, 0.0, 1.0) * glyph, 0.6) * uDim, 1.0);
     vec3 printed = mix(toSrgb(uPaper), toSrgb(ink), toSrgb(vec3(cover)).r);
     col = pow(printed, vec3(2.2));
     // The welcome's night: glyphs glow on a dark-blue sky the way they do on black. It sweeps in diagonally from the bottom

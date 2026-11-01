@@ -20,6 +20,18 @@ export default example({
         <ToolButton label="decks, 3 new" badge={3} onClick={none}>{icon}</ToolButton>
       </div>
     ),
+    'hud sizes': {
+      render: () => (
+        <div style={{ display: 'flex', gap: 'var(--space-8)', alignItems: 'center' }}>
+          {(['small', 'normal', 'large'] as const).map((s) => (
+            <div key={s} data-hud={s}>
+              <ToolButton label={`find, ${s}`} onClick={none}>{icon}</ToolButton>
+            </div>
+          ))}
+        </div>
+      ),
+      note: 'Settings → display → hud size (D-348): 24, 30, 36 px, the icon 14, 18, 22',
+    },
     hover: { render: () => <ToolButton label="find" data-g="t" onClick={none}>{icon}</ToolButton>, hover: '[data-g="t"]' },
   },
 })

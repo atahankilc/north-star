@@ -609,9 +609,9 @@ export const LESSONS: readonly Lesson[] = [
     pages: [{ title: 'More than one canvas', body: 'Big work splits into canvases: this name lists them. `⌥1`–`⌥9` jump between them.', scene: 'canvases' }],
   },
   {
-    id: 'settings', v: 1, format: 'lesson', roles: ALL, area: 'settings', since: 'D-097',
+    id: 'settings', v: 2, format: 'lesson', roles: ALL, area: 'settings', since: 'D-097, D-348',
     trigger: [{ event: 'settings-open' }], anchor: 'settings-menu', within: 'settings',
-    pages: [{ title: 'Settings', body: 'You: account and display (theme, motion, background). Workspace: name, people, export.' }],
+    pages: [{ title: 'Settings', body: 'You: account and display (theme, motion, background and its strength, HUD size). Workspace: name, people, export.' }],
   },
   {
     id: 'people-settings', v: 1, format: 'lesson', roles: OWNERS, area: 'settings', since: 'D-062, D-098',
