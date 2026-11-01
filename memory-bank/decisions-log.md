@@ -6526,4 +6526,5 @@ that read like a button kind was a feature wrapping one of them, and is now name
 Alternatives: a new `HudButton`: not needed, ToolButton is it; what was missing was one icon size and set.
 Verified: headless Chrome on demo.html (deck-drag), every HUD icon 18 px; typecheck, check:kit/gallery/tokens/lessons,
 unit tests 983/0, build.
-Not yet: where each tool sits (the decks-and-days tool in the side nav, threads in the corner) is unchanged; Q-034.
+Where each tool sits (Q-034; the user: "deck butonu yerinde kalsın"): unchanged. The side nav holds the canvas's
+tools (`+`, fit, find, `?`, decks and days); the corner holds people (here now, threads, you, settings).

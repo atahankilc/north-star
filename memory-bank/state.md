@@ -68,7 +68,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   go, the keys taught by onboarding instead; not started (the workspaces page's already gone, D-338).
 - Landing (D-340, 2026-11-01, committed): full-screen backdrop, mono name, no HUD, Button; the user is working
   through more landing changes. AsciiButton deleted (e1b86de).
-- D-343 (2026-11-01, committed): two buttons, HUD tools `*Tool`, one icon set; next Q-034 (tools' places).
+- D-343 (2026-11-01, pushed): two buttons, HUD tools `*Tool`, one icon set; tools stay where they are (Q-034).
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Next: Q-033 (dark
   backdrop faint on some screens; ask the user which screens, then (a) + (b)).
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
