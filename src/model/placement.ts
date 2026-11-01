@@ -109,7 +109,9 @@ export function withParts(picked: Card[], cards: Card[], edges: Edge[]): Card[] 
 
 // Where brought cards land on `plane`: laid out as they are on `from` (the first one's home unless said; those not there
 // in a row under them), centred on `at`, on the grid, the whole group moved right past any card it would cover.
-export function landing(list: Card[], cards: Card[], places: Place[], plane: string, at: [number, number], from = list[0]?.pieceId): Map<string, { x: number; y: number; folded?: boolean }> {
+// `boxes`: other things on the plane to keep clear of besides its cards (its text: stickies, headings, sections; bug 6,
+// found by D-327's evals: a card brought here landed on a sticky).
+export function landing(list: Card[], cards: Card[], places: Place[], plane: string, at: [number, number], from = list[0]?.pieceId, boxes: { x: number; y: number; w: number; h: number }[] = []): Map<string, { x: number; y: number; folded?: boolean }> {
   const there = new Map(cardsOn(cards, places, from).map((c) => [c.id, c]))
   const spots = new Map<string, { x: number; y: number; folded?: boolean }>()
   for (const c of list) {
@@ -131,13 +133,15 @@ export function landing(list: Card[], cards: Card[], places: Place[], plane: str
   const h = Math.max(...all.map((s) => s.y)) + CARD.h - y0
   let dx = snap(at[0] - w / 2) - x0
   const dy = snap(at[1] - h / 2) - y0
-  const others = cardsOn(cards, places, plane).filter((c) => !spots.has(c.id))
+  const others = [...cardsOn(cards, places, plane).filter((c) => !spots.has(c.id)).map((c) => ({ x: c.x, y: c.y, w: CARD.w, h: CARD.h })), ...boxes]
+  const hits = (s: { x: number; y: number }, o: { x: number; y: number; w: number; h: number }) =>
+    s.x < o.x + o.w + GRID && o.x < s.x + CARD.w + GRID && s.y < o.y + o.h + GRID && o.y < s.y + CARD.h + GRID
   for (let hit = true; hit; ) {
     hit = false
     for (const s of all) {
-      const o = others.find((k) => overlaps({ x: s.x + dx, y: s.y + dy }, k))
+      const o = others.find((k) => hits({ x: s.x + dx, y: s.y + dy }, k))
       if (o) {
-        dx = o.x + CARD.w + GRID - s.x
+        dx = o.x + o.w + GRID - s.x
         hit = true
         break
       }

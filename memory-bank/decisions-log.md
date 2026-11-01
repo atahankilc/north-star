@@ -6049,9 +6049,19 @@ several planes, a main plane with detail planes beside it, sections), each only 
   `/restructure` tasks. Checked: 896 unit tests (agentStructure.test.ts new), stub evals 113 tasks 0 failed, every
   wrong script failing. Two things found on the way: label propagation leaked a topic across one bridge (replaced by
   bridges), and the first flow ran off the bottom of a plane (strips, then the skyline).
-- *Not yet, phase 2:* the `look` tool (a picture of a plane and of the proposed state: images in tool results for
-  both providers, rendered in the browser and in node for the evals); the user's planes as reference pictures; evals
-  judged on before/after pictures; runs with a real model.
+- *Built (2026-11-01), phase 2:* the `look` tool: src/agent/picture.ts draws a plane (cards in their type's colour
+  with short id and title, links, sections, packages, text, the plane's own outline) or a canvas (planes, the links
+  between them with counts) as an SVG from the boxes the app and the evals use, with the pending changes on it;
+  `env.render` turns it into a PNG (src/agent/ui/render.ts: the browser's canvas; evals/render.ts: `@resvg/resvg-js`
+  2.6.2, a dev dependency); the contract's `ImagePart` on a tool's result and on a user message; OpenAI sends it as an
+  `input_image` in the function_call_output, Claude as an image block in the tool_result; a cleared result drops its
+  picture, transcripts and saved chats never hold one. The prompt and /organize, /restructure say look before and
+  after. Evals: `pictureJudge(plane, rubric)` (before and after drawn by resvg, given to the judge model) and
+  skill-restructure-04 judged by it. Checked: 906 unit tests (agentLook.test.ts new), stub evals 114 tasks 0 failed,
+  every wrong script failing; the Rivals pictures before and after looked at by eye. Found by it: place_on's landing
+  avoided cards but not text (a card on a sticky, bug 6), fixed with the plane's text as obstacles.
+- *Not yet:* the user's planes as reference pictures (which ones is the user's call); a run with a real model; a
+  flow that doesn't fit its plane still runs past its bottom (the plane doesn't grow; seen in the Rivals picture).
 - *Spec:* docs/specs/agent-bugs.md item 27.
 
 ### D-328 · 2026-10-31 · Accepted (agent-bugs 28; the user: "bişey istiyorum, bana bitti al diyo… 5-6-10 kere sırada ne varsa onu yap demek zorunda kalıyorum"; "hardcoded bir 25 adımda bitire gerek yok… step by step kullanıcın onayını ala ala ilerleyebilir… agentı çalışırken bölemiyoruz da"; then "27 ve 28'i kabul ediyorum")

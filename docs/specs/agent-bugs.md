@@ -36,7 +36,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 26 | turning text into cards rewrites its words       | Guards       | mid      | code + prompt    | open   |
 | 18 | a viewer's agent calls `change`                  | Guards       | low      | code             | open   |
 | 16 | ops nobody asked for                             | Guards       | mid      | code + prompt    | open   |
-| 6  | items land on top of each other                  | Guards       | mid      | code             | open   |
+| 6  | items land on top of each other                  | Guards       | mid      | code             | place_on fixed (text); paragraphs open |
 | 11 | links no plane can draw                          | Guards       | mid      | code (`lint`)    | open   |
 | 12 | no last look before the preview                  | Guards       | mid      | code, then model | open   |
 | 25 | evals build their store apart from the app's     | Plumbing     | blocker  | code (evals)     | open   |
@@ -58,7 +58,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 13 | no coverage map for a big document               | New parts    | mid      | new              | open   |
 | 14 | one plane or several, never weighed              | New parts    | mid      | code + prompt    | numbers built (`structure`, D-327) |
 | 28 | a big job stops after one preview                | New parts    | high     | new (workflow)   | built (job, steering; not saved) |
-| 27 | organising never changes the structure           | New parts    | high     | new (read + skill)| phase 1 built; `look` next |
+| 27 | organising never changes the structure           | New parts    | high     | new (read + skill)| phases 1–2 built; reference pictures, real-model run next |
 | 8  | no web access                                    | New parts    | mid      | new (Phase 9)    | open   |
 
 ## Order
@@ -130,6 +130,9 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     count as taken is still to check. Fix (code): a paragraph's and a sticky's height from its wrapped lines at its
     width (characters per line from the font size, or measured like `sizes.ts`), Markdown lines (bullets, headings)
     counted. Eval first (it fails on any overlap, a long one-line paragraph in it), so it shows this is the cause.
+    A second cause, found and fixed with D-327's evals (2026-11-01): place_on's `landing` (src/model/placement.ts) kept
+    clear of the plane's cards but not its text, so a card brought to a plane landed on a sticky; the plane's text is
+    now in its obstacles (tests/unit/agentLook.test.ts). The paragraph height above is still open.
 11. **Links between cards on different planes are never shown, and it doesn't know.** In its import of the Founder
     Discovery Study (the `north-star` canvas in the user's Granat export), 16 of 48 links join cards on two planes, so
     no plane draws them (D-207). `validate` (src/ops/validate.ts) checks both ends exist, not that they share a plane.
@@ -340,7 +343,10 @@ injection 5/5; weakest: skills 31/61, build 3/8 (before the eval fixes). The 60 
     there"; "I've built the main plane, now I'll split it into parts that are easier to follow"; "these cards make a
     package on a sub-plane, and I'll use it on another plane later, because at a wider view it links to other
     things; at the end I put it on the main plane", each only when it's needed.
-    Agreed (D-327); phase 1 built 2026-11-01 (decisions-log D-327 *Built*); phase 2 (`look`, pictures) next.
+    Agreed (D-327); phases 1 and 2 built 2026-11-01 (decisions-log D-327 *Built*). What the pictures showed at once,
+    left to do: cards place_on brings along (parts, members) aren't in a later arrange unless named, so they stay where
+    they landed (the model sees it in `look`; the change result could name them); a flow too big for its plane runs
+    past its bottom (the plane doesn't grow).
     Before it: it could only move things: `/organize` is "cluster by type, one arrange" (4). The ops for
     structure exist (`create_piece` plane, `place_on`/`take_off`, `create_package`, sections, headings, `stuck_to`), but
     the agent sees nothing that would tell it when to use them, and no skill uses them together.

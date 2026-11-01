@@ -17,7 +17,10 @@ import { statusOf } from '../src/model/source'
 import type { Box } from '../src/model/layout'
 import { callsOf, resultsOf } from '../src/agent/contract'
 import { notesOf } from '../src/model/notes'
-import type { AgentWs } from '../src/agent/contract'
+import type { AgentWs, ImagePart } from '../src/agent/contract'
+import { LEGEND, planePicture } from '../src/agent/picture'
+import { clean } from '../src/agent/read/derive'
+import { nodeRender } from './render'
 import type { Grade, Grader, RunResult } from './types'
 
 // ---- Matching
@@ -716,7 +719,8 @@ export const undoRestores = (): Grader => ({
 // ---- The judge (an LLM grading the answer against a rubric; interface only until a model is configured)
 
 // `context`: what the run changed, in words (diffLines), so the judge grades the answer against what happened.
-export type Judge = (q: { rubric: string; ask: string; answer: string; context: string }) => Promise<{ pass: boolean; why: string }>
+// `images` (D-327 phase 2): pictures the judge looks at with the rubric (a plane before and after the run).
+export type Judge = (q: { rubric: string; ask: string; answer: string; context: string; images?: ImagePart[] }) => Promise<{ pass: boolean; why: string }>
 let judgeFn: Judge | null = null
 // Set by the runner when a judge model is configured (S12 brings the adapter); null: every judge grade is skipped.
 export function setJudge(fn: Judge | null) {
@@ -741,6 +745,27 @@ export const judge = (rubric: string): Grader => ({
       'How the app works: the agent never writes directly; it proposes changes that open as a preview the person accepts (here accepted, so they are listed below), so "waiting in the preview" is true. A new document is private until shared. Short ids (c12 a card, d5 a document, x3 a text, t4 a task) are how the agent names things; an answer may point to the document it wrote by its id, and the document\'s own text (below) is where its claims and card citations are.'
     const context = [app, lines.length ? `What the run changed:\n${lines.join('\n')}` : 'The run changed nothing.', ...docs].join('\n\n')
     const v = await judgeFn({ rubric, ask: r.transcript.turns[0]?.ask ?? '', answer: r.answer, context })
+    return ok(v.pass, v.why)
+  },
+})
+
+// A plane judged by its pictures (D-327 phase 2): before and after the run, drawn as `look` draws them, given to the
+// judge model with a rubric about how it reads ("can a person follow the flow from customer to feature"), not about
+// which layout was used. Skipped without a judge model or a renderer.
+export const pictureJudge = (plane: Ref, rubric: string): Grader => ({
+  name: `pictureJudge(${showRef(plane)}: ${rubric.length > 50 ? `${rubric.slice(0, 47)}…` : rubric})`,
+  grade: async (r) => {
+    if (!judgeFn) return { pass: 'skipped', why: 'no judge model configured' }
+    const pid = ref1(r.end, resolveRef(r, plane), ['piece'])
+    if (!pid) return ok(false, `no plane ${showRef(plane)}`)
+    const draw = async (ws: AgentWs) => {
+      const pic = planePicture(clean(ws), r.ids, pid)
+      return pic ? nodeRender(pic.svg, { w: pic.w, h: pic.h }) : null
+    }
+    const [before, after] = await Promise.all([r.start.pieces.some((p) => p.id === pid) ? draw(r.start) : null, draw(r.end)])
+    if (!after) return { pass: 'skipped', why: 'no picture could be drawn here' }
+    const context = `${LEGEND}\n${before ? 'The first picture is the plane before the run, the second after it.' : 'The plane is new: the picture is it after the run.'}`
+    const v = await judgeFn({ rubric, ask: r.transcript.turns[0]?.ask ?? '', answer: r.answer, context, images: before ? [before, after] : [after] })
     return ok(v.pass, v.why)
   },
 })

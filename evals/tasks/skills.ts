@@ -3,7 +3,7 @@
 // what was made or changed, the cards an answer cites (real ones, the right ones), and for the document skills the
 // document's text: every card it mentions is real and named with its own title (docWritten). Big jobs (agent.md §4.10)
 // plan first and change nothing until "go" (`followUps`, `noWritesInTurn(1)`). Each has a plausible wrong script. The judge rides on a twin of the first task for /gaps, /next and the five document skills (`-04-judged`, capability, JUDGED below), so the stub's pass counts stay model-free.
-import { MADE, allSet, docSectionCards, judge, sameLine, answerExcludes, answerIncludes, absent, cell, cites, citesSome, count, docWritten, exists, field, grouped, linked, made, noDeletes, noOverlaps, noWriteAttempts, noWritesInTurn, onPlane, onlyChanged, task, toolCalled, undoRestores, noNewLinksAcrossPlanes, linksShownOn, noWrites, type ChangeTest } from '../graders'
+import { MADE, allSet, docSectionCards, judge, sameLine, answerExcludes, answerIncludes, absent, cell, cites, citesSome, count, docWritten, exists, field, grouped, linked, made, noDeletes, noOverlaps, noWriteAttempts, noWritesInTurn, onPlane, onlyChanged, task, toolCalled, undoRestores, noNewLinksAcrossPlanes, linksShownOn, noWrites, pictureJudge, type ChangeTest } from '../graders'
 import { NOW } from '../fixtures'
 import type { Grader, Task } from '../types'
 import type { AgentWs } from '../../src/agent/contract'
@@ -80,6 +80,8 @@ const IDEAS_ON_BETS = Array.from({ length: 22 }, (_, i) => `c${55 + i}`)
 // ideas link to (src/model/graph.ts on the medium fixture).
 const SEG_GROUP = ['c4', 'c15', 'c18', 'c19', 'c20', 'c24', 'c26', 'c28']
 const SEG_PROBLEMS_FOR_BETS = ['c16', 'c19', 'c20', 'c21', 'c22', 'c24', 'c25', 'c26', 'c27', 'c30']
+// The problems on other planes that Rivals' competitors compete on (17 links).
+const PROBLEMS_FOR_RIVALS = ['c16', 'c18', 'c22', 'c24', 'c25', 'c26', 'c27', 'c30', 'c50', 'c52', 'c91', 'c92', 'c95']
 const IDEAS_ON_PRICING = ['c133', 'c134', 'c135', 'c136', 'c137', 'c138', 'c139', 'c140']
 const ROADMAP_GAPS = ['c97', 'c98', 'c99', 'c101', 'c103', 'c104', 'c107', 'c108', 'c111', 'c115', 'c117', 'c119', 'c120', 'c122']
 
@@ -794,6 +796,39 @@ export const SKILL_TASKS: Task[] = [
       change([['arrange', { items: [...SEG_PROBLEMS_FOR_BETS, ...IDEAS_ON_BETS], plane: 'p3', layout: 'flow' }]], 'Bets as a flow'),
       call('progress', { step: 2, state: 'done' }),
       answer('Step 2 of 2 is in the preview: Bets laid out as a flow, problems on the left and the ideas that solve them beside them.'),
+    ],
+  },
+  {
+    // Judged by its pictures (D-327 phase 2): before and after, on how it reads, not on which layout was used.
+    id: 'skill-restructure-04',
+    group: 'skills',
+    set: 'capability',
+    fixture: 'medium',
+    ask: '/restructure Rivals so I can see which problems each rival goes after',
+    followUps: ['go', { goOn: true }],
+    graders: [
+      toolCalled('structure'),
+      toolCalled('plan'),
+      linksShownOn(R('p2'), 17),
+      noNewLinksAcrossPlanes(),
+      noOverlaps('Rivals'),
+      noDeletes(),
+      pictureJudge(R('p2'), 'After the run each competitor sits beside the problems it competes on, linked ones near each other, so a person can see at a glance which problems each rival goes after; better than before.'),
+    ],
+    reference: [
+      call('structure', { space: 'p2' }),
+      call('look', { space: 'p2' }),
+      call('plan', { title: 'Rivals beside the problems they go after', steps: [{ title: 'Place the problems the rivals compete on onto Rivals', scope: '13 problems from Segments, Bets and Interviews; they stay where they are' }, { title: 'Lay Rivals out as a flow', check: 'each rival level with its problems' }] }),
+      answer('Rivals has 14 competitors and 17 links to problems on other planes, so none of those links is drawn.\nPlan:\n1. Place those 13 problems on Rivals too (they stay where they are).\n2. Lay Rivals out as a flow, each rival beside its problems.\nSay go and I will do it step by step: each step waits in the preview for you.'),
+      call('progress', { step: 1, state: 'doing' }),
+      change([['place_on', { cards: PROBLEMS_FOR_RIVALS, plane: 'p2' }]], 'problems the rivals go after, on Rivals'),
+      call('progress', { step: 1, state: 'done' }),
+      answer('Step 1 of 2 is in the preview: the 13 problems placed on p2 Rivals.'),
+      call('progress', { step: 2, state: 'doing' }),
+      change([['arrange', { items: [...PROBLEMS_FOR_RIVALS, ...Object.values(RIVALS).flat()], plane: 'p2', layout: 'flow' }]], 'Rivals as a flow'),
+      call('look', { space: 'p2' }),
+      call('progress', { step: 2, state: 'done' }),
+      answer('Step 2 of 2 is in the preview: Rivals as a flow, each rival level with the problems it competes on.'),
     ],
   },
   {

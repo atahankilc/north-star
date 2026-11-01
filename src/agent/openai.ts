@@ -28,7 +28,7 @@
 //   credit), then a message; 5xx one retry; a network failure a message; an abort throws an `AbortError`.
 //   A failure inside the stream (`response.failed`, `error`) is a response with `stop: 'error'`, not a throw.
 // - Malformed tool-call JSON is `ToolCall.argsError` (the loop tells the model), never a throw.
-import type { AgentModel, ModelEvent, ModelMessage, ModelRequest, ModelResponse, StopReason, ToolCall, ToolDef, Usage } from './contract'
+import type { AgentModel, ImagePart, ModelEvent, ModelMessage, ModelRequest, ModelResponse, StopReason, ToolCall, ToolDef, Usage } from './contract'
 
 export const OPENAI_API = 'https://api.openai.com/v1'
 
@@ -104,6 +104,9 @@ export function toOpenAITool(def: ToolDef): OpenAITool {
 
 type Item = Record<string, unknown>
 
+// A picture as a Responses API image part (a data URL); a tool's output can be a list of these and text (D-327).
+const dataPart = (i: ImagePart) => ({ type: 'input_image', image_url: `data:${i.mediaType};base64,${i.data}` })
+
 // The contract's messages as the Responses API's `instructions` + `input` items.
 export function toInput(messages: ModelMessage[]): { instructions?: string; input: Item[] } {
   let instructions: string | undefined
@@ -112,7 +115,9 @@ export function toInput(messages: ModelMessage[]): { instructions?: string; inpu
     if (m.role === 'system') {
       if (instructions === undefined && !input.length) instructions = m.content
       else input.push({ role: 'developer', content: m.content })
-    } else if (m.role === 'user') input.push({ role: 'user', content: m.content })
+    } else if (m.role === 'user')
+      // A message's pictures (D-327: a judge's before and after) as image parts after its text.
+      input.push({ role: 'user', content: m.images?.length ? [{ type: 'input_text', text: m.content }, ...m.images.map(dataPart)] : m.content })
     else if (m.role === 'assistant') {
       // Another provider's items (a chat switched from Claude) never go to OpenAI: its text and calls do (D-329).
       if (m.providerItems?.length && (m.provider ?? 'openai') === 'openai') {
@@ -122,7 +127,7 @@ export function toInput(messages: ModelMessage[]): { instructions?: string; inpu
       }
       if (m.content) input.push({ role: 'assistant', content: m.content })
       for (const c of m.toolCalls ?? []) input.push({ type: 'function_call', call_id: c.id, name: c.name, arguments: c.rawArgs ?? JSON.stringify(c.args ?? {}) })
-    } else input.push({ type: 'function_call_output', call_id: m.callId, output: m.content })
+    } else input.push({ type: 'function_call_output', call_id: m.callId, output: m.image ? [{ type: 'input_text', text: m.content }, dataPart(m.image)] : m.content })
   }
   return { ...(instructions !== undefined ? { instructions } : {}), input }
 }

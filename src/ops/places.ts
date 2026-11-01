@@ -1,6 +1,7 @@
 // Place ops (S4, D-312; agent-actions.md §5): the same card on more planes (D-281). place_on brings cards (with their
 // parts and members) to a plane, laid out as they are where they come from; take_off takes them off one plane, still on
 // the others (a card on no other plane isn't touched: that's a delete).
+import { labelBox } from '../model/labelBox'
 import type { Card } from '../model/cards'
 import { boxOf, landing, onPlane, placeId, withParts } from '../model/placement'
 import type { OpCtx, Plan, Write } from './types'
@@ -28,7 +29,9 @@ export function placeOnPlan(ctx: OpCtx, args: PlaceOnArgs, among?: { cards: Card
   if (!list.length) return { plan: { op, label, writes: [], ids: {}, meta: { kind: 'place' } } as Plan, list, box: null }
   const piece = ctx.ws.pieces.find((p) => p.id === args.plane)
   const at = args.at ?? [(piece?.w ?? 960) / 2, (piece?.h ?? 600) / 2]
-  const spots = landing(list, all.cards, all.places, args.plane, at, args.layout ?? list[0].pieceId)
+  // The plane's text stays clear too (stickies, headings, sections).
+  const text = ctx.ws.labels.filter((l) => l.pieceId === args.plane).map((l) => labelBox(l))
+  const spots = landing(list, all.cards, all.places, args.plane, at, args.layout ?? list[0].pieceId, text)
   const from = list[0].pieceId
   const ids: Record<string, string> = {}
   const writes: Write[] = list.map((c) => {

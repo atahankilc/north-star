@@ -23,7 +23,7 @@
 // a call cut off by max_tokens is an `argsError`), server-side fallbacks on a refusal where the model has them.
 import Anthropic, { APIConnectionError, APIUserAbortError, AuthenticationError, BadRequestError, InternalServerError, NotFoundError, PermissionDeniedError, RateLimitError } from '@anthropic-ai/sdk'
 import type { BetaContentBlock, BetaContentBlockParam, BetaMessage, BetaMessageParam, BetaTool } from '@anthropic-ai/sdk/resources/beta/messages/messages'
-import type { AgentModel, ModelEvent, ModelMessage, ModelRequest, ModelResponse, StopReason, ToolCall, ToolDef, Usage } from './contract'
+import type { AgentModel, ImagePart, ModelEvent, ModelMessage, ModelRequest, ModelResponse, StopReason, ToolCall, ToolDef, Usage } from './contract'
 import { fitsStrict, redact, type Effort } from './openai'
 
 export type AnthropicOptions = {
@@ -76,6 +76,7 @@ export function toClaudeTool(def: ToolDef): BetaTool {
 type Out = BetaMessageParam | { role: 'system'; content: string }
 
 const text = (t: string): BetaContentBlockParam => ({ type: 'text', text: t })
+const imageBlock = (i: ImagePart) => ({ type: 'image' as const, source: { type: 'base64' as const, media_type: i.mediaType, data: i.data } })
 
 // The contract's messages as Claude's `system` + `messages`, the same bytes for the same history (see the head).
 export function toClaude(messages: ModelMessage[], model: string): { system?: string; messages: Out[] } {
@@ -123,12 +124,16 @@ export function toClaude(messages: ModelMessage[], model: string): { system?: st
       return
     }
     flush('user')
-    if (m.role === 'user') user().push(text(m.content))
-    else {
+    if (m.role === 'user') {
+      const blocks = user()
+      blocks.push(text(m.content))
+      for (const i of m.images ?? []) blocks.push(imageBlock(i))
+    } else {
       // A tool result: with the step's others, first in its user message.
       const prev = last()
       const blocks = prev?.role === 'user' && Array.isArray(prev.content) && (prev.content as BetaContentBlockParam[]).every((b) => b.type === 'tool_result') ? (prev.content as BetaContentBlockParam[]) : null
-      const r: BetaContentBlockParam = { type: 'tool_result', tool_use_id: m.callId, content: m.content || '(empty)' }
+      // A picture with its result (D-327, `look`): text then the image, in the tool result itself.
+      const r: BetaContentBlockParam = { type: 'tool_result', tool_use_id: m.callId, content: m.image ? [{ type: 'text', text: m.content || '(empty)' }, imageBlock(m.image)] : m.content || '(empty)' }
       if (blocks) blocks.push(r)
       else out.push({ role: 'user', content: [r] })
     }

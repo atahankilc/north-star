@@ -152,14 +152,14 @@ export const SKILLS: Skill[] = [
     plan: true,
     when: 'A plane that is hard to read (D-327). Nothing is deleted and nothing leaves the plane; the person\'s words win (a grouping they name is the grouping).',
     steps: [
-      'structure the plane (the one named or in focus), then view it.',
+      'structure the plane (the one named or in focus), then look at it.',
       'Say in a line or two how you read it: the question it answers, which groups run the chain, which parts belong together.',
       'Plan, then wait for go: each part and how it will read (the flow layout for a group that runs the chain; a cluster with your own groups and headings for parts of one meaning; the grouping the person named, if they named one), and why.',
-      'On go: one arrange per part with that layout; never coordinates.',
+      'On go: one arrange per part with that layout; never coordinates. Then look at the proposal and fix what doesn\'t read as you said.',
       'Answer with what each part is now (cited), and anything better done with restructure (a topic that could be a plane of its own).',
     ],
     methods: ['jtbd'],
-    tools: ['structure', 'view', 'change'],
+    tools: ['structure', 'look', 'view', 'change'],
   },
   {
     name: 'restructure',
@@ -169,13 +169,13 @@ export const SKILLS: Skill[] = [
     plan: true,
     when: 'One plane holding several questions, or planes that don\'t match how people think about the work (D-327). Nothing is deleted: cards move by being placed on planes, so no link is lost.',
     steps: [
-      'structure what was named (a plane, or a canvas and then each of its planes); view what you need.',
+      'structure what was named (a plane, or a canvas and then each of its planes) and look at it; view what you need.',
       'Say how you read it now and the shape you propose, each move with its numbers (a topic of 14 cards with 2 links out: a plane of its own).',
       'plan the moves as steps that build on each other: the main plane, the planes split off (a card two of them need placed on both), packages, then those packages placed on the main plane; wait for go.',
       'On go, one step a turn as the job goes (progress, change, progress), checking each: every card still on a plane, no link left between two planes, each new plane reachable from the main one.',
       'At the end, what moved where (cited), and what you left as it was and why.',
     ],
-    tools: ['structure', 'view', 'plan', 'progress', 'change'],
+    tools: ['structure', 'look', 'view', 'plan', 'progress', 'change'],
   },
   {
     name: 'sort-stickies',

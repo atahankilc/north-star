@@ -42,14 +42,18 @@ export type Provider = 'openai' | 'anthropic' | 'stub'
 // Adapters send the content and ignore the tag.
 export type ContextTag = 'map' | 'notes' | 'where' | 'guide' | 'final' | 'compact' | 'outcome'
 
+// A picture for the model (D-327 phase 2): a PNG, base64, sent with a tool's result (`look`) or a message (a judge's
+// before and after). Never saved with a chat, never in a transcript or the usage log.
+export type ImagePart = { mediaType: 'image/png'; data: string }
+
 export type ModelMessage =
   | { role: 'system'; content: string; tag?: ContextTag }
-  | { role: 'user'; content: string }
+  | { role: 'user'; content: string; images?: ImagePart[] }
   // `providerItems`: the provider's own output items (reasoning items, encrypted or not; Claude's whole content with
   // its thinking blocks) to send back unchanged on the next request, only to the same `provider` (left out: OpenAI's,
   // as saved before D-329); `responseId`: the provider's id for the response (OpenAI's previous_response_id).
   | { role: 'assistant'; content: string; toolCalls?: ToolCall[]; providerItems?: unknown[]; provider?: Provider; responseId?: string }
-  | { role: 'tool'; callId: string; name: string; content: string }
+  | { role: 'tool'; callId: string; name: string; content: string; image?: ImagePart }
 
 // `toolChoice: 'none'`: the tools stay listed (the prompt cache's prefix stays the same) but the model must answer in
 // text: the loop's last allowed step (S12, src/agent/loop.ts). Left out: the model may call tools ('auto').
@@ -133,11 +137,14 @@ export type AgentEnv = {
   chatId?: string
   // The chat's big job (D-328, job.ts): what `plan` and `progress` write. Left out, those tools say there is none.
   job?: JobHost
+  // An SVG drawn into a PNG for the model (D-327, `look`): the browser's canvas in the app, resvg in the evals. Left
+  // out (or null back): the tool answers in words alone.
+  render?: (svg: string, size: { w: number; h: number }) => Promise<ImagePart | null>
 }
 
 // A tool the loop can run: its definition for the model and how it runs. Read tools never write; write tools go
 // through `env.apply`; UI tools through `env.ui`.
-export type AgentTool = { def: ToolDef; kind: 'read' | 'write' | 'ui'; run: (env: AgentEnv, args: Record<string, unknown>) => Promise<{ ok: boolean; text: string }> }
+export type AgentTool = { def: ToolDef; kind: 'read' | 'write' | 'ui'; run: (env: AgentEnv, args: Record<string, unknown>) => Promise<{ ok: boolean; text: string; image?: ImagePart }> }
 
 // ---- What happened
 

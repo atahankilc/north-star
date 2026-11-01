@@ -26,7 +26,8 @@ describe('skills', () => {
       expect(mine.length, s.name).toBeGreaterThanOrEqual(3)
       for (const t of mine) expect(t.ask.startsWith(`/${s.name}`), t.id).toBe(true)
       expect(mine.filter((t) => t.set === 'regression').length, `${s.name}: a regression task`).toBeGreaterThanOrEqual(1)
-      expect(mine.filter((t) => !t.graders.some((g) => g.name.startsWith('judge('))).length, `${s.name}: model-free tasks`).toBeGreaterThanOrEqual(3)
+      // A picture judge needs a model too (D-327).
+      expect(mine.filter((t) => !t.graders.some((g) => /^(judge|pictureJudge)\(/.test(g.name))).length, `${s.name}: model-free tasks`).toBeGreaterThanOrEqual(3)
     }
   })
 

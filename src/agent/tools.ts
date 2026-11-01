@@ -3,7 +3,10 @@
 // previewed at the turn's end and accepted as one undo step: changeset.ts, workflow.ts) and the UI tools (src/agent/ui.ts in the browser, recorded
 // by the eval env). Every tool is an `AgentTool` of the contract; the loop (loop.ts), the evals (evals/tools.ts) and
 // the dev stub (devStub.ts) take this one list, and the prompt's test checks every tool it names is here.
-import { READ_TOOLS, whereAmI, type Ids } from './read'
+import { READ_TOOLS, whereAmI, resolve, type Ids } from './read'
+import { canvasPicture, planePicture } from './picture'
+import { clean } from './read/derive'
+import { kindOfPiece } from '../model/pieces'
 import { REGISTRY, type ArgSchema } from '../ops/registry'
 import { toolDef, type AgentEnv, type AgentTool } from './contract'
 import { agentArgs, ID_KEYS, runChange } from './change'
@@ -37,6 +40,29 @@ const whereTool: AgentTool = {
   def: toolDef('where_am_i', "Where the person is now: the canvas, what's in focus, beside it, selected, the open panel.", { properties: {} }),
   kind: 'read',
   run: async (env) => ({ ok: true, text: whereAmI(env.getWs(), env.ids, env.ui.currentView()).text }),
+}
+
+// ---- look (D-327 phase 2): a picture of a plane or a canvas, with the pending changes on it
+
+const lookTool: AgentTool = {
+  def: toolDef('look', "A picture of a plane or a canvas as it is now, your pending changes on it: where things sit, what is near what, what crosses what. Look before you rearrange, and again at your proposal before you end the turn. Changes nothing.", {
+    properties: { space: { type: 'string', description: 'a plane or a canvas (id or name)' } },
+    required: ['space'],
+  }),
+  kind: 'read',
+  run: async (env, a) => {
+    const ws = clean(env.getWs())
+    const r = resolve(ws, env.ids, String(a.space ?? ''), ['piece', 'canvas'], undefined, 'plane or canvas')
+    if (!('id' in r)) return { ok: false, text: `look needs a plane or a canvas: ${String(a.space ?? '')} isn't one here` }
+    if (r.kind === 'piece') {
+      const p = ws.pieces.find((x) => x.id === r.id)
+      if (!p || kindOfPiece(p) !== 'plane') return { ok: false, text: `${String(a.space)} is a ${p ? kindOfPiece(p) : 'piece'}: look draws a plane or a canvas` }
+    }
+    const pic = r.kind === 'canvas' ? canvasPicture(ws, env.ids, r.id) : planePicture(ws, env.ids, r.id)
+    if (!pic) return { ok: true, text: 'Nothing on it to draw yet.' }
+    const image = env.render ? await env.render(pic.svg, { w: pic.w, h: pic.h }).catch(() => null) : null
+    return image ? { ok: true, text: pic.text, image } : { ok: true, text: `${pic.text}\n(No picture can be drawn here: read the plane with structure and view instead.)` }
+  },
 }
 
 // ---- change (change.ts: the real write tool, S13)
@@ -179,6 +205,6 @@ const progressTool: AgentTool = {
   },
 }
 
-export const AGENT_TOOLS: AgentTool[] = [...read, whereTool, changeTool, ...ui, planTool, progressTool]
+export const AGENT_TOOLS: AgentTool[] = [...read, whereTool, lookTool, changeTool, ...ui, planTool, progressTool]
 export const WRITE_TOOLS = new Set(AGENT_TOOLS.filter((t) => t.kind === 'write').map((t) => t.def.name))
 export const TOOL_NAMES = AGENT_TOOLS.map((t) => t.def.name)

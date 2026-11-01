@@ -35,6 +35,7 @@ import type { OpActor } from '../../ops'
 import type { AgentEnv, AgentTool, AgentWs, ModelMessage, TurnEnd, Usage } from '../contract'
 import { NO_USAGE } from '../contract'
 import { readKey, suggested, useAgentSettings } from './settings'
+import { svgToPng } from './render'
 import { JOB_BUDGET, nextMove, nextStep, settled, type Job, type JobHost, type Move } from '../job'
 import { plainError, NO_KEY } from './errors'
 import { subscribeWs } from '../../state/wsStore'
@@ -250,6 +251,8 @@ function envOf(chat: Chat, rt: Runtime): AgentEnv {
     now: () => Date.now(),
     chatId: chat.id,
     job: jobHost(chat.id, rt),
+    // `look`'s pictures (D-327), drawn in this browser.
+    render: svgToPng,
     get changes() {
       return rt.changes
     },

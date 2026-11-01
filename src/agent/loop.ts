@@ -47,7 +47,7 @@
 // and how long it took, text deltas when the model streams, usage per step. The usage log (usage.ts) keeps only counts.
 import { workspaceMap, whereAmI, resolve, estimateTokens, RESULT_TOKENS, type Ids } from './read'
 import { clean, derive } from './read/derive'
-import { addUsage, NO_USAGE, toolsHash, type AgentEnv, type AgentModel, type AgentStep, type AgentTool, type AgentTurn, type AgentWs, type ModelMessage, type ModelRequest, type ModelResponse, type ToolCall, type ToolResult, type Transcript, type Usage } from './contract'
+import { addUsage, NO_USAGE, toolsHash, type AgentEnv, type AgentModel, type AgentStep, type AgentTool, type AgentTurn, type AgentWs, type ImagePart, type ModelMessage, type ModelRequest, type ModelResponse, type ToolCall, type ToolResult, type Transcript, type Usage } from './contract'
 import { systemPrompt } from './prompt'
 import { viewOf } from './changeset'
 import { notesOf } from '../model/notes'
@@ -214,12 +214,17 @@ export function clearOldResults(msgs: ModelMessage[], keep = KEEP_RESULTS): numb
   const go = full.slice(0, full.length - keep)
   for (const { m, i } of go) {
     const t = m as Extract<ModelMessage, { role: 'tool' }>
-    msgs[i] = { ...t, content: `[an earlier result of ${t.name}, ~${estimateTokens(t.content)} tokens, cleared to save room; call it again if you need it]` }
+    // A picture goes with its result (D-327).
+    const { image: _image, ...bare } = t
+    msgs[i] = { ...bare, content: `[an earlier result of ${t.name}, ~${estimateTokens(t.content)} tokens, cleared to save room; call it again if you need it]` }
   }
   return go.length
 }
 
-export const historyTokens = (msgs: ModelMessage[]) => msgs.reduce((n, m) => n + estimateTokens(m.content) + ('providerItems' in m && m.providerItems ? estimateTokens(JSON.stringify(m.providerItems)) : 0), 0)
+// A picture counts as this many tokens (a 1400 px one is about 1.5–2.5k on either provider).
+export const IMAGE_TOKENS = 2000
+export const historyTokens = (msgs: ModelMessage[]) =>
+  msgs.reduce((n, m) => n + estimateTokens(m.content) + ('providerItems' in m && m.providerItems ? estimateTokens(JSON.stringify(m.providerItems)) : 0) + ('image' in m && m.image ? IMAGE_TOKENS : 0) + ('images' in m && m.images ? IMAGE_TOKENS * m.images.length : 0), 0)
 
 // Turns of a history: each starts at a user message.
 function turnsOf(msgs: ModelMessage[]): ModelMessage[][] {
@@ -303,6 +308,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     ...(env.settings ? { settings: env.settings } : {}),
     ...(env.newId ? { newId: () => env.newId!() } : {}),
     ...(env.job ? { job: env.job } : {}),
+    ...(env.render ? { render: env.render } : {}),
     get changes() {
       return env.changes
     },
@@ -450,6 +456,8 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
       break
     }
 
+    // A tool's picture (D-327, `look`), by call: it goes into the history with the result, never into the transcript.
+    const pictures = new Map<string, ImagePart>()
     const runOne = async (c: ToolCall, i: number): Promise<ToolResult> => {
       const c0 = performance.now()
       emit({ type: 'tool_started', n, call: lines[i] })
@@ -461,6 +469,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
         try {
           const r = await tool.run(agentEnv, c.args ?? {})
           out = { ok: !!r?.ok, text: cut(String(r?.text ?? '')) }
+          if (r?.image) pictures.set(c.id, r.image)
         } catch (e) {
           out = { ok: false, text: `${c.name} failed: ${(e as Error)?.message ?? String(e)}` }
         }
@@ -489,7 +498,10 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
       }
     })
     results.push(...(await Promise.all(done)))
-    for (const r of results) mine.push({ role: 'tool', callId: r.callId, name: r.name, content: r.text })
+    for (const r of results) {
+      const image = pictures.get(r.callId)
+      mine.push({ role: 'tool', callId: r.callId, name: r.name, content: r.text, ...(image ? { image } : {}) })
+    }
     steps.push({ n, text: res.text, toolCalls: calls, results, usage: res.usage, ms: performance.now() - s0, stop: res.stop })
     emit({ type: 'step_finished', n, tools: lines, ms: performance.now() - s0, usage: res.usage })
 

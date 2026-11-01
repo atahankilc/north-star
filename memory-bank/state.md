@@ -42,14 +42,20 @@ something is finished, add its entry to state-history.md and leave at most one l
   Left: Q-029, Q-030; `kindOfType` once documents.ts is committed; until the push, invites don't work live (old client).
 
 ## Next steps (not started; ask the user which first)
+- **The agent, where it stands (2026-11-01; D-327, D-328, D-329 built and pushed, none tried with a real model):**
+  1. A real-model run: the user's key, `npm run eval -- --model <openai|anthropic>:<id>` (judge: `--judge`), and in the
+     app a big job (`/restructure Segments`): does it call `plan` and `look`, one step per turn? Tune the prompt on it.
+  2. agent-bugs 25 then the baseline (three runs, two models) before any prompt change is measured.
+  3. Small, ready: 28's "done is checked" (`progress` done refused or warned when the step's `change` was refused);
+     27's leftovers: cards place_on brings along aren't in a later arrange unless named (name them in the result);
+     a flow too big for its plane runs past it (the plane doesn't grow: Q-033).
+  4. Waiting on the user: reference planes for the agent's taste (Q-032); the local harness stays an idea (Q-031).
+  Order and status of every agent bug: docs/specs/agent-bugs.md (its table).
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
   which (D-313); committed, not pushed;
   rules deployed.
 - Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.
-- The agent back: plan accepted (D-312, docs/specs/agent.md): OpenAI, own keys, the person's model, previews, the
-  bottom-right corner. Overnight run 2026-10-29/30 (docs/specs/agent-run.md, its log is the progress): all 17 steps done
-  (ops, read layer, evals, OpenAI loop, change tool, UI, preview, memory, 18 skills); not tried with a real key yet;
-  S16's rules NOT deployed. Next: the user's key + `npm run eval -- --model`, rules deploy, a UI design session. 1.0's rules: decisions-1.0.md.
+- The agent (D-312, docs/specs/agent.md; the overnight build: docs/specs/agent-run.md): see the first item above.
 - Onboarding (D-315, D-316): **built and live** (O0–O16; state-history.md); its rules (and the agent run's) deployed
   2026-10-31 (firestore:rules + database; rules tests 586/0; indexes not). The agent's lessons wait for its redesign.
 - Parked (D-312: the agent uses own keys only): the
@@ -65,14 +71,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 ## Known issues
 - Gallery: Coach › empty canvas draws nothing, even with the welcome seen, the whole screen (side nav's `+`) and no menu
   open; next to look at: Coach.tsx's `hintWaits`/`readBusy` for that hint. EmptyHint › empty canvas shows it alone.
-- Agent: ten bugs and gaps found trying it in the app (documents unread, bare ids, preview stepping, plane layout, apply not
-  heard, overlaps, previews outside their piece, no web, skills list scroll, canvas arrange), then 11–14 from an import,
-  15–24 from the first real eval run (gpt-5.6-terra 66/110, 2026-10-31; eval bugs fixed 6c9cc13), 25 eval vs live store:
-  docs/specs/agent-bugs.md (26 split from 17; 27 structure-aware organising D-327 and 28 jobs that keep going D-328:
-  agreed, not built; second review read against the code). Add new ones there. Claude adapter: D-329
-  (docs/specs/agent-claude.md): steps 1–5 built, not tried with a real key; evals after 25. Jobs and steering (D-328):
-  built and pushed 2026-11-01, the job saved with the chat; its rule deployed first (tests 596/0). D-327 phase 1
-  (graph.ts, flow layout, `structure`, /organize + /restructure) built and pushed 2026-11-01; phase 2 `look` next. Other providers: Q-031.
+- Agent: bugs 1–28 with their order and status in docs/specs/agent-bugs.md (add new ones there); the first real eval
+  run (gpt-5.6-terra 66/110, 2026-10-31) is not a baseline. Other providers: Q-031.
 - Emulators only: after a Storage URL fetch, a tab's next Firestore write can queue ~55 s in Chrome (HTTP/1.1 connection limit).
 - Emulators only: the 6th page load in one Chrome tab stalls ~60 s (connections per host); use a new tab per few loads.
 - Emulators only: a Firestore emulator left running for days can stop sending one workspace's live updates; restart it.

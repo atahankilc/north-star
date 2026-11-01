@@ -80,7 +80,7 @@ export function promptSections(o: { workspaceName?: string } = {}): PromptSectio
         '- A plane holds one question a person comes to think about. A main plane gives the overview (packages folded, the hubs); planes beside it hold the detail: overview first, details on demand.',
         '- A flow is an order of reasoning, customer → problem → competitor → idea → feature, read left to right.',
         '- A card two planes need goes on both, so its links show on each; a link between planes is drawn on neither.',
-        'Before you organise or restructure, call `structure` and say in a line or two how you read it and what question a person brings to it. Then choose what makes it easiest to read, and say why: the flow layout for a group that runs the chain, sections or headings for parts of one meaning, a plane of its own for a topic with few links out, a package for cards that go together and are used in more than one place. These are examples of what a structure can say, not a checklist.',
+        'Before you organise or restructure, call `structure` and `look`, and say in a line or two how you read it and what question a person brings to it. After you propose a new arrangement, `look` again: if it doesn\'t read the way you said, change it before you end the turn. Then choose what makes it easiest to read, and say why: the flow layout for a group that runs the chain, sections or headings for parts of one meaning, a plane of its own for a topic with few links out, a package for cards that go together and are used in more than one place. These are examples of what a structure can say, not a checklist.',
       ].join('\n'),
     },
     {

@@ -30,6 +30,7 @@ import { openaiModel } from '../src/agent/openai'
 import { anthropicModel } from '../src/agent/anthropic'
 import { effortFor } from '../src/agent/models'
 import { nextMove, settled } from '../src/agent/job'
+import { nodeRender } from './render'
 import { EVAL_TOOLS, WRITE_TOOLS } from './tools'
 import { diffLines, gradeAll, setJudge } from './graders'
 import { costOf } from './prices'
@@ -99,6 +100,8 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
     if (em) close = em.close
     const start = em ? em.start : fixture
     const env = makeEnv(start, { role: task.role ?? 'editor', view: task.view, ...(em ? { writer: em.write } : {}) })
+    // `look`'s pictures (D-327): drawn by resvg, as the browser draws them.
+    env.render = nodeRender
     const startedAt = env.now()
     const transcript: Transcript = { model: model.name, startedAt, turns: [] }
     // The ask, then each follow-up as a later turn of the same chat (e.g. a plan, then "go"); graded on the end state
@@ -282,11 +285,11 @@ export function realModel(spec: string, env: Record<string, string | undefined>,
   const tested = adapterFor(spec, env)
   const js = judgeSpec ?? (env.OPENAI_API_KEY ? DEFAULT_JUDGE : spec)
   const judging = js === spec ? tested : adapterFor(js, env)
-  const judge: Judge = async ({ rubric, ask, answer, context }) => {
+  const judge: Judge = async ({ rubric, ask, answer, context, images }) => {
     const r = await judging.make().respond({
       messages: [
         { role: 'system', content: 'You grade an assistant\'s answer against a rubric. Reply with PASS or FAIL on the first line, then one short line why.' },
-        { role: 'user', content: `Rubric: ${rubric}\n\nThe person asked: ${ask}\n\nWhat changed in the workspace:\n${context || '(nothing)'}\n\nThe answer:\n${answer}` },
+        { role: 'user', content: `Rubric: ${rubric}\n\nThe person asked: ${ask}\n\nWhat changed in the workspace:\n${context || '(nothing)'}\n\nThe answer:\n${answer}`, ...(images?.length ? { images } : {}) },
       ],
       tools: [],
     })
