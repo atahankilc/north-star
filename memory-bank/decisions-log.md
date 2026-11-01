@@ -6056,8 +6056,15 @@ docs/foundation-audit-2026-10-31.md).
   CanvasSwitch and MoveToCanvas (menus), Threads (a docked panel), the agent's column (left alone while the user tries
   a big job on this tree). `npm run check:kit` in CI (scripts/check-kit.mjs, baseline 238 in 64 files, only shrinks),
   the rule in CLAUDE.md.
-- *Not yet:* the agent's column on Window; the landing and workspaces pages; lowering check:kit's baseline area by
-  area (what each copy still needs is in those forks' notes: a world size for
+- *Not yet* (agreed with the user 2026-11-01, in this order): (1) landing and workspaces onto the kit: Workspaces.tsx's
+  card actions ([rename] [leave] [delete] [save] [cancel]) and invites' [accept]/[decline] → Button (delete `danger`,
+  its `composes: small` gone), the rename / new name / invite code inputs → Field, the caps labels (name, invite code,
+  "no workspaces yet", "waiting") → Label, the empty line → Empty, the whole-card open button kept (`// kit-ok`),
+  Landing's CSS only (already on the kit); then `check:kit -- --write`. (2) The agent's column (Agent.tsx) on Window,
+  only after the user's browser test of a big job; the agent session asked that its job checklist, [stop], steering,
+  the stepper, `apply · N deletes` and the `/` menu stay exactly as they are. (3) Lower check:kit area by area.
+  (4) Folders by layer (src/ui foundation/primitives/patterns; src/views/workspace by area) in one commit when no
+  other session works. Also still open (what each copy still needs is in those forks' notes: a world size for
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
   MenuPanel, the settings gear's badge 4 px higher once moved); patterns (Dialog/Window, WizardShell, SetupPanel,
   Dock); `check:kit`; folders.

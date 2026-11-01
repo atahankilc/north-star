@@ -66,8 +66,9 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
-- Component gallery (D-324, docs/specs/gallery.md): G1–G3 and the map (D-326) pushed 2026-10-31. Foundation (D-326):
-  motion, the tree and Button pushed; the kit's primitives built 2026-11-01; every area moved onto them; patterns (Options, Window, WizardShell) and check:kit built 2026-11-01; next: folders.
+- Gallery and foundation (D-324, D-326): map, motion, kit, every area on it, patterns, `check:kit` pushed 2026-11-01
+  (4a07c52). Next, agreed with the user, not started: landing + workspaces onto the kit, then the agent's column on
+  Window (after the user's browser test), check:kit lower, folders last; the plan is D-326's *Not yet* in the log.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers
