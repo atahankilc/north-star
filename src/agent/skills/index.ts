@@ -187,8 +187,8 @@ export const SKILLS: Skill[] = [
     steps: [
       'query kind text type sticky (on the plane named, else in focus, else everywhere) and read each.',
       'Decide each note\'s card type by meaning (a who → customer, a pain → problem, a rival → competitor, a what-if → idea, a thing to build → feature); a note that repeats a card already there links to it instead.',
-      'Plan, then wait for go. On go, one change: create_card each (title in the note\'s words) on the same plane, then create_text a section around the new cards of each type.',
-      'Leave the stickies; offer to remove them (only after a yes).',
+      'Plan, then wait for go. On go, one change: create_card each, naming the note it comes from and no title (it keeps the note\'s words) on the same plane, then create_text a section around the new cards of each type.',
+      'Leave the stickies; offer to remove them in your answer.',
     ],
     tools: ['query', 'search', 'change'],
   },

@@ -25,6 +25,7 @@ import { makeIds, resolve, resolvePerson, unclear, view, type IdKind, type Ids }
 import { clean, derive } from './read/derive'
 import { norm, q, wrap } from './read/text'
 import { withNames as textWithNames } from './read/names'
+import { TITLE_MAX } from '../model/limits'
 import type { AgentEnv, AgentWs } from './contract'
 import type { OpError } from '../ops/types'
 
@@ -198,6 +199,7 @@ export function parseChange(ws: AgentWs, ids: Ids, args: Record<string, unknown>
   if (list.length > MAX_OPS) return { ok: false, text: `change refused, nothing added: ${list.length} ops in one call; at most ${MAX_OPS}. Split the job into several change calls (each adds to the same preview).` }
   const ops: ChangeOp[] = []
   const errors: string[] = []
+  const notes: string[] = []
   list.forEach((raw, i) => {
     const entry = (raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}) as Record<string, unknown>
     const extra = Object.keys(entry).filter((k) => !ENTRY_KEYS.has(k))
@@ -215,14 +217,29 @@ export function parseChange(ws: AgentWs, ids: Ids, args: Record<string, unknown>
     const r = resolveIds(ws, ids, def.name, a, `ops[${i}] ${def.name}.args`)
     if (r.errors.length) return void errors.push(...r.errors)
     let value = withNames(ws, r.value as Record<string, unknown>)
+    let whyNow = why
+    // A card made from a note keeps the note's words (agent-bugs 26): no title takes them; a different one is shown
+    // beside the old words in the preview and told to the model.
+    if (def.name === 'create_card' && typeof value.from_text === 'string') {
+      const src = ws.labels.find((l) => l.id === value.from_text)
+      if (!src) return void errors.push(`ops[${i}] create_card.from_text: ${String(a.from_text)} is no text; give the sticky or paragraph the card comes from`)
+      const words = src.text.replace(/\s+/g, ' ').trim()
+      const title = typeof value.title === 'string' ? value.title.replace(/\s+/g, ' ').trim() : ''
+      if (!title) value = { ...value, title: words.slice(0, TITLE_MAX) }
+      else if (title !== words.slice(0, TITLE_MAX)) {
+        whyNow ||= `was ${q(words, 120)}`
+        notes.push(`ops[${i}] create_card's title "${title}" rewords the text's own words ${q(words, 120)}: a card made from a note keeps its words. Use them as the title (leave title out), and offer a rewording in your answer instead, unless the person asked for one.`)
+      }
+    }
     // A document is read outside the agent: a bare `c12` in it becomes `c12 "title"` (agent-bugs 22). The title is the
     // one it has now (a renamed card leaves the document on its old name).
     if (def.name === 'create_document' && typeof value.text === 'string') value = { ...value, text: textWithNames(value.text, ws, ids) }
-    ops.push({ op: def.name, args: value, ...(why ? { why } : {}) })
+    ops.push({ op: def.name, args: value, ...(whyNow ? { why: whyNow } : {}) })
   })
   if (errors.length) return { ok: false, text: `change refused, nothing added:\n${errors.slice(0, 10).join('\n')}` }
   const folded = foldArranges(ops)
-  return { ok: true, ops: folded.ops, ...(folded.notes.length ? { notes: folded.notes } : {}), drop, ...(typeof args.summary === 'string' && args.summary.trim() ? { summary: args.summary.trim() } : {}), dryRun: args.dry_run === true }
+  notes.push(...folded.notes)
+  return { ok: true, ops: folded.ops, ...(notes.length ? { notes } : {}), drop, ...(typeof args.summary === 'string' && args.summary.trim() ? { summary: args.summary.trim() } : {}), dryRun: args.dry_run === true }
 }
 
 // ---- The result in words

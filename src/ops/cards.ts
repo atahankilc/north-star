@@ -32,6 +32,9 @@ export type CreateCardArgs = {
   // Parts: new cards of its type below it, each `part of` it.
   parts?: (string | { title: string; fields?: Partial<CardFields> })[]
   evidence?: EvidenceInput[]
+  // The text it's made from (the agent's `change` reads it: the title keeps its words, agent-bugs 26); the op itself
+  // writes nothing from it.
+  from_text?: string
   handle?: string
 }
 

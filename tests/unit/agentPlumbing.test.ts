@@ -180,3 +180,37 @@ describe('an arrange of the cards just made folds into their own where (bug 16)'
     expect(r.text).toMatch(/Note: The arrange of \$a, \$b was folded/)
   })
 })
+
+describe('a card made from a note keeps its words (bug 26)', () => {
+  const sticky = () => {
+    const ws = loadFixture('medium')
+    const l = ws.labels.find((x) => x.kind === 'sticky' && x.text.trim())!
+    return { ws, l }
+  }
+  it('no title: the note\'s words', async () => {
+    const { ws, l } = sticky()
+    const env = makeEnv(ws)
+    const change = AGENT_TOOLS.find((t) => t.def.name === 'change')!
+    const r = await change.run(env, { ops: [{ op: 'create_card', args: { type: 'problem', plane: env.ids.short('piece', l.pieceId), from_text: env.ids.short('text', l.id) } }] })
+    expect(r.ok, r.text).toBe(true)
+    const made = env.changes!.items[0]
+    expect(made.line).toContain(l.text.replace(/\s+/g, ' ').trim().slice(0, 30))
+    expect(made.why).toBeUndefined()
+  })
+  it('a reworded title: the old words beside it in the preview, and a note to the model', async () => {
+    const { ws, l } = sticky()
+    const env = makeEnv(ws)
+    const change = AGENT_TOOLS.find((t) => t.def.name === 'change')!
+    const r = await change.run(env, { ops: [{ op: 'create_card', args: { type: 'idea', plane: env.ids.short('piece', l.pieceId), title: 'Own the stall data', from_text: env.ids.short('text', l.id) } }] })
+    expect(r.ok, r.text).toBe(true)
+    expect(env.changes!.items[0].why).toMatch(/^was "/)
+    expect(r.text).toMatch(/rewords the text's own words/)
+  })
+  it('from_text that is no text: refused with how to fix it', async () => {
+    const env = makeEnv(loadFixture('medium'))
+    const change = AGENT_TOOLS.find((t) => t.def.name === 'change')!
+    const r = await change.run(env, { ops: [{ op: 'create_card', args: { type: 'idea', plane: 'p1', from_text: 'c1' } }] })
+    expect(r.ok).toBe(false)
+    expect(r.text).toMatch(/from_text/)
+  })
+})

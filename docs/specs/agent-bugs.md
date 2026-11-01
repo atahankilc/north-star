@@ -33,7 +33,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | #  | What                                             | Group        | Severity | Layer            | Status |
 |----|--------------------------------------------------|--------------|----------|------------------|--------|
 | 17 | `go` taken as yes to a delete                    | Guards       | mid      | code (preview)   | fixed  |
-| 26 | turning text into cards rewrites its words       | Guards       | mid      | code + prompt    | open   |
+| 26 | turning text into cards rewrites its words       | Guards       | mid      | code + prompt    | fixed  |
 | 18 | a viewer's agent calls `change`                  | Guards       | low      | code             | fixed  |
 | 16 | ops nobody asked for                             | Guards       | mid      | code + prompt    | fixed  |
 | 6  | items land on top of each other                  | Guards       | mid      | code             | place_on fixed (text); paragraphs open |
@@ -108,6 +108,10 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     that makes a card from a piece of text (sort-stickies, import) carries the source text, and `change` warns when the
     title differs from it beyond trimming; the preview shows the old words beside the new. Fix (prompt, sort-stickies'
     method): the title keeps the note's words; a rewording is offered, never made.
+    *Fixed 2026-11-01:* `create_card` takes `from_text` (the note); `change` gives a card with no title the note's
+    words, and a different title gets `was "…"` beside it in the preview and a note to the model. sort-stickies makes
+    its cards that way (and no longer asks a yes before offering to remove the stickies, D-333). build-02 already
+    grades the exact titles.
 18. **A viewer's agent still calls `change`.** refuse-03: the tool refused it and the answer was right, but it
     shouldn't try. Fix (code): drop `change` from the tool list for a viewer. Not one line: `AGENT_TOOLS` is a fixed
     list (src/agent/tools.ts:140) and the refusal already works (src/agent/change.ts:265); the list goes to `runTurn` as
