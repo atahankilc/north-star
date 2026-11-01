@@ -19,6 +19,7 @@ import { notesOf } from '../src/model/notes'
 import type { AgentWs, ImagePart } from '../src/agent/contract'
 import { LEGEND, planePicture } from '../src/agent/picture'
 import { clean } from '../src/agent/read/derive'
+import { get } from '../src/agent/read'
 import { withNames } from '../src/agent/read/names'
 import { nodeRender } from './render'
 import type { Grade, Grader, RunResult } from './types'
@@ -779,6 +780,17 @@ export const undoRestores = (): Grader => ({
   },
 })
 
+// The read layer's `get` on every card, task or document a text cites by short id (≤ 40), on the end state.
+function citedFacts(r: RunResult, text: string, max = 16000): string {
+  const shorts = [...new Set(text.match(/\b[ctd]\d+\b/g) ?? [])].filter((x) => r.ids.real(x)).slice(0, 40)
+  if (!shorts.length) return ''
+  try {
+    return get(clean(r.end), r.ids, { ids: shorts, detail: 'concise' }).text.slice(0, max)
+  } catch {
+    return ''
+  }
+}
+
 // The read tools' results of the run, newest last, cut to fit a judge's prompt.
 const READS = new Set(['search', 'query', 'get', 'view', 'neighbours', 'read_document', 'whats_new', 'where_am_i', 'structure'])
 function readsOf(r: RunResult, max = 24000): string {
@@ -813,7 +825,9 @@ export const judge = (rubric: string): Grader => ({
   name: `judge(${rubric.length > 60 ? `${rubric.slice(0, 57)}…` : rubric})`,
   grade: async (r) => {
     if (!judgeFn) return { pass: 'skipped', why: 'no judge model configured' }
-    const lines = diffLines(r.start, r.end)
+    // The changes with the short ids the agent's answer uses (the judge can't map c149 to its real id otherwise).
+    const short = (id: string) => SHORT_KINDS.map((k) => r.ids.has(k, id)).find(Boolean)
+    const lines = diffLines(r.start, r.end).map((l) => l.replace(/\/([A-Za-z0-9_-]+)/, (m, id: string) => { const s = short(id); return s ? `${m} (${s})` : m }))
     // A document the run wrote is shown whole, under the short id the agent knows it by (the diff only has its real id).
     const bodies = (r.end as AgentWs & { bodies?: Record<string, { text?: string } | undefined> }).bodies ?? {}
     const docs = madeIds(r, 'document')
@@ -828,7 +842,10 @@ export const judge = (rubric: string): Grader => ({
     // What the agent read, as its tools showed it: the facts the answer may use (a judge without them takes a true
     // quote for a made-up one, find-09).
     const read = readsOf(r)
-    const context = [app, lines.length ? `What the run changed:\n${lines.join('\n')}` : 'The run changed nothing.', ...docs, ...(read ? [`What the agent read (its tools' results; a claim found here is backed):\n${read}`] : [])].join('\n\n')
+    // The facts of every item the answer or the document cites, as the read layer gives them: the agent also knows the
+    // workspace from its map, which the judge doesn't see (mini, swot-04: real cards judged "unseen or invented").
+    const cited = citedFacts(r, [r.answer, ...docs].join('\n'))
+    const context = [app, lines.length ? `What the run changed:\n${lines.join('\n')}` : 'The run changed nothing.', ...docs, ...(cited ? [`The items cited, as the workspace has them after the run:\n${cited}`] : []), ...(read ? [`What the agent read (its tools' results; a claim found here is backed):\n${read}`] : [])].join('\n\n')
     // The answer as the person reads it in the chat: every short id with its name (agent-bugs 2's renderer).
     const v = await judgeFn({ rubric, ask: r.transcript.turns[0]?.ask ?? '', answer: shownAnswer(r), context })
     return ok(v.pass, v.why)

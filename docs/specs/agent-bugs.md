@@ -65,6 +65,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 31 | an arrange of new cards is its own preview item  | Guards       | low      | code (changeset) | fixed  |
 | 32 | a section round new cards cuts what's beside it  | Layout       | mid      | code (ops)       | fixed  |
 | 33 | the evals' own errors, found by reading every failure | Plumbing | blocker  | evals            | fixed  |
+| 34 | a field of another card type, refused confusingly | Guards     | mid      | code (ops)       | fixed  |
 
 ## Order
 
@@ -193,6 +194,20 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     *Fixed 2026-11-01:* changeset.ts marks such an arrange `rides` (all its items create_card handles of its call): no
     preview item, and an untick or a drop takes the gone cards out of its items (none left, it goes). Tests:
     changeset.test.ts ("three cards and their row: three items"; one unticked, the other two still in a row).
+
+34. **A field another card type takes, refused in two confusing steps.** The shakedown run (gpt-5.4-mini ×1,
+    2026-11-01, 85/116, $3.37; report 2026-11-01T14-22-26-020Z): build-06 gave an idea `status: "hypothesis"`; the
+    schema answered that "hypothesis" isn't one of a feature's statuses, so the model sent `status: "idea"`, which
+    validate then refused in the rules' words ("status isn't a field it can have"). It gave up on the cards.
+    *Fixed 2026-11-01:* create_card (and its parts) and update_card check each type's own fields first
+    (src/ops/util.ts `checkCardFields`, the same lists as clean.ts) and name the right one ("an idea has no status;
+    how far an idea is tested is validation …"); the schema's `status` says so too.
+    The rest of that run, read failure by failure: the model's (19 edit-12, 23's marks on swot-02/one-pager-02/
+    next-03, big jobs done without a plan on build-01/04, compare-01 pointing at p11 instead of making one (24), a wrong
+    merge pair, evidence on customers instead of the problem) and the evals': pitch-02's "**Positioning sentence:**"
+    (the regex now takes a word after "positioning"), build-01's axes either way round, and the judge (it now gets the
+    short ids beside the run's changes and the facts of every item the answer or document cites, so a card known from
+    the map isn't "invented").
 
 ## Plumbing: wiring the app to what was built
 

@@ -38,9 +38,12 @@ export const BUILD: Task[] = [
     graders: [
       noWritesInTurn(1),
       made('piece', { kind: 'matrix' }),
-      field(MATRIX, 'matrix.rows.type', 'feature', ['piece']),
-      field(MATRIX, 'matrix.rows.plane', R('p9'), ['piece']),
-      field(MATRIX, 'matrix.cols.type', 'competitor', ['piece']),
+      // Roadmap's features on one axis, competitors on the other, either way round.
+      field(MATRIX, 'matrix', (m: unknown) => {
+        const x = m as { rows?: { type?: string; plane?: string }; cols?: { type?: string; plane?: string } }
+        const fits = (f?: { type?: string; plane?: string }, c?: { type?: string }) => f?.type === 'feature' && f.plane === R('p9') && c?.type === 'competitor'
+        return fits(x.rows, x.cols) || fits(x.cols, x.rows)
+      }, ['piece']),
       // The /compare guide fills the cells the recorded matches know (skills/index.ts): only the new matrix's cells.
       onlyChanged({ add: { pieces: 1 }, allow: [(id, c, r) => c.kind === 'cells' && c.change === 'added' && madeIds(r, 'piece', { kind: 'matrix' }).some((m) => id.startsWith(`${m}_`))] }),
       undoRestores(),

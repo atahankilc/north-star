@@ -88,7 +88,7 @@ const clashes = (c: Card, r: { start: AgentWs }) => {
 // The Mom Test's past question in any wording: "last time", "when did/was", "the most recent".
 const MOM_PAST = /\blast\b|\bmost recent\b|\bwhen (did|was)\b/i
 // The method's positioning sentence opens the pitch, under a heading or not, in bold or a quote or after "Positioning:".
-const POSITIONING_FIRST = /^(?:\s*#.*\n+)*\s*(?:>\s*)?(?:[*_]{1,2})?(?:positioning\s*:?\s*(?:[*_]{1,2})?\s*:?\s*)?for\b[^\n]+?\bwho\b/i
+const POSITIONING_FIRST = /^(?:\s*#.*\n+)*\s*(?:>\s*)?(?:[*_]{1,2})?(?:positioning(?:\s+\w+)?\s*:?\s*(?:[*_]{1,2})?\s*:?\s*)?for\b[^\n]+?\bwho\b/i
 const withDup = (ws: AgentWs): AgentWs => {
   const bets = R('p3')
   const card = { id: DUP, type: 'problem', pieceId: bets, title: 'Bakers carry heavy bags home on foot.', x: 1500, y: 1200, validation: 'hypothesis', createdAt: NOW - 48 * H, updatedAt: NOW - 48 * H } as unknown as Card

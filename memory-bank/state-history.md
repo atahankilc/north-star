@@ -1207,3 +1207,8 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   untick leaves it laying out the rest). 32: a section drawn `around` things that would cut what's beside it moves
   with them to the nearest clear spot (src/ops/text.ts). Verified: tsc, vitest 968 (changeset and textOps tests
   replay the runs' own ops), stub evals 116 tasks 0 failed, `--wrong` 116 failed.
+- Shakedown gpt-5.4-mini ×1 (85/116, 73 %, $3.37), every failure read: agent-bugs 34 (create_card/update_card name
+  the right field for a type: checkCardFields), pitch-02's regex, build-01's axes either way, the judge given short ids
+  beside the changes and the cited items' facts. Replay 95 → 96 (judges left out). Verified: tsc, vitest 968, stub
+  evals 0 failed, `--wrong` 116 failed. Earlier the same day: the stub evals through D-335's deployed field lists on
+  the emulators (`--emulator`): 116 tasks, 0 failed.

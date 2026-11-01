@@ -14,7 +14,7 @@ import { arrangeAny, sceneOf, type Scene } from './arrange'
 import { project } from './project'
 import { criterionCascade } from './lens'
 import { DELETE, OpsRefused, type OpCtx, type Plan, type Write } from './types'
-import { cardColl, cardData, cardIn, handleOf, once, one, plural, refuse, titleField } from './util'
+import { cardColl, cardData, cardIn, checkCardFields, handleOf, once, one, plural, refuse, titleField } from './util'
 import { evidenceData, type EvidenceInput } from './evidence'
 
 // ---- create_card
@@ -64,6 +64,8 @@ export function createCard(ctx: OpCtx, args: CreateCardArgs): Plan {
   const h = handleOf(args)
   const id = ctx.newId()
   const type = args.type
+  checkCardFields(OP, type, args.fields as Record<string, unknown>)
+  for (const p of args.parts ?? []) if (typeof p !== 'string') checkCardFields(OP, type, p.fields as Record<string, unknown>)
   const here = cardsOn(ctx.ws.cards, ctx.ws.places, args.plane)
   const w = args.where
   // Where the app picks the spot (no `where`, `near`, the parts): clear of everything on the plane, not only its cards
@@ -139,6 +141,7 @@ export function updateCard(ctx: OpCtx, args: UpdateCardArgs): Plan {
   for (const k of ['title', 'name'])
     if (args.fields && k in args.fields) refuse(op, `${k} isn't one of a card's fields here`, 'use title (the argument beside fields) to rename it')
   const now = ctx.now
+  checkCardFields(op, card.type, args.fields as Record<string, unknown>)
   const own: Record<string, unknown> = { ...cardData(card.type, args.fields as Record<string, unknown>, true) }
   if (args.title !== undefined) own[titleField(card.type)] = String(args.title).slice(0, TITLE_MAX)
   const spot: Record<string, unknown> = {}

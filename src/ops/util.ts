@@ -29,6 +29,27 @@ export function find<T extends { id: string }>(list: T[], op: string, id: unknow
 
 // A card's fields as its doc holds them: `notes` is a competitor's `notes`, any other card's `body`. In a patch an
 // `undefined` or `null` takes the field away; in a new doc it's left out.
+// The fields each type of card takes (src/model/clean.ts' cleanCard, firestore.rules' lists). A field another type
+// takes is refused here with the right one named, before validate turns it into a rules-shaped refusal (mini, build-06:
+// an idea given `status`, told only that "hypothesis" isn't a feature status, then refused for having status at all).
+const OWN_FIELDS: Record<string, string[]> = {
+  competitor: ['tags', 'notes', 'url', 'description', 'pricing', 'audience', 'regions'],
+  customer: ['tags', 'notes', 'validation'],
+  problem: ['tags', 'notes', 'validation'],
+  idea: ['tags', 'notes', 'validation'],
+  feature: ['tags', 'notes', 'validation', 'priority', 'status', 'criteria', 'impact', 'effort'],
+  package: ['tags', 'notes', 'validation', 'impact', 'effort', 'memberIds'],
+}
+export function checkCardFields(op: string, type: AnyType, fields: Record<string, unknown> | undefined) {
+  const own = OWN_FIELDS[type]
+  if (!own) return
+  const wrong = Object.keys(fields ?? {}).filter((k) => k !== 'title' && k !== 'name' && !own.includes(k))
+  if (!wrong.length) return
+  const a = /^[aeiou]/.test(type) ? 'an' : 'a'
+  const hint = wrong.includes('status') && own.includes('validation') && type !== 'feature' ? `; how far ${a} ${type} is tested is validation (hypothesis, testing, validated, invalidated)` : ''
+  refuse(op, `${a} ${type} has no ${wrong.join(', ')}${hint}`, `${a} ${type}'s fields: ${own.join(', ')}`)
+}
+
 export function cardData(type: AnyType, fields: Record<string, unknown> | undefined, patch: boolean): Record<string, unknown> {
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(fields ?? {})) {

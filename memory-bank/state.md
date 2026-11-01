@@ -36,8 +36,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   1. Real runs, gpt-5.6-terra ×3 (2026-11-01): 66 %/52 %, then 71 %/54 % ($18.08). Every failure read, then all 116
      tasks' graders audited against guides/prompt/decisions (agent-bugs 33): 43 had findings, several "model bugs"
      were the graders'; `npm run eval -- --replay <run>` re-grades a past run for free: 249 → 293 of 348. Next: one
-     cheap shakedown (claude-haiku-5-5 ×1, ~$1), its failures read; then terra, gpt-5.4-mini, claude-sonnet-5-5 ×1
-     (judge terra); ×3 only for a model to mark `works well`; then the prompt bugs one by one (19, 20, 23, 24).
+     shakedown done (gpt-5.4-mini ×1: 85/116, $3.37; failures read: bug 34 and three eval fixes). Next: terra and
+     claude-sonnet-5-5 ×1 (judge terra); ×3 only for a model to mark `works well`; then the prompt bugs (19, 23, 24).
   2. In the app: a big job (`/restructure Segments`), and the two go buttons (not looked at in a browser yet).
   3. Bugs 31, 32 fixed 2026-11-01 (committed, not pushed); left: the preview pick saved with the chat (rules).
   4. The local harness stays an idea (Q-031).

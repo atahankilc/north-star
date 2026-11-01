@@ -76,7 +76,7 @@ const cardFields = obj(
     pricing: s('competitor only'),
     url: s('competitor only'),
     priority: { type: 'string', enum: FEATURE_PRIORITIES, description: 'feature only' },
-    status: { type: 'string', enum: FEATURE_STATUSES, description: 'feature only' },
+    status: { type: 'string', enum: FEATURE_STATUSES, description: "feature only (a customer's, problem's or idea's is validation)" },
     impact: { type: 'string', enum: FEATURE_IMPACTS, description: 'feature or package' },
     effort: { type: 'string', enum: FEATURE_EFFORTS, description: 'feature or package' },
     criteria: { type: 'array', items: obj({ id: s('a–z 0–9, ≤ 16'), text: s() }, ['id', 'text']), description: 'feature only: what it is judged on (≤ 8)' },
