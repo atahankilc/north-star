@@ -28,3 +28,7 @@
 .prompt[data-running] .input {
   color: var(--fg-dim);
 }
+
+.input[data-invalid] {
+  color: var(--accent-magenta);
+}

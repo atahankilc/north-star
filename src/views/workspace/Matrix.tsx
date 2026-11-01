@@ -64,6 +64,8 @@ import { learn } from '../../onboarding/learn'
 import styles from './Matrix.module.css'
 import { DUR } from '../../ui/motion'
 import { MATRIX_PX } from '../../model/world'
+import { Button } from '../../ui/Button'
+import { Empty } from '../../ui/Empty'
 
 // The matrix's parts in its own px: model/world.ts (D-325).
 export const M = MATRIX_PX
@@ -475,9 +477,9 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
             </div>
           </div>
           {!rows.length && !cols.length && !(live && editor) && (
-            <p className={styles.empty} style={box(0, M.top, L.w, M.row * 2)}>
+            <Empty className={styles.empty} tone="dim" style={box(0, M.top, L.w, M.row * 2)}>
               Nothing to cross yet
-            </p>
+            </Empty>
           )}
         </div>
       </div>
@@ -1018,54 +1020,54 @@ function CellBar({ setup, cell, row, col, editor, onFold, at, room, write, onTyp
             {rolled ? `${read.step?.label ?? (read.number !== undefined ? fmt(read.number) : '')} · ` : ''}read from what it's judged on, {cell.parts.length}
           </span>
           {onFold && (
-            <button className={styles.tool} onClick={onFold.toggle}>
+            <Button className={styles.barTool} onClick={onFold.toggle}>
               {onFold.shown ? 'fold' : 'unfold to score'}
-            </button>
+            </Button>
           )}
         </div>
       )}
       {!out && !rolled && setup.cell === 'scale' && (
         <div className={styles.barRow}>
           {setup.steps.map((s, i) => (
-            <button
+            <Button
               key={s.id}
-              className={styles.tool}
-              aria-pressed={read.step?.id === s.id}
+              className={styles.barTool}
+              pressed={read.step?.id === s.id}
               disabled={!editor}
               style={{ ['--tone' as string]: TONE_VAR[s.tone] }}
               title={`${s.label} (${i + 1})`}
               onClick={() => write({ value: read.step?.id === s.id ? undefined : s.id })}
             >
               {setup.marks ? <span className={styles.stepGlyph}>{s.glyph}</span> : <StepSquare steps={setup.steps} step={s} />} {s.label}
-            </button>
+            </Button>
           ))}
         </div>
       )}
       {!out && !rolled && !cell?.parts && setup.cell !== 'scale' && editor && (
         <div className={styles.barRow}>
-          <button className={styles.tool} onClick={onType} title="type it (Enter)">
+          <Button className={styles.barTool} onClick={onType} title="type it (Enter)">
             {read.number !== undefined || read.text ? 'change' : 'type'}
-          </button>
+          </Button>
           {(read.number !== undefined || read.text) && (
-            <button className={styles.tool} onClick={() => write({ value: undefined })} title="clear it (Backspace)">
+            <Button className={styles.barTool} onClick={() => write({ value: undefined })} title="clear it (Backspace)">
               clear
-            </button>
+            </Button>
           )}
         </div>
       )}
       {(setup.notRelevant || setup.confidence) && (
         <div className={styles.barRow}>
           {setup.notRelevant && (
-            <button className={styles.tool} aria-pressed={out} disabled={!editor} title="they can't be compared here: left out of the totals (-)" onClick={() => write({ notRelevant: out ? undefined : true })}>
+            <Button className={styles.barTool} pressed={out} disabled={!editor} title="they can't be compared here: left out of the totals (-)" onClick={() => write({ notRelevant: out ? undefined : true })}>
               — doesn't apply
-            </button>
+            </Button>
           )}
           {setup.confidence && !out &&
             CONFIDENCES.map((c) => (
-              <button key={c} className={styles.tool} aria-pressed={cell?.confidence === c} disabled={!editor} onClick={() => write({ confidence: cell?.confidence === c ? undefined : c })}>
+              <Button key={c} className={styles.barTool} pressed={cell?.confidence === c} disabled={!editor} onClick={() => write({ confidence: cell?.confidence === c ? undefined : c })}>
                 {CONFIDENCE_MARK[c] ? `${CONFIDENCE_MARK[c]} ` : ''}
                 {c}
-              </button>
+              </Button>
             ))}
         </div>
       )}

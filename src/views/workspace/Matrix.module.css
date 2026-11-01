@@ -65,16 +65,13 @@
   background: var(--bg);
 }
 
-/* `features × competitors`, faint caps in the corner. */
+/* `features × competitors`, faint caps in the corner: the kit's Label (D-326). */
 .corner {
+  composes: label from '../../ui/Label.module.css';
   display: flex;
   align-items: flex-end;
   gap: var(--space-1);
   padding: 0 var(--space-2) var(--space-2) var(--space-half);
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .corner > span {
@@ -269,15 +266,12 @@
   white-space: nowrap;
 }
 
-/* The totals at the ends: a column after the cells, a row under them; their heads faint caps. */
+/* The totals at the ends: a column after the cells, a row under them; their heads faint caps (the kit's Label). */
 .endHead {
+  composes: label from '../../ui/Label.module.css';
   display: flex;
   align-items: flex-end;
   padding: 0 var(--space-2) var(--space-2);
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .endHead[data-row] {
@@ -533,11 +527,10 @@
   color: var(--fg-faint);
 }
 
+/* Nothing to cross yet: the kit's Empty (dim), centred in the cells' place. */
 .empty {
   display: grid;
   place-items: center;
-  margin: 0;
-  color: var(--fg-dim);
   font-size: var(--text-sm);
 }
 
@@ -574,27 +567,18 @@
   gap: var(--space-1) var(--space-2);
 }
 
-.tool {
-  composes: small from '../../ui/AsciiButton.module.css';
+/* The cell bar's tools: the kit's Button (D-326); a step's square beside its name, a step picked in its own tone. */
+.barTool {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: 0 var(--space-half);
 }
 
-.tool[aria-pressed='true'] {
+.cellBar .barTool[aria-pressed='true'] {
   color: var(--tone, var(--accent-cyan));
 }
 
-.tool:disabled {
-  cursor: default;
-}
-
-.tool[data-main] {
-  color: var(--fg-strong);
-}
-
-.tool .square {
+.barTool .square {
   width: var(--dot-lg);
   height: var(--dot-lg);
 }

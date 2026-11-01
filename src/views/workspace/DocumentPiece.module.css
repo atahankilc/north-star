@@ -50,12 +50,9 @@
   font-size: var(--text-sm);
 }
 
-/* "On this page": its head and rows (PageOutline). */
+/* "On this page": its head (the kit's Label, faint) and rows (PageOutline). */
 .outlineHead {
   margin-bottom: var(--space-2);
-  color: var(--fg-faint);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .outlineItem {
@@ -268,18 +265,10 @@
   font-size: var(--text-sm);
 }
 
-.askTool {
-  composes: small from '../../ui/AsciiButton.module.css';
-}
-
-.askTool[data-go] {
+/* Its answers: the kit's Button with its key; "share and place" in the ask's yellow. */
+.askActions .askGo {
   margin-left: var(--space-3);
   color: var(--accent-yellow);
-}
-
-.askKey {
-  color: var(--fg-faint);
-  font-size: var(--text-xs);
 }
 
 /* The list put away (D-232): the first document starts at the side nav, no line down its left. */
@@ -304,13 +293,12 @@
   box-sizing: border-box;
 }
 
-.openMoreButton {
-  composes: small from '../../ui/AsciiButton.module.css';
+.openMore .openMoreButton {
   color: var(--fg);
   font-size: var(--text-sm);
   pointer-events: auto;
 }
 
-.openMoreButton:hover {
+.openMore .openMoreButton:hover {
   color: var(--accent-cyan);
 }

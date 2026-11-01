@@ -57,10 +57,8 @@
   border-right: var(--line-w) solid var(--accent-magenta);
 }
 
-
-
 /* The `>` line. */
-.line {
+.finder .line {
   display: flex;
   flex: none;
   align-items: center;
@@ -70,73 +68,17 @@
   cursor: text;
 }
 
-.sign {
-  color: var(--accent-magenta);
-  font-size: var(--text-sm);
-}
-
-.field {
-  flex: 1;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-strong);
-  font: inherit;
-  font-size: var(--text-sm);
-  caret-color: var(--accent-magenta);
-}
-
-.field::placeholder {
-  color: var(--fg-faint);
-}
-
-.field:focus {
-  outline: none;
-}
-
-.field[data-bad='true'] {
-  color: var(--accent-magenta);
-}
-
-/* here | everywhere: one switch of two, the one on filled cyan. */
+/* here | everywhere: Tabs' segments (D-326), framed. */
 .scope {
   display: inline-flex;
   flex: none;
   border: var(--line-w) solid var(--line-hover);
 }
 
-.seg {
-  padding: var(--space-half) var(--space-2);
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
-}
-
-.seg:hover {
-  color: var(--fg-strong);
-}
-
-.seg[aria-pressed='true'] {
-  background: var(--accent-cyan);
-  color: var(--on-accent);
-}
-
 .switches {
   display: inline-flex;
   flex: none;
   gap: var(--space-1);
-}
-
-.tool {
-  composes: small from '../../ui/AsciiButton.module.css';
-  padding: 0 var(--space-half);
-}
-
-.tool[aria-pressed='true'] {
-  color: var(--accent-cyan);
 }
 
 /* The matches, grouped. */
@@ -235,9 +177,7 @@
 }
 
 .none {
-  margin: 0;
   padding: var(--space-4) var(--space-3);
-  color: var(--fg-faint);
 }
 
 /* The preview: what the screen shows once you're there, small. */
@@ -315,11 +255,6 @@
 
 .zoomAt:hover {
   color: var(--fg-strong);
-}
-
-.tool:disabled {
-  color: var(--fg-faint);
-  cursor: default;
 }
 
 /* Go to (nothing typed): a plane's own places under it, in; its `▸ N inside` opens them (D-200). */

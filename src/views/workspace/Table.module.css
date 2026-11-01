@@ -69,20 +69,20 @@
   pointer-events: none;
 }
 
-/* A column's head: faint caps at its bottom; its own columns a little brighter. A click sorts by it. */
+/* A column's head: faint caps at its bottom (the kit's Label, D-326); its own columns a little brighter. A click sorts
+   by it. */
 .head {
+  composes: label from '../../ui/Label.module.css';
   display: flex;
   align-items: flex-end;
   gap: var(--space-1);
   padding: 0 var(--space-3) var(--space-2);
   border: 0;
   background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
+  font-family: inherit;
+  font-weight: inherit;
+  line-height: inherit;
   text-align: left;
-  text-transform: uppercase;
   outline: none;
   cursor: default;
 }
@@ -341,18 +341,12 @@
   color: var(--accent-magenta);
 }
 
+/* No rows: the kit's Empty (dim), in the rows' place. */
 .empty {
   display: flex;
   align-items: center;
-  margin: 0;
   padding: 0 var(--space-3);
-  color: var(--fg-dim);
   font-size: var(--text-xs);
-}
-
-.tool {
-  composes: small from '../../ui/AsciiButton.module.css';
-  padding: 0 var(--space-half);
 }
 
 /* The setup's columns in order (D-218): one line each, the name fixed first. */

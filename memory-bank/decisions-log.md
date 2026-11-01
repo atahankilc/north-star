@@ -6028,6 +6028,16 @@ docs/foundation-audit-2026-10-31.md).
   empty lines → Empty. Looks snapped to the kit: the column heads' magenta lead, the add-task sheet's magenta `>` and
   height, the side view's tabs underlined instead of framed, OVERVIEW 10 → 11 px. Kept: the scale buttons (a pinch
   rests between scales), LaneHead, the SOON band, `+ add a task` / `+ column` (quiet rows, not verbs).
+- *Built:* the canvas pieces on the kit (2026-11-01): a card's `#tags` and a link's kind → Chip, which got
+  `scale="world"` (the world's `--w-*` type), `voice="user"`, an `extra` slot and attribute pass-through; the matrix's
+  cell bar, the table's and documents' pagers, `[upload]`, table/shelf, a document's ask → Button; axis and column
+  heads compose Label; empty lines → Empty (it passes `style`); the finder's `>` line → PromptField (got `onKeyDown`,
+  `passKeys`, `invalid`, a trailing slot) and its scope → Tabs; the text bar's controls → Button. Looks snapped: a
+  link's kind in the system voice (`solves` → `SOLVES`, D-266; a link's own label stays as typed), the finder's line
+  without the page's cyan focus box, the text bar's delete magenta only on hover. Kept: the world-sized cell and head
+  editors (Field is screen-sized), the card's type label and meta and fold toggles, documents' icon buttons, the
+  console buttons and a piece's name field (CanvasView.module.css, another session's work then: next), the colour
+  swatches. Beside, collab, ContextMenu, FocusedPlane, SideNav already had nothing hand-made.
 - *Not yet:* moving the other areas onto the kit (what each copy still needs is in those forks' notes: a world size for
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
   MenuPanel, the settings gear's badge 4 px higher once moved); patterns (Dialog/Window, WizardShell, SetupPanel,

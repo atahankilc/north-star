@@ -42,29 +42,23 @@
 }
 
 /* A small framed chip at a card's small-text size (D-154): its kind's colour round it and in it; filled when selected. */
-.chip {
+/* The link's kind is the kit's Chip (`kind`, at the world's size, D-326); here only where it sits and how it's
+   pressed. Two classes, so these hold whichever stylesheet comes last. */
+.at .chip {
   position: absolute;
   top: 0;
   left: 0;
-  padding: 0 var(--space-1);
-  border: calc(var(--line-w) * 0.64) solid var(--tone);
-  background: var(--bg);
-  color: var(--tone);
-  font-family: var(--font-mono);
-  font-size: var(--w-text-2xs);
-  line-height: var(--lh-body);
-  letter-spacing: var(--track-label);
-  white-space: nowrap;
+  max-width: none;
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
 
-.chip[data-live='true'] {
+.at .chip[data-live='true'] {
   pointer-events: auto;
   cursor: pointer;
 }
 
-.chip[data-hidden='true'] {
+.at .chip[data-hidden='true'] {
   visibility: hidden;
 }
 

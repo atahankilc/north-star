@@ -23,6 +23,8 @@ import { isOpen, useOpenSize } from './shownBox'
 import { docScope, scrollTo, useLandOnPage } from './find'
 import styles from './DocumentPiece.module.css'
 import beside from './Beside.module.css'
+import { Button } from '../../ui/Button'
+import { Label } from '../../ui/Label'
 
 // The margin round its text, in its px.
 const PAD = WORLD.docPad
@@ -123,9 +125,9 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
         )}
         {onCanvas && cut && d && (
           <div className={styles.openMore} style={{ width: width + 2 * PAD, height: MORE_H }}>
-            <button className={styles.openMoreButton} data-live onPointerDown={(e) => e.stopPropagation()} onClick={onMore} title="read the rest in focus">
+            <Button className={styles.openMoreButton} data-live onPointerDown={(e) => e.stopPropagation()} onClick={onMore} title="read the rest in focus">
               continue reading ↗
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -347,7 +349,9 @@ function PageOutline({ scroller, at }: { scroller: React.RefObject<HTMLDivElemen
   const top = Math.min(...parts.map((p) => p.level))
   return (
     <nav className={styles.pageOutline} aria-label="On this page">
-      <span className={styles.outlineHead}>on this page</span>
+      <Label tone="faint" className={styles.outlineHead}>
+        on this page
+      </Label>
       {parts.map((p, i) => (
         <button
           key={i}
@@ -382,7 +386,6 @@ export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlacePro
   const { wid, documents } = useWs()
   const placing = useDocUi((s) => s.placing)
   const d = placing ? (documents.find((x) => x.id === placing.docId) ?? null) : null
-  const go = useRef<HTMLButtonElement>(null)
   const size = useCanvasView((s) => s.size)
   const cancel = () => useDocUi.setState({ placing: null })
   const place = () => {
@@ -400,7 +403,6 @@ export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlacePro
   }, [d?.shared, placing])
   useEffect(() => {
     if (!placing || !d || d.shared) return
-    go.current?.focus()
     const key = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !(e.target as Element | null)?.closest?.('[data-coach]')) {
         e.stopPropagation()
@@ -436,14 +438,13 @@ export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlacePro
         <p className={styles.askTitle}>Show "{d.title.length > 60 ? `${d.title.slice(0, 59)}…` : d.title}" to everyone?</p>
         <p className={styles.askLines}>Putting it on the canvas shares it with the workspace: {people}. You can unshare it later from the documents list.</p>
         <p className={styles.askActions}>
-          <button className={styles.askTool} onClick={cancel}>
+          <Button onClick={cancel} keyHint="esc">
             cancel
-          </button>
-          <span className={styles.askKey}>esc</span>
-          <button ref={go} className={styles.askTool} data-go onClick={place}>
+          </Button>
+          {/* The question opens on it (autoFocus): Enter places, Escape cancels. */}
+          <Button autoFocus className={styles.askGo} onClick={place} keyHint="↵">
             share and place
-          </button>
-          <span className={styles.askKey}>↵</span>
+          </Button>
         </p>
       </div>
     </div>

@@ -47,6 +47,7 @@ import styles from './PlaneCards.module.css'
 import { CELLS_SHUT } from '../../ui/cellReveal'
 import { CARD_TONE } from '../../ui/cardTone'
 import { DRAG_PX } from '../../ui/feel'
+import { Chip } from '../../ui/Chip'
 
 // How a card is drawn by how big it is on screen (D-111, D-153): everything while its small text (8 px) is 4 px or more;
 // the title alone (24 px) while that's 5 px or more; then bars. Going back up takes 10 % more, so a view resting on a
@@ -882,8 +883,9 @@ function ProofCells({ proof }: { proof: Proof }) {
   )
 }
 
-// Tags as framed chips in a row; what doesn't fit becomes `+N`. Mono is 0.6 em a character. The same sizes as the CSS
-// (D-325): --w-text-3xs, --space-1, and the world's chip gap and card padding (model/world.ts).
+// Tags as framed chips in a row (the kit's Chip at the world's size, D-326); what doesn't fit becomes `+N`. Mono is
+// 0.6 em a character. The same sizes as the CSS (D-325): --w-text-3xs, --space-1, and the world's chip gap and card
+// padding (model/world.ts).
 const CHIP_TEXT = 7
 const CHIP_PAD = 4
 const CHIP_GAP = WORLD.chipGap
@@ -906,9 +908,9 @@ function TagChips({ tags }: { tags: string[] }) {
   return (
     <span className={styles.tags}>
       {shown.map((t) => (
-        <span key={t} className={styles.chip}>
+        <Chip key={t} scale="world">
           {t}
-        </span>
+        </Chip>
       ))}
     </span>
   )

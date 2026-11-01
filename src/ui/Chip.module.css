@@ -63,6 +63,23 @@
   text-transform: uppercase;
 }
 
+/* world: sized in the world's tokens, so it zooms with what it sits on (a card face's #tags; a link's kind a step
+   bigger). */
+.chip[data-scale='world'] {
+  font-size: var(--w-text-3xs);
+  line-height: var(--lh-body);
+}
+
+.chip[data-scale='world'][data-variant='kind'] {
+  font-size: var(--w-text-2xs);
+}
+
+/* A person's own words (D-266): as typed, never caps, even as a kind (a link's own label). */
+.chip[data-voice='user'] {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 /* The `×`: there on hover or focus inside the chip, magenta under the pointer. */
 .remove {
   display: none;

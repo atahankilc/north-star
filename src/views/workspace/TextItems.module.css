@@ -553,19 +553,6 @@
   cursor: default;
 }
 
-.tool {
-  composes: small from '../../ui/AsciiButton.module.css';
-  padding: 0 var(--space-half);
-}
-
-.tool[aria-pressed='true'] {
-  color: var(--accent-cyan);
-}
-
-.tool[data-tone='danger'] {
-  color: var(--accent-magenta);
-}
-
 .rule2 {
   align-self: stretch;
   width: var(--line-w);

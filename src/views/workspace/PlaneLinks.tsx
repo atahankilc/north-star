@@ -14,6 +14,7 @@ import { useWs } from './context'
 import { Marks } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import styles from './PlaneLinks.module.css'
+import { Chip } from '../../ui/Chip'
 
 type LinkGroup = 'solves' | 'part' | 'competes' | 'clashes' | 'draws' | 'depends' | 'plain' | 'for'
 
@@ -182,7 +183,12 @@ export function LinkChips({ links, live, editor, zoom }: { links: Drawn[]; live:
         const text = (s.selected || s.active) && edge.label ? edge.label : kindOf(edge.kind).label
         return (
           <div key={edge.id} className={styles.at} style={{ left: mid[0], top: mid[1], ['--tone' as string]: linkTone(edge.kind) }}>
-            <span
+            {/* Its kind in the system's voice; its own label (in focus) in the person's (D-266). */}
+            <Chip
+              variant="kind"
+              scale="world"
+              voice={text === edge.label ? 'user' : undefined}
+              tone="var(--tone)"
               className={styles.chip}
               data-selected={s.selected || undefined}
               data-live={live || undefined}
@@ -195,15 +201,19 @@ export function LinkChips({ links, live, editor, zoom }: { links: Drawn[]; live:
                 ev.stopPropagation()
                 select(edge.id)
               }}
+              extra={
+                <>
+                  {live && <Marks zoom={zoom} tier="s" tone="var(--tone)" selected={s.selected} />}
+                  {thread && (
+                    <span className={styles.thread}>
+                      <ThreadChip wid={wid} thread={thread} zoom={zoom} />
+                    </span>
+                  )}
+                </>
+              }
             >
               {text}
-              {live && <Marks zoom={zoom} tier="s" tone="var(--tone)" selected={s.selected} />}
-              {thread && (
-                <span className={styles.thread}>
-                  <ThreadChip wid={wid} thread={thread} zoom={zoom} />
-                </span>
-              )}
-            </span>
+            </Chip>
             {s.selected && editor && <LinkBar edge={edge} zoom={zoom} />}
           </div>
         )

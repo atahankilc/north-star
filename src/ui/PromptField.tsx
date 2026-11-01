@@ -3,7 +3,7 @@
 // (the prompt's border is the row's). Enter submits; in a `multiline` one Shift+Enter is a new line (as the agent and
 // threads take it). Escape calls `onEscape`. `framed` draws the row's bottom rule (a menu's head); without it, it sits
 // in what holds it.
-import { forwardRef, type ReactNode } from 'react'
+import { forwardRef, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
 import { Field } from './Field'
 import { Spinner } from './Spinner'
 import styles from './PromptField.module.css'
@@ -26,15 +26,24 @@ type Props = {
   className?: string
   // Leaving it (a deck's add-task keeps what was typed, then closes).
   onBlur?: () => void
+  // The caller's own keys after Enter/Escape (the finder: arrows move the pick, Tab its scope); `passKeys` lets keys
+  // reach the window (⌘F again while the finder is open).
+  onKeyDown?: (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void
+  passKeys?: boolean
+  // What's typed can't be used (the finder's bad regular expression): magenta.
+  invalid?: boolean
+  // More on the row after the field (the finder's scope and switches).
+  children?: ReactNode
+  style?: CSSProperties
 }
 
 export const PromptField = forwardRef<HTMLInputElement | HTMLTextAreaElement | null, Props>(function PromptField(
-  { value, onChange, onSubmit, onEscape, label, placeholder, sign = '>', running, multiline, framed, autoFocus, disabled, maxLength, className, onBlur },
+  { value, onChange, onSubmit, onEscape, label, placeholder, sign = '>', running, multiline, framed, autoFocus, disabled, maxLength, className, onBlur, onKeyDown, passKeys, invalid, children, style },
   ref,
 ) {
-  const shared = { value, onChange, label, placeholder, onEscape, autoFocus, disabled, maxLength, onBlur, className: styles.input }
+  const shared = { value, onChange, label, placeholder, onEscape, autoFocus, disabled, maxLength, onBlur, passKeys, 'data-invalid': invalid || undefined, className: styles.input }
   return (
-    <label className={[styles.prompt, className].filter(Boolean).join(' ')} data-framed={framed || undefined} data-running={running || undefined}>
+    <label className={[styles.prompt, className].filter(Boolean).join(' ')} style={style} data-framed={framed || undefined} data-running={running || undefined}>
       <span className={styles.sign} aria-hidden>
         {running ? <Spinner /> : sign}
       </span>
@@ -46,11 +55,13 @@ export const PromptField = forwardRef<HTMLInputElement | HTMLTextAreaElement | n
           rows={1}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) (e.preventDefault(), onSubmit(value))
+            onKeyDown?.(e)
           }}
         />
       ) : (
-        <Field {...shared} ref={ref} onEnter={onSubmit} />
+        <Field {...shared} ref={ref} onEnter={onSubmit} onKeyDown={onKeyDown} />
       )}
+      {children}
     </label>
   )
 })

@@ -1077,3 +1077,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Verified: tsc, vitest 925, check:tokens 0, check:gallery 84, lint; ~100 gallery states old against new (each from
   its own checkout, a second old for noise), both themes: the changes are the snaps in D-326's log, looked at in their
   crops; the rest the real-time canvas behind.
+
+## Done (2026-11-01): the canvas pieces on the kit (D-326)
+- PlaneCards, PlaneLinks, Matrix, Table, Documents, DocumentPiece, Finder, TextItems (its bar), WorkspaceLayout's dead
+  rule onto Chip (world scale), Button, Label, Empty, PromptField, Tabs (three forks; reports in
+  /private/tmp/claude-501/ns-kit-plane, ns-kit-lenses, ns-kit-screens, not kept).
+- Verified: tsc, vitest 944, check:tokens 0, check:gallery 84, check:lessons, lint; ~176 gallery states old against
+  new in both themes (each from its own checkout, a second old for noise): the changes are the snaps in D-326's log,
+  looked at in their crops; the rest the real-time canvas. Canvas speed: nothing inside the world changed shape;
+  chips stay in the memoised card and link; not measured.

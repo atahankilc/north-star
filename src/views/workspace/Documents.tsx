@@ -22,6 +22,8 @@ import type { FindItem } from './find'
 import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import styles from './Documents.module.css'
 import { DOCS_PX } from '../../model/world'
+import { Button } from '../../ui/Button'
+import { Empty } from '../../ui/Empty'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const D = DOCS_PX
@@ -228,7 +230,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
         {all.length === 0 ? (
           <div className={styles.empty} style={{ width: TABLE_W }}>
             <p>No documents yet.</p>
-            <p className={styles.emptyHint}>Drop .md files here{live ? ', or [upload] below' : ''}. Images and PDFs come with Storage.</p>
+            <Empty tone="dim">Drop .md files here{live ? ', or [upload] below' : ''}. Images and PDFs come with Storage.</Empty>
           </div>
         ) : setup.view === 'shelf' ? (
           <div className={styles.shelf} style={{ width: shelfW(shown.length), padding: D.pad, gap: D.sheet.gap, gridTemplateColumns: `repeat(${shelfCols(shown.length)}, ${D.sheet.w}px)` }}>
@@ -496,9 +498,9 @@ export function UploadAction({ className }: { className?: string }) {
   if (!user) return null
   return (
     <>
-      <button className={className ?? styles.tool} title="add .md files (images and PDFs come with Storage)" onClick={() => input.current?.click()}>
+      <Button className={className} title="add .md files (images and PDFs come with Storage)" onClick={() => input.current?.click()}>
         upload
-      </button>
+      </Button>
       <input
         ref={input}
         type="file"
@@ -534,7 +536,8 @@ export function DocumentsTools({ piece, editor, toolClass, compact = false }: { 
   const p = pagesOf(setup, count, useDocUi((s) => s.pages[piece.id]))
   const go = (at: number) => useDocUi.setState((s) => ({ pages: { ...s.pages, [piece.id]: at } }))
   const uploads = useDocUi((s) => s.uploads)
-  const tool = toolClass ?? styles.tool
+  // In a console its own tool class (CanvasView's, scaled with the console); in a dock the kit's Button alone.
+  const tool = toolClass
   const kindValue = setup.kinds?.length === 1 ? setup.kinds[0] : ALL
   return (
     <span className={styles.tools} role="group" aria-label="Documents">
@@ -546,15 +549,15 @@ export function DocumentsTools({ piece, editor, toolClass, compact = false }: { 
       ))}
       {p.size && p.pages > 1 && (
         <>
-          <button className={tool} disabled={p.at === 0} aria-label="Page before" onClick={() => go(p.at - 1)}>
+          <Button className={tool} disabled={p.at === 0} aria-label="Page before" onClick={() => go(p.at - 1)}>
             ‹
-          </button>
+          </Button>
           <span className={styles.pageAt}>
             {p.at + 1} / {p.pages}
           </span>
-          <button className={tool} disabled={p.at >= p.pages - 1} aria-label="Page after" onClick={() => go(p.at + 1)}>
+          <Button className={tool} disabled={p.at >= p.pages - 1} aria-label="Page after" onClick={() => go(p.at + 1)}>
             ›
-          </button>
+          </Button>
         </>
       )}
       {editor && (
@@ -582,9 +585,9 @@ export function DocumentsTools({ piece, editor, toolClass, compact = false }: { 
           {/* Table or shelf (D-232): shared, like its sort. */}
           <span className={styles.switch} role="radiogroup" aria-label="Show as">
             {(['table', 'shelf'] as const).map((v) => (
-              <button key={v} className={tool} role="radio" aria-checked={setup.view === v} data-on={setup.view === v || undefined} onClick={() => setup.view !== v && void setDocumentsSetup(wid, piece, { view: v })}>
+              <Button key={v} className={tool} role="radio" aria-checked={setup.view === v} data-on={setup.view === v || undefined} onClick={() => setup.view !== v && void setDocumentsSetup(wid, piece, { view: v })}>
                 {v}
-              </button>
+              </Button>
             ))}
           </span>
         </>

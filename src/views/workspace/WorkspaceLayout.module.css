@@ -95,10 +95,6 @@
   border-bottom-color: var(--accent-cyan);
 }
 
-.action {
-  composes: small from '../../ui/AsciiButton.module.css';
-}
-
 .status {
   position: relative;
   z-index: var(--z-1);

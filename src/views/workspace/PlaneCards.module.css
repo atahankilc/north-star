@@ -172,16 +172,6 @@
   margin-top: auto;
 }
 
-.chip {
-  padding: 0 var(--space-1);
-  border: var(--line-w) solid var(--line);
-  background: var(--chip);
-  color: var(--fg);
-  font-family: var(--font-mono);
-  font-size: var(--w-text-3xs);
-  line-height: var(--lh-body);
-}
-
 /* Zoomed out (D-153): the title alone, 24 px, top-aligned where the header starts, three lines at most. */
 .compact {
   max-height: calc(3 * var(--lh-tight) * var(--w-text-xl));

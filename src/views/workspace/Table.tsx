@@ -24,6 +24,8 @@ import { usePeersOn } from './collab'
 import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import styles from './Table.module.css'
 import { DUR } from '../../ui/motion'
+import { Button } from '../../ui/Button'
+import { Empty } from '../../ui/Empty'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
 export const T = { head: 40, row: 32, name: 260, add: 40 }
@@ -456,9 +458,9 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
           </>
         )}
         {!rows.length && (
-          <p className={styles.empty} style={box(nameW, T.head, Math.max(width - nameW, 200), T.row)}>
+          <Empty className={styles.empty} tone="dim" style={box(nameW, T.head, Math.max(width - nameW, 200), T.row)}>
             {setup.manual ? 'No rows yet' : 'No card meets its rules'}
-          </p>
+          </Empty>
         )}
       </>
     ),
@@ -791,15 +793,15 @@ export function TablePager({ piece, editor }: { piece: WithId<Piece>; editor: bo
     <span className={styles.pager} role="group" aria-label="Pages">
       {p.size && (
         <>
-          <button className={styles.tool} disabled={p.at === 0} title="the page before" aria-label="Page before" onClick={() => go(p.at - 1)}>
+          <Button disabled={p.at === 0} title="the page before" aria-label="Page before" onClick={() => go(p.at - 1)}>
             ‹
-          </button>
+          </Button>
           <span className={styles.pageAt}>
             {p.at + 1} / {p.pages}
           </span>
-          <button className={styles.tool} disabled={p.at >= p.pages - 1} title="the page after" aria-label="Page after" onClick={() => go(p.at + 1)}>
+          <Button disabled={p.at >= p.pages - 1} title="the page after" aria-label="Page after" onClick={() => go(p.at + 1)}>
             ›
-          </button>
+          </Button>
         </>
       )}
       {editor ? (

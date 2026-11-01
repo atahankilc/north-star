@@ -28,6 +28,10 @@ import { useFieldText, useTableUi } from './Table'
 import { useDocUi } from './Documents'
 import { TYPE_ACCENT } from './PlaneCards'
 import styles from './Finder.module.css'
+import { Button } from '../../ui/Button'
+import { Empty } from '../../ui/Empty'
+import { PromptField } from '../../ui/PromptField'
+import { Tabs } from '../../ui/Tabs'
 
 const SWITCHES: { k: keyof FindOpts; label: string; title: string; code: string }[] = [
   { k: 'caseSensitive', label: 'Aa', title: 'match case (alt C)', code: 'KeyC' },
@@ -112,7 +116,7 @@ function Panel() {
   const looking = useDeferredValue(settled)
   const found = useMemo(() => matcherOf(looking, opts), [looking, opts])
   const searching = !!query && (settled !== query || looking !== settled)
-  const field = useRef<HTMLInputElement>(null)
+  const field = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
   const summoned = useFinderUi((s) => s.summoned)
   // With nothing typed it's go to (D-196): the places, a plane's own folded under it until opened (D-200).
   const unfolded = useGoTo((s) => s.open)
@@ -253,7 +257,7 @@ function Panel() {
     list.current?.querySelector('[data-picked]')?.scrollIntoView({ block: 'nearest' })
   }, [at])
 
-  const keys = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const keys = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (e.key === 'Escape') {
       e.stopPropagation()
       return closeFinder()
@@ -263,10 +267,6 @@ function Panel() {
       const n = rows.length
       if (n) setSel((at + (e.key === 'ArrowDown' ? 1 : -1) + n) % n)
       return
-    }
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      return go(picked)
     }
     // A plane's own places: → opens them under it, ← folds them.
     if (going && picked?.fold && (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && picked.fold.open !== (e.key === 'ArrowRight')) {
@@ -362,51 +362,44 @@ function Panel() {
         style={{ width, height }}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <label className={styles.line} style={{ height: LINE }}>
-          <span className={styles.sign} aria-hidden>
-            &gt;
-          </span>
-          <input
-            ref={field}
-            className={styles.field}
-            value={query}
-            placeholder="find a place or a word…"
-            aria-label="Find"
-            spellCheck={false}
-            autoComplete="off"
-            data-bad={re === 'bad' || undefined}
-            onChange={(e) => {
-              setQuery(e.target.value)
-            }}
-            onKeyDown={keys}
-          />
+        {/* The `>` line (PromptField, D-326): Enter goes; the arrows, Tab and Escape are the finder's (`keys`); ⌘F again
+            reaches the window (passKeys). */}
+        <PromptField
+          ref={field}
+          className={styles.line}
+          style={{ height: LINE }}
+          value={query}
+          onChange={setQuery}
+          onSubmit={() => go(picked)}
+          onKeyDown={keys}
+          passKeys
+          invalid={re === 'bad'}
+          label="Find"
+          placeholder="find a place or a word…"
+        >
           {scopes.length > 1 && (
-            <span className={styles.scope} role="group" aria-label="Where">
-              {scopes.map((s) => (
-                <button key={s} className={styles.seg} aria-pressed={scope === s} onClick={() => (setScope(s), field.current?.focus())}>
-                  {SCOPE_NAME[s]}
-                </button>
-              ))}
+            <span className={styles.scope}>
+              <Tabs look="segments" label="Where" options={scopes.map((s) => ({ value: s, label: SCOPE_NAME[s] }))} value={scope} onChange={(s) => (setScope(s), field.current?.focus())} />
             </span>
           )}
           <span className={styles.switches}>
             {SWITCHES.map((s) => (
-              <button key={s.k} className={styles.tool} aria-pressed={opts[s.k]} title={s.title} onClick={() => (toggleOpt(s.k), field.current?.focus())}>
+              <Button key={s.k} pressed={opts[s.k]} title={s.title} onClick={() => (toggleOpt(s.k), field.current?.focus())}>
                 {s.label}
-              </button>
+              </Button>
             ))}
           </span>
-        </label>
+        </PromptField>
 
         <div ref={list} className={styles.list} style={{ height: shownList }} role="listbox" aria-label="Matches">
           {rows.length ? (
             listed
           ) : searching ? (
-            <p className={styles.none}>searching…</p>
+            <Empty className={styles.none}>searching…</Empty>
           ) : going ? (
-            <p className={styles.none}>{here === CANVAS ? 'Planes, the project title, headings and named sections show here' : 'Write a heading or draw a named section (+) to go to it from here'}</p>
+            <Empty className={styles.none}>{here === CANVAS ? 'Planes, the project title, headings and named sections show here' : 'Write a heading or draw a named section (+) to go to it from here'}</Empty>
           ) : query ? (
-            <p className={styles.none}>{re === 'bad' ? 'not a regular expression' : scope === 'here' ? 'nothing matches here' : 'nothing matches'}</p>
+            <Empty className={styles.none}>{re === 'bad' ? 'not a regular expression' : scope === 'here' ? 'nothing matches here' : 'nothing matches'}</Empty>
           ) : null}
         </div>
 
@@ -493,15 +486,15 @@ function PreviewHead({ dest, zoom, onZoom, drawing }: { dest: Dest | null; zoom:
       </span>
       <span className={styles.previewWhere}>{where}</span>
       <span className={styles.zoom} role="group" aria-label="Preview zoom">
-        <button className={styles.tool} disabled={zoom <= ZOOM.min} title="zoom out (wheel)" aria-label="Zoom out" onClick={() => onZoom(zoom / ZOOM.step)}>
+        <Button disabled={zoom <= ZOOM.min} title="zoom out (wheel)" aria-label="Zoom out" onClick={() => onZoom(zoom / ZOOM.step)}>
           −
-        </button>
+        </Button>
         <button className={styles.zoomAt} title="back to 100 %" onClick={() => onZoom(1)}>
           {Math.round(zoom * 100)}%
         </button>
-        <button className={styles.tool} disabled={zoom >= ZOOM.max} title="zoom in (wheel)" aria-label="Zoom in" onClick={() => onZoom(zoom * ZOOM.step)}>
+        <Button disabled={zoom >= ZOOM.max} title="zoom in (wheel)" aria-label="Zoom in" onClick={() => onZoom(zoom * ZOOM.step)}>
           +
-        </button>
+        </Button>
       </span>
     </div>
   )
