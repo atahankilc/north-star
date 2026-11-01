@@ -657,7 +657,7 @@ export const OPS: OpDef[] = [
   {
     name: 'merge_cards',
     kind: 'card',
-    summary: 'Merge near-duplicate cards of one type into the one kept: their links, evidence, tasks, planes, packages, matrix/table/deck entries and missing fields move to it, then they are deleted. Needs why and a yes, like a delete.',
+    summary: 'Merge near-duplicate cards of one type into the one kept: their links, evidence, tasks, planes, packages, matrix/table/deck entries and missing fields move to it, then they are deleted. Needs why, like a delete: the person accepting the preview is the yes (D-333).',
     args: obj({ keep: s('the card that stays'), merge: ids('the cards folded into it, then deleted'), title: s('a new title for the kept card (left out: its own)') }, ['keep', 'merge']),
     build: mergeCards,
   },

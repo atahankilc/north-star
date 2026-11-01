@@ -8,6 +8,9 @@ import type { Task } from '../types'
 import type { AgentWs } from '../../src/agent/contract'
 import { answer, call, change, realOf } from './util'
 
+// "we only sell in Berlin", "Pazar sells only in Berlin", "only selling in Berlin", "Berlin-only".
+const BERLIN_ONLY = /\b(only\s+sells?|sells?\s+only|only\s+selling)\s+in\s+Berlin\b|\bBerlin[- ]only\b/i
+
 const R = (s: string) => realOf('medium', s)
 const H = 3_600_000
 
@@ -35,8 +38,8 @@ export const MEMORY: Task[] = [
     autoGo: false,
     graders: [
       // Any wording of the same fact: "we only sell in Berlin", "Pazar only sells in Berlin".
-      notesSay([/\bonly\s+sells?\s+in\s+Berlin\b/i]),
-      notesSeenIn(2, [/\bonly\s+sells?\s+in\s+Berlin\b/i]),
+      notesSay([BERLIN_ONLY]),
+      notesSeenIn(2, [BERLIN_ONLY]),
       answerIncludes(['Berlin']),
       logged('update_notes'),
       onlyChanged({ add: { documents: 1 } }),

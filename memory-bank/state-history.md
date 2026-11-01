@@ -1191,3 +1191,9 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Verified: tsc (app + evals), build, vitest 965/965, check:kit/tokens/gallery/lessons/memory; gallery, demo and app
   pages load in headless Chrome with no console errors.
 
+- All 116 eval tasks' graders audited (three read-only reviewers, every finding checked by hand; agent-bugs 33):
+  graders fixed to the guides and decisions (SWOT lines' subjects, regions by containment, coverage cells full or
+  partial, either card of a merge, context marked "(on X)"), weak ones tightened, the dedupe guide and merge_cards
+  aligned with D-333, CITE says how to mark context (23); `npm run eval -- --replay <run>` (scriptOf, divergence,
+  replay.md). Verified: tsc, vitest 965, stub evals 116 tasks 0 failed, `--wrong` 116 failed, replay of the third
+  run 249 → 293 of 348.

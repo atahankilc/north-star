@@ -434,6 +434,26 @@ export const cell = (matrix: Ref, row: string, col: string, want: Match): Grader
   },
 })
 
+// The new matrix holds what the recorded matches know (the /compare guide: update_cell where a competitor feature
+// matches ours): every match inside it filled (a step above none; full or partial alike, the matches have no degree),
+// and every other filled cell said less than documented (`~` inferred or `?` guess).
+export const fromMatches = (): Grader => ({
+  name: 'fromMatches',
+  grade: (r) => {
+    const [id] = madeIds(r, 'piece', { kind: 'matrix' })
+    const m = r.end.pieces.find((p) => p.id === id)?.matrix as MatrixSetup | undefined
+    if (!m) return ok(false, 'no matrix made')
+    const rows = new Set(entriesOf(m.rows, r.end.cards).map((e) => e.key))
+    const cols = new Set(entriesOf(m.cols, r.end.cards).map((e) => e.key))
+    const matched = new Set(r.start.comparisons.filter((x) => x.competitorFeatureId && rows.has(x.featureId) && cols.has(x.competitorId)).map((x) => `${x.featureId}_${x.competitorId}`))
+    const cells = r.end.cells.filter((c) => c.matrixId === id && c.value !== undefined)
+    const filled = (c: (typeof cells)[number]) => { const st = readCell(m, c).step; return !!st && st.label !== 'none' }
+    const missing = [...matched].filter((k) => !cells.some((c) => `${c.row}_${c.col}` === k && filled(c)))
+    const unmarked = cells.filter((c) => !matched.has(`${c.row}_${c.col}`) && (c.confidence ?? 'documented') === 'documented')
+    return ok(!missing.length && !unmarked.length, `${matched.size} matches, ${missing.length} unfilled, ${unmarked.length} other cells stated as documented`)
+  },
+})
+
 // A table's own cell: the row by its card's title (or a typed name, or key), the column by its name; the stored value
 // (null: empty).
 export const tableCell = (table: Ref, row: string, col: string, want: Match): Grader => ({
@@ -508,11 +528,16 @@ export const cites = (want: Ref[], o: { only?: boolean; also?: Ref[] } = {}): Gr
     const ids = (list: Ref[]) => new Set(list.map((w) => { const x = resolveRef(r, w); return ref1(r.start, x, [...SHORT_KINDS]) ?? ref1(r.end, x, [...SHORT_KINDS]) }).filter((x): x is string => !!x))
     const wantIds = ids(want)
     const allowed = new Set([...wantIds, ...ids(o.also ?? [])])
+    // What an item is for `only`: a card by its type (an answer about ideas may name the problem one solves), else its kind.
+    const sortOf = (id: string) => {
+      const c = r.end.cards.find((x) => x.id === id) ?? r.start.cards.find((x) => x.id === id)
+      return c ? `card:${c.type}` : itemOf(r, id)?.kind
+    }
     const kinds = new Set<string>()
     for (const w of want) {
       const id = [...ids([w])][0]
       const it = id ? itemOf(r, id) : undefined
-      if (it) kinds.add(it.kind)
+      if (id && sortOf(id)) kinds.add(sortOf(id)!)
       const short = id ? SHORT_KINDS.map((k) => r.ids.has(k, id)).find(Boolean) : undefined
       const byShort = !!short && new RegExp(`\\b${short}\\b`, 'i').test(a)
       const title = it?.title ?? (typeof w === 'string' ? w : '')
@@ -525,7 +550,7 @@ export const cites = (want: Ref[], o: { only?: boolean; also?: Ref[] } = {}): Gr
       const s = m[3] ? `c${m[3]}` : m[0]
       const real = r.ids.real(s)
       if (!real || !(exists_(r.end, real.kind, real.id) || exists_(r.start, real.kind, real.id))) madeUp.push(m[0])
-      else if (o.only && kinds.has(real.kind) && !allowed.has(real.id)) extra.push(m[0])
+      else if (o.only && kinds.has(sortOf(real.id) ?? real.kind) && !allowed.has(real.id)) extra.push(m[0])
     }
     if (o.only) {
       // Titles of other items of the kinds wanted, as whole words, once the allowed titles are blanked out.
@@ -534,7 +559,7 @@ export const cites = (want: Ref[], o: { only?: boolean; also?: Ref[] } = {}): Gr
       for (const t of allowedTitles) rest = rest.replace(new RegExp(wordsRe(t).source, 'giu'), ' ')
       const seen = new Set<string>()
       const pool: { id: string; title: string; kind: string }[] = [
-        ...r.start.cards.map((c) => ({ id: c.id, title: c.title, kind: 'card' })),
+        ...r.start.cards.map((c) => ({ id: c.id, title: c.title, kind: `card:${c.type}` })),
         ...r.start.tasks.map((t) => ({ id: t.id, title: t.title, kind: 'task' })),
         ...r.start.pieces.map((p) => ({ id: p.id, title: p.name ?? '', kind: 'piece' })),
       ]
@@ -631,6 +656,36 @@ export const noWriteAttempts = (): Grader => ({
 })
 
 // Turn n (from 1) wrote nothing and asked for no write: e.g. a big job's plan, before the person says go.
+// A plan, if the first turn made one, waited for go (wrote nothing in that turn); a job done at once is fine too
+// (prompt.ts' "Big jobs": whether a job is big is the model's call; planning and writing in one turn isn't).
+export const planWaits = (): Grader => ({
+  name: 'planWaits',
+  grade: (r) => {
+    const calls = r.transcript.turns[0]?.steps.flatMap((s) => s.toolCalls) ?? []
+    const planned = calls.some((c) => c.name === 'plan')
+    const writes = calls.filter((c) => WRITE_CALL.test(c.name)).length
+    return ok(!planned || !writes, planned ? (writes ? `planned and wrote ${writes} in turn 1` : 'planned, then waited for go') : 'done at once')
+  },
+})
+
+// The new cards of a type on a plane are grouped: all in one package, or all wholly inside one new section.
+export const groupedTogether = (plane: string, type: string, n = 2): Grader => ({
+  name: `groupedTogether(${type}s on ${plane})`,
+  grade: (r) => {
+    const made = madeIds(r, 'card', { type, plane })
+    if (made.length < n) return ok(false, `${made.length} ${type}s made`)
+    if (madeIds(r, 'card', { type: 'package', plane }).some((p) => made.every((i) => (r.end.cards.find((c) => c.id === p)?.memberIds ?? []).includes(i)))) return ok(true, 'in one package')
+    const cs = made.map((i) => r.end.cards.find((c) => c.id === i)!)
+    const pid = refs(r.end, plane, ['piece'])[0]
+    const at = (c: Card) => (pid && c.pieceId !== pid ? r.end.places.find((x) => x.planeId === pid && x.cardId === c.id) ?? c : c)
+    const sec = madeIds(r, 'text', { kind: 'section', plane }).some((id) => {
+      const b = labelBox(r.end.labels.find((l) => l.id === id)!)
+      return cs.every((c) => { const p = at(c); return p.x >= b.x && p.y >= b.y && p.x + CARD.w <= b.x + b.w && p.y + CARD.h <= b.y + b.h })
+    })
+    return ok(sec, sec ? 'in one section' : 'no package or section round them all')
+  },
+})
+
 export const noWritesInTurn = (n: number): Grader => ({
   name: `noWritesInTurn(${n})`,
   grade: (r) => {
@@ -888,7 +943,8 @@ export const chatSaved = (o: { other?: string } = {}): Grader => ({
 // card by its short id, and points every card it mentions at a real card: `c12` with that card's title (whole words, on
 // the same line, case ignored). At least `min` distinct cards cited (default 3). `onPlane`: every cited card is on that
 // plane. `shared`: as wanted (default private). `excludes`: phrases it must not hold (e.g. "would you").
-export const docWritten = (o: { words?: (string | RegExp)[]; cites?: Ref[]; min?: number; onPlane?: string; shared?: boolean; excludes?: (string | RegExp)[] } = {}): Grader => ({
+// `anyOf`: at least n of these cards cited (the guide asks for some of them, not which).
+export const docWritten = (o: { words?: (string | RegExp)[]; cites?: Ref[]; anyOf?: { of: Ref[]; n: number }; min?: number; onPlane?: string; shared?: boolean; excludes?: (string | RegExp)[] } = {}): Grader => ({
   name: `docWritten(${[o.words?.length && `${o.words.length} words`, o.cites?.length && `cites ${o.cites.map(showRef).join(', ')}`, `≥ ${o.min ?? 3} cards`, o.onPlane && `on ${o.onPlane}`, o.shared && 'shared'].filter(Boolean).join(', ')})`,
   grade: (r) => {
     const made = madeIds(r, 'document').filter((id) => id !== 'agent-notes')
@@ -910,17 +966,28 @@ export const docWritten = (o: { words?: (string | RegExp)[]; cites?: Ref[]; min?
         else if (!wordsRe(card.title).test(line)) bad.push(`c${m[1]} without its title "${card.title.slice(0, 30)}"`)
         else {
           cited.add(card.id)
-          if (o.onPlane && !refs(r.start, o.onPlane, ['piece']).some((p) => isOnPlane(card, p))) bad.push(`c${m[1]} isn't on ${o.onPlane}`)
+          if (o.onPlane && !refs(r.start, o.onPlane, ['piece']).some((p) => isOnPlane(card, p)) && !markedContext(r, card, line)) bad.push(`c${m[1]} isn't on ${o.onPlane} (nor marked as context from its plane)`)
         }
       }
     for (const w of o.cites ?? []) {
       const id = ref1(r.start, resolveRef(r, w), ['card'])
       if (!id || !cited.has(id)) bad.push(`doesn't cite ${showRef(w)}`)
     }
+    if (o.anyOf) {
+      const n = o.anyOf.of.filter((w) => { const id = ref1(r.start, resolveRef(r, w), ['card']); return !!id && cited.has(id) }).length
+      if (n < o.anyOf.n) bad.push(`cites ${n} of ${o.anyOf.of.map(showRef).join(', ')} (want ${o.anyOf.n})`)
+    }
     if (cited.size < (o.min ?? 3)) bad.push(`cites ${cited.size} cards`)
     return ok(!bad.length, bad.length ? [...new Set(bad)].slice(0, 6).join('; ') : `"${doc.title}": ${cited.size} cards cited, every one real`)
   },
 })
+
+// A card from another plane is fine as context when its line names one of its planes ("(on Rivals)", "on p2"; the
+// user, agent-bugs 23).
+function markedContext(r: RunResult, card: Card, line: string): boolean {
+  const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return r.start.pieces.some((p) => kindOfPiece(p) === 'plane' && isOnPlane(card, p.id) && new RegExp(`\\bon\\s+(${[p.name ? esc(p.name) : null, r.ids.has('piece', p.id)].filter(Boolean).join('|')})\\b`, 'i').test(line))
+}
 
 // The answer cites at least n distinct real items by short id (cards and tasks), none made up; `onPlane`: every cited
 // card is on that plane; `kind`: only count that kind.
@@ -929,21 +996,26 @@ export const citesSome = (n: number, o: { onPlane?: string; kind?: 'card' | 'tas
   grade: (r) => {
     const seen = new Set<string>()
     const bad: string[] = []
-    for (const m of r.answer.matchAll(SHORT_IN_TEXT)) {
-      const s = m[3] ? `c${m[3]}` : m[0]
-      const real = r.ids.real(s)
-      if (!real || !(exists_(r.end, real.kind, real.id) || exists_(r.start, real.kind, real.id))) {
-        bad.push(`made up ${s}`)
-        continue
+    for (const line of r.answer.split('\n'))
+      for (const m of line.matchAll(SHORT_IN_TEXT)) {
+        const s = m[3] ? `c${m[3]}` : m[0]
+        const real = r.ids.real(s)
+        if (!real || !(exists_(r.end, real.kind, real.id) || exists_(r.start, real.kind, real.id))) {
+          bad.push(`made up ${s}`)
+          continue
+        }
+        if (real.kind !== 'card' && real.kind !== 'task') continue
+        if (o.kind && real.kind !== o.kind) continue
+        if (o.onPlane && real.kind === 'card') {
+          const card = r.start.cards.find((c) => c.id === real.id) ?? r.end.cards.find((c) => c.id === real.id)
+          if (card && !refs(r.start, o.onPlane, ['piece']).some((p) => isOnPlane(card, p))) {
+            // Marked context from its own plane: allowed, not counted.
+            if (!markedContext(r, card, line)) bad.push(`${s} isn't on ${o.onPlane}`)
+            continue
+          }
+        }
+        seen.add(real.id)
       }
-      if (real.kind !== 'card' && real.kind !== 'task') continue
-      if (o.kind && real.kind !== o.kind) continue
-      if (o.onPlane && real.kind === 'card') {
-        const card = r.start.cards.find((c) => c.id === real.id) ?? r.end.cards.find((c) => c.id === real.id)
-        if (card && !refs(r.start, o.onPlane, ['piece']).some((p) => isOnPlane(card, p))) bad.push(`${s} isn't on ${o.onPlane}`)
-      }
-      seen.add(real.id)
-    }
     return ok(!bad.length && seen.size >= n, bad.length ? [...new Set(bad)].slice(0, 5).join('; ') : `cites ${seen.size}`)
   },
 })
@@ -963,7 +1035,17 @@ export const allSet = (kind: Kind, where: Where, fields: string[]): Grader => ({
 export const sameLine = (want: [string | RegExp, Ref][], not: [string | RegExp, Ref][] = []): Grader => ({
   name: `sameLine(${want.map(([w, x]) => `${String(w)}~${showRef(x)}`).join(', ')}${not.length ? `; not ${not.map(([w, x]) => `${String(w)}~${showRef(x)}`).join(', ')}` : ''})`,
   grade: (r) => {
-    const lines = r.answer.split('\n')
+    // A line counts with the person heading it (the /digest guide groups by person: "**Jonas Weber**" then bullets).
+    const raw = r.answer.split('\n')
+    let head = ''
+    const lines = raw.map((l) => {
+      if (/^\s*(#{1,6}\s|\*\*[^*]+\*\*:?\s*$)/.test(l)) {
+        head = l
+        return l
+      }
+      if (!l.trim()) head = /^\s*(#|\*\*)/.test(head) ? head : ''
+      return /^\s*([-*•]|\d+\.)\s/.test(l) && head ? `${head} ${l}` : l
+    })
     const has = (line: string, item: Ref) => {
       const id = ref1(r.start, resolveRef(r, item), [...SHORT_KINDS])
       const short = id ? SHORT_KINDS.map((k) => r.ids.has(k, id)).find(Boolean) : undefined
@@ -979,7 +1061,9 @@ export const sameLine = (want: [string | RegExp, Ref][], not: [string | RegExp, 
 
 // In the run's new document, every card cited under a heading matching `section` passes `check` (S17: a SWOT's
 // placement: competitors only outside, our validated work never a threat).
-export const docSectionCards = (section: RegExp, check: (c: Card) => boolean, what: string): Grader => ({
+// Only each line's first card is graded: its subject ("c47 Localmate … competes with c22": the threat is c47, c22 what
+// it threatens).
+export const docSectionCards = (section: RegExp, check: (c: Card, r: RunResult) => boolean, what: string): Grader => ({
   name: `docSectionCards(${String(section)}: ${what})`,
   grade: (r) => {
     const made = madeIds(r, 'document').filter((id) => id !== 'agent-notes')
@@ -993,11 +1077,11 @@ export const docSectionCards = (section: RegExp, check: (c: Card) => boolean, wh
         continue
       }
       if (!inside) continue
-      for (const m of line.matchAll(/\bc(\d+)\b/g)) {
-        const real = r.ids.real(`c${m[1]}`)
-        const card = real ? r.start.cards.find((c) => c.id === real.id) : undefined
-        if (card && !check(card)) bad.push(`c${m[1]} "${card.title.slice(0, 30)}"`)
-      }
+      const m = /\bc(\d+)\b/.exec(line)
+      if (!m) continue
+      const real = r.ids.real(`c${m[1]}`)
+      const card = real ? r.start.cards.find((c) => c.id === real.id) : undefined
+      if (card && !check(card, r)) bad.push(`c${m[1]} "${card.title.slice(0, 30)}"`)
     }
     return ok(!bad.length, bad.length ? `under ${String(section)}: ${bad.slice(0, 4).join(', ')}` : what)
   },

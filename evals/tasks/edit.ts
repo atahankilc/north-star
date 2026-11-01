@@ -50,7 +50,7 @@ export const EDIT: Task[] = [
     ask: "Mark the idea 'Swap pickup slots with neighbours' validated, with this interview: six of eight stall owners said they would swap slots.",
     graders: [
       field('Swap pickup slots with neighbours', 'validation', 'validated'),
-      exists('evidence', { card: 'Swap pickup slots with neighbours', kind: 'interview', stance: 'supports', textHas: 'six of eight' }),
+      exists('evidence', { card: 'Swap pickup slots with neighbours', kind: 'interview', stance: 'supports', text: /\b(six|6)\b.*\b(eight|8)\b/i }),
       onlyChanged({ allow: ['Swap pickup slots with neighbours'], add: { evidence: 1 } }),
       undoRestores(),
     ],
@@ -232,7 +232,27 @@ export const EDIT: Task[] = [
     fixture: 'medium',
     ask: 'Delete the Interviews plane.',
     // Only removals (the plane and what's only on it), and cards also on another plane taking a new home there.
-    graders: [proposedIn(1, { ops: ['delete'], deletesWithWhy: true }), absent('piece', { id: R('p4') }), onlyChanged({ allow: [(_, c) => c.change === 'removed' || (c.fields ?? []).every((f) => ['pieceId', 'planes', 'updatedAt', 'x', 'y'].includes(f))] }), undoRestores()],
+    // Gone: the plane, its text and what lives only on it (with their links, evidence, places, cells); a card also on
+    // another plane stays, homed there.
+    graders: [
+      proposedIn(1, { ops: ['delete'], deletesWithWhy: true }),
+      absent('piece', { id: R('p4') }),
+      exists('card', { title: 'Neighbourhood cooks with big families', plane: 'Rivals' }),
+      exists('card', { title: 'Bread chat', plane: 'Roadmap' }),
+      onlyChanged({
+        allow: [
+          (id, c, r) => {
+            const P4 = R('p4')
+            if (c.change !== 'removed') return (c.fields ?? []).every((f) => ['pieceId', 'planes', 'updatedAt', 'x', 'y'].includes(f))
+            if (c.kind === 'pieces') return id === P4
+            if (c.kind === 'labels') return r.start.labels.find((l) => l.id === id)?.pieceId === P4
+            const card = r.start.cards.find((x) => x.id === id)
+            return card ? card.pieceId === P4 && !(card.planes ?? []).some((p) => p !== P4) : true
+          },
+        ],
+      }),
+      undoRestores(),
+    ],
     reference: [
       call('view', { piece: 'p4' }),
       change([['delete', { ids: ['p4'] }, 'asked to delete the Interviews plane']], 'delete Interviews'),
@@ -249,7 +269,7 @@ export const EDIT: Task[] = [
     set: 'regression',
     fixture: 'medium',
     ask: "On Bets, put this note as a paragraph next to 'Office lunch groups throw away unsold greens every evening': Office lunch groups decide by eleven what they will eat, and most of them already order through one person in a WhatsApp group: if the stall posts what is left at half past ten, the person who orders can pre-book a box for the group, the stall stops throwing greens away in the evening, and the group gets a better price than walking past at noon. We tried it with two groups in Kreuzberg in the pilot week and both ordered twice; the third group never answered because nobody in it owned the ordering.",
-    graders: [exists('text', { kind: 'paragraph', plane: 'Bets' }), noOverlaps('Bets'), onlyChanged({ add: { labels: 1 } }), undoRestores()],
+    graders: [exists('text', { kind: 'paragraph', plane: 'Bets', textHas: 'Office lunch groups decide by eleven' }), noOverlaps('Bets'), onlyChanged({ add: { labels: 1 } }), undoRestores()],
     reference: [
       call('get', { ids: ['c49'] }),
       change([['create_text', { kind: 'paragraph', plane: 'p3', text: "Office lunch groups decide by eleven what they will eat, and most of them already order through one person in a WhatsApp group: if the stall posts what is left at half past ten, the person who orders can pre-book a box for the group, the stall stops throwing greens away in the evening, and the group gets a better price than walking past at noon. We tried it with two groups in Kreuzberg in the pilot week and both ordered twice; the third group never answered because nobody in it owned the ordering.", where: { near: 'c49' } }]], 'the lunch groups note'),

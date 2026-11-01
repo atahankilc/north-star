@@ -28,7 +28,7 @@ export type Skill = {
   plan?: boolean
 }
 
-const CITE = 'Every claim about the workspace names its card: short id and title, as c12 "Title". A claim the workspace doesn\'t back says "unknown" instead.'
+const CITE = 'Every claim about the workspace names its card: short id and title, as c12 "Title". A claim the workspace doesn\'t back says "unknown" instead. For a plane: its own cards first; a card from another plane only as context, marked with its plane, as c47 "Localmate" (on Rivals).'
 const DOC = 'Write it with create_document (one call, Markdown, private unless the person asks to share it): a title, short sections with headings, bullet lines. ' + CITE + ' Then answer in two or three lines: what the document holds and that it waits in the preview.'
 
 export const SKILLS: Skill[] = [
@@ -214,8 +214,8 @@ export const SKILLS: Skill[] = [
     when: 'Finding cards that say the same thing twice.',
     steps: [
       'query by type and compare titles: same words, a word or two apart, "(early)" or "(core)" variants, the same thing on two planes.',
-      'List the pairs, each with which one to keep (more links and evidence, the older one) and why; ask "merge them?". Change nothing in that turn.',
-      'After a yes: one change with merge_cards per pair (keep, merge, why), which moves links, evidence, tasks, planes and entries to the kept card.',
+      'For each pair pick the one to keep (more links and evidence, else the older one).',
+      'One change with merge_cards per pair (keep, merge, why), which moves links, evidence, tasks, planes and entries to the kept card. The preview is where the person says yes (D-333): no "merge them?" first. Pairs you are unsure of: list them in the answer instead, not in the change.',
     ],
     tools: ['query', 'search', 'get', 'change'],
   },

@@ -180,7 +180,8 @@ export const FIND: Task[] = [
     set: 'regression',
     fixture: 'medium',
     ask: 'Which features depend on Bread chat?',
-    graders: [noWrites(), cites(['Cheese map', 'Stall opening hours price list'], { only: true, also: ['Bread chat'] })],
+    // What Bread chat itself depends on may be named as context; the link read the wrong way still misses c100.
+    graders: [noWrites(), cites(['Cheese map', 'Stall opening hours price list'], { only: true, also: ['Bread chat', 'Leftover produce map'] })],
     reference: [call('neighbours', { id: 'c105', kinds: ['depends-on'] }), answer('Two features depend on c105 Bread chat: c109 "Cheese map" and c100 "Stall opening hours price list".')],
     // The link read the wrong way round: what Bread chat depends on counted as depending on it.
     wrong: [call('neighbours', { id: 'c105', kinds: ['depends-on'] }), answer('Two features depend on c105 Bread chat: c109 "Cheese map" and c117 "Leftover produce map".')],

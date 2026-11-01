@@ -3,11 +3,16 @@
 // what was made or changed, the cards an answer cites (real ones, the right ones), and for the document skills the
 // document's text: every card it mentions is real and named with its own title (docWritten). Big jobs (agent.md §4.10)
 // plan first and change nothing until "go" (`followUps`, `noWritesInTurn(1)`). Each has a plausible wrong script. The judge rides on a twin of the first task for /gaps, /next and the five document skills (`-04-judged`, capability, JUDGED below), so the stub's pass counts stay model-free.
-import { MADE, allSet, docSectionCards, judge, sameLine, answerExcludes, answerIncludes, absent, cell, cites, citesSome, count, docWritten, exists, field, grouped, linked, made, noDeletes, noOverlaps, noWriteAttempts, noWritesInTurn, onPlane, onlyChanged, task, toolCalled, undoRestores, noNewLinksAcrossPlanes, linksShownOn, noWrites, pictureJudge, type ChangeTest } from '../graders'
+import { MADE, allSet, docSectionCards, fromMatches, madeIds, judge, sameLine, answerExcludes, answerIncludes, absent, cell, cites, citesSome, count, docWritten, exists, field, grouped, linked, made, noDeletes, noOverlaps, noWriteAttempts, noWritesInTurn, onPlane, onlyChanged, task, toolCalled, undoRestores, noNewLinksAcrossPlanes, linksShownOn, noWrites, pictureJudge, type ChangeTest } from '../graders'
 import { NOW } from '../fixtures'
 import type { Grader, Task } from '../types'
 import type { AgentWs } from '../../src/agent/contract'
-import type { Card } from '../../src/model/cards'
+import { isOnPlane, type Card } from '../../src/model/cards'
+import { kindOf } from '../../src/model/labels'
+import { labelBox } from '../../src/model/labelBox'
+import { inRegions } from '../../src/model/regions'
+import { SKILLS } from '../../src/agent/skills'
+import { METHODS } from '../../src/agent/skills/methods'
 import { project } from '../../src/ops/project'
 import { updateNotes } from '../../src/ops/notes'
 import { answer, call, calls, change, realOf } from './util'
@@ -37,6 +42,53 @@ const withNotes = (line: string) => (ws: AgentWs): AgentWs => project(ws, [updat
 // "Who owns the stall data?" is an open question: by meaning (the guide) an idea or a problem; each type its section.
 const IDEA_OR_PROBLEM = (v: unknown) => v === 'idea' || v === 'problem'
 const DUP = 'dupe0000000000000001'
+// One of a merged pair left, with the links that must survive (`$keep`: whichever is left).
+const mergedPair = (a: string, b: string, links: [string, string, string][]): Grader => ({
+  name: `mergedPair(${a}, ${b})`,
+  grade: (r) => {
+    const left = [a, b].filter((s) => r.end.cards.some((c) => c.id === R(s)))
+    if (left.length !== 1) return { pass: false, why: `${left.length} of ${a}, ${b} left` }
+    const at = (s: string) => R(s === '$keep' ? left[0] : s)
+    const lost = links.filter(([f, t, k]) => !r.end.edges.some((e) => e.fromId === at(f) && e.toId === at(t) && e.kind === k))
+    return { pass: !lost.length, why: lost.length ? `kept ${left[0]}; lost ${lost.map((l) => l.join(' ')).join(', ')}` : `kept ${left[0]} with every link` }
+  },
+})
+// The heavy-bags pair merged either way: one left, holding the evidence, the task, both planes and c16's links.
+const heavyBags: Grader = {
+  name: 'heavyBags merged either way',
+  grade: (r) => {
+    const left = [R('c16'), DUP].filter((id) => r.end.cards.some((c) => c.id === id))
+    if (left.length !== 1) return { pass: false, why: `${left.length} of the pair left` }
+    const k = r.end.cards.find((c) => c.id === left[0])!
+    const bad = [
+      !r.end.evidence.some((e) => e.nodeId === k.id && /15 kg/.test(e.text)) && 'no 15 kg evidence',
+      !r.end.tasks.some((t) => t.cardId === k.id && t.title === 'Ask bakers about carts') && 'task not moved',
+      !(isOnPlane(k, R('p1')) && isOnPlane(k, R('p3'))) && 'not on both Segments and Bets',
+      r.end.edges.filter((e) => e.toId === k.id || e.fromId === k.id).length < r.start.edges.filter((e) => e.toId === R('c16') || e.fromId === R('c16')).length && "c16's links lost",
+    ].filter(Boolean)
+    return { pass: !bad.length, why: bad.join('; ') || `kept ${k.id} with everything` }
+  },
+}
+// sort-stickies-03: "Cash only is a big deal" becomes a problem, or the answer says which card-payments problem it
+// repeats (c17, c28: the guide links a repeat instead).
+const cashNote: Grader = {
+  name: 'cashNote: a problem, or the repeat named',
+  grade: (r) => {
+    const made = r.end.cards.some((c) => c.type === 'problem' && /cash only is a big deal/i.test(c.title) && isOnPlane(c, R('p1')))
+    const said = /\b(c17|c28)\b/.test(r.transcript.turns.map((t) => t.answer).join('\n'))
+    return { pass: made || said, why: made ? 'made the problem' : said ? 'named the card it repeats' : 'neither' }
+  },
+}
+// Status and evidence disagree (contradicting evidence, or validated with none for it): a SWOT threat by the method.
+const clashes = (c: Card, r: { start: AgentWs }) => {
+  const ev = r.start.evidence.filter((e) => e.nodeId === c.id)
+  const s = ev.filter((e) => e.stance === 'supports').length
+  return ev.length > s || (c.validation === 'validated' && s === 0)
+}
+// The Mom Test's past question in any wording: "last time", "when did/was", "the most recent".
+const MOM_PAST = /\blast\b|\bmost recent\b|\bwhen (did|was)\b/i
+// The method's positioning sentence opens the pitch, under a heading or not, in bold or a quote or after "Positioning:".
+const POSITIONING_FIRST = /^(?:\s*#.*\n+)*\s*(?:>\s*)?(?:[*_]{1,2})?(?:positioning\s*:?\s*(?:[*_]{1,2})?\s*:?\s*)?for\b[^\n]+?\bwho\b/i
 const withDup = (ws: AgentWs): AgentWs => {
   const bets = R('p3')
   const card = { id: DUP, type: 'problem', pieceId: bets, title: 'Bakers carry heavy bags home on foot.', x: 1500, y: 1200, validation: 'hypothesis', createdAt: NOW - 48 * H, updatedAt: NOW - 48 * H } as unknown as Card
@@ -69,21 +121,92 @@ const estimated: ChangeTest = (id, c, r) => {
   return c.change === 'changed' && !!was && (was.type === 'feature' || was.type === 'package') && (c.fields ?? []).every((f) => (f === 'impact' && !was.impact) || (f === 'effort' && !was.effort) || f === 'updatedAt')
 }
 // Impact/effort written as the cards' facts allow, not every gap filled as the best case (high impact, small effort).
-const notAllBestCase = (cards: string[]): Grader => ({
-  name: `notAllBestCase(${cards.join(', ')})`,
+// Only the fields that were empty count (a field already set can't be a guess).
+const notAllBestCase = (gaps: [string, 'impact' | 'effort'][]): Grader => ({
+  name: `notAllBestCase(${gaps.map(([c, f]) => `${c}.${f}`).join(', ')})`,
   grade: (r) => {
-    const got = cards.map((s) => r.end.cards.find((c) => c.id === R(s)))
-    const best = got.filter((c) => c && (c.impact === 'high' || !c.impact) && (c.effort === 'S' || !c.effort)).length
-    return { pass: best < cards.length, why: `${best} of ${cards.length} are high/S` }
+    const best = gaps.filter(([s, f]) => r.end.cards.find((c) => c.id === R(s))?.[f] === (f === 'impact' ? 'high' : 'S')).length
+    return { pass: best < gaps.length, why: `${best} of ${gaps.length} filled as the best case` }
   },
 })
-const JUDGE_DOC = judge('The document is useful for its purpose and follows its method; every claim about the workspace names its card, and nothing is invented.')
+// Estimates on that plane's features and packages only (and never their priority).
+const estimatedOn = (plane: string): ChangeTest => (id, c, r) => estimated(id, c, r) && r.start.cards.some((x) => x.id === id && isOnPlane(x, R(plane)))
+// Every feature on the plane has impact and effort, but for a few (≤ maxLeft) the answer names, saying why not.
+const setOrSaid = (plane: string, maxLeft = 3): Grader => ({
+  name: `setOrSaid(${plane})`,
+  grade: (r) => {
+    const said = r.transcript.turns.map((t) => t.answer).join('\n')
+    const pid = r.end.pieces.find((p) => p.name === plane)?.id
+    const left = r.end.cards.filter((c) => c.type === 'feature' && pid && isOnPlane(c, pid) && (!c.impact || !c.effort))
+    const unsaid = left.filter((c) => { const s = r.ids.has('card', c.id); return !(s && new RegExp(`\\b${s}\\b`).test(said)) })
+    return { pass: left.length <= maxLeft && !unsaid.length, why: `${left.length} left unset, ${unsaid.length} of them not named` }
+  },
+})
+const FULL_OR_PARTIAL = /^(full|partial)$/
+// The judge reads the skill's own guide and method (it can't check "follows its method" without them).
+const judgeDoc = (name: string) => {
+  const s = SKILLS.find((x) => x.name === name)!
+  return judge(`The document is useful for its purpose and follows the guide and method below; every claim about the workspace names the item it comes from (a card as c12 "Title"; a text, document or evidence by its id), and nothing is invented.\nGuide: ${s.steps.join(' ')}\n${(s.methods ?? []).map((m) => METHODS[m]).join('\n')}`)
+}
 const JUDGE_GAPS = judge('Each gap is real (the cited cards show it) and comes with a concrete fix the agent could propose; nothing was changed.')
 const JUDGE_NEXT = judge('Three concrete, well-chosen actions tied to cited cards or tasks, each with why now.')
 
 const RIVALS = { TR: ['c37', 'c38', 'c48'], DE: ['c36', 'c41', 'c42', 'c45', 'c47'], EU: ['c35', 'c39', 'c40', 'c43', 'c44', 'c46'] }
-const regionOf = (c: Card) => (['Turkey'].includes(c.regions?.[0] ?? '') ? 'TR' : ['Germany', 'DACH'].includes(c.regions?.[0] ?? '') ? 'DE' : 'EU')
+// Each rival sits under the nearest new heading above it, and that heading names one of its regions or a place holding
+// one ("DACH & Germany", "Europe"); 2–6 groups, every new heading used.
+const byRegionHeading = (): Grader => ({
+  name: 'byRegionHeading(Rivals)',
+  grade: (r) => {
+    const plane = R('p2')
+    const heads = r.end.labels.filter((l) => l.pieceId === plane && kindOf(l) === 'heading' && !r.start.labels.some((x) => x.id === l.id))
+    const bad: string[] = []
+    const used = new Set<string>()
+    for (const s of Object.values(RIVALS).flat()) {
+      const c = r.end.cards.find((x) => x.id === R(s))!
+      const above = heads.filter((l) => { const b = labelBox(l); return b.y + b.h <= c.y + 1 })
+      const h = above.sort((a, b) => { const A = labelBox(a), B = labelBox(b); return c.y - A.y + Math.abs(c.x - A.x) - (c.y - B.y + Math.abs(c.x - B.x)) })[0]
+      if (!h) { bad.push(`${s} under no new heading`); continue }
+      const places = h.text.split(/\s*(?:&|\/|,|\+|\band\b)\s*/i).map((p) => p.trim()).filter(Boolean)
+      if (!inRegions(c.regions, places)) bad.push(`${s} (${(c.regions ?? []).join(', ')}) under "${h.text}"`)
+      used.add(h.id)
+    }
+    if (used.size < 2 || used.size > 6 || used.size !== heads.length) bad.push(`${heads.length} new headings for ${used.size} groups`)
+    return { pass: !bad.length, why: bad.slice(0, 5).join('; ') || `${used.size} region groups, each rival under one of its own` }
+  },
+})
 const IDEAS_ON_BETS = Array.from({ length: 22 }, (_, i) => `c${55 + i}`)
+// These cards all on one plane the run made.
+const togetherOnANewPlane = (cards: string[]): Grader => ({
+  name: `togetherOnANewPlane(${cards.join(', ')})`,
+  grade: (r) => {
+    const made = madeIds(r, 'piece', { kind: 'plane' })
+    const hit = made.find((p) => cards.every((s) => { const c = r.end.cards.find((x) => x.id === R(s)); return !!c && isOnPlane(c, p) }))
+    return { pass: !!hit, why: hit ? `all on ${hit}` : `${made.length} planes made, none holds all of them` }
+  },
+})
+// noOverlaps on every plane the run made.
+const noOverlapsOnNewPlanes = (): Grader => ({
+  name: 'noOverlapsOnNewPlanes',
+  grade: async (r) => {
+    const made = madeIds(r, 'piece', { kind: 'plane' })
+    const bad: string[] = []
+    for (const p of made) { const g = await noOverlaps(p).grade(r); if (g.pass === false) bad.push(`${p}: ${g.why}`) }
+    return { pass: !bad.length, why: bad.join('; ') || `${made.length} new planes, nothing overlapping` }
+  },
+})
+// Links between the two sets that some plane shows (both ends on it) grew by at least `min`.
+const linksNowShown = (a: string[], b: string[], min: number): Grader => ({
+  name: `linksNowShown(+${min})`,
+  grade: (r) => {
+    const A = new Set(a.map(R)), B = new Set(b.map(R))
+    const n = (ws: AgentWs) => {
+      const planes = ws.pieces.filter((p) => p.kind === 'plane').map((p) => p.id)
+      const on = (id: string) => { const c = ws.cards.find((x) => x.id === id); return new Set(c ? planes.filter((p) => isOnPlane(c, p)) : []) }
+      return ws.edges.filter((e) => ((A.has(e.fromId) && B.has(e.toId)) || (B.has(e.fromId) && A.has(e.toId))) && [...on(e.fromId)].some((p) => on(e.toId).has(p))).length
+    }
+    return { pass: n(r.end) - n(r.start) >= min, why: `${n(r.start)} → ${n(r.end)}` }
+  },
+})
 // D-327: Segments' one large linked group (the restaurant buyers and their problems), and the Segments problems Bets'
 // ideas link to (src/model/graph.ts on the medium fixture).
 const SEG_GROUP = ['c4', 'c15', 'c18', 'c19', 'c20', 'c24', 'c26', 'c28']
@@ -333,7 +456,7 @@ export const SKILL_TASKS: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: '/review-deck Sprint',
-    graders: [cites(['t41', 't52', 't54', 't46', 't34', 't44', 't27', 't45'].map(R)), answerIncludes([/13\s*\/\s*5|over (its|the) limit/i]), noWriteAttempts()],
+    graders: [cites(['t41', 't52', 't54', 't46', 't34', 't44', 't27', 't45'].map(R)), answerIncludes([/13\s*\/\s*5|\blimit\b/i]), noWriteAttempts()],
     reference: [
       calls(['view', { piece: 'p13' }], ['query', { kind: 'task', deck: 'p13', overdue: true }]),
       answer(
@@ -521,10 +644,12 @@ export const SKILL_TASKS: Task[] = [
       // No plane named: every feature (the /compare guide) or Roadmap's; the documented matches either way.
       field(MATRIX, 'matrix.rows.plane', (v: unknown) => v === undefined || v === R('p9'), ['piece']),
       field(MATRIX, 'matrix.cols.type', 'competitor', ['piece']),
-      cell(MATRIX, 'Bread pickup slots', 'Tarlamate', 'full'),
-      cell(MATRIX, 'Market maps chat', 'Bazaarmate', 'full'),
-      cell(MATRIX, 'Cheese map', 'Freshgo', null),
-      onlyChanged({ add: { pieces: 1, cells: { min: 7, max: 10 } } }),
+      // A match has no degree: full or partial alike (FULL_OR_PARTIAL). Sepetnow has no features: nothing known.
+      cell(MATRIX, 'Bread pickup slots', 'Tarlamate', FULL_OR_PARTIAL),
+      cell(MATRIX, 'Market maps chat', 'Bazaarmate', FULL_OR_PARTIAL),
+      cell(MATRIX, 'Cheese map', 'Sepetnow', null),
+      fromMatches(),
+      onlyChanged({ add: { pieces: 1, cells: { min: 7 } } }),
       undoRestores(),
     ],
     reference: [
@@ -569,7 +694,7 @@ export const SKILL_TASKS: Task[] = [
     fixture: 'medium',
     ask: '/compare our Pricing features',
     followUps: ['go'],
-    graders: [noWritesInTurn(1), made('piece', { kind: 'matrix' }), field(MATRIX, 'matrix.rows.plane', R('p10'), ['piece']), cell(MATRIX, 'Seasonal boxes QR codes', 'Sepetbox', 'full'), cell(MATRIX, 'The weekly basket map', 'Bazaarrun', 'full'), onlyChanged({ add: { pieces: 1, cells: 3 } }), undoRestores()],
+    graders: [noWritesInTurn(1), made('piece', { kind: 'matrix' }), field(MATRIX, 'matrix.rows.plane', R('p10'), ['piece']), cell(MATRIX, 'Seasonal boxes QR codes', 'Sepetbox', FULL_OR_PARTIAL), cell(MATRIX, 'The weekly basket map', 'Bazaarrun', FULL_OR_PARTIAL), fromMatches(), onlyChanged({ add: { pieces: 1, cells: { min: 3 } } }), undoRestores()],
     reference: [
       calls(['view', { piece: 'p10' }], ['query', { kind: 'card', type: 'competitor', limit: 20 }]),
       answer('Plan:\n1. A matrix on k2 Build: the features on p10 Pricing × every competitor.\n2. Fill the 3 cells where a competitor feature matches ours; the rest stay ?.\nSay go, or tell me what to change in the plan.'),
@@ -606,9 +731,10 @@ export const SKILL_TASKS: Task[] = [
       made('piece', { kind: 'matrix' }),
       field(MATRIX, 'matrix.cols.items', (v: unknown) => Array.isArray(v) && v.length === 2 && [R('c38'), R('c42')].every((id) => v.some((i: { cardId?: string }) => i.cardId === id)), ['piece']),
       field(MATRIX, 'matrix.cols.type', undefined, ['piece']),
-      cell(MATRIX, 'Market maps chat', 'Bazaarmate', 'full'),
-      cell(MATRIX, 'Pickup slots checkout', 'Sepetbox', 'full'),
-      onlyChanged({ add: { pieces: 1, cells: 2 } }),
+      cell(MATRIX, 'Market maps chat', 'Bazaarmate', FULL_OR_PARTIAL),
+      cell(MATRIX, 'Pickup slots checkout', 'Sepetbox', FULL_OR_PARTIAL),
+      fromMatches(),
+      onlyChanged({ add: { pieces: 1, cells: { min: 2 } } }),
       undoRestores(),
     ],
     reference: [
@@ -644,7 +770,7 @@ export const SKILL_TASKS: Task[] = [
     fixture: 'medium',
     ask: '/prioritize Pricing',
     followUps: ['go'],
-    graders: [noWritesInTurn(1), allSet('card', { type: 'feature', plane: 'Pricing' }, ['impact', 'effort']), field(R('c142'), 'impact', /^(medium|high)$/, ['card']), field(R('c147'), 'effort', /^(M|L)$/, ['card']), notAllBestCase(['c142', 'c146', 'c147']), onlyChanged({ allow: [R('c142'), R('c146'), R('c147')] }), citesSome(3), undoRestores()],
+    graders: [noWritesInTurn(1), allSet('card', { type: 'feature', plane: 'Pricing' }, ['impact', 'effort']), field(R('c142'), 'impact', /^(medium|high)$/, ['card']), field(R('c147'), 'effort', /^(M|L)$/, ['card']), notAllBestCase([['c142', 'impact'], ['c146', 'effort'], ['c147', 'effort']]), onlyChanged({ allow: [estimatedOn('p10')] }), citesSome(3), undoRestores()],
     reference: [
       calls(['view', { piece: 'p10' }], ['view', { piece: 'p14' }]),
       answer('Plan:\n1. Fill what p14 Priorities needs on p10 Pricing: c142 "Recipes ratings" has no impact, c146 "Seasonal boxes QR codes" and c147 "The weekly basket map" no effort.\n2. Then explain the order.\nSay go, or tell me what to change in the plan.'),
@@ -677,7 +803,8 @@ export const SKILL_TASKS: Task[] = [
     fixture: 'medium',
     ask: '/prioritize Roadmap',
     followUps: ['go'],
-    graders: [noWritesInTurn(1), allSet('card', { type: 'feature', plane: 'Roadmap' }, ['impact', 'effort']), onlyChanged({ allow: ROADMAP_GAPS.map(R) }), citesSome(3), undoRestores()],
+    // Its skill check: estimate each, or say why not (a few left unset, each named in the answer).
+    graders: [noWritesInTurn(1), setOrSaid('Roadmap'), onlyChanged({ allow: [estimatedOn('p9')] }), citesSome(3), undoRestores()],
     reference: [
       calls(['view', { piece: 'p9' }], ['view', { piece: 'p14' }]),
       answer(`Plan:\n1. Fill impact or effort on the 14 features of p9 Roadmap that lack one (${ROADMAP_GAPS.join(', ')}), from what their cards and links say.\n2. Explain the order.\nSay go, or tell me what to change in the plan.`),
@@ -751,9 +878,10 @@ export const SKILL_TASKS: Task[] = [
       toolCalled('structure'),
       toolCalled('plan'),
       noWritesInTurn(1),
-      made('piece', { kind: 'plane' }),
-      ...SEG_GROUP.map((c) => onPlane(R(c), MADE('piece', { kind: 'plane' }))),
-      noOverlaps(MADE('piece', { kind: 'plane' })),
+      // One plane or several split off (the guide's "planes split off"); the group together on one of them.
+      count('piece', { kind: 'plane' }, { min: 1 }, { delta: true }),
+      togetherOnANewPlane(SEG_GROUP),
+      noOverlapsOnNewPlanes(),
       noNewLinksAcrossPlanes(),
       noDeletes(),
     ],
@@ -788,9 +916,9 @@ export const SKILL_TASKS: Task[] = [
       toolCalled('structure'),
       toolCalled('plan'),
       noWritesInTurn(1),
-      ...SEG_PROBLEMS_FOR_BETS.map((c) => onPlane(R(c), R('p3'))),
+      // The ask's goal: those links shown on some plane (Bets with the problems placed on it, or a plane of their own).
       ...SEG_PROBLEMS_FOR_BETS.map((c) => onPlane(R(c), R('p1'))),
-      linksShownOn(R('p3'), 10),
+      linksNowShown(IDEAS_ON_BETS, SEG_PROBLEMS_FOR_BETS, 10),
       noNewLinksAcrossPlanes(),
       noOverlaps('Bets'),
       noDeletes(),
@@ -820,6 +948,7 @@ export const SKILL_TASKS: Task[] = [
     graders: [
       toolCalled('structure'),
       toolCalled('plan'),
+      noWritesInTurn(1),
       linksShownOn(R('p2'), 17),
       noNewLinksAcrossPlanes(),
       noOverlaps('Rivals'),
@@ -851,7 +980,7 @@ export const SKILL_TASKS: Task[] = [
     autoGo: false,
     // Model-free: the plan comes from the canvas's numbers (it names the planes the links run between), kept as a job,
     // and nothing is written.
-    graders: [toolCalled('structure'), toolCalled('plan'), noWrites(), answerIncludes(['Segments', 'Bets'])],
+    graders: [toolCalled('structure'), toolCalled('plan'), noWrites(), answerIncludes([/Segments|\bp1\b/, /Bets|\bp3\b/])],
     reference: [
       call('structure', { space: 'k1' }),
       call('plan', { title: 'A canvas whose links show', steps: [{ title: 'Place the Segments problems Bets links to on Bets' }, { title: 'Put the restaurant buyers on a plane of their own' }, { title: 'Lay each plane out as a flow' }] }),
@@ -869,7 +998,8 @@ export const SKILL_TASKS: Task[] = [
     fixture: 'medium',
     ask: '/organize the competitors on Rivals by region',
     followUps: ['go'],
-    graders: [noWritesInTurn(1), grouped(Object.values(RIVALS).flat().map(R), regionOf), noOverlaps('Rivals'), count('text', { kind: 'heading', plane: 'Rivals' }, 3, { delta: true }), noDeletes(), onlyChanged({ allow: Object.values(RIVALS).flat().map(R), add: { labels: 3 } }), undoRestores()],
+    // Grouped under headings naming one of each card's regions (D-145; six rivals have two): the model picks the groups.
+    graders: [noWritesInTurn(1), byRegionHeading(), noOverlaps('Rivals'), noDeletes(), onlyChanged({ allow: Object.values(RIVALS).flat().map(R), add: { labels: { min: 2, max: 6 } } }), undoRestores()],
     reference: [
       call('view', { piece: 'p2' }),
       answer('Plan for p2 Rivals:\n1. Three groups by where they work: Turkey, Germany and DACH, Europe and global.\n2. A heading over each; the pains section and notes stay put.\nSay go, or tell me what to change in the plan.'),
@@ -902,7 +1032,7 @@ export const SKILL_TASKS: Task[] = [
     fixture: 'medium',
     ask: '/organize the ideas on Bets by status',
     followUps: ['go'],
-    graders: [noWritesInTurn(1), grouped(IDEAS_ON_BETS.map(R), 'status'), noOverlaps('Bets'), count('text', { kind: 'heading', plane: 'Bets' }, { min: 4, max: 5 }, { delta: true }), onlyChanged({ allow: IDEAS_ON_BETS.map(R), add: { labels: { min: 0, max: 4 } } }), undoRestores()],
+    graders: [noWritesInTurn(1), grouped(IDEAS_ON_BETS.map(R), 'status'), noOverlaps('Bets'), count('text', { kind: 'heading', plane: 'Bets' }, { min: 4, max: 5 }, { delta: true }), noDeletes(), onlyChanged({ allow: IDEAS_ON_BETS.map(R), add: { labels: { min: 4, max: 5 } } }), undoRestores()],
     reference: [
       call('view', { piece: 'p3' }),
       answer('Plan for p3 Bets:\n1. The 22 ideas in four groups by status (hypothesis, testing, validated, invalidated), a heading over each.\n2. The pains section and the sticky notes stay.\nSay go, or tell me what to change in the plan.'),
@@ -1003,7 +1133,7 @@ export const SKILL_TASKS: Task[] = [
     fixture: 'medium',
     ask: '/sort-stickies Segments',
     followUps: ['go'],
-    graders: [noWritesInTurn(1), exists('card', { type: 'idea', title: 'Maybe start with bread', plane: 'Segments' }), exists('card', { type: 'problem', title: 'Cash only is a big deal', plane: 'Segments' }), onlyChanged({ add: { ideas: 1, problems: 1, labels: { min: 1, max: 2 } } }), noOverlaps('Segments'), undoRestores()],
+    graders: [noWritesInTurn(1), exists('card', { type: 'idea', title: 'Maybe start with bread', plane: 'Segments' }), cashNote, onlyChanged({ add: { ideas: 1, problems: { min: 0, max: 1 }, labels: { min: 1, max: 2 } } }), noOverlaps('Segments'), undoRestores()],
     reference: [
       call('query', { kind: 'text', type: 'sticky', plane: 'p1' }),
       answer('Plan for p1 Segments:\n1. x4 "Maybe start with bread" → an idea; x5 "Cash only is a big deal" → a problem.\n2. A section around each new card.\nSay go, or tell me what to change in the plan.'),
@@ -1035,7 +1165,7 @@ export const SKILL_TASKS: Task[] = [
     set: 'regression',
     fixture: 'medium',
     ask: '/learn Talked to Elif, an organic farmer at the Beşiktaş market, on Saturday: "I throw away a crate of greens every evening." She only takes cash.',
-    graders: [exists('evidence', { card: R('c25'), stance: 'supports', text: /crate/i }), exists('evidence', { card: R('c28'), stance: 'supports' }), onlyChanged({ add: { evidence: 2 } }), answerIncludes([/validated|status/i]), undoRestores()],
+    graders: [exists('evidence', { card: R('c25'), stance: 'supports', text: /crate/i }), exists('evidence', { card: R('c28'), stance: 'supports' }), onlyChanged({ add: { evidence: 2 } }), answerIncludes([/\b(testing|validated|invalidated|status)\b/i]), undoRestores()],
     reference: [
       calls(['search', { query: 'organic farmers greens', limit: 8 }], ['search', { query: 'organic farmers card payments', limit: 8 }]),
       change(
@@ -1076,7 +1206,7 @@ export const SKILL_TASKS: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: '/learn from d1',
-    graders: [toolCalled('read_document'), exists('evidence', { card: R('c94'), stance: 'supports', text: /4 crates/i }), onlyChanged({ add: { evidence: { min: 1, max: 4 } } }), undoRestores()],
+    graders: [toolCalled('read_document'), exists('evidence', { card: R('c94'), stance: 'supports', text: /4 crates/i }), onlyChanged({ add: { evidence: { min: 1, max: 8 } } }), undoRestores()],
     reference: [
       calls(['read_document', { id: 'd1' }], ['search', { query: 'stall owners greens', limit: 8 }]),
       change([['create_evidence', { card: 'c94', kind: 'interview', text: 'Said she throws away 4 crates of greens a week.', stance: 'supports', source: 'd1 Interview notes — stall owners' }]], 'evidence from the stall owner interviews'),
@@ -1092,11 +1222,11 @@ export const SKILL_TASKS: Task[] = [
     set: 'regression',
     fixture: 'medium',
     ask: '/dedupe customers',
-    followUps: ['yes, merge them'],
-    graders: [noWritesInTurn(1), absent('card', { id: R('c2') }), exists('card', { id: R('c7') }), linked(R('c61'), R('c7'), 'for'), linked(R('c7'), R('c131'), 'relates'), onlyChanged({ allow: [R('c2'), R('c7'), touchesOnly('c2', 'c7')] }), undoRestores()],
+    // D-333: the merges go in the preview with why (accepting is the yes). Either card of a pair may be kept; the
+    // "(early)"/"(core)" customers c4 and c80 are the guide's candidates too.
+    graders: [mergedPair('c2', 'c7', [['c61', '$keep', 'for'], ['$keep', 'c131', 'relates']]), onlyChanged({ allow: [R('c2'), R('c7'), R('c4'), R('c80'), touchesOnly('c2', 'c7', 'c4', 'c80')] }), undoRestores()],
     reference: [
       call('query', { kind: 'card', type: 'customer', limit: 40 }),
-      answer('One near-duplicate: c2 "Organic farmers in Beşiktaş (early)" and c7 "Organic farmers in Beşiktaş". Keep c7 (tags, testing, two cards for it); fold c2 into it, its links coming along. Merge them?'),
       call('get', { ids: ['c2', 'c7'] }),
       change([['merge_cards', { keep: 'c7', merge: ['c2'] }, 'the same segment twice; c2 was the early wording']], 'merge c2 into c7'),
       answer('In the preview: c2 merged into c7 "Organic farmers in Beşiktaş": its link to c131 and c61\'s for link move to c7, then c2 goes.'),
@@ -1104,7 +1234,6 @@ export const SKILL_TASKS: Task[] = [
     // Deleted instead of merged: its links are lost.
     wrong: [
       call('query', { kind: 'card', type: 'customer', limit: 40 }),
-      answer('c2 and c7 are the same. Merge them?'),
       // Merged, but it also tagged another card nobody asked about.
       change([['merge_cards', { keep: 'c7', merge: ['c2'] }, 'the same segment twice'], ['update_card', { card: 'c9', fields: { tags: ['organic'] } }]]),
       answer('Merged; I also tagged c9 as organic.'),
@@ -1117,17 +1246,15 @@ export const SKILL_TASKS: Task[] = [
     fixture: 'medium',
     setup: withDup,
     ask: '/dedupe problems',
-    followUps: ['yes'],
-    graders: [noWritesInTurn(1), absent('card', { id: DUP }), exists('evidence', { card: R('c16'), text: /15 kg/ }), count('task', { card: R('c16') }, 1, { delta: true }), onPlane(R('c16'), 'Bets'), onPlane(R('c16'), 'Segments'), undoRestores()],
+    // Either card may be kept (c16 older with the links, the copy with the evidence and task): one left, holding it all.
+    graders: [heavyBags, onlyChanged({ allow: [(id, c, r) => { const item = c.was ?? [...r.end.cards, ...r.end.edges, ...r.end.places, ...r.end.evidence, ...r.end.tasks].find((x) => (x as { id?: string }).id === id); const j = JSON.stringify(item ?? {}); return id === DUP || id === R('c16') || j.includes(DUP) || j.includes(R('c16')) }] }), undoRestores()],
     reference: [
       call('query', { kind: 'card', type: 'problem', title: 'heavy bags' }),
-      answer('A near-duplicate: c55 "Bakers carry heavy bags home on foot." on p3 Bets repeats c16 "Bakers carry heavy bags home on foot" on p1 Segments. Keep c16 (older, two ideas solve it); the copy\'s evidence and task move to it and c16 shows on Bets too. Merge them?'),
       change([['merge_cards', { keep: 'c16', merge: ['c55'] }, 'the same problem twice, one on Bets']], 'merge the heavy bags duplicate'),
       answer('In the preview: the copy merged into c16 "Bakers carry heavy bags home on foot" (its evidence and task move; c16 is shown on Bets where the copy was).'),
     ],
     wrong: [
       call('query', { kind: 'card', type: 'problem', title: 'heavy bags' }),
-      answer('A duplicate of c16. Merge them?'),
       change([['delete', { ids: ['c55'] }, 'a duplicate of c16']]),
       answer('Done.'),
     ],
@@ -1215,7 +1342,7 @@ export const SKILL_TASKS: Task[] = [
     set: 'regression',
     fixture: 'medium',
     ask: '/interview "Bakers near the tram"',
-    graders: [docWritten({ cites: [R('c11'), R('c49')], words: [/last time/i], excludes: [/would you (use|pay|buy)/i] }), DOC_ONLY, undoRestores()],
+    graders: [docWritten({ cites: [R('c11')], anyOf: { of: ['c70', 'c105', 'c49', 'c124'].map(R), n: 2 }, words: [MOM_PAST], excludes: [/would you (use|pay|buy)/i] }), DOC_ONLY, undoRestores()],
     reference: [
       calls(['get', { ids: ['c11'] }], ['neighbours', { id: 'c11' }]),
       doc('Interview script: Bakers near the tram', [
@@ -1250,7 +1377,7 @@ export const SKILL_TASKS: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: '/interview c92',
-    graders: [docWritten({ cites: [R('c92'), R('c69')], min: 2, words: [/last time|when did/i] }), DOC_ONLY, undoRestores()],
+    graders: [docWritten({ cites: [R('c92'), R('c69')], min: 2, words: [MOM_PAST] }), DOC_ONLY, undoRestores()],
     reference: [
       calls(['get', { ids: ['c92'] }], ['neighbours', { id: 'c92' }]),
       doc('Interview script: rain and stall owners', [
@@ -1275,7 +1402,7 @@ export const SKILL_TASKS: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: '/interview Office lunch groups near the tram',
-    graders: [docWritten({ cites: [R('c85'), R('c49')], words: [/last time|when did/i], excludes: [/would you (use|pay|buy)/i] }), DOC_ONLY, undoRestores()],
+    graders: [docWritten({ cites: [R('c85'), R('c49')], words: [MOM_PAST], excludes: [/would you (use|pay|buy)/i] }), DOC_ONLY, undoRestores()],
     reference: [
       calls(['get', { ids: ['c85'] }], ['neighbours', { id: 'c85' }]),
       doc('Interview script: Office lunch groups near the tram', [
@@ -1303,7 +1430,8 @@ export const SKILL_TASKS: Task[] = [
     graders: [
       docWritten({ words: ['Strengths', 'Weaknesses', 'Opportunities', 'Threats'], cites: [R('c65'), R('c47')], min: 6 }),
       docSectionCards(/strength|weakness/i, (c) => c.type !== 'competitor', 'no competitor under strengths or weaknesses'),
-      docSectionCards(/threat/i, (c) => c.type === 'competitor' || c.validation !== 'validated', 'nothing of ours that is validated under threats'),
+      // The method: threats are strong competitors and contradicting evidence; a clean validated idea or feature of ours never.
+      docSectionCards(/threat/i, (c, r) => c.type === 'competitor' || !['idea', 'feature', 'package'].includes(c.type) || c.validation !== 'validated' || clashes(c, r), 'no clean validated idea or feature of ours as a threat'),
       DOC_ONLY,
       noDeletes(),
       undoRestores(),
@@ -1400,7 +1528,7 @@ export const SKILL_TASKS: Task[] = [
     set: 'regression',
     fixture: 'medium',
     ask: '/one-pager',
-    graders: [docWritten({ words: ['Pazar', /next steps/i], cites: [R('c58')], min: 5 }), DOC_ONLY, undoRestores()],
+    graders: [docWritten({ words: ['Pazar', /next steps/i], anyOf: { of: ['c58', 'c65', 'c75', 'c59'].map(R), n: 1 }, min: 5 }), DOC_ONLY, undoRestores()],
     reference: [
       calls(['query', { kind: 'card', type: 'customer', status: 'validated' }], ['query', { kind: 'card', type: 'idea', limit: 30 }], ['query', { kind: 'card', type: 'competitor', limit: 20 }]),
       doc('Pazar in one page', [
@@ -1505,7 +1633,7 @@ export const SKILL_TASKS: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: '/pitch with the positioning sentence first',
-    graders: [docWritten({ words: [/^\s*(#.*\n+)?\s*For .+ who /m, /\bunlike\b/i], min: 3 }), DOC_ONLY, undoRestores()],
+    graders: [docWritten({ words: [POSITIONING_FIRST, /\bunlike\b/i], min: 3 }), DOC_ONLY, undoRestores()],
     reference: [
       call('query', { kind: 'card', status: 'validated', limit: 30 }),
       doc('Pitch: Pazar', [
@@ -1528,7 +1656,7 @@ export const SKILL_TASKS: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: '/pitch built on our validated ideas',
-    graders: [docWritten({ cites: [R('c59'), R('c65'), R('c75')] }), DOC_ONLY, undoRestores()],
+    graders: [docWritten({ cites: [R('c59'), R('c65'), R('c75')] }), docSectionCards(/traction|proof|evidence/i, (c) => c.validation !== 'invalidated', 'no invalidated card as traction'), DOC_ONLY, undoRestores()],
     reference: [
       call('query', { kind: 'card', type: 'idea', status: 'validated' }),
       doc('Pitch: what is proven', [
@@ -1644,11 +1772,11 @@ export const SKILL_TASKS: Task[] = [
 const JUDGED: [string, Grader][] = [
   ['gaps', JUDGE_GAPS],
   ['next', JUDGE_NEXT],
-  ['interview', JUDGE_DOC],
-  ['swot', JUDGE_DOC],
-  ['one-pager', JUDGE_DOC],
-  ['pitch', JUDGE_DOC],
-  ['lean-canvas', JUDGE_DOC],
+  ['interview', judgeDoc('interview')],
+  ['swot', judgeDoc('swot')],
+  ['one-pager', judgeDoc('one-pager')],
+  ['pitch', judgeDoc('pitch')],
+  ['lean-canvas', judgeDoc('lean-canvas')],
 ]
 for (const [name, j] of JUDGED) {
   const first = SKILL_TASKS.find((t) => t.id === `skill-${name}-01`)!

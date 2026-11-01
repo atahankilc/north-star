@@ -3,7 +3,7 @@
 // were made or moved, groups and headings laid out as asked, links wired, one undo step; the judge (capability only)
 // for what only a reader can tell. Each has a plausible wrong script. A big job (a new piece filled with things, agent.md
 // §4.10) is two turns: a plan that writes nothing, then "go" (`followUps`, `noWritesInTurn(1)`).
-import { MADE, count, deletesHaveWhy, madeIds, exists, field, grouped, judge, linked, made, noOverlaps, noWritesInTurn, onPlane, onlyChanged, under, undoRestores } from '../graders'
+import { MADE, count, deletesHaveWhy, groupedTogether, madeIds, planWaits, exists, field, grouped, judge, linked, made, noOverlaps, noWritesInTurn, onPlane, onlyChanged, under, undoRestores } from '../graders'
 import type { Grader, Task } from '../types'
 import { answer, call, change, realOf } from './util'
 
@@ -37,11 +37,12 @@ export const BUILD: Task[] = [
     followUps: ['go'],
     graders: [
       noWritesInTurn(1),
-      made('piece', { kind: 'matrix', canvas: 'Build' }),
+      made('piece', { kind: 'matrix' }),
       field(MATRIX, 'matrix.rows.type', 'feature', ['piece']),
       field(MATRIX, 'matrix.rows.plane', R('p9'), ['piece']),
       field(MATRIX, 'matrix.cols.type', 'competitor', ['piece']),
-      onlyChanged({ add: { pieces: 1 } }),
+      // The /compare guide fills the cells the recorded matches know (skills/index.ts): only the new matrix's cells.
+      onlyChanged({ add: { pieces: 1 }, allow: [(id, c, r) => c.kind === 'cells' && c.change === 'added' && madeIds(r, 'piece', { kind: 'matrix' }).some((m) => id.startsWith(`${m}_`))] }),
       undoRestores(),
     ],
     reference: [
@@ -64,8 +65,9 @@ export const BUILD: Task[] = [
     graders: [
       exists('card', { type: 'idea', title: 'Who owns the stall data?', plane: 'Bets' }),
       exists('card', { type: 'idea', title: 'Maybe start with bread', plane: 'Bets' }),
-      made('card', { type: 'package', plane: 'Bets', memberIds: (v: unknown) => Array.isArray(v) && v.length === 2 }),
-      onlyChanged({ allow: [R('x13'), R('x14')], add: { ideas: 2, packages: 1 } }),
+      // Grouped: a package, or a section round them (the sort-stickies guide's way).
+      groupedTogether('Bets', 'idea'),
+      onlyChanged({ allow: [R('x13'), R('x14')], add: { ideas: 2, packages: { min: 0, max: 1 }, labels: { min: 0, max: 1 } } }),
       deletesHaveWhy(),
       noOverlaps('Bets'),
       undoRestores(),
@@ -107,7 +109,8 @@ export const BUILD: Task[] = [
       count('task', { deck: DECK }, { min: 3, max: 10 }),
       // The new tasks start open: in a column that isn't the finished one, whatever the deck calls its columns.
       tasksOpen,
-      onlyChanged({ add: { pieces: 1, tasks: { min: 3, max: 10 } } }),
+      // The /test guide sets the idea to testing on go (it was a hypothesis).
+      onlyChanged({ allow: [(id, c) => id === R('c58') && (c.fields ?? []).every((f) => ['validation', 'updatedAt'].includes(f))], add: { pieces: 1, tasks: { min: 3, max: 10 } } }),
       undoRestores(),
     ],
     reference: [
@@ -147,8 +150,9 @@ export const BUILD: Task[] = [
       grouped(IDEAS_ON_BETS.map(R), 'status'),
       noOverlaps('Bets'),
       count('card', { plane: 'Bets' }, 28),
-      count('text', { kind: 'heading', plane: 'Bets' }, { min: 4, max: 5 }, { delta: true }),
-      onlyChanged({ allow: IDEAS_ON_BETS.map(R), add: { labels: { min: 0, max: 4 } } }),
+      // A heading or a section per status (the prompt offers both for parts of one meaning).
+      count('text', { kind: (k: unknown) => k === 'heading' || k === 'section', plane: 'Bets' }, { min: 4, max: 5 }, { delta: true }),
+      onlyChanged({ allow: IDEAS_ON_BETS.map(R), add: { labels: { min: 4, max: 5 } } }),
       undoRestores(),
     ],
     reference: [
@@ -169,7 +173,8 @@ export const BUILD: Task[] = [
     fixture: 'medium',
     ask: 'Make a table of every feature with its status and priority.',
     followUps: ['go'],
-    graders: [noWritesInTurn(1), made('piece', { kind: 'table' }), field(TABLE, 'table.rows.rules', rulesHold('feature'), ['piece']), field(TABLE, 'table.cols', (v: unknown) => JSON.stringify(v).includes('"status"') && JSON.stringify(v).includes('"priority"'), ['piece']), onlyChanged({ add: { pieces: 1 } }), undoRestores()],
+    // Big or not is the model's call; a plan, if made, waits for go.
+    graders: [planWaits(), made('piece', { kind: 'table' }), field(TABLE, 'table.rows.rules', rulesHold('feature'), ['piece']), field(TABLE, 'table.cols', (v: unknown) => JSON.stringify(v).includes('"status"') && JSON.stringify(v).includes('"priority"'), ['piece']), onlyChanged({ add: { pieces: 1 } }), undoRestores()],
     reference: [
       answer('Plan: a table "All features" on k2 Build with every feature card as a row, and its status, priority, impact and effort as columns. Say go, or change the plan.'),
       change([['create_piece', { kind: 'table', canvas: 'k2', name: 'All features', table: { template: 'features' } }]], 'a table of every feature'),

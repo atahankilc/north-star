@@ -33,11 +33,11 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## Next steps (not started; ask the user which first)
 - **The agent, where it stands (2026-11-01; D-327, D-328, D-329 built and pushed):**
-  1. Real runs, gpt-5.6-terra ×3 (2026-11-01): 66 %/52 %, then 71 %/54 % ($18.08). Every failure of the second read
-     one by one (agent-bugs 33): `look` never had a picture in `npm run eval` (resvg under Vite's runner), the judge
-     never saw what the agent read, graders stricter than the guides and D-186/D-327, create_card couldn't sit under a
-     heading; fixed, replayed 249 → 262 of 348. Next: terra ×1, gpt-5.4-mini, claude-sonnet-5-5, claude-haiku-5-5 ×1
-     (judge terra); ×3 only for a model to mark `works well`; then the prompt bugs one by one (19, 20, 23, 21, 24).
+  1. Real runs, gpt-5.6-terra ×3 (2026-11-01): 66 %/52 %, then 71 %/54 % ($18.08). Every failure read, then all 116
+     tasks' graders audited against guides/prompt/decisions (agent-bugs 33): 43 had findings, several "model bugs"
+     were the graders'; `npm run eval -- --replay <run>` re-grades a past run for free: 249 → 293 of 348. Next: one
+     cheap shakedown (claude-haiku-5-5 ×1, ~$1), its failures read; then terra, gpt-5.4-mini, claude-sonnet-5-5 ×1
+     (judge terra); ×3 only for a model to mark `works well`; then the prompt bugs one by one (19, 20, 23, 24).
   2. In the app: a big job (`/restructure Segments`), and the two go buttons (not looked at in a browser yet).
   3. Code left: bugs 31 (an arrange of new cards is its own preview item), 32 (a section round new cards cuts what's
      beside it); the preview pick saved with the chat (rules).

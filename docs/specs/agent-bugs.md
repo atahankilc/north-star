@@ -283,8 +283,20 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
       landed at the first clear spot (build-06's 262–512 px): now under a heading or paragraph (a sticky stays
       refused: 32). The arrange into a fresh section refused (sort-stickies-03 then proposed nothing): 32.
     Replaying the run's 348 transcripts on the fixed graders (judges left out): 249 → 262 attempts with no failure.
-    What's left is the model's (19, 20, 23, 21's swot and compare cells, dedupe-01's merge, pitch-02's sentence) and
-    31, 32.
+    **Then every task audited** (the user: "do 1 and 3": all 116 tasks' graders against the guides, the prompt and the
+    decisions, by three read-only reviewers, each finding checked and applied by hand; `npm run eval -- --replay`
+    made a command). 43 tasks had findings. Several "model bugs" were the graders': SWOT threats (a line's other cards
+    counted, contradicting evidence is a threat by the method), /organize by region (graded by the first typed region;
+    six rivals have two), pitch-02's sentence (bold or quoted), the coverage cells (a match has no degree: full or
+    partial), dedupe's kept card (the guide keeps either by its rule). Contradictions fixed in the guides too: /dedupe
+    asked "merge them?" first and merge_cards said "needs a yes" (D-333: the preview is the yes); the "(on Rivals)"
+    context mark (23) was in no guide (now in CITE). Tightened: edit-14's removals, edit-15's paragraph, prioritize's
+    estimates only where empty, the never-failing notAllBestCase. New graders: fromMatches, groupedTogether,
+    planWaits, mergedPair, byRegionHeading, linksNowShown; context marks honoured by docWritten and citesSome; the
+    judge of a document reads its skill's guide and method. Kept as they are, on purpose: edit-12 (it measures 19:
+    "would it work" should be a dry run) and refuse-01 (asking and a preview are both defensible).
+    Replay after all of it: 249 → 293 of 348 (17 diverged: the dedupe guide and two ops answer differently now).
+    What's left is the model's (19, 20, 23's marks, compare's extra cells, restructure's moves) and 31, 32.
 
 ## Preview: what the person sees before applying
 

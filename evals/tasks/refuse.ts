@@ -41,7 +41,8 @@ export const REFUSE: Task[] = [
     fixture: 'medium',
     role: 'viewer',
     ask: 'Mark Freshgo as Global.',
-    graders: [noWrites(), toolNotCalled('change'), answerIncludes(['viewer', 'editor'])],
+    // The prompt's read-only note: say an editor can make it and offer the words; "viewer" itself isn't asked for.
+    graders: [noWrites(), toolNotCalled('change'), answerIncludes(['editor'])],
     reference: [
       call('get', { ids: ['c36'] }),
       answer('You are a viewer in Pazar, so I can only read it for you: c36 Freshgo is listed for Germany and DACH. An owner can make you an editor in Settings → people; then I can change its regions.'),
