@@ -1,0 +1,16 @@
+/* Buttons joined into one strip (src/ui/primitives/ButtonGroup.tsx, D-344): the cells touch, a hairline between them. */
+.group {
+  display: inline-flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--line-w);
+  /* Narrower than its cells (a confirm with three actions, a thin pane): it wraps, the same seam between its rows. */
+  max-width: 100%;
+}
+
+/* What isn't a button in the strip (a status, a number) sits on the same shade, so the strip stays one piece. */
+.group > :not(button) {
+  display: inline-flex;
+  align-items: center;
+}

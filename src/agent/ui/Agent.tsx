@@ -32,7 +32,9 @@ import { ChatsView, NotesDiff, NotesView } from './AgentMemory'
 import styles from './Agent.module.css'
 import { skillChip, useSkillMenu } from './SkillMenu'
 import { SKILLS } from '../skills'
+import { Checkbox } from '../../ui/primitives/Checkbox'
 import { Button } from '../../ui/primitives/Button'
+import { ButtonGroup } from '../../ui/primitives/ButtonGroup'
 import { Spinner } from '../../ui/primitives/Spinner'
 import { PromptField } from '../../ui/primitives/PromptField'
 import { Num, Rule } from '../../ui/primitives/Rule'
@@ -186,7 +188,7 @@ function Box() {
             </span>
             <span className={styles.boxModel}>{chatModel()}</span>
             <span className={styles.close}>
-              <Button keyHint="esc" onClick={() => closeAgent()} title="Close (Esc)">
+              <Button icon onClick={() => closeAgent()} title="Close (Esc)" aria-label="close">
                 ×
               </Button>
             </span>
@@ -219,7 +221,6 @@ function Box() {
         onSubmit={() => {}}
         onKeyDown={onKey as never}
       >
-        {!open && <kbd className={styles.kbd}>⌘J</kbd>}
       </PromptField>
     </Appear>
   )
@@ -292,17 +293,19 @@ function Column() {
         </span>
         <ModelSwitch />
         <span className={styles.headTools}>
-          <Button className={styles.action} pressed={view === 'chats'} onClick={() => agentActions.show(view === 'chats' ? 'chat' : 'chats')} disabled={running} title="Your saved chats and the shared ones">
+          <ButtonGroup label="the agent's views">
+          <Button pressed={view === 'chats'} onClick={() => agentActions.show(view === 'chats' ? 'chat' : 'chats')} disabled={running} title="Your saved chats and the shared ones">
             chats
           </Button>
-          <Button className={styles.action} pressed={view === 'notes'} onClick={() => agentActions.show(view === 'notes' ? 'chat' : 'notes')} title="The agent notes: the workspace's memory">
+          <Button pressed={view === 'notes'} onClick={() => agentActions.show(view === 'notes' ? 'chat' : 'notes')} title="The agent notes: the workspace's memory">
             notes
           </Button>
-          <Button className={styles.action} onClick={() => agentActions.newChat()} disabled={running} title="A new chat (this one is saved)">
+          <Button onClick={() => agentActions.newChat()} disabled={running} title="A new chat (this one is saved)">
             new
           </Button>
+          </ButtonGroup>
           <span className={styles.close}>
-            <Button keyHint="esc" onClick={() => closeAgent()} title="Fold it back to the box (Esc); the chat stays">
+            <Button icon onClick={() => closeAgent()} title="Fold it back to the box (Esc); the chat stays" aria-label="fold it back">
               ×
             </Button>
           </span>
@@ -338,7 +341,6 @@ function Column() {
         >
           {running && (
             <Button
-              className={styles.action}
               tone="danger"
               onClick={() => {
                 agentActions.stop()
@@ -397,7 +399,6 @@ function ModelSwitch() {
   return (
     <Select
       ariaLabel="Model for this chat"
-      className={styles.modelSelect}
       value={current}
       options={rows.map((r) => ({ value: r.id, label: r.id }))}
       onChange={(v) => agentActions.setModel(v)}
@@ -451,7 +452,7 @@ function FirstSkills() {
     <div className={styles.asks}>
       <Rule as="div" name="skills" />
       {list.map((s) => (
-        <button key={s.name} className={styles.ask} data-skill-ask onClick={() => agentActions.send(`/${s.name}`)}>
+        <button /* kit-ok: a skill's whole row (name, what it does) that asks it */ key={s.name} className={styles.ask} data-skill-ask onClick={() => agentActions.send(`/${s.name}`)}>
           <span className={styles.skillName}>/{s.name}</span>
           <span className={styles.skillSummary}>{s.summary}</span>
         </button>
@@ -467,7 +468,7 @@ function KeyNeeded() {
   return (
     <p className={styles.note} data-tone="error">
       add your key first (OpenAI or Anthropic): it stays in this browser.{' '}
-      <Button className={styles.action} tone="primary" onClick={() => openSettingsAt('agent')}>
+      <Button tone="primary" onClick={() => openSettingsAt('agent')}>
         settings → the agent
       </Button>
     </p>
@@ -482,7 +483,7 @@ function FirstAsks({ focus, onAsk, compact }: { focus: string | null; onAsk: (t:
     <div className={styles.asks} data-compact={compact || undefined}>
       <Rule as="div" name="try" />
       {asks.map((a) => (
-        <button key={a} className={styles.ask} onClick={() => onAsk(a)}>
+        <button /* kit-ok: a first question's whole row that asks it */ key={a} className={styles.ask} onClick={() => onAsk(a)}>
           <span className={styles.askMark} aria-hidden>
             ›
           </span>
@@ -538,14 +539,14 @@ function JobPanel({ job, phase }: { job: Job; phase: string }) {
           {job.status === 'paused' && job.paused ? `paused: ${job.paused} · ` : job.status === 'planned' ? 'waiting for go · ' : job.status === 'running' && !job.stopAfter ? `${previewOf(job) === 'all' ? 'one preview' : 'step by step'} · ` : job.status === 'done' ? 'done · ' : job.stopAfter ? 'stops after this step · ' : ''}
           {kTok(job.tokens)} / {kTok(job.budget)} tokens
         </span>
-        <span className={styles.jobTools}>
+        <ButtonGroup className={styles.jobTools} label="the job">
           {job.status === 'running' && !job.stopAfter && (
-            <Button className={styles.action} onClick={() => agentActions.jobStopAfter()}>
+            <Button onClick={() => agentActions.jobStopAfter()}>
               stop after this step
             </Button>
           )}
           {job.status === 'running' && job.stopAfter && (
-            <Button className={styles.action} onClick={() => agentActions.jobStopAfter(false)}>
+            <Button onClick={() => agentActions.jobStopAfter(false)}>
               keep going
             </Button>
           )}
@@ -554,21 +555,21 @@ function JobPanel({ job, phase }: { job: Job; phase: string }) {
             !running &&
             phase !== 'previewing' &&
             (['all', 'each'] as const).map((p) => (
-              <Button key={p} className={styles.action} tone={(job.suggest ?? 'each') === p ? 'primary' : undefined} onClick={() => agentActions.jobGo(p)} title={p === 'all' ? 'every step, then one preview to accept' : 'a preview after each step; the next starts once you accept'}>
+              <Button key={p} tone={(job.suggest ?? 'each') === p ? 'primary' : undefined} onClick={() => agentActions.jobGo(p)} title={p === 'all' ? 'every step, then one preview to accept' : 'a preview after each step; the next starts once you accept'}>
                 {p === 'all' ? 'go · one preview' : 'go · step by step'}
               </Button>
             ))}
           {job.status === 'paused' && !running && phase !== 'previewing' && (
-            <Button className={styles.action} tone="primary" onClick={() => agentActions.jobGoOn(over)}>
+            <Button tone="primary" onClick={() => agentActions.jobGoOn(over)}>
               {over ? 'raise budget and go on' : 'go on'}
             </Button>
           )}
           {!running && (
-            <Button className={styles.action} onClick={() => agentActions.jobDrop()}>
+            <Button onClick={() => agentActions.jobDrop()}>
               drop
             </Button>
           )}
-        </span>
+        </ButtonGroup>
       </footer>
     </section>
   )
@@ -618,7 +619,7 @@ const EntryView = memo(function EntryView({ entry, n }: { entry: Entry; n: numbe
           {entry.settings && (
             <>
               {' '}
-              <Button className={styles.action} tone="primary" onClick={() => openSettingsAt('agent')}>
+              <Button tone="primary" onClick={() => openSettingsAt('agent')}>
                 open settings
               </Button>
             </>
@@ -638,7 +639,7 @@ function AgentAnswer({ entry }: { entry: Extract<Entry, { kind: 'agent' }> }) {
   return (
     <div className={styles.answer}>
       {tools.length > 0 && !entry.running && (
-        <button className={styles.fold} onClick={() => setUnfold((u) => !u)} aria-expanded={!folded}>
+        <button /* kit-ok: a fold line (mark, how many steps, how long) that opens the steps, not a verb */ className={styles.fold} onClick={() => setUnfold((u) => !u)} aria-expanded={!folded}>
           <span className={styles.foldMark}>{folded ? '▸' : '▾'}</span> {tools.length} step{tools.length === 1 ? '' : 's'}
           {entry.ms !== undefined && <> · {secs(entry.ms)}</>}
         </button>
@@ -669,7 +670,7 @@ function AgentAnswer({ entry }: { entry: Extract<Entry, { kind: 'agent' }> }) {
           {entry.errorSettings && (
             <>
               {' '}
-              <Button className={styles.action} tone="primary" onClick={() => openSettingsAt('agent')}>
+              <Button tone="primary" onClick={() => openSettingsAt('agent')}>
                 open settings
               </Button>
             </>
@@ -870,28 +871,32 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
       {live && (
         <>
           <div className={styles.stepper}>
-            <button className={styles.stepBtn} onClick={() => go(at < 0 ? on.length - 1 : at - 1)} disabled={!on.length} aria-label="The change before">
-              ‹
-            </button>
-            <span className={styles.stepAt} aria-live="polite">
-              <Num n={at >= 0 ? String(at + 1) : '–'} /> / {on.length}
-            </span>
-            <button className={styles.stepBtn} onClick={() => go(at + 1)} disabled={!on.length} aria-label="The next change">
-              ›
-            </button>
+            <ButtonGroup label="each change">
+              <Button icon onClick={() => go(at < 0 ? on.length - 1 : at - 1)} disabled={!on.length} aria-label="The change before">
+                ‹
+              </Button>
+              <span className={styles.stepAt} aria-live="polite">
+                <Num n={at >= 0 ? String(at + 1) : '–'} /> / {on.length}
+              </span>
+              <Button icon onClick={() => go(at + 1)} disabled={!on.length} aria-label="The next change">
+                ›
+              </Button>
+            </ButtonGroup>
             <span className={styles.changesHint}>{at >= 0 && on[at] ? on[at].where : '← → goes to each one'}</span>
           </div>
           <div className={styles.changesFoot}>
             {/* The deletes it holds named on the button (agent-bugs 17, D-333): accepting is the yes to them, so none goes
                 unseen in a long list. */}
+            <ButtonGroup>
             <span ref={apply} className={styles.applyBox}>
-              <Button className={styles.action} tone="primary" onClick={() => agentActions.accept()}>
-                apply{deletes > 0 && <span className={styles.applyDeletes}> · {deletes} delete{deletes === 1 ? '' : 's'}</span>} ↵
+              <Button tone="primary" onClick={() => agentActions.accept()}>
+                apply{deletes > 0 && <span className={styles.applyDeletes}> · {deletes} delete{deletes === 1 ? '' : 's'}</span>}
               </Button>
             </span>
-            <Button className={styles.action} tone="danger" onClick={() => agentActions.discard()}>
-              discard esc
+            <Button tone="danger" onClick={() => agentActions.discard()}>
+              discard
             </Button>
+            </ButtonGroup>
             <span className={styles.changesHint}>{on.length ? 'one undo step · the app waits till then' : 'nothing ticked: apply closes it'}</span>
           </div>
         </>
@@ -937,17 +942,13 @@ function ChangeRow({ i, live, current, onGo }: { i: ChangeLine; live: boolean; c
   return (
     <li className={styles.item} data-diff={i.diff ? '' : undefined} data-delete={i.delete || undefined} data-off={!i.on || undefined} data-current={current || undefined}>
       {live && (
-        <button
-          className={styles.tick}
-          role="checkbox"
-          aria-checked={i.on}
+        <Checkbox
+          checked={i.on}
           aria-label={`${i.on ? 'untick' : 'tick'}: ${i.line}`}
           title={i.needs ? `off: it needs ${i.needs.join(', ')}` : i.on ? 'untick: leave this change out' : 'tick: put it back'}
-          onClick={() => agentActions.tick(i.id, !i.on)}
+          onChange={(on) => agentActions.tick(i.id, on)}
           disabled={!i.on && !!i.needs}
-        >
-          [{i.on ? '×' : ' '}]
-        </button>
+        />
       )}
       <span className={styles.itemMark} aria-hidden>
         {i.sign}
@@ -986,7 +987,7 @@ function ReportLine({ entry }: { entry: Extract<Entry, { kind: 'report' }> }) {
       <span className={styles.statusWord}>{shown.undone ? 'undone' : 'applied'}</span>
       <span className={styles.statusText}>· {what.join(' · ')}</span>
       {current && !shown.undone && (
-        <Button className={styles.action} onClick={() => agentActions.undo()} disabled={shown.undoing}>
+        <Button className={styles.undo} onClick={() => agentActions.undo()} disabled={shown.undoing}>
           {shown.undoing ? 'undoing…' : 'undo'}
         </Button>
       )}

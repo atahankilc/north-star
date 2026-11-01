@@ -29,20 +29,6 @@
   font-size: var(--text-xs);
 }
 
-/* A row of `[verb]` Buttons: their own side padding makes the space between them, the row pulled out by it so
-   the first bracket lines up with the text above; no padding above and below, so a row is a line high. Kit CSS can
-   come again after this file (another module composing it), hence `> button` for the padding. */
-.pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-half) var(--space-1);
-  margin: 0 calc(-1 * var(--space-1));
-}
-
-.pills > button {
-  padding-block: 0;
-}
-
 .warn {
   margin: var(--space-2) 0 0;
   color: var(--accent-magenta);
@@ -97,10 +83,6 @@
   opacity: 0;
 }
 
-.x[data-icon] {
-  padding: 0 var(--space-half);
-}
-
 :is(.ev, .link):hover .x {
   opacity: 1;
 }
@@ -149,10 +131,6 @@
 /* A row's `×` shown on hover (a Button icon, tone danger). */
 .chipX {
   display: none;
-}
-
-.chipX[data-icon] {
-  padding: 0;
 }
 
 .notes {
@@ -244,12 +222,7 @@
   text-decoration: none;
 }
 
-/* `+ region`, `+ a feature`, `+ <plane>`: a Button icon, its `+` magenta as a Rule's add. `[data-icon]` so it
-   outweighs the Button's padding however the kit's CSS is ordered. */
-.inlineAdd[data-icon] {
-  padding: 0;
-}
-
+/* `+ region`, `+ a feature`, `+ <plane>`: a Button, its `+` magenta as a Rule's add. */
 .plus {
   color: var(--accent-magenta);
 }
@@ -310,9 +283,6 @@
   gap: var(--space-2);
 }
 
-.select {
-  color: var(--fg);
-}
 
 /* A part's parent, under the header. */
 .parent {

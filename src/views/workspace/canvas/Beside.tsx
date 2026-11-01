@@ -27,21 +27,16 @@ import { DRAG_PX, wheelStep } from '../../../ui/foundation/feel'
 
 const PAD = 48
 
-// What Escape closes next (after a selection): a setup, then what's beside (the last opened), then focus. The dock
-// whose action that is shows `esc` on it.
-export type EscNext = { what: 'setup' | 'close'; id: string } | 'unfocus'
-
 type Props = {
   plane: WithId<Piece>
   open: WithId<Piece>[]
   editor: boolean
-  esc: EscNext
   // The matrix pane its setup opens in, when it's open.
   matrixSetupPane: string | null
   onClose: (id: string) => void
 }
 
-export function Beside({ plane, open, editor, esc, matrixSetupPane, onClose }: Props) {
+export function Beside({ plane, open, editor, matrixSetupPane, onClose }: Props) {
   const size = useCanvasView((s) => s.size)
   const split = useCanvasView((s) => s.split)
   const left = Math.round(size.w * split)
@@ -100,7 +95,7 @@ export function Beside({ plane, open, editor, esc, matrixSetupPane, onClose }: P
   return (
     <>
       {open.map((p, i) => (
-        <Pane key={p.id} piece={p} plane={plane} box={{ x: left, y: tops[i], w: size.w - left, h: tops[i + 1] - tops[i] }} editor={editor} first={i === 0} esc={esc} matrixSetupHere={p.id === matrixSetupPane} onClose={() => onClose(p.id)} />
+        <Pane key={p.id} piece={p} plane={plane} box={{ x: left, y: tops[i], w: size.w - left, h: tops[i + 1] - tops[i] }} editor={editor} first={i === 0} matrixSetupHere={p.id === matrixSetupPane} onClose={() => onClose(p.id)} />
       ))}
       <div className={styles.divider} data-learn="split" style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="Plane and what's beside it" />
       {open.slice(0, -1).map((p, i) => (
@@ -110,7 +105,7 @@ export function Beside({ plane, open, editor, esc, matrixSetupPane, onClose }: P
   )
 }
 
-type PaneProps = { piece: WithId<Piece>; plane: WithId<Piece>; box: Bounds; editor: boolean; first: boolean; esc: EscNext; matrixSetupHere: boolean; onClose: () => void }
+type PaneProps = { piece: WithId<Piece>; plane: WithId<Piece>; box: Bounds; editor: boolean; first: boolean; matrixSetupHere: boolean; onClose: () => void }
 
 // A pane's own view (D-211): fitted to its box (again when the box changes), the wheel zooming round the pointer, a drag on
 // its empty space panning (a press on a cell is the cell's until it moves 5 px, D-217). Beside a plane and in the tasks
@@ -208,7 +203,7 @@ export function glidePlaneTo(picked: Pick<Card, 'id'>, plane: string, cards: Car
   else glide(c, to, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
 }
 
-function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose }: PaneProps) {
+function Pane({ piece, plane, box, editor, first, matrixSetupHere, onClose }: PaneProps) {
   const { cards, places } = useWs()
   const kind = kindOfPiece(piece)
   const content = kind === 'matrix' ? matrixBounds(piece, cards) : tableBounds(piece, cards)
@@ -226,7 +221,6 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
   const matrixSetup = useMatrixUi((s) => !!s.setup) && matrixSetupHere
   const setupOpen = kind === 'table' ? tableSetup : matrixSetup
   const toggleSetup = () => (kind === 'table' ? useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id })) : toggleMatrixSetup())
-  const escHere = (what: 'setup' | 'close') => (esc !== 'unfocus' && esc.what === what && esc.id === piece.id ? 'esc' : undefined)
 
   return (
     <div
@@ -259,12 +253,11 @@ function Pane({ piece, plane, box, editor, first, esc, matrixSetupHere, onClose 
           <DockAction
             label="setup"
             pressed={setupOpen}
-            keyHint={escHere('setup')}
             title={kind === 'table' ? 'where its rows come from, its columns' : 'its rows, columns and cells'}
             onClick={toggleSetup}
           />
         )}
-        <DockAction label="close" main keyHint={escHere('close')} title="close it; it stays stuck to the plane" onClick={onClose} />
+        <DockAction label="close" main title="close it; it stays stuck to the plane" onClick={onClose} />
       </FocusDock>
     </div>
   )

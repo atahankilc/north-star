@@ -41,6 +41,7 @@ import { tokenPx, tokenText } from '../../../styles/cssToken'
 import { Label } from '../../../ui/primitives/Label'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const T = STRIP_PX
@@ -1043,17 +1044,17 @@ export function TimelineWeeks({ piece, toolClass }: { piece: WithId<Piece>; tool
   const onToday = !!s && now >= s.from && now < s.from + s.span
   const step = (by: number) => glideStrip(piece.id, { from: stripOf(piece.id).from + by * 7 })
   return (
-    <>
-      <Button className={toolClass} title="a week back" aria-label="A week back" onClick={() => step(-1)}>
+    <ButtonGroup label="Weeks">
+      <Button icon className={toolClass} title="a week back" aria-label="A week back" onClick={() => step(-1)}>
         ‹
       </Button>
       <Button className={toolClass} pressed={onToday} title="back to today" onClick={() => toToday(piece.id)}>
         today
       </Button>
-      <Button className={toolClass} title="a week on" aria-label="A week on" onClick={() => step(1)}>
+      <Button icon className={toolClass} title="a week on" aria-label="A week on" onClick={() => step(1)}>
         ›
       </Button>
-    </>
+    </ButtonGroup>
   )
 }
 

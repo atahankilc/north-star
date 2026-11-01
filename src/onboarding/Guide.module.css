@@ -196,19 +196,6 @@
   align-items: baseline;
   gap: var(--space-1);
   margin-left: var(--space-2);
-  padding: var(--space-half) var(--space-2);
-  border: var(--line-w) solid var(--edge);
-  background: none;
-  color: var(--fg-muted);
-  font: inherit;
-  font-size: var(--text-xs);
-  cursor: pointer;
-}
-
-.fold:hover,
-.it[data-open] .fold {
-  border-color: var(--accent-cyan);
-  color: var(--accent-cyan);
 }
 
 .kbd {

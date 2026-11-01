@@ -1,9 +1,4 @@
 /* Settings → the agent (S14): the rows' controls, in Settings' look (Settings.module.css). Tokens only. */
-.action:disabled {
-  color: var(--fg-faint);
-  cursor: default;
-}
-
 .hint {
   color: var(--fg-strong);
   font-family: var(--font-display);
@@ -51,10 +46,6 @@
   color: var(--accent-yellow);
 }
 
-.select {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-}
 
 .modelRow {
   display: inline-flex;

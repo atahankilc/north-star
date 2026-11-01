@@ -24,17 +24,6 @@
   color: var(--fg-strong);
 }
 
-.chipAvatar {
-  display: inline-grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: var(--control-sm);
-  height: var(--control-sm);
-  background: var(--accent-cyan);
-  color: var(--on-accent);
-  font-size: var(--text-xs);
-}
-
 @media (max-width: 760px) {
   .account {
     padding-left: var(--space-2);
@@ -192,19 +181,6 @@
   top: var(--space-6);
   right: var(--space-6);
   z-index: var(--z-2);
-  padding: var(--space-half);
-  /* Scrolled rows pass under it. */
-  background: var(--bg-raised);
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
-}
-
-.close:hover,
-.close:focus-visible {
-  color: var(--fg-strong);
 }
 
 /* Account: who you are, large. */

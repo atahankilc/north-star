@@ -16,6 +16,7 @@ import { HazardConfirm } from '../../../ui/patterns/HazardConfirm'
 import type { MenuEntry } from '../../../ui/patterns/Menu'
 import { Select } from '../../../ui/primitives/Select'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { canEditIn } from '../../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, setFitter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../../state/canvasView'
@@ -60,7 +61,7 @@ import { MatrixSetupPanel } from '../matrix/MatrixSetup'
 import { tableBounds, TablePager, TableView, useTableUi } from '../table/Table'
 import { TableSetupPanel } from '../table/TableSetup'
 import { KanbanSetupPanel } from '../deck/KanbanSetup'
-import { Beside, type EscNext } from './Beside'
+import { Beside } from './Beside'
 import { TasksSide } from '../deck/TasksSide'
 import { closeTasksSide, escapeTasksSide, toggleDaysOf, toggleFromPlane, toggleTasksSide, useTasksSide } from '../deck/sideState'
 import { isOpen, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
@@ -196,28 +197,14 @@ export function CanvasView() {
   const kanbanSetup = useKanbanUi((s) => s.setup)
   const matrixOnCanvas = useMatrixUi((s) => s.canvas)
   const canvasSetup = pieces.find((p) => isOpen(p) && (kindOfPiece(p) === 'matrix' ? matrixSetup && p.id === matrixOnCanvas : p.id === tableSetup || p.id === kanbanSetup)) ?? null
-  // What Escape closes next, after a selection (D-211): a setup, then what's beside (the last opened), then focus. The
-  // dock whose action that is shows `esc` on it; the key handler below goes in the same order.
+  // What Escape closes next, after a selection (D-211): a setup, then what's beside (the last opened), then focus (the
+  // key handler below; no key is shown on the docks, D-344).
   const matrixPane = besideOpen.find((p) => kindOfPiece(p) === 'matrix')?.id ?? null
   // Documents beside their list (D-232): Escape closes the last one; with the list put away, a framed list comes back,
   // an unframed one (opened from the canvas) goes straight back to the canvas.
   const focusedUnframed = !!focused && isOpen(focused)
   const focusedUnframedRef = useRef(focusedUnframed)
   focusedUnframedRef.current = focusedUnframed
-  const escNext: EscNext = readerOpen && !(listHidden && focusedUnframed)
-    ? { what: 'close', id: 'reader' }
-    : matrixSetup && focused && (focusedMatrix || matrixPane)
-      ? { what: 'setup', id: focusedMatrix ? focused.id : matrixPane! }
-      : tableSetup
-        ? { what: 'setup', id: tableSetup }
-        : kanbanSetup
-          ? { what: 'setup', id: kanbanSetup }
-          : sideOpen
-          ? { what: 'close', id: 'tasks' }
-          : besideOpen.length
-          ? { what: 'close', id: besideOpen[besideOpen.length - 1].id }
-          : 'unfocus'
-  const escOn = (what: 'setup' | 'close') => (escNext !== 'unfocus' && escNext.what === what && escNext.id === focused?.id ? 'esc' : undefined)
   // What's in a piece, in its own px: a plane's cards and text, a matrix's table (D-204) or a table's (D-209).
   // A plane's filter changes what its box holds.
   const filters = usePlaneFilter((s) => s.byPlane)
@@ -885,7 +872,7 @@ export function CanvasView() {
         const { cardSelected } = useCanvasView.getState()
         const card = focusedCardsRef.current.find((c) => c.id === cardSelected)
         if (e.key === 'Escape') {
-          // A card, or a matrix's cell (D-204), lets go first; then as `escNext` says (its dock shows `esc`): the setup
+          // A card, or a matrix's cell (D-204), lets go first; then the setup
           // closes, then what's beside, then focus goes.
           if (cardSelected) useCanvasView.setState({ cardSelected: null })
           else if (useMatrixUi.getState().setup) useMatrixUi.setState({ setup: false })
@@ -1072,7 +1059,7 @@ export function CanvasView() {
           )}
           {drawing === focused.id && <DrawSection space={focused.id} toSpace={planeToSpace} />}
           {focusArrived && !focusLeaving && (
-            <Beside plane={focused} open={besideOpen} editor={editor} esc={escNext} matrixSetupPane={matrixPane} onClose={(id) => setBeside(besideIds.filter((x) => x !== id))} />
+            <Beside plane={focused} open={besideOpen} editor={editor} matrixSetupPane={matrixPane} onClose={(id) => setBeside(besideIds.filter((x) => x !== id))} />
           )}
           {focusedMatrix && editor && matrixSetup && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
           {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
@@ -1088,18 +1075,18 @@ export function CanvasView() {
           {focusArrived && !focusLeaving && !listHidden && !focusedDocument && (
             <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length || sideOpen ? (size.w * split) / 2 : undefined}>
               {focusedMatrix && editor && (
-                <DockAction label="setup" pressed={!!matrixSetup} keyHint={escOn('setup')} title="its rows, columns and cells" onClick={() => useMatrixUi.setState((s) => ({ setup: !s.setup }))} />
+                <DockAction label="setup" pressed={!!matrixSetup} title="its rows, columns and cells" onClick={() => useMatrixUi.setState((s) => ({ setup: !s.setup }))} />
               )}
               {focusedTable && <TablePager piece={focused} editor={editor} />}
               {focusedTable && editor && (
-                <DockAction label="setup" pressed={tableSetup === focused.id} keyHint={escOn('setup')} title="where its rows come from, its columns" onClick={() => useTableUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
+                <DockAction label="setup" pressed={tableSetup === focused.id} title="where its rows come from, its columns" onClick={() => useTableUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
               )}
               {focusedDocuments && <DocumentsTools piece={focused} editor={editor} />}
               {focusedKanban && <KanbanFilterDock piece={focused} />}
               {focusedKanban && <KanbanLanes piece={focused} editor={editor} />}
               {focusedKanban && <KanbanDockTools piece={focused} editor={editor} />}
               {focusedKanban && editor && (
-                <DockAction label="setup" pressed={kanbanSetup === focused.id} keyHint={escOn('setup')} title="what it holds: tasks, or cards by a field" onClick={() => useKanbanUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
+                <DockAction label="setup" pressed={kanbanSetup === focused.id} title="what it holds: tasks, or cards by a field" onClick={() => useKanbanUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
               )}
               {/* A timeline stuck to the deck (D-262): its days in the tasks side view, the deck on the left (D-300). */}
               {focusedKanban &&
@@ -1145,8 +1132,8 @@ export function CanvasView() {
                 />
               )}
               {!isBare(focused) && <ViewMenu editor={editor} />}
-              {/* Always here; `esc` only when Escape does it next (with something open beside, that closes first, D-211). */}
-              <DockAction label="unfocus" keyHint={escNext === 'unfocus' ? 'esc' : undefined} title="back to the canvas" main onClick={unfocus} />
+              {/* Always here, last (Escape does it once nothing beside or open is left, D-211). */}
+              <DockAction label="unfocus" title="back to the canvas" main onClick={unfocus} />
             </FocusDock>
           )}
         </FocusedPlane>
@@ -1157,7 +1144,7 @@ export function CanvasView() {
       {/* And from one open on the canvas (D-228). */}
       {!focused && <LensCardPanel space={null} editor={editor} />}
       {/* The tasks side view (D-300): one, over the canvas and any focus, so going in or out never redraws it. */}
-      {sideOpen && <TasksSide editor={editor} esc={focused ? escNext : null} focusedId={focused && focusArrived && !focusLeaving ? focused.id : null} plane={focused && focusArrived && !focusLeaving && kindOfPiece(focused) === 'plane' ? focused : null} />}
+      {sideOpen && <TasksSide editor={editor} focusedId={focused && focusArrived && !focusLeaving ? focused.id : null} plane={focused && focusArrived && !focusLeaving && kindOfPiece(focused) === 'plane' ? focused : null} />}
       {/* And a task picked on a kanban open on the canvas (D-251), or from a card's panel there (D-254). */}
       {!focused && <TaskPanel editor={editor} />}
       <PeerCursors space={space} toScreen={toScreen} />
@@ -2047,6 +2034,7 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
           <span className={styles.readout}>
             {size.w} × {size.h}
           </span>
+          <ButtonGroup>
           {open && (
             <Button className={styles.tool} data-learn="console-unframe" title={open.on ? 'back into its window' : 'out of its window onto the canvas, live there'} onClick={open.onToggle}>
               {open.on ? 'frame' : 'unframe'}
@@ -2075,13 +2063,14 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
             </Button>
           )}
           {onEdit && (
-            <Button className={styles.tool} pressed title="stop moving, resizing and renaming" onClick={onEdit}>
+            <Button className={styles.tool} tone="primary" title="stop moving, resizing and renaming" onClick={onEdit}>
               done
             </Button>
           )}
+          </ButtonGroup>
         </>
       ) : (
-        <>
+        <ButtonGroup>
           {shared && (
             <Button className={styles.tool} title={`on ${shared.count} canvases: where`} aria-label={`On ${shared.count} canvases`} onClick={(e) => shared.onWhere(under(e))}>
               ⧉ {shared.count}
@@ -2122,7 +2111,7 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
               edit
             </Button>
           )}
-        </>
+        </ButtonGroup>
       )}
     </div>
     </>

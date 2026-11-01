@@ -1,0 +1,66 @@
+/* The one dropdown trigger (D-344): what opens a list, Menu's (`FOR all ▾`, `lanes none ▾`) and Select's (`viewer ▾`),
+   a Button cell with a caps label, a value after a faint rule, `▾`. Open it brightens as a hover does; narrowing what
+   you see (`data-active`, a filter) it's lit as a pressed Button. Menu.module.css and Select.module.css compose these;
+   neither draws its own. */
+.trigger {
+  composes: sm from './Button.module.css';
+  justify-content: flex-start;
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
+}
+
+.trigger[aria-expanded='true'] {
+  background: var(--wash-3);
+  color: var(--fg-strong);
+}
+
+.trigger[data-active='true'] {
+  background: var(--wash-cyan);
+  color: var(--accent-cyan);
+  box-shadow: inset 0 calc(-1 * var(--line-w)) 0 var(--accent-cyan);
+}
+
+/* `FOR`: what it sets, caps, dim. */
+.label {
+  flex: none;
+  color: var(--fg-dim);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+/* The value, after a faint rule when there's a label; cut with `…`. */
+.value {
+  min-width: 0;
+  max-width: 20ch;
+  overflow: hidden;
+  color: var(--fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.label + .value {
+  padding-left: var(--space-2);
+  border-left: var(--line-w) solid var(--line-hover);
+}
+
+.trigger[data-active='true'] .value {
+  color: var(--accent-cyan);
+}
+
+.caret {
+  flex: none;
+  color: var(--fg-faint);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.trigger:hover .caret {
+  color: var(--fg-dim);
+}
+
+.trigger[aria-expanded='true'] .caret {
+  color: var(--fg);
+  transform: rotate(180deg);
+}

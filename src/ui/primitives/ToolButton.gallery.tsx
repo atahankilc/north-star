@@ -10,7 +10,7 @@ export default example({
   place: 'actions/buttons',
   also: ['hud/navigation'],
   file: 'src/ui/primitives/ToolButton.tsx',
-  note: 'the HUD’s icon tool (D-326): the side nav’s fit, compass and ?, the decks-and-days and threads buttons, the settings gear; every icon from hudIcons.tsx, one size (D-343)',
+  note: 'the HUD’s icon tool (D-326): the side nav’s fit, compass and ?, the decks-and-days and threads buttons, the settings gear; every icon from hudIcons.tsx, one size (D-343); a cell like every Button (D-344)',
   states: {
     states: () => (
       <div style={{ display: 'flex', gap: 'var(--space-8)', alignItems: 'center' }}>

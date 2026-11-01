@@ -45,6 +45,7 @@ import styles from './Matrix.module.css'
 import { Tabs } from '../../../ui/primitives/Tabs'
 import { Checkbox } from '../../../ui/primitives/Checkbox'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { Options } from '../../../ui/patterns/Options'
 
@@ -99,7 +100,7 @@ export function Row({ label, hint, children }: { label: string; hint?: string; c
 
 // A setup's switch with a line under it saying what it does: the kit's Checkbox, in the setup's size.
 export function Toggle({ on, label, hint, onChange }: { on: boolean; label: string; hint: string; onChange: (v: boolean) => void }) {
-  return <Checkbox size="xs" checked={on} label={label} hint={hint} onChange={onChange} />
+  return <Checkbox checked={on} label={label} hint={hint} onChange={onChange} />
 }
 
 // Pick one of a few: the kit's framed options (src/ui/patterns/Options.tsx), the picked one cyan.
@@ -141,7 +142,6 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
         <Row label="on">
           <Select
             ariaLabel={`${which}: on which plane`}
-            className={styles.select}
             value={axis.plane ?? ANY}
             options={[{ value: ANY, label: 'any plane' }, ...planes.map((p) => ({ value: p.id, label: p.name || 'unnamed plane' }))]}
             onChange={(v) => onChange({ ...axis, plane: v === ANY ? undefined : v })}
@@ -162,7 +162,7 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
               <span key={item.id} className={styles.pill} data-card={c ? true : undefined} style={c ? { ['--type' as string]: TYPE_ACCENT[c.type] } : undefined} title={c ? c.type : 'a typed name'}>
                 <span className={styles.pillMark} aria-hidden />
                 {c ? c.title || `untitled ${c.type}` : item.name || 'name'}
-                <Button icon tone="danger" className={styles.pillX} aria-label="Take it out" onClick={() => drop(item)}>
+                <Button icon tone="danger" aria-label="Take it out" onClick={() => drop(item)}>
                   ×
                 </Button>
               </span>
@@ -202,12 +202,14 @@ function Unfold({ axis, onChange }: { axis: Axis; onChange: (a: Axis, key?: stri
       />
       {on && all.length > 0 && (
         <>
-          <Button disabled={shown === all.length} onClick={() => onChange({ ...axis, open: all })}>
-            open all
-          </Button>
-          <Button disabled={!shown} onClick={() => onChange({ ...axis, open: undefined })}>
-            fold all
-          </Button>
+          <ButtonGroup>
+            <Button disabled={shown === all.length} onClick={() => onChange({ ...axis, open: all })}>
+              open all
+            </Button>
+            <Button disabled={!shown} onClick={() => onChange({ ...axis, open: undefined })}>
+              fold all
+            </Button>
+          </ButtonGroup>
         </>
       )}
     </Row>
@@ -329,11 +331,13 @@ export function CellsEditor({ setup, onChange }: { setup: MatrixSetup; onChange:
       {setup.cell === 'scale' && (
         <>
           <Row label="start from">
-            {SCALES.map((sc) => (
-              <Button key={sc.key} title="replace the steps" onClick={() => onChange('steps', sc.steps)}>
-                {sc.name}
-              </Button>
-            ))}
+            <ButtonGroup>
+              {SCALES.map((sc) => (
+                <Button key={sc.key} title="replace the steps" onClick={() => onChange('steps', sc.steps)}>
+                  {sc.name}
+                </Button>
+              ))}
+            </ButtonGroup>
           </Row>
           <StepsEditor steps={setup.steps} marks={!!setup.marks} onChange={(steps, key) => onChange('steps', steps, key)} />
           <Row label="show as" hint="squares filled to the step, or the steps' own glyphs">

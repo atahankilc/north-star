@@ -34,6 +34,7 @@ import { useHoldCurtain } from '../../state/curtain'
 import { ago } from '../../ui/foundation/ago'
 import { Appear } from '../../ui/primitives/Appear'
 import { Button } from '../../ui/primitives/Button'
+import { ButtonGroup } from '../../ui/primitives/ButtonGroup'
 import { DecodeText } from '../../ui/primitives/DecodeText'
 import { Field } from '../../ui/primitives/Field'
 import { Label } from '../../ui/primitives/Label'
@@ -475,14 +476,14 @@ function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen }: {
                 <span className={styles.needS}>
                   invited you · {i.memberCount} {i.memberCount === 1 ? 'person' : 'people'}
                 </span>
-                <span className={styles.acts}>
+                <ButtonGroup className={styles.acts}>
                   <Button tone="primary" disabled={busy !== null} onClick={() => runBusy(i.id, async () => (await acceptInvite(i.workspaceId, user), onOpen(i.workspaceId)))}>
                     join
                   </Button>
                   <Button disabled={busy !== null} onClick={() => runBusy(i.id, () => declineInvite(i.workspaceId, user.email ?? ''))}>
                     decline
                   </Button>
-                </span>
+                </ButtonGroup>
               </PieceCard>
             </Appear>
           ))}
@@ -611,12 +612,12 @@ function NameWindow({ title, name, withAbout, onCancel, onDone }: { title: strin
         <h3 className={styles.windowTitle}>{title}</h3>
         <Field value={value} onChange={setValue} label="Name" placeholder="e.g. Pet-sitting marketplace" maxLength={NAME_MAX} onEnter={done} autoFocus />
         {withAbout && <Field value={about} onChange={setAbout} label="What are you building?" placeholder="One line: who it's for and what it does (optional)" maxLength={DESCRIPTION_MAX} multiline />}
-        <span className={styles.windowFoot}>
+        <ButtonGroup className={styles.windowFoot}>
           <Button onClick={onCancel}>cancel</Button>
-          <Button tone="main" disabled={!value.trim()} onClick={done}>
+          <Button tone="primary" disabled={!value.trim()} onClick={done}>
             {withAbout ? 'create' : 'rename'}
           </Button>
-        </span>
+        </ButtonGroup>
       </div>
     </Window>
   )

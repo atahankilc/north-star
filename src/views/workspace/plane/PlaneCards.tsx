@@ -545,8 +545,8 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
             ))}
           </span>
           {editor && (
-            <button /* kit-ok: on the package's band at the world's size */ className={styles.fold} onPointerDown={(e) => e.stopPropagation()} onClick={fold} title="Fold its members into it">
-              [−] {members.length}
+            <button /* kit-ok: on the package's band at the world's size: the Button's cell drawn in world units (D-344) */ className={styles.fold} onPointerDown={(e) => e.stopPropagation()} onClick={fold} title="Fold its members into it">
+              − {members.length}
             </button>
           )}
         </div>
@@ -852,7 +852,7 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
           </span>
         )}
         {parts > 0 && (
-          <button /* kit-ok: a card face's `[+] N parts`, at the world's size */
+          <button /* kit-ok: a card face's `+ N parts`, at the world's size: the Button's cell drawn in world units (D-344) */
             className={styles.fold}
             disabled={!editor}
             title={card.type === 'package' ? 'Lay what it holds out on the plane' : card.folded ? 'Unfold its parts onto the plane' : 'Fold its parts into it'}
@@ -861,7 +861,7 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
               void (card.type === 'package' ? foldPackage(wid, card, null) : foldCard(wid, card, !card.folded))
             }
           >
-            {card.type === 'package' ? `[+] ${parts} inside` : `[${card.folded ? '+' : '−'}] ${parts} part${parts === 1 ? '' : 's'}`}
+            {card.type === 'package' ? `+ ${parts} inside` : `${card.folded ? '+' : '−'} ${parts} part${parts === 1 ? '' : 's'}`}
           </button>
         )}
       </span>

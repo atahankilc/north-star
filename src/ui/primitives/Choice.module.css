@@ -1,7 +1,7 @@
-/* `priority  [P1] P2 P3`: one-of choice row (docs/DESIGN.md §6 bracket language). */
+/* `priority  P1 P2 P3`: a one-of choice row; the options are Button cells in a ButtonGroup (D-344). */
 .row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-4);
 }
 
@@ -10,57 +10,4 @@
   flex-shrink: 0;
   /* Settings sets one column for all its rows (D-093). */
   width: var(--label-w, 10ch);
-}
-
-.options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-2);
-}
-
-.empty {
-  color: var(--fg-faint);
-  font-size: var(--text-xs);
-}
-
-.option {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  font-size: var(--text-sm);
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.option::before {
-  content: '[';
-  color: transparent;
-}
-
-.option::after {
-  content: ']';
-  color: transparent;
-}
-
-.option:hover {
-  color: var(--fg-strong);
-}
-
-.option[data-active='true'] {
-  color: var(--fg-strong);
-}
-
-.option[data-active='true']::before,
-.option[data-active='true']::after {
-  color: var(--accent-cyan);
-}
-
-.option[data-tone] {
-  color: var(--fg-dim);
-}
-
-.option[data-active='true'][data-tone] {
-  color: var(--tone);
 }

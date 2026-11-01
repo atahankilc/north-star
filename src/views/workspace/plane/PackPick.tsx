@@ -9,6 +9,7 @@ import { useWs } from '../canvas/context'
 import { packageThese, setSelection } from '../canvas/selection'
 import styles from './PackPick.module.css'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Label } from '../../../ui/primitives/Label'
 
 export function PackPick({ cards }: { cards: Card[] }) {
@@ -41,12 +42,14 @@ export function PackPick({ cards }: { cards: Card[] }) {
     <Appear className={styles.strip} role="group" aria-label="Pick a package's cards">
       <Label className={styles.kind}>package</Label>
       <span>{picked.length ? `${picked.length} picked` : 'click cards or drag a box round them'}</span>
-      <Button className={styles.make} disabled={!picked.length} onClick={make}>
-        package {picked.length || ''}
-      </Button>
-      <Button keyHint="esc" onClick={stop}>
-        cancel
-      </Button>
+      <ButtonGroup>
+        <Button tone="primary" disabled={!picked.length} onClick={make}>
+          package {picked.length || ''}
+        </Button>
+        <Button onClick={stop}>
+          cancel
+        </Button>
+      </ButtonGroup>
     </Appear>
   )
 }

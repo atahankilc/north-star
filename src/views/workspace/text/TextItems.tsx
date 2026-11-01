@@ -61,6 +61,7 @@ import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLa
 import { headingSize, kickPx, labelBox, STICKY_TEXT_TOP, type HeadingSize } from '../../../model/labelBox'
 import { AUTOSAVE_MS, DRAG_PX } from '../../../ui/foundation/feel'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 export { labelBox } from '../../../model/labelBox'
 
 // Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
@@ -912,43 +913,53 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
   const sizes = named ? SIZES : kind === 'paragraph' || kind === 'sticky' ? SCALES : []
   return (
     <div className={styles.bar} data-learn="text-bar" data-screen-sized style={{ transform: `scale(${1 / zoom})` }} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
-      {sizes.map(([s, name]) => (
-        <Button key={s} pressed={named ? headingSize(l) === s : scale === s} onClick={() => set(named ? { size: s as HeadingSize } : { scale: s as TextScale })}>
-          {name}
-        </Button>
-      ))}
+      {sizes.length > 0 && (
+        <ButtonGroup label="Size">
+          {sizes.map(([s, name]) => (
+            <Button key={s} pressed={named ? headingSize(l) === s : scale === s} onClick={() => set(named ? { size: s as HeadingSize } : { scale: s as TextScale })}>
+              {name}
+            </Button>
+          ))}
+        </ButtonGroup>
+      )}
       {kind !== 'sticky' && (
         <>
           <span className={styles.rule2} />
-          <Button pressed={!!l.bold} title="bold" style={{ fontWeight: 'var(--weight-bold)' }} onClick={() => set({ bold: l.bold ? undefined : true })}>
-            B
-          </Button>
-          <Button pressed={!!l.italic} title="italic" style={{ fontStyle: 'italic' }} onClick={() => set({ italic: l.italic ? undefined : true })}>
-            I
-          </Button>
-          <Button pressed={!!l.caps} title="capitals" onClick={() => set({ caps: l.caps ? undefined : true })}>
-            AA
-          </Button>
+          <ButtonGroup label="Style">
+            <Button icon pressed={!!l.bold} title="bold" style={{ fontWeight: 'var(--weight-bold)' }} onClick={() => set({ bold: l.bold ? undefined : true })}>
+              B
+            </Button>
+            <Button icon pressed={!!l.italic} title="italic" style={{ fontStyle: 'italic' }} onClick={() => set({ italic: l.italic ? undefined : true })}>
+              I
+            </Button>
+            <Button icon pressed={!!l.caps} title="capitals" onClick={() => set({ caps: l.caps ? undefined : true })}>
+              AA
+            </Button>
+          </ButtonGroup>
         </>
       )}
       {(kind === 'heading' || kind === 'paragraph') && (
         <>
           <span className={styles.rule2} />
-          {TURNS.map(([t, glyph, name]) => (
-            <Button key={t} pressed={l.rotate === t} aria-label={name} title={name} onClick={() => set({ rotate: l.rotate === t ? undefined : t })}>
-              {glyph}
-            </Button>
-          ))}
+          <ButtonGroup label="Turn">
+            {TURNS.map(([t, glyph, name]) => (
+              <Button key={t} icon pressed={l.rotate === t} aria-label={name} title={name} onClick={() => set({ rotate: l.rotate === t ? undefined : t })}>
+                {glyph}
+              </Button>
+            ))}
+          </ButtonGroup>
         </>
       )}
       {kind === 'section' && (
         <>
           <span className={styles.rule2} />
-          {SIDES.map(([s, glyph, name]) => (
-            <Button key={s} pressed={(l.side ?? 'top') === s} title={name} onClick={() => set({ side: s === 'left' ? 'left' : undefined })}>
-              {glyph}
-            </Button>
-          ))}
+          <ButtonGroup label="Name's edge">
+            {SIDES.map(([s, glyph, name]) => (
+              <Button key={s} icon pressed={(l.side ?? 'top') === s} title={name} onClick={() => set({ side: s === 'left' ? 'left' : undefined })}>
+                {glyph}
+              </Button>
+            ))}
+          </ButtonGroup>
         </>
       )}
       <span className={styles.rule2} />
@@ -964,12 +975,14 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
         />
       ))}
       <span className={styles.rule2} />
-      <Button title="or double-click it" onClick={() => useCanvasView.setState({ labelEditing: l.id })}>
-        {kind === 'section' ? 'rename' : 'edit'}
-      </Button>
-      <Button tone="danger" title={kind === 'section' ? 'delete (Delete); what it holds stays' : 'delete (Delete)'} onClick={() => void deleteLabel(wid, l)}>
-        delete
-      </Button>
+      <ButtonGroup>
+        <Button title="or double-click it" onClick={() => useCanvasView.setState({ labelEditing: l.id })}>
+          {kind === 'section' ? 'rename' : 'edit'}
+        </Button>
+        <Button tone="danger" title={kind === 'section' ? 'delete (Delete); what it holds stays' : 'delete (Delete)'} onClick={() => void deleteLabel(wid, l)}>
+          delete
+        </Button>
+      </ButtonGroup>
     </div>
   )
 }

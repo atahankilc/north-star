@@ -11,6 +11,7 @@ export default example({
   name: 'Choice',
   place: 'forms/pickers',
   file: 'src/ui/primitives/Choice.tsx',
+  note: 'Tabs’ segments (D-344): every one-of-several in the app (priorities, statuses, the card panel’s rows, documents’ table | shelf)',
   states: {
     picked: () => <Pick start="P2" />,
     'none picked': () => <Pick />,

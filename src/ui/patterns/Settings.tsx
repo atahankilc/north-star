@@ -10,6 +10,7 @@ import { useMotion, type MotionPref } from '../../state/motion'
 import { themeAccent, useTheme, type ThemePref } from '../../state/theme'
 import { AgentSettings } from '../../agent/ui/AgentSettings'
 import { Button } from '../primitives/Button'
+import { Avatar } from '../primitives/Avatar'
 import { Choice } from '../primitives/Choice'
 import { SettingsTool } from './SettingsTool'
 import styles from './Settings.module.css'
@@ -94,9 +95,7 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
     <>
       <button className={styles.account} onClick={() => show('account')} aria-haspopup="dialog" aria-label={`Account: ${who}`} title={who}>
         {/* In a workspace, your square is in the colour the others see you in (D-067). */}
-        <span className={styles.chipAvatar} style={myColor ? { background: themeAccent(myColor, theme) } : undefined} aria-hidden>
-          {who.trim()[0]?.toUpperCase()}
-        </span>
+        <Avatar name={who} color={myColor ? themeAccent(myColor, theme) : 'var(--accent-cyan)'} />
       </button>
       <SettingsTool open={open} waiting={badge} onClick={() => show()} />
       <dialog
@@ -173,9 +172,9 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
               {workspace && WORKSPACE_PAGES.includes(current.id) && workspace(current.id as WorkspacePage)}
             </div>
 
-            <button className={styles.close} onClick={() => setOpen(false)} aria-label="Close settings">
-              [×]
-            </button>
+            <Button icon className={styles.close} onClick={() => setOpen(false)} aria-label="Close settings" title="Close (Esc)">
+              ×
+            </Button>
           </div>
         )}
       </dialog>

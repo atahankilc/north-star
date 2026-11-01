@@ -58,6 +58,7 @@ import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
 import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
 import { useKanbanSizes } from '../canvas/sizes'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Field } from '../../../ui/primitives/Field'
@@ -554,7 +555,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
           </div>
         ))}
         {live && editor && cols.length < KANBAN_COLS_MAX && (
-          <Button icon className={styles.addCol} onPointerDown={own} onClick={addCol} title="add a column">
+          <Button className={styles.addCol} onPointerDown={own} onClick={addCol} title="add a column">
             + column
           </Button>
         )}
@@ -670,7 +671,7 @@ function SoonBand({ piece, tasks, live, picked, onPick, onPress }: { piece: With
   const weekday = (due: string) => new Date(Date.UTC(+due.slice(0, 4), +due.slice(5, 7) - 1, +due.slice(8, 10))).toLocaleString('en', { weekday: 'short', timeZone: 'UTC' }).toLowerCase()
   return (
     <div className={styles.soon} onPointerDown={live ? onPress : undefined}>
-      <Button icon className={styles.soonFold} onClick={live ? fold : undefined} aria-expanded={!folded} title={folded ? 'show what’s due' : 'fold it'}>
+      <Button onClick={live ? fold : undefined} aria-expanded={!folded} title={folded ? 'show what’s due' : 'fold it'}>
         {folded ? '▸' : '▾'} <span className={styles.soonName}>soon</span>
       </Button>
       {folded ? (
@@ -840,29 +841,29 @@ function ColumnHead({ col, n, count, holds, live, editor, naming, first, last, a
     )
   // Its tools, after the count while it's hovered (D-252): `≤` the limit, `‹ ›` move it, `✓` the finished one, `×`.
   const toolRow = tools && (
-    <span className={styles.tools}>
-      <Button icon className={styles.tool} data-limit pressed={!!col.limit} title={col.limit ? `at most ${col.limit}: change or take away` : 'how many it should hold at most'} aria-label="Column limit" onClick={() => setLimiting(col.limit ? String(col.limit) : '')}>
+    <ButtonGroup className={styles.tools}>
+      <Button icon pressed={!!col.limit} title={col.limit ? `at most ${col.limit}: change or take away` : 'how many it should hold at most'} aria-label="Column limit" onClick={() => setLimiting(col.limit ? String(col.limit) : '')}>
         ≤
       </Button>
       {!first && (
-        <Button icon className={styles.tool} title="move it left" aria-label="Move the column left" onClick={() => onMove(-1)}>
+        <Button icon title="move it left" aria-label="Move the column left" onClick={() => onMove(-1)}>
           ‹
         </Button>
       )}
       {!last && (
-        <Button icon className={styles.tool} title="move it right" aria-label="Move the column right" onClick={() => onMove(1)}>
+        <Button icon title="move it right" aria-label="Move the column right" onClick={() => onMove(1)}>
           ›
         </Button>
       )}
-      <Button icon className={styles.tool} data-done pressed={!!col.done} title={col.done ? 'not the finished column' : 'its tasks are finished: their due days stop warning'} aria-label="Finished column" onClick={onDone}>
+      <Button icon pressed={!!col.done} style={{ ['--button-on' as string]: 'var(--accent-green)' }} title={col.done ? 'not the finished column' : 'its tasks are finished: their due days stop warning'} aria-label="Finished column" onClick={onDone}>
         ✓
       </Button>
       {!alone && (
-        <Button icon tone="danger" className={styles.tool} title={count ? `take it away: its ${count} task${count > 1 ? 's go' : ' goes'} to the column ${first ? 'after' : 'before'} it` : 'take it away'} aria-label="Delete the column" onClick={onDelete}>
+        <Button icon tone="danger" title={count ? `take it away: its ${count} task${count > 1 ? 's go' : ' goes'} to the column ${first ? 'after' : 'before'} it` : 'take it away'} aria-label="Delete the column" onClick={onDelete}>
           ×
         </Button>
       )}
-    </span>
+    </ButtonGroup>
   )
   // The kit's rule (D-326): `01 TODO ──── 5`, the tools after it (beside the rule, so hidden they take no room); the head
   // keeps its own presses and its over state.
@@ -958,7 +959,6 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, 
       )}
       {learn && (
         <Button
-          icon
           tone="primary"
           className={styles.learn}
           title="log what it taught on its card, as evidence"
@@ -983,7 +983,7 @@ function AddTask({ open, quiet, onPress, onOpen, onClose, onAdd }: AddProps) {
   const [draft, setDraft] = useState('')
   if (!open)
     return (
-      <Button icon className={styles.add} data-quiet={quiet || undefined} onPointerDown={onPress} onClick={onOpen}>
+      <Button className={styles.add} data-quiet={quiet || undefined} onPointerDown={onPress} onClick={onOpen}>
         + add a task
       </Button>
     )

@@ -37,7 +37,7 @@ export default example({
   name: 'SidePanel',
   place: 'panels/frame',
   file: 'src/ui/patterns/SidePanel.tsx',
-  note: 'every right panel (D-219): 400 px, flush right, full height; with PanelSection and PanelAction',
+  note: 'every right panel (D-219): 400 px, flush right, full height; with PanelSection and PanelAction; its × and its foot Button cells, joined (D-344)',
   states: {
     default: { size: 'full', render: () => <Problem /> },
     'long title': {

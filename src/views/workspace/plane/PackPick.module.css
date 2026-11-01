@@ -5,9 +5,9 @@
   left: 50%;
   z-index: var(--z-panel);
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-3) var(--space-2);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
   border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
   color: var(--fg-dim);
@@ -40,12 +40,8 @@
   border-right: var(--line-w) solid var(--accent-blue);
 }
 
-/* The package's colour on its kind and its make (the rest the kit's: Label, Button), in the strip so it wins over the
-   kit's own colour whatever order the stylesheets load in. */
+/* The package's colour on its kind (the rest the kit's: Label, Button; `package N` the strip's one go, D-344), in the
+   strip so it wins over the kit's own colour whatever order the stylesheets load in. */
 .strip .kind {
-  color: var(--accent-blue);
-}
-
-.strip .make:not(:disabled) {
   color: var(--accent-blue);
 }

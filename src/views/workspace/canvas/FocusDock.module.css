@@ -8,9 +8,9 @@
   bottom: 0;
   z-index: var(--z-2);
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-4) var(--space-2);
+  padding: var(--space-1);
   border: var(--line-w) solid var(--piece-edge);
   border-bottom: 0;
   /* On the piece in focus: the screen's black (D-289). */
@@ -66,6 +66,10 @@
 /* Its own colour over the kit's label (which can come again later): outweighs it. */
 .dock .name {
   color: var(--fg);
+}
+
+.name {
+  padding-left: var(--space-2);
 }
 
 .sep {

@@ -36,7 +36,7 @@ export default example({
   states: {
     cursors: screen({ then: here([AYLA({ x: 420, y: 330 }), JONAS({ x: 1850, y: 300 })]) }),
     'their selections': screen({ focus: P.lunch, then: here([AYLA({ plane: P.lunch, sel: 'i-preorder', x: 120, y: 560 }), JONAS({ plane: P.lunch, sel: 'r-greasy', more: 'r-break', x: 300, y: 200 })], null, true) }),
-    following: { ...screen({ then: here([AYLA({ x: 600, y: 360 }), JONAS({ x: 2000, y: 400 })], 'u-ayla') }), note: 'the page framed in her colour, `following Ayla · esc to stop`' },
+    following: { ...screen({ then: here([AYLA({ x: 600, y: 360 }), JONAS({ x: 2000, y: 400 })], 'u-ayla') }), note: 'the page framed in her colour, `following Ayla · stop`' },
     'following into a plane': screen({ focus: P.lunch, then: here([AYLA({ plane: P.lunch, x: 330, y: 300, sel: 'i-shelf' })], 'u-ayla', true) }),
     'a task held by someone': {
       ...screen({ only: [P.deck], focus: P.deck, then: here([AYLA({ plane: P.deck, drag: `${PAZAR.tasks[0].id} 300 120 1` })], null, true) }),

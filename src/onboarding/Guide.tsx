@@ -20,6 +20,7 @@ import { PromptField } from '../ui/primitives/PromptField'
 import { Tabs } from '../ui/primitives/Tabs'
 import { Label } from '../ui/primitives/Label'
 import { Empty } from '../ui/primitives/Empty'
+import { Button } from '../ui/primitives/Button'
 
 type Props = {
   onClose: () => void
@@ -364,17 +365,18 @@ function RowView({ row: r, model, picked, typed, onClick, onFold }: { row: Row; 
         <span className={styles.what}>{a ? `${a.seen} / ${a.notes.length} seen` : ''}</span>
         {a?.isNew && <New />}
         {!typed && (
-          <button /* kit-ok: a framed count that folds its row, like the finder's [▸ N inside] */
-            type="button"
+          <Button
+            icon
             tabIndex={-1}
             className={styles.fold}
             aria-hidden
+            pressed={r.open}
             title={r.open ? 'fold (←)' : 'open (→)'}
             onMouseDown={(e) => e.preventDefault()}
             onClick={(e) => (e.stopPropagation(), onFold())}
           >
             {r.open ? '▾' : '▸'} {count}
-          </button>
+          </Button>
         )}
       </div>
     )

@@ -1238,3 +1238,18 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Verified: tsc (app, evals), vitest (agentPipeline.test.ts: roles, models, a pipeline run turn by turn, the record's
   sums, items kept to their model), stub evals 0 failed, `--wrong` 116 failed, a recorded run and a compare of terra
   and sonnet (old zero-cost attempts priced from tokens).
+
+## Done (2026-11-01): buttons are cells (D-344)
+- Preview with two rounds of options on a local port (docs/specs/button-preview/index.html: A–G, H–L); the user
+  picked H. Button (`sm` 24 px cell, `icon` 24 × 24, `md` 36 white, tones main/primary/danger/hazard, pressed, no
+  `keyHint`), ToolButton a 30 px cell, ButtonGroup (new), Choice on it, Menu's four triggers composed from the cell,
+  SidePanel's `[×] esc`, Settings' `[×]`, Window's close, the toast's `[undo]`, the hazard confirm (hazard tone), the
+  wizard foot (make primary), FocusDock wrapping its actions in a group; key hints beside buttons removed (the `esc`
+  prop chain in CanvasView/Beside/TasksSide/DocumentPiece deleted). Three helper sessions removed the ~50 local
+  overrides and raw buttons by area (agent/onboarding/workspaces/settings; panels/threads/find/documents/deck;
+  canvas/plane/text/matrix/table). Avatar (new) replaced three hand-made person squares.
+- Verified: see D-344's Verified line. Round 3 (controls.html) waits on the user.
+- Round 3 (same day): G1 + F3 picked. Checkbox as a toggle cell (+ CheckMark), Tabs as cells (Choice on Tabs, Steps
+  on its cell), one Trigger.module.css for Menu and Select, Pills deleted for Choice, hand-made `[x]`s and option rows
+  moved onto the kit. Verified: tsc, check:kit/tokens/gallery/lessons, vitest 983/0, build; gallery shots of Checkbox,
+  Tabs, Choice, Steps, Select, Menu, the task panel.

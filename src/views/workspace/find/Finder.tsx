@@ -29,6 +29,7 @@ import { useDocUi } from '../documents/Documents'
 import { TYPE_ACCENT } from '../plane/PlaneCards'
 import styles from './Finder.module.css'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 import { PromptField } from '../../../ui/primitives/PromptField'
 import { Tabs } from '../../../ui/primitives/Tabs'
@@ -495,17 +496,17 @@ function PreviewHead({ dest, zoom, onZoom, drawing }: { dest: Dest | null; zoom:
         preview{drawing && <span className={styles.drawing}> · drawing…</span>}
       </span>
       <span className={styles.previewWhere}>{where}</span>
-      <span className={styles.zoom} role="group" aria-label="Preview zoom">
-        <Button disabled={zoom <= ZOOM.min} title="zoom out (wheel)" aria-label="Zoom out" onClick={() => onZoom(zoom / ZOOM.step)}>
+      <ButtonGroup className={styles.zoom} label="Preview zoom">
+        <Button icon disabled={zoom <= ZOOM.min} title="zoom out (wheel)" aria-label="Zoom out" onClick={() => onZoom(zoom / ZOOM.step)}>
           −
         </Button>
-        <Button icon className={styles.zoomAt} title="back to 100 %" onClick={() => onZoom(1)}>
+        <Button icon title="back to 100 %" onClick={() => onZoom(1)}>
           {Math.round(zoom * 100)}%
         </Button>
-        <Button disabled={zoom >= ZOOM.max} title="zoom in (wheel)" aria-label="Zoom in" onClick={() => onZoom(zoom * ZOOM.step)}>
+        <Button icon disabled={zoom >= ZOOM.max} title="zoom in (wheel)" aria-label="Zoom in" onClick={() => onZoom(zoom * ZOOM.step)}>
           +
         </Button>
-      </span>
+      </ButtonGroup>
     </div>
   )
 }

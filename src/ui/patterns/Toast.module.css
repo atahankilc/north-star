@@ -4,6 +4,8 @@
   left: 50%;
   bottom: calc(var(--hud-y) + var(--space-12));
   z-index: var(--z-float);
+  display: flex;
+  align-items: center;
   padding: var(--space-2) var(--space-4);
   color: var(--fg);
   font-size: var(--text-sm);
@@ -17,7 +19,8 @@
 }
 
 .toast::before {
-  content: '› ';
+  content: '›';
+  margin-right: 1ch;
   color: var(--accent-cyan);
 }
 
@@ -31,31 +34,12 @@ html[data-motion='reduced'] .toast {
   transition: none;
 }
 
-/* Something to do from it (D-302's session 2): a bracketed action, cyan, the one part that takes a click. */
+/* Something to do from it (D-302's session 2): the toast's one action, a solid Button cell (D-344); it only takes a
+   click while the toast shows. */
 .action {
   margin-left: var(--space-3);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent-cyan);
-  font: inherit;
-  cursor: pointer;
-}
-
-.action::before {
-  content: '[';
-  color: var(--fg-faint);
-}
-
-.action::after {
-  content: ']';
-  color: var(--fg-faint);
 }
 
 .toast[data-visible='true'] .action {
   pointer-events: auto;
-}
-
-.action:hover {
-  color: var(--fg-strong);
 }

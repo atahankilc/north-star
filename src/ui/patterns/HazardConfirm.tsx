@@ -9,6 +9,7 @@ import { runCells } from '../primitives/Appear'
 import { CELL_PX } from '../foundation/cellReveal'
 import { DecodeText } from '../primitives/DecodeText'
 import { Button } from '../primitives/Button'
+import { ButtonGroup } from '../primitives/ButtonGroup'
 import styles from './HazardConfirm.module.css'
 import { DUR } from '../foundation/motion'
 
@@ -146,18 +147,21 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
             <DecodeText text={line} duration={500} delay={160 + i * 60} />
           </p>
         ))}
+        {/* Cancel the strong one (focused), deleting the solid magenta one: here deleting is the point (D-344). */}
         <div className={styles.actions}>
-          <Button ref={cancelBtn} className={styles.action} onClick={() => leave(onCancel)}>
-            cancel
-          </Button>
-          {also && (
-            <Button ref={alsoBtn} className={styles.action} onClick={() => leave(also.onSelect)}>
-              {also.label}
+          <ButtonGroup>
+            <Button ref={cancelBtn} tone="main" onClick={() => leave(onCancel)}>
+              cancel
             </Button>
-          )}
-          <Button className={`${styles.action} ${styles.danger}`} onClick={() => leave(onConfirm)}>
-            {confirm}
-          </Button>
+            {also && (
+              <Button ref={alsoBtn} onClick={() => leave(also.onSelect)}>
+                {also.label}
+              </Button>
+            )}
+            <Button tone="hazard" onClick={() => leave(onConfirm)}>
+              {confirm}
+            </Button>
+          </ButtonGroup>
         </div>
       </div>
     </dialog>,

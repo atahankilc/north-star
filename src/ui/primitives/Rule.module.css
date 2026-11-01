@@ -38,11 +38,9 @@
   text-transform: none;
 }
 
-/* `+ tag` at the right end: a Button with no brackets, its `+` magenta. Two classes, so it wins over Button's own. */
-.rule .add {
-  padding: 0;
-  letter-spacing: normal;
-  text-transform: none;
+/* `+ tag` at the right end: a Button cell (D-344), its `+` magenta. */
+.add {
+  flex: none;
 }
 
 .plus {

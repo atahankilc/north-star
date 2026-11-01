@@ -40,6 +40,7 @@ import m from '../matrix/Matrix.module.css'
 import styles from './Table.module.css'
 import { Tabs } from '../../../ui/primitives/Tabs'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Options } from '../../../ui/patterns/Options'
 
@@ -137,7 +138,7 @@ export function RowsEditor({ setup, onChange, onRemoveItem, cardsOnly }: EditorP
               <span key={item.id} className={m.pill} data-card={c ? true : undefined} style={c ? { ['--type' as string]: TYPE_ACCENT[c.type] } : undefined} title={c ? c.type : 'a typed name'}>
                 <span className={m.pillMark} aria-hidden />
                 {c ? c.title || `untitled ${c.type}` : item.name || 'name'}
-                <Button icon tone="danger" className={m.pillX} aria-label="Take it out" onClick={() => drop(item)}>
+                <Button icon tone="danger" aria-label="Take it out" onClick={() => drop(item)}>
                   ×
                 </Button>
               </span>
@@ -165,7 +166,6 @@ function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: bool
       <span className={m.choices}>
         <Select<string>
           ariaLabel="What it looks at"
-          className={m.select}
           value={rule.field}
           options={RULE_FIELDS.map((f) => ({ value: f, label: f }))}
           onChange={(f) => onChange({ field: f as RuleField, values: [], ...(rule.not ? { not: true } : {}) })}
@@ -194,7 +194,7 @@ function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: bool
             · auto
           </span>
         )}
-        <Button icon tone="danger" className={m.pillX} title="take the rule out" aria-label="Take the rule out" onClick={onRemove}>
+        <Button icon tone="danger" title="take the rule out" aria-label="Take the rule out" onClick={onRemove}>
           ×
         </Button>
       </span>
@@ -256,12 +256,14 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
           </li>
           {cols.map((c, i) => (
             <li key={c.id} className={styles.colItem}>
-              <Button disabled={i === 0} title="move it left" aria-label="Move left" onClick={() => move(i, -1)}>
-                ‹
-              </Button>
-              <Button disabled={i === cols.length - 1} title="move it right" aria-label="Move right" onClick={() => move(i, 1)}>
-                ›
-              </Button>
+              <ButtonGroup label="Move it">
+                <Button icon disabled={i === 0} title="move it left" aria-label="Move left" onClick={() => move(i, -1)}>
+                  ‹
+                </Button>
+                <Button icon disabled={i === cols.length - 1} title="move it right" aria-label="Move right" onClick={() => move(i, 1)}>
+                  ›
+                </Button>
+              </ButtonGroup>
               {c.field ? (
                 <span className={styles.colFixed}>{colName(c)}</span>
               ) : (
@@ -282,7 +284,6 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
                   {c.kind === 'scale' && (
                     <Select<string>
                       ariaLabel="Its steps"
-                      className={m.select}
                       value={SCALES.find((s) => JSON.stringify(s.steps) === JSON.stringify(c.steps ?? DEFAULT_STEPS))?.key ?? 'own'}
                       options={[...SCALES.map((s) => ({ value: s.key, label: `${s.name}  ${s.steps.map((x) => x.glyph).join('')}` })), { value: 'own', label: 'its own steps' }]}
                       onChange={(k) => {
@@ -293,7 +294,7 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
                   )}
                 </>
               )}
-              <Button icon tone="danger" className={m.pillX} title="take the column out (its values go; ⌘Z brings them back)" aria-label={`Take ${colName(c)} out`} onClick={() => drop(c)}>
+              <Button icon tone="danger" title="take the column out (its values go; ⌘Z brings them back)" aria-label={`Take ${colName(c)} out`} onClick={() => drop(c)}>
                 ×
               </Button>
             </li>
@@ -323,7 +324,6 @@ export function ViewEditor({ setup, onChange }: EditorProps) {
         <span className={m.choices}>
           <Select<string>
             ariaLabel="Sort by"
-            className={m.select}
             value={setup.sort?.col ?? NONE}
             options={[{ value: NONE, label: 'as they come' }, { value: NAME_COL, label: setup.manual ? 'name' : 'title' }, ...setup.cols.map((c) => ({ value: c.id, label: colName(c) }))]}
             onChange={(v) => onChange('sort', v === NONE ? undefined : { col: v, ...(setup.sort?.desc ? { desc: true } : {}) })}

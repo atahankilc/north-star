@@ -41,7 +41,7 @@
 
 .top {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-6) 0;
 }
@@ -53,33 +53,9 @@
   text-transform: uppercase;
 }
 
-/* More along the top, before `[×]` (D-300: `[full]`, `‹ back`). */
+/* More along the top, joined with the `×` (D-300: `full`, `‹ back`; D-344). */
 .tools {
-  display: flex;
-  gap: var(--space-3);
   margin-left: auto;
-}
-
-.tools + .close {
-  margin-left: 0;
-}
-
-.close {
-  margin-left: auto;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
-}
-
-.close:hover {
-  color: var(--fg-strong);
-}
-
-.br {
-  color: var(--fg-faint);
 }
 
 /* The title in Inter, under a rule. */
@@ -122,7 +98,8 @@
 
 .foot {
   display: flex;
-  gap: var(--space-4);
+  /* The foot's actions joined, a hairline between their cells (as a ButtonGroup, D-344); a danger one apart. */
+  gap: var(--line-w);
   padding: var(--space-3) var(--space-6) var(--space-3);
   border-top: var(--line-w) solid var(--line);
 }

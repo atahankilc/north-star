@@ -1,5 +1,5 @@
 // The threads panel (D-166): every conversation in the workspace in one place, opened from the board's bottom-left
-// corner. Like the assistant's chat window: a header with views as bracket actions (all · new · mentions · resolved),
+// corner. Like the assistant's chat window: a header with views as tabs (all · new · mentions · resolved, D-344),
 // then one row per thread, newest first: what it's on, who wrote last and how it began, when, how many messages, and
 // the plane it's on when that isn't the open one (D-168: going there switches to it); new
 // ones (someone else wrote since you last read it) lit magenta, `@` where you're mentioned. A row opens the thread
@@ -16,6 +16,8 @@ import { runCells } from '../../../ui/primitives/Appear'
 import { DURATION_MS, CELLS_SHUT } from '../../../ui/foundation/cellReveal'
 import { CommentIcon, myUid, ThreadPanel, toggleInbox, useThreadView } from './Threads'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
+import { Tabs } from '../../../ui/primitives/Tabs'
 import styles from './Threads.module.css'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
@@ -203,16 +205,16 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
       <div ref={listEl} className={styles.listInner}>
       <header className={styles.head}>
         <span className={styles.title}>threads</span>
-        <span className={styles.actions}>
+        <ButtonGroup className={styles.actions}>
           {counts.new > 0 && (
-            <Button className={styles.action} onClick={markAll}>
+            <Button onClick={markAll}>
               mark all read
             </Button>
           )}
-          <Button className={styles.close} icon tone="danger" aria-label="Close threads" onClick={() => toggleInbox(false)}>
-            [×]
+          <Button icon aria-label="Close threads" title="close" onClick={() => toggleInbox(false)}>
+            ×
           </Button>
-        </span>
+        </ButtonGroup>
       </header>
       {/* What you're looking at, always said (D-195): the whole workspace, or what's inside one plane. */}
       {/* With several canvases (D-302's session 4), the one shown too: `on this canvas`. */}
@@ -222,7 +224,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
             <span>
               on <b>{canvasScope!.name}</b>
             </span>
-            <Button className={styles.action} onClick={() => useThreadView.setState({ scope: null })}>
+            <Button onClick={() => useThreadView.setState({ scope: null })}>
               whole workspace
             </Button>
           </>
@@ -231,7 +233,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
             <span>
               inside <b>{scopeName?.(scope) ?? 'a plane'}</b>
             </span>
-            <Button className={styles.action} onClick={() => useThreadView.setState({ scope: null })}>
+            <Button onClick={() => useThreadView.setState({ scope: null })}>
               whole workspace
             </Button>
           </>
@@ -239,20 +241,24 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
           <>
             <span>whole workspace</span>
             {canvasScope && (
-              <Button className={styles.action} onClick={() => useThreadView.setState({ scope: THIS_CANVAS })}>
+              <Button onClick={() => useThreadView.setState({ scope: THIS_CANVAS })}>
                 on this canvas
               </Button>
             )}
           </>
         )}
       </div>
-      <nav className={styles.views} aria-label="Which threads">
-        {(['all', 'new', 'mentions', 'resolved'] as const).map((v) => (
-          <Button key={v} className={styles.action} pressed={view === v} data-lit={(v === 'new' && counts.new > 0) || undefined} onClick={() => setView(v)}>
-            {v}
-            {counts[v] > 0 && ` ${counts[v]}`}
-          </Button>
-        ))}
+      <nav className={styles.views}>
+        <Tabs<View>
+          label="Which threads"
+          value={view}
+          onChange={setView}
+          options={(['all', 'new', 'mentions', 'resolved'] as const).map((v) => ({
+            value: v,
+            label: v,
+            count: counts[v] > 0 ? <span className={v === 'new' ? styles.lit : undefined}>{counts[v]}</span> : undefined,
+          }))}
+        />
       </nav>
       <ol className={styles.rows}>
         {rows.length === 0 && (

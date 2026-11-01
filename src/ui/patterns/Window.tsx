@@ -145,7 +145,7 @@ export function Window({
     <>
       {close && onClose && (
         <span className={styles.close}>
-          <Button keyHint="esc" aria-label="close" onClick={onClose}>
+          <Button icon aria-label="close" title="Close (Esc)" onClick={onClose}>
             ×
           </Button>
         </span>

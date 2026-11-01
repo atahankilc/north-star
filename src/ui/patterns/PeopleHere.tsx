@@ -9,6 +9,7 @@ import { usePresence, type Peer } from '../../data/presence'
 import { useThemeAccent } from '../../state/theme'
 import { useWs } from '../../views/workspace/canvas/context'
 import styles from './PeopleHere.module.css'
+import { Avatar } from '../primitives/Avatar'
 
 // Squares shown before `+N`.
 const MAX = 4
@@ -83,9 +84,9 @@ export function PeopleHere() {
                 aria-pressed={on}
                 onClick={() => toggle(p)}
               >
-                <Swatch p={p} />
+                <Avatar name={p.name} photo={p.photo} color={tone(p.color)} away={p.away} className={styles.swatch} />
                 <span className={styles.tip} aria-hidden>
-                  {p.name} <span className={styles.where}>· {on ? 'esc to stop' : where(p)}</span>
+                  {p.name} <span className={styles.where}>· {on ? 'click to stop' : where(p)}</span>
                 </span>
               </button>
             </li>
@@ -109,7 +110,7 @@ export function PeopleHere() {
           {peers.map((p) => (
             <li key={p.uid}>
               <button className={styles.row} style={{ ['--peer' as string]: tone(p.color) }} data-away={p.away || undefined} aria-pressed={following === p.uid} onClick={() => toggle(p)}>
-                <Swatch p={p} />
+                <Avatar name={p.name} photo={p.photo} color={tone(p.color)} away={p.away} size="sm" />
                 <span className={styles.rowName}>{p.name}</span>
                 <span className={styles.where}>{following === p.uid ? 'following' : where(p)}</span>
               </button>
@@ -120,7 +121,7 @@ export function PeopleHere() {
       {leader && (
         <div className={styles.following} style={{ ['--peer' as string]: tone(leader.color) }}>
           <button className={styles.followTag} data-learn="follow-label" onClick={() => follow(null)}>
-            following {leader.name} · {where(leader)} <span className={styles.stop}>esc to stop</span>
+            following {leader.name} · {where(leader)} <span className={styles.stop}>stop</span>
           </button>
         </div>
       )}
@@ -128,10 +129,3 @@ export function PeopleHere() {
   )
 }
 
-const Swatch = ({ p }: { p: Peer }) => (
-  <span className={styles.swatch} aria-hidden>
-    {p.photo ? <img src={p.photo} alt="" referrerPolicy="no-referrer" /> : initial(p.name)}
-  </span>
-)
-
-const initial = (name: string) => (name.trim()[0] ?? '?').toUpperCase()

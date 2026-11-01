@@ -21,16 +21,6 @@
   border-top: var(--line-w) solid var(--line);
 }
 
-.avatar {
-  display: inline-grid;
-  place-items: center;
-  width: var(--control);
-  height: var(--control);
-  border: var(--line-w) solid var(--line-hover);
-  color: var(--fg);
-  font-size: var(--text-xs);
-}
-
 .who {
   display: flex;
   flex-direction: column;
@@ -61,10 +51,6 @@
 
 .role {
   min-width: 13ch;
-  padding: var(--space-1) 0;
-  border-bottom: var(--line-w) solid var(--line);
-  color: var(--fg-strong);
-  font-size: var(--text-sm);
 }
 
 .roleText {

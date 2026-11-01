@@ -1,63 +1,39 @@
-/* One row of options, one current (src/ui/primitives/Tabs.tsx, D-326). Tabs: caps, the current underlined magenta (a setup's).
-   Segments: the current filled cyan (the finder's switch). */
+/* One row of options, one current (src/ui/primitives/Tabs.tsx, D-326; D-344): Button cells joined by a hairline seam,
+   the current one lit as a pressed Button. Tabs fill their row, caps; segments are as wide as their words. */
 .row {
   display: flex;
-  align-items: baseline;
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-}
-
-.row[data-look='tabs'] {
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  gap: var(--line-w);
+  min-width: 0;
 }
 
 .row[data-look='segments'] {
-  gap: var(--space-1);
+  display: inline-flex;
 }
 
 .option {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+  composes: sm from './Button.module.css';
 }
 
-.option:hover {
-  color: var(--fg-strong);
-}
-
+/* Tabs: as wide as their row, each from its words' width sharing what's left; cut with `…` only when the row is too
+   narrow for all their words. */
 .row[data-look='tabs'] .option {
-  padding: var(--space-2) 0;
-  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 transparent;
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  min-width: 0;
+  padding: 0 var(--space-3);
   letter-spacing: var(--track-label);
-  font-family: var(--font-mono);
   text-transform: uppercase;
 }
 
-.row[data-look='tabs'] .option[aria-selected='true'] {
-  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 var(--accent-magenta);
-  color: var(--fg-strong);
-}
-
-.row[data-look='segments'] .option {
-  padding: var(--space-half) var(--space-2);
-}
-
-.row[data-look='segments'] .option[aria-checked='true'] {
-  background: var(--accent-cyan);
-  color: var(--on-accent);
+.text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .count {
-  margin-left: var(--space-1);
+  flex: none;
   color: var(--fg-faint);
   letter-spacing: 0;
-}
-
-.row[data-look='segments'] .option[aria-checked='true'] .count {
-  color: inherit;
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { example } from '../../gallery/example'
-import { Checkbox } from './Checkbox'
+import { Checkbox, CheckMark } from './Checkbox'
 
 function Live(p: Omit<Parameters<typeof Checkbox>[0], 'checked' | 'onChange'> & { start?: boolean }) {
   const [on, setOn] = useState(!!p.start)
@@ -12,7 +12,7 @@ export default example({
   name: 'Checkbox',
   place: 'forms/pickers',
   file: 'src/ui/primitives/Checkbox.tsx',
-  note: '[x] / [ ] (D-093); Space or a click toggles',
+  note: 'a toggle cell (D-344): the label is the cell, ✓ before it while on; Space or a click toggles; no label: a square box cell',
   states: {
     'on and off': () => (
       <div style={col}>
@@ -31,6 +31,22 @@ export default example({
         <Live label="Call Factory" start strike tone="var(--accent-green)" />
         <Live label="Ask about the fridge" strike tone="var(--accent-green)" />
         <Live label="Send the menu" strike tone="var(--accent-green)" />
+      </div>
+    ),
+    'in a row (strip)': () => (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--line-w)' }}>
+        <Live label="solves" start />
+        <Live label="relates" />
+        <Live label="competes" />
+        <Live label="for" start />
+      </div>
+    ),
+    'box alone (beside typed text)': () => (
+      <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+        <Live aria-label="tick" start tone="var(--accent-green)" />
+        <Live aria-label="tick" />
+        <CheckMark checked />
+        <CheckMark checked={false} />
       </div>
     ),
     disabled: () => (

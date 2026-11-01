@@ -84,25 +84,6 @@
   gap: var(--space-2);
 }
 
-.box {
-  flex: none;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  white-space: pre;
-  cursor: pointer;
-}
-
-.box[aria-pressed='true'] {
-  color: var(--accent-green);
-}
-
-.box:disabled {
-  cursor: default;
-}
-
 .checkText {
   flex: 1;
   min-width: 0;
@@ -124,7 +105,7 @@
 
 .check:hover > button:last-child,
 .check:focus-within > button:last-child {
-  display: inline;
+  display: inline-flex;
 }
 
 /* What a finished task taught (D-254). */

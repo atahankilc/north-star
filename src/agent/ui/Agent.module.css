@@ -199,31 +199,15 @@
 }
 
 /* The model switch: plain text like a console's dropdown (`gpt-5.6-terra ▾`). */
-.modelSelect {
-  min-width: 0;
-  max-width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  font-family: var(--font-mono);
-}
-
-.modelSelect:hover,
-.modelSelect:focus-visible {
-  color: var(--fg-strong);
-}
-
 .headTools {
   display: flex;
   flex: none;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-3);
   margin-left: auto;
 }
 
-/* `[×] esc`: the kit's Button with its key (D-326), pushed to the right of the head. */
+/* The close (×), the kit's Button, pushed to the right of the head. */
 .close {
   margin-left: auto;
 }
@@ -234,30 +218,11 @@
 
 
 
-/* `apply · 2 deletes`: the deletes in the danger colour. */
+/* `apply · 2 deletes`: the deletes said strongest (the cell is the go's cyan, D-344). */
 .applyDeletes {
-  color: var(--accent-magenta);
+  font-weight: var(--weight-bold);
 }
 
-.action:disabled {
-  color: var(--fg-faint);
-  cursor: default;
-}
-
-/* In the header, readable at rest (`[new chat]`). */
-.head .action:not(:disabled) {
-  color: var(--fg-muted);
-}
-
-.head .action:not(:disabled):hover,
-.head .action:not(:disabled):focus-visible {
-  color: var(--fg-strong);
-}
-
-/* The view the column shows (`[chats]`, `[notes]`), lit while it's open (S16). */
-.head .action[data-on]:not(:disabled) {
-  color: var(--accent-cyan);
-}
 
 /* ---- The log */
 
@@ -675,34 +640,10 @@
   text-transform: none;
 }
 
-/* The tick: `[×]` on, `[ ]` off (the person's own); an item off because it needs one that is can't be ticked alone. */
-.tick {
-  flex: none;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent-cyan);
-  font: inherit;
-  font-family: var(--font-mono);
-  cursor: pointer;
-}
-
-.tick:disabled {
-  color: var(--fg-faint);
-  cursor: default;
-}
-
-.tick:focus-visible {
-  outline: var(--line-w) solid var(--accent-cyan);
-}
-
+/* An item ticked off (a Checkbox, D-344); one off because it needs one that is can't be ticked alone. */
 .item[data-off] .itemLine,
 .item[data-off] .itemMark {
   color: var(--fg-dim);
-}
-
-.item[data-off] .tick:not(:disabled) {
-  color: var(--fg-muted);
 }
 
 /* Deletes struck, the agent's reason beside them plain; a merge strikes only the merged card's name (S17). */
@@ -738,35 +679,14 @@
 
 .stepper {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 1ch;
   padding-top: var(--space-2);
   border-top: var(--line-w) dashed var(--line);
 }
 
-.stepBtn {
-  padding: 0 var(--space-1);
-  border: var(--line-w) solid var(--line);
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  font-family: var(--font-mono);
-  cursor: pointer;
-}
-
-.stepBtn:hover:not(:disabled),
-.stepBtn:focus-visible {
-  border-color: var(--accent-cyan);
-  color: var(--fg-strong);
-  outline: none;
-}
-
-.stepBtn:disabled {
-  color: var(--fg-faint);
-  cursor: default;
-}
-
 .stepAt {
+  padding: 0 var(--space-2);
   font-family: var(--font-mono);
   color: var(--fg);
   font-variant-numeric: tabular-nums;
@@ -775,7 +695,7 @@
 .changesFoot {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-3);
   padding-top: var(--space-2);
   border-top: var(--line-w) solid var(--line);
@@ -817,7 +737,7 @@
   color: var(--fg-muted);
 }
 
-.status .action {
+.status .undo {
   margin-left: auto;
 }
 
@@ -860,13 +780,6 @@
 }
 
 
-
-.kbd {
-  flex: none;
-  color: var(--fg-faint);
-  font: inherit;
-  font-family: var(--font-mono);
-}
 
 .scope {
   margin: 0;
@@ -1274,9 +1187,7 @@
 }
 
 .jobTools {
-  display: inline-flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
 }
 
 /* The app's own go-on to a job's next step, and words sent while it worked */

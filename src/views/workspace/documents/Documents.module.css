@@ -254,31 +254,16 @@
 /* Its tools in a console or dock. */
 .tools {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
 }
 
 .pageAt {
+  padding: 0 var(--space-2);
   color: var(--fg);
   white-space: nowrap;
 }
 
-.pick {
-  color: var(--fg-muted);
-}
-
-.switch {
-  display: inline-flex;
-  gap: 0;
-}
-
-.switch [data-on] {
-  color: var(--fg-strong);
-}
-
-.switch :not([data-on]) {
-  color: var(--fg-dim);
-}
 
 .upload {
   color: var(--accent-cyan);
@@ -291,33 +276,7 @@
 
 /* A document's actions as marks (D-232): faint, lit on hover; never open the document. */
 .actions {
-  display: inline-flex;
-  gap: var(--space-half);
   justify-content: flex-end;
-}
-
-/* A row's glyph actions: Button icons in a square, the glyph a size up. `[data-icon]` outweighs the Button's own
-   padding and size (kit CSS can come again later). */
-.act[data-icon] {
-  display: grid;
-  place-items: center;
-  width: var(--control);
-  height: var(--control);
-  padding: 0;
-  font-size: var(--text-lg);
-  line-height: var(--lh-none);
-  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
-}
-
-/* No frame: the mark itself lights, on a faint wash. */
-.act[data-icon]:hover {
-  background: var(--wash-2);
-  color: var(--accent-cyan);
-}
-
-
-.act[data-icon][data-tone='danger']:hover {
-  color: var(--accent-magenta);
 }
 
 .sheet .actions {

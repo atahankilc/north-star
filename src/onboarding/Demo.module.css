@@ -32,7 +32,7 @@
   composes: label from '../ui/primitives/Label.module.css';
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
   padding: var(--space-1) var(--demo-strip-x, 0) var(--space-2);
   /* A look draws lines round the strip (the window's) or none (a card's); set by what holds the demo. */
@@ -50,17 +50,6 @@
 .what b {
   color: var(--accent-magenta);
   font-weight: var(--weight-regular);
-}
-
-/* `[▶ play]` / `[❚❚]`: a Button, quieter here; `.strip` outweighs the Button's own padding and colours. */
-.strip .toggle {
-  padding: 0;
-  color: var(--fg-muted);
-}
-
-.strip .toggle:hover,
-.strip .toggle:focus-visible {
-  color: var(--fg);
 }
 
 .still {

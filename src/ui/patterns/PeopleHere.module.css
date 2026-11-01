@@ -44,26 +44,6 @@
   background: color-mix(in srgb, var(--peer) var(--card-tint), transparent);
 }
 
-.swatch {
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: var(--control-sm);
-  height: var(--control-sm);
-  overflow: hidden;
-  background: var(--peer);
-  color: var(--on-accent);
-  font-size: var(--text-xs);
-}
-
-/* A photo keeps a band of their colour underneath, so the colour still reads. */
-.swatch img {
-  width: 100%;
-  height: 100%;
-  border-bottom: var(--line-w-bold) solid var(--peer);
-  object-fit: cover;
-}
-
 /* Squares only, overlapping, each edged in the page colour so they read apart. */
 .stack {
   gap: 0;
@@ -126,12 +106,8 @@
   opacity: var(--o-soft);
 }
 
-/* Away (D-331): the square faint and grey, the name still in their colour on hover; nothing to follow. */
-[data-away] .swatch {
-  opacity: var(--o-dim);
-  filter: grayscale(1);
-}
-
+/* Away (D-331): the square faint and grey (Avatar's `away`), the name still in their colour on hover; nothing to
+   follow. */
 .person[data-away],
 .row[data-away] {
   cursor: default;
@@ -144,12 +120,13 @@
 .more {
   display: grid;
   place-items: center;
-  min-width: var(--control-sm);
-  height: var(--control-sm);
+  /* As big as the squares and the HUD's tools (D-344), a cell like theirs. */
+  min-width: var(--control);
+  height: var(--control);
   margin-top: var(--space-1);
   padding: 0 var(--space-1);
-  border: var(--line-w) solid var(--fg-faint);
-  background: var(--bg);
+  border: 0;
+  background: var(--wash-2);
   color: var(--fg-dim);
   font: inherit;
   font-size: var(--text-xs);
@@ -162,8 +139,7 @@
 .more:hover,
 .more:focus-visible,
 .more[aria-expanded='true'] {
-  outline: none;
-  border-color: var(--fg);
+  background: var(--wash-3);
   color: var(--fg-strong);
 }
 

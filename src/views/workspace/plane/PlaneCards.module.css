@@ -387,20 +387,24 @@
   color: var(--accent-green);
 }
 
+/* `+ 3 parts`, `− 4` on a package's band: the Button's cell (D-344) in world units, so it zooms with the card. */
 .fold {
   flex: none;
   margin-left: auto;
-  padding: 0;
+  padding: 0.3em 0.6em;
   border: 0;
-  background: none;
+  background: var(--wash-2);
   color: var(--link-part);
   font-family: var(--font-mono);
   font-size: var(--small);
   line-height: var(--lh-none);
+  white-space: nowrap;
   cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
 .fold:hover:not(:disabled) {
+  background: var(--wash-3);
   color: var(--fg-strong);
 }
 

@@ -29,7 +29,7 @@ export default example({
   place: 'overlays/menus',
   also: ['forms/pickers'],
   file: 'src/ui/patterns/Menu.tsx',
-  note: 'the prompt (D-222): `>` narrows, Enter picks the first, a letter goes first',
+  note: 'the prompt (D-222): `>` narrows, Enter picks the first, a letter goes first; its trigger the one dropdown trigger, ticked rows ✓ on a wash (D-344)',
   states: {
     closed: () => <Menu label="+" items={ADD} ariaLabel="add" />,
     open: { render: () => <div style={{ height: 420 }}><Menu label="+" items={ADD} ariaLabel="add" /></div>, setup: (c) => c.click('[aria-haspopup="menu"]') },

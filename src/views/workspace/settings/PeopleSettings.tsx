@@ -21,7 +21,9 @@ import {
   uninviteEmail,
   useMembers,
 } from '../../../data/workspaces'
+import { Avatar } from '../../../ui/primitives/Avatar'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Loading } from '../../../ui/primitives/Loading'
 import { Select } from '../../../ui/primitives/Select'
 import { Note, Row, Section } from '../../../ui/patterns/Settings'
@@ -62,14 +64,14 @@ export function PeopleSettings({ wid, workspace, requests }: Props) {
                       {r.name}
                       {r.email && r.email !== r.name && <span className={styles.dim}> {r.email}</span>}
                     </span>
-                    <span>
+                    <ButtonGroup>
                       <Button tone="primary" onClick={() => run(approveJoinRequest(wid, r))}>
                         let in
                       </Button>
                       <Button tone="danger" onClick={() => run(denyJoinRequest(wid, r.uid))}>
                         deny
                       </Button>
-                    </span>
+                    </ButtonGroup>
                   </li>
                 ))}
               </ul>
@@ -102,9 +104,7 @@ function Members({ wid, workspace, run }: { wid: string; workspace: WorkspaceCtx
     const lastOwner = role === 'owner' && owners <= 1
     return (
       <li key={uid} className={styles.member}>
-        <span className={styles.avatar} aria-hidden>
-          {name.trim()[0]?.toUpperCase() ?? '?'}
-        </span>
+        <Avatar name={name} size="sm" />
         <span className={styles.who}>
           <span className={styles.name}>
             {name}
@@ -129,9 +129,9 @@ function Members({ wid, workspace, run }: { wid: string; workspace: WorkspaceCtx
           )}
           {isOwner && !me && !lastOwner && (
             confirm === uid ? (
-              <>
+              <ButtonGroup>
                 <Button
-                  tone="danger"
+                  tone="hazard"
                   onClick={() => {
                     setConfirm(null)
                     run(removeMember(wid, uid))
@@ -142,7 +142,7 @@ function Members({ wid, workspace, run }: { wid: string; workspace: WorkspaceCtx
                 <Button onClick={() => setConfirm(null)}>
                   keep
                 </Button>
-              </>
+              </ButtonGroup>
             ) : (
               <Button tone="danger" onClick={() => setConfirm(uid)}>
                 remove

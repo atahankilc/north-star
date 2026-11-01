@@ -79,6 +79,8 @@
   --wash-2: rgba(255, 255, 255, 0.05);
   --wash-3: rgba(255, 255, 255, 0.08);
   --wash-cyan: rgba(45, 226, 230, 0.06);
+  --wash-4: rgba(255, 255, 255, 0.14); /* a main button's hover (D-344) */
+  --wash-magenta: rgba(255, 61, 154, 0.14); /* a danger button's hover (D-344) */
   --scrim: rgba(0, 0, 0, 0.7);
   --menu: rgba(22, 22, 22, 0.92);
 
@@ -224,6 +226,7 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* folding and resizing */
   --dur-press: 70ms; /* a press */
+  --press-scale: 0.97; /* a button while pressed (D-344) */
   --dur-snap: 120ms; /* resize, landing, the console leaving */
   --dur-quick: 160ms; /* small things in and out, steps(3) entrances */
   --dur-fast: 200ms; /* hovers, colour changes */
@@ -346,6 +349,8 @@
   --wash-2: rgba(0, 0, 0, 0.045);
   --wash-3: rgba(0, 0, 0, 0.07);
   --wash-cyan: rgba(10, 151, 156, 0.08);
+  --wash-4: rgba(0, 0, 0, 0.11);
+  --wash-magenta: rgba(219, 26, 122, 0.1);
   --scrim: rgba(0, 0, 0, 0.3);
   --menu: rgba(255, 255, 255, 0.96);
 }

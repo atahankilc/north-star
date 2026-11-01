@@ -1,0 +1,324 @@
+/* The button options. Every button in the preview is `<button class="b" data-v="…"><span class="t">label</span></button>`:
+   data-v  (none) quiet row action · main the strong one of a row · primary the one that goes · danger · icon a glyph
+           alone · solid the page's big one · choice one of a row of options (P1 P2 P3)
+   aria-pressed="true" a switch that's on · disabled
+   .s-hover / .s-focus / .s-down force a state for the states table.
+   A group of buttons sits in `.grp`. `.key` after a button is today's key hint (only NOW shows it). */
+
+.b {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  margin: 0; border: 0; background: none; color: var(--fg-dim); cursor: pointer;
+  font: 400 var(--text-xs)/1 var(--font-mono); white-space: nowrap; letter-spacing: normal;
+  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.b:disabled { opacity: var(--o-faint); cursor: not-allowed; }
+.b:focus { outline: none; }
+.b:is(:focus-visible, .s-focus) { outline: 1px solid var(--accent-cyan); outline-offset: 2px; }
+.b .t { position: relative; }
+.grp { display: inline-flex; align-items: center; gap: 2px; }
+.key { display: none; }
+
+/* ═════════ NOW: today's Button ═════════ */
+[data-opt='now'] .key { display: inline; margin: 0 4px 0 2px; font: 400 var(--text-xs)/1 var(--font-mono); color: var(--fg-faint); }
+[data-opt='now'] .b { padding: 2px 4px; }
+[data-opt='now'] .b:not([data-v='icon'], [data-v='solid'], [data-v='choice']) .t::before,
+[data-opt='now'] .b[data-now-br] .t::before { content: '['; color: var(--line-hover); }
+[data-opt='now'] .b:not([data-v='icon'], [data-v='solid'], [data-v='choice']) .t::after,
+[data-opt='now'] .b[data-now-br] .t::after { content: ']'; color: var(--line-hover); }
+[data-opt='now'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--fg-strong); }
+[data-opt='now'] .b[data-v='main'] { color: var(--fg); }
+[data-opt='now'] .b[data-v='primary'], [data-opt='now'] .b[aria-pressed='true'] { color: var(--accent-cyan); }
+[data-opt='now'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--accent-magenta); }
+[data-opt='now'] .b[data-v='icon'] { padding: 2px 4px; font-size: var(--text-sm); }
+[data-opt='now'] .b[data-v='choice'] .t::before { content: '\00a0'; }
+[data-opt='now'] .b[data-v='choice'] .t::after { content: '\00a0'; }
+[data-opt='now'] .b[data-v='choice'][aria-pressed='true'] .t::before { content: '['; }
+[data-opt='now'] .b[data-v='choice'][aria-pressed='true'] .t::after { content: ']'; }
+[data-opt='now'] .b[data-v='choice'][aria-pressed='true'] { color: var(--accent-magenta); }
+/* The hazard confirm's own: 14 px, danger magenta and filled on hover. */
+[data-opt='now'] .hazBox .b { font-size: var(--text-sm); }
+[data-opt='now'] .hazBox .b[data-v='danger'] { color: var(--accent-magenta); }
+[data-opt='now'] .hazBox .b[data-v='danger']:is(:hover, .s-hover) { color: var(--on-accent); background: var(--accent-magenta); }
+/* md: `[ label ]` in Inter 14, accent brackets, the accent wiping in from the left. */
+[data-opt='now'] .b[data-v='solid'] { padding: 8px 12px; gap: 8px; font: 400 var(--text-sm)/1 var(--font-display); color: var(--fg-strong); isolation: isolate; }
+[data-opt='now'] .b[data-v='solid']::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--acc, var(--accent-magenta)); transform: scaleX(0); transform-origin: left; transition: transform var(--dur-med) var(--ease-out); }
+[data-opt='now'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus)::before { transform: scaleX(1); }
+[data-opt='now'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--on-accent); }
+[data-opt='now'] .b[data-v='solid'] .t::before { content: '['; margin-right: 8px; color: var(--acc, var(--accent-magenta)); }
+[data-opt='now'] .b[data-v='solid'] .t::after { content: ']'; margin-left: 8px; color: var(--acc, var(--accent-magenta)); }
+[data-opt='now'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) .t::before,
+[data-opt='now'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) .t::after { color: var(--on-accent); }
+
+/* ═════════ A · BARE: plain words, a line under on hover ═════════ */
+[data-opt='a'] .b { padding: 6px 7px; }
+[data-opt='a'] .b::after { content: ''; position: absolute; left: 7px; right: 7px; bottom: 3px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform var(--dur-fast) var(--ease-out); }
+[data-opt='a'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--fg-strong); }
+[data-opt='a'] .b:is(:hover, :focus-visible, .s-hover, .s-focus)::after { transform: scaleX(1); }
+[data-opt='a'] .b[data-v='main'] { color: var(--fg); font-weight: 500; }
+[data-opt='a'] .b[data-v='primary'] { color: var(--accent-cyan); font-weight: 500; }
+[data-opt='a'] .b[data-v='primary']::after { transform: scaleX(1); opacity: 0.5; }
+[data-opt='a'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--accent-cyan); }
+[data-opt='a'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus)::after { opacity: 1; }
+[data-opt='a'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--accent-magenta); }
+[data-opt='a'] .b[aria-pressed='true'] { color: var(--accent-cyan); }
+[data-opt='a'] .b[aria-pressed='true']::after { transform: scaleX(1); }
+[data-opt='a'] .b[data-v='icon'] { padding: 4px 6px; font-size: var(--text-sm); }
+[data-opt='a'] .b[data-v='icon']::after { display: none; }
+[data-opt='a'] .b[data-v='choice'][aria-pressed='true'] { color: var(--accent-magenta); }
+[data-opt='a'] .b[data-v='solid'] { padding: 10px 12px; font: 500 var(--text-sm)/1 var(--font-display); color: var(--fg-strong); isolation: isolate; transition: color var(--dur-fast) var(--ease-out); }
+/* The accent line under it grows up to fill the button on hover: a transform, never a layout change. */
+[data-opt='a'] .b[data-v='solid']::after { inset: 0; height: auto; z-index: -1; background: var(--acc, var(--accent-magenta)); transform: scaleY(0.06); transform-origin: bottom; transition: transform var(--dur-fast) var(--ease-out); }
+[data-opt='a'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus)::after { transform: scaleY(1); }
+[data-opt='a'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--on-accent); }
+[data-opt='a'] .hazBox .b[data-v='danger'] { color: var(--accent-magenta); font-weight: 500; }
+
+/* ═════════ B · CORNERS: the Marks' L's instead of brackets ═════════ */
+[data-opt='b'] .b {
+  --k: var(--line-hover); --L: 4px;
+  padding: 6px 9px;
+  background:
+    linear-gradient(var(--k), var(--k)) left top / var(--L) 1px no-repeat,
+    linear-gradient(var(--k), var(--k)) left top / 1px var(--L) no-repeat,
+    linear-gradient(var(--k), var(--k)) right bottom / var(--L) 1px no-repeat,
+    linear-gradient(var(--k), var(--k)) right bottom / 1px var(--L) no-repeat;
+}
+[data-opt='b'] .b:is(:hover, :focus-visible, .s-hover, .s-focus),
+[data-opt='b'] .b[aria-pressed='true'] {
+  --k: var(--fg-dim);
+  color: var(--fg-strong);
+  background:
+    linear-gradient(var(--k), var(--k)) left top / var(--L) 1px no-repeat,
+    linear-gradient(var(--k), var(--k)) left top / 1px var(--L) no-repeat,
+    linear-gradient(var(--k), var(--k)) right top / var(--L) 1px no-repeat,
+    linear-gradient(var(--k), var(--k)) right top / 1px var(--L) no-repeat,
+    linear-gradient(var(--k), var(--k)) left bottom / var(--L) 1px no-repeat,
+    linear-gradient(var(--k), var(--k)) left bottom / 1px var(--L) no-repeat,
+    linear-gradient(var(--k), var(--k)) right bottom / var(--L) 1px no-repeat,
+    linear-gradient(var(--k), var(--k)) right bottom / 1px var(--L) no-repeat,
+    var(--wash-1);
+}
+[data-opt='b'] .b:is(:active, .s-down) { transform: scale(0.96); }
+[data-opt='b'] .b[data-v='main'] { color: var(--fg); --k: var(--fg-faint); }
+[data-opt='b'] .b[data-v='primary'] { color: var(--accent-cyan); --k: var(--accent-cyan); }
+[data-opt='b'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--accent-cyan); --k: var(--accent-cyan); }
+[data-opt='b'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--accent-magenta); --k: var(--accent-magenta); }
+[data-opt='b'] .b[aria-pressed='true'] { color: var(--accent-cyan); --k: var(--accent-cyan); }
+[data-opt='b'] .b[data-v='icon'] { padding: 4px 6px; font-size: var(--text-sm); background: none; }
+[data-opt='b'] .b[data-v='icon']:is(:hover, :focus-visible, .s-hover, .s-focus) { --k: var(--fg-dim); }
+[data-opt='b'] .b[data-v='choice'] { background: none; }
+[data-opt='b'] .b[data-v='choice'][aria-pressed='true'] { color: var(--accent-magenta); --k: var(--accent-magenta); }
+[data-opt='b'] .b[data-v='solid'] { --L: 7px; --k: var(--acc, var(--accent-magenta)); padding: 11px 18px; font: 500 var(--text-sm)/1 var(--font-display); color: var(--fg-strong); }
+[data-opt='b'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { --k: var(--acc, var(--accent-magenta)); }
+[data-opt='b'] .hazBox .b[data-v='danger'] { color: var(--accent-magenta); --k: var(--accent-magenta); }
+
+/* ═════════ C · BLOCK: a cell of shade, inverted on hover like a terminal's selection ═════════ */
+[data-opt='c'] .b { padding: 6px 8px; background: var(--wash-2); }
+[data-opt='c'] .grp { gap: 3px; }
+[data-opt='c'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--fg); color: var(--bg); }
+[data-opt='c'] .b:is(:active, .s-down) { background: var(--fg-strong); }
+[data-opt='c'] .b[data-v='main'] { background: var(--wash-3); color: var(--fg); }
+[data-opt='c'] .b[data-v='main']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--fg); color: var(--bg); }
+[data-opt='c'] .b[data-v='primary'] { background: var(--accent-cyan); color: var(--on-accent); font-weight: 500; }
+[data-opt='c'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--fg-strong); color: var(--bg); }
+[data-opt='c'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--accent-magenta); color: var(--on-accent); }
+[data-opt='c'] .b[aria-pressed='true'] { background: var(--wash-cyan); color: var(--accent-cyan); box-shadow: inset 0 -1px 0 var(--accent-cyan); }
+[data-opt='c'] .b[aria-pressed='true']:is(:hover, .s-hover) { background: var(--accent-cyan); color: var(--on-accent); }
+[data-opt='c'] .b[data-v='icon'] { min-width: 24px; height: 24px; padding: 0 4px; background: none; font-size: var(--text-sm); }
+[data-opt='c'] .b[data-v='icon']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--wash-3); color: var(--fg-strong); }
+[data-opt='c'] .b[data-v='choice'] { background: none; }
+[data-opt='c'] .b[data-v='choice'][aria-pressed='true'] { background: var(--accent-magenta); color: var(--on-accent); box-shadow: none; }
+[data-opt='c'] .b[data-v='solid'] { padding: 11px 16px; background: var(--fg-strong); color: var(--bg); font: 500 var(--text-sm)/1 var(--font-display); }
+[data-opt='c'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--acc, var(--accent-magenta)); color: var(--on-accent); }
+[data-opt='c'] .hazBox .b[data-v='danger'] { background: var(--accent-magenta); color: var(--on-accent); font-weight: 500; }
+[data-opt='c'] .hazBox .b[data-v='danger']:is(:hover, .s-hover) { background: var(--fg-strong); color: var(--bg); }
+
+/* ═════════ D · STRIP: a row of buttons is one framed strip, hairlines between ═════════ */
+[data-opt='d'] .grp { gap: 0; border: 1px solid var(--line-hover); }
+[data-opt='d'] .grp > .b + .b { box-shadow: -1px 0 0 var(--line); }
+[data-opt='d'] .b { padding: 7px 10px; }
+[data-opt='d'] :not(.grp) > .b:not([data-v='icon'], [data-v='solid']) { box-shadow: inset 0 0 0 1px var(--line-hover); }
+[data-opt='d'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--wash-3); color: var(--fg-strong); }
+[data-opt='d'] .b[data-v='main'] { color: var(--fg); }
+[data-opt='d'] .b[data-v='primary'] { background: var(--accent-cyan); color: var(--on-accent); font-weight: 500; }
+[data-opt='d'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--fg-strong); color: var(--bg); }
+[data-opt='d'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--accent-magenta); background: color-mix(in srgb, var(--accent-magenta) 10%, transparent); }
+[data-opt='d'] .b[aria-pressed='true'] { color: var(--accent-cyan); background: var(--wash-cyan); }
+[data-opt='d'] .b[data-v='icon'] { padding: 4px 6px; font-size: var(--text-sm); }
+[data-opt='d'] .b[data-v='choice'][aria-pressed='true'] { color: var(--accent-magenta); background: color-mix(in srgb, var(--accent-magenta) 12%, transparent); }
+[data-opt='d'] .b[data-v='solid'] { padding: 11px 18px; font: 500 var(--text-sm)/1 var(--font-display); color: var(--fg-strong); box-shadow: inset 0 0 0 1px var(--acc, var(--accent-magenta)); }
+[data-opt='d'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--acc, var(--accent-magenta)); color: var(--on-accent); }
+[data-opt='d'] .hazBox .b[data-v='danger'] { color: var(--accent-magenta); }
+[data-opt='d'] .hazBox .b[data-v='danger']:is(:hover, .s-hover) { background: var(--accent-magenta); color: var(--on-accent); }
+
+/* ═════════ E · CARET: the prompt's `›` comes in on hover, as on a menu's row ═════════ */
+[data-opt='e'] .b { padding: 6px 7px 6px 13px; }
+[data-opt='e'] .b::before { content: '›'; position: absolute; left: 3px; top: 50%; color: var(--accent-cyan); opacity: 0; transform: translate(-3px, -50%); transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+[data-opt='e'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--fg-strong); }
+[data-opt='e'] .b:is(:hover, :focus-visible, .s-hover, .s-focus)::before { opacity: 1; transform: translate(0, -50%); }
+[data-opt='e'] .b[data-v='main'] { color: var(--fg); font-weight: 500; }
+[data-opt='e'] .b[data-v='primary'] { color: var(--accent-cyan); font-weight: 500; }
+[data-opt='e'] .b[data-v='primary']::before { opacity: 1; transform: translate(0, -50%); }
+[data-opt='e'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--accent-magenta); }
+[data-opt='e'] .b[data-v='danger']::before { color: var(--accent-magenta); }
+[data-opt='e'] .b[aria-pressed='true'] { color: var(--accent-cyan); }
+[data-opt='e'] .b[aria-pressed='true']::before { content: '•'; opacity: 1; transform: translate(0, -50%); }
+[data-opt='e'] .b[data-v='icon'] { padding: 4px 6px; font-size: var(--text-sm); }
+[data-opt='e'] .b[data-v='icon']::before { display: none; }
+[data-opt='e'] .b[data-v='choice'] { padding: 6px 7px; }
+[data-opt='e'] .b[data-v='choice']::before { display: none; }
+[data-opt='e'] .b[data-v='choice'][aria-pressed='true'] { color: var(--accent-magenta); }
+[data-opt='e'] .b[data-v='solid'] { padding: 11px 16px 11px 30px; font: 500 var(--text-sm)/1 var(--font-display); color: var(--fg-strong); background: var(--wash-2); box-shadow: inset 2px 0 0 var(--acc, var(--accent-magenta)); }
+[data-opt='e'] .b[data-v='solid']::before { content: '>'; left: 13px; opacity: 1; transform: translate(0, -50%); font-family: var(--font-mono); color: var(--acc, var(--accent-magenta)); }
+[data-opt='e'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--wash-3); }
+[data-opt='e'] .b[data-v='solid']:is(:hover, .s-hover) .t::after { content: '▍'; margin-left: 2px; color: var(--acc, var(--accent-magenta)); animation: blink var(--dur-blink) steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+[data-opt='e'] .hazBox .b[data-v='danger'] { color: var(--accent-magenta); }
+[data-opt='e'] .hazBox .b[data-v='danger']::before { opacity: 1; transform: translate(0, -50%); }
+
+/* ═════════ F · SANS: Inter, a thin frame: what most apps do ═════════ */
+[data-opt='f'] .b { padding: 6px 10px; font: 500 13px/1 var(--font-display); box-shadow: inset 0 0 0 1px var(--line-hover); color: var(--fg-muted); }
+[data-opt='f'] .grp { gap: 6px; }
+[data-opt='f'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { box-shadow: inset 0 0 0 1px var(--fg-dim); color: var(--fg-strong); background: var(--wash-1); }
+[data-opt='f'] .b[data-v='main'] { color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg-faint); }
+[data-opt='f'] .b[data-v='primary'] { background: var(--fg-strong); color: var(--bg); box-shadow: none; }
+[data-opt='f'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--accent-cyan); color: var(--on-accent); box-shadow: none; }
+[data-opt='f'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--accent-magenta); box-shadow: inset 0 0 0 1px var(--accent-magenta); }
+[data-opt='f'] .b[aria-pressed='true'] { color: var(--accent-cyan); box-shadow: inset 0 0 0 1px var(--accent-cyan); background: var(--wash-cyan); }
+[data-opt='f'] .b[data-v='icon'] { padding: 4px 6px; box-shadow: none; font: 400 var(--text-sm)/1 var(--font-mono); }
+[data-opt='f'] .b[data-v='icon']:is(:hover, :focus-visible, .s-hover, .s-focus) { box-shadow: none; background: var(--wash-3); }
+[data-opt='f'] .b[data-v='choice'] { box-shadow: none; font-family: var(--font-mono); font-weight: 400; font-size: var(--text-xs); }
+[data-opt='f'] .b[data-v='choice'][aria-pressed='true'] { color: var(--accent-magenta); box-shadow: inset 0 0 0 1px var(--accent-magenta); background: none; }
+[data-opt='f'] .b[data-v='solid'] { padding: 11px 18px; font-size: var(--text-sm); background: var(--fg-strong); color: var(--bg); box-shadow: none; }
+[data-opt='f'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--acc, var(--accent-magenta)); color: var(--on-accent); box-shadow: none; }
+[data-opt='f'] .hazBox .b[data-v='danger'] { background: var(--accent-magenta); color: var(--on-accent); box-shadow: none; }
+
+/* ═════════ G · TWO TIERS (suggested): bare words for everything, one solid cell for the one that goes ═════════ */
+[data-opt='g'] .b { padding: 6px 7px; }
+[data-opt='g'] .b::after { content: ''; position: absolute; left: 7px; right: 7px; bottom: 3px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform var(--dur-fast) var(--ease-out); }
+[data-opt='g'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--fg-strong); }
+[data-opt='g'] .b:is(:hover, :focus-visible, .s-hover, .s-focus)::after { transform: scaleX(1); }
+[data-opt='g'] .b[data-v='main'] { color: var(--fg); font-weight: 500; }
+[data-opt='g'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--accent-magenta); }
+[data-opt='g'] .b[aria-pressed='true'] { color: var(--accent-cyan); background: var(--wash-cyan); }
+[data-opt='g'] .b[aria-pressed='true']::after { transform: scaleX(1); background: var(--accent-cyan); left: 0; right: 0; bottom: 0; }
+/* The one that goes: a solid cyan cell. Never more than one on a surface. */
+[data-opt='g'] .b[data-v='primary'] { padding: 6px 10px; background: var(--accent-cyan); color: var(--on-accent); font-weight: 500; }
+[data-opt='g'] .b[data-v='primary']::after { display: none; }
+[data-opt='g'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--fg-strong); color: var(--bg); }
+[data-opt='g'] .b[data-v='icon'] { min-width: 24px; height: 24px; padding: 0 4px; font-size: var(--text-sm); }
+[data-opt='g'] .b[data-v='icon']::after { display: none; }
+[data-opt='g'] .b[data-v='icon']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--wash-3); }
+[data-opt='g'] .b[data-v='choice'][aria-pressed='true'] { color: var(--accent-magenta); background: none; }
+[data-opt='g'] .b[data-v='choice'][aria-pressed='true']::after { background: var(--accent-magenta); }
+[data-opt='g'] .b[data-v='solid'] { padding: 11px 18px; font: 500 var(--text-sm)/1 var(--font-display); color: var(--bg); background: var(--fg-strong); isolation: isolate; overflow: hidden; }
+[data-opt='g'] .b[data-v='solid']::after { inset: 0; height: auto; z-index: -1; background: var(--acc, var(--accent-magenta)); transition: transform var(--dur-med) var(--ease-out); }
+[data-opt='g'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--on-accent); }
+[data-opt='g'] .hazBox .b[data-v='danger'] { padding: 6px 10px; background: var(--accent-magenta); color: var(--on-accent); font-weight: 500; }
+[data-opt='g'] .hazBox .b[data-v='danger']::after { display: none; }
+[data-opt='g'] .hazBox .b[data-v='danger']:is(:hover, .s-hover) { background: var(--fg-strong); color: var(--bg); }
+
+/* ═════════ HUD tools (ToolButton): an icon in a 30 px square, for every option ═════════ */
+.b[data-v='tool'] { width: var(--control); height: var(--control); padding: 0; }
+.b[data-v='tool'] svg { width: var(--tool-icon, 18px); height: var(--tool-icon, 18px); }
+.b[data-v='tool']:is(:hover, :focus-visible, .s-hover, .s-focus) { color: var(--fg-strong); }
+.b[data-v='tool'][aria-pressed='true'] { color: var(--accent-cyan); }
+.b[data-v='tool'][data-plus] { color: var(--accent-magenta); }
+.b[data-v='tool']::before, .b[data-v='tool']::after { display: none; }
+.b[data-v='tool'] .t::before, .b[data-v='tool'] .t::after { content: none !important; }
+.badge { position: absolute; top: -5px; right: -5px; min-width: 14px; height: 14px; padding: 0 3px; background: var(--accent-magenta); color: var(--on-accent); font: 500 10px/14px var(--font-mono); text-align: center; pointer-events: none; }
+[data-opt='c'] .b[data-v='tool'] { background: var(--wash-2); }
+[data-opt='c'] .b[data-v='tool']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--fg); color: var(--bg); }
+[data-opt='g'] .b[data-v='tool']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--wash-3); }
+[data-opt='g'] .b[data-v='tool'][aria-pressed='true'] { background: var(--wash-cyan); }
+
+/* ═════════ ROUND 2: one family. Every button is a cell: words, glyphs, HUD tools, the page's one.
+   One height for small ones (24 px, a glyph's cell is 24 × 24), 30 for the HUD's tools, 36 for the page's.
+   What changes between kinds is only the fill and the ink, never the shape. ═════════ */
+:is([data-opt='h'], [data-opt='i'], [data-opt='j'], [data-opt='k'], [data-opt='l']) .b { height: 24px; padding: 0 8px; }
+:is([data-opt='h'], [data-opt='i'], [data-opt='j'], [data-opt='k'], [data-opt='l']) .grp { gap: 3px; }
+:is([data-opt='h'], [data-opt='i'], [data-opt='j'], [data-opt='k'], [data-opt='l']) .b[data-v='icon'] { width: 24px; padding: 0; font-size: var(--text-sm); }
+:is([data-opt='h'], [data-opt='i'], [data-opt='j'], [data-opt='k'], [data-opt='l']) .b[data-v='tool'] { height: var(--control); }
+:is([data-opt='h'], [data-opt='i'], [data-opt='j'], [data-opt='k'], [data-opt='l']) .b[data-v='solid'] { height: var(--control-lg); padding: 0 18px; font: 500 var(--text-sm)/1 var(--font-display); }
+:is([data-opt='h'], [data-opt='i'], [data-opt='j'], [data-opt='k'], [data-opt='l']) .zoom .b[data-v='icon'] { width: auto; min-width: 24px; padding: 0 4px; }
+:is([data-opt='h'], [data-opt='i'], [data-opt='j'], [data-opt='k'], [data-opt='l']) .hazBox .b { height: 30px; padding: 0 12px; font-size: var(--text-sm); }
+
+/* H · CELLS: C made calm. Faint shade at rest, one step brighter on hover (no flash), the one that goes cyan. */
+[data-opt='h'] .b { background: var(--wash-2); }
+[data-opt='h'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--wash-3); color: var(--fg-strong); }
+[data-opt='h'] .b:is(:active, .s-down) { background: var(--wash-1); transform: scale(0.97); }
+[data-opt='h'] .b[data-v='main'] { background: var(--wash-3); color: var(--fg); }
+[data-opt='h'] .b[data-v='main']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: color-mix(in srgb, var(--fg) 16%, transparent); color: var(--fg-strong); }
+[data-opt='h'] .b[data-v='primary'] { background: var(--accent-cyan); color: var(--on-accent); font-weight: 500; }
+[data-opt='h'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: color-mix(in srgb, var(--accent-cyan) 78%, var(--fg-strong)); color: var(--on-accent); }
+[data-opt='h'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: color-mix(in srgb, var(--accent-magenta) 16%, transparent); color: var(--accent-magenta); }
+[data-opt='h'] .b[aria-pressed='true'] { background: var(--wash-cyan); color: var(--accent-cyan); box-shadow: inset 0 -1px 0 var(--accent-cyan); }
+[data-opt='h'] .b[data-v='choice'][aria-pressed='true'] { background: color-mix(in srgb, var(--accent-magenta) 14%, transparent); color: var(--accent-magenta); box-shadow: inset 0 -1px 0 var(--accent-magenta); }
+[data-opt='h'] .b[data-v='tool'][data-plus] { background: color-mix(in srgb, var(--accent-magenta) 12%, transparent); }
+[data-opt='h'] .b[data-v='solid'] { background: var(--fg-strong); color: var(--bg); }
+[data-opt='h'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--acc, var(--accent-magenta)); color: var(--on-accent); }
+[data-opt='h'] .hazBox .b[data-v='danger'] { background: var(--accent-magenta); color: var(--on-accent); font-weight: 500; }
+[data-opt='h'] .hazBox .b[data-v='danger']:is(:hover, .s-hover) { background: color-mix(in srgb, var(--accent-magenta) 78%, var(--fg-strong)); color: var(--on-accent); }
+
+/* I · KEYCAPS: H with a thicker bottom edge, a key you press: the press sinks it 1 px. The app's 3D in one line. */
+[data-opt='i'] .b { --edge: var(--line-hover); background: var(--wash-2); box-shadow: inset 0 -2px 0 var(--edge); }
+[data-opt='i'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { --edge: var(--fg-faint); background: var(--wash-3); color: var(--fg-strong); }
+[data-opt='i'] .b:is(:active, .s-down) { transform: translateY(1px); box-shadow: inset 0 -1px 0 var(--edge); }
+[data-opt='i'] .b[data-v='main'] { --edge: var(--fg-faint); color: var(--fg); background: var(--wash-3); }
+[data-opt='i'] .b[data-v='primary'] { --edge: color-mix(in srgb, var(--accent-cyan) 55%, var(--bg)); background: var(--accent-cyan); color: var(--on-accent); font-weight: 500; }
+[data-opt='i'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus) { --edge: color-mix(in srgb, var(--accent-cyan) 55%, var(--bg)); background: color-mix(in srgb, var(--accent-cyan) 80%, var(--fg-strong)); color: var(--on-accent); }
+[data-opt='i'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { --edge: var(--accent-magenta); color: var(--accent-magenta); background: color-mix(in srgb, var(--accent-magenta) 12%, transparent); }
+[data-opt='i'] .b[aria-pressed='true'] { --edge: var(--accent-cyan); background: var(--wash-cyan); color: var(--accent-cyan); transform: translateY(1px); box-shadow: inset 0 -1px 0 var(--edge); }
+[data-opt='i'] .b[data-v='choice'][aria-pressed='true'] { --edge: var(--accent-magenta); color: var(--accent-magenta); background: color-mix(in srgb, var(--accent-magenta) 12%, transparent); }
+[data-opt='i'] .b[data-v='tool'][data-plus] { --edge: var(--accent-magenta); }
+[data-opt='i'] .b[data-v='solid'] { --edge: var(--fg-dim); background: var(--fg-strong); color: var(--bg); box-shadow: inset 0 -3px 0 var(--edge); }
+[data-opt='i'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { --edge: color-mix(in srgb, var(--acc, var(--accent-magenta)) 55%, var(--bg)); background: var(--acc, var(--accent-magenta)); color: var(--on-accent); }
+[data-opt='i'] .hazBox .b[data-v='danger'] { --edge: color-mix(in srgb, var(--accent-magenta) 55%, var(--bg)); background: var(--accent-magenta); color: var(--on-accent); }
+
+/* J · FRAMED CELLS: a thin frame, no fill at rest; hover fills. Lighter than H where many sit together. */
+[data-opt='j'] .b { box-shadow: inset 0 0 0 1px var(--line-hover); }
+[data-opt='j'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { box-shadow: inset 0 0 0 1px var(--fg-faint); background: var(--wash-2); color: var(--fg-strong); }
+[data-opt='j'] .b:is(:active, .s-down) { transform: scale(0.97); }
+[data-opt='j'] .b[data-v='main'] { color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg-faint); }
+[data-opt='j'] .b[data-v='primary'] { background: var(--accent-cyan); color: var(--on-accent); box-shadow: none; font-weight: 500; }
+[data-opt='j'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: color-mix(in srgb, var(--accent-cyan) 78%, var(--fg-strong)); color: var(--on-accent); box-shadow: none; }
+[data-opt='j'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { box-shadow: inset 0 0 0 1px var(--accent-magenta); color: var(--accent-magenta); background: color-mix(in srgb, var(--accent-magenta) 10%, transparent); }
+[data-opt='j'] .b[aria-pressed='true'] { box-shadow: inset 0 0 0 1px var(--accent-cyan); background: var(--wash-cyan); color: var(--accent-cyan); }
+[data-opt='j'] .b[data-v='choice'][aria-pressed='true'] { box-shadow: inset 0 0 0 1px var(--accent-magenta); color: var(--accent-magenta); background: none; }
+[data-opt='j'] .b[data-v='tool'][data-plus] { box-shadow: inset 0 0 0 1px var(--accent-magenta); }
+[data-opt='j'] .b[data-v='solid'] { background: var(--fg-strong); color: var(--bg); box-shadow: none; }
+[data-opt='j'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--acc, var(--accent-magenta)); color: var(--on-accent); box-shadow: none; }
+[data-opt='j'] .hazBox .b[data-v='danger'] { background: var(--accent-magenta); color: var(--on-accent); box-shadow: none; }
+
+/* K · DOT CELLS: the cell is filled with the plane's dots (ASCII texture); hover fills it solid. */
+[data-opt='k'] .b { --dot: var(--line-hover); background: radial-gradient(var(--dot) 0.6px, transparent 0.9px) 0 0 / 3px 3px; }
+[data-opt='k'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--wash-3); color: var(--fg-strong); }
+[data-opt='k'] .b:is(:active, .s-down) { transform: scale(0.97); }
+[data-opt='k'] .b[data-v='main'] { --dot: var(--fg-faint); color: var(--fg); }
+[data-opt='k'] .b[data-v='primary'] { background: var(--accent-cyan); color: var(--on-accent); font-weight: 500; }
+[data-opt='k'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: color-mix(in srgb, var(--accent-cyan) 78%, var(--fg-strong)); color: var(--on-accent); }
+[data-opt='k'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: color-mix(in srgb, var(--accent-magenta) 16%, transparent); color: var(--accent-magenta); }
+[data-opt='k'] .b[aria-pressed='true'] { --dot: var(--accent-cyan); color: var(--accent-cyan); background: radial-gradient(var(--dot) 0.6px, transparent 0.9px) 0 0 / 3px 3px, var(--wash-cyan); }
+[data-opt='k'] .b[data-v='choice'][aria-pressed='true'] { --dot: var(--accent-magenta); color: var(--accent-magenta); background: radial-gradient(var(--dot) 0.6px, transparent 0.9px) 0 0 / 3px 3px; }
+[data-opt='k'] .b[data-v='tool'][data-plus] { --dot: var(--accent-magenta); }
+[data-opt='k'] .b[data-v='solid'] { background: var(--fg-strong); color: var(--bg); }
+[data-opt='k'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--acc, var(--accent-magenta)); color: var(--on-accent); }
+[data-opt='k'] .hazBox .b[data-v='danger'] { background: var(--accent-magenta); color: var(--on-accent); }
+
+/* L · CUT CELLS: H's cell with its top-left corner cut, a terminal's tab; every button the same cut shape. */
+[data-opt='l'] .b { --cut: 5px; background: var(--wash-2); clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut)); }
+[data-opt='l'] .b:is(:focus-visible, .s-focus) { outline: none; box-shadow: inset 0 0 0 1px var(--accent-cyan); }
+[data-opt='l'] .b:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--wash-3); color: var(--fg-strong); }
+[data-opt='l'] .b:is(:active, .s-down) { background: var(--wash-1); }
+[data-opt='l'] .b[data-v='main'] { background: var(--wash-3); color: var(--fg); }
+[data-opt='l'] .b[data-v='primary'] { background: var(--accent-cyan); color: var(--on-accent); font-weight: 500; }
+[data-opt='l'] .b[data-v='primary']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: color-mix(in srgb, var(--accent-cyan) 78%, var(--fg-strong)); color: var(--on-accent); }
+[data-opt='l'] .b[data-v='danger']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: color-mix(in srgb, var(--accent-magenta) 16%, transparent); color: var(--accent-magenta); }
+[data-opt='l'] .b[aria-pressed='true'] { background: var(--wash-cyan); color: var(--accent-cyan); box-shadow: inset 0 -1px 0 var(--accent-cyan); }
+[data-opt='l'] .b[data-v='choice'][aria-pressed='true'] { background: color-mix(in srgb, var(--accent-magenta) 14%, transparent); color: var(--accent-magenta); }
+[data-opt='l'] .b[data-v='tool'] { --cut: 7px; }
+[data-opt='l'] .b[data-v='tool'][data-plus] { background: color-mix(in srgb, var(--accent-magenta) 12%, transparent); }
+[data-opt='l'] .b[data-v='solid'] { --cut: 9px; background: var(--fg-strong); color: var(--bg); }
+[data-opt='l'] .b[data-v='solid']:is(:hover, :focus-visible, .s-hover, .s-focus) { background: var(--acc, var(--accent-magenta)); color: var(--on-accent); }
+[data-opt='l'] .hazBox .b[data-v='danger'] { background: var(--accent-magenta); color: var(--on-accent); }

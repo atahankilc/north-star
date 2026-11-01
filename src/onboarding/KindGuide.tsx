@@ -214,17 +214,12 @@ function Column({ host, row, seenN, total, onHide }: { host: HTMLElement | null;
   )
 }
 
-// A press only: the keys stay the menu's (letters pick its rows). The keyboard way is said beside it: tips off in `?`.
+// A press only: the keys stay the menu's (letters pick its rows). The keyboard's way is the `?` guide's tips switch.
 function HideButton({ onHide }: { onHide: () => void }) {
   return (
-    <>
-      <Button className={styles.hide} tabIndex={-1} onMouseDown={keepFocus} onClick={onHide}>
-        hide guide
-      </Button>
-      <span className={styles.hideKeys}>
-        keys: <kbd className={styles.k}>?</kbd> → tips off
-      </span>
-    </>
+    <Button className={styles.hide} tabIndex={-1} onMouseDown={keepFocus} onClick={onHide}>
+      hide guide
+    </Button>
   )
 }
 

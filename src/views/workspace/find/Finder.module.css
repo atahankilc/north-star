@@ -229,26 +229,9 @@
 }
 
 /* The preview's zoom: `[−] 140% [+]`, the number back to 100 %. */
+/* `− 100% +`, a ButtonGroup (D-344). */
 .zoom {
-  display: inline-flex;
   flex: none;
-  align-items: baseline;
-  gap: var(--space-1);
-  letter-spacing: normal;
-  text-transform: none;
-}
-
-/* `100%`, a Button icon between `[−]` and `[+]`. */
-.zoomAt[data-icon] {
-  min-width: 5ch;
-  padding: 0;
-  color: var(--fg);
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-}
-
-.zoomAt[data-icon]:hover {
-  color: var(--fg-strong);
 }
 
 /* Go to (nothing typed): a plane's own places under it, in; its `▸ N inside` opens them (D-200). */
@@ -256,7 +239,7 @@
   padding-left: calc(var(--space-3) + 3ch);
 }
 
-/* `[▸ 3 inside]`, a Button, pressed while open. */
+/* `▸ 3 inside`, a Button, pressed while open. */
 .fold {
   flex: none;
 }

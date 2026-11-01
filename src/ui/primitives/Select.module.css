@@ -1,22 +1,6 @@
-/* Select (D-093): an inline trigger, `value ▾`; the context's class adds its own edge (an underline, a cell's padding). */
+/* Select (D-093): `value ▾`, the one dropdown trigger (Trigger.module.css, D-344) Menu uses too. */
 .trigger {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.trigger:hover,
-.trigger[aria-expanded='true'] {
-  color: var(--fg-strong);
+  composes: trigger from './Trigger.module.css';
 }
 
 .trigger:disabled {
@@ -25,16 +9,12 @@
 }
 
 .value {
+  composes: value from './Trigger.module.css';
   flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .caret {
-  flex: none;
-  color: var(--fg-faint);
+  composes: caret from './Trigger.module.css';
 }
 
 /* The list in the menus' prompt look (D-222, Menu.module.css), fixed where Select placed it. */

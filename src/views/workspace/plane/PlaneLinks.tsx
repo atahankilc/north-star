@@ -16,6 +16,7 @@ import { ThreadChip, threadOn } from '../threads/Threads'
 import styles from './PlaneLinks.module.css'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 
 type LinkGroup = 'solves' | 'part' | 'competes' | 'clashes' | 'draws' | 'depends' | 'plain' | 'for'
@@ -288,23 +289,25 @@ function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
         />
         <span className={styles.rule} />
         {/* A customer tag always points item → customer (D-044). */}
-        <Button
-          disabled={edge.kind === FOR}
-          title={edge.kind === FOR ? 'A customer tag always points at the customer' : 'Turn the arrow around'}
-          onClick={() => void reverseEdge(wid, edge)}
-        >
-          ⇄ reverse
-        </Button>
-        <Button
-          tone="danger"
-          title="Delete or Backspace"
-          onClick={() => {
-            useCanvasView.setState({ linkSelected: null })
-            void deleteEdge(wid, edge.id)
-          }}
-        >
-          × remove
-        </Button>
+        <ButtonGroup>
+          <Button
+            disabled={edge.kind === FOR}
+            title={edge.kind === FOR ? 'A customer tag always points at the customer' : 'Turn the arrow around'}
+            onClick={() => void reverseEdge(wid, edge)}
+          >
+            ⇄ reverse
+          </Button>
+          <Button
+            tone="danger"
+            title="Delete or Backspace"
+            onClick={() => {
+              useCanvasView.setState({ linkSelected: null })
+              void deleteEdge(wid, edge.id)
+            }}
+          >
+            × remove
+          </Button>
+        </ButtonGroup>
       </div>
     </div>
   )

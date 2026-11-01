@@ -21,7 +21,7 @@ import { deleteEdge, FOR } from '../../../data/edges'
 import { mismatch } from '../../../data/evidence'
 import { PanelSection } from '../../../ui/patterns/SidePanel'
 import { Select } from '../../../ui/primitives/Select'
-import { CardPicker, goToCard, KIND_LABEL, PLACEHOLDER, Pills, useCommit, type P } from './CardPanel'
+import { CardPicker, goToCard, KIND_LABEL, PLACEHOLDER, useCommit, type P } from './CardPanel'
 import { createEdge } from '../../../data/edges'
 import { useWs } from '../canvas/context'
 import { useCanvasView } from '../../../state/canvasView'
@@ -30,6 +30,8 @@ import { packageTree } from '../plane/cardInside'
 import { confidenceFor } from '../plane/cardFacts'
 import styles from './CardPanel.module.css'
 import { Button } from '../../../ui/primitives/Button'
+import { Choice } from '../../../ui/primitives/Choice'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Label } from '../../../ui/primitives/Label'
@@ -118,7 +120,7 @@ export function CompetitorProfile({ n, card, editor }: P) {
             />
           ) : (
             editor && (
-              <Button icon className={styles.inlineAdd} onClick={() => setRegion('')}>
+              <Button onClick={() => setRegion('')}>
                 <span className={styles.plus}>+</span> region
               </Button>
             )
@@ -212,14 +214,13 @@ function NewFeature({ card, cards, categories, onDone }: { card: Card; cards: Ca
         <div className={styles.cats}>
           <Field size="sm" label="Category" placeholder="booking, operations…" value={f.category ?? ''} maxLength={100} onChange={(v) => setF({ ...f, category: v })} onKeyDown={keys} />
           {categories.length > 0 && (
-            <Pills values={categories} value={f.category} editor label="Categories in use" onPick={(v) => setF({ ...f, category: v })} />
+            <Choice bare clearable options={categories} value={f.category} label="Categories in use" onChange={(v) => setF({ ...f, category: v })} />
           )}
         </div>
         <Label>offered</Label>
-        <Pills values={AVAILABILITIES} value={f.availability} editor label="Offered" onPick={(v) => setF({ ...f, availability: v })} />
+        <Choice bare clearable options={AVAILABILITIES} value={f.availability} label="Offered" onChange={(v) => setF({ ...f, availability: v })} />
         <Label>ours</Label>
         <Select
-          className={styles.select}
           value={ours}
           ariaLabel="Our feature it matches"
           options={[{ value: '', label: 'none' }, ...features.map((c) => ({ value: c.id, label: c.title || 'untitled feature' }))]}
@@ -229,13 +230,14 @@ function NewFeature({ card, cards, categories, onDone }: { card: Card; cards: Ca
         <Field size="sm" label="Seen at" placeholder="where it was seen" value={f.url ?? ''} maxLength={2000} onChange={(v) => setF({ ...f, url: v })} onKeyDown={keys} />
       </div>
       <div className={styles.formActions}>
-        <Button tone="primary" disabled={!f.name.trim()} onClick={add}>
-          add
-        </Button>
-        <Button onClick={() => onDone(null, null)}>
-          cancel
-        </Button>
-        <span className={styles.hint}>enter adds · esc</span>
+        <ButtonGroup>
+          <Button tone="primary" disabled={!f.name.trim()} onClick={add}>
+            add
+          </Button>
+          <Button onClick={() => onDone(null, null)}>
+            cancel
+          </Button>
+        </ButtonGroup>
       </div>
     </div>
   )
@@ -259,11 +261,10 @@ function FeatureDetails({ f, card, cards, ours, editor, categories, onClose }: {
         <Label>category</Label>
         <ValueField value={f.category} placeholder={categories.length ? categories.join(', ') : 'booking, operations…'} editor={editor} onSave={(v) => set({ category: v })} />
         <Label>offered</Label>
-        <Pills values={AVAILABILITIES} value={f.availability} editor={editor} label="Offered" onPick={(v) => set({ availability: v })} />
+        <Choice bare clearable options={AVAILABILITIES} value={f.availability} disabled={!editor} label="Offered" onChange={(v) => set({ availability: v })} />
         <Label>ours</Label>
         {editor ? (
           <Select
-            className={styles.select}
             value={ours?.id ?? ''}
             ariaLabel="Our feature it matches"
             options={[{ value: '', label: 'none' }, ...features.map((c) => ({ value: c.id, label: c.title || 'untitled feature' }))]}
@@ -316,7 +317,7 @@ export function Parent({ card, cards, editor }: { card: Card; cards: Card[]; edi
             <CardPicker card={card} cards={cards} types={[card.type]} exclude={below} onPick={(c) => (setPicking(false), createEdge(wid, card, c, 'part-of'))} onClose={() => setPicking(false)} />
           </div>
         ) : (
-          <Button icon className={styles.inlineAdd} onClick={() => setPicking(true)}>
+          <Button onClick={() => setPicking(true)}>
             <span className={styles.plus}>+</span> {card.type === 'idea' ? 'an idea' : `a ${card.type}`}
           </Button>
         )}

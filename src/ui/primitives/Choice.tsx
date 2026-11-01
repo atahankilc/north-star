@@ -1,4 +1,7 @@
-// One row of `[P1] P2 P3`. Clicking the active option clears it only when it's `clearable`; else it stays picked.
+// One row of options, one of them picked (`P1 P2 P3`, D-344): Tabs' segments, so every one-of-several in the app is
+// drawn by one component (Tabs), the picked one lit (cyan, or its own colour from `tones`). Clicking the picked option
+// clears it only when it's `clearable`; else it stays picked.
+import { Tabs } from './Tabs'
 import styles from './Choice.module.css'
 
 type Props<T extends string> = {
@@ -9,28 +12,23 @@ type Props<T extends string> = {
   tones?: Partial<Record<T, string>>
   // Only the options; the label is still read out (a settings Row shows its own, D-097).
   bare?: boolean
+  // Who can't edit sees it, can't change it.
+  disabled?: boolean
 } & ({ clearable: true; onChange: (v: T | undefined) => void } | { clearable?: false; onChange: (v: T) => void })
 
-export function Choice<T extends string>({ label, options, value, tones, bare, ...pick }: Props<T>) {
+export function Choice<T extends string>({ label, options, value, tones, bare, disabled, ...pick }: Props<T>) {
   const group = (
-    <span className={styles.options} role="radiogroup" aria-label={label}>
-      {options.map((o) => (
-        <button
-          key={o}
-          role="radio"
-          aria-checked={value === o}
-          className={styles.option}
-          // A picker: locked for a viewer it still shows the value (D-098).
-          data-edit
-          data-active={value === o}
-          data-tone={tones?.[o] ? '' : undefined}
-          style={tones?.[o] ? { ['--tone' as string]: tones[o] } : undefined}
-          onClick={() => (pick.clearable ? pick.onChange(value === o ? undefined : o) : value !== o && pick.onChange(o))}
-        >
-          {o}
-        </button>
-      ))}
-    </span>
+    <Tabs<T>
+      look="segments"
+      label={label}
+      // A picker: locked for a viewer it still shows the value (D-098).
+      edit
+      disabled={disabled}
+      options={options.map((o) => ({ value: o, label: o, tone: tones?.[o] }))}
+      value={value}
+      onChange={(v) => pick.onChange(v)}
+      onReclick={pick.clearable ? () => pick.onChange(undefined) : undefined}
+    />
   )
   if (bare) return group
   return (

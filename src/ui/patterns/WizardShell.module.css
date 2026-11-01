@@ -40,15 +40,10 @@
 
 .foot {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   padding: var(--space-3) var(--space-4);
   border-top: var(--line-w) solid var(--line);
-}
-
-.end {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
 }
 
 @media (max-width: 760px) {

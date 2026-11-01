@@ -180,7 +180,7 @@ function HeldTasks({ piece, held, onDone }: { piece: WithId<Piece>; held: Task[]
       <span className={styles.heldActs}>
         {!cardsHere && (
           <span className={styles.heldAct}>
-            <Button tone="main" autoFocus onClick={() => void makeNew()} title="a new deck next to this one holds the cards; the tasks stay here">
+            <Button tone="primary" autoFocus onClick={() => void makeNew()} title="a new deck next to this one holds the cards; the tasks stay here">
               make a new deck for cards
             </Button>
             <span className={styles.heldHint}>next to this one; the tasks stay</span>
@@ -188,7 +188,8 @@ function HeldTasks({ piece, held, onDone }: { piece: WithId<Piece>; held: Task[]
         )}
         {others.length > 0 && (
           <span className={styles.heldAct}>
-            <Button tone="primary" aria-expanded={picking} onClick={() => setPicking(!picking)}>
+            {/* The one that goes (D-344): this when it holds cards; with tasks still on it, making a new deck is. */}
+            <Button tone={cardsHere ? 'primary' : undefined} aria-expanded={picking} onClick={() => setPicking(!picking)}>
               move the tasks to {picking ? '▴' : '▾'}
             </Button>
             <span className={styles.heldHint}>{cardsHere ? 'into the column of the same name' : 'then this one holds cards'}</span>
@@ -212,11 +213,11 @@ function HeldTasks({ piece, held, onDone }: { piece: WithId<Piece>; held: Task[]
           </span>
         )}
         {cardsHere ? (
-          <Button tone="primary" onClick={() => void setKanbanSetup(wid, piece.id, { holds: undefined }, 'hold tasks on a deck')}>
+          <Button onClick={() => void setKanbanSetup(wid, piece.id, { holds: undefined }, 'hold tasks on a deck')}>
             hold tasks again
           </Button>
         ) : (
-          <Button tone="primary" onClick={onDone}>
+          <Button onClick={onDone}>
             keep tasks
           </Button>
         )}

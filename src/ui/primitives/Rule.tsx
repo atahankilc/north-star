@@ -35,7 +35,7 @@ export function Rule({ n, name, count, countAt = 'name', aside, add, line = true
       {countAt === 'end' && countEl}
       {aside !== undefined && <span className={styles.aside}>{aside}</span>}
       {add && (
-        <Button icon className={styles.add} onClick={add.onClick}>
+        <Button className={styles.add} onClick={add.onClick}>
           <span className={styles.plus}>+ </span>
           {add.label}
         </Button>

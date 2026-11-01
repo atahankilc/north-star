@@ -1,41 +1,26 @@
-/* A wizard's numbered steps (src/ui/patterns/Steps.tsx, D-326). */
+/* A wizard's numbered steps (src/ui/patterns/Steps.tsx, D-326): the same tab cells as Tabs (D-344), joined by a seam
+   and as wide as their row; the current one lit as a pressed Button, the ones behind a little brighter. */
 .steps {
   display: flex;
+  gap: var(--line-w);
+  padding: var(--space-2);
   border-bottom: var(--line-w) solid var(--line);
 }
 
 .step {
-  composes: label from '../primitives/Label.module.css';
-  flex: 1;
+  composes: option from '../primitives/Tabs.module.css';
+  flex: 1 1 0;
+  justify-content: flex-start;
   min-width: 0;
-  padding: var(--space-3) var(--space-4);
+  padding: 0 var(--space-3);
   overflow: hidden;
-  border: 0;
-  background: none;
-  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 transparent;
-  font-family: inherit;
-  text-align: left;
+  letter-spacing: var(--track-label);
   text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
+  text-transform: uppercase;
 }
 
-.steps .step:hover {
-  color: var(--fg);
-}
-
-.steps .step[data-done] {
+.step[data-done] {
   color: var(--fg-muted);
-}
-
-.steps .step[aria-selected='true'] {
-  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 var(--accent-magenta);
-  color: var(--fg-strong);
-}
-
-.step:focus-visible {
-  outline: var(--line-w) solid var(--accent-cyan);
-  outline-offset: calc(-1 * var(--space-half));
 }
 
 .num {

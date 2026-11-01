@@ -1,59 +1,41 @@
-/* The one checkbox (src/ui/primitives/Checkbox.tsx, D-326): `[x]` cyan (or its tone) when on, `[ ]` faint when off. */
+/* The one checkbox (src/ui/primitives/Checkbox.tsx, D-344): a Button cell you switch on; on, it's lit as a pressed
+   Button (Button.module.css's aria-checked) with `✓` before the word. */
 .check {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-muted);
-  font: inherit;
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
+  composes: sm from './Button.module.css';
+  justify-content: flex-start;
   text-align: left;
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out);
 }
 
-.check[data-size='xs'] {
-  font-size: var(--text-xs);
-}
-
-.check:hover {
-  color: var(--fg-strong);
-}
-
-.check[aria-checked='true'] {
-  color: var(--fg);
-}
-
-.box {
-  font-family: var(--font-mono);
+.mark {
   flex: none;
-  color: var(--tone, var(--accent-cyan));
 }
 
-.check[aria-checked='false'] .box {
-  color: var(--fg-faint);
+/* CheckMark (a span inside a row that is the button): lit as a ticked one. */
+.check[data-on] {
+  background: color-mix(in srgb, var(--button-on, var(--accent-cyan)) var(--mix-wash), transparent);
+  color: var(--button-on, var(--accent-cyan));
+  box-shadow: inset 0 calc(-1 * var(--line-w)) 0 var(--button-on, var(--accent-cyan));
+}
+
+.label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .check[aria-checked='true'][data-strike] .label {
-  color: var(--fg-dim);
   text-decoration: line-through;
 }
 
-.text {
+/* A setup's option: the cell, its hint under it. */
+.withHint {
   display: inline-flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-half);
 }
 
 .hint {
-  margin-top: var(--space-half);
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--text-xs);
-}
-
-.check:disabled {
-  opacity: var(--o-faint);
-  cursor: not-allowed;
 }

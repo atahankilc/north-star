@@ -1,10 +1,12 @@
 // The focus dock (D-189): a tab sitting on the bottom edge of the screen, in the middle, while a plane is in focus. It
-// holds what can be done there, `[unfocus]` last; more actions come in before it. No plane name: the breadcrumb has it.
-// The same dock is a pane's beside a plane (D-211), named. `esc` shows on whatever Escape closes next, in whichever dock.
+// holds what can be done there, `unfocus` last; more actions come in before it, joined in one strip (ButtonGroup,
+// D-344). No plane name: the breadcrumb has it. The same dock is a pane's beside a plane (D-211), named. No keys shown
+// (Escape closes what's open next; onboarding teaches it).
 import type { ReactNode } from 'react'
 import { isReducedMotion } from '../../../state/motion'
 import styles from './FocusDock.module.css'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 
 // `center`: where its middle sits (screen px); its box's middle when unset (the screen's, or a pane's beside a plane:
 // each part has its own dock, D-211). `name`: what it's the dock of, first, set off by `|` (a pane's: `TABLE · costs`).
@@ -29,15 +31,14 @@ export function FocusDock({ children, center, name, label = 'Focus' }: { childre
           </span>
         </>
       )}
-      {children}
+      <ButtonGroup>{children}</ButtonGroup>
     </div>
   )
 }
 
-// One action: `[verb]` and its key, faint, after it. `main` is the strong one (unfocus).
-export function DockAction({ label, keyHint, title, main, pressed, tone, onClick }: {
+// One action, a Button cell. `main` is the strong one (unfocus).
+export function DockAction({ label, title, main, pressed, tone, onClick }: {
   label: string
-  keyHint?: string
   title?: string
   main?: boolean
   // A switch (what's open beside the plane, D-211): lit while on.
@@ -47,7 +48,7 @@ export function DockAction({ label, keyHint, title, main, pressed, tone, onClick
   onClick: () => void
 }) {
   return (
-    <Button tone={main ? 'main' : undefined} pressed={pressed} keyHint={keyHint} title={title} style={tone ? { color: tone } : undefined} onClick={onClick}>
+    <Button tone={main ? 'main' : undefined} pressed={pressed} title={title} style={tone ? { color: tone } : undefined} onClick={onClick}>
       {label}
     </Button>
   )

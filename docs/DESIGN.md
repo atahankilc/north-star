@@ -68,7 +68,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Big size contrast: huge display titles, small mono labels.
 - *Which face (D-337, replacing D-093's split):* Inter is the page's default: titles, reading text, rows, hints, meta
   lines, fields, settings, menus' items, tasks, table cells. JetBrains Mono only where the system speaks: caps labels
-  (Label, Rule, kinds, piece names, column heads), numbers and counts, `[verb]` buttons, keys (`[p]`, `⌘F`), the
+  (Label, Rule, kinds, piece names, column heads), numbers and counts, buttons, keys (`[p]`, `⌘F`), the
   prompt's `>` and `›`, glyphs, cells, consoles and docks, readouts, tags, sticky notes, and the landing's name (D-340). A rule that sets mono on a
   whole container is wrong now: set it on the bit.
 - *Scale (tokens.css; no raw px sizes):* `--text-xs` 12 (labels, meta, small buttons; nothing smaller), `--text-sm` 14 (body
@@ -135,9 +135,24 @@ Values will be tuned against contrast checks (WCAG AA for text).
 ## 6. Components (ASCII-styled DOM)
 
 - Boxes drawn with box characters (`┌─┐│└┘`) or 1px lines that echo them
-- Buttons, two sizes, both lowercase (`src/ui/primitives/Button.tsx`, D-093, D-326): `<Button size="md">` `[ create ]` (spaced
-  coloured brackets, accent fill on hover) for the main action of a form or panel; `<Button>` (`sm`) `[share]` (dim, faint
-  brackets; `tone="primary"` cyan, `"danger"` magenta on hover) for row and inline actions. Use `Button`; never redraw brackets.
+- Buttons are cells (D-344, `src/ui/primitives/Button.tsx`, lowercase, D-093): every button is the same cell, a faint
+  shade (`--wash-2`) that says "you can press this", a step brighter on hover (`--wash-3`), a little smaller while pressed
+  (`--press-scale`); its kind shows only in its fill and ink, never in its shape. No brackets, no key after it (keys live
+  in its `title`; onboarding teaches them). `sm` is 24 px (`--control-sm`; a glyph's cell 24 × 24, `icon`), mono 12;
+  `tone="main"` a row's strong one (`--wash-3`, `--fg`), `"primary"` the one that goes, a solid cyan cell (save, add,
+  make, apply, done: **at most one on a surface**), `"danger"` magenta on hover (`--wash-magenta`), `"hazard"` the solid
+  magenta one where deleting is the point (the hazard confirm); `pressed` (a switch on, a Choice picked) cyan on
+  `--wash-cyan` with a line under it, `--button-on` another colour. `md` the page's: a white 36 px cell, its accent wiping
+  in on hover. `link` (a name that goes somewhere) has no cell. The HUD's ToolButton is the same cell at 30 px
+  (`--control`), cyan while what it opens is open. A caller's class only places a button (margin, flex, shown on hover),
+  never repaints, repads or resizes it.
+- **ButtonGroup** (D-344, `src/ui/primitives/ButtonGroup.tsx`): buttons that belong together join into one strip, a
+  hairline between their cells instead of a gap: a dock's or console's actions, a panel's or a wizard's foot, a zoom's
+  `− 100% +`, a Choice's options. Menu's triggers (`SHOW all ▾`, `lanes ▾`, the side nav's `+`) are the same cell.
+- **Controls are toggle cells** (D-344), one kit component each: Checkbox (the label is the cell, `✓` before it while
+  on; no label, a square box cell; `CheckMark` inside a row), Tabs (cells joined by the seam, filling their row; Choice
+  is its segments, Steps its cell), one dropdown trigger (`Trigger.module.css`, Menu's and Select's). A menu's ticked
+  rows show `✓` on a wash. A person's square is `Avatar` (30 px in the HUD, 24 in rows).
 - Inputs: underscore or caret cursor `▌`, mono text
 - Tags: `#tag` in an accent colour
 - **Marks** (D-265, `src/ui/primitives/Marks.tsx`, tokens `--mark-*`): hover and selection on everything selectable (cards, text,
@@ -219,14 +234,14 @@ Values will be tuned against contrast checks (WCAG AA for text).
   corner and edge, the console a cyan status line with the live size and `[done]`.
 - Focus (D-185, D-189, D-297): a plane spreads over the screen like ink, cell by cell, while its own view glides to fit
   what it holds (going out it glides home while the ink draws back); its page eases from the piece's graphite to the
-  black on the way in and back on the way out, everything on `--bg` inside with it. The focus dock is a tab on the bottom edge's middle, `[unfocus] esc` last. The right of the screen stays free,
+  black on the way in and back on the way out, everything on `--bg` inside with it. The focus dock is a tab on the bottom edge's middle, its actions one ButtonGroup, `unfocus` last. The right of the screen stays free,
   except what's beside the plane (D-211) and the right panel (D-219).
 
 ### HUD (D-027, D-175)
 - Top left on every page but the landing (which has none, D-340): the breadcrumb (`# north-star / workspaces / <name>`, then the focused plane's name, D-189).
   Everything else moves to a left side nav piece by piece. Screen-edge margins come only from `--hud-x` / `--hud-y`.
-- The side nav's tools at the middle of the left edge (D-178): unframed icon buttons like the gear; the `+` a drawn 20 px
-  magenta `+`, its menu opening right.
+- The side nav's tools at the middle of the left edge (D-178): ToolButton cells like the gear (D-344); the `+` a drawn 20 px
+  magenta `+` in its cell, its menu opening right.
 - Bottom-left corner, `--space-3` from the edges, top to bottom (D-175, D-193): people here (D-169: squares, no names,
   overlapping, name on hover, `+N` past four; a click follows), the threads button, a short rule, your square (initial,
   name on hover), the ⚙ (a cyan count when people wait to join). Anything else bottom left stays `--corner-h` above.
@@ -235,7 +250,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   the current page with a cyan left bar; on the right a title, a one-line description and framed sections (label in the
   top edge, rows split by hairlines, a note at the foot). Below 640 px the menu becomes tabs. 1.0's `ASSISTANT` (keys,
   usage) comes back with the assistant. Signed out there are no controls (D-069).
-- Dropdowns (`src/ui/patterns/Menu.tsx`) are a **prompt** (D-222): a framed trigger `SHOW all ▾` (or a side nav icon), a list on
+- Dropdowns (`src/ui/patterns/Menu.tsx`) are a **prompt** (D-222): a trigger cell `SHOW all ▾` (D-344) (or a side nav icon), a list on
   page black with a `--line-hover` edge, built cell by cell. On top a `>` line with focus (a placeholder saying what it
   does: `add…`, `find a place…`): typing narrows the list, the typed part lit magenta, Enter picks the first. `# text`
   section lines. A row: a magenta `›` where Enter goes, the item's letter `[p]` (typed alone it goes first: `+` `p` Enter

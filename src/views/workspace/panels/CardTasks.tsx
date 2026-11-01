@@ -11,12 +11,14 @@ import { addTask, orderBetween, overdue, tasksIn, TASK_TITLE_MAX, untested, type
 import { useCanvasView } from '../../../state/canvasView'
 import { PanelSection } from '../../../ui/patterns/SidePanel'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { PromptField } from '../../../ui/primitives/PromptField'
 import { useWs } from '../canvas/context'
 import { dueText, kanbanOf, selectTask } from '../deck/Kanban'
 import { kindOfPiece } from '../../../data/pieces'
 import styles from './CardPanel.module.css'
 import own from './CardTasks.module.css'
+import { CheckMark } from '../../../ui/primitives/Checkbox'
 
 // The kanban new tasks went into last, kept while the tab is open.
 let lastKanban: string | null = null
@@ -73,7 +75,7 @@ export function TasksSection({ n, card, editor }: { n: number; card: Card; edito
         const late = overdue(t, !!col?.done)
         return (
           <button /* kit-ok: a task's whole row (its column, title, where) that opens it */ key={t.id} className={own.row} data-done={col?.done || undefined} onClick={() => openTask(t)} title="open the task">
-            <span className={own.box}>[{col?.done ? 'x' : ' '}]</span>
+            <CheckMark checked={!!col?.done} tone="var(--accent-green)" />
             <span className={own.title}>{t.title}</span>
             {t.due && !col?.done && (
               <span className={own.due} data-late={late || undefined}>
@@ -87,13 +89,13 @@ export function TasksSection({ n, card, editor }: { n: number; card: Card; edito
       {draft !== null && (
         <div className={own.add}>
           {kanbans.length > 1 && (
-            <div className={styles.pills} role="group" aria-label="Into which deck">
+            <ButtonGroup label="Into which deck">
               {kanbans.map((k) => (
                 <Button key={k.id} pressed={k.id === kanban?.id} onMouseDown={(e) => e.preventDefault()} onClick={() => setInto(k.id)}>
                   {k.name || 'deck'}
                 </Button>
               ))}
-            </div>
+            </ButtonGroup>
           )}
           <PromptField
             framed
@@ -111,11 +113,11 @@ export function TasksSection({ n, card, editor }: { n: number; card: Card; edito
         </div>
       )}
       {testable && draft === null && (
-        <div className={styles.pills}>
+        <ButtonGroup>
           <Button onClick={testIt} title="A task to find out whether this holds">
             + test it
           </Button>
-        </div>
+        </ButtonGroup>
       )}
       {editor && !kanbans.length && <p className={own.none}>no deck yet: put one on the canvas from its +</p>}
     </PanelSection>

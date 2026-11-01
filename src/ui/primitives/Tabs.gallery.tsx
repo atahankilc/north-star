@@ -37,7 +37,7 @@ export default example({
   place: 'forms/pickers',
   also: ['hud/navigation'],
   file: 'src/ui/primitives/Tabs.tsx',
-  note: 'one row, one current (D-326): tabs (a setup’s) or segments (a switch); arrows move and pick',
+  note: 'one row, one current (D-326; cells, D-344): Button cells joined by a seam; tabs fill their row, segments (a switch, every Choice) fit their words; arrows move and pick',
   states: {
     tabs: () => <Live label="setup" options={SETUP} start="rows" />,
     segments: () => <Live label="where" look="segments" options={WHERE} start="here" />,

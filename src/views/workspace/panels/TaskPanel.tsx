@@ -15,15 +15,18 @@ import { useMembers } from '../../../data/workspaces'
 import { useCanvasView } from '../../../state/canvasView'
 import { PanelAction, PanelSection, SidePanel } from '../../../ui/patterns/SidePanel'
 import { Select } from '../../../ui/primitives/Select'
-import { CardPicker, EvidenceForm, Pills, PLACEHOLDER, useCommit } from './CardPanel'
+import { CardPicker, EvidenceForm, PLACEHOLDER, useCommit } from './CardPanel'
 import { useWs } from '../canvas/context'
 import { dueText, kanbanOf, selectTask, useKanbanUi } from '../deck/Kanban'
 import { TYPE_ACCENT } from '../plane/PlaneCards'
 import { useTasksSide } from '../deck/sideState'
 import styles from './CardPanel.module.css'
 import own from './TaskPanel.module.css'
+import { Checkbox } from '../../../ui/primitives/Checkbox'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
+import { Choice } from '../../../ui/primitives/Choice'
 import { Field } from '../../../ui/primitives/Field'
 import { Label } from '../../../ui/primitives/Label'
 
@@ -201,7 +204,7 @@ function ManyInside({ tasks: picked, cols, editor }: { tasks: Task[]; cols: { id
     <>
       <div className={styles.under}>{inCol.map(([c, n]) => `${n} in ${c.name}`).join(' · ')}</div>
       <PanelSection n={1} name="move to">
-        <Pills values={cols.map((c) => c.name)} value={col === SEVERAL ? undefined : cols.find((c) => c.id === col)?.name} editor={editor} label="Move to" onPick={(name) => {
+        <Choice bare clearable options={cols.map((c) => c.name)} value={col === SEVERAL ? undefined : cols.find((c) => c.id === col)?.name} disabled={!editor} label="Move to" onChange={(name) => {
           const to = cols.find((c) => c.name === name)
           if (to) moveTo(to.id)
         }} />
@@ -254,19 +257,13 @@ function Inside({ task, cols, editor }: InsideProps) {
   return (
     <>
       <PanelSection n={1} name="column">
-        <Pills
-          values={names}
-          value={col?.name}
-          editor={editor}
-          label="Column"
-          onPick={(name) => {
+        <Choice bare clearable options={names} value={col?.name} disabled={!editor} label="Column" onChange={(name) => {
             const to = cols.find((c) => c.name === name)
             if (!to || to.id === task.col) return
             // At the end of the column it goes to.
             const last = tasksIn(tasks.filter((t) => t.pieceId === task.pieceId), to.id).at(-1)?.order
             void moveTask(wid, task, to.id, orderBetween(last, undefined))
-          }}
-        />
+          }} />
       </PanelSection>
       <Assignee task={task} editor={editor} n={2} />
       <Due task={task} finished={!!col?.done} editor={editor} n={3} />
@@ -412,7 +409,7 @@ function Priority({ task, editor, n }: { task: Task; editor: boolean; n: number 
   const { wid } = useWs()
   return (
     <PanelSection n={n} name="priority">
-      <Pills values={TASK_PRIORITIES} value={task.priority} editor={editor} label="Priority" onPick={(v) => void updateTask(wid, task, { priority: v }, v ? 'set a task’s priority' : 'clear a task’s priority')} />
+      <Choice bare clearable options={TASK_PRIORITIES} value={task.priority} disabled={!editor} label="Priority" onChange={(v) => void updateTask(wid, task, { priority: v }, v ? 'set a task’s priority' : 'clear a task’s priority')} />
     </PanelSection>
   )
 }
@@ -460,13 +457,13 @@ function Labels({ task, editor, n }: { task: Task; editor: boolean; n: number })
         )}
       </div>
       {offer.length > 0 && (
-        <div className={styles.pills}>
+        <ButtonGroup>
           {offer.map((l) => (
             <Button key={l} onMouseDown={(e) => e.preventDefault()} onClick={() => add(l)}>
               #{l}
             </Button>
           ))}
-        </div>
+        </ButtonGroup>
       )}
     </PanelSection>
   )
@@ -514,7 +511,7 @@ function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }
             <span className={own.gone}>its card is gone</span>
           )}
           {editor && (
-            <Button icon tone="danger" className={styles.chipX} style={{ display: 'inline' }} title="let go of it" onClick={() => void updateTask(wid, task, { cardId: undefined, cardType: undefined }, 'unlink a task')}>
+            <Button icon tone="danger" className={styles.chipX} style={{ display: 'inline-flex' }} title="let go of it" onClick={() => void updateTask(wid, task, { cardId: undefined, cardType: undefined }, 'unlink a task')}>
               ×
             </Button>
           )}
@@ -554,9 +551,8 @@ function Checklist({ task, editor, n }: { task: Task; editor: boolean; n: number
       <ul className={own.checks}>
         {checks.map((c) => (
           <li key={c.id} className={own.check} data-done={c.done || undefined}>
-            <button /* kit-ok: the checklist's [x], beside its text typed in place (a Checkbox's label would tick it) */ className={own.box} aria-pressed={!!c.done} disabled={!editor} aria-label={c.done ? 'untick' : 'tick'} onClick={() => set(checks.map((x) => (x.id === c.id ? { ...x, done: !x.done || undefined } : x)))}>
-              [{c.done ? 'x' : ' '}]
-            </button>
+            {/* The box alone (no label): its text beside it is typed in place, so a click there must not tick it. */}
+            <Checkbox checked={!!c.done} disabled={!editor} tone="var(--accent-green)" aria-label={c.done ? 'untick' : 'tick'} onChange={() => set(checks.map((x) => (x.id === c.id ? { ...x, done: !x.done || undefined } : x)))} />
             {typing === c.id ? (
               <CheckField
                 value={c.text}

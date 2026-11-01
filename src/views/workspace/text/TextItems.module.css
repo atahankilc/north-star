@@ -214,14 +214,15 @@
   gap: var(--space-1);
 }
 
-/* Folding a long note: a small glyph in the band, a size over its signature, ink, darker on hover. */
-/* `▾`, a Button icon in the note's ink at the world's size. `[data-icon]` outweighs the Button's own. */
+/* Folding a long note: `▾`, a Button icon in the glue band at the world's size (D-344's exception for the zoomed world:
+   its cell in world units, em) and in the note's ink, which is the only ink that reads on its paper. */
 .stickyFold[data-icon] {
-  padding: 0 var(--space-half);
+  height: auto;
+  min-width: 0;
+  padding: 0.3em 0.5em;
   color: inherit;
   font-family: inherit;
   font-size: var(--w-text-3xs);
-  line-height: var(--lh-none);
 }
 
 .stickyFold[data-icon]:hover {
@@ -536,7 +537,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-1) var(--space-3);
+  padding: var(--space-1);
   border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
   color: var(--fg-dim);

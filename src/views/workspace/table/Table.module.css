@@ -220,11 +220,7 @@
 .remove {
   flex-shrink: 0;
   opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
-}
-
-.remove[data-icon] {
-  padding: 0 var(--space-half);
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
 
 .name:hover .remove,
@@ -316,25 +312,6 @@
   font-size: var(--text-sm);
 }
 
-/* `+` for a column at the end of the heads, `+ row` under the rows. */
-/* (Button icons, placed in the grid; `[data-icon]` outweighs the Button's own padding and colour.) */
-.add[data-icon] {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0 var(--space-3);
-  color: var(--fg-faint);
-}
-
-.add[data-icon][data-col] {
-  justify-content: center;
-  padding: 0;
-}
-
-.add[data-icon]:hover {
-  color: var(--accent-magenta);
-}
-
 /* No rows: the kit's Empty (dim), in the rows' place. */
 .empty {
   display: flex;
@@ -374,20 +351,16 @@
 /* The page controls in its dock (D-213): `‹ 2 / 5 ›` and the rows a page. */
 .pager {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-1);
 }
 
+/* `2 / 5` between the page arrows, in their strip (ButtonGroup, D-344). */
 .pageAt {
+  padding: 0 var(--space-2);
   color: var(--fg);
   white-space: nowrap;
 }
 
-.pageSize {
-  color: var(--fg-muted);
-}
 
-.tool:disabled {
-  color: var(--fg-faint);
-  cursor: default;
-}
+

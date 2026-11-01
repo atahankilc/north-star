@@ -848,6 +848,7 @@ save reports rather than whole chats (chats stay in the tab, D-073); every repor
 - Never under reduced motion (no antics there, no `nar` listener). Dev hook: `__orbPom()` does what `nar` does.
 
 ### D-093 · 2026-10-18 · Accepted (refines D-024, D-027; DESIGN.md §4, §6)
+_The `[verb]` / `[ create ]` button look here was replaced by D-344 (buttons are cells, no brackets)._
 **One page system: shared tokens, two labels, two button sizes, every view from the same left edge.** User: the pages looked
 inconsistent with each other. Audited with screenshots (dark 1440, light 1440, dark 390) of board + panel, flow, table, reports,
 the report screen and every Settings page; the assistant chat was left out on purpose (the user will redesign it).
@@ -5958,6 +5959,7 @@ gallery/headless shots in dark and light: changes listed in the spec are expecte
 - *Not yet:* TS durations read from one source (D-326 took it).
 
 ### D-326 · 2026-10-31 · Accepted (the user: "farklı componentler farklı kategoriler altında olmalı… bir çok şey individual componentlerden oluşturulmak yerine yeniden kodlanıyorsa… bu gallery'nin bir anlamı yok… bir bina gibi foundation'ımızın iyi olması lazım"; then "evet, haritayla başla, G3'ü birlikte commit et")
+_Button's `[verb]` look and its `keyHint` here were replaced by D-344 (cells, ButtonGroup, no keys)._
 **The UI is built like a building, from the bottom: foundations (tokens, motion), the kit (primitives), patterns, then the
 rooms (features); the gallery's map shows those floors, by what a thing is, never by its folder** (the audit:
 docs/foundation-audit-2026-10-31.md).
@@ -6508,6 +6510,7 @@ Not yet: dark theme faint on some screens (Q-033).
 
 
 ### D-343 · 2026-11-01 · Accepted (the user: "şu an 5 farklı buttonumuz var: AsciiButton, Button, ToolButton, TasksButton ve GuideButton… bunların bu kadar farklı olmasının nedenini anlamadım"; "hudda toplam 7 icon var… settings iconu neden diğerlerinden daha küçük. Herekiyosa hud button diye bişi yapalım ama hepsi consisten olsun")
+_The HUD tools' unframed look here was replaced by D-344 (ToolButton is a cell like every Button)._
 Two buttons only: `Button` (a `[verb]`, sm/md/icon/link) and `ToolButton` (the HUD's icon square). Everything else
 that read like a button kind was a feature wrapping one of them, and is now named so:
 - AsciiButton deleted (it was `Button size="md"`; commit e1b86de).
@@ -6531,3 +6534,61 @@ Verified: headless Chrome on demo.html (deck-drag), every HUD icon 18 px; typech
 unit tests 983/0, build.
 Where each tool sits (Q-034; the user: "deck butonu yerinde kalsın"): unchanged. The side nav holds the canvas's
 tools (`+`, fit, find, `?`, decks and days); the corner holds people (here now, threads, you, settings).
+
+### D-344 · 2026-11-01 · Accepted (the user: "şu anda button görünümü beni çok memnun etmiyor. [...] olayı çok yer kaplıyor ve button kaplağığı alana göre az text gösteriyor ve bence consistent da değil, bi çok farklı button designımız var. Ve ayrıca da buttonlarının yanıdaki kısa yollar ("esc" gibi) gereksiz"; after two rounds of options (docs/specs/button-preview/): "G looks good but i want all the buttons to be consistent… C is really good at showing what is a button or not… include this to icon buttons too"; then "lets go with cells… find if there is any button outside of our primitive one and also convert them"; "maybe we can add another component for grouping buttons together so they do not take unnecessary space")
+**Buttons are cells; a row of them is one strip.** Supersedes D-093's and D-326's `[verb]` look (the brackets) and
+D-343's unframed HUD icons; the two buttons (Button, ToolButton) stay.
+- Every button is the same cell: `--wash-2` at rest (you see it's a button and how big it is before pointing), `--wash-3`
+  on hover (one step, never an inverted flash), `--press-scale` (0.97) while pressed. A kind shows only in fill and
+  ink, never in shape. Button `sm` 24 px (`--control-sm`, `max(…, 2em)` so a console's growing text keeps it), mono 12;
+  `icon` a 24 × 24 cell (wider for `‹ back`, `100%`); ToolButton the same cell at 30 px; `md` the page's, a white 36 px
+  cell with the accent wiping in. `link` (a name that goes somewhere) has no cell.
+- Tones: `main` a row's strong one (`--wash-3`, `--fg`); `primary` the one that goes, a solid cyan cell, **at most one
+  per surface** (save, add, make, apply, done, join, send); `danger` magenta on hover (`--wash-magenta`); `hazard` the
+  solid magenta one where deleting is the point (the hazard confirm, a person's removal); `pressed` (a switch on, a
+  Choice picked through `aria-checked`) cyan on its wash with a line under it, `--button-on` another colour.
+- A caller's class only places a button (margin, flex, position, shown on hover); it never repaints, repads or resizes it.
+  The ~50 local overrides (hazard confirm's 14 px and magenta fill, documents' `.act` squares, deck tools' 16 px, threads'
+  no padding, the agent head's muted colour…) are deleted.
+- `ButtonGroup` (src/ui/primitives/ButtonGroup.tsx): buttons that belong together touch, a `--line-w` seam between their
+  cells instead of a gap: the focus dock (FocusDock wraps its children), consoles, panel feet (SidePanel's foot and its
+  top-right tools with the `×`), wizard feet (`cancel next make`, make the primary), form actions, zooms, deck column
+  tools, Choice's options, the agent's heads and feet.
+- Buttons outside the kit moved onto it: Choice (`[P1] P2 P3` → cells), the toast's `[undo]`, SidePanel's hand-drawn
+  `[×] esc`, Settings' `[×]`, Window's close (a glyph cell), Menu's four triggers (framed `SHOW all ▾`, plain dock text,
+  the magenta create `+`, the side nav's `+`) composed from Button's cell, the agent's change stepper ‹ ›, the guide's
+  fold count; world-size ones that must stay raw (a package band's `− N`, a card's `+ N parts`) drawn as cells in world
+  tokens. What stays raw is not a button: whole rows, grid cells, column heads, swatches, chips, list options, people's
+  squares, checkboxes (`[x]` is a box, not a button), Select (a field with `▾`).
+- No keys next to or inside a button: Button's `keyHint` prop deleted (the docks' moving `esc`, Window's, the agent's
+  close), `apply ↵`, `discard esc`, `save ⌘↵`, `cancel esc`, the agent box's `⌘J`, the panels' `enter adds · esc`, the
+  follow tag's `esc to stop` (now `stop`), the right panel's `esc`. Keys stay in `title`; onboarding teaches them. The
+  key lines not beside a button (prompt feet, the finder's and guide's foot, DrawSection's hint) are the separate
+  "key hints out" item in state.md.
+- New tokens: `--wash-4` (main's hover), `--wash-magenta` (danger's hover), `--press-scale`.
+- A person's square is one kit `Avatar` (the user: "user badgeleri ile buttonlar aynı genişliğe ve yüksekliğe sahip
+  değiller"): `hud` 30 px like a ToolButton (people here, your square), `sm` 24 px like a Button (rows); PeopleHere,
+  Settings and the people settings drew it three times; the `+N` is a 30 px cell.
+- Round 3 (docs/specs/button-preview/controls.html; the user: "birlikte duran buttonlar için… checkbox/choice/select/
+  tabs/dropdown/filter lar da buttonlarımızla aynı designa sahip olmalı… duplicated olarak farklı yerlerde yazılmamalı",
+  then "G1 and F3"): groups keep G1, the seam. Controls are toggle cells (F3), each drawn by one kit component:
+  - Checkbox: the label is the cell, `✓` before it while on (lit as a pressed Button), a hint under the cell; no label: a
+    square box cell (a checklist beside typed text); `CheckMark` inside a row that is the button. Menu's ticked rows `✓`
+    on a wash. Replaced: Menu's `[x]`, the agent's change tick, CardTasks' and TaskPanel's `[x]`.
+  - Tabs: Button cells joined by the seam, filling their row (from their words' width), the current one lit; Steps
+    composes the same cell; segments fit their words. Choice is Tabs' segments (with tones, clearable, disabled), so one
+    component draws every one-of-several: the card panel's `Pills` (11 uses) deleted for Choice, documents' table |
+    shelf on Choice, the threads inbox's views on Tabs; seven hand-made option rows are ButtonGroups.
+  - One dropdown trigger (src/ui/primitives/Trigger.module.css) composed by Menu and Select; callers' recolourings of
+    Select removed (a link kind's colour and the console's growing text kept).
+  - Filters stay dropdown triggers whose lists are toggle rows; always-open strips of toggles for SHOW/FOR/TAG/REGION/
+    LINKS were not built (long lists would run wide): ask if wanted.
+Alternatives (docs/specs/button-preview/, round 1): bare words with a line under on hover (A), the Marks' corners (B),
+inverted blocks (C), joined strips (D), the menus' `›` caret (E), Inter framed buttons (F), two tiers (G: bare words,
+one solid go; the user liked it but wanted every button alike); round 2: keycaps (I), framed cells (J), dot cells (K),
+cut cells (L). The user picked H, cells.
+Verified: tsc, check:kit (baseline lowered to 30 in 11 files), check:tokens 0, check:gallery 99, check:lessons,
+check:memory, vitest 983/0, build; headless Chrome on the gallery (Button, ButtonGroup, Choice, SidePanel,
+HazardConfirm, WizardShell, FocusDock, card panel, matrix, deck, threads, documents, the HUD corner) in dark and light.
+Fixed on the way: a group wraps when narrower than its cells (the confirm with three actions), Rule's `+ add` a word
+cell (was a glyph, larger), `link` laid out as text (was centred). Not looked at in the running app (needs emulators).

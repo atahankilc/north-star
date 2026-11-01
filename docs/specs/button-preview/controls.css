@@ -1,0 +1,132 @@
+/* Round 3: groups and controls, all on the chosen cell (H, D-344). A preview, not app code. */
+.back { color: var(--fg-dim); text-decoration: none; margin-right: 8px; }
+.back:hover { color: var(--fg); }
+.ctl .tabs { display: inline-flex; gap: 2px; margin-left: 4px; }
+
+/* ── The app's button cell (as Button.module.css now) ── */
+.b {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  height: 24px; padding: 0 8px; margin: 0; border: 0; background: var(--wash-2); color: var(--fg-dim); cursor: pointer;
+  font: 400 var(--text-xs)/1 var(--font-mono); white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out);
+}
+.b:hover { background: var(--wash-3); color: var(--fg-strong); }
+.b:active { transform: scale(0.97); }
+.b[data-v='main'] { background: var(--wash-3); color: var(--fg); }
+.b[data-v='primary'] { background: var(--accent-cyan); color: var(--on-accent); font-weight: 500; }
+.b[data-v='danger']:hover { background: var(--wash-magenta); color: var(--accent-magenta); }
+.b[data-v='icon'] { min-width: 24px; padding: 0 4px; font-size: var(--text-sm); }
+.b[aria-pressed='true'] { background: var(--wash-cyan); color: var(--accent-cyan); box-shadow: inset 0 -1px 0 var(--accent-cyan); }
+.b[data-v='choice'][aria-pressed='true'] { background: color-mix(in srgb, var(--accent-magenta) 8%, transparent); color: var(--accent-magenta); box-shadow: inset 0 -1px 0 var(--accent-magenta); }
+.status { font: 400 var(--text-xs)/1 var(--font-mono); color: var(--accent-cyan); letter-spacing: var(--track-label); padding: 0 8px 0 4px; display: inline-flex; align-items: center; }
+
+/* ═════════ GROUPS ═════════ */
+.grp { display: inline-flex; align-items: stretch; }
+.grp .cut { width: 0; }
+
+/* G1 · SEAM (built now): cells touch, a 1 px seam. */
+[data-g='g1'] .grp { gap: 1px; }
+
+/* G2 · PLATE: the group is one shaded plate, its buttons bare on it until pointed at (a segmented control). */
+[data-g='g2'] .grp { gap: 2px; padding: 2px; background: var(--wash-1); box-shadow: inset 0 0 0 1px var(--line); }
+[data-g='g2'] .grp .b:not([data-v='primary'], [aria-pressed='true']) { background: none; }
+[data-g='g2'] .grp .b:not([data-v='primary']):hover { background: var(--wash-3); }
+[data-g='g2'] .grp .b[data-v='main'] { color: var(--fg); }
+
+/* G3 · ONE CELL: a single shaded cell, hairlines between the words; a hover lights one part. */
+[data-g='g3'] .grp { gap: 0; background: var(--wash-2); }
+[data-g='g3'] .grp .b:not([data-v='primary']) { background: none; }
+[data-g='g3'] .grp > * + * { box-shadow: inset 1px 0 0 var(--line-hover); }
+[data-g='g3'] .grp .b:not([data-v='primary']):hover { background: var(--wash-3); }
+[data-g='g3'] .grp .b[aria-pressed='true'] { background: var(--wash-cyan); box-shadow: inset 1px 0 0 var(--line-hover), inset 0 -1px 0 var(--accent-cyan); }
+
+/* G4 · FRAMED: a thin frame round the group, hairlines inside, no shade until pointed at. */
+[data-g='g4'] .grp { gap: 0; box-shadow: inset 0 0 0 1px var(--line-hover); }
+[data-g='g4'] .grp .b:not([data-v='primary'], [aria-pressed='true']) { background: none; }
+[data-g='g4'] .grp > * + * { box-shadow: inset 1px 0 0 var(--line-hover); }
+[data-g='g4'] .grp .b:not([data-v='primary']):hover { background: var(--wash-2); }
+[data-g='g4'] .grp .b[aria-pressed='true'] { box-shadow: inset 1px 0 0 var(--line-hover), inset 0 -1px 0 var(--accent-cyan); }
+
+/* G5 · SECTIONS: G1's seam, and a wider cut between kinds of action (look · switches · go / leave). */
+[data-g='g5'] .grp { gap: 1px; }
+[data-g='g5'] .grp .cut { width: 7px; }
+
+/* ═════════ CONTROLS ═════════ */
+/* Checkbox: <label class="ck" data-on><span class="box"></span><span class="lab">…</span></label> */
+.ck { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; color: var(--fg); font-size: 13px; cursor: pointer; }
+.ck small { display: block; color: var(--fg-dim); font-size: 12px; }
+.box { flex: none; display: inline-grid; place-items: center; font: 500 11px/1 var(--font-mono); }
+/* Tabs: <span class="tabs2"><button class="tab" aria-selected>ROWS<i>4</i></button>…</span> */
+.tabs2 { display: inline-flex; }
+.tb { border: 0; background: none; cursor: pointer; font: 400 var(--text-xs)/1 var(--font-mono); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--fg-dim); white-space: nowrap; }
+.tb i { font-style: normal; color: var(--fg-faint); margin-left: 6px; }
+.tb b { font-weight: 400; color: var(--accent-magenta); margin-right: 6px; }
+/* Select and dropdown triggers: <button class="trig"><span class="lbl">FOR</span><span class="val">all</span><span class="car">▾</span></button> */
+.trig { display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; font: 400 var(--text-xs)/1 var(--font-mono); color: var(--fg); white-space: nowrap; }
+.trig .lbl { color: var(--fg-dim); letter-spacing: var(--track-label); }
+.trig .car { color: var(--fg-faint); }
+.trig[data-active] .val { color: var(--accent-cyan); }
+.trig.sel .val { font-family: var(--font-display); font-size: 13px; }
+
+/* F1 · ALL CELLS: every control a cell like a button. */
+[data-f='f1'] .box { width: 16px; height: 16px; background: var(--wash-3); color: transparent; }
+[data-f='f1'] .ck:hover .box { background: var(--wash-4); }
+[data-f='f1'] .ck[data-on] .box { background: var(--accent-cyan); color: var(--on-accent); }
+[data-f='f1'] .ck[data-on] .box::before { content: '✓'; }
+[data-f='f1'] .tabs2 { gap: 1px; }
+[data-f='f1'] .tb { height: 24px; padding: 0 10px; background: var(--wash-2); }
+[data-f='f1'] .tb:hover { background: var(--wash-3); color: var(--fg-strong); }
+[data-f='f1'] .tb[aria-selected='true'] { background: var(--wash-cyan); color: var(--accent-cyan); box-shadow: inset 0 -1px 0 var(--accent-cyan); }
+[data-f='f1'] .trig { height: 24px; padding: 0 8px; background: var(--wash-2); }
+[data-f='f1'] .trig:hover, [data-f='f1'] .trig[aria-expanded='true'] { background: var(--wash-3); }
+[data-f='f1'] .trig[data-active] { background: var(--wash-cyan); box-shadow: inset 0 -1px 0 var(--accent-cyan); }
+
+/* F2 · CELLS ACT, INK CHOOSES: actions are cells; what sets a value is ink (a box, an underline) and takes a cell only
+   when pointed at. Quieter setups. */
+[data-f='f2'] .box { width: 12px; height: 12px; box-shadow: inset 0 0 0 1px var(--fg-faint); }
+[data-f='f2'] .ck { padding: 0 6px; margin-left: -6px; }
+[data-f='f2'] .ck:hover { background: var(--wash-2); }
+[data-f='f2'] .ck[data-on] .box { background: var(--accent-cyan); box-shadow: none; }
+[data-f='f2'] .tabs2 { gap: 16px; box-shadow: inset 0 -1px 0 var(--line); }
+[data-f='f2'] .tb { height: 28px; padding: 0; }
+[data-f='f2'] .tb:hover { color: var(--fg-strong); }
+[data-f='f2'] .tb[aria-selected='true'] { color: var(--fg-strong); box-shadow: inset 0 -2px 0 var(--accent-magenta); }
+[data-f='f2'] .trig { height: 24px; padding: 0 2px; background: none; box-shadow: inset 0 -1px 0 var(--line-hover); }
+[data-f='f2'] .trig:hover { background: var(--wash-2); }
+[data-f='f2'] .grp .b[data-v='choice'] { background: none; }
+[data-f='f2'] .grp .b[data-v='choice']:hover { background: var(--wash-3); }
+
+/* F3 · TOGGLE CELLS: a checkbox is a cell you switch on (✓ before the word), a filter's values a strip of them; tabs
+   are segments as wide as their row. */
+[data-f='f3'] .box { display: none; }
+[data-f='f3'] .ck { height: 24px; padding: 0 8px; background: var(--wash-2); color: var(--fg-dim); font: 400 var(--text-xs)/1 var(--font-mono); }
+[data-f='f3'] .ck small { display: none; }
+[data-f='f3'] .ck:hover { background: var(--wash-3); color: var(--fg-strong); }
+[data-f='f3'] .ck[data-on] { background: var(--wash-cyan); color: var(--accent-cyan); box-shadow: inset 0 -1px 0 var(--accent-cyan); }
+[data-f='f3'] .ck[data-on]::before { content: '✓'; }
+[data-f='f3'] .opts { flex-direction: row !important; flex-wrap: wrap; gap: 1px !important; }
+[data-f='f3'] .tabs2 { display: flex; gap: 1px; }
+[data-f='f3'] .tb { flex: 1; height: 28px; padding: 0 10px; background: var(--wash-2); }
+[data-f='f3'] .tb:hover { background: var(--wash-3); color: var(--fg-strong); }
+[data-f='f3'] .tb[aria-selected='true'] { background: var(--wash-cyan); color: var(--accent-cyan); box-shadow: inset 0 -1px 0 var(--accent-cyan); }
+[data-f='f3'] .trig { height: 24px; padding: 0 8px; background: var(--wash-2); }
+[data-f='f3'] .trig:hover { background: var(--wash-3); }
+[data-f='f3'] .trig[data-active] { background: var(--wash-cyan); box-shadow: inset 0 -1px 0 var(--accent-cyan); }
+
+/* Page bits */
+.stack { display: flex; flex-direction: column; gap: 6px; }
+.lineRow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.lbl2 { font: 400 11px/1 var(--font-mono); color: var(--fg-dim); letter-spacing: var(--track-label); width: 74px; flex: none; }
+.menuList { width: 260px; border: 1px solid var(--line-hover); background: var(--bg); font: 400 12px/1 var(--font-mono); }
+.menuList .prompt { padding: 8px 10px; border-bottom: 1px solid var(--line); color: var(--fg-faint); }
+.menuList .prompt b { color: var(--accent-magenta); font-weight: 400; margin-right: 6px; }
+.menuList .ck { display: flex; padding: 4px 10px; font: inherit; color: var(--fg); width: 100%; box-sizing: border-box; }
+[data-f='f3'] .menuList .ck { background: none; height: 28px; }
+[data-f='f3'] .menuList .ck[data-on] { background: var(--wash-cyan); }
+.dups { max-width: 980px; }
+.dups table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dups td, .dups th { padding: 8px 10px; border-top: 1px solid var(--line); text-align: left; vertical-align: top; color: var(--fg-muted); }
+.dups th { font: 400 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--fg-faint); border-top: 0; }
+.dups code { font-family: var(--font-mono); font-size: 0.88em; color: var(--fg); }
+.dups td:first-child { color: var(--fg); white-space: nowrap; }
+.dups .n { font-family: var(--font-mono); color: var(--accent-magenta); }

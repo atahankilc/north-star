@@ -44,10 +44,6 @@
 }
 
 /* `[verb]`s are the kit's Button (D-326); a way out is --fg-muted, quiet by where it sits (onboarding.md §4). */
-.out {
-  color: var(--fg-muted);
-}
-
 /* Holds a button only to hand it to a ref: no box of its own. */
 .btnRef {
   display: contents;

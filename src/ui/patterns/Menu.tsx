@@ -221,7 +221,7 @@ export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…',
               </span>
               {item.checked !== undefined ? (
                 <span className={styles.check} data-on={item.checked} aria-hidden>
-                  {item.checked ? '[x]' : '[ ]'}
+                  {item.checked ? '✓' : ''}
                 </span>
               ) : (
                 keyed && (

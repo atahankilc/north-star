@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buttons · round 3: groups and controls</title>
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/inter/opsz.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/jetbrains-mono/index.css">
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="preview.css">
+<link rel="stylesheet" href="controls.css">
+</head>
+<body data-g="g1" data-f="f1">
+
+<header class="bar">
+  <a class="back" href="index.html#h">‹ round 1–2</a>
+  <span class="ctl">GROUPS <span class="tabs" id="gTabs"></span></span>
+  <span class="ctl">CONTROLS <span class="tabs" id="fTabs"></span></span>
+  <button class="ctlBtn" id="dupBtn" aria-pressed="false">duplicates</button>
+  <span class="sp"></span>
+  <span class="ctl">THEME
+    <button data-theme-set="dark" aria-pressed="true">dark</button>
+    <button data-theme-set="light">light</button>
+  </span>
+</header>
+
+<aside class="notes" id="notes"></aside>
+<main id="stage" class="stage"></main>
+
+<script src="controls.js"></script>
+</body>
+</html>

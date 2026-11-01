@@ -14,6 +14,7 @@ import { diffShown, NOTES_MAX, NOTES_TITLE, type DiffLine } from '../../model/no
 import { agentActions, isViewer, liveWs, useAgent } from './agentStore'
 import styles from './AgentMemory.module.css'
 import { Button } from '../../ui/primitives/Button'
+import { ButtonGroup } from '../../ui/primitives/ButtonGroup'
 import { Rule as KitRule } from '../../ui/primitives/Rule'
 
 // `01 ── CHATS` as the column's other views start.
@@ -144,12 +145,14 @@ export function NotesView() {
         <div className={styles.edit}>
           <textarea ref={area} className={styles.area} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={onKey} aria-label="The agent notes" spellCheck />
           <div className={styles.foot}>
-            <Button className={styles.action} tone="primary" onClick={() => void save()}>
-              save ⌘↵
-            </Button>
-            <Button className={styles.action} onClick={() => setEditing(false)}>
-              cancel esc
-            </Button>
+            <ButtonGroup>
+              <Button tone="primary" onClick={() => void save()}>
+                save
+              </Button>
+              <Button onClick={() => setEditing(false)}>
+                cancel
+              </Button>
+            </ButtonGroup>
             <span className={styles.count} data-over={draft.length > NOTES_MAX || undefined}>
               {draft.length}/{NOTES_MAX}
             </span>
@@ -160,15 +163,17 @@ export function NotesView() {
         <>
           <div className={styles.page}>{text ? <Markdown text={text} /> : <p className={styles.none}>{doc ? 'loading…' : 'Nothing yet. Tell the agent "remember …", or write the first lines here.'}</p>}</div>
           <div className={styles.foot}>
-            {!viewer && (
-              // Not before the text is loaded: saving would overwrite notes not seen.
-              <Button className={styles.action} tone="primary" onClick={start} disabled={!!doc && text == null}>
-                {text ? 'edit' : 'write'}
+            <ButtonGroup>
+              {!viewer && (
+                // Not before the text is loaded: saving would overwrite notes not seen.
+                <Button tone="primary" onClick={start} disabled={!!doc && text == null}>
+                  {text ? 'edit' : 'write'}
+                </Button>
+              )}
+              <Button onClick={() => agentActions.show('chat')}>
+                back to the chat
               </Button>
-            )}
-            <Button className={styles.action} onClick={() => agentActions.show('chat')}>
-              back to the chat
-            </Button>
+            </ButtonGroup>
             <span className={styles.count}>{viewer ? "you're a viewer: read only" : 'one undo step'}</span>
           </div>
         </>

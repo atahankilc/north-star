@@ -93,18 +93,7 @@
 }
 
 .actions {
-  display: flex;
   flex: none;
-  align-items: baseline;
-  gap: var(--space-2);
-}
-
-/* The panels' [verb]s, [×] and [send] are the kit's Button (sm, D-326), set flush in their lines (no side padding).
-   `button.` so it outweighs the kit's own padding whatever order the style sheets load in. */
-button.action,
-button.close,
-button.send {
-  padding: var(--space-half) 0;
 }
 
 .log {
@@ -146,8 +135,6 @@ button.send {
 }
 
 .msgActions {
-  display: flex;
-  gap: var(--space-2);
   margin-left: auto;
   opacity: 0;
 }
@@ -193,26 +180,8 @@ button.send {
 
 .bar {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
+  justify-content: flex-end;
   margin-top: var(--space-2);
-}
-
-.footnote {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--fg-faint);
-  font-size: var(--text-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Nothing to send: faint, not the kit's dimmed disabled. */
-button.send:disabled {
-  color: var(--fg-faint);
-  opacity: 1;
-  cursor: default;
 }
 
 /* `@` suggestions (D-166): the workspace's people over the prompt, as the dropdowns' rows. */
@@ -379,30 +348,15 @@ button.send:disabled {
   white-space: pre;
 }
 
-/* Go there (D-220): the where in the header, a Button (D-326) in brackets as the other actions, its ↗ a size up;
-   cyan on hover. Laid out as a row that cuts its name. */
-button.goThere {
+/* Go there (D-220): the where in the header, a Button link (D-344), its ↗ a size up. Laid out as a row that cuts its
+   name. */
+.goThere {
   display: inline-flex;
   flex: none;
   align-items: baseline;
   gap: 0.5ch;
   max-width: 60%;
   margin-left: var(--space-3);
-  padding: var(--space-half) 0;
-  font: inherit;
-}
-
-button.goThere::before,
-button.goThere::after {
-  flex: none;
-}
-
-button.goThere::before {
-  margin-right: -0.5ch;
-}
-
-button.goThere::after {
-  margin-left: -0.5ch;
 }
 
 .goThereName {
@@ -417,25 +371,15 @@ button.goThere::after {
   line-height: var(--lh-none);
 }
 
-button.goThere:hover,
-button.goThere:focus-visible {
-  outline: none;
-  color: var(--accent-cyan);
-}
-
 .views {
   display: flex;
   flex: none;
-  gap: var(--space-3);
   padding: var(--space-2) var(--space-4);
   border-bottom: var(--line-w) solid var(--line);
 }
 
-.views .action[aria-pressed='true'] {
-  color: var(--fg-strong);
-}
-
-.views .action[data-lit] {
+/* Its count when there are new threads: magenta, as a mention's (D-166). */
+.lit {
   color: var(--accent-magenta);
 }
 
@@ -565,11 +509,6 @@ button.goThere:focus-visible {
 .scope b {
   color: var(--fg-strong);
   font-weight: var(--weight-medium);
-  text-transform: none;
-  letter-spacing: normal;
-}
-
-.scope .action {
   text-transform: none;
   letter-spacing: normal;
 }

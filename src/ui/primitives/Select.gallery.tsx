@@ -19,7 +19,7 @@ export default example({
   name: 'Select',
   place: 'forms/pickers',
   file: 'src/ui/primitives/Select.tsx',
-  note: 'never a native <select> (D-093); the `>` line past 7 options',
+  note: 'never a native <select> (D-093); its trigger is the one dropdown trigger (Trigger.module.css, Menu’s too, D-344); the `>` line past 7 options',
   states: {
     closed: () => <Pick />,
     open: { render: () => <div style={{ height: 240 }}><Pick /></div>, setup: (c) => c.click('[aria-haspopup]') },

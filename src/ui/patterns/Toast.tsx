@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useHistory } from '../../data/history'
 import styles from './Toast.module.css'
+import { Button } from '../primitives/Button'
 
 const SHOW_MS = 2600
 const ACTION_MS = 6000
@@ -22,7 +23,8 @@ export function Toast() {
     <div className={styles.toast} data-visible={visible} role="status" aria-live="polite" data-learn="toast">
       {notice?.text}
       {notice?.action && (
-        <button
+        <Button
+          tone="primary"
           className={styles.action}
           tabIndex={visible ? 0 : -1}
           onClick={() => {
@@ -31,7 +33,7 @@ export function Toast() {
           }}
         >
           {notice.action.label}
-        </button>
+        </Button>
       )}
     </div>
   )

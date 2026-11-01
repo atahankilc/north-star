@@ -1,4 +1,5 @@
-/* The HUD's tool (src/ui/primitives/ToolButton.tsx, D-326): an icon in a control square. */
+/* The HUD's tool (src/ui/primitives/ToolButton.tsx, D-326): an icon in a control square, a cell like every Button
+   (D-344): a faint shade at rest (it keeps the icon readable over the moving backdrop), a step brighter on hover. */
 .tool {
   position: relative;
   display: inline-grid;
@@ -7,10 +8,13 @@
   height: var(--control);
   padding: 0;
   border: 0;
-  background: none;
+  background: var(--wash-2);
   color: var(--fg-dim);
   cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
 }
 
 .tool > svg {
@@ -21,11 +25,20 @@
 
 .tool:hover,
 .tool:focus-visible {
+  background: var(--wash-3);
   color: var(--fg-strong);
 }
 
+.tool:active {
+  background: var(--wash-1);
+  transform: scale(var(--press-scale));
+}
+
+/* On (what it opens is open): as a pressed Button, cyan on a cyan wash with a line under it. */
 .tool[data-on='true'] {
+  background: var(--wash-cyan);
   color: var(--accent-cyan);
+  box-shadow: inset 0 calc(-1 * var(--line-w)) 0 var(--accent-cyan);
 }
 
 /* Something new: magenta, as a mention's (D-166), over the top right corner. */

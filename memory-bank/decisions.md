@@ -44,8 +44,8 @@ feature comes back as a piece, and check them with the user then.
   src/ui, patterns, then features; the gallery a page per component, grouped by layer and area (where its file lives), every
   state side by side, what it's built from and where it's used by area (D-336). Motion's numbers and the tween in src/ui/foundation/motionTokens.ts and motion.ts (held to tokens.css by a test), card
   colours in `--type-*` and src/ui/foundation/cardTone.ts; one Spinner, the small entrances in src/ui/foundation/Enter.module.css, one
-  cell-path builder. The kit in src/ui: Button (`sm`, `md`, `icon`, `link`), ToolButton (the HUD's icon tools), Steps (a wizard's tabs), Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge. The gallery's `[tree]` shows what each
-  component draws and where it's used. Two buttons only (D-343): Button and ToolButton; a feature wrapping ToolButton is a `*Tool`, its icon from `src/ui/primitives/hudIcons.tsx` (one 18 px set), the gear too. The side nav holds the canvas's tools (decks and days too), the corner people (threads, you, settings). Patterns: Options, Window, WizardShell. Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
+  cell-path builder. The kit in src/ui: Button (`sm`, `md`, `icon`, `link`), ButtonGroup, ToolButton (the HUD's icon tools), Steps (a wizard's tabs), Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge. The gallery's `[tree]` shows what each
+  component draws and where it's used. Two buttons only (D-343): Button and ToolButton, both cells (D-344); a feature wrapping ToolButton is a `*Tool`, its icon from `src/ui/primitives/hudIcons.tsx` (one 18 px set), the gear too. The side nav holds the canvas's tools (decks and days too), the corner people (threads, you, settings). Patterns: Options, Window, WizardShell. Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
   from coming back. Everything but the agent's column is on it (13 left, all src/agent/ui); next: the agent's column, Q-032, folders.
 - The UI rules are enforced, not asked for (D-339): a Claude Code hook on every write (`scripts/ui-rules-hook.mjs`) and git
   hooks on commit (`scripts/commit-rules.mjs`; a component without its gallery or lesson needs `Gallery:`/`Lessons:` in the
@@ -88,14 +88,21 @@ feature comes back as a piece, and check them with the user then.
   TS/TSX) at 0 in CI (D-325, docs/specs/tokens.md); constants that aren't tokens by kind in one module each:
   model/world.ts (geometry), model/limits.ts (data limits, tested against firestore.rules), ui/feel.ts (DRAG_PX 5,
   zoom), motionTokens.ts (D-326); `Frame.module.css` is the one framed
-  surface (D-024); shared `Page.module.css`, `fieldLabel`, `small` buttons (D-093). Actions lowercase, labels uppercase; no
+  surface (D-024); shared `Page.module.css`, `fieldLabel` (D-093). Actions lowercase, labels uppercase; no
   native `<select>` (`src/ui/primitives/Select.tsx`) (D-093). `▸`/`▾` only open or fold something, never lead a row of actions (D-189).
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063,
   D-069). Light theme via tokens under `[data-theme='light']` and `usePalette()` (three.js too;
   `Palette` only what WebGL reads, D-321), bg `#f3f3f3` (D-342), no-flash script (D-069); the backdrop prints bolder, darker glyphs in light (D-342).
+- Buttons are cells (D-344, DESIGN.md §6): every button the same cell (`--wash-2`, a step brighter on hover), its kind
+  only fill and ink: `main`, `primary` the one go of a surface (solid cyan, at most one), `danger`, `hazard` (solid
+  magenta where deleting is the point), `pressed`; 24 px, glyphs 24 × 24, HUD tools 30, the page's 36 white; no brackets,
+  no keys beside them; a caller's class only places one. Buttons that belong together are one `ButtonGroup` strip
+  (docks, consoles, panel and wizard feet, zooms, Choice). Menu's triggers are the same cell. A person's square is one
+  `Avatar`, 30 px in the HUD like a ToolButton, 24 in rows like a Button. Controls are toggle cells, one component each
+  (D-344): Checkbox (✓ before the word), Tabs (Choice is its segments, Steps its cell), one dropdown trigger (Menu, Select).
 - HUD (D-027): the breadcrumb top left, fixed margins; the rest becomes a left side nav. Bottom left, top to bottom:
   people here, threads button, a rule, your square, the gear, `--space-3` from the edges, other bottom-left tools
-  `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge; its `+` an unframed drawn
+  `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge, cells (D-344); its `+` a drawn
   20 px magenta `+`, its menu opening right (D-178).
 - Menus, pickers and right-click are a **prompt** (D-222; an empty heading is a plain rule, D-291): a `>` line narrowing the list (Enter picks the first), `#
   section` lines, rows `› [p] ▦ label  hint`, a letter puts its item first, a counting foot; Select: `•` current, the

@@ -171,10 +171,6 @@
   stroke: var(--accent-cyan);
 }
 
-/* The link dropdown in a matrix's or table's console (D-215). */
-.linkPick {
-  color: var(--fg-muted);
-}
 
 /* What's in a console grows with it (D-264): the dropdown's text, the comment icon. */
 .console :is(.linkPick, .linkPick *) {
@@ -318,17 +314,17 @@
    bottom border), magenta marks on its top corners, like the focus dock; over what the piece holds. Shown only while the
    piece is pointed at (built cell by cell, CanvasView's PlaneConsole), in edit mode, with its setup open or the keyboard
    in it. On the screen 11 px at 100 % and over, growing as the canvas zooms out (`--cs`, 1.4 times at most); everything
-   in it by the same factor. On a piece narrower than it, it runs past the left edge. Bracketed actions, nothing before
-   them. In edit mode a status line in cyan. */
+   in it by the same factor. On a piece narrower than it, it runs past the left edge. Its actions Button cells joined in
+   a ButtonGroup (D-344). In edit mode a status line in cyan before them. */
 .console {
   position: absolute;
   z-index: var(--z-2);
   right: calc(var(--space-4) * var(--cs, 1));
   bottom: 0;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: calc(var(--space-2) * var(--cs, 1));
-  padding: calc(var(--space-1) * var(--cs, 1)) calc(var(--space-3) * var(--cs, 1)) calc(var(--space-2) * var(--cs, 1));
+  padding: calc(var(--space-1) * var(--cs, 1));
   border: calc(var(--line-w) * var(--cs, 1)) solid var(--piece-edge);
   border-bottom: 0;
   background: var(--bg);
@@ -374,11 +370,11 @@
 
 /* Something new inside while the console's hidden: a small tab of its own, magenta (D-264). */
 .console[data-fresh] {
-  padding-inline: calc(var(--space-2) * var(--cs, 1));
   border-color: var(--accent-magenta);
 }
 
 .mode {
+  padding-left: calc(var(--space-2) * var(--cs, 1));
   color: var(--accent-cyan);
   letter-spacing: var(--track-label);
 }
@@ -387,19 +383,12 @@
   color: var(--fg);
 }
 
-/* The console's buttons are the kit's Button (D-326) at the kit's padding; `.tool` only lets their text grow with the
-   console (`--cs`, D-264). */
-.console .tool {
+/* The console's buttons are the kit's Button (D-326, D-344); `.tool` only lets their text grow with the console (`--cs`,
+   D-264): the cell follows (its height is 2em at least). */
+.console .tool,
+.console [role='radio'] {
+  /* A console's text grows as the canvas zooms out (D-264): its buttons and a Choice in it (documents' table | shelf) too. */
   font-size: inherit;
-}
-
-.console[data-editing='true'] .tool {
-  color: var(--accent-cyan);
-}
-
-/* Delete (D-182), and it asks first. */
-.console .tool[data-tone='danger'] {
-  color: var(--accent-magenta);
 }
 
 /* A plane in focus (D-184, D-185): the whole screen, solid, carrying the plane's dot marks on its own grid (--mx, --my)
@@ -463,14 +452,7 @@
 }
 
 
-/* A plane's comments in its console (D-193): the mark and the count on one line, magenta while something is new. */
-.tool[aria-label^='Comments inside'] {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  white-space: nowrap;
-}
-
+/* A plane's comments in its console (D-193): magenta while something is new (a state, as a count's badge). */
 .tool[data-new='true'] {
   color: var(--accent-magenta);
 }

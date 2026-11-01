@@ -1,11 +1,12 @@
 // The wizard (D-212, D-218, D-268; D-326's patterns): what the matrix's, the table's and the deck's wizards share, on
 // the one Window. Numbered steps as tabs along the top (any of them at any time), the question on the left with the
-// step's own content, a preview on the right, the foot: `[back]` on the left, `[cancel] [next] [make …]` on the right.
+// step's own content, a preview on the right, the foot: `back` on the left, `cancel next make …` joined on the right, make the solid one (D-344).
 // Enter goes to the next step and on the last makes it, ⌘Enter makes it from any step (not while typing in one of its
 // fields: there Enter is the field's, D-250); Escape or a press outside leaves it. Its height holds still between
 // steps. Each wizard keeps its steps' content and what making it does.
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Button } from '../primitives/Button'
+import { ButtonGroup } from '../primitives/ButtonGroup'
 import { Label } from '../primitives/Label'
 import { Window } from './Window'
 import { Steps } from './Steps'
@@ -68,13 +69,17 @@ export function WizardShell({ label, steps, step, onStep, title, children, previ
       </div>
       <footer className={styles.foot}>
         <span>{step > 0 && <Button onClick={() => onStep(step - 1)}>back</Button>}</span>
-        <span className={styles.end}>
+        <ButtonGroup>
           <Button onClick={onClose}>cancel</Button>
-          {step < steps.length - 1 && <Button onClick={() => onStep(step + 1)}>next</Button>}
-          <Button tone="main" onClick={onMake}>
+          {step < steps.length - 1 && (
+            <Button tone="main" onClick={() => onStep(step + 1)}>
+              next
+            </Button>
+          )}
+          <Button tone="primary" onClick={onMake}>
             {make}
           </Button>
-        </span>
+        </ButtonGroup>
       </footer>
     </Window>
   )

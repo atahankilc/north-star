@@ -65,6 +65,7 @@ import styles from './Matrix.module.css'
 import { DUR } from '../../../ui/foundation/motion'
 import { MATRIX_PX } from '../../../model/world'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 
 // The matrix's parts in its own px: model/world.ts (D-325).
@@ -617,7 +618,6 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
             </span>
           )}
           <Button
-            className={styles.fold}
             disabled={!(live && editor)}
             aria-expanded={unfold.shown}
             title={unfold.shown ? 'fold what it is judged on into its cells' : 'unfold what it is judged on, to score each'}
@@ -1020,56 +1020,56 @@ function CellBar({ setup, cell, row, col, editor, onFold, at, room, write, onTyp
             {rolled ? `${read.step?.label ?? (read.number !== undefined ? fmt(read.number) : '')} · ` : ''}read from what it's judged on, {cell.parts.length}
           </span>
           {onFold && (
-            <Button className={styles.barTool} onClick={onFold.toggle}>
+            <Button onClick={onFold.toggle}>
               {onFold.shown ? 'fold' : 'unfold to score'}
             </Button>
           )}
         </div>
       )}
       {!out && !rolled && setup.cell === 'scale' && (
-        <div className={styles.barRow}>
+        <ButtonGroup className={styles.barGroup} label="Steps">
           {setup.steps.map((s, i) => (
             <Button
               key={s.id}
               className={styles.barTool}
               pressed={read.step?.id === s.id}
               disabled={!editor}
-              style={{ ['--tone' as string]: TONE_VAR[s.tone] }}
+              style={{ ['--tone' as string]: TONE_VAR[s.tone], ['--button-on' as string]: TONE_VAR[s.tone] }}
               title={`${s.label} (${i + 1})`}
               onClick={() => write({ value: read.step?.id === s.id ? undefined : s.id })}
             >
               {setup.marks ? <span className={styles.stepGlyph}>{s.glyph}</span> : <StepSquare steps={setup.steps} step={s} />} {s.label}
             </Button>
           ))}
-        </div>
+        </ButtonGroup>
       )}
       {!out && !rolled && !cell?.parts && setup.cell !== 'scale' && editor && (
-        <div className={styles.barRow}>
-          <Button className={styles.barTool} onClick={onType} title="type it (Enter)">
+        <ButtonGroup>
+          <Button onClick={onType} title="type it (Enter)">
             {read.number !== undefined || read.text ? 'change' : 'type'}
           </Button>
           {(read.number !== undefined || read.text) && (
-            <Button className={styles.barTool} onClick={() => write({ value: undefined })} title="clear it (Backspace)">
+            <Button onClick={() => write({ value: undefined })} title="clear it (Backspace)">
               clear
             </Button>
           )}
-        </div>
+        </ButtonGroup>
       )}
       {(setup.notRelevant || setup.confidence) && (
-        <div className={styles.barRow}>
+        <ButtonGroup className={styles.barGroup}>
           {setup.notRelevant && (
-            <Button className={styles.barTool} pressed={out} disabled={!editor} title="they can't be compared here: left out of the totals (-)" onClick={() => write({ notRelevant: out ? undefined : true })}>
+            <Button pressed={out} disabled={!editor} title="they can't be compared here: left out of the totals (-)" onClick={() => write({ notRelevant: out ? undefined : true })}>
               — doesn't apply
             </Button>
           )}
           {setup.confidence && !out &&
             CONFIDENCES.map((c) => (
-              <Button key={c} className={styles.barTool} pressed={cell?.confidence === c} disabled={!editor} onClick={() => write({ confidence: cell?.confidence === c ? undefined : c })}>
+              <Button key={c} pressed={cell?.confidence === c} disabled={!editor} onClick={() => write({ confidence: cell?.confidence === c ? undefined : c })}>
                 {CONFIDENCE_MARK[c] ? `${CONFIDENCE_MARK[c]} ` : ''}
                 {c}
               </Button>
             ))}
-        </div>
+        </ButtonGroup>
       )}
       {editor ? (
         <AutosaveField

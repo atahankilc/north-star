@@ -19,11 +19,12 @@ import { useWs } from '../canvas/context'
 import { DocContent } from './DocContent'
 import { closeDoc, documentsBounds, shareOrAsk, documentsOf, listed, readerLeft, useDocUi } from './Documents'
 import { DockAction, FocusDock } from '../canvas/FocusDock'
-import { isOpen, useOpenSize } from '../canvas/shownBox'
+import { useOpenSize } from '../canvas/shownBox'
 import { docScope, scrollTo, useLandOnPage } from '../find/find'
 import styles from './DocumentPiece.module.css'
 import beside from '../canvas/Beside.module.css'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Label } from '../../../ui/primitives/Label'
 import { Window } from '../../../ui/patterns/Window'
 
@@ -46,19 +47,23 @@ export function documentHome(piece: WithId<Piece>, screenW: number): PlaneCam {
 const ZOOMS = [0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2]
 const stepZoom = (z: number, dir: 1 | -1) => (dir > 0 ? (ZOOMS.find((s) => s > z + 0.001) ?? ZOOMS[ZOOMS.length - 1]) : ([...ZOOMS].reverse().find((s) => s < z - 0.001) ?? ZOOMS[0]))
 
-// `[−] 100% [+]` in a document page's dock (`reader`: that document's id): its text's zoom; a click on the number goes
-// back to 100 %.
+// `− 100% +` in a document page's dock (`reader`: that document's id), one ButtonGroup: its text's zoom; a click on the
+// number goes back to 100 %.
 function DocZoom({ reader }: { reader: string }) {
   const zoom = useDocUi((s) => s.readerZooms[reader] ?? 1)
   const set = (to: number) => setReaderZoom(reader, to)
   return (
-    <span className={styles.zoom} role="group" aria-label="Zoom">
-      <DockAction label="−" title="zoom out" onClick={() => set(stepZoom(zoom, -1))} />
-      <Button icon className={styles.zoomAt} title="back to 100 %" onClick={() => set(1)}>
+    <ButtonGroup label="Zoom">
+      <Button icon title="zoom out" aria-label="Zoom out" onClick={() => set(stepZoom(zoom, -1))}>
+        −
+      </Button>
+      <Button icon title="back to 100 %" onClick={() => set(1)}>
         {Math.round(zoom * 100)}%
       </Button>
-      <DockAction label="+" title="zoom in" onClick={() => set(stepZoom(zoom, 1))} />
-    </span>
+      <Button icon title="zoom in" aria-label="Zoom in" onClick={() => set(stepZoom(zoom, 1))}>
+        +
+      </Button>
+    </ButtonGroup>
   )
 }
 
@@ -206,7 +211,7 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
   return (
     <>
       {open.map((id, i) => (
-        <DocPane key={id} id={id} list={list} box={{ x: Math.round(lefts[i]), y: 0, w: Math.round(lefts[i + 1] - lefts[i]), h: size.h }} last={i === open.length - 1} first={i === 0} />
+        <DocPane key={id} id={id} list={list} box={{ x: Math.round(lefts[i]), y: 0, w: Math.round(lefts[i + 1] - lefts[i]), h: size.h }} first={i === 0} />
       ))}
       {!hidden && <div className={beside.divider} style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="List and documents" />}
       {open.slice(0, -1).map((id, i) => (
@@ -233,10 +238,10 @@ const NARROW = 560
 const PANE_MIN = 280
 
 // `focus`: the page is a document piece's own focus (D-232), the whole screen right of the side nav: the same page, dock
-// and "on this page" as beside the list (one look for both), its close the focus's `[unfocus] esc`, nothing to place.
-type PaneProps = { id: string; box: Bounds; last: boolean; first: boolean } & ({ list: WithId<Piece>; focus?: undefined } | { list?: undefined; focus: { piece: WithId<Piece>; onUnfocus: () => void } })
+// and "on this page" as beside the list (one look for both), its close the focus's `unfocus`, nothing to place.
+type PaneProps = { id: string; box: Bounds; first: boolean } & ({ list: WithId<Piece>; focus?: undefined } | { list?: undefined; focus: { piece: WithId<Piece>; onUnfocus: () => void } })
 
-function DocPane({ id, list, box, last, first, focus }: PaneProps) {
+function DocPane({ id, list, box, first, focus }: PaneProps) {
   const { wid, documents, workspace, pieces } = useWs()
   const { user } = useAuth()
   const d = documents.find((x) => x.id === id)!
@@ -251,8 +256,6 @@ function DocPane({ id, list, box, last, first, focus }: PaneProps) {
   const mine = d.uid === user?.id
   const mayDelete = mine || (d.shared && workspace.roles[user?.id ?? ''] === 'owner')
   const narrow = box.w < NARROW
-  // Escape with the list put away (D-232): back to the list when it's framed, to the canvas when it's unframed.
-  const framed = !!list && !isOpen(list)
 
   // The wheel scrolls it as a page, kept from the list's view; ctrl (or a pinch) zooms its text.
   useEffect(() => {
@@ -282,7 +285,7 @@ function DocPane({ id, list, box, last, first, focus }: PaneProps) {
       {/* Its title is on the page already: the dock only says what it is, so it fits a narrow part. */}
       <FocusDock label={focus ? 'Focus' : 'document beside'} name={narrow ? undefined : <span className={beside.kind}>document</span>}>
         {/* The list put away: its button here, in the first one's dock (D-232). */}
-        {!focus && hidden && first && <DockAction label={narrow ? '≡' : '≡ list'} keyHint={framed && last && !narrow ? 'esc' : undefined} title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })} />}
+        {!focus && hidden && first && <DockAction label={narrow ? '≡' : '≡ list'} title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })} />}
         {mine && d.id !== 'agent-notes' && <DockAction label={narrow ? '◐' : d.shared ? 'unshare' : 'share'} title={d.shared ? 'unshare: only you see it again' : 'share: everyone in the workspace sees it'} onClick={() => shareOrAsk(wid, d, pieces)} />}
         {editor && list && <DockAction label={narrow ? '↗' : 'place ↗'} title="place: put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
         <DockAction label={narrow ? '↓' : 'download'} title="download: save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
@@ -290,9 +293,9 @@ function DocPane({ id, list, box, last, first, focus }: PaneProps) {
         <DocZoom reader={id} />
         {/* With the list put away Escape goes straight to the canvas: no `esc` on a close then. */}
         {focus ? (
-          <DockAction label="unfocus" main keyHint="esc" title="back to the canvas" onClick={focus.onUnfocus} />
+          <DockAction label="unfocus" main title="back to the canvas" onClick={focus.onUnfocus} />
         ) : (
-          <DockAction label={narrow ? '×' : 'close'} main keyHint={last && (!hidden || !framed) && !narrow ? 'esc' : undefined} title="close it" onClick={() => closeDoc(id)} />
+          <DockAction label={narrow ? '×' : 'close'} main title="close it" onClick={() => closeDoc(id)} />
         )}
       </FocusDock>
     </div>
@@ -313,7 +316,7 @@ export function DocFocus({ piece, onUnfocus }: { piece: WithId<Piece>; onUnfocus
         This document is gone, or only its author sees it now.
       </p>
     )
-  return <DocPane id={d.id} focus={{ piece, onUnfocus }} box={{ x: SIDE_GAP, y: 0, w: size.w - SIDE_GAP, h: size.h }} first last />
+  return <DocPane id={d.id} focus={{ piece, onUnfocus }} box={{ x: SIDE_GAP, y: 0, w: size.w - SIDE_GAP, h: size.h }} first />
 }
 // Right of the side nav, as with the list put away.
 const SIDE_GAP = 56
@@ -435,15 +438,15 @@ export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlacePro
         <p className={styles.askKicker}>only you see this</p>
         <p className={styles.askTitle}>Show "{d.title.length > 60 ? `${d.title.slice(0, 59)}…` : d.title}" to everyone?</p>
         <p className={styles.askLines}>Putting it on the canvas shares it with the workspace: {people}. You can unshare it later from the documents list.</p>
-        <p className={styles.askActions}>
-          <Button onClick={cancel} keyHint="esc">
+        <ButtonGroup>
+          <Button onClick={cancel}>
             cancel
           </Button>
           {/* The question opens on it (autoFocus): Enter places, Escape cancels. */}
-          <Button autoFocus className={styles.askGo} onClick={place} keyHint="↵">
+          <Button autoFocus tone="primary" onClick={place}>
             share and place
           </Button>
-        </p>
+        </ButtonGroup>
       </Window>
     </div>
   )

@@ -33,12 +33,12 @@ export function Words({ text }: { text: string }) {
   )
 }
 
-// A `[verb]` button: the kit's Button (D-326). `tone`: hot the strong one (`main`), go cyan (`primary`), out a way out
-// (--fg-muted: quiet by where it sits, never by contrast, onboarding.md §4); `bare` without brackets. `elRef` is the
+// A button: the kit's Button (D-326, cells D-344). `tone`: hot the strong one (`main`), go the solid cyan one (`primary`),
+// out a way out (the plain cell: quiet by where it sits, never by contrast, onboarding.md §4); `bare` a glyph's cell. `elRef` is the
 // button itself, for the focus a dialog starts on (Button takes no ref: a wrapper that is no box hands it over).
 export function Btn({ children, onClick, tone, disabled, bare, label, elRef }: { children: ReactNode; onClick?: () => void; tone?: 'hot' | 'go' | 'out'; disabled?: boolean; bare?: boolean; label?: string; elRef?: React.Ref<HTMLButtonElement> }) {
   const button = (
-    <Button tone={tone === 'hot' ? 'main' : tone === 'go' ? 'primary' : undefined} icon={bare} className={tone === 'out' ? styles.out : undefined} disabled={disabled} onClick={onClick} aria-label={label}>
+    <Button tone={tone === 'hot' ? 'main' : tone === 'go' ? 'primary' : undefined} icon={bare} disabled={disabled} onClick={onClick} aria-label={label}>
       {children}
     </Button>
   )

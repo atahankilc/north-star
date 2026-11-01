@@ -121,7 +121,3 @@
   align-self: flex-end;
   margin-top: auto;
 }
-
-.choice:hover .choiceAct {
-  color: var(--fg-strong);
-}

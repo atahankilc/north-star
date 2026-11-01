@@ -309,7 +309,7 @@ export function Demo({ scene, width, label, compact, own }: { scene: string; wid
         {reduced ? (
           <span className={styles.still}>still</span>
         ) : (
-          <Button className={styles.toggle} onClick={toggle} aria-label={playing ? 'pause the demo' : 'play the demo'}>
+          <Button onClick={toggle} aria-label={playing ? 'pause the demo' : 'play the demo'}>
             {playing ? '❚❚' : '▶ play'}
           </Button>
         )}

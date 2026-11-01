@@ -23,6 +23,8 @@ import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import styles from './Documents.module.css'
 import { DOCS_PX } from '../../../model/world'
 import { Button } from '../../../ui/primitives/Button'
+import { Choice } from '../../../ui/primitives/Choice'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { Empty } from '../../../ui/primitives/Empty'
 
@@ -341,31 +343,31 @@ function RowActions({ d, list, editor, onCanvas }: { d: WithId<Doc>; list: WithI
     fn()
   }
   return (
-    <span className={styles.actions} role="group" aria-label={`${d.title}: actions`}>
+    <ButtonGroup className={styles.actions} label={`${d.title}: actions`}>
       {mine && (
-        <Button icon className={styles.act} title="rename" aria-label="Rename" onClick={act(() => useDocUi.setState({ renaming: d.id }))}>
+        <Button icon title="rename" aria-label="Rename" onClick={act(() => useDocUi.setState({ renaming: d.id }))}>
           ✎
         </Button>
       )}
       {mine && d.id !== 'agent-notes' && (
-        <Button icon className={styles.act} pressed={!!d.shared} title={d.shared ? 'unshare: only you see it again' : 'share with everyone'} aria-label={d.shared ? 'Unshare' : 'Share'} onClick={act(() => shareOrAsk(wid, d, pieces))}>
+        <Button icon pressed={!!d.shared} title={d.shared ? 'unshare: only you see it again' : 'share with everyone'} aria-label={d.shared ? 'Unshare' : 'Share'} onClick={act(() => shareOrAsk(wid, d, pieces))}>
           ◐
         </Button>
       )}
       {editor && (
-        <Button icon className={styles.act} title={`place it on the canvas where you're looking${onCanvas ? ', or drag it where you want it' : ''}${d.shared ? '' : ' (shares it; asks first)'}`} aria-label="Place on the canvas" onPointerDown={onCanvas ? dragOut(d.id) : undefined} onClick={act(() => useDocUi.setState({ placing: { docId: d.id, near: list.id } }))}>
+        <Button icon title={`place it on the canvas where you're looking${onCanvas ? ', or drag it where you want it' : ''}${d.shared ? '' : ' (shares it; asks first)'}`} aria-label="Place on the canvas" onPointerDown={onCanvas ? dragOut(d.id) : undefined} onClick={act(() => useDocUi.setState({ placing: { docId: d.id, near: list.id } }))}>
           ↗
         </Button>
       )}
-      <Button icon className={styles.act} title="download .md" aria-label="Download" onClick={act(() => void downloadDocument(wid, d))}>
+      <Button icon title="download .md" aria-label="Download" onClick={act(() => void downloadDocument(wid, d))}>
         ↓
       </Button>
       {(mine || (d.shared && owner)) && (
-        <Button icon tone="danger" className={styles.act} title="delete (asks first)" aria-label="Delete" onClick={act(() => useDocUi.setState({ deleting: d.id }))}>
+        <Button icon tone="danger" title="delete (asks first)" aria-label="Delete" onClick={act(() => useDocUi.setState({ deleting: d.id }))}>
           ⌫
         </Button>
       )}
-    </span>
+    </ButtonGroup>
   )
 }
 
@@ -555,23 +557,22 @@ export function DocumentsTools({ piece, editor, toolClass, compact = false }: { 
         </span>
       ))}
       {p.size && p.pages > 1 && (
-        <>
-          <Button className={tool} disabled={p.at === 0} aria-label="Page before" onClick={() => go(p.at - 1)}>
+        <ButtonGroup label="Pages">
+          <Button icon className={tool} disabled={p.at === 0} aria-label="Page before" onClick={() => go(p.at - 1)}>
             ‹
           </Button>
           <span className={styles.pageAt}>
             {p.at + 1} / {p.pages}
           </span>
-          <Button className={tool} disabled={p.at >= p.pages - 1} aria-label="Page after" onClick={() => go(p.at + 1)}>
+          <Button icon className={tool} disabled={p.at >= p.pages - 1} aria-label="Page after" onClick={() => go(p.at + 1)}>
             ›
           </Button>
-        </>
+        </ButtonGroup>
       )}
       {editor && (
         <>
           {!compact && <Select<string>
             ariaLabel="Which kinds"
-            className={styles.pick}
             value={kindValue}
             options={KIND_FILTER.map((k) => ({ value: k.value, label: k.label }))}
             onChange={(v) => {
@@ -581,7 +582,6 @@ export function DocumentsTools({ piece, editor, toolClass, compact = false }: { 
           />}
           {!compact && <Select<string>
             ariaLabel="Documents a page"
-            className={styles.pick}
             value={p.size ? String(p.size) : ALL}
             options={[{ value: ALL, label: `all ${count}` }, ...PAGE_SIZES.map((n) => ({ value: String(n), label: `${n} a page` }))]}
             onChange={(v) => {
@@ -590,13 +590,7 @@ export function DocumentsTools({ piece, editor, toolClass, compact = false }: { 
             }}
           />}
           {/* Table or shelf (D-232): shared, like its sort. */}
-          <span className={styles.switch} role="radiogroup" aria-label="Show as">
-            {(['table', 'shelf'] as const).map((v) => (
-              <Button key={v} className={tool} role="radio" aria-checked={setup.view === v} data-on={setup.view === v || undefined} onClick={() => setup.view !== v && void setDocumentsSetup(wid, piece, { view: v })}>
-                {v}
-              </Button>
-            ))}
-          </span>
+          <Choice bare label="Show as" options={['table', 'shelf'] as const} value={setup.view} onChange={(v) => void setDocumentsSetup(wid, piece, { view: v })} />
         </>
       )}
       <UploadAction className={tool} />

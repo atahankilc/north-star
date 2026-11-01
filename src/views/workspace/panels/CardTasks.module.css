@@ -13,16 +13,6 @@
   cursor: pointer;
 }
 
-.box {
-  flex: none;
-  color: var(--fg-dim);
-  white-space: pre;
-}
-
-.row[data-done='true'] .box {
-  color: var(--accent-green);
-}
-
 .title {
   flex: 1;
   min-width: 0;

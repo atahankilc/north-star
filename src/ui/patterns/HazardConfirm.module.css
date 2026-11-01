@@ -87,20 +87,5 @@
 .actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--space-4);
   margin-top: var(--space-6);
-}
-
-.action {
-  font-size: var(--text-sm);
-}
-
-.action.danger {
-  color: var(--accent-magenta);
-}
-
-.action.danger:hover,
-.action.danger:focus-visible {
-  color: var(--on-accent);
-  background: var(--accent-magenta);
 }

@@ -25,6 +25,7 @@ import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import styles from './Table.module.css'
 import { DUR } from '../../../ui/foundation/motion'
 import { Button } from '../../../ui/primitives/Button'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Label } from '../../../ui/primitives/Label'
 
@@ -440,12 +441,11 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
 
         {live && editor && (
           <>
-            <Button icon className={styles.add} data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: piece.id, tab: 'cols' })}>
+            <Button icon data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: piece.id, tab: 'cols' })}>
               +
             </Button>
             <Button
               icon
-              className={styles.add}
               style={box(0, bottom, nameW, T.add)}
               title="add a named row"
               aria-label="Add a row"
@@ -794,22 +794,21 @@ export function TablePager({ piece, editor }: { piece: WithId<Piece>; editor: bo
   return (
     <span className={styles.pager} role="group" aria-label="Pages">
       {p.size && (
-        <>
-          <Button disabled={p.at === 0} title="the page before" aria-label="Page before" onClick={() => go(p.at - 1)}>
+        <ButtonGroup>
+          <Button icon disabled={p.at === 0} title="the page before" aria-label="Page before" onClick={() => go(p.at - 1)}>
             ‹
           </Button>
           <span className={styles.pageAt}>
             {p.at + 1} / {p.pages}
           </span>
-          <Button disabled={p.at >= p.pages - 1} title="the page after" aria-label="Page after" onClick={() => go(p.at + 1)}>
+          <Button icon disabled={p.at >= p.pages - 1} title="the page after" aria-label="Page after" onClick={() => go(p.at + 1)}>
             ›
           </Button>
-        </>
+        </ButtonGroup>
       )}
       {editor ? (
         <Select<string>
           ariaLabel="Rows a page"
-          className={styles.pageSize}
           value={p.size ? String(p.size) : ALL}
           options={[{ value: ALL, label: `all ${count}` }, ...PAGE_SIZES.map((n) => ({ value: String(n), label: `${n} a page` }))]}
           onChange={(v) => {

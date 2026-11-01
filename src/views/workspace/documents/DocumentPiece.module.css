@@ -154,24 +154,6 @@
 }
 
 /* The zoom in a dock: `[−] 100% [+]`. */
-.zoom {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-half);
-}
-
-/* `100%`, a Button icon between the zoom's `−` and `+`. */
-.zoomAt[data-icon] {
-  min-width: 4ch;
-  padding: 0 var(--space-half);
-  color: var(--fg);
-  text-align: center;
-}
-
-.zoomAt[data-icon]:hover {
-  color: var(--accent-cyan);
-}
-
 /* The question before a private document goes on the canvas (D-232). */
 .placeLayer {
   position: absolute;
@@ -253,20 +235,6 @@
   line-height: var(--lh-body);
 }
 
-.askActions {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-}
-
-/* Its answers: the kit's Button with its key; "share and place" in the ask's yellow. */
-.askActions .askGo {
-  margin-left: var(--space-3);
-  color: var(--accent-yellow);
-}
 
 /* The list put away (D-232): the first document starts at the side nav, no line down its left. */
 .reader[data-alone] {
@@ -291,11 +259,5 @@
 }
 
 .openMore .openMoreButton {
-  color: var(--fg);
-  font-size: var(--text-sm);
   pointer-events: auto;
-}
-
-.openMore .openMoreButton:hover {
-  color: var(--accent-cyan);
 }

@@ -7,10 +7,10 @@ export default example({
   place: 'hud/docks',
   also: ['actions/dock actions'],
   file: 'src/views/workspace/canvas/FocusDock.tsx',
-  note: 'the focus dock: a tab on the bottom edge, `[unfocus] esc` last; each piece adds its tools',
+  note: 'the focus dock: a tab on the bottom edge, its actions one strip of Button cells (ButtonGroup, D-344), `unfocus` last; each piece adds its tools',
   states: {
-    plane: onCanvas({ only: [P.lunch], focus: P.lunch, note: '[filter] [view ▾] [unfocus]' }),
-    matrix: onCanvas({ only: [P.matrix], focus: P.matrix, note: '[setup] [unfocus]' }),
+    plane: onCanvas({ only: [P.lunch], focus: P.lunch, note: 'filter · view ▾ · unfocus' }),
+    matrix: onCanvas({ only: [P.matrix], focus: P.matrix, note: 'setup · unfocus' }),
     table: onCanvas({ only: [P.table], focus: P.table }),
     deck: onCanvas({ only: [P.deck], focus: P.deck, note: 'lanes, filter, setup' }),
     timeline: onCanvas({ only: [P.deck, P.days], focus: P.days, note: 'scales, today, the deck it draws' }),
@@ -19,7 +19,7 @@ export default example({
       only: [P.product, P.matrix],
       focus: P.product,
       change: (ws) => ({ ...ws, pieces: ws.pieces.map((p) => (p.id === P.matrix ? { ...p, stuckTo: P.product } : p)) }),
-      note: '`[⇆ matrix · …]` opens it beside (D-211)',
+      note: '`⇆ matrix · …` opens it beside (D-211)',
     }),
   },
 })

@@ -213,9 +213,8 @@
 }
 
 /* Its tools, after the count, while it's hovered: they take no room until then. */
-.tools {
+.head .tools {
   display: none;
-  gap: var(--space-half);
 }
 
 .head:hover .tools,
@@ -223,27 +222,7 @@
   display: flex;
 }
 
-/* Each a kit Button `icon` (D-326) in a cell of its own; the finished one green while on, the limit as the text. */
-.tools .tool {
-  min-width: var(--control-xs);
-  height: var(--control-xs);
-  padding: 0 var(--space-1);
-}
-
-.tools .tool:hover,
-.tools .tool:focus-visible {
-  background: var(--wash-2);
-  outline: none;
-}
-
-.tools .tool[data-done][aria-pressed='true'] {
-  color: var(--accent-green);
-}
-
-.tools .tool[data-limit][aria-pressed='true'] {
-  color: var(--fg);
-}
-
+/* Joined in one ButtonGroup (D-344); the finished one green while on (`--button-on`). */
 /* Over its limit (D-256): its name and count magenta. */
 .head[data-over='true'] .name,
 .head[data-over='true'] .count {
@@ -349,7 +328,6 @@
 /* Finished, for a card still being tested (D-254): a cyan line asking what it taught (the kit's Button, primary). */
 .task .learn {
   align-self: flex-start;
-  padding: 0;
 }
 
 .for {
@@ -430,27 +408,16 @@
   visibility: visible;
 }
 
-/* `+ add a task`: a faint line, not a box. `+ column`: a head of its own, as faint. */
-/* `+ add a task`, `+ column`: Button icons, faint until pointed at. `[data-icon]` outweighs the Button's own padding
-   and colour, however the kit's CSS is ordered. */
-.add[data-icon],
-.addCol[data-icon] {
-  padding: var(--space-1) 0 var(--space-1) var(--space-4);
-  color: var(--fg-faint);
-  text-align: left;
+/* `+ add a task` under a column's tasks, `+ column` beside the last column: Button cells (D-344), set at the start of
+   their line. */
+.add,
+.addCol {
+  align-self: flex-start;
 }
 
-.addCol[data-icon] {
-  height: var(--head);
-  padding: 0;
-}
-
-.add[data-icon]:hover,
-.add[data-icon]:focus-visible,
-.addCol[data-icon]:hover,
-.addCol[data-icon]:focus-visible {
-  color: var(--fg);
-  outline: none;
+/* `+ column` sits in the middle of the heads' line. */
+.addCol {
+  margin-top: calc((var(--head) - var(--control-sm)) / 2);
 }
 
 /* Typing a new task: a sheet in its place with the kit's prompt (D-326), a cyan edge. */
@@ -510,25 +477,9 @@
   white-space: nowrap;
 }
 
-/* A Button icon: `▾ SOON`. */
-.soonFold[data-icon] {
-  padding: 0;
-  color: var(--fg-faint);
-  font-size: inherit;
-}
-
-.soonFold:hover .soonName,
-.soonFold:focus-visible .soonName {
-  color: var(--fg-strong);
-}
-
+/* `▾ SOON`, a Button (D-344). */
 .soonName {
   composes: label from '../../../ui/primitives/Label.module.css';
-}
-
-/* Its own colour over the kit's label, which can come again later (a file composing it): outweighs it */
-.soonFold .soonName {
-  color: var(--fg);
 }
 
 .soonCounts {
@@ -859,7 +810,7 @@
 
 .heldAct {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
 }
 
 .heldHint {

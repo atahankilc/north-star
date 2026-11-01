@@ -1,106 +1,30 @@
-/* Dropdown menus (D-053), in the bracket language of the HUD. */
+/* Dropdown menus (D-053); every trigger a Button cell (D-344). */
 .root {
   position: relative;
   display: inline-flex;
 }
 
+/* Every trigger is the one dropdown trigger (src/ui/primitives/Trigger.module.css, D-344), Select's too. */
 .trigger {
-  composes: interactive from '../foundation/Frame.module.css';
-  --accent: var(--accent-cyan);
-  display: inline-flex;
-  align-items: center;
-  /* Fixed height: a trigger without a summary ("go to") is as tall as the others. */
-  height: var(--control);
-  padding: 0 var(--space-2) 0 var(--space-3);
-  color: var(--fg);
-  font: inherit;
-  font-size: var(--text-sm);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.trigger[aria-expanded='true'] {
-  border-color: var(--line-hover);
-  background: var(--menu);
-}
-
-/* Narrowing the board: the accent bar stays, the edge and value take the accent. */
-.trigger[data-active='true'] {
-  border-color: color-mix(in srgb, var(--accent) var(--mix-soft), var(--line));
-}
-
-.trigger[data-active='true']::before {
-  transform: scaleX(1);
+  composes: trigger from '../primitives/Trigger.module.css';
 }
 
 .label {
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  font-family: var(--font-mono);
-  text-transform: uppercase;
+  composes: label from '../primitives/Trigger.module.css';
 }
 
-/* Label | value, split by a faint rule. */
 .summary {
-  display: inline-block;
-  max-width: 20ch;
-  line-height: var(--lh-tight);
-  margin-left: var(--space-2);
-  padding-left: var(--space-2);
-  overflow: hidden;
-  border-left: var(--line-w) solid var(--line);
-  color: var(--fg);
-  text-overflow: ellipsis;
-}
-
-.trigger[data-active='true'] .summary {
-  color: var(--accent);
+  composes: value from '../primitives/Trigger.module.css';
 }
 
 .caret {
-  display: inline-block;
-  margin-left: var(--space-2);
-  color: var(--fg-faint);
-  font-size: var(--text-xs);
-  transition:
-    transform var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+  composes: caret from '../primitives/Trigger.module.css';
 }
 
-.trigger:hover .caret {
-  color: var(--fg-dim);
-}
-
-.trigger[aria-expanded='true'] .caret {
-  color: var(--fg);
-  transform: rotate(180deg);
-}
-
-/* Plain (D-289): in a console or a dock, text like the link dropdown beside it (Select's trigger), `lanes none ▾`; no
-   frame, no fill, the console's size. */
+/* Plain (D-289): in a console or a dock, `lanes none ▾`, the same cell as the actions beside it (D-344), the label in
+   their words (not caps). */
 .plain {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.6em;
-  padding: 0 var(--space-half);
-  border: 0;
-  background: none;
-  color: var(--fg-muted);
-  font: inherit;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.plain:hover,
-.plain[aria-expanded='true'] {
-  color: var(--fg-strong);
-}
-
-.plain:focus-visible {
-  outline: var(--line-w) solid var(--fg-dim);
-  outline-offset: var(--space-half);
+  composes: trigger;
 }
 
 .plain .label {
@@ -108,32 +32,6 @@
   font-size: inherit;
   letter-spacing: 0;
   text-transform: none;
-}
-
-.plain .summary {
-  max-width: 20ch;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  line-height: inherit;
-  vertical-align: bottom;
-}
-
-.plain[data-active='true'] .summary {
-  color: var(--accent-cyan);
-}
-
-.plain .caret {
-  margin: 0;
-}
-
-.plain:hover .caret {
-  color: var(--fg-dim);
-}
-
-.plain[aria-expanded='true'] .caret {
-  color: var(--fg);
-  transform: rotate(180deg);
 }
 
 /* SHOW's summary: one square per type, in its colour; hidden types go dark. */
@@ -155,24 +53,15 @@
   box-shadow: inset 0 0 0 var(--line-w) var(--fg-faint);
 }
 
-/* The create button: a solid square `+`. */
+/* The create button: a solid magenta cell, `+` (D-344's cell, the create's own colour). */
 .primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
+  composes: sm from '../primitives/Button.module.css';
   height: var(--control-lg);
   min-width: var(--control-lg);
   padding: 0 var(--space-3);
-  border: var(--line-w) solid var(--accent-magenta);
   background: var(--accent-magenta);
   color: var(--on-accent);
-  font: inherit;
   font-size: var(--text-sm);
-  cursor: pointer;
-  transition:
-    background var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
 }
 
 .primary .label {
@@ -182,64 +71,48 @@
 }
 
 .primary:hover,
+.primary:focus-visible,
 .primary[aria-expanded='true'] {
-  background: var(--bg);
-  color: var(--accent-magenta);
+  background: color-mix(in srgb, var(--accent-magenta) var(--mix-near), var(--fg-strong));
+  color: var(--on-accent);
 }
 
-/* The side nav's `+` (D-178): unframed like the settings gear (Settings.module.css .trigger), the glyph in magenta;
-   open, it takes the tabs' magenta bar. */
+/* The side nav's `+` (D-178): a HUD tool's cell (ToolButton's, D-344), its glyph magenta; open, lit like a tool that's
+   on, in magenta. */
 .icon {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
+  composes: sm from '../primitives/Button.module.css';
   width: var(--control);
   height: var(--control);
   padding: 0;
-  border: 0;
-  background: none;
   color: var(--accent-magenta);
-  font: inherit;
-  cursor: pointer;
 }
 
 .icon .label {
   display: grid;
   color: inherit;
-  transition: transform var(--dur-med) var(--ease-out);
 }
 
-.icon:hover .label,
-.icon:focus-visible .label {
-  transform: scale(1.15);
+.icon:hover,
+.icon:focus-visible {
+  color: var(--accent-magenta);
 }
 
-.icon::after {
-  content: '';
-  position: absolute;
-  left: var(--space-2);
-  right: var(--space-2);
-  bottom: calc(-1 * var(--space-1));
-  height: var(--line-w-bold);
-  background: var(--accent-magenta);
-  transform: scaleX(0);
-  transition: transform var(--dur-med) var(--ease-out);
-}
-
-.icon[aria-expanded='true']::after {
-  transform: scaleX(1);
+.icon[aria-expanded='true'] {
+  background: var(--wash-magenta);
+  box-shadow: inset 0 calc(-1 * var(--line-w)) 0 var(--accent-magenta);
 }
 
 /* Grey like the side nav's fit (go to, D-196), lit while hovered or open. */
 .icon[data-quiet] {
   color: var(--fg-dim);
-  transition: color var(--dur-fast) var(--ease-out);
 }
 
 .icon[data-quiet]:hover,
 .icon[data-quiet]:focus-visible,
 .icon[data-quiet][aria-expanded='true'] {
+  background: var(--wash-3);
   color: var(--fg-strong);
+  box-shadow: none;
 }
 
 /* The panel (D-222): page black, a brighter edge, the prompt inside. */
@@ -418,14 +291,18 @@
   color: var(--accent-magenta);
 }
 
+/* A row you tick (a filter's, the view menu's): a toggle row (D-344), `✓` in a fixed slot, the row lit while on as a
+   ticked Checkbox is, in the item's tone. */
 .check {
   font-family: var(--font-mono);
   flex: none;
-  color: var(--fg-faint);
+  width: 1.2em;
+  color: var(--tone, var(--accent-cyan));
+  text-align: center;
 }
 
-.check[data-on='true'] {
-  color: var(--tone, var(--accent-cyan));
+.item[aria-checked='true'] {
+  background: color-mix(in srgb, var(--tone, var(--accent-cyan)) var(--mix-wash), transparent);
 }
 
 .glyph {

@@ -181,12 +181,11 @@
   font: inherit;
 }
 
-/* `×` to take a head out: in its top-right corner, shown while hovered. */
-/* A head's `×` (a Button icon, tone danger), shown while the head is pointed at. */
+/* A head's `×` (a Button icon, tone danger), in its top-right corner, shown while the head is pointed at. */
 .remove {
   flex-shrink: 0;
   opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
 
 .rowHead .remove,
@@ -201,11 +200,6 @@
 .remove:focus-visible,
 .remove[data-shown] {
   opacity: 1;
-}
-
-.remove[data-icon] {
-  padding: 0 var(--space-half);
-  line-height: var(--lh-none);
 }
 
 /* The totals (D-212): squares, one per cell; a line of the steps' shares; or a number. */
@@ -561,15 +555,10 @@
   gap: var(--space-1) var(--space-2);
 }
 
-/* The cell bar's tools: the kit's Button (D-326); a step's square beside its name, a step picked in its own tone. */
-.barTool {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.cellBar .barTool[aria-pressed='true'] {
-  color: var(--tone, var(--accent-cyan));
+/* The cell bar's tools: Button cells joined in a ButtonGroup (D-344), wrapping when there are many; a step picked lit
+   in its own tone (`--button-on`); a step's square beside its name. */
+.barGroup {
+  flex-wrap: wrap;
 }
 
 .barTool .square {
@@ -667,10 +656,6 @@
   min-width: 0;
 }
 
-.select {
-  color: var(--fg);
-}
-
 .checkHint {
   display: block;
   margin: var(--space-half) 0 0;
@@ -717,12 +702,6 @@
 [data-card] > .pillMark {
   background: var(--type);
   box-shadow: none;
-}
-
-/* A pill's `×` (a Button icon, tone danger). */
-.pillX[data-icon] {
-  padding: 0 var(--space-half);
-  color: var(--fg-faint);
 }
 
 .addPill {
@@ -1020,12 +999,6 @@
   flex-shrink: 0;
   align-items: center;
   gap: var(--space-2);
-}
-
-/* `[−]` / `[+] 3`: a Button, no padding of its own on the axis. */
-.fold[data-tone],
-.fold:not([data-tone]) {
-  padding: 0;
 }
 
 .endCell[data-sub] {

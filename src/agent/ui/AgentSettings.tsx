@@ -13,6 +13,7 @@ import { EFFORTS, pickable, readKey, suggested, useAgentSettings } from './setti
 import { plainError } from './errors'
 import styles from './AgentSettings.module.css'
 import { Button } from '../../ui/primitives/Button'
+import { ButtonGroup } from '../../ui/primitives/ButtonGroup'
 import { Field } from '../../ui/primitives/Field'
 
 const k = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
@@ -116,12 +117,14 @@ function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text
           <span className={styles.hint} aria-label={`your ${p.name} key, shortened`}>
             {hint}
           </span>
-          <Button className={styles.action} tone="primary" onClick={() => void check()} disabled={busy}>
-            {busy ? 'checking' : 'check'}
-          </Button>
-          <Button className={styles.action} tone="danger" onClick={() => (s.removeKey(provider), onSaid({ text: 'Removed from this browser.' }))}>
-            remove
-          </Button>
+          <ButtonGroup>
+            <Button onClick={() => void check()} disabled={busy}>
+              {busy ? 'checking' : 'check'}
+            </Button>
+            <Button tone="danger" onClick={() => (s.removeKey(provider), onSaid({ text: 'Removed from this browser.' }))}>
+              remove
+            </Button>
+          </ButtonGroup>
         </>
       ) : (
         <form
@@ -141,7 +144,7 @@ function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text
             value={draft}
             onChange={setDraft}
           />
-          <Button className={styles.action} tone="primary" type="submit" disabled={!draft.trim()}>
+          <Button tone="primary" type="submit" disabled={!draft.trim()}>
             save
           </Button>
         </form>
@@ -179,7 +182,6 @@ function KeySection() {
       <Row label="model" hint={s.model ? `${FIT_WORDS[rows.find((r) => r.id === s.model)?.fit ?? 'unknown']}. Each chat can switch it in its header.` : `Suggested: ${suggest}. Pick one to keep it; each chat can switch it.`}>
         <Select
           ariaLabel="model"
-          className={styles.select}
           value={shown}
           options={rows.map((r) => ({ value: r.id, label: <ModelRow id={r.id} words={r.fitWords} suggested={!s.model && r.id === suggest} /> }))}
           onChange={(v) => s.setModel(v)}
@@ -221,7 +223,7 @@ function UsageSection() {
           {u.answers} answer{u.answers === 1 ? '' : 's'} · {k(u.input)} in{u.cached ? ` (${k(u.cached)} cached)` : ''} · {k(u.output)} out
         </span>
         {u.answers > 0 && (
-          <Button className={styles.action} onClick={() => (clearUsage(), redraw((n) => n + 1))}>
+          <Button onClick={() => (clearUsage(), redraw((n) => n + 1))}>
             clear
           </Button>
         )}

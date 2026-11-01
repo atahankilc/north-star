@@ -18,7 +18,7 @@ import styles from './Workspaces.module.css'
 // The workspace's menu (open, rename, invite code, leave, delete), under its `⋯`: right-click opens the same.
 export function More({ name, onMenu }: { name: string; onMenu: (at: [number, number]) => void }) {
   return (
-    <Button icon className={styles.more} aria-label={`more for ${name}`} title="more: rename, invite code, leave, delete" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); onMenu([r.left, r.bottom]) }}>
+    <Button icon aria-label={`more for ${name}`} title="more: rename, invite code, leave, delete" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); onMenu([r.left, r.bottom]) }}>
       ⋯
     </Button>
   )

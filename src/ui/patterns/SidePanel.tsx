@@ -1,14 +1,16 @@
 // The right panel (D-219): one look for every panel that opens on the right, whatever fills it. A terminal column flush
 // with the right edge of the space it belongs to, the screen's full height, over the HUD's bar (in a portal): a piece's own view in focus (its part of the screen when
 // something is open beside it), or the screen's right edge for what's on the canvas itself. A thin line on its left
-// with magenta marks at its corners (a plane console's), the kind in its colour and `[×] esc` along the top, the title
-// under it, then sections under rules that carry a number and a name (`01 STATUS ────`), actions at the foot. It
+// with magenta marks at its corners (a plane console's), the kind in its colour and a `×` along the top, the title
+// under it, then sections under rules that carry a number and a name (`01 STATUS ────`), actions at the foot, joined
+// (D-344). It
 // builds up cell by cell as it opens and breaks apart as it closes (D-034): wrap it in <AnimatePresence>.
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Appear } from '../primitives/Appear'
 import styles from './SidePanel.module.css'
 import { Button } from '../primitives/Button'
+import { ButtonGroup } from '../primitives/ButtonGroup'
 import { Rule } from '../primitives/Rule'
 
 type Props = {
@@ -18,13 +20,13 @@ type Props = {
   title: ReactNode
   label: string
   onClose: () => void
-  // `[verb]` actions at its foot.
+  // Actions at its foot (PanelAction), joined; a danger one goes to the far right.
   actions?: ReactNode
   // From the screen's right edge: the part of the screen right of the space it belongs to (what's open beside a plane).
   right?: number
   // Its width when not the usual 400 (a task's inside the tasks side view, D-300: narrower, or all of it).
   width?: number
-  // More along the top, before `[×]` (that side view's `[full]`, `‹ back`).
+  // More along the top, before the `×`, joined with it (that side view's `full`, `‹ back`).
   tools?: ReactNode
   children?: ReactNode
 }
@@ -48,10 +50,12 @@ export function SidePanel({ kind, tone, title, label, onClose, actions, right = 
     >
       <header className={styles.top}>
         <span className={styles.kind}>{kind}</span>
-        {tools && <span className={styles.tools}>{tools}</span>}
-        <button className={styles.close} onClick={onClose} title="Close (Esc)">
-          <span className={styles.br}>[</span>×<span className={styles.br}>]</span> esc
-        </button>
+        <ButtonGroup className={styles.tools}>
+          {tools}
+          <Button icon onClick={onClose} title="Close (Esc)" aria-label="close">
+            ×
+          </Button>
+        </ButtonGroup>
       </header>
       <div className={styles.title}>{title}</div>
       <div className={styles.body}>{children}</div>
@@ -75,7 +79,7 @@ export function PanelSection({ n, name, count, add, empty, children, 'data-learn
   )
 }
 
-// A `[verb]` at the panel's foot; `danger` turns magenta on hover.
+// An action at the panel's foot; `danger` turns magenta on hover and sits in the far right corner.
 export function PanelAction({ label, title, danger, onClick }: { label: string; title?: string; danger?: boolean; onClick: () => void }) {
   return (
     <Button className={styles.action} tone={danger ? 'danger' : undefined} title={title} onClick={onClick}>

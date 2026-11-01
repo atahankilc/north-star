@@ -51,6 +51,8 @@ import styles from './CardPanel.module.css'
 import { DUR } from '../../../ui/foundation/motion'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { Button } from '../../../ui/primitives/Button'
+import { Choice } from '../../../ui/primitives/Choice'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Label as UiLabel } from '../../../ui/primitives/Label'
@@ -310,23 +312,23 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
     <>
       <div className={styles.under}>{kinds}</div>
       <PanelSection n={1} name="line up">
-        <div className={styles.pills}>
+        <ButtonGroup>
           {ALIGN.map(([name, to]) => (
             <Button key={name} disabled={!editor} onClick={() => moveTo(to)}>
               {name}
             </Button>
           ))}
-        </div>
+        </ButtonGroup>
       </PanelSection>
       <PanelSection n={2} name="space out">
-        <div className={styles.pills}>
+        <ButtonGroup>
           <Button disabled={!editor || items.length < 3} onClick={() => spread(0)}>
             ↔ across
           </Button>
           <Button disabled={!editor || items.length < 3} onClick={() => spread(1)}>
             ↕ down
           </Button>
-        </div>
+        </ButtonGroup>
       </PanelSection>
       <PanelSection
         n={3}
@@ -364,11 +366,11 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
       </PanelSection>
       {editor && packable.length > 0 && (
         <PanelSection n={4} name="package">
-          <div className={styles.pills}>
+          <ButtonGroup>
             <Button onClick={() => setSelection([packageThese(wid, packable, every)])} title="One thing to rate and rank, holding these cards (D-239)">
               package these {packable.length}
             </Button>
-          </div>
+          </ButtonGroup>
         </PanelSection>
       )}
     </>
@@ -490,7 +492,7 @@ function PackagePlan({ n, card, editor }: P) {
   const row = (field: 'impact' | 'effort', values: string[]) => (
     <>
       <UiLabel>{field}</UiLabel>
-      <Pills values={values} value={card[field]} editor={editor} label={field} onPick={(v) => void updateCard(wid, card, { [field]: v }, `${field} of`)} />
+      <Choice bare clearable options={values} value={card[field]} disabled={!editor} label={field} onChange={(v) => void updateCard(wid, card, { [field]: v }, `${field} of`)} />
     </>
   )
   return (
@@ -561,7 +563,7 @@ function PlanSection({ n, card, editor }: P) {
   const row = (label: string, field: 'priority' | 'status' | 'impact' | 'effort', values: string[]) => (
     <>
       <UiLabel>{label}</UiLabel>
-      <Pills values={values} value={card[field]} editor={editor} label={label} onPick={(v) => void updateCard(wid, card, { [field]: v }, `${label} of`)} />
+      <Choice bare clearable options={values} value={card[field]} disabled={!editor} label={label} onChange={(v) => void updateCard(wid, card, { [field]: v }, `${label} of`)} />
     </>
   )
   return (
@@ -706,24 +708,12 @@ async function makeNext(wid: string, card: Card, cards: Card[], places: Place[])
 export type P = { n: number; card: Card; cards: Card[]; editor: boolean }
 
 // `[pills]`: a click picks, a click on the picked one clears.
-export function Pills<T extends string>({ values, value, editor, onPick, label }: { values: readonly T[]; value?: T; editor: boolean; onPick: (v: T | undefined) => void; label: string }) {
-  return (
-    <div className={styles.pills} role="group" aria-label={label}>
-      {values.map((v) => (
-        <Button key={v} pressed={v === value} disabled={!editor} onClick={() => onPick(v === value ? undefined : v)}>
-          {v}
-        </Button>
-      ))}
-    </div>
-  )
-}
-
 function StatusSection({ n, card, editor }: P) {
   const { wid, evidence } = useWs()
   const warn = mismatch(card.validation, evidence.filter((e) => e.nodeId === card.id))
   return (
     <PanelSection n={n} name="status" data-learn="panel-status">
-      <Pills values={VALIDATIONS} value={card.validation} editor={editor} label="Status" onPick={(v) => void updateCard(wid, card, { validation: v }, 'status of')} />
+      <Choice bare clearable options={VALIDATIONS} value={card.validation} disabled={!editor} label="Status" onChange={(v) => void updateCard(wid, card, { validation: v }, 'status of')} />
       {warn && <p className={styles.warn}>! {warn}</p>}
     </PanelSection>
   )
@@ -818,21 +808,22 @@ export function EvidenceForm({ start, onDone }: { start?: Partial<Evidence>; onD
   return (
     <div className={styles.form}>
       <Field multiline size="sm" rows={1} label="What was learned" autoFocus placeholder="What was learned, in a sentence or a quote" value={f.text} maxLength={2000} onChange={(v) => setF({ ...f, text: v })} onKeyDown={keys} />
-      <Pills values={['supports', 'contradicts'] as const} value={f.stance} editor label="For or against" onPick={(v) => setF({ ...f, stance: v ?? f.stance })} />
-      <Pills values={EVIDENCE_KINDS} value={f.kind} editor label="Kind" onPick={(v) => setF({ ...f, kind: v ?? f.kind })} />
+      <Choice bare clearable options={['supports', 'contradicts'] as const} value={f.stance} label="For or against" onChange={(v) => setF({ ...f, stance: v ?? f.stance })} />
+      <Choice bare clearable options={EVIDENCE_KINDS} value={f.kind} label="Kind" onChange={(v) => setF({ ...f, kind: v ?? f.kind })} />
       <div className={styles.formRow}>
         <Field size="sm" label="From" placeholder="from (who, where)" value={f.source ?? ''} maxLength={200} onChange={(v) => setF({ ...f, source: v })} onKeyDown={keys} />
         <Field size="sm" type="date" label="When" value={f.date ?? ''} onChange={(v) => setF({ ...f, date: v || undefined })} onKeyDown={keys} />
       </div>
       <Field size="sm" label="Link" placeholder="link (optional)" value={f.url ?? ''} maxLength={2000} onChange={(v) => setF({ ...f, url: v })} onKeyDown={keys} />
       <div className={styles.formActions}>
-        <Button tone="primary" onClick={save}>
-          {start?.id ? 'save' : 'add'}
-        </Button>
-        <Button onClick={() => onDone(null)}>
-          cancel
-        </Button>
-        <span className={styles.hint}>enter {start?.id ? 'saves' : 'adds'} · esc</span>
+        <ButtonGroup>
+          <Button tone="primary" onClick={save}>
+            {start?.id ? 'save' : 'add'}
+          </Button>
+          <Button onClick={() => onDone(null)}>
+            cancel
+          </Button>
+        </ButtonGroup>
       </div>
     </div>
   )
@@ -1074,7 +1065,7 @@ function PlanesSection({ n, card, editor }: P) {
       {picking &&
         others.map((p) => (
           <div key={p.id} className={styles.link}>
-            <Button icon className={styles.inlineAdd} onClick={() => placeOn(p.id)}>
+            <Button onClick={() => placeOn(p.id)}>
               <span className={styles.plus}>+</span> <PlaneName name={name(p.id)} />
             </Button>
           </div>
