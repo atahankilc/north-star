@@ -36,7 +36,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 26 | turning text into cards rewrites its words       | Guards       | mid      | code + prompt    | fixed  |
 | 18 | a viewer's agent calls `change`                  | Guards       | low      | code             | fixed  |
 | 16 | ops nobody asked for                             | Guards       | mid      | code + prompt    | fixed  |
-| 6  | items land on top of each other                  | Guards       | mid      | code             | place_on fixed (text); paragraphs open |
+| 6  | items land on top of each other                  | Guards       | mid      | code             | fixed  |
 | 11 | links no plane can draw                          | Guards       | mid      | code (`lint`)    | fixed  |
 | 12 | no last look before the preview                  | Guards       | mid      | code, then model | code part fixed |
 | 25 | evals build their store apart from the app's     | Plumbing     | blocker  | code (evals)     | fixed  |
@@ -149,6 +149,11 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     A second cause, found and fixed with D-327's evals (2026-11-01): place_on's `landing` (src/model/placement.ts) kept
     clear of the plane's cards but not its text, so a card brought to a plane landed on a sticky; the plane's text is
     now in its obstacles (tests/unit/agentLook.test.ts). The paragraph height above is still open.
+    *Fixed 2026-11-01:* the cause was that height. labelBox now wraps each line word by word at the text's width
+    (`wrappedLines`; a blank line counts half), Geist 0.46 em and Geist Mono 0.6 em per character, checked against
+    the texts as drawn in headless Chrome: a 600-character one-line paragraph 400 wide was counted 32 px high against
+    264 drawn; now 272. Stickies exact, paragraphs 3–8 % over. tests/unit/labelBox.test.ts pins those measurements
+    (an eval can't: noOverlaps measures with the same labelBox); edit-15 places a long paragraph by a card on Bets.
 11. **Links between cards on different planes are never shown, and it doesn't know.** In its import of the Founder
     Discovery Study (the `north-star` canvas in the user's Granat export), 16 of 48 links join cards on two planes, so
     no plane draws them (D-207). `validate` (src/ops/validate.ts) checks both ends exist, not that they share a plane.

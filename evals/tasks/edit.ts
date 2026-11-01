@@ -241,6 +241,23 @@ export const EDIT: Task[] = [
     // Asks for a yes it doesn't need, and proposes nothing.
     wrong: [call('view', { piece: 'p4' }), answer('p4 Interviews holds 21 cards. Delete it with all of that? Yes or no?')],
   },
+  // agent-bugs 6: a long one-line paragraph is as tall as it's drawn (labelBox wraps it at its width), so placing it
+  // next to a card keeps it off the rows below; counted one line high, it fitted a gap and ran over the next row.
+  {
+    id: 'edit-15-long-paragraph-clear',
+    group: 'edit',
+    set: 'regression',
+    fixture: 'medium',
+    ask: "On Bets, put this note as a paragraph next to 'Office lunch groups throw away unsold greens every evening': Office lunch groups decide by eleven what they will eat, and most of them already order through one person in a WhatsApp group: if the stall posts what is left at half past ten, the person who orders can pre-book a box for the group, the stall stops throwing greens away in the evening, and the group gets a better price than walking past at noon. We tried it with two groups in Kreuzberg in the pilot week and both ordered twice; the third group never answered because nobody in it owned the ordering.",
+    graders: [exists('text', { kind: 'paragraph', plane: 'Bets' }), noOverlaps('Bets'), onlyChanged({ add: { labels: 1 } }), undoRestores()],
+    reference: [
+      call('get', { ids: ['c49'] }),
+      change([['create_text', { kind: 'paragraph', plane: 'p3', text: "Office lunch groups decide by eleven what they will eat, and most of them already order through one person in a WhatsApp group: if the stall posts what is left at half past ten, the person who orders can pre-book a box for the group, the stall stops throwing greens away in the evening, and the group gets a better price than walking past at noon. We tried it with two groups in Kreuzberg in the pilot week and both ordered twice; the third group never answered because nobody in it owned the ordering.", where: { near: 'c49' } }]], 'the lunch groups note'),
+      answer('Proposed the note as a paragraph on p3 Bets next to c49 "Office lunch groups throw away unsold greens every evening": it waits in the preview.'),
+    ],
+    // On another plane.
+    wrong: [change([['create_text', { kind: 'paragraph', plane: 'p2', text: "Office lunch groups decide by eleven what they will eat, and most of them already order through one person in a WhatsApp group: if the stall posts what is left at half past ten, the person who orders can pre-book a box for the group, the stall stops throwing greens away in the evening, and the group gets a better price than walking past at noon. We tried it with two groups in Kreuzberg in the pilot week and both ordered twice; the third group never answered because nobody in it owned the ordering.", where: { near: 'c49' } }]]), answer('Added the note on Bets.')],
+  },
   {
     id: 'edit-11-revise-in-preview',
     group: 'edit',
