@@ -50,12 +50,11 @@ something is finished, add its entry to state-history.md and leave at most one l
      app a big job (`/restructure Segments`): does it call `plan` and `look`, one step per turn? Tune the prompt on it.
   2. The baseline (three runs, two models) before any prompt change is measured; agent-bugs 25 (with 1 and 5)
      fixed 2026-11-01, pushed.
-  3. Done 2026-11-01, pushed: 28's done is checked (a refused `change` keeps its step from done); 27's leftover
-     (place_on's result names the cards it brought along).
-     Bugs 7 (a plane's preview spilling onto the canvas), 3 (the stepper's item), 17 (deletes through the preview,
-     no word lists, D-333), 2/22 (names for short ids), 9, 18, 16, 26, 11, 12 (code part), 6 and 10 fixed
-     2026-11-01, pushed. Left: judgment bugs (15, 19, 20, 21, 23, 24) and new parts (13, 8), for a real model.
-  4. The local harness stays an idea (Q-031).
+  3. Done and pushed 2026-11-01: 28, 27's leftover, bugs 7, 3, 17 (D-333), 2/22, 9, 18, 16, 26, 11, 12 (code), 6, 10.
+  4. Before the run, done 2026-11-01 (not pushed): 15's and 21's code parts and 25's leftover (state-history.md);
+     21's checks found that a plan skill's guide never reached its `go` turn (fixed). Left for the model: the prompt
+     parts of 15 and 21, 19, 20, 23, 24, 12's step 2.
+  5. The local harness stays an idea (Q-031).
   Order and status of every agent bug: docs/specs/agent-bugs.md (its table).
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
   which (D-313); committed, not pushed;

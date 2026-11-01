@@ -1097,3 +1097,14 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   drawn). 10: an arrange beside something keeps its side when pushed clear; view takes a canvas.
 - Evals: edit-15 (a long paragraph by a card), edit-16 (the canvas row; fails without the fix).
 - Verified: tsc (app, evals), vitest 945, check:tokens 0, stub evals 116 tasks 0 failed, `--wrong` 116 failed.
+
+## Done (2026-11-01): agent-bugs 15 (code), 25's leftover, 21 (code), before the real-model baseline
+- 15: the map, when a competitor has regions, says they're as typed and that a list by region comes from
+  `query({region})` (read/map.ts; goldens updated). 25: a reopened chat tells what became of a preview with
+  workflow.ts' `withOutcome`, from the saved status line; a discard's status line had been saved as `applied`
+  (chatEntries.ts). 21: src/agent/skills/checks.ts (/test, /import, /prioritize, /compare), run by the loop once
+  when a skill's turn ends with changes waiting: findings back to the model as a `checks` message for one more step,
+  what's left into the preview's warnings. Found on the way: a plan skill's guide reached only its plan turn, so the
+  `go` turn never saw its "on go" steps (OpenAI; Claude's append-only history kept it); now sent again after a plan skill.
+- Verified: tsc, vitest agent* 165 (agentSkillChecks new), stub evals 116 tasks 0 failed (prioritize-03's reference
+  got its reply to the check), `--wrong` 116 failed. Not pushed.
