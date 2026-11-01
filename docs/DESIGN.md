@@ -150,7 +150,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   grid step; on a kanban the gap that opens); let go, it grows into them (180 ms). What holds others (a section, an
   unfolded package dragged by its band) shrinks with them as one, round the same point, in the same 160 ms, and only
   its L's show where it lands (D-291). Text's L's are on its edges (the project title's 7 px out); where a heading or
-  paragraph lands is rounded up to the grid, so its L's sit on the `+` marks (D-294). Resizing: cyan handles on the ring
+  paragraph lands is rounded up to the grid, so its L's sit on the grid's dots (D-294). Resizing: cyan handles on the ring
   only while selected (a corner's L, an edge's bar), the moving edges lit cyan, the size beside them.
 - **Cards** (D-055, D-152, D-205): flat, one shape for every type; a left border and a small uppercase label in the type's
   colour (customer green, problem magenta, competitor yellow, idea white, feature cyan, package blue), the face a dark
@@ -160,7 +160,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   magenta when they disagree with the status), the title (≤ 3 lines), a dim mono facts line, tag chips. Smaller on
   screen (D-111, D-153): the title alone, whole words, `…`; then each line a `--fg-dim` bar. A hovered card shows a dim
   `›` to drag a link from (cyan while linking).
-- Plane grid (D-182, D-187): faint `+` marks every 25 px (`--grid-mark`); pieces, cards and text snap to it (alt free).
+- Plane grid (D-182, D-187): faint dots every 25 px (`--grid-mark`, the shape `--grid-mark-shape`, D-332); pieces, cards and text snap to it (alt free).
   A card is 200 × 100, 8 × 4 steps, a mark on each corner. (1.0's board: 0.625 units, marks thinning as they crowded,
   D-110, D-148, D-149, D-151.)
 - Text (D-050, D-156, D-188, D-194): Geist straight on the canvas or a plane; typing keeps its face, size and layout

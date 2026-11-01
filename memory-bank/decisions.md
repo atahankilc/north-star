@@ -133,6 +133,7 @@ feature comes back as a piece, and check them with the user then.
 - Pieces (D-176): `pieces/{id}`, x/y/w/h in canvas px, a name. The side nav's `+` puts one at the screen's middle or the
   nearest clear spot, in edit mode (D-238); drawn oldest first, the newest on top (D-310). Drag pans, the wheel zooms round the pointer (0.1–4); over a plane too,
   out of focus (D-186). Fit (side nav, `0`; at once on a workspace's first open in a tab) frames all planes (D-202).
+- Grid marks (D-332): a plane's grid is faint dots every 25 px (`--grid-mark-shape`), not `+`.
 - Edit mode (D-180, D-182, D-183): a press on a piece is its own; only in edit mode does it move, resize (snapped to the
   canvas's 25 px grid, alt free, ≥ 325 × 200), take a name or get deleted; edit stays on until pressed off. Deleting
   asks in the hazard confirm (`src/ui/HazardConfirm.tsx`: dark screen, `╱╱╱` tape round the box once, ~1.5 s; cancel

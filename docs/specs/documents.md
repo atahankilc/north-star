@@ -46,7 +46,7 @@ any other, without `share`/`unshare`.
 
 ## The documents list (`+ → documents`)
 
-A window on the canvas like the table (D-208): name in the top edge, console in the corner, no `+` marks. Framed,
+A window on the canvas like the table (D-208): name in the top edge, console in the corner, no grid marks. Framed,
 its console is only `[focus] [edit]`: table or shelf, upload, kinds and pages are set in its focus (or on it once
 unframed).
 

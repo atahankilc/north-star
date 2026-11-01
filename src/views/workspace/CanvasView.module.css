@@ -56,14 +56,14 @@
     translate var(--dur-quick) var(--ease-out);
 }
 
-/* The marks: a thin `+` (3 px arms, 1 px stroke) every 25 plane px, on its cards' grid as it shows them (D-187). */
+/* The marks: a dot every 25 plane px (D-332), on its cards' grid as it shows them (D-187). */
 .piece::before {
   content: '';
   position: absolute;
   inset: 0;
   background: var(--grid-mark);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx, calc(var(--w-grid) / -2)) var(--my, calc(var(--w-grid) / -2)) / var(--mark, var(--w-grid)) var(--mark, var(--w-grid));
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx, calc(var(--w-grid) / -2)) var(--my, calc(var(--w-grid) / -2)) / var(--mark, var(--w-grid)) var(--mark, var(--w-grid));
+  -webkit-mask: var(--grid-mark-shape) var(--mx, calc(var(--w-grid) / -2)) var(--my, calc(var(--w-grid) / -2)) / var(--mark, var(--w-grid)) var(--mark, var(--w-grid));
+  mask: var(--grid-mark-shape) var(--mx, calc(var(--w-grid) / -2)) var(--my, calc(var(--w-grid) / -2)) / var(--mark, var(--w-grid)) var(--mark, var(--w-grid));
   pointer-events: none;
 }
 
@@ -85,7 +85,7 @@
   transition: none;
 }
 
-/* A matrix (D-204, D-208) is a window: a plane's edge, fill, name and console, but no `+` marks; its table sits at
+/* A matrix (D-204, D-208) is a window: a plane's edge, fill, name and console, but no grid marks; its table sits at
    its own size from the top-left, cut by the edge. In focus its copy there glides out, so this one hides. A table
    (D-209) is the same kind of window. */
 .piece[data-kind='matrix']::before,
@@ -415,7 +415,7 @@
   color: var(--accent-magenta);
 }
 
-/* A plane in focus (D-184, D-185): the whole screen, solid, carrying the plane's `+` marks on its own grid (--mx, --my)
+/* A plane in focus (D-184, D-185): the whole screen, solid, carrying the plane's dot marks on its own grid (--mx, --my)
    at the canvas's zoom (--mark), so they never move. The ink transition cuts it with a clip-path. On the page's black
    (D-289: graphite only on the canvas, where it sets a piece off), what it holds on the pieces' raised shade. */
 .focused {
@@ -442,14 +442,14 @@
   cursor: grabbing;
 }
 
-/* Its `+` marks: an element of their own under what it holds, so the view's --mark/--mx/--my, written on every pan
+/* Its dot marks: an element of their own under what it holds, so the view's --mark/--mx/--my, written on every pan
    and zoom step, restyle only it and not everything inside (custom properties inherit). */
 .focusMarks {
   position: absolute;
   inset: 0;
   background: var(--grid-mark);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx) var(--my) / var(--mark) var(--mark);
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Cpath d='M9 12.5h7M12.5 9v7' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") var(--mx) var(--my) / var(--mark) var(--mark);
+  -webkit-mask: var(--grid-mark-shape) var(--mx) var(--my) / var(--mark) var(--mark);
+  mask: var(--grid-mark-shape) var(--mx) var(--my) / var(--mark) var(--mark);
   pointer-events: none;
 }
 

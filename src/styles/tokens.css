@@ -10,6 +10,8 @@
   --placeholder: #3d3d3d;
   /* The board's `+` marks, also drawn on a board placed on the canvas (D-176). */
   --grid-mark: #4d4d4d;
+  /* The grid's mark (D-332): a dot at the middle of each 25 px cell, used as a mask; its colour is --grid-mark. */
+  --grid-mark-shape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Ccircle cx='12.5' cy='12.5' r='1.2'/%3E%3C/svg%3E");
 
   /* One surface for every framed element: panels, cards, forms, chips. */
   --surface: rgba(11, 11, 11, 0.86);

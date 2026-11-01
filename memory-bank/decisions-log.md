@@ -6209,6 +6209,16 @@ several planes, a main plane with detail planes beside it, sections), each only 
   vitest 917, build, check:tokens, check:gallery (PeopleHere: one away, away in the list, all away), check:lessons.
 - *Lessons:* `people-here` v2 ("A faint square is away."); no release entry, as D-330.
 
+
+### D-332 · 2026-11-01 · Accepted (the user, looking at softer-look options: "Sadece dots u beğendim plane de plus kullanmaktansa, sadece bunu değiştir")
+- *What:* a plane's grid marks are dots, not `+`: a 1.2 px-radius dot at the middle of each 25 px cell, the same colour
+  (`--grid-mark`, `--piece-mark` on pieces). One token, `--grid-mark-shape` in tokens.css, is the mask used by the plane
+  on the canvas, the plane in focus (`.focusMarks`) and the finder's preview (FindPreview).
+- *Why:* the `+` marks read as hard and technical (feedback: "too techie"); dots are quieter, and the grid and snapping stay the same.
+- *Replaces:* the shape of D-182/D-187's `+` marks (spacing, snapping and colours unchanged).
+- *Verified:* gallery › Focused plane shows the dots; check:tokens 0.
+- *Lessons:* none (looks only).
+
 ### D-333 · 2026-11-01 · Accepted (agent-bugs 17; the user: "go gibi tek dile uygun kalıplar kullanmak istemiyorum. Delete eger undo yapılabiliyosa yada bir onay butonu arkasında kalıyorsa sorun yok. Onay butonundan kastım agentın propose edip bizim accept dememiz")
 **Decision:** a delete is safe when it waits behind the preview's accept or can be undone, so the agent no longer asks
 "shall I delete…?" first: a delete, unlink or axis entry taken off goes in the preview like any change, with why, and
