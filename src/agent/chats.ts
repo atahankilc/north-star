@@ -9,6 +9,7 @@
 import type { Job } from './job'
 import type { IdsState } from './read/ids'
 import type { AgentTurn, ModelMessage, Transcript } from './contract'
+import { withOutcome } from './workflow'
 
 export const CHAT_TURNS_MAX = 200
 export const CHAT_BYTES_MAX = 450_000
@@ -138,17 +139,36 @@ export function chatProblems(summary: Record<string, unknown>, body?: Record<str
 }
 
 // The model's history from a kept chat: the person's messages and the agent's answers, in order (no tool calls or
-// results: they were never kept). A change list or a status line becomes a short line of the agent's, so it knows.
+// results: they were never kept). What became of a preview is told as the live chat told it (agent-bugs 25:
+// workflow.ts' withOutcome, from the status line's report: what was applied where, what wasn't, then an undo); a change
+// list with no status line after it (older chats) becomes a short line of the agent's, so it still knows.
 export function historyOf(turns: SavedTurn[]): ModelMessage[] {
   const out: ModelMessage[] = []
-  for (const t of turns) {
+  turns.forEach((t, i) => {
     if (t.role === 'user') out.push({ role: 'user', content: t.text })
     else if (t.role === 'agent' && t.text) out.push({ role: 'assistant', content: t.text })
-    else if (t.role === 'changes' && t.applied) out.push({ role: 'assistant', content: `[the proposed changes were ${t.applied.state}${t.applied.count !== undefined ? ` (${t.applied.count})` : ''}]` })
-  }
+    else if (t.role === 'changes' && t.applied && !reportAfter(turns, i)) out.push({ role: 'assistant', content: `[the proposed changes were ${t.applied.state}${t.applied.count !== undefined ? ` (${t.applied.count})` : ''}]` })
+    else if (t.role === 'report') {
+      // The list before it says what became of it (a discard's report was once saved as `applied`).
+      const list = [...turns.slice(0, i)].reverse().find((x) => x.role === 'changes')
+      const state = list?.applied?.state === 'discarded' || t.applied?.state === 'discarded' ? 'discarded' : list?.applied?.state === 'undone' || t.applied?.state === 'undone' ? 'undone' : 'applied'
+      const report = { text: t.text.replace(/ Undone\.$/, ''), done: [], notDone: [], step: null }
+      const told = state === 'discarded' ? withOutcome([], { discarded: report }) : withOutcome([], { applied: report })
+      out.push(...(state === 'undone' ? withOutcome(told, { undone: true }) : told))
+    }
+  })
   // A history starts with the person (a kept chat whose first entries went starts at the next message of theirs).
   const first = out.findIndex((m) => m.role === 'user')
   return first < 0 ? [] : out.slice(first)
+}
+
+// A status line (report) follows this change list before the person's next message.
+function reportAfter(turns: SavedTurn[], i: number): boolean {
+  for (let j = i + 1; j < turns.length; j++) {
+    if (turns[j].role === 'report') return true
+    if (turns[j].role === 'user' || turns[j].role === 'changes') return false
+  }
+  return false
 }
 
 // An eval's transcript as kept turns (the person's asks, the agent's answers with their steps' labels).

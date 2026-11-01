@@ -20,6 +20,7 @@ import { changeEntry, fromChangeDoc, mergeEntries, toChangeDoc, CHANGE_IDS_MAX }
 import { FIRST_PAGE, pageChats, capTurns, chatDocs, chatProblems, historyOf, memoryChats, CHAT_TURNS_MAX, CHAT_BYTES_MAX, type SavedTurn } from '../../src/agent/chats'
 import { makeIds, whatsNew } from '../../src/agent/read'
 import { entriesOf, turnsOf } from '../../src/agent/ui/chatEntries'
+import { withOutcome } from '../../src/agent/workflow'
 import type { AgentWs } from '../../src/agent/contract'
 import type { OpCtx } from '../../src/ops/types'
 
@@ -203,6 +204,25 @@ describe('saved chats', () => {
   it('the model\'s history from a kept chat: asks and answers only, starting at an ask', () => {
     const h = historyOf([turn('note', 'earlier left out'), turn('agent', 'orphan'), turn('user', 'q'), { ...turn('agent', 'a'), steps: [{ label: 'reading…' }] }, { ...turn('changes', '+ x\tline'), applied: { state: 'applied', count: 1 } }])
     expect(h).toEqual([{ role: 'user', content: 'q' }, { role: 'assistant', content: 'a' }, { role: 'assistant', content: '[the proposed changes were applied (1)]' }])
+  })
+
+  it('agent-bugs 25: a reopened chat tells what became of a preview as the live chat did (withOutcome)', () => {
+    const rep = 'Applied 2 changes on Segments (2), one undo step.'
+    const live = (o: Parameters<typeof withOutcome>[1]) => withOutcome([], o)[0]
+    const report = { text: rep, done: [], notDone: [], step: null }
+    const applied = historyOf([turn('user', 'q'), { ...turn('changes', '+ x\tline'), applied: { state: 'applied', count: 2 } }, { ...turn('report', rep), applied: { state: 'applied', count: 2 } }])
+    expect(applied).toEqual([{ role: 'user', content: 'q' }, live({ applied: report })])
+    // A discard's report saved as `applied` by older code: the list before it says discarded.
+    const discarded = historyOf([turn('user', 'q'), { ...turn('changes', '+ x\tline'), applied: { state: 'discarded', count: 1 } }, { ...turn('report', 'Applied 0 changes.'), applied: { state: 'applied', count: 0 } }])
+    expect(discarded[1]).toEqual(live({ discarded: { ...report, text: 'Applied 0 changes.' } }))
+    const undone = historyOf([turn('user', 'q'), { ...turn('changes', '+ x\tline'), applied: { state: 'undone', count: 2 } }, { ...turn('report', `${rep} Undone.`), applied: { state: 'undone', count: 2 } }])
+    expect(undone.slice(1)).toEqual([live({ applied: report }), live({ undone: true })])
+  })
+
+  it('agent-bugs 25: a discard\'s status line is saved as discarded', () => {
+    const items = [{ id: 'i', line: 'line', where: 'Segments · plane', delete: false, on: true, kind: '', op: '', sign: '+' as const }]
+    const t = turnsOf([{ id: 'a', kind: 'changes', items, warnings: [], state: 'discarded' }, { id: 'b', kind: 'report', report: { text: 'x', done: [], notDone: [], step: null }, wheres: [], count: 0 }])
+    expect(t[1].applied?.state).toBe('discarded')
   })
 
   it('who may: the writer reads and writes; others only once shared, and never write; viewers keep their own; outsiders nothing', () => {

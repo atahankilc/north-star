@@ -16,7 +16,7 @@ const atOf = (id: string) => {
 
 // The column's entries as kept turns (what's still running is left for the next save).
 export function turnsOf(entries: Entry[]): SavedTurn[] {
-  return entries.flatMap((e): SavedTurn[] => {
+  return entries.flatMap((e, i): SavedTurn[] => {
     const at = atOf(e.id)
     switch (e.kind) {
       case 'user':
@@ -28,8 +28,12 @@ export function turnsOf(entries: Entry[]): SavedTurn[] {
         const on = e.items.filter((i) => i.on)
         return [{ role: 'changes', text: on.map((i) => `${i.sign} ${i.where}\t${i.line}`).join('\n'), at, applied: { state: e.state === 'pending' || e.state === 'applying' || e.state === 'revising' || e.state === 'unapplied' ? 'not applied' : e.state, count: on.length } }]
       }
-      case 'report':
-        return [{ role: 'report', text: e.report.text, at, applied: { state: e.report.undone ? 'undone' : 'applied', count: e.count } }]
+      case 'report': {
+        // What became of the list before it: a discard's report says discarded, not applied (agent-bugs 25).
+        const list = [...entries.slice(0, i)].reverse().find((x) => x.kind === 'changes')
+        const state = e.report.undone || list?.state === 'undone' ? 'undone' : list?.state === 'discarded' ? 'discarded' : 'applied'
+        return [{ role: 'report', text: e.report.text, at, applied: { state, count: e.count } }]
+      }
       case 'note':
         return [{ role: 'note', text: e.text, at }]
     }
