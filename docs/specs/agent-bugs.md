@@ -37,8 +37,8 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 18 | a viewer's agent calls `change`                  | Guards       | low      | code             | fixed  |
 | 16 | ops nobody asked for                             | Guards       | mid      | code + prompt    | fixed  |
 | 6  | items land on top of each other                  | Guards       | mid      | code             | place_on fixed (text); paragraphs open |
-| 11 | links no plane can draw                          | Guards       | mid      | code (`lint`)    | open   |
-| 12 | no last look before the preview                  | Guards       | mid      | code, then model | open   |
+| 11 | links no plane can draw                          | Guards       | mid      | code (`lint`)    | fixed  |
+| 12 | no last look before the preview                  | Guards       | mid      | code, then model | code part fixed |
 | 25 | evals build their store apart from the app's     | Plumbing     | blocker  | code (evals)     | fixed  |
 | 1  | document text never loaded                       | Plumbing     | high     | code             | fixed  |
 | 5  | an apply is never told to the model              | Plumbing     | mid      | code             | fixed  |
@@ -156,6 +156,9 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     (`places`, D-281), or put both on one plane. It reads the link graph (src/model/graph.ts, not written yet; shared
     with 4, 14 and 27).
     Eval: fails on any link no plane can draw.
+    *Fixed 2026-11-01 (with 12):* changeset.ts' warnings (each change result, and the preview) name a link these changes
+    leave drawn on no plane, with the two ways out. No eval fails on it: edit-07's ask is such a link (c58 on Bets,
+    c16 on Segments), and placing a card unasked would be 16; the link is made, warned and offered.
 12. **It never checks its own work before the preview.** The same import: competitors with only `notes` (no url,
     pricing, audience), evidence without URLs, tasks tied to no card, tables whose rows are typed names repeating cards
     that exist (stale once a card changes), no tags, planes of 960 × 600 holding items out to 1400 × 2475. `/gaps`
@@ -167,6 +170,11 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     Two limits on `lint`: the model gets at most one turn to fix its findings (no loop of fix, lint, fix); and what
     is left goes into the preview for the person too (`2 links no plane draws`), not only to the model, which can
     ignore a warning.
+    *Code part fixed 2026-11-01:* no separate lint: the changeset's warnings already reach the model with every change
+    result and the person in the preview, so the checks went there: links drawn on no plane (11), new tasks tied to
+    no card, and new or moved things landing on each other, plane by plane (src/model/overlaps.ts, the same boxes as
+    the evals' noOverlaps). Left out: "items outside their plane" (a plane fits its content, D-186/D-187), and empty
+    key fields and table rows repeating a card (judgment: step 2, the model's own look).
 
 ## Plumbing: wiring the app to what was built
 

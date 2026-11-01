@@ -8,9 +8,8 @@ import { project } from '../src/ops/project'
 import { isOnPlane, CARD, type Card } from '../src/model/cards'
 import { kindOf, type Label } from '../src/model/labels'
 import { kindOfPiece } from '../src/model/pieces'
-import { cardsOn } from '../src/model/placement'
-import { foldsOf, packageBox } from '../src/model/cardInside'
 import { labelBox } from '../src/model/labelBox'
+import { hit, overlaps, planeBoxes, wholly } from '../src/model/overlaps'
 import { entriesOf, readCell, type MatrixSetup } from '../src/model/matrix'
 import { colName, type TableSetup } from '../src/model/table'
 import { statusOf } from '../src/model/source'
@@ -282,27 +281,7 @@ export const onlyChanged = (o: { allow?: (Ref | ChangeTest)[]; add?: Record<stri
 
 // ---- Layout
 
-// What's drawn on a plane as boxes (S9's arrange tests): every card shown (a folded part none; an unfolded package its
-// frame) and its text; sections are frames.
-type Boxed = Box & { id: string; frame?: boolean }
-export function planeBoxes(ws: AgentWs, plane: string): Boxed[] {
-  const cards = cardsOn(ws.cards, ws.places, plane)
-  const folds = foldsOf(cards, ws.edges)
-  const out: Boxed[] = []
-  for (const c of cards) {
-    if (folds.hidden.has(c.id)) continue
-    if (c.type === 'package' && !c.folded) {
-      const f = packageBox((folds.members.get(c.id) ?? []).map((m: Card) => ({ x: m.x, y: m.y, w: CARD.w, h: CARD.h })))
-      if (f) out.push({ id: c.id, ...f, frame: true })
-      continue
-    }
-    out.push({ id: c.id, x: c.x, y: c.y, w: CARD.w, h: CARD.h })
-  }
-  for (const l of ws.labels.filter((x) => x.pieceId === plane)) out.push({ id: l.id, ...labelBox(l), ...(l.kind === 'section' ? { frame: true } : {}) })
-  return out
-}
-const hit = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
-const wholly = (a: Box, s: Box) => a.x >= s.x && a.y >= s.y && a.x + a.w <= s.x + s.w && a.y + a.h <= s.y + s.h
+// What's drawn on a plane as boxes and what lands on what: src/model/overlaps.ts, shared with the agent's warnings.
 const around = (bs: Box[]): Box => {
   const [l, t] = [Math.min(...bs.map((b) => b.x)), Math.min(...bs.map((b) => b.y))]
   return { x: l, y: t, w: Math.max(...bs.map((b) => b.x + b.w)) - l, h: Math.max(...bs.map((b) => b.y + b.h)) - t }
@@ -317,19 +296,9 @@ export const noOverlaps = (plane: Ref): Grader => ({
     const id = ref1(r.end, resolveRef(r, plane), ['piece'])
     const p = r.end.pieces.find((x) => x.id === id)
     if (!id || !p) return ok(false, `no plane ${showRef(plane)}`)
-    const before = new Map(planeBoxes(r.start, id).map((b) => [b.id, b]))
     const boxes = planeBoxes(r.end, id)
-    const touched = new Set(boxes.filter((b) => { const was = before.get(b.id); return !was || was.x !== b.x || was.y !== b.y || was.w !== b.w || was.h !== b.h }).map((b) => b.id))
-    const bad: string[] = []
-    for (let i = 0; i < boxes.length; i++)
-      for (let j = i + 1; j < boxes.length; j++) {
-        const [a, b] = [boxes[i], boxes[j]]
-        if (!touched.has(a.id) && !touched.has(b.id)) continue
-        if (a.frame || b.frame) {
-          const [f, o] = a.frame ? [a, b] : [b, a]
-          if (hit(f, o) && !wholly(o, f) && !wholly(f, o)) bad.push(`${o.id} cuts ${f.id}`)
-        } else if (hit(a, b)) bad.push(`${a.id} × ${b.id}`)
-      }
+    const { touched, found } = overlaps(planeBoxes(r.start, id), boxes)
+    const bad = found.map((o) => (o.cuts ? `${o.a} cuts ${o.b}` : `${o.a} × ${o.b}`))
     const far = { x: -p.w, y: -p.h, w: 3 * p.w, h: 3 * p.h }
     for (const b of boxes) if (touched.has(b.id) && !wholly(b, far)) bad.push(`${b.id} far outside the plane (${b.x}, ${b.y})`)
     return ok(bad.length === 0, bad.length ? `${bad.length} problems: ${bad.slice(0, 4).join(', ')}` : `${touched.size} made or moved, none overlapping`)

@@ -214,3 +214,41 @@ describe('a card made from a note keeps its words (bug 26)', () => {
     expect(r.text).toMatch(/from_text/)
   })
 })
+
+describe('what the changes leave, told to the model and shown in the preview (bugs 11, 12)', () => {
+  const change = () => AGENT_TOOLS.find((t) => t.def.name === 'change')!
+  it('a link between cards on two planes is drawn on no plane: warned, with the ways out', async () => {
+    const env = makeEnv(loadFixture('medium'))
+    const r = await change().run(env, { ops: [{ op: 'link', args: { from: 'c58', to: 'c16', kind: 'solves' } }] })
+    expect(r.ok, r.text).toBe(true)
+    expect(env.changes!.warnings.join('\n')).toMatch(/drawn on no plane.*place_on/)
+  })
+  it('a link between two cards on one plane: no warning', async () => {
+    const ws = loadFixture('medium')
+    const env = makeEnv(ws)
+    const plane = ws.pieces.find((p) => p.kind === 'plane' && ws.cards.filter((c) => c.pieceId === p.id).length >= 2)!
+    const [a, b] = ws.cards.filter((c) => c.pieceId === plane.id && !ws.edges.some((e) => (e.fromId === c.id || e.toId === c.id)))
+    if (!a || !b) return
+    const r = await change().run(env, { ops: [{ op: 'link', args: { from: env.ids.short('card', a.id), to: env.ids.short('card', b.id) } }] })
+    expect(r.ok, r.text).toBe(true)
+    expect(env.changes!.warnings.join('\n')).not.toMatch(/drawn on no plane/)
+  })
+  it('a new task for no card is warned about', async () => {
+    const ws = loadFixture('medium')
+    const env = makeEnv(ws)
+    const deck = ws.pieces.find((p) => p.kind === 'kanban')!
+    const r = await change().run(env, { ops: [{ op: 'create_task', args: { deck: env.ids.short('piece', deck.id), title: 'Call the bakery' } }] })
+    expect(r.ok, r.text).toBe(true)
+    expect(env.changes!.warnings.join('\n')).toMatch(/tied to no card/)
+  })
+  it('overlaps: only what was made or moved counts, a frame only when cut through', async () => {
+    const { overlaps } = await import('../../src/model/overlaps')
+    const before = [{ id: 'a', x: 0, y: 0, w: 100, h: 50 }, { id: 'b', x: 0, y: 0, w: 100, h: 50 }]
+    expect(overlaps(before, before).found).toEqual([])
+    const after = [...before, { id: 'n', x: 50, y: 25, w: 100, h: 50 }, { id: 's', x: 40, y: 20, w: 300, h: 300, frame: true }]
+    const f = overlaps(before, after).found
+    expect(f).toContainEqual({ a: 'a', b: 'n', cuts: false })
+    expect(f).toContainEqual({ a: 'a', b: 's', cuts: true })
+    expect(f.some((o) => o.a === 'n' && o.b === 's')).toBe(false)
+  })
+})

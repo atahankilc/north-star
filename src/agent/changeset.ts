@@ -16,6 +16,7 @@
 // turn. The agent's new `change` calls ADD items; `change(drop: ['i2'])` takes items (and what depends on them) off
 // first, so "make the second one a problem instead" is one call: drop i2, add the new op. Nothing is ever replaced
 // silently.
+import { overlaps, planeBoxes } from '../model/overlaps'
 import { buildBatch, REGISTRY } from '../ops/registry'
 import { project, projectLoose } from '../ops/project'
 import { validate } from '../ops/validate'
@@ -32,7 +33,7 @@ import { cardBoxes, piecesShown, sectionHolds } from '../model/textPlace'
 import type { WorkspaceCtx } from '../state/wsStore'
 import { clean, derive, type Derived } from './read/derive'
 import { norm, q } from './read/text'
-import type { Ids } from './read/ids'
+import type { IdKind, Ids } from './read/ids'
 import type { Applied, ApplyAs } from './contract'
 import { ID_KEYS } from './idKeys'
 import { entriesOf, type MatrixSetup } from '../model/matrix'
@@ -498,6 +499,38 @@ function warningsOf(cs: Pick<Changeset, 'items'>, live: WorkspaceCtx, after: Wor
     const labels = after.labels.filter((x) => x.pieceId === l.pieceId)
     const others = l.pieceId === 'canvas' ? piecesShown(canvasOf(l), after.pieces, after.spots) : cardBoxes(n.d.onPlane.get(l.pieceId) ?? [])
     if (!sectionHolds(l, labels, others, labelBox(l)).length) out.push(`the new section ${ids ? `${ids.short('text', l.id)} ` : ''}${q(l.text, 40)} is empty: put things in it (arrange with where: {in_section: …}) or give it around: [ids] when making it`)
+  }
+  // What the changes leave that no one would want (agent-bugs 11, 12): told to the model with each change result and
+  // shown in the preview, so what the model leaves is seen by the person too. Only what these changes did.
+  const nb = namedOf(live)
+  const sid = (k: IdKind, id: string) => (ids ? `${ids.short(k, id)} ` : '')
+  const title = (id: string) => q(n.d.cards.get(id)?.title, 40)
+  // A link is drawn only on a plane that shows both its cards (D-207).
+  const drawn = (d: Named['d'], e: { fromId: string; toId: string }) => {
+    const b = new Set(d.planesOf.get(e.toId) ?? [])
+    return (d.planesOf.get(e.fromId) ?? []).some((p) => b.has(p))
+  }
+  const undrawn = after.edges.filter((e) => !drawn(n.d, e) && (!live.edges.some((x) => x.id === e.id) ? true : drawn(nb.d, e)))
+  for (const e of undrawn.slice(0, 5))
+    out.push(`the link ${sid('link', e.id)}${title(e.fromId)} → ${title(e.toId)} is drawn on no plane: no plane shows both cards. Place one card on the other's plane too (place_on), or keep both on one plane`)
+  if (undrawn.length > 5) out.push(`… and ${undrawn.length - 5} more links drawn on no plane`)
+  // A new task for no card.
+  const loose = after.tasks.filter((t) => made.has(t.id) && !(t as { cardId?: string }).cardId)
+  if (loose.length) out.push(`${loose.length === 1 ? `the new task ${sid('task', loose[0].id)}${q(loose[0].title, 40)} is` : `${loose.length} new tasks are`} tied to no card: give each the card it's for (card), unless it stands alone`)
+  // New or moved things landing on others, plane by plane.
+  const planes = new Set<string>()
+  for (const i of cs.items) for (const id of i.ids) {
+    for (const p of n.d.planesOf.get(id) ?? []) planes.add(p)
+    const l = n.d.labels.get(id)
+    if (l && l.pieceId !== 'canvas') planes.add(l.pieceId)
+  }
+  for (const p of planes) {
+    if (!n.d.pieces.get(p)) continue
+    const { found } = overlaps(planeBoxes(nb.ws, p), planeBoxes(n.ws, p))
+    if (!found.length) continue
+    const name = (id: string) => (n.d.cards.get(id) ? `${sid('card', id)}${title(id)}` : `${sid('text', id)}${q(n.d.labels.get(id)?.text.split('\n')[0], 30)}`)
+    const list = found.slice(0, 3).map((o) => `${name(o.a)} ${o.cuts ? 'cuts through' : 'on'} ${name(o.b)}`).join('; ')
+    out.push(`on ${q(n.d.pieceName(n.d.pieces.get(p)!), 40)} things land on each other: ${list}${found.length > 3 ? `; … ${found.length - 3} more` : ''}. Place them by meaning again (arrange with a where or a layout)`)
   }
   return out
 }
