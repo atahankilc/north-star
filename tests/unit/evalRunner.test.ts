@@ -343,5 +343,7 @@ describe('the runner goes on with a job as the app does (D-328)', () => {
     expect(a.undoSteps).toBe(2)
     expect(a.transcript.turns.map((t) => t.ask)).toEqual([task.ask, 'go', expect.stringMatching(/^The changes were applied \(1\)\. Go on with step 2 of 2/)])
     expect(a.grades.find((g) => g.name.startsWith('count('))?.pass).toBe(true)
+    // Both steps undone, last first, give the start back.
+    expect(a.grades.find((g) => g.name === 'undoRestores')).toMatchObject({ pass: true, why: expect.stringMatching(/the job's 2 steps/) })
   })
 })

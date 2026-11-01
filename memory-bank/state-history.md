@@ -1157,3 +1157,7 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   states × 2 themes (panels, open forms, hovers) from old, a second old and new worktrees (noise ≤ 1 px), each
   difference read; three rounds of fixes until only the snaps in D-326's log were left; the title being typed
   measured equal (font, size, line height, height).
+- Third run read (gpt-5.6-terra ×3, 71 % / 54 %): job.ts' nextMove goes on after a turn that settled a step with
+  nothing to propose (it had paused as if asked a question); `undoRestores` undoes a job's per-step applies last first;
+  build-03 takes "To do"; the report's price label read the model with its judge. Verified: tsc, vitest agent* +
+  evalRunner 200, stub evals 116 tasks 0 failed, `--wrong` 116 failed.

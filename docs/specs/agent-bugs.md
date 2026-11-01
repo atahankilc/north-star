@@ -250,6 +250,12 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     agent suggests, the person picks at go (`[go · one preview]` / `[go · step by step]`; a typed message takes the
     suggestion), one at the end goes on with the preview waiting; the evals go on with a job as the app does once the
     scripted asks are used up. Evals: evalRunner.test.ts runs a two-step job both ways.
+    The third run (2026-11-01, report 2026-11-01T12-43-56-013Z: pass@1 82/116 71 %, pass^3 63/116 54 %, $18.08) showed
+    three more of the harness's: a job step that only reads ends its turn with nothing proposed, which nextMove took
+    for a question and paused (the app did the same: prioritize-01/02, organize-02 applied nothing); now a turn that
+    settled a step goes on, one that settled none waits. `undoRestores` wanted exactly one undo step, but a job run one
+    preview per step leaves one per apply: now all of them, undone last first, must give the start back. build-03
+    counted tasks in a column named exactly `todo`; "To do" counts too.
 30. **Ids written as Markdown links.** The model writes `[c58](c58)` and `[p6]`; the chat's renderer named both ids in
     the link (`[c58 "…"](c58 "…")`) and the judge read bare ids (pitch-04: "cites ids without names"). *Fixed
     2026-11-01:* read/names.ts' `plainCites` makes them plain ids before the chat draws them and before `withNames`

@@ -93,7 +93,8 @@ export const BUILD: Task[] = [
       made('piece', { kind: 'deck' }),
       count('task', { deck: DECK, card: 'Pre-order bread for pickup' }, { min: 3 }),
       count('task', { deck: DECK }, { min: 3, max: 10 }),
-      count('task', { deck: DECK, column: 'todo' }, { min: 3 }),
+      // New tasks start in the to-do column, however the deck writes it ("todo", "To do").
+      count('task', { deck: DECK, column: /^to[ -]?do$/i }, { min: 3 }),
       onlyChanged({ add: { pieces: 1, tasks: { min: 3, max: 10 } } }),
       undoRestores(),
     ],

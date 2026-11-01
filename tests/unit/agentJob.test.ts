@@ -65,7 +65,10 @@ describe('whether the app goes on', () => {
     expect(nextMove({ ...j, settledAt: 1 }, { applied: 1 })).toEqual({ pause: 'no step was finished since the last go-on' })
     expect(nextMove({ ...j, tokens: JOB_BUDGET }, {})).toEqual({ pause: expect.stringMatching(/budget \(2000k tokens\) is used up/) })
     expect(nextMove({ ...j, stopAfter: true }, {})).toEqual({ pause: 'stopped after the step, as asked' })
-    expect(nextMove(j, { waits: true })).toEqual({ pause: "waiting for the person's answer" })
+    // Nothing proposed and nothing settled since the last go-on: it waits for the person.
+    expect(nextMove({ ...j, settledAt: 1 }, { waits: true })).toEqual({ pause: "waiting for the person's answer" })
+    // A step settled with nothing to propose (a read): it goes on.
+    expect(nextMove(j, { waits: true })).toEqual({ go: 'Go on with step 2 of 3: Split the rivals off.' })
     expect(nextMove(j, { stopped: true })).toEqual({ pause: 'stopped by the person' })
     expect(nextMove(j, { discarded: true })).toEqual({ pause: "the step's changes were discarded" })
   })

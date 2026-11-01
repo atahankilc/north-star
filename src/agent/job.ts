@@ -120,7 +120,8 @@ export const PREVIEW_NOTE: Record<JobPreview, string> = {
 
 // What a finished turn means for the job: go on (the next step's message), stop with why (the job pauses), or
 // nothing (no job running). `applied`: the turn's changes were just applied; `waits`: the turn ended with nothing
-// proposed, so the agent waits for the person (an answer, a question; never told from its words, agent-bugs 17);
+// proposed: with no step settled since the last go-on the agent waits for the person (an answer, a question; never
+// told from its words, agent-bugs 17), with one settled (a step with nothing to change) it goes on;
 // `stopped`: the person stopped the turn.
 export type Move = { go: string } | { pause: string } | null
 
@@ -132,7 +133,9 @@ export function nextMove(j: Job | null, o: { applied?: number; waits?: boolean; 
   // One preview per step: a waiting preview is the person's to apply first.
   if (o.pending && previewOf(j) === 'each') return null
   if (o.discarded) return { pause: 'the step\'s changes were discarded' }
-  if (o.waits) return { pause: 'waiting for the person\'s answer' }
+  // Nothing proposed and no step settled: it stopped for the person (a question, an answer). A step settled with
+  // nothing to propose (a read, a check) goes on like an applied one.
+  if (o.waits && settled(j) <= j.settledAt) return { pause: 'waiting for the person\'s answer' }
   if (j.stopAfter) return { pause: 'stopped after the step, as asked' }
   if (j.tokens >= j.budget) return { pause: `the budget (${Math.round(j.budget / 1000)}k tokens) is used up` }
   if (settled(j) <= j.settledAt) return { pause: 'no step was finished since the last go-on' }

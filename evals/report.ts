@@ -54,7 +54,7 @@ export function writeReport(dir: string, results: TaskResult[], meta: { model: s
   const lines = [
     `# Eval report`,
     '',
-    `Model: ${meta.model}${priced(meta.model) ? '' : ' (no price known: cost shows 0)'} · repeat ${meta.repeat} · ${new Date().toISOString()} · \`npm run eval -- ${meta.argv.join(' ')}\` · tools ${t0?.toolsHash ?? '-'}`,
+    `Model: ${meta.model}${priced(meta.model.split(' ')[0]) ? '' : ' (no price known: cost shows 0)'} · repeat ${meta.repeat} · ${new Date().toISOString()} · \`npm run eval -- ${meta.argv.join(' ')}\` · tools ${t0?.toolsHash ?? '-'}`,
     '',
     summary,
     '',

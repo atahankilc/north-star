@@ -700,6 +700,15 @@ export const dryRunOnly = (): Grader => ({
 export const undoRestores = (): Grader => ({
   name: 'undoRestores',
   grade: async (r) => {
+    // A job run one preview per step leaves an undo step per applied step (D-328): all of them, undone last first,
+    // must give the start back. Anything else is one apply, one undo step.
+    const job = callsOf(r.transcript).some((c) => c.name === 'plan')
+    if (job && r.steps.length > 1 && !r.undo) {
+      if (r.steps.some((x) => x.actor !== 'agent')) return ok(false, 'a step is not the agent\'s')
+      const back = project(r.end, [...r.steps].reverse().map((x) => x.inverse)) as AgentWs
+      const d = diff(r.start, back)
+      return ok(d.size === 0, d.size ? `${d.size} differ after undoing the job's ${r.steps.length} steps: ${[...d.keys()].slice(0, 4).join(', ')}` : `undoing the job's ${r.steps.length} steps, last first, gives the start back exactly`)
+    }
     if (r.steps.length !== 1) return ok(false, `${r.steps.length} undo steps (want exactly 1)`)
     const s = r.steps[0]
     if (s.actor !== 'agent') return ok(false, `the step is the ${s.actor}'s, not the agent's`)
