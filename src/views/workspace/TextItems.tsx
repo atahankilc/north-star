@@ -7,6 +7,7 @@
 // inside it), a double-click types, a right edge sets a width, a section's corner its size; a small bar under the
 // selected one sets it. Frames are drawn under everything else, text over it.
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -58,7 +59,7 @@ import { Landing, Marks, type Handle } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 import { headingSize, kickPx, labelBox, STICKY_TEXT_TOP, type HeadingSize } from '../../model/labelBox'
-import { DRAG_PX } from '../../ui/feel'
+import { AUTOSAVE_MS, DRAG_PX } from '../../ui/feel'
 export { labelBox } from '../../model/labelBox'
 
 // Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
@@ -519,41 +520,36 @@ function Kicker({ kick, size, hidden }: { kick: { num: string; rest: string }; s
 }
 
 // Typing a heading with its small line over it, or a section's name with its number before it (`row`); Tab moves
-// between the two. Enter or leaving both keeps them, Escape puts them back. A heading left empty goes away; a section
-// may have no name. One just made (`fresh`, D-250): Escape takes it away as if never made, and its first text is one
-// undo step with its making.
+// between the two. Kept as it's typed (`useTyped`); Enter, Escape or leaving ends it. A heading left empty goes away; a
+// section may have no name. One just made (`fresh`, D-250) and left with nothing typed goes as if never made; its text
+// is one undo step with its making.
 function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickSize: number; row?: boolean }) {
   const { wid } = useWs()
   const [text, setText] = useState(l.text)
   const [k, setK] = useState(kick)
   const root = useRef<HTMLSpanElement>(null)
   const main = useRef<HTMLInputElement>(null)
-  const done = useRef(false)
+  const heading = kindOf(l) === 'heading'
+  const typed = useTyped(wid, l, { text: l.text, kicker: l.kicker })
+  const now = () => ({ text: text.trim(), kicker: k.trim() || undefined })
+  // While typing, an empty heading isn't written (it would go away on leaving anyway).
+  typed.useSave(() => (heading && !text.trim() ? null : now()), [text, k])
   useEffect(() => {
     main.current?.focus()
     main.current?.select()
   }, [])
-  const finish = (keep: boolean) => {
-    if (done.current) return
-    done.current = true
-    const fresh = endFresh(l.id)
+  const finish = () => {
+    const end = typed.end()
+    if (!end) return
     useCanvasView.setState({ labelEditing: null })
-    const heading = kindOf(l) === 'heading'
-    const t = (keep ? text : l.text).trim()
-    if (fresh && (!keep || (!t && heading))) return discard(wid, l)
-    if (!t && heading) return void deleteLabel(wid, l)
-    if (!keep) return
-    const kk = k.trim()
-    const nextKick = kk || undefined
-    const patch: Partial<Label> = {}
-    if (t !== l.text) patch.text = t
-    if (nextKick !== l.kicker) patch.kicker = nextKick
-    if (Object.keys(patch).length) void updateLabel(wid, l, patch, 'text', fresh)
+    const v = now()
+    if (end.fresh && !v.text && (heading || !v.kicker)) return discard(wid, l)
+    if (!v.text && heading) return void deleteLabel(wid, l)
+    end.write(v)
   }
   const onKeyDown = (e: ReactKeyboardEvent) => {
     e.stopPropagation()
-    if (e.key === 'Enter') (e.preventDefault(), finish(true))
-    if (e.key === 'Escape') finish(false)
+    if (e.key === 'Enter' || e.key === 'Escape') (e.preventDefault(), finish())
   }
   return (
     <span
@@ -562,7 +558,7 @@ function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickS
       data-row={row || undefined}
       onPointerDown={(e) => e.stopPropagation()}
       onBlur={(e) => {
-        if (!root.current?.contains(e.relatedTarget as Node)) finish(true)
+        if (!root.current?.contains(e.relatedTarget as Node)) finish()
       }}
     >
       <input
@@ -591,13 +587,15 @@ function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickS
   )
 }
 
-// Typing into a paragraph or a sticky note: ⌘Enter or leaving keeps it, Escape puts it back. A paragraph left empty
-// goes away; one just made (D-250), a sticky note too, and Escape takes it away as if never made.
+// Typing into a paragraph or a sticky note: kept as it's typed (`useTyped`); ⌘Enter, Escape or leaving ends it. A
+// paragraph left empty goes away; one just made (D-250), a sticky note too, left empty goes as if never made.
 function Field({ l }: { l: Label }) {
   const { wid } = useWs()
   const [draft, setDraft] = useState(l.text)
   const ref = useRef<HTMLTextAreaElement>(null)
-  const done = useRef(false)
+  const typed = useTyped(wid, l, { text: l.text })
+  // While typing, nothing empty is written: emptied, it's decided on leaving.
+  typed.useSave(() => (draft.trim() ? { text: draft.trim() } : null), [draft])
   useEffect(() => {
     ref.current?.focus()
     ref.current?.select()
@@ -610,15 +608,14 @@ function Field({ l }: { l: Label }) {
       el.style.height = `${el.scrollHeight}px`
     }
   }, [draft])
-  const finish = (keep: boolean) => {
-    if (done.current) return
-    done.current = true
-    const fresh = endFresh(l.id)
+  const finish = () => {
+    const end = typed.end()
+    if (!end) return
     useCanvasView.setState({ labelEditing: null })
-    const text = (keep ? draft : l.text).trim()
-    if (fresh && (!keep || !text)) return discard(wid, l)
+    const text = draft.trim()
+    if (end.fresh && !text) return discard(wid, l)
     if (!text && kindOf(l) === 'paragraph') return void deleteLabel(wid, l)
-    if (text !== l.text) void updateLabel(wid, l, { text }, 'text', fresh)
+    end.write({ text })
   }
   return (
     <textarea
@@ -632,11 +629,10 @@ function Field({ l }: { l: Label }) {
       aria-label={`${kindOf(l)} text`}
       onChange={(e) => setDraft(e.target.value)}
       onPointerDown={(e) => e.stopPropagation()}
-      onBlur={() => finish(true)}
+      onBlur={finish}
       onKeyDown={(e) => {
         e.stopPropagation()
-        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) (e.preventDefault(), finish(true))
-        if (e.key === 'Escape') finish(false)
+        if ((e.key === 'Enter' && (e.metaKey || e.ctrlKey)) || e.key === 'Escape') (e.preventDefault(), finish())
       }}
     />
   )
@@ -647,6 +643,72 @@ function endFresh(id: string) {
   const fresh = useCanvasView.getState().fresh === id
   if (fresh) useCanvasView.setState({ fresh: null })
   return fresh
+}
+
+// `save` runs AUTOSAVE_MS after `deps` last changed, when the tab is hidden and when the component goes; the latest
+// `save` each time.
+function useWhilePaused(save: () => void, deps: unknown[]) {
+  const latest = useRef(save)
+  latest.current = save
+  const timer = useRef<number | undefined>(undefined)
+  const flush = useCallback(() => {
+    window.clearTimeout(timer.current)
+    timer.current = undefined
+    latest.current()
+  }, [])
+  useEffect(() => {
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(flush, AUTOSAVE_MS)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps)
+  useEffect(() => {
+    const hide = () => document.visibilityState === 'hidden' && flush()
+    document.addEventListener('visibilitychange', hide)
+    return () => {
+      document.removeEventListener('visibilitychange', hide)
+      flush()
+    }
+  }, [flush])
+}
+
+type Typed = Partial<Pick<Label, 'text' | 'kicker'>>
+const sameTyped = (a: Typed, b: Typed) => a.text === b.text && (a.kicker || undefined) === (b.kicker || undefined)
+
+// One go at typing into a text item, kept as it's typed (the user lost ten minutes of writing to an Escape,
+// 2026-11-01): a pause of AUTOSAVE_MS writes what's there, and so does going away (the item unmounted, the tab hidden).
+// The whole go is one undo step: one just made (D-250) shares its making's step (`text`), any other a step of its own
+// (a key per go, so a later go isn't merged into this one). `end()` is the last word (null once ended): it says whether
+// the item was just made, and `write` puts the final value down if it changed.
+function useTyped(wid: string, l: Label, start: Typed) {
+  const saved = useRef(start)
+  const ended = useRef(false)
+  const [go] = useState(() => ({ fresh: useCanvasView.getState().fresh === l.id, key: `text:${Date.now()}` }))
+  const latest = useRef({ wid, l })
+  latest.current = { wid, l }
+  const write = useCallback(
+    (v: Typed) => {
+      if (sameTyped(v, saved.current)) return
+      const patch: Typed = {}
+      if (v.text !== saved.current.text) patch.text = v.text
+      if ((v.kicker || undefined) !== (saved.current.kicker || undefined)) patch.kicker = v.kicker
+      saved.current = v
+      void updateLabel(latest.current.wid, latest.current.l, patch, go.fresh ? 'text' : go.key, true)
+    },
+    [go],
+  )
+  const useSave = (read: () => Typed | null, deps: unknown[]) =>
+    useWhilePaused(() => {
+      if (ended.current) return
+      const v = read()
+      if (v) write(v)
+    }, deps)
+  const end = () => {
+    if (ended.current) return null
+    ended.current = true
+    endFresh(l.id)
+    return { fresh: go.fresh, write }
+  }
+  return { useSave, end }
 }
 
 function discard(wid: string, l: Pick<Label, 'id'>) {
@@ -758,7 +820,7 @@ function TitleBlock({ l, style, common, press, edit, typing, editor, zoom, w, ma
   )
 }
 
-// Just made (D-250), Escape takes the block away again.
+// Just made (D-250) and nothing changed, Escape takes the block away again; anything typed is kept.
 function TitleFields({ wid, id, name, description }: { wid: string; id: string; name: string; description: string }) {
   const [n, setN] = useState(name)
   const [d, setD] = useState(description)
@@ -772,10 +834,14 @@ function TitleFields({ wid, id, name, description }: { wid: string; id: string; 
     el.style.height = '0px'
     el.style.height = `${el.scrollHeight}px`
   }, [d])
+  // Kept as it's typed, like the other text (useWhilePaused); Escape, Enter or leaving ends it.
+  const saved = useRef({ name, description })
   const keep = () => {
-    if (n.trim() && n.trim() !== name) void renameWorkspace(wid, n.trim())
-    if (d.trim() !== description) void describeWorkspace(wid, d)
+    const nn = n.trim()
+    if (nn && nn !== saved.current.name) (void renameWorkspace(wid, nn), (saved.current.name = nn))
+    if (d.trim() !== saved.current.description) (void describeWorkspace(wid, d), (saved.current.description = d.trim()))
   }
+  useWhilePaused(keep, [n, d])
   return (
     <div
       ref={root}
@@ -792,7 +858,9 @@ function TitleFields({ wid, id, name, description }: { wid: string; id: string; 
       onKeyDown={(e) => {
         e.stopPropagation()
         if (e.key === 'Escape') {
-          if (endFresh(id)) discard(wid, { id })
+          const untouched = n === name && d === description
+          if (endFresh(id) && untouched) discard(wid, { id })
+          else keep()
           useCanvasView.setState({ labelEditing: null })
         }
         if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') (e.target as HTMLElement).blur()

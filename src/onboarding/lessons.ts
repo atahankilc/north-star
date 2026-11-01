@@ -438,9 +438,9 @@ export const LESSONS: readonly Lesson[] = [
 
   // 4. Text
   {
-    id: 'text-made', v: 1, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-188, D-190',
+    id: 'text-made', v: 2, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-188, D-190, D-330',
     trigger: [{ event: 'text-made', when: { kind: ['heading', 'paragraph'] } }], anchor: 'text-bar', within: 'typing',
-    pages: [{ title: 'Writing on the canvas', body: 'Double-click to type; `Enter` ends a heading, `⌘Enter` a paragraph. The bar under it sets size, style and colour.', scene: 'text-edit' }],
+    pages: [{ title: 'Writing on the canvas', body: 'Double-click to type. It saves as you type; `esc` or a click away ends it. The bar under it sets size, style and colour.', scene: 'text-edit' }],
   },
   {
     id: 'sticky-made', v: 1, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-257',

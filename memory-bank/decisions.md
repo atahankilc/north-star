@@ -177,6 +177,8 @@ feature comes back as a piece, and check them with the user then.
 - Made and named (D-250): `+` in focus makes a card at the view's middle with its panel open for the title (never typed
   on the card, D-221); Enter keeps it (Tab makes the next of its type beside it), Escape or nothing typed takes it away;
   making and naming are one undo step; paragraphs and sticky notes keep ⌘Enter. Wizards: Enter next, last makes it.
+- Text saves as it's typed (D-330): a 500 ms pause, a hidden tab or leaving writes it; Escape, Enter or a click away
+  ends it and keeps it; one go is one undo step; a just-made one goes only when left with nothing typed.
 - Motion (D-150, D-203): arriving cards build cell by cell; drag at 0.8 with landing marks.
 - A card's panel (D-221): what it is → what backs it → links by meaning → tags → notes, edited in place; `for` as link
   rows; a competitor's features by category, `≈ our`; a feature's plan, parts tree, must-haves, rests on + confidence,

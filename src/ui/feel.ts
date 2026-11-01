@@ -16,3 +16,7 @@ export const wheelStep = (zoom: number, e: { deltaY: number; ctrlKey: boolean })
   Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom * Math.exp(-e.deltaY * (e.ctrlKey ? PINCH : WHEEL))))
 
 // Sticking's reach (48 screen px, D-210) is STICK_REACH in model/pieceMoves.ts: the agent's ops read it too.
+
+// Typing on the canvas is kept as it's typed: a pause this long (ms) writes what's there (the user lost ten minutes of
+// writing to an Escape, 2026-11-01).
+export const AUTOSAVE_MS = 500

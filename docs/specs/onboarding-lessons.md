@@ -247,8 +247,8 @@ when `context-menu` (first) · anchor the menu · within menu · stays (no lead)
 
 ### `text-made` · lesson · E+ · D-188, D-190
 when `text-made {heading|paragraph}` (first) · anchor the text bar · within typing
-1. **Writing on the canvas**: Double-click to type; `Enter` ends a heading, `⌘Enter` a paragraph. The bar under it
-   sets size, style and colour. · `text-edit`
+1. **Writing on the canvas**: Double-click to type. It saves as you type; `esc` or a click away ends it. The bar
+   under it sets size, style and colour. · `text-edit` (v2, D-330)
 
 ### `sticky-made` · lesson · E+ · D-257
 when `text-made {sticky}` (first) · anchor the sticky · within typing

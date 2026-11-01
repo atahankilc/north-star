@@ -4309,9 +4309,10 @@ sonra enterla direkt oluşturabilme/esc özelliği. Bu bütün cardlar ve textle
   ends. A card: Enter keeps the title and shuts its panel, the card still selected (`panelShut`, cleared when the
   selection changes or the card is clicked again); Tab keeps it and makes the next card of its type a grid step to its
   right (or the first clear spot past it), its title ready; Escape, or Enter or leaving with nothing typed, removes it.
-  Text: a heading, section, paragraph, sticky note or the project title just made goes on Escape; a heading, paragraph
-  or sticky note also when left empty (a section may stay unnamed). Paragraphs and sticky notes keep ⌘Enter (the user:
-  Enter stays a new line). Things that already exist are as before: Enter (or leaving) keeps, Escape puts it back.
+  Text (changed by D-330): text saves as it's typed and Escape keeps it; a heading, section, paragraph or sticky note
+  just made goes only when left with nothing typed (a heading, paragraph or sticky note also when left empty, a
+  section may stay unnamed; the project title when nothing changed). Paragraphs and sticky notes keep ⌘Enter (the user:
+  Enter stays a new line).
 - *Undo:* making and the first name are one step (`addCard`/`addLabel` keyed as the title/text is, the first save
   `mergeAlways`); a removed fresh item takes its step with it (`discardNew` in history.ts), so nothing is left to undo.
   A card made from a picker's "new …" row is one step too.
@@ -6153,3 +6154,26 @@ several planes, a main plane with detail planes beside it, sections), each only 
   check:tokens, build. Not run against Anthropic (no key in the session), nor seen in a browser.
 - *Spec:* docs/specs/agent-claude.md. *Not yet:* step 6 (evals, after agent-bugs 25); server-side compaction and
   context editing; the map as a diff; a look at Settings → the agent in a browser.
+
+### D-330 · 2026-11-01 · Accepted (the user: "entera basılmadan text componentleri save edilmiyor az önce 10 dk yazı yazıp entera basmak yerine esc ye bastığım için her şeyi kayıp ettim"; then "evet düzelt, yazarken kaydetsin")
+**Text on the canvas saves as it's typed; Escape never throws writing away.**
+- *What:* headings, section names (and their small line or number), paragraphs, sticky notes and the project title
+  write what's typed after a 500 ms pause (`AUTOSAVE_MS`, src/ui/feel.ts), when the tab is hidden and when the field
+  goes away; Enter / ⌘Enter, Escape or a click away end the typing and write the rest. Nothing empty is written while
+  typing: an emptied heading or paragraph is still decided on leaving (it goes away).
+- *Undo:* one go at typing is one undo step however many writes it took (`useTyped` in TextItems.tsx: a key per go,
+  `mergeAlways`); one just made shares its making's step, as D-250 had it.
+- *Just made:* left with nothing typed it still goes as if never made (D-250); the project title just made goes on
+  Escape only when nothing in it changed.
+- *Why:* the user lost ten minutes of writing to an Escape (it used to put the old text back, and took a just-made
+  paragraph away). Saving as you type is what people expect from a canvas; undo is the way back.
+- *Alternatives:* Escape keeps but nothing saves while typing (a closed tab or crash still loses it); Escape asks once
+  past a few words (one more dialog). Chose both saving as you type and Escape keeping.
+- *Verified (2026-11-01):* headless Chrome on the emulators: a just-made paragraph typed, paused and Escaped keeps all
+  of it; an existing one Escaped at once keeps it, one undo brings the old text; a session with three pauses is one
+  undo step and redo puts it back; a just-made empty paragraph on Escape is gone; a heading saves while typing; a
+  reload mid-typing keeps it. tsc, check:tokens, check:gallery, check:lessons.
+- *Lessons:* `text-made` v2 ("It saves as you type; `esc` or a click away ends it"): shown again once to those who saw
+  v1. No release entry: the first `what's new` would open for everyone, too much for a fix (the user's call).
+- *Not yet:* a card's title and the panels' notes were not checked for the same (they're edited in the panel).
+

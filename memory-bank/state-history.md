@@ -1009,6 +1009,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   (separate checkouts, a second old for noise): the changes are the four kit snaps listed in D-326's log, looked at
   in their crops; the rest the canvas behind.
 
+## Done (2026-11-01): text saves as it's typed (D-330)
+- The user lost ten minutes of writing to an Escape. Headings, section names, paragraphs, sticky notes and the project
+  title now write after a 500 ms pause, on a hidden tab and on leaving; Escape keeps; one go is one undo step.
+- Verified in headless Chrome on the emulators (six cases, decisions-log D-330); tsc, check:tokens, check:gallery,
+  check:lessons.
+
 ## Done (2026-11-01): agent-bugs 25, 1 and 5: the evals load and tell as the app does
 - The evals' store starts as the app's: only the agent notes' text (`asTheAppLoads`, evals/env.ts). `read_document`
   asks for a missing text (`needs`); the tool wrapper loads it through `AgentEnv.loadBody` and reads again. The app and
