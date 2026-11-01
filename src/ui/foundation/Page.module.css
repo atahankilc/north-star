@@ -20,11 +20,11 @@
   align-items: center;
   gap: var(--space-3);
   height: var(--control);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
 }
 
-/* Page, panel and report titles: Geist at the heading size. */
+/* Page, panel and report titles: Inter at the heading size. */
 .title {
   margin: 0;
   color: var(--fg-strong);

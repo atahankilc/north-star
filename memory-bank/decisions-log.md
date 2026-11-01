@@ -54,7 +54,7 @@ Implementation: Firebase Auth Google provider, popup flow (updated after D-014).
 ### D-012 · 2026-10-17 · Superseded by D-062
 Was: anyone with the invite code joined directly as an editor. Now a code only asks and an owner approves, or an owner invites an email (D-062).
 
-### D-013 · 2026-10-17 · Accepted
+### D-013 · 2026-10-17 · Superseded by D-337
 **Fonts: Geist (display/UI) + Geist Mono (data/ASCII).** (Resolves Q-005.) Self-hosted through `@fontsource-variable/geist` and `geist-mono`, with no external font CDN.
 
 ### D-014 · 2026-10-17 · Accepted
@@ -864,7 +864,7 @@ the report screen and every Settings page; the assistant chat was left out on pu
 - *Layout:* reports in the filter row's place (now a full-width table, D-106); the table fills the
   width ("linked to" takes the spare room) and names end in "…"; Settings rows line up (their layout now D-097); the
   "coming later" section is gone; on phones the side panel covers the filter row instead of sliding under it.
-- *Fonts (user):* Geist for titles and long reading text, Geist Mono for everything else, as it already was.
+- *Fonts (user):* Geist for titles and long reading text, Geist Mono for everything else, as it already was. (Changed by D-337: Inter + JetBrains Mono, mono only for the system's bits.)
 - *Case (user, follow-up):* every action is lowercase: `[ create ]`, `[ delete ]`, `[+ attach]`, `[+ link]`, the Settings menu
   (`> account`). Uppercase is only for labels. Before, `[ DELETE ]` (panel) and `[delete]` (lists) both existed. The
   `--track-button` token went with it. `sign in with Google` keeps the name's capital; test users stay `Alice`/`Bob`/`Carol`.
@@ -6343,3 +6343,36 @@ old page showed one state at a time, its "used in" was a run-on line of 40 names
 Verified: tsc, vitest 968, check:gallery; headless shots of the overview, Button (all states and one live), Card panel
 and Agent (no example), no console errors. `place`/`also` stay in the example files (unused by the page now).
 
+### D-337 · 2026-11-01 · Accepted (the user: "i have a problem with current font, it is hard to read and look. Especially when texts get smaller… text are soo separated"; "Most of the text are hard to read because they are not birght enough… both on dark and light mode"; picked B from the preview with brighter greys: "yes apply B with brighter greys")
+**Inter + JetBrains Mono, mono only for the system's bits, brighter text greys.** (Supersedes D-013; changes D-093's
+which-face rule.) Fonts self-hosted: `@fontsource-variable/inter` (its opsz + italic files) and
+`@fontsource-variable/jetbrains-mono`; `--font-display` Inter, `--font-mono` JetBrains Mono, `fonts` in tokens.ts the
+same (the backdrop's glyphs follow). The page's default (body) is now Inter; mono is set on the bit, never on a
+container: caps labels (Label, Rule, kinds, Chip kind, Tabs, Menu headings), numbers, `[verb]` buttons, keys, the
+prompt's `>`/`›`/glyphs, consoles, docks, cells, readouts, tags, sticky notes. Containers moved to Inter: Window,
+SidePanel, the prompt menu, Select's list, the finder, Field, Checkbox's text, HazardConfirm's question, Page toolbar,
+the kanban and timeline boards, the tasks side view's rows, the table, the documents list and shelf, the matrix's setup,
+a card's facts line, the threads panel, the lessons, guide, kind guide and nudge. Sizes: `--text-xs` 11 → 12,
+`--text-sm` 13 → 14; `--track-label` 0.12em → 0.05em. Greys (contrast on the page / on a piece): dark `--fg` #ededed,
+`--fg-muted` #b0b0b0, `--fg-dim` #8a8a8a (6.1 / 5.4, was 3.9 / 3.5), `--fg-faint` #666666 (3.7, was 2.5),
+`--placeholder` #555555; light `--fg` #111111, `--fg-muted` #444444, `--fg-dim` #595959 (6.4 / 7.0), `--fg-faint`
+#767676 (4.2 / 4.5, was 3.1), `--placeholder` #949494, the `--paper-*` copies the same; the night sky's greys untouched
+(6.3 / 3.3 already).
+Why: 170 places drew mono at 11 px, where every letter takes the same width, so narrow letters left gaps and words fell
+apart, worse in caps spaced 0.12em; `--fg-dim` (175 uses) and `--fg-faint` (129) were under 4.5:1 in dark.
+Alternatives (docs/specs/font-preview/: today vs pick, 8 sans and 10 monos with measured widths, the greys with their
+contrast): A Geist with less mono, C IBM Plex Sans + Mono, D Geist + Iosevka (mono everywhere, narrower), E Atkinson
+Hyperlegible, F Mona Sans + Monaspace Neon, G Instrument Sans + Martian Mono; greys `brightest` (flattened the levels).
+The agent's column too (the user: "coordinate with the other agent and update agent's column too"; its session had
+nothing open there): its box, column, `/` menu, job, go-on line, notes field, settings hint and `was` box in Inter;
+its model name, step marks and tool labels, timings, tokens, ticks, counts, keys, the skill menu's marks mono.
+The agent's picture too (the user: "yup change it too"): PICTURE_FONT 'Inter', the browser's renderer
+embeds Inter's opsz woff2 (latin + latin-ext), `@fontsource-variable/geist` removed; the evals' side (evals/render.ts,
+evals/fonts: Inter Regular/Bold static TTFs) left to the agent's session, as the user asked (a terra eval was
+running). labelBox's
+PROSE_EM stays 0.46 (Inter measured 0.463 vs Geist 0.451; the estimate ran 3–8 % over in Geist, so it still rounds
+up; its test passes).
+Verified: build, vitest 968, check:tokens 0, check:kit 13, check:gallery; headless shots of the gallery (card panel,
+deck, table, menu typed, settings, plane; dark and light) against a worktree of the code before.
+Not yet: `--fg-faint`'s 129 uses not read one by one (some hold words that should be `--fg-dim`); the world's smallest
+sizes (`--w-text-3xs` 7, `-2xs` 8) unchanged; evals/fonts still Geist until the agent's session swaps them.

@@ -46,7 +46,7 @@
   padding: 0 0 var(--space-1);
   border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
 }
 
 /* The `>` line of a long list: typing narrows it. */
@@ -63,6 +63,7 @@
 }
 
 .sign {
+  font-family: var(--font-mono);
   color: var(--accent-magenta);
 }
 
@@ -115,6 +116,7 @@
 
 /* The gutter: a cyan `•` on the current value, the magenta `›` where Enter goes. */
 .cursor {
+  font-family: var(--font-mono);
   flex: none;
   width: 1ch;
 }

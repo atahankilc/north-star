@@ -6,7 +6,7 @@
 
 .hint {
   color: var(--fg-strong);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   letter-spacing: var(--track-label);
 }

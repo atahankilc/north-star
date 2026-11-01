@@ -195,7 +195,7 @@ export class AsciiEffect {
     mesh.frustumCulled = false
     this.quad = new Scene().add(mesh as Object3D)
 
-    // Redraw once Geist Mono has loaded; the first draw may use the fallback font.
+    // Redraw once the mono font (JetBrains Mono) has loaded; the first draw may use the fallback font.
     document.fonts?.load(`48px "${fonts.mono}"`).then(() => { // tokens-ok: any size loads the font
       drawAtlas(canvas, ramp)
       atlas.needsUpdate = true

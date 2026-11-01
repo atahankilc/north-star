@@ -61,6 +61,6 @@ export const palettes: Record<Theme, Palette> = {
 }
 
 export const fonts = {
-  mono: 'Geist Mono Variable',
-  display: 'Geist Variable',
+  mono: 'JetBrains Mono Variable',
+  display: 'Inter Variable',
 }

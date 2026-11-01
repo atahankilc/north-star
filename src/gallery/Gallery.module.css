@@ -317,6 +317,7 @@
   font: inherit;
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
+  font-family: var(--font-mono);
   text-transform: uppercase;
   cursor: pointer;
 }
@@ -391,6 +392,7 @@
   color: var(--fg-faint);
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
+  font-family: var(--font-mono);
   text-transform: uppercase;
 }
 

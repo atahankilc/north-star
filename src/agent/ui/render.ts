@@ -1,10 +1,10 @@
 // The browser's `render` for the agent's `look` (D-327 phase 2): an SVG drawn on a canvas, read back as a PNG (base64).
 // Nothing leaves the browser here; the PNG goes to the model with the tool's result, and nowhere else.
-// An SVG drawn as an image can't see the page's web fonts, so Geist goes inside it: the app's own files (latin and
+// An SVG drawn as an image can't see the page's web fonts, so Inter (D-337) goes inside it: the app's own files (latin and
 // latin-ext), as data URLs, fetched once. Two family names, not one split by unicode-range: Chrome loads a ranged face
 // only once a letter needs it, after the image is drawn, and then draws no text at all (ğ, ş, İ in a title).
-import latin from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url'
-import latinExt from '@fontsource-variable/geist/files/geist-latin-ext-wght-normal.woff2?url'
+import latin from '@fontsource-variable/inter/files/inter-latin-opsz-normal.woff2?url'
+import latinExt from '@fontsource-variable/inter/files/inter-latin-ext-opsz-normal.woff2?url'
 import type { ImagePart } from '../contract'
 import { PICTURE_FONT } from '../picture'
 
@@ -34,7 +34,7 @@ const svgImage = async (svg: string) => {
 }
 
 const PROBE_PX = 40 // tokens-ok: the probe's own canvas, never shown
-const PROBE_MS = 1500 // tokens-ok: how long the first picture waits for Geist at most
+const PROBE_MS = 1500 // tokens-ok: how long the first picture waits for Inter at most
 
 // Chrome decodes an image's embedded font after the image itself (~40 ms) and draws no text until then; once one image
 // has shown it, the next ones draw at once. So the first picture waits for a probe's letters (both faces) to appear.
@@ -53,7 +53,7 @@ async function warm(defs: string) {
   }
 }
 
-// The `<defs>` with Geist's faces, the drawing in both (CSS beats the SVG's own font-family), ready to draw; empty when
+// The `<defs>` with Inter's faces, the drawing in both (CSS beats the SVG's own font-family), ready to draw; empty when
 // a file can't be fetched, and the picture falls back to sans-serif.
 let style: Promise<string> | null = null
 const fontStyle = () =>

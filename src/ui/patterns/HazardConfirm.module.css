@@ -68,7 +68,7 @@
 .title {
   margin: 0 0 var(--space-3);
   color: var(--fg-strong);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-md);
   font-weight: var(--weight-medium);
   text-shadow:

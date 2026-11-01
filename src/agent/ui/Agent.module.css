@@ -1,6 +1,6 @@
 /* The agent (S14, D-312; agent.md §4.6): a small framed box in the bottom-right corner, growing into a terminal column on
    the right (the right panel's look, D-219: a line on its left with magenta marks on its corners, the kind along the
-   top, mono for the system, Geist for what people and the agent say). Tokens only; light under [data-theme='light']. */
+   top, mono only on the system's bits, Inter for the rest, D-337). Tokens only; light under [data-theme='light']. */
 
 /* The column's width, on <html> so the app's box (WorkspaceLayout.module.css `.app`) and the right panel (SidePanel)
    read it: `--ai-w` is how far the app stops short of the right edge. Never leaves the app less than 360 px. */
@@ -38,7 +38,7 @@
   width: clamp(var(--size-xs), calc(50vw - var(--panel-w) / 2 - var(--space-3)), var(--size-md));
   border-color: var(--line-hover);
   color: var(--fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
   line-height: var(--space-4);
 }
@@ -74,6 +74,7 @@
 }
 
 .boxModel {
+  font-family: var(--font-mono);
   min-width: 0;
   overflow: hidden;
   color: var(--fg-faint);
@@ -95,7 +96,7 @@
   border-left: var(--line-w) solid var(--line-hover);
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
   line-height: var(--space-4);
   cursor: default;
@@ -184,10 +185,12 @@
   gap: var(--space-2);
   color: var(--accent-cyan);
   letter-spacing: var(--track-label);
+  font-family: var(--font-mono);
   text-transform: uppercase;
 }
 
 .model {
+  font-family: var(--font-mono);
   min-width: 0;
   overflow: hidden;
   color: var(--fg-dim);
@@ -204,6 +207,7 @@
   background: none;
   color: var(--fg-dim);
   font: inherit;
+  font-family: var(--font-mono);
 }
 
 .modelSelect:hover,
@@ -268,7 +272,7 @@
   overscroll-behavior: contain;
 }
 
-/* The person's message, numbered as a turn: `01 ──` (mono, the number magenta, D-266) and their words in Geist. */
+/* The person's message, numbered as a turn: `01 ──` (mono, the number magenta, D-266) and their words in Inter. */
 .you {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -328,6 +332,7 @@
 }
 
 .foldMark {
+  font-family: var(--font-mono);
   color: var(--fg-faint);
 }
 
@@ -348,6 +353,7 @@
 }
 
 .stepMark {
+  font-family: var(--font-mono);
   flex: none;
   width: 1.5ch;
   color: var(--accent-cyan);
@@ -358,6 +364,7 @@
 }
 
 .stepLabel {
+  font-family: var(--font-mono);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -365,6 +372,7 @@
 }
 
 .stepMs {
+  font-family: var(--font-mono);
   flex: none;
   margin-left: auto;
   color: var(--fg-faint);
@@ -468,12 +476,14 @@
 }
 
 .meta {
+  font-family: var(--font-mono);
   margin: 0;
   color: var(--fg-dim);
 }
 
 /* Tokens per answer (agent.md §4.8): counts, never prices. */
 .tokens {
+  font-family: var(--font-mono);
   margin: 0;
   color: var(--fg-faint);
 }
@@ -566,6 +576,7 @@
 }
 
 .canMark {
+  font-family: var(--font-mono);
   display: inline-block;
   width: 2ch;
   color: var(--accent-cyan);
@@ -620,6 +631,7 @@
 }
 
 .itemMark {
+  font-family: var(--font-mono);
   flex: none;
   color: var(--accent-cyan);
 }
@@ -657,6 +669,7 @@
 }
 
 .whereCount {
+  font-family: var(--font-mono);
   color: var(--fg-muted);
   letter-spacing: normal;
   text-transform: none;
@@ -670,6 +683,7 @@
   background: none;
   color: var(--accent-cyan);
   font: inherit;
+  font-family: var(--font-mono);
   cursor: pointer;
 }
 
@@ -736,6 +750,7 @@
   background: none;
   color: var(--fg);
   font: inherit;
+  font-family: var(--font-mono);
   cursor: pointer;
 }
 
@@ -752,6 +767,7 @@
 }
 
 .stepAt {
+  font-family: var(--font-mono);
   color: var(--fg);
   font-variant-numeric: tabular-nums;
 }
@@ -780,12 +796,14 @@
 }
 
 .statusMark {
+  font-family: var(--font-mono);
   color: var(--accent-green);
 }
 
 .statusWord {
   color: var(--accent-green);
   letter-spacing: var(--track-label);
+  font-family: var(--font-mono);
   text-transform: uppercase;
 }
 
@@ -847,6 +865,7 @@
   flex: none;
   color: var(--fg-faint);
   font: inherit;
+  font-family: var(--font-mono);
 }
 
 .scope {
@@ -892,6 +911,7 @@
 }
 
 .spinner {
+  font-family: var(--font-mono);
   display: inline-block;
   width: 1ch;
   color: var(--accent-cyan);
@@ -993,7 +1013,7 @@
   border: var(--line-w) solid var(--line-hover);
   border-top-color: var(--accent-cyan);
   background: var(--bg);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
 }
 
@@ -1015,6 +1035,7 @@
 }
 
 .skillHead {
+  font-family: var(--font-mono);
   padding: var(--space-2) var(--space-3) var(--space-half);
   color: var(--fg-faint);
   font-size: var(--text-xs);
@@ -1046,6 +1067,7 @@
 }
 
 .skillCursor {
+  font-family: var(--font-mono);
   color: var(--accent-magenta);
   visibility: hidden;
 }
@@ -1132,6 +1154,7 @@
   border: var(--line-w) solid var(--line-hover);
   color: var(--accent-cyan);
   font: inherit;
+  font-family: var(--font-mono);
 }
 
 /* ---- The job (D-328): a big job's plan as a live checklist above the prompt */
@@ -1144,7 +1167,7 @@
   padding-bottom: var(--space-2);
   overflow-y: auto;
   border-bottom: var(--line-w) dashed var(--line);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
 }
 
@@ -1177,6 +1200,7 @@
 }
 
 .jobCount {
+  font-family: var(--font-mono);
   flex: none;
   color: var(--accent-magenta);
 }
@@ -1213,11 +1237,13 @@
 }
 
 .jobMark {
+  font-family: var(--font-mono);
   color: var(--fg-dim);
   white-space: pre;
 }
 
 .jobN {
+  font-family: var(--font-mono);
   color: var(--accent-magenta);
 }
 
@@ -1239,6 +1265,7 @@
 }
 
 .jobUsed {
+  font-family: var(--font-mono);
   color: var(--fg-dim);
 }
 
@@ -1257,7 +1284,7 @@
 .goOn {
   margin: var(--space-2) 0 0;
   color: var(--fg-dim);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
 }
 

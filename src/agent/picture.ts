@@ -24,9 +24,9 @@ export type Picture = { svg: string; w: number; h: number; text: string }
 // The longest side of a picture, px: big enough to read a card's id, small enough to cost little (~1–2k tokens).
 export const PICTURE_MAX = 1400
 const MARGIN = 40
-// The app's own font (D-013): the renderers embed it, since neither sees the page's web fonts (src/agent/ui/render.ts,
+// The app's own font (D-337, Inter): the renderers embed it, since neither sees the page's web fonts (src/agent/ui/render.ts,
 // evals/render.ts).
-export const PICTURE_FONT = 'Geist'
+export const PICTURE_FONT = 'Inter'
 
 const TONE: Record<string, string> = { customer: colors.green, problem: colors.magenta, competitor: colors.yellow, idea: colors.fg, feature: colors.cyan, package: colors.blue }
 export const LEGEND = 'Colours: customer green, problem magenta, competitor yellow, idea white, feature cyan, package blue (a frame round its members when unfolded). Lines are links (dashed: for and relates, which the app hides until a card is picked). Grey frames are sections.'

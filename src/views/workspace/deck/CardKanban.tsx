@@ -283,7 +283,7 @@ type SheetProps = {
 }
 
 // A card on a kanban: a sheet as a task's (D-252), edged in its type's colour. Its type in that colour and its priority
-// (P1 magenta) on top, its title (Geist, up to three lines), then how sure we are (`◆ high`, `! broken` magenta) and the
+// (P1 magenta) on top, its title (Inter, up to three lines), then how sure we are (`◆ high`, `! broken` magenta) and the
 // values it has other than the columns' own.
 function CardSheet({ card, field, rowField, sure, finished, selected, live, lifted, onPointerDown, onClick }: SheetProps) {
   const peers = usePeersOn(card.id)

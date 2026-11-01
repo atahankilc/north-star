@@ -110,7 +110,7 @@
   flex: none;
   flex-direction: column;
   width: var(--size-xs);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
 }
 
@@ -248,7 +248,7 @@
 .askLines {
   margin: 0 0 var(--space-4);
   color: var(--fg-muted);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
   line-height: var(--lh-body);
 }

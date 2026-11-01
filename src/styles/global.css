@@ -1,5 +1,6 @@
-@import '@fontsource-variable/geist';
-@import '@fontsource-variable/geist-mono';
+@import '@fontsource-variable/inter/opsz.css';
+@import '@fontsource-variable/inter/opsz-italic.css';
+@import '@fontsource-variable/jetbrains-mono';
 @import './tokens.css';
 
 *,
@@ -18,7 +19,8 @@ body,
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-mono);
+  /* The UI's default is the reading font; the system's bits ask for mono themselves (D-337). */
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;

@@ -8,7 +8,7 @@
   background: none;
   color: var(--fg-muted);
   font: inherit;
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   text-align: left;
   cursor: pointer;
@@ -28,6 +28,7 @@
 }
 
 .box {
+  font-family: var(--font-mono);
   flex: none;
   color: var(--tone, var(--accent-cyan));
 }

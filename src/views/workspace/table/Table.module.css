@@ -42,7 +42,7 @@
 .table {
   position: relative;
   background: var(--bg);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
 }
 
@@ -174,7 +174,7 @@
   pointer-events: none;
 }
 
-/* A row's name: Geist, one line; a card's carries its type's colour on its left edge. */
+/* A row's name: Inter, one line; a card's carries its type's colour on its left edge. */
 .name {
   display: flex;
   align-items: center;

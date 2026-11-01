@@ -7,6 +7,7 @@
   color: var(--fg-dim);
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
+  font-family: var(--font-mono);
   text-transform: uppercase;
 }
 

@@ -37,6 +37,7 @@
   color: var(--fg-dim);
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
+  font-family: var(--font-mono);
   text-transform: uppercase;
 }
 
@@ -273,7 +274,7 @@
   display: flex;
   flex-direction: column;
   max-height: min(60vh, var(--menu-h));
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
 }
 
@@ -288,6 +289,7 @@
 }
 
 .caretSign {
+  font-family: var(--font-mono);
   color: var(--accent-magenta);
 }
 
@@ -319,6 +321,7 @@
 
 /* `# text`: a section of the list, a comment line. */
 .heading {
+  font-family: var(--font-mono);
   padding: var(--space-2) var(--space-3) var(--space-half);
   color: var(--fg-faint);
   font-size: var(--text-xs);
@@ -351,6 +354,7 @@
 
 /* `›`: where Enter or a click goes: under the pointer, on the keys, or the first match while typing. */
 .cursor {
+  font-family: var(--font-mono);
   flex: none;
   width: 1ch;
   color: var(--accent-magenta);
@@ -398,6 +402,7 @@
 
 /* `[p]`: the item's letter. */
 .letter {
+  font-family: var(--font-mono);
   flex: none;
   width: 3ch;
   color: var(--fg-faint);
@@ -414,6 +419,7 @@
 }
 
 .check {
+  font-family: var(--font-mono);
   flex: none;
   color: var(--fg-faint);
 }
@@ -423,6 +429,7 @@
 }
 
 .glyph {
+  font-family: var(--font-mono);
   flex: none;
   width: 1.2em;
   color: var(--tone, var(--fg-dim));
@@ -448,6 +455,7 @@
 /* `[▸ 2 inside]`: what an item holds folded under it (go to's planes, D-200, D-201), framed so it reads as its own
    button; cyan while open or hovered. */
 .fold {
+  font-family: var(--font-mono);
   display: inline-flex;
   align-items: baseline;
   gap: 0.4ch;

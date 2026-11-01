@@ -78,7 +78,7 @@
   transform: rotate(90deg) translateY(-100%);
 }
 
-/* Headings (D-130, D-156): Geist, left-aligned; a small line over it, and an H1 has a rule fading right under it. */
+/* Headings (D-130, D-156): Inter, left-aligned; a small line over it, and an H1 has a rule fading right under it. */
 .heading {
   color: var(--tone);
   font-family: var(--font-display);
@@ -115,6 +115,7 @@
 .kickRest {
   color: var(--fg-dim);
   letter-spacing: var(--track-label);
+  font-family: var(--font-mono);
   text-transform: uppercase; /* kit-ok: a heading's small line at its heading's world size (a Label is text-xs) */
 }
 

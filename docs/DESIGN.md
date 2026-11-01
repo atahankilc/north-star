@@ -34,8 +34,10 @@ References in [design/references/](design/references/):
 | `--bg` | `#000000` | canvas / page |
 | `--bg-raised` | `#0b0b0b` | panels, cards |
 | `--line` | `#2a2a2a` | borders, grid glyphs |
-| `--fg-dim` | `#6b6b6b` | secondary text, ambient ASCII |
-| `--fg` | `#e8e8e8` | primary text |
+| `--fg-faint` | `#666666` | quiet marks: separators, empty states, idle actions (≥ 3:1; not for words to read) |
+| `--fg-dim` | `#8a8a8a` | secondary text, meta lines, labels (≥ 4.5:1 on the page and on a piece, D-337) |
+| `--fg-muted` | `#b0b0b0` | help text, hints |
+| `--fg` | `#ededed` | primary text |
 | `--fg-strong` | `#ffffff` | headlines, focus |
 | `--accent-magenta` | `#ff3d9a` | ideas / selection |
 | `--accent-cyan` | `#2de2e6` | features / links |
@@ -44,7 +46,8 @@ References in [design/references/](design/references/):
 | `--accent-green` | `#3dff8a` | success / "we're better" |
 
 **Light theme (D-069):** dark is the default; Settings → display → theme switches to light (or `system`). Light swaps the
-tokens above for neutral light grey (`--bg #f5f5f5`), white surfaces, near-black text and darker accents (magenta `#db1a7a`, cyan `#0a979c`,
+tokens above for neutral light grey (`--bg #f5f5f5`), white surfaces, near-black text (`--fg #111`, `--fg-muted #444`,
+`--fg-dim #595959`, `--fg-faint #767676`, D-337) and darker accents (magenta `#db1a7a`, cyan `#0a979c`,
 yellow `#a87d00`, blue `#2a5fe0`, green `#0f9a4b`); the ASCII field prints as ink on the paper. Values in `src/styles/tokens.css`
 (`[data-theme='light']`); what WebGL draws (bg, accents, the night sky) also in `palettes.light` in `tokens.ts`, read through
 `usePalette()` (D-321). Text on an accent fill uses `--on-accent`; tints use `--wash-*`.
@@ -60,17 +63,20 @@ Values will be tuned against contrast checks (WCAG AA for text).
 
 ## 4. Typography
 
-- **Display / UI:** **Geist** (D-013)
-- **Data / labels / ASCII:** **Geist Mono**
+- **Reading and UI:** **Inter** (`--font-display`, D-337; was Geist, D-013), with its optical sizes, so small text opens up
+- **System bits / ASCII:** **JetBrains Mono** (`--font-mono`, D-337; was Geist Mono)
 - Big size contrast: huge display titles, small mono labels.
-- *Which face (D-093):* Geist for titles and long reading text (report answers and points); Geist Mono for everything else:
-  data, labels, controls, inputs, meta lines.
-- *Scale (tokens.css; no raw px sizes):* `--text-xs` 11 (labels, meta, small buttons; nothing smaller), `--text-sm` 13 (body
+- *Which face (D-337, replacing D-093's split):* Inter is the page's default: titles, reading text, rows, hints, meta
+  lines, fields, settings, menus' items, tasks, table cells. JetBrains Mono only where the system speaks: caps labels
+  (Label, Rule, kinds, piece names, column heads), numbers and counts, `[verb]` buttons, keys (`[p]`, `⌘F`), the
+  prompt's `>` and `›`, glyphs, cells, consoles and docks, readouts, tags, sticky notes. A rule that sets mono on a
+  whole container is wrong now: set it on the bit.
+- *Scale (tokens.css; no raw px sizes):* `--text-xs` 12 (labels, meta, small buttons; nothing smaller), `--text-sm` 14 (body
   and controls), `--text-md` 15 (report body), `--text-lg` 18 (card and list titles), `--text-heading` 26, 20 on phones (page,
   panel and report titles), `--text-xl`, `--text-hero` (the workspaces page title), `--text-display` (landing headline).
 - *Case:* uppercase means a label (`NOTES`, `┌ DISPLAY`, column heads, type names); everything you click is lowercase
   (buttons, the Settings menu, choices).
-- *Tracking:* `--track-label` 0.12em on every small uppercase label, `--track-title` -0.02em on Geist titles,
+- *Tracking:* `--track-label` 0.05em on every small uppercase label (D-337; 0.12em pulled small caps apart), `--track-title` -0.02em on sans titles,
   `--track-display` -0.045em on the display headline, `--track-cells` -1px where glyph cells must touch. The same in the
   world (D-325). Lowercase actions are untracked.
 - *Inside the zoomed world (D-325):* the screen's `--text-xs`…`--text-lg` hold in canvas px too; `--w-text-*` adds only
@@ -89,8 +95,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   that); the assistant's stage was one cyan box (`StageBox`) with a `‹ n/N ›` stepper.
 
 ### Names and lines on the canvas (D-266)
-- *Two voices.* The system's: Geist Mono, caps, tracked (piece names, type labels, column heads, panel sections, the
-  small line over a heading, consoles). The user's: Geist (card titles, headings, paragraphs, section names, the
+- *Two voices.* The system's: JetBrains Mono, caps, tracked (piece names, type labels, column heads, panel sections, the
+  small line over a heading, consoles). The user's: Inter (card titles, headings, paragraphs, section names, the
   project title).
 - *Numbers.* A number, wherever there is one, is magenta, mono, before the name: a piece's name (`01 PAZAR · PLANE`, a
   leading number in the name is taken apart), kanban columns (`01 TODO`), sections, a heading's small line, the right
@@ -105,7 +111,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   what it holds on `--piece-card`) and exactly as big as its contents; under each row (a matrix's heads and cells, a table's
   rows, a kanban's heads and tasks, a list's rows and sheets) a shade that hugs it (page colour at 80 %, feathered
   `0 0 16px 10px` at 72 %), as under text; its name a heading's small line 8 px over its contents
-  (`04 ── RIVALS · TABLE`, mono 11 px on the screen, caps, tracked .14em, the number magenta); its console the same, on
+  (`04 ── RIVALS · TABLE`, mono 12 px on the screen, caps, tracked `--track-label`, the number magenta); its console the same, on
   the same hover rule, hanging 10 px under the contents' right end. A dropdown in a console or dock is plain text, like
   the link `Select` (`label value ▾`, no frame or fill).
   Going between: the window breaks (or builds) cell by cell while the contents grow from fitted to their own size (or
@@ -163,7 +169,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Plane grid (D-182, D-187): faint dots every 25 px (`--grid-mark`, the shape `--grid-mark-shape`, D-332); pieces, cards and text snap to it (alt free).
   A card is 200 × 100, 8 × 4 steps, a mark on each corner. (1.0's board: 0.625 units, marks thinning as they crowded,
   D-110, D-148, D-149, D-151.)
-- Text (D-050, D-156, D-188, D-194): Geist straight on the canvas or a plane; typing keeps its face, size and layout
+- Text (D-050, D-156, D-188, D-194): Inter straight on the canvas or a plane; typing keeps its face, size and layout
   (D-190); under it the ink shade, line by line (D-277). Headings H1–H3 (48 / 29 / 22 px on the canvas), left-aligned,
   with an optional small line (`02 ── WHO WE BEAT`: mono caps, `--fg-dim`, the number magenta); an H1's hairline rule
   fades right. Paragraphs (`¶`, S/M/L, L the default and still under an H3, D-161, D-162) wrap at their width, light
@@ -173,7 +179,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Sticky notes (D-158, D-162, D-257, D-259): paper in its colour (92 % with black in dark, a 34 % pastel in light; yellow
   the bright one), dark ink (`--sticky-ink`), a darker 13 px glue band with `ATAHAN · 2h` and three checks, a soft shade
   under its foot, never tilted. 150 × 125 to start (6 × 5 steps), growing down as you type; a long one folds back from
-  `▾` / `▸`, its text fading at the foot. Text Geist Mono S/M/L, light Markdown.
+  `▾` / `▸`, its text fading at the foot. Text mono (JetBrains Mono) S/M/L, light Markdown.
 - Sections (D-130, D-157): a thin frame, no fill; the name in the edge, the line breaking round it, along the top or up
   the left edge (read bottom to top), a number before it in magenta; a colour goes to the line and name only.
 - Comment threads (D-159, D-166, D-167, D-193): a chip under the component's bottom-right corner, at screen size: the
@@ -261,8 +267,8 @@ Every 1.0 workspace view except the board composed `src/ui/foundation/Page.modul
   filters and upload there (D-106).
 - Column headers (D-107): every table-like view composes `head` from `src/ui/TableHead.module.css` (40 px, `--bg-raised`,
   mono `--text-xs` uppercase, `--fg-dim`) and sets only its side padding; a column may add its own mark or colour.
-- `title`: Geist at `--text-heading`, for Settings pages, side panels, the competitor profile, the matrix panel and the report screen.
-Settings rows (D-097) are two columns: on the left the setting's name (mono, `--fg-strong`) with what it does under it (Geist,
+- `title`: Inter at `--text-heading`, for Settings pages, side panels, the competitor profile, the matrix panel and the report screen.
+Settings rows (D-097) are two columns: on the left the setting's name (mono, `--fg-strong`) with what it does under it (Inter,
 `--fg-muted`), on the right the control (`--label-w`, 260 px; stacked on phones). Help text is never `--fg-faint` there:
 `--fg-muted` is the readable grey for explanations. On phones a side panel covers the filter row.
 

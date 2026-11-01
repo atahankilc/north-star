@@ -11,7 +11,7 @@
   border-left: var(--line-w) solid var(--line-hover);
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
   line-height: var(--space-4);
   cursor: default;
@@ -49,6 +49,7 @@
 .kind {
   color: var(--tone);
   letter-spacing: var(--track-label);
+  font-family: var(--font-mono);
   text-transform: uppercase;
 }
 
@@ -81,7 +82,7 @@
   color: var(--fg-faint);
 }
 
-/* The title in Geist, under a rule. */
+/* The title in Inter, under a rule. */
 .title {
   padding: var(--space-3) var(--space-6) var(--space-4);
   border-bottom: var(--line-w) solid var(--line);

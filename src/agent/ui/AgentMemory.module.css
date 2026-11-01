@@ -60,7 +60,7 @@
   border: var(--line-w) solid var(--accent-cyan);
   background: var(--bg);
   color: var(--fg-strong);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   line-height: var(--lh-body);
   resize: vertical;

@@ -14,8 +14,8 @@ export const headingSize = (l: Label): HeadingSize => (l.size === 'note' ? 'mino
 export const kickPx = (px: number) => Math.max(8, px * 0.3)
 
 // Average character widths, in em, checked against the text as drawn (2026-11-01, headless Chrome: paragraphs 3–8 %
-// over, so a count rounds up, stickies exact): Geist on prose, and Geist Mono (exactly 0.6). A paragraph's text keeps
-// 0.6 em clear of its hairline (TextItems.module.css).
+// over in Geist, so a count rounds up; Inter, D-337, is 2.7 % wider, still over), and JetBrains Mono (exactly 0.6,
+// stickies exact). A paragraph's text keeps 0.6 em clear of its hairline (TextItems.module.css).
 const PROSE_EM = 0.46
 const MONO_EM = 0.6
 const PARA_INSET_EM = 0.6

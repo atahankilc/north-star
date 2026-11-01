@@ -83,6 +83,24 @@
         ],
         "createdAt": "2026-10-29T04:29:36.430Z",
         "reason": "O4 reviewer measured: mocks' title:body steps are 1.4-1.7x; the page-wide count is skewed by ~1400 scaled-down scene texts at 5.5-9px"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/specs/font-preview/index.html"
+        ],
+        "createdAt": "2026-11-01T14:34:06.706Z",
+        "reason": "Claude: the preview shows today's faint greys on purpose, to compare them with brighter ones"
+      },
+      {
+        "rule": "all-caps-body",
+        "value": "*",
+        "files": [
+          "docs/specs/font-preview/index.html"
+        ],
+        "createdAt": "2026-11-01T14:34:31.448Z",
+        "reason": "Claude: the preview's caps lines are samples of the app's short caps labels, shown to compare letter spacing"
       }
     ]
   }

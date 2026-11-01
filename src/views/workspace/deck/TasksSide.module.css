@@ -134,7 +134,7 @@
   border: 0;
   background: none;
   color: var(--fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
   text-align: left;
   cursor: pointer;

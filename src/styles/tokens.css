@@ -4,10 +4,11 @@
   --bg: #000000;
   --bg-raised: #0b0b0b;
   --line: #2a2a2a;
-  --fg-dim: #6b6b6b;
-  --fg-muted: #9a9a9a; /* readable help text (settings hints) */
-  --fg-faint: #4d4d4d;
-  --placeholder: #3d3d3d;
+  /* Text greys (D-337): dim, muted and fg ≥ 4.5 contrast on the page and on a piece; faint is for quiet marks (≥ 3). */
+  --fg-dim: #8a8a8a;
+  --fg-muted: #b0b0b0; /* readable help text (settings hints) */
+  --fg-faint: #666666;
+  --placeholder: #555555;
   /* The board's `+` marks, also drawn on a board placed on the canvas (D-176). */
   --grid-mark: #4d4d4d;
   /* The grid's mark (D-332): a dot at the middle of each 25 px cell, used as a mask; its colour is --grid-mark. */
@@ -29,7 +30,7 @@
   --sticky-shadow: rgba(0, 0, 0, 0.65);
   /* A tag chip on a card. */
   --chip: #161616;
-  --fg: #e8e8e8;
+  --fg: #ededed;
   --fg-strong: #ffffff;
 
   --accent-magenta: #ff3d9a;
@@ -81,11 +82,13 @@
   --scrim: rgba(0, 0, 0, 0.7);
   --menu: rgba(22, 22, 22, 0.92);
 
-  --font-display: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* Two voices (D-337): Inter for what people read and most of the UI (the page's default), JetBrains Mono only for the
+     system's bits: caps labels, numbers, keys, the prompt's `>`, cells, readouts. */
+  --font-display: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  --text-xs: 11px;
-  --text-sm: 13px;
+  --text-xs: 12px; /* D-337: was 11 */
+  --text-sm: 14px; /* D-337: was 13 */
   --text-md: 15px;
   --text-lg: 18px; /* card and list titles */
   --text-title: 22px; /* the right panel's title (D-219) */
@@ -97,7 +100,7 @@
   --text-code: 0.88em;
 
   /* Type inside the zoomed world (D-325, docs/specs/tokens.md): canvas px, scaled with the zoom. The screen's --text-xs…lg
-     hold in the world too; these add only what the screen doesn't have (below 11 px, read when zoomed in; a card's
+     hold in the world too; these add only what the screen doesn't have (below 12 px, read when zoomed in; a card's
      title; titles that don't shrink on phones). Never on screen-sized UI. */
   --w-text-3xs: 7px; /* the tiniest caps: a card's chip and inner category, mini avatars, a sticky's glue band */
   --w-text-2xs: 8px; /* a link's chip, a package band's caps */
@@ -112,7 +115,7 @@
 
   /* Tracking (D-093, D-325): every uppercase label, sans titles, the display headline; glyph cells that must touch.
      Actions are lowercase, untracked. The same three on screen and in the world. */
-  --track-label: 0.12em;
+  --track-label: 0.05em; /* D-337: was 0.12em, which pulled small caps apart */
   --track-title: -0.02em;
   --track-display: -0.045em;
   --track-cells: -1px;
@@ -293,10 +296,10 @@
   --card-tint: 9%;
   --ink-shade: rgba(245, 245, 245, 0.92);
   --line: #d9d9d9;
-  --fg-dim: #6b6b6b;
-  --fg-muted: #555555;
-  --fg-faint: #8c8c8c;
-  --placeholder: #b0b0b0;
+  --fg-dim: #595959;
+  --fg-muted: #444444;
+  --fg-faint: #767676;
+  --placeholder: #949494;
   --grid-mark: #b8b8b8;
 
   --surface: rgba(255, 255, 255, 0.86);
@@ -307,7 +310,7 @@
   --sticky-base: #ffffff;
   --sticky-shadow: rgba(0, 0, 0, 0.18);
   --chip: #fafafa;
-  --fg: #161616;
+  --fg: #111111;
   --fg-strong: #000000;
 
   --accent-magenta: #db1a7a;
@@ -355,10 +358,10 @@
 /* The welcome's night sky in light theme (D-072): while the landing's sky is dark blue its text is light, then eases back.
    Set on <html> by Landing (data-night). Registered so they can ease back to day as fast as the sky breaks up; going into the night they switch at once. */
 @property --bg { syntax: '<color>'; inherits: true; initial-value: #000000; }
-@property --fg { syntax: '<color>'; inherits: true; initial-value: #e8e8e8; }
+@property --fg { syntax: '<color>'; inherits: true; initial-value: #ededed; }
 @property --fg-strong { syntax: '<color>'; inherits: true; initial-value: #ffffff; }
-@property --fg-dim { syntax: '<color>'; inherits: true; initial-value: #6b6b6b; }
-@property --fg-faint { syntax: '<color>'; inherits: true; initial-value: #4d4d4d; }
+@property --fg-dim { syntax: '<color>'; inherits: true; initial-value: #8a8a8a; }
+@property --fg-faint { syntax: '<color>'; inherits: true; initial-value: #666666; }
 
 :root[data-theme='light']:not([data-night]) {
   transition: --bg 0.25s ease, --fg 0.25s ease, --fg-strong 0.25s ease, --fg-dim 0.25s ease, --fg-faint 0.25s ease;
@@ -370,10 +373,10 @@
   --night-fg-strong: #ffffff;
   --night-fg-dim: #8f9bb8;
   --night-fg-faint: #5d6a8a;
-  --paper-fg: #161616;
+  --paper-fg: #111111;
   --paper-fg-strong: #000000;
-  --paper-fg-dim: #6b6b6b;
-  --paper-fg-faint: #8c8c8c;
+  --paper-fg-dim: #595959;
+  --paper-fg-faint: #767676;
 }
 
 :root[data-theme='light'][data-night] {

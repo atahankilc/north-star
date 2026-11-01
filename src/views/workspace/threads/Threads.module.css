@@ -281,7 +281,7 @@ button.send:disabled {
   border-bottom: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
 }
 

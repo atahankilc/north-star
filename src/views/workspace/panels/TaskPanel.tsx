@@ -146,7 +146,7 @@ export function TaskPanel({ editor }: { editor: boolean }) {
   )
 }
 
-// Its title: Geist, typed in place; Enter keeps it, Escape puts it back. A task always has one.
+// Its title: Inter, typed in place; Enter keeps it, Escape puts it back. A task always has one.
 function Title({ task, editor }: { task: Task; editor: boolean }) {
   const { wid } = useWs()
   const field = useRef<HTMLTextAreaElement>(null)
@@ -634,7 +634,7 @@ function CheckField({ value, onDone }: { value: string; onDone: (text: string | 
   )
 }
 
-// Notes: Geist, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
+// Notes: Inter, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
 function Notes({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
   const { wid } = useWs()
   const { draft, setDraft, commit } = useCommit(task.notes ?? '', (v) => void updateTask(wid, task, { notes: v.trim() ? v : undefined }, 'edit a task’s notes'))

@@ -10,6 +10,7 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-regular);
   letter-spacing: var(--track-label);
+  font-family: var(--font-mono);
   text-transform: uppercase;
 }
 

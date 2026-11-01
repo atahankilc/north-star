@@ -890,7 +890,7 @@ type CardProps = {
   onClick?: (e: React.MouseEvent) => void
 }
 
-// A task: raised paper as tall as its title (Geist, up to three lines), its left edge in the colour of the card it's for.
+// A task: raised paper as tall as its title (Inter, up to three lines), its left edge in the colour of the card it's for.
 // Under the title, only when there's something: the card's name, then on the right its due day (magenta once past,
 // unless finished), its checklist as cells, who it's given to (a square with their initials). Finished: a green `✓`
 // before the title, the title grey. Hover and selection are its marks (D-265), in its card's colour (cyan with none);

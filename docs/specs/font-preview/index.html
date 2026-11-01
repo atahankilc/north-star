@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fonts · options</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=Inter:opsz,wght@14..32,300..700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Atkinson+Hyperlegible+Next:wght@300..700&family=Instrument+Sans:wdth,wght@75..100,400..700&family=Mona+Sans:wdth,wght@75..125,300..700&family=Hanken+Grotesk:wght@300..700&family=Host+Grotesk:wght@300..700&family=JetBrains+Mono:wght@300..700&family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Martian+Mono:wdth,wght@75..112.5,300..700&family=Atkinson+Hyperlegible+Mono:wght@300..700&family=Google+Sans+Code:wght@300..700&family=Fragment+Mono&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iosevka/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iosevka/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iosevka/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/commit-mono/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/commit-mono/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/commit-mono/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/monaspace-neon/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/monaspace-neon/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/monaspace-neon/600.css">
+<style>
+/* Today's fonts, the app's own files. */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font: 12px/1.5 'Geist Mono', monospace; }
+button, select { font: inherit; color: inherit; }
+
+/* ── The preview's own chrome (always today's fonts) ─────────────────── */
+.top { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+.top h1 { font: 500 11px/1 'Geist Mono'; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); margin: 0; }
+.tabs { display: flex; gap: 2px; }
+.tab, .chipbtn { font-size: 12px; color: var(--fg-dim); background: none; border: 1px solid transparent; padding: 5px 9px; cursor: pointer; }
+.tab b { color: var(--accent-magenta); font-weight: 400; margin-right: 6px; }
+.tab:hover, .chipbtn:hover { color: var(--fg); }
+.tab[aria-pressed='true'], .chipbtn[aria-pressed='true'] { color: var(--fg); border-color: var(--line-hover); background: var(--wash-2, #111); }
+.ctl { display: flex; align-items: center; gap: 6px; color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
+.ctl select { background: var(--bg-raised); border: 1px solid var(--line); padding: 4px 6px; text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--fg); }
+.presets { display: flex; flex-wrap: wrap; gap: 2px; width: 100%; }
+.sp { flex: 1; }
+.view { display: none; padding: 20px 16px 80px; }
+.view.on { display: block; }
+.intro { max-width: 900px; color: var(--fg-muted); font: 14px/1.6 'Geist'; margin: 0 0 20px; }
+.intro b { color: var(--fg); font-weight: 500; }
+
+/* ── 01 Side by side: today vs the pick ─────────────────────────────── */
+.ab { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.side { border: 1px solid var(--line); padding: 14px; min-width: 0; }
+.demo { color: var(--fg); }
+.side > .who { font: 500 11px/1 'Geist Mono'; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 14px; display: flex; gap: 10px; }
+.side > .who em { color: var(--accent-cyan); font-style: normal; }
+
+/* Everything inside .demo uses the variables only. */
+.demo {
+  --f-read: var(--font-display);
+  --f-sys: var(--font-mono);
+  --f-ui: var(--f-sys);
+  --trk: var(--track-label);
+  --xs: var(--text-xs);
+  --sm: var(--text-sm);
+  --wd: 100%;
+  font-family: var(--f-ui); font-size: var(--xs); color: var(--fg); font-stretch: var(--wd);
+}
+.demo .sys { font-family: var(--f-sys); }
+.demo .ui { font-family: var(--f-ui); }
+.demo .read { font-family: var(--f-read); }
+.demo .caps { font-family: var(--f-sys); text-transform: uppercase; letter-spacing: var(--trk); font-weight: 500; }
+.demo .n { color: var(--accent-magenta); font-family: var(--f-sys); }
+.demo .dim { color: var(--fg-dim); }
+.demo .muted { color: var(--fg-muted); }
+.demo .faint { color: var(--fg-faint); }
+.demo .cy { color: var(--accent-cyan); }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.rule { display: flex; align-items: center; gap: 8px; }
+.rule::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+.rule .cnt { order: 2; }
+
+.crumb { display: flex; gap: 8px; align-items: baseline; font-size: var(--sm); }
+.crumb .read { font-size: var(--sm); }
+
+.prompt { border: 1px solid var(--line-hover); background: var(--bg-raised); padding: 8px 0; }
+.prompt .in { padding: 2px 12px 8px; border-bottom: 1px solid var(--line); font-size: var(--sm); }
+.prompt .in .ph { color: var(--placeholder); }
+.prompt .sec { padding: 8px 12px 2px; }
+.prompt .row { display: grid; grid-template-columns: 14px 28px 16px 1fr auto; gap: 4px; padding: 3px 12px; align-items: baseline; }
+.prompt .row.hot { background: var(--wash-2, #141414); }
+.prompt .foot { border-top: 1px solid var(--line); margin-top: 6px; padding: 6px 12px 0; }
+
+.panel { border-left: 1px solid var(--line); padding: 4px 0 4px 16px; display: flex; flex-direction: column; gap: 12px; }
+.panel .head { display: flex; justify-content: space-between; }
+.panel h2 { margin: 0; font: 500 var(--text-title)/1.2 var(--f-read); letter-spacing: var(--track-title); }
+.panel .field { display: grid; grid-template-columns: 92px 1fr; gap: 8px; align-items: baseline; }
+.panel .linkrow { display: flex; gap: 8px; align-items: baseline; }
+.panel p { margin: 0; font: var(--sm)/1.55 var(--f-read); color: var(--fg-muted); }
+.tagchip { display: inline-block; background: var(--chip); padding: 1px 6px; margin-right: 4px; font-family: var(--f-sys); }
+
+/* A card on the canvas: its world size, scaled like a zoom. */
+.zooms { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.zooms figure { margin: 0; }
+.zooms figcaption { color: var(--fg-dim); margin-bottom: 6px; font-family: 'Geist Mono'; font-size: 10px; letter-spacing: .1em; }
+.zbox { overflow: hidden; }
+.card { width: 200px; height: 100px; transform-origin: 0 0; background: color-mix(in srgb, var(--tone) 16%, var(--piece, #151515)); border-top: 2px solid var(--tone); padding: 7px 9px; display: flex; flex-direction: column; gap: 3px; }
+.card .t1 { display: flex; justify-content: space-between; font-size: var(--w-text-3xs); }
+.card .t1 .caps { color: var(--tone); }
+.card .meta { font-size: var(--w-text-xs); color: var(--fg-muted); }
+.card .title { font: 500 var(--w-text-lg)/1.25 var(--f-read); letter-spacing: var(--track-title); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card .facts { font-size: var(--w-text-xs); color: var(--fg-muted); margin-top: auto; }
+.card .tagchip { font-size: var(--w-text-3xs); }
+
+.deck .task { border-left: 2px solid var(--tone); background: var(--bg-raised); padding: 6px 8px; margin-top: 6px; }
+.deck .task .tt { font: 500 var(--sm)/1.3 var(--f-read); }
+.deck .task .tm { color: var(--fg-dim); margin-top: 3px; }
+.deck .late { color: var(--accent-magenta); }
+
+table.tbl { border-collapse: collapse; width: 100%; }
+.tbl th { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line-hover); color: var(--fg-dim); font-weight: 500; }
+.tbl td { padding: 4px 8px; border-bottom: 1px dashed var(--line); }
+.tbl td.num { font-family: var(--f-sys); text-align: right; font-variant-numeric: tabular-nums; }
+.tbl td.name { font-family: var(--f-read); font-size: var(--sm); }
+
+.set { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.set .nm { font-size: var(--sm); }
+.set .hint { color: var(--fg-muted); grid-column: 1; }
+
+.reading { font: var(--text-md)/1.6 var(--f-read); color: var(--fg); max-width: 60ch; margin: 0; }
+
+/* ── 02 / 03 Every font ─────────────────────────────────────────────── */
+.fonts { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+.fcard { border: 1px solid var(--line); padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 10px; }
+.fcard:hover { border-color: var(--line-hover); }
+.fcard.picked { border-color: var(--accent-cyan); }
+.fcard .fh { display: flex; justify-content: space-between; align-items: baseline; font: 500 11px/1.3 'Geist Mono'; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-dim); }
+.fcard .fh b { color: var(--fg); font-weight: 500; }
+.fcard .fh .w { color: var(--accent-cyan); letter-spacing: 0; text-transform: none; }
+.fcard .fh .w.wide { color: var(--accent-magenta); }
+.fcard .why { font: 13px/1.5 'Geist'; color: var(--fg-muted); }
+.fcard .spec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.fcard .big { font-size: 26px; line-height: 1.15; font-weight: 500; }
+.fcard .s9 { font-size: 9px; } .fcard .s11 { font-size: 11px; } .fcard .s13 { font-size: 13px; }
+.fcard .lab { text-transform: uppercase; font-weight: 500; }
+.fcard .glyphs { font-size: 18px; letter-spacing: .04em; }
+.fcard .size { color: var(--fg-faint); font: 10px 'Geist Mono'; margin-right: 8px; }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Fonts · options</h1>
+  <div class="tabs" role="tablist">
+    <button class="tab" data-view="ab" aria-pressed="true"><b>01</b>today vs pick</button>
+    <button class="tab" data-view="sans" aria-pressed="false"><b>02</b>sans fonts</button>
+    <button class="tab" data-view="mono" aria-pressed="false"><b>03</b>mono fonts</button>
+    <button class="tab" data-view="greys" aria-pressed="false"><b>04</b>text greys</button>
+  </div>
+  <span class="sp"></span>
+  <label class="ctl">sans <select id="sans"></select></label>
+  <label class="ctl">mono <select id="mono"></select></label>
+  <label class="ctl">width <select id="wd"></select></label>
+  <label class="ctl">use mono for
+    <select id="mode"><option value="all">everything (today)</option><option value="sys" selected>system bits only</option></select></label>
+  <label class="ctl">caps spacing
+    <select id="trk"><option value="0.12em">0.12em (today)</option><option value="0.08em">0.08em</option><option value="0.05em" selected>0.05em</option><option value="0.02em">0.02em</option></select></label>
+  <label class="ctl">small text
+    <select id="xs"><option value="11px">11px (today)</option><option value="12px" selected>12px</option></select></label>
+  <label class="ctl">text greys
+    <select id="greys"><option value="now">today</option><option value="b1" selected>brighter</option><option value="b2">brightest</option></select></label>
+  <label class="ctl">theme
+    <select id="theme"><option value="dark">dark</option><option value="light">light</option></select></label>
+  <div class="presets" id="presets"></div>
+</div>
+
+<section class="view on" id="v-ab">
+  <p class="intro">Left is the app <b>today</b>: Geist + Geist Mono, mono for almost all UI text, caps spaced 0.12em, 11px. Right is <b>your pick</b> from the bar above. Click a pairing in the bar, or pick any font in tabs 02 and 03. The cards on the canvas are shown at 100 %, 75 % and 50 % zoom, which is where small text hurts most.</p>
+  <div class="ab">
+    <div class="side"><div class="who">today <em>Geist · Geist Mono · today’s greys</em></div><div class="demo" id="d-now"></div></div>
+    <div class="side"><div class="who">pick <em id="pickname"></em></div><div class="demo" id="d-pick"></div></div>
+  </div>
+</section>
+<section class="view" id="v-sans"><p class="intro">Sans fonts, for titles, reading and (with “system bits only”) most UI text. <b>Width</b> = how wide a line of the same small UI text runs, against Geist (lower fits more). Click one to try it on tab 01.</p><div class="fonts" id="f-sans"></div></section>
+<section class="view" id="v-mono"><p class="intro">Mono fonts, for caps labels, numbers, the <b>&gt;</b> prompt, cells and keys. <b>Width</b> is against Geist Mono (lower fits more). Click one to try it on tab 01.</p><div class="fonts" id="f-mono"></div></section>
+
+<section class="view" id="v-greys"><p class="intro">The four text greys, today and brighter, in the theme picked above. The number is contrast against the page and against a piece (text needs <b>4.5</b> to read easily; <b>3</b> is the floor for big or decorative text). Today in dark, <b>dim</b> (used 175 times) is 3.9 and <b>faint</b> (129 times) 2.5.</p><div id="greytbl"></div></section>
+<script>
+const SANS = [
+  { id: 'geist', name: 'Geist', css: "'Geist'", now: true, why: 'Today. Clean and modern, but small letters are short (low x-height) and close in shape, so 11px blurs.' },
+  { id: 'inter', name: 'Inter', css: "'Inter'", why: 'Built for screens. Tall small letters and an optical-size axis that opens letters up at small sizes on its own. The safe choice.' },
+  { id: 'plex', name: 'IBM Plex Sans', css: "'IBM Plex Sans'", why: 'Engineered, slightly mechanical, clear letter shapes. Has a matching mono, so one family for both voices. Fits the terminal look.' },
+  { id: 'atk', name: 'Atkinson Hyperlegible Next', css: "'Atkinson Hyperlegible Next'", why: 'Made for low vision: every letter is hard to confuse (Il1, O0). Most readable when small, a bit more character than the others.' },
+  { id: 'mona', name: 'Mona Sans', css: "'Mona Sans'", wdth: [75, 125], why: 'GitHub’s sans. Has a width axis: at 90 % it fits more per line without looking squeezed. Pairs with Monaspace.' },
+  { id: 'instr', name: 'Instrument Sans', css: "'Instrument Sans'", wdth: [75, 100], why: 'Compact, precise, a bit editorial. Width axis down to 75 %, good for dense labels and tables.' },
+  { id: 'host', name: 'Host Grotesk', css: "'Host Grotesk'", why: 'Friendly, open grotesk with tall small letters. Warmer than Geist, still neutral.' },
+  { id: 'hanken', name: 'Hanken Grotesk', css: "'Hanken Grotesk'", why: 'Narrow-ish, clean grotesk. Fits more per line than Geist with a similar mood.' },
+]
+const MONO = [
+  { id: 'gmono', name: 'Geist Mono', css: "'Geist Mono'", now: true, why: 'Today. Wide letters with lots of room around narrow ones (i, l, .), so words fall apart, more so in spaced caps.' },
+  { id: 'jb', name: 'JetBrains Mono', css: "'JetBrains Mono'", why: 'Tall small letters and simple shapes, made for reading code for hours. Same width as Geist Mono, but much clearer at 11px.' },
+  { id: 'plexm', name: 'IBM Plex Mono', css: "'IBM Plex Mono'", why: 'The mono of Plex: typewriter-like, very technical, great caps. One family with Plex Sans.' },
+  { id: 'ios', name: 'Iosevka', css: "'Iosevka'", why: 'A narrow mono: about a sixth narrower, so far more fits per line. Tall and crisp. Keeps the terminal look while saving space.' },
+  { id: 'commit', name: 'Commit Mono', css: "'Commit Mono'", why: 'Neutral and calm; letters are balanced so a mono line reads almost like normal text. Less “gappy” than Geist Mono.' },
+  { id: 'mart', name: 'Martian Mono', css: "'Martian Mono'", wdth: [75, 112.5], why: 'Bold, retro-futurist, with a width axis: at 75–85 % it is narrow and fits a lot. The boldest match for 3D ASCII.' },
+  { id: 'atkm', name: 'Atkinson Hyperlegible Mono', css: "'Atkinson Hyperlegible Mono'", why: 'The low-vision mono: no letter mixes up with another. Very clear at tiny sizes, a bit rounder.' },
+  { id: 'gsc', name: 'Google Sans Code', css: "'Google Sans Code'", why: 'New, soft and very legible. Friendly shapes, tall small letters.' },
+  { id: 'neon', name: 'Monaspace Neon', css: "'Monaspace Neon'", why: 'GitHub’s mono family (pairs with Mona Sans). Smart spacing in editors; here simply a clear neo-grotesk mono.' },
+  { id: 'frag', name: 'Fragment Mono', css: "'Fragment Mono'", why: 'Helvetica turned mono: neutral and sharp. One weight only (no medium), so caps labels look lighter.' },
+]
+// Text greys per theme. Contrast on the page / on a piece is in the notes of tab 04.
+const GREYS = {
+  dark: {
+    now: { fg: '#e8e8e8', muted: '#9a9a9a', dim: '#6b6b6b', faint: '#4d4d4d', ph: '#3d3d3d' },
+    b1: { fg: '#ededed', muted: '#b0b0b0', dim: '#8a8a8a', faint: '#666666', ph: '#555555' },
+    b2: { fg: '#f2f2f2', muted: '#c2c2c2', dim: '#a0a0a0', faint: '#7a7a7a', ph: '#666666' },
+  },
+  light: {
+    now: { fg: '#161616', muted: '#555555', dim: '#6b6b6b', faint: '#8c8c8c', ph: '#b0b0b0' },
+    b1: { fg: '#111111', muted: '#444444', dim: '#595959', faint: '#767676', ph: '#949494' },
+    b2: { fg: '#0a0a0a', muted: '#333333', dim: '#4a4a4a', faint: '#666666', ph: '#808080' },
+  },
+}
+const PRESETS = [
+  { label: 'today', sans: 'geist', mono: 'gmono', mode: 'all', trk: '0.12em', xs: '11px', wd: 100 },
+  { label: 'A · Geist + less mono (no new font)', sans: 'geist', mono: 'gmono', mode: 'sys', trk: '0.05em', xs: '12px', wd: 100 },
+  { label: 'B · Inter + JetBrains Mono (safe)', sans: 'inter', mono: 'jb', mode: 'sys', trk: '0.05em', xs: '12px', wd: 100 },
+  { label: 'C · IBM Plex Sans + Plex Mono (one family, technical)', sans: 'plex', mono: 'plexm', mode: 'sys', trk: '0.05em', xs: '12px', wd: 100 },
+  { label: 'D · Geist + Iosevka (keep the mono look, narrower)', sans: 'geist', mono: 'ios', mode: 'all', trk: '0.05em', xs: '12px', wd: 100 },
+  { label: 'E · Atkinson Next + Atkinson Mono (most readable)', sans: 'atk', mono: 'atkm', mode: 'sys', trk: '0.05em', xs: '12px', wd: 100 },
+  { label: 'F · Mona Sans 90 % + Monaspace Neon', sans: 'mona', mono: 'neon', mode: 'sys', trk: '0.05em', xs: '12px', wd: 90 },
+  { label: 'G · Instrument Sans + Martian Mono 85 % (bold)', sans: 'instr', mono: 'mart', mode: 'sys', trk: '0.05em', xs: '12px', wd: 85 },
+]
+const $ = (s) => document.querySelector(s)
+const state = { ...PRESETS[2], greys: 'b1' }
+
+// The same bits of UI the app draws, on made-up data.
+function demoHTML() {
+  const card = (tone, kind, meta, title, facts, tags) => `
+    <div class="card" style="--tone:var(${tone})">
+      <div class="t1"><span class="caps">${kind}</span><span class="sys dim">testing +2 −1</span></div>
+      <div class="meta ui">${meta}</div>
+      <div class="title">${title}</div>
+      <div class="facts ui">${facts}</div>
+      <div>${tags.map((t) => `<span class="tagchip">#${t}</span>`).join('')}</div>
+    </div>`
+  const zoomed = (z) => `<figure><figcaption>${Math.round(z * 100)} %</figcaption>
+    <div class="zbox" style="width:${200 * z}px;height:${200 * z + 12}px">
+      <div style="transform:scale(${z});transform-origin:0 0;display:flex;flex-direction:column;gap:12px">
+        ${card('--type-competitor', 'competitor', 'Germany · Europe · 12 features', 'Lagerly: stock sync for small shops', '☐ 2/5 · 3 matched · updated 2m', ['retail', 'smb'])}
+        ${card('--type-problem', 'problem', 'for Shop owners · 4 evidence', 'Stock goes wrong when selling in two places', '☐ 0/2 · ! sources disagree', ['ops'])}
+      </div></div></figure>`
+  return `
+  <div class="grid2">
+    <div class="col">
+      <div class="crumb"><span class="caps dim">North Star</span><span class="faint">/</span><span class="read">Pazar araştırması</span><span class="dim">/</span><span class="caps"><span class="n">01</span> Rivals · plane</span></div>
+
+      <div class="prompt">
+        <div class="in sys"><span class="cy">&gt;</span> <span class="ph">type to narrow</span></div>
+        <div class="sec rule"><span class="caps dim"># pieces</span></div>
+        <div class="row hot"><span class="cy">›</span><span class="sys dim">[p]</span><span class="sys">▦</span><span class="ui">plane</span><span class="ui dim">cards, links and text</span></div>
+        <div class="row"><span></span><span class="sys dim">[m]</span><span class="sys">▦</span><span class="ui">matrix…</span><span class="ui dim">rows × columns, scored</span></div>
+        <div class="row"><span></span><span class="sys dim">[t]</span><span class="sys">▤</span><span class="ui">table…</span><span class="ui dim">cards by rules</span></div>
+        <div class="row"><span></span><span class="sys dim">[k]</span><span class="sys">▥</span><span class="ui">deck…</span><span class="ui dim">tasks or cards in columns</span></div>
+        <div class="sec rule"><span class="caps dim"># text</span></div>
+        <div class="row"><span></span><span class="sys dim">[h]</span><span class="sys">H</span><span class="ui">heading</span><span class="ui dim">a place to go to</span></div>
+        <div class="row"><span></span><span class="sys dim">[s]</span><span class="sys">▢</span><span class="ui">sticky note</span><span class="ui dim">yellow paper</span></div>
+        <div class="foot ui faint">6 of 11 · ↵ pick · esc close</div>
+      </div>
+
+      <div class="zooms">${zoomed(1)}${zoomed(0.75)}${zoomed(0.5)}</div>
+
+      <div class="deck">
+        <div class="rule"><span class="caps"><span class="n">01</span> todo</span><span class="n cnt">3</span></div>
+        <div class="task" style="--tone:var(--type-problem)"><div class="tt">Call five shop owners about double selling</div><div class="tm ui">given to Atahan · due 12 Nov · ☐ 1/4</div></div>
+        <div class="task" style="--tone:var(--type-feature)"><div class="tt">Sketch the sync settings page</div><div class="tm ui"><span class="late">overdue 2 days</span> · Elif · P1 #design</div></div>
+      </div>
+
+      <table class="tbl">
+        <tr><th class="caps">name</th><th class="caps">region</th><th class="caps">price</th><th class="caps">fit</th></tr>
+        <tr><td class="name">Lagerly</td><td class="ui">Germany</td><td class="num">€29.00</td><td class="num">4/5</td></tr>
+        <tr><td class="name">Stockwise</td><td class="ui">US · Global</td><td class="num">$49.00</td><td class="num">3/5</td></tr>
+        <tr><td class="name">Depoİşi</td><td class="ui">Türkiye</td><td class="num">₺899</td><td class="num">2/5</td></tr>
+      </table>
+
+      <p class="reading">Small shops sell the same item on their own site and on a marketplace. When one sells, the other still shows it in stock. Owners fix it by hand at night — or they don’t, and refund angry buyers. Ilgın, 31: “I lose 1–2 orders a week.”</p>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="caps" style="color:var(--type-problem)">problem</span><span class="sys dim">[×] esc</span></div>
+      <h2>Stock goes wrong when selling in two places</h2>
+      <div class="rule"><span class="caps"><span class="n">01</span> what it is</span></div>
+      <div class="field"><span class="caps dim">status</span><span class="ui">testing <span class="sys dim">+2 −1</span></span></div>
+      <div class="field"><span class="caps dim">for</span><span class="ui">Shop owners, Market sellers</span></div>
+      <div class="field"><span class="caps dim">tags</span><span><span class="tagchip">#ops</span><span class="tagchip">#retail</span></span></div>
+      <div class="rule"><span class="caps"><span class="n">02</span> what backs it</span></div>
+      <div class="linkrow"><span class="sys" style="color:var(--accent-green)">+</span><span class="ui">interview · “I lose 1–2 orders a week” <span class="dim">· 28 Oct</span></span></div>
+      <div class="linkrow"><span class="sys" style="color:var(--accent-magenta)">−</span><span class="ui">survey · 62 % never noticed <span class="dim">· 30 Oct</span></span></div>
+      <div class="rule"><span class="caps"><span class="n">03</span> links</span></div>
+      <div class="linkrow"><span class="ui dim">solved by</span><span class="ui">Inventory sync</span><span class="ui dim">· idea</span></div>
+      <div class="linkrow"><span class="ui dim">competes</span><span class="ui">Lagerly, Stockwise</span></div>
+      <div class="rule"><span class="caps"><span class="n">04</span> notes</span></div>
+      <p>Ask whether the marketplace has a stock API, or only CSV upload. If only CSV, the whole idea changes.</p>
+      <div class="set"><span class="nm ui">Workspace name</span><span class="sys dim">[edit]</span><span class="hint ui">Shown on the canvas and in invites.</span></div>
+      <div class="set"><span class="nm ui">Motion</span><span class="sys">full ▾</span><span class="hint ui">Reduced turns the build-up into a fade.</span></div>
+      <div class="sys" style="display:flex;gap:12px"><span class="cy">[add evidence]</span><span class="dim">[+ task]</span><span class="faint">[comment]</span></div>
+    </div>
+  </div>`
+}
+
+const byId = (list, id) => list.find((f) => f.id === id)
+function applyVars(el, s) {
+  const sans = byId(SANS, s.sans), mono = byId(MONO, s.mono)
+  el.style.setProperty('--f-read', `${sans.css}, sans-serif`)
+  el.style.setProperty('--f-sys', `${mono.css}, monospace`)
+  el.style.setProperty('--f-ui', s.mode === 'all' ? 'var(--f-sys)' : 'var(--f-read)')
+  el.style.setProperty('--trk', s.trk)
+  el.style.setProperty('--xs', s.xs)
+  el.style.setProperty('--sm', s.xs === '12px' ? '14px' : '13px')
+  el.style.setProperty('--wd', s.wd + '%')
+  const theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
+  const g = GREYS[theme][s.greys || 'now']
+  el.style.setProperty('--fg', g.fg); el.style.setProperty('--fg-muted', g.muted); el.style.setProperty('--fg-dim', g.dim)
+  el.style.setProperty('--fg-faint', g.faint); el.style.setProperty('--placeholder', g.ph)
+}
+
+function widthOptions() {
+  const sans = byId(SANS, state.sans), mono = byId(MONO, state.mono)
+  const has = sans.wdth || mono.wdth
+  $('#wd').innerHTML = [100, 95, 90, 85, 80, 75].map((w) => `<option value="${w}" ${w === state.wd ? 'selected' : ''}>${w} %</option>`).join('')
+  $('#wd').disabled = !has
+  $('#wd').title = has ? 'only fonts with a width axis change: ' + [sans, mono].filter((f) => f.wdth).map((f) => f.name).join(', ') : 'neither font has a width axis'
+}
+
+function render() {
+  applyVars($('#d-pick'), state)
+  $('#pickname').textContent = `${byId(SANS, state.sans).name} · ${byId(MONO, state.mono).name}${state.wd !== 100 ? ' · ' + state.wd + ' %' : ''} · ${{ now: 'today’s', b1: 'brighter', b2: 'brightest' }[state.greys]} greys`
+  $('#sans').value = state.sans; $('#mono').value = state.mono; $('#mode').value = state.mode; $('#trk').value = state.trk; $('#xs').value = state.xs; $('#greys').value = state.greys
+  widthOptions()
+  document.querySelectorAll('#presets .chipbtn').forEach((b, i) => {
+    const p = { ...PRESETS[i], greys: i === 0 ? 'now' : state.greys }
+    b.setAttribute('aria-pressed', String(['sans', 'mono', 'mode', 'trk', 'xs', 'wd'].every((k) => p[k] === state[k]) && (i !== 0 || state.greys === 'now')))
+  })
+  document.querySelectorAll('.fcard').forEach((c) => c.classList.toggle('picked', c.dataset.id === state.sans || c.dataset.id === state.mono))
+}
+
+// Width: the same UI line at 11px, measured, against today's font of its kind.
+const SAMPLE = 'drag to pan · scroll to zoom · given to Atahan · due 12 Nov · 3 matched'
+function widthOf(css, wd = 100) {
+  const s = document.createElement('span')
+  s.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:400 11px ${css};font-stretch:${wd}%`
+  s.textContent = SAMPLE
+  document.body.appendChild(s)
+  const w = s.getBoundingClientRect().width
+  s.remove()
+  return w
+}
+
+function fontCards(list, kind) {
+  const base = widthOf(list[0].css)
+  return list.map((f) => {
+    const w = widthOf(f.css)
+    const pct = Math.round((w / base) * 100)
+    const narrow = f.wdth ? Math.round((widthOf(f.css, Math.max(f.wdth[0], 80)) / base) * 100) : null
+    const cls = pct > 102 ? 'w wide' : 'w'
+    return `<div class="fcard" data-id="${f.id}" data-kind="${kind}" style="font-family:${f.css}, ${kind === 'sans' ? 'sans-serif' : 'monospace'}">
+      <div class="fh"><b>${f.name}${f.now ? ' · today' : ''}</b><span class="${cls}">width ${pct} %${narrow ? ` · ${narrow} % at ${Math.max(f.wdth[0], 80)} %` : ''}</span></div>
+      <div class="why">${f.why}</div>
+      <div class="spec">
+        <div class="big">Stock goes wrong in two places</div>
+        <div class="glyphs">Il1| O0o 5S 8B rn m ı İ ş ğ ç ö ü €₺ → ☐ ▦</div>
+        <div class="s13"><span class="size">13</span>Small shops sell the same item on their own site and a marketplace.</div>
+        <div class="s11"><span class="size">11</span>given to Atahan · due 12 Nov · ☐ 1/4 · 3 matched · updated 2m</div>
+        <div class="s11 lab" style="letter-spacing:.12em"><span class="size">11 caps .12</span>01 what backs it ── competitor · plane</div>
+        <div class="s11 lab" style="letter-spacing:.05em"><span class="size">11 caps .05</span>01 what backs it ── competitor · plane</div>
+        <div class="s9"><span class="size">9</span>Germany · Europe · 12 features · testing +2 −1 · Pazar araştırması</div>
+        <div class="s9 lab" style="font-size:7px;letter-spacing:.08em"><span class="size">7 caps</span>competitor · #retail #smb · Atahan · 2m</div>
+      </div>
+    </div>`
+  }).join('')
+}
+
+const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] }
+const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) }
+function greyTable() {
+  const theme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
+  const bgs = theme === 'light' ? ['#f5f5f5', '#ffffff'] : ['#000000', '#121315']
+  const names = { fg: 'fg · text', muted: 'muted · hints', dim: 'dim · meta, labels', faint: 'faint · quiet bits', ph: 'placeholder' }
+  const cols = ['now', 'b1', 'b2']
+  const cell = (c, bg) => { const r = contrast(c, bg); return `<span style="color:${r >= 4.5 ? 'var(--accent-green)' : r >= 3 ? 'var(--accent-yellow)' : 'var(--accent-magenta)'}">${r.toFixed(1)}</span>` }
+  $('#greytbl').innerHTML = `<div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:16px">${cols.map((k) => `
+    <div class="side"><div class="who">${{ now: 'today', b1: 'brighter', b2: 'brightest' }[k]}</div>
+    ${bgs.map((bg, i) => `<div style="background:${bg};padding:12px;margin-bottom:8px;border:1px solid var(--line)"><div style="font:10px 'Geist Mono';letter-spacing:.1em;color:${GREYS[theme][k].dim};margin-bottom:8px">ON ${i ? 'A PIECE' : 'THE PAGE'}</div>
+      ${Object.entries(GREYS[theme][k]).map(([n, c]) => `<div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;font:12px/1.9 'Geist Mono'"><span style="color:${c}">${names[n]}: Stock goes wrong when selling in two places</span><span style="color:${GREYS[theme][k].dim}">${c}</span>${cell(c, bg)}</div>`).join('')}
+    </div>`).join('')}</div>`).join('')}</div>`
+}
+
+function init() {
+  $('#sans').innerHTML = SANS.map((f) => `<option value="${f.id}">${f.name}</option>`).join('')
+  $('#mono').innerHTML = MONO.map((f) => `<option value="${f.id}">${f.name}</option>`).join('')
+  $('#presets').innerHTML = PRESETS.map((p) => `<button class="chipbtn">${p.label}</button>`).join('')
+  $('#d-now').innerHTML = demoHTML()
+  $('#d-pick').innerHTML = demoHTML()
+  applyVars($('#d-now'), PRESETS[0])
+
+  document.querySelectorAll('#presets .chipbtn').forEach((b, i) => b.onclick = () => { const g = state.greys; Object.assign(state, PRESETS[i]); state.greys = i === 0 ? 'now' : g; render() })
+  $('#sans').onchange = (e) => { state.sans = e.target.value; render() }
+  $('#mono').onchange = (e) => { state.mono = e.target.value; render() }
+  $('#mode').onchange = (e) => { state.mode = e.target.value; render() }
+  $('#trk').onchange = (e) => { state.trk = e.target.value; render() }
+  $('#xs').onchange = (e) => { state.xs = e.target.value; render() }
+  $('#wd').onchange = (e) => { state.wd = +e.target.value; render() }
+  $('#greys').onchange = (e) => { state.greys = e.target.value; render() }
+  $('#theme').onchange = (e) => {
+    if (e.target.value === 'light') document.documentElement.dataset.theme = 'light'
+    else delete document.documentElement.dataset.theme
+    applyVars($('#d-now'), PRESETS[0])
+    render()
+    greyTable()
+  }
+  document.querySelectorAll('.tab').forEach((t) => t.onclick = () => {
+    document.querySelectorAll('.tab').forEach((x) => x.setAttribute('aria-pressed', String(x === t)))
+    document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === 'v-' + t.dataset.view))
+  })
+
+  document.fonts.ready.then(() => {
+    // Make sure every face is in before measuring widths.
+    const loads = [...SANS, ...MONO].flatMap((f) => [document.fonts.load(`400 11px ${f.css}`, SAMPLE), document.fonts.load(`500 11px ${f.css}`, 'AB')])
+    return Promise.all(loads)
+  }).then(() => {
+    $('#f-sans').innerHTML = fontCards(SANS, 'sans')
+    $('#f-mono').innerHTML = fontCards(MONO, 'mono')
+    document.querySelectorAll('.fcard').forEach((c) => c.onclick = () => {
+      state[c.dataset.kind === 'sans' ? 'sans' : 'mono'] = c.dataset.id
+      render()
+      document.querySelector('.tab[data-view="ab"]').click()
+      window.scrollTo(0, 0)
+    })
+    render()
+    greyTable()
+    window.__ready = true
+  })
+  render()
+}
+init()
+</script>
+</body>
+</html>

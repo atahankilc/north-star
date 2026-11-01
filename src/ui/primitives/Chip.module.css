@@ -60,6 +60,7 @@
   background: var(--bg);
   color: var(--chip-tone, var(--fg-dim));
   letter-spacing: var(--track-label);
+  font-family: var(--font-mono);
   text-transform: uppercase;
 }
 

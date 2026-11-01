@@ -53,10 +53,10 @@
   margin: 0 0 var(--space-2);
 }
 
-/* The table: mono, solid under its text. */
+/* The table: solid under its text; names in the reading font, its labels mono (D-337). */
 .table {
   background: var(--bg);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-sm);
 }
 
@@ -185,7 +185,7 @@
   padding: var(--space-3);
   border: var(--line-w) solid var(--line);
   background: var(--card-behind);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
 }
 
 .layer[data-live='true'] .sheet {

@@ -74,9 +74,12 @@ feature comes back as a piece, and check them with the user then.
   `Loading` line (D-083, D-098).
 
 ## Design language (DESIGN.md has the spec)
-- 3D ASCII, mostly black and white with vivid accents (D-004); Geist for titles and long reading, Geist Mono for the
-  rest, self-hosted (D-013, D-093). WebGL only behind; readable or editable text is DOM, never under the ASCII effect
-  (D-009, D-019).
+- 3D ASCII, mostly black and white with vivid accents (D-004). WebGL only behind; readable or editable text is DOM, never
+  under the ASCII effect (D-009, D-019).
+- Fonts (D-337): Inter (`--font-display`) is the page's default for reading and the UI; JetBrains Mono (`--font-mono`)
+  only on the system's bits (caps labels, numbers, `[verb]`, keys, the prompt's marks, cells, consoles, docks, tags,
+  stickies), set on the bit, never on a container; self-hosted. `--text-xs` 12, `--text-sm` 14, caps tracked 0.05em.
+  Text greys: dim, muted, fg ≥ 4.5:1 on the page and on a piece, both themes; faint only for quiet marks.
 - Tokens only, no raw colours, sizes or tracking (D-069, D-093, D-097); every CSS value a token from one set of short
   scales, consistency first (off-scale snaps), screen `--text-*` vs the world's `--w-*`, `npm run check:tokens` (CSS and
   TS/TSX) at 0 in CI (D-325, docs/specs/tokens.md); constants that aren't tokens by kind in one module each:
@@ -108,7 +111,7 @@ feature comes back as a piece, and check them with the user then.
   - Resize (D-273): cyan handles on the ring, only when selected (paragraph, sticky, title: the right bar; section:
     right, bottom, corner; a piece in edit mode: every corner and edge; a table column: its head's edge); the moving
     edges lit and the size shown; pieces and sections move at 0.8 with landing L's.
-  - Names and lines (D-266, D-276, D-277): two voices (system mono caps, user Geist); numbers magenta (a piece name's
+  - Names and lines (D-266, D-276, D-277): two voices (system mono caps, user Inter); numbers magenta (a piece name's
     leading number, kanban columns, panel sections); containers edged, the name cut in (16 lead, 8 clear), held things
     banded; text's shade line by line (`src/ui/primitives/Ink.tsx`); lines: straight holds, fading opens, dashed separates rows, a
     magenta lead starts something numbered.
@@ -166,7 +169,7 @@ feature comes back as a piece, and check them with the user then.
   reading order; typed, matches grouped by space (`here`, Tab `everywhere`) with a live preview of where you'll land.
   Enter or a double-click goes: it glides there, into a plane's focus first.
 - Right panel (D-219): every panel on the right is a terminal column flush with its space's right edge, 400 px, full
-  height, magenta corner marks, kind + `[×] esc`, a Geist title, `01 NAME ──` sections, a `[verb]` foot; cell by cell.
+  height, magenta corner marks, kind + `[×] esc`, an Inter title, `01 NAME ──` sections, a `[verb]` foot; cell by cell.
 
 ## Cards and links on planes
 - Plane details (D-291, D-294): a card's face is `--card-tint` of its type's colour (16 %, light 9 %), on kanbans and a
@@ -174,7 +177,7 @@ feature comes back as a piece, and check them with the user then.
   with what it holds as one, only its landing L's shown; text's L's on its edges, a heading's or paragraph's landing
   rounded up to the grid. Inside a tinted face the greys and the type's colour lean to the ink, every line ≥ 4.5 (D-295).
 - Cards (D-187, D-205): in their own collections with `pieceId`, x/y in plane px, 200 × 100 (8 × 4 marks). Inside: type
-  edge and label, status/regions/priority with evidence cells, Geist title ≤ 3 lines, facts, tag chips; smaller on
+  edge and label, status/regions/priority with evidence cells, Inter title ≤ 3 lines, facts, tag chips; smaller on
   screen, the title alone in whole words, then bars (D-152, D-153). On the canvas a plane shows a fitted picture; in
   focus click selects, drag moves (snapped, alt free), Delete removes. Deleting a plane takes its cards, links and text (cards also on another plane stay there, D-282).
 - Made and named (D-250): `+` in focus makes a card at the view's middle with its panel open for the title (never typed

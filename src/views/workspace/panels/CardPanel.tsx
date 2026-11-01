@@ -1125,7 +1125,7 @@ function TagsSection({ n, card, editor }: P) {
   )
 }
 
-// Notes: Geist, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
+// Notes: Inter, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
 function NotesSection({ n, card, editor }: P) {
   const { wid } = useWs()
   const { draft, setDraft, commit } = useCommit(card.notes ?? '', (v) => void updateCard(wid, card, { notes: v.trim() ? v : undefined }, 'notes of'))
