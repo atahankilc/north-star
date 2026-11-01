@@ -6086,7 +6086,7 @@ several planes, a main plane with detail planes beside it, sections), each only 
   skill-restructure-04 judged by it. Checked: 906 unit tests (agentLook.test.ts new), stub evals 114 tasks 0 failed,
   every wrong script failing; the Rivals pictures before and after looked at by eye. Found by it: place_on's landing
   avoided cards but not text (a card on a sticky, bug 6), fixed with the plane's text as obstacles.
-- *Not yet:* the user's planes as reference pictures (which ones is the user's call, Q-032); a run with a real model.
+- *Not yet:* a run with a real model. The user's planes as reference pictures: set aside by the user (2026-11-01), the question about them dropped.
 - *Corrected (2026-11-01, the user):* a plane has no edge for its content: the app fits what's on it into the plane's
   window, on the canvas (D-187) and in focus (D-186), so nothing is "outside the plane" and a plane never needs to
   grow (a question about growing it was withdrawn). `look` no longer draws the plane's box nor counts cards outside

@@ -39,9 +39,3 @@ provider; (2) subscriptions, checked 2026-10-31: Claude's sign-in is not allowed
 the evals, not by the provider: every provider and model runs the same suite (`--model anthropic:<id>`), three
 times, with `fit` in models.ts written from it; nothing ships as `works well` without that run. After 25 and the
 baseline.
-
-### Q-032 · soon · Which planes are the agent's examples of a good layout (D-327)
-D-327 wants taste from examples, not rules: planes the user made or liked, as reference pictures (`look` draws them)
-with a line on why each works, read by the agent when it organises. The user hasn't picked them. **Recommendation:**
-the user names two or three planes (the hand import of the Founder Discovery Study was one candidate); they are kept as
-pictures plus a sentence each in the agent notes or a document the agent reads, and an eval checks a run against them.
