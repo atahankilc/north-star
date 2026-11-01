@@ -51,7 +51,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   2. The baseline (three runs, two models) before any prompt change is measured; agent-bugs 25 (with 1 and 5)
      fixed 2026-11-01, pushed.
   3. Done and pushed 2026-11-01: 28, 27's leftover, bugs 7, 3, 17 (D-333), 2/22, 9, 18, 16, 26, 11, 12 (code), 6, 10.
-  4. Before the run, done 2026-11-01 (not pushed): 15's and 21's code parts and 25's leftover (state-history.md);
+  4. Before the run, done and pushed 2026-11-01: 15's and 21's code parts and 25's leftover (state-history.md);
      21's checks found that a plan skill's guide never reached its `go` turn (fixed). Left for the model: the prompt
      parts of 15 and 21, 19, 20, 23, 24, 12's step 2.
   5. The local harness stays an idea (Q-031).

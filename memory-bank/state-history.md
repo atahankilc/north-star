@@ -1107,4 +1107,4 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   what's left into the preview's warnings. Found on the way: a plan skill's guide reached only its plan turn, so the
   `go` turn never saw its "on go" steps (OpenAI; Claude's append-only history kept it); now sent again after a plan skill.
 - Verified: tsc, vitest agent* 165 (agentSkillChecks new), stub evals 116 tasks 0 failed (prioritize-03's reference
-  got its reply to the check), `--wrong` 116 failed. Not pushed.
+  got its reply to the check), `--wrong` 116 failed. Pushed 2026-11-01.
