@@ -35,7 +35,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - **The agent, where it stands (2026-11-01; D-327, D-328, D-329 built and pushed):**
   1. First real run, gpt-5.6-terra ×3 (2026-11-01, report 2026-11-01T10-58-25-484Z): pass@1 66 %, pass^3 52 %, $15.20;
      not a baseline: harness bugs 29, 30 and build-02 (D-333) fixed after it, with D-328's preview picked at go
-     (committed, not pushed). Next: terra ×3 again = the baseline, then gpt-5.4-mini, claude-sonnet-5-5,
+     (pushed 2026-11-01). Next: terra ×3 again = the baseline, then gpt-5.4-mini, claude-sonnet-5-5,
      claude-haiku-5-5 (×3, judge terra); then the prompt bugs measured one by one (19, 20, 23, 15, 21's methods, 24).
   2. In the app: a big job (`/restructure Segments`), and the two go buttons (not looked at in a browser yet).
   3. Code left: bug 31 (an arrange of new cards is its own preview item); the pick saved with the chat (rules).
