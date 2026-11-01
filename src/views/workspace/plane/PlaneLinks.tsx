@@ -17,6 +17,7 @@ import styles from './PlaneLinks.module.css'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
+import { Console } from '../../../ui/patterns/Console'
 import { Field } from '../../../ui/primitives/Field'
 
 type LinkGroup = 'solves' | 'part' | 'competes' | 'clashes' | 'draws' | 'depends' | 'plain' | 'for'
@@ -235,7 +236,7 @@ function KindOption({ kind }: { kind: string }) {
   )
 }
 
-// Under a selected link, at the screen's size (D-108, D-154): its kind, its own label, turn it round, remove. A link just
+// Under a selected link, at the screen's size (D-108, D-154), the Console named `link` (D-347): its kind, its own label, turn it round, remove. A link just
 // drawn opens it with the cursor in the label.
 function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
   const { wid } = useWs()
@@ -254,10 +255,12 @@ function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
   }
   return (
     <div className={styles.barAt} data-screen-sized style={{ transform: `scale(${1 / zoom})` }}>
-      <div
+      <Console
+        at="under"
+        fill={false}
+        name="link"
         className={styles.bar}
         style={{ ['--tone' as string]: linkTone(edge.kind) }}
-        role="toolbar"
         aria-label="Link"
         data-learn="link-bar"
         onPointerDown={(e) => e.stopPropagation()}
@@ -308,7 +311,7 @@ function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
             × remove
           </Button>
         </ButtonGroup>
-      </div>
+      </Console>
     </div>
   )
 }

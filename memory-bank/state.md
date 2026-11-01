@@ -68,6 +68,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - D-344 (committed): buttons and controls as cells. Open: filters as always-open toggle strips (asked, not built).
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Next: Q-033 (dark
   backdrop faint on some screens; ask the user which screens, then (a) + (b)).
+- Consoles (D-347): one `Console`, every console/dock/bar on it, committed (not pushed); left: a look in the app.
 - D-346 (2026-11-01, committed): backdrop 70 % in workspaces (sceneClock.ts, Backdrop.tsx, App.tsx); value checked headless, the user not yet.
 - D-348 (2026-11-01, pushed): Settings → display: hud size and background strength; the user checked it in the app.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).

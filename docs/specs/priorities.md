@@ -96,7 +96,7 @@ weakest-of rule until P3. The dock's task filter and lanes are hidden on a kanba
 Built (D-269): for a kanban holding cards, `rowField` (any card field but the columns'), `no value` the top row; impact
 runs high → low down the rows (low → high across). A card shows only when both fields apply to it. A row is the tasks'
 lane head (`▾ IMPACT HIGH ──── 2`), folds (yours, per browser). Dropping in a box sets both fields, one undo step; rows
-and boxes that don't take the held card go faint. The dock's `[lanes ▾]` reads `[rows ▾]` on a card kanban; the setup's
+and boxes that don't take the held card go faint. The dock's `lanes` drawer reads `rows` on a card kanban (D-347); the setup's
 columns tab has `rows from`, and a new `boxes` tab names boxes in a small grid (a name ≤ 40, and `·` plain, `wash` green,
 `warn` magenta; ≤ 40 names). The wizard's last step is `columns · rows`, its preview the grid. Tasks keep their lanes by
 who / card (D-258) and get no box names. The held card keeps its room while dragged (else the rows under the pointer

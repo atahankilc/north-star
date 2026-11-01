@@ -231,9 +231,8 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
   )
 }
 
-// One document open beside the list: a page that scrolls, its sections, its own zoom and dock.
-// A narrow one (side by side) says each action with a mark, its words in the tip.
-const NARROW = 560
+// One document open beside the list: a page that scrolls, its sections, its own zoom and dock. A narrow one (side by
+// side) keeps its words: its dock takes the pane's whole foot and wraps (D-347).
 // How narrow one may be dragged.
 const PANE_MIN = 280
 
@@ -255,7 +254,6 @@ function DocPane({ id, list, box, first, focus }: PaneProps) {
   const editor = !!user && ['owner', 'editor'].includes(workspace.roles[user.id] ?? '')
   const mine = d.uid === user?.id
   const mayDelete = mine || (d.shared && workspace.roles[user?.id ?? ''] === 'owner')
-  const narrow = box.w < NARROW
 
   // The wheel scrolls it as a page, kept from the list's view; ctrl (or a pinch) zooms its text.
   useEffect(() => {
@@ -283,19 +281,19 @@ function DocPane({ id, list, box, first, focus }: PaneProps) {
         </div>
       </div>
       {/* Its title is on the page already: the dock only says what it is, so it fits a narrow part. */}
-      <FocusDock label={focus ? 'Focus' : 'document beside'} name={narrow ? undefined : <span className={beside.kind}>document</span>}>
+      <FocusDock label={focus ? 'Focus' : 'document beside'} name={<span className={beside.kind}>document</span>}>
         {/* The list put away: its button here, in the first one's dock (D-232). */}
-        {!focus && hidden && first && <DockAction label={narrow ? '≡' : '≡ list'} title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })} />}
-        {mine && d.id !== 'agent-notes' && <DockAction label={narrow ? '◐' : d.shared ? 'unshare' : 'share'} title={d.shared ? 'unshare: only you see it again' : 'share: everyone in the workspace sees it'} onClick={() => shareOrAsk(wid, d, pieces)} />}
-        {editor && list && <DockAction label={narrow ? '↗' : 'place ↗'} title="place: put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
-        <DockAction label={narrow ? '↓' : 'download'} title="download: save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
-        {mayDelete && <DockAction label={narrow ? '⌫' : 'delete'} title="delete the document (asks first)" onClick={() => useDocUi.setState({ deleting: d.id })} />}
+        {!focus && hidden && first && <DockAction label="≡ list" title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })} />}
+        {mine && d.id !== 'agent-notes' && <DockAction label={d.shared ? 'unshare' : 'share'} title={d.shared ? 'unshare: only you see it again' : 'share: everyone in the workspace sees it'} onClick={() => shareOrAsk(wid, d, pieces)} />}
+        {editor && list && <DockAction label="place ↗" title="place: put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
+        <DockAction label="download" title="download: save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
+        {mayDelete && <DockAction label="delete" title="delete the document (asks first)" onClick={() => useDocUi.setState({ deleting: d.id })} />}
         <DocZoom reader={id} />
         {/* With the list put away Escape goes straight to the canvas: no `esc` on a close then. */}
         {focus ? (
           <DockAction label="unfocus" main title="back to the canvas" onClick={focus.onUnfocus} />
         ) : (
-          <DockAction label={narrow ? '×' : 'close'} main title="close it" onClick={() => closeDoc(id)} />
+          <DockAction label="close" main title="close it" onClick={() => closeDoc(id)} />
         )}
       </FocusDock>
     </div>

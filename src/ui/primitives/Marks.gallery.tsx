@@ -58,7 +58,7 @@ export default example({
     resize: () =>
       row([
         ['handles', <Thing w={320} h={200} label="plane in edit mode"><Marks tier="l" selected handles={EVERY_HANDLE} /></Thing>],
-        ['resizing se', <Thing w={320} h={200} label="plane"><Marks tier="l" selected handles={EVERY_HANDLE} resizing="se" readout="960 × 600" /></Thing>],
+        ['resizing se', <Thing w={320} h={200} label="plane"><Marks tier="l" selected handles={EVERY_HANDLE} resizing="se" /></Thing>],
       ]),
     'landing and box': () =>
       row([

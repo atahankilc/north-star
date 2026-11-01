@@ -284,33 +284,6 @@
 .edge[data-e='s'] { left: calc(-1 * var(--r)); right: calc(-1 * var(--r)); bottom: calc(-1 * var(--r)); height: calc(var(--line-w) * var(--zs, 1)); }
 .edge[data-e='n'] { left: calc(-1 * var(--r)); right: calc(-1 * var(--r)); top: calc(-1 * var(--r)); height: calc(var(--line-w) * var(--zs, 1)); }
 
-.readout {
-  position: absolute;
-  padding: 0 calc(var(--space-1) * var(--zs, 1));
-  background: var(--accent-cyan);
-  color: var(--on-accent);
-  font-family: var(--font-mono);
-  font-size: calc(var(--text-xs) * var(--zs, 1));
-  font-style: normal;
-  font-weight: var(--weight-regular);
-  line-height: var(--lh-body);
-  letter-spacing: normal;
-  text-transform: none;
-  white-space: nowrap;
-}
-
-.readout[data-at='right'] {
-  top: 50%;
-  left: calc(100% + var(--r) + var(--space-2) * var(--zs, 1));
-  transform: translateY(-50%);
-}
-
-/* Height too: beside the bottom-right corner, clear of what hangs under the thing (a text's bar, a console). */
-.readout[data-at='below'] {
-  bottom: calc(-1 * var(--r));
-  left: calc(100% + var(--r) + var(--space-2) * var(--zs, 1));
-}
-
 .handles[data-reduced='true'] .handle,
 .handles[data-reduced='true'] .handle::after {
   transition: none;

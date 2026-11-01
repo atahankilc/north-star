@@ -289,11 +289,11 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'piece-console', v: 1, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-264',
+    id: 'piece-console', v: 2, format: 'lesson', roles: ALL, area: 'canvas', since: 'D-264, D-347',
     // Not the edit-mode console (a piece just made): its words are about the console shown on pointing.
     trigger: [{ event: 'console-shown', when: { editing: false } }], doneWhen: [{ event: 'focus-in' }], anchor: 'console',
     pages: [
-      { title: 'Every piece has a console', body: 'Point at a piece and its console appears: go inside, edit, link it, see its comments.', scene: 'console-appear' },
+      { title: 'Every piece has a console', body: 'Point at a piece and its console appears on its bottom edge: go inside, edit, link it, see its comments.', scene: 'console-appear' },
       { title: 'Go inside with focus', body: 'Press `focus` or double-click. Inside, the piece is yours to work in; `esc` comes back.', scene: 'focus-ink' },
     ],
   },
@@ -421,7 +421,7 @@ export const LESSONS: readonly Lesson[] = [
     pages: [{ title: 'Parts fold inside', body: 'A feature can hold parts. `−` folds them into the card as a tree.', scene: 'parts' }],
   },
   {
-    id: 'plane-filter', v: 1, format: 'lesson', roles: ALL, area: 'planes', since: 'D-233, D-308',
+    id: 'plane-filter', v: 2, format: 'lesson', roles: ALL, area: 'planes', since: 'D-233, D-308, D-347',
     trigger: [{ event: 'filter-open', when: { kind: 'plane' } }], anchor: 'filter-strip',
     pages: [{ title: 'Filters pass', body: 'Show only some types, one customer, a tag or a region. Leaving the plane clears it.', scene: 'plane-filter' }],
   },
@@ -565,7 +565,7 @@ export const LESSONS: readonly Lesson[] = [
     line: 'no tasks yet: draw across days to plan one',
   },
   {
-    id: 'deck-filter', v: 1, format: 'lesson', roles: ALL, area: 'decks', since: 'D-256, D-308',
+    id: 'deck-filter', v: 2, format: 'lesson', roles: ALL, area: 'decks', since: 'D-256, D-308, D-347',
     trigger: [{ event: 'filter-open', when: { kind: 'kanban' } }], anchor: 'filter-strip',
     pages: [{ title: 'Only some tasks', body: 'Given to, due, for a card, a label. It lasts while the deck is open.', scene: 'deck-filter' }],
   },

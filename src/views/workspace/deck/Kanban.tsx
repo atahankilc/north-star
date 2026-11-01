@@ -46,7 +46,7 @@ import type { Card } from '../../../data/cards'
 import { useWs } from '../canvas/context'
 import { alikeProps } from '../canvas/kept'
 import { DockAction } from '../canvas/FocusDock'
-import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
+import { DrawerPick } from '../../../ui/patterns/Console'
 import { loadFolds, saveFolds, taskRows, type Lane } from '../table/rows'
 import { setPresenceDrag } from '../../../data/presence'
 import { PeerTaskDrags, usePeersOn } from '../canvas/collab'
@@ -716,24 +716,36 @@ export function LaneHead({ lane, count, folded, onFold, onPress }: { lane: Lane;
 // Its lanes, in its dock (D-258): none, by who a task is given to, by the card it's for. Shared; editors choose.
 export function KanbanLanes({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const { wid } = useWs()
-  // Holding cards (D-269): rows by another of their fields.
+  // Holding cards (D-269): rows by another of their fields. A drawer of the dock (D-347).
   if (kanbanOf(piece).holds === 'cards') {
     const setup = kanbanOf(piece)
     const row = rowFieldOf(setup)
     const fields = CARD_FIELDS.filter((f) => f !== (setup.colField ?? 'status'))
-    const cardItems: MenuEntry[] = [
-      { key: 'none', label: 'no rows', checked: !row, onSelect: () => editor && row && void setKanbanSetup(wid, piece.id, { rowField: undefined }, 'no rows on a deck') },
-      ...fields.map((f) => ({ key: f, label: `by ${FIELD_NAME[f]}`, checked: row === f, onSelect: () => editor && row !== f && void setKanbanSetup(wid, piece.id, { rowField: f }, `a deck’s rows by ${FIELD_NAME[f]}`) })),
-    ]
-    return <Menu label="rows" up plain summary={row ? FIELD_NAME[row] : 'none'} active={!!row} items={cardItems} ariaLabel="Rows" noun="fields" />
+    return (
+      <DrawerPick
+        id={`rows:${piece.id}`}
+        label="rows"
+        title="its rows: by another of the cards' fields"
+        disabled={!editor}
+        options={[{ value: '', label: 'none' }, ...fields.map((f) => ({ value: f as string, label: FIELD_NAME[f] }))]}
+        value={row ?? ''}
+        onPick={(f) => f !== (row ?? '') && void setKanbanSetup(wid, piece.id, { rowField: (f || undefined) as typeof row }, f ? `a deck’s rows by ${FIELD_NAME[f as NonNullable<typeof row>]}` : 'no rows on a deck')}
+      />
+    )
   }
   const rows = kanbanOf(piece).rows
   const NAME: Record<KanbanRows, string> = { assignee: 'given to', card: 'card' }
-  const items: MenuEntry[] = [
-    { key: 'none', label: 'no lanes', checked: !rows, onSelect: () => editor && rows && void setKanbanRows(wid, piece.id, undefined) },
-    ...KANBAN_ROWS.map((r) => ({ key: r, label: `by ${NAME[r]}`, checked: rows === r, onSelect: () => editor && rows !== r && void setKanbanRows(wid, piece.id, r) })),
-  ]
-  return <Menu label="lanes" up plain summary={rows ? NAME[rows] : 'none'} active={!!rows} items={items} ariaLabel="Lanes" noun="ways" />
+  return (
+    <DrawerPick
+      id={`lanes:${piece.id}`}
+      label="lanes"
+      title="its lanes: by who it's given to, or by card"
+      disabled={!editor}
+      options={[{ value: '', label: 'none' }, ...KANBAN_ROWS.map((r) => ({ value: r as string, label: NAME[r] }))]}
+      value={rows ?? ''}
+      onPick={(r) => r !== (rows ?? '') && void setKanbanRows(wid, piece.id, (r || undefined) as KanbanRows | undefined)}
+    />
+  )
 }
 
 // A task with the place a held one would land just above it (`slot`: its height, 0 none). Memoised on what it shows

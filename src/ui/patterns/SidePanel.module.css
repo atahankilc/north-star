@@ -17,7 +17,17 @@
   cursor: default;
 }
 
-/* Magenta marks on its left corners, as on a plane's console and the focus dock. */
+/* Marks on its left corners, as on every console (D-347): faint, cyan while the pointer or the keyboard is in it. Its
+   edge line stays: a full-height column on the page's black needs it. */
+.panel {
+  --mk: var(--fg-faint);
+}
+
+.panel:hover,
+.panel:focus-within {
+  --mk: var(--accent-cyan);
+}
+
 .panel::before,
 .panel::after {
   content: '';
@@ -25,18 +35,18 @@
   left: calc(-1 * var(--line-w));
   width: var(--corner-mark);
   height: var(--corner-mark);
-  border-left: var(--line-w) solid var(--accent-magenta);
+  border-left: var(--line-w) solid var(--mk);
   pointer-events: none;
 }
 
 .panel::before {
   top: 0;
-  border-top: var(--line-w) solid var(--accent-magenta);
+  border-top: var(--line-w) solid var(--mk);
 }
 
 .panel::after {
   bottom: 0;
-  border-bottom: var(--line-w) solid var(--accent-magenta);
+  border-bottom: var(--line-w) solid var(--mk);
 }
 
 .top {

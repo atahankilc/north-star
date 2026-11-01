@@ -23,3 +23,7 @@ export const AUTOSAVE_MS = 500
 
 // Untouched this long (ms), someone is shown as away to the others (D-331); a hidden tab is away at once.
 export const AWAY_AFTER_MS = 5 * 60_000
+
+// A console past this share of the width it hangs on takes the whole edge and wraps, never shrinking or hiding a tool
+// (D-347, the user: "belki console yer yoksa tam alan kaplayabilir").
+export const CONSOLE_FILL = 0.7

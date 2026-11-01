@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consoles · options</title>
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/inter/opsz.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/jetbrains-mono/index.css">
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="preview.css">
+<link rel="stylesheet" href="options.css">
+</head>
+<body>
+<!-- The preview's own bar. Not part of any design. -->
+<header class="bar">
+  <nav class="tabs" id="tabs"></nav>
+  <span class="sp"></span>
+  <span class="ctl">THEME
+    <button data-theme-set="dark" aria-pressed="true">dark</button>
+    <button data-theme-set="light">light</button>
+  </span>
+  <span class="ctl">CONSOLES
+    <button data-show="always">always</button>
+    <button data-show="hover" aria-pressed="true">on hover ★</button>
+  </span>
+  <span class="ctl">CORNERS
+    <button data-corner="l">pink L</button>
+    <button data-corner="band">kind band</button>
+    <button data-corner="cyan">cyan L</button>
+    <button data-corner="marks" aria-pressed="true">marks ★</button>
+    <button data-corner="lead">lead</button>
+    <button data-corner="none">none</button>
+  </span>
+  <button class="ctlBtn" id="notesBtn" aria-pressed="true">notes</button>
+</header>
+<aside class="notes" id="notes"></aside>
+<main id="stage" class="stage"></main>
+<script src="preview.js"></script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+/* Every console, dock and bar (src/ui/patterns/Console.tsx, D-347). Sizes times `--cs`: 1 on the screen, a piece's
+   factor inside the zoomed canvas (D-264). Its own look in `:where()`, so a caller's class (a bar's place) always wins
+   (D-334). */
+:where(.console) {
+  /* Its marks' colour: faint at rest, cyan while pointed at or in edit mode; `--mkt`/`--mkb` its top and bottom pair. */
+  --mk: var(--fg-faint);
+  --mkt: var(--mk);
+  --mkb: var(--mk);
+  --mark-len: calc(var(--corner-mark) * var(--cs, 1));
+  --mark-w: calc(var(--line-w) * var(--cs, 1));
+  /* Its ButtonGroups' seam, scaled like everything in it: 1 px on the screen at any zoom (D-344). */
+  --seam: calc(var(--line-w) * var(--cs, 1));
+
+  position: absolute;
+  z-index: var(--z-2);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space-2) * var(--cs, 1));
+  padding: calc(var(--space-1) * var(--cs, 1));
+  background: var(--bg);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: calc(var(--text-xs) * var(--cs, 1));
+  line-height: calc(var(--space-4) * var(--cs, 1));
+  /* Its own width, never squeezed by where it starts (a dock from the middle has half the screen to its right). */
+  width: max-content;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.console:hover,
+.console:focus-within,
+.console[data-editing] {
+  --mk: var(--accent-cyan);
+}
+
+/* Its buttons' text grows with it (their cell follows, 2em at least). */
+.console :is(button, [role='radio']) {
+  font-size: inherit;
+}
+
+.console svg {
+  width: 1em;
+  height: 1em;
+}
+
+/* The L's: on its four corners, a hair outside them. */
+.console::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--space-1) * var(--cs, 1));
+  pointer-events: none;
+  background:
+    linear-gradient(var(--mkt), var(--mkt)) left top / var(--mark-len) var(--mark-w) no-repeat,
+    linear-gradient(var(--mkt), var(--mkt)) left top / var(--mark-w) var(--mark-len) no-repeat,
+    linear-gradient(var(--mkt), var(--mkt)) right top / var(--mark-len) var(--mark-w) no-repeat,
+    linear-gradient(var(--mkt), var(--mkt)) right top / var(--mark-w) var(--mark-len) no-repeat,
+    linear-gradient(var(--mkb), var(--mkb)) left bottom / var(--mark-len) var(--mark-w) no-repeat,
+    linear-gradient(var(--mkb), var(--mkb)) left bottom / var(--mark-w) var(--mark-len) no-repeat,
+    linear-gradient(var(--mkb), var(--mkb)) right bottom / var(--mark-len) var(--mark-w) no-repeat,
+    linear-gradient(var(--mkb), var(--mkb)) right bottom / var(--mark-w) var(--mark-len) no-repeat;
+}
+
+/* Cut into a piece's bottom edge, half in, half out, near its right corner. */
+.console[data-at='edge'] {
+  right: calc(var(--space-4) * var(--cs, 1));
+  bottom: 0;
+  transform: translateY(50%);
+}
+
+/* `under`: hanging under what it belongs to; the caller places it. */
+
+/* On the screen's foot, in the middle: its bottom corners would sit on the screen's edge, so only the top two. */
+.console[data-at='foot'] {
+  --mkb: transparent;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+/* A drawer open: its marks go to the floor's top. */
+.console:has(.floor:not(:empty)) {
+  --mkt: transparent;
+}
+
+/* No room (D-347): the whole edge, wrapping upward, go keeping the right end; a line along its top, no corners. */
+.console[data-full] {
+  left: 0;
+  right: 0;
+  width: auto;
+  flex-wrap: wrap;
+  row-gap: calc(var(--space-1) * var(--cs, 1));
+  white-space: normal;
+  border-top: var(--mark-w) solid var(--piece-edge);
+}
+
+.console[data-full][data-at='foot'] {
+  transform: none;
+}
+
+/* Cut into the edge, wrapped: only its last row sits on the edge, half out; the rows over it inside the piece. */
+.console[data-full][data-at='edge'] {
+  transform: translateY(calc(1em + var(--space-1) * var(--cs, 1)));
+}
+
+.console[data-full][data-editing] {
+  border-top-color: var(--accent-cyan);
+}
+
+.console[data-full]::before {
+  content: none;
+}
+
+.console[data-full] > :last-child {
+  margin-left: auto;
+}
+
+/* Who: its name (caps, bright) and readouts. */
+.who {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--space-2) * var(--cs, 1));
+  padding-left: calc(var(--space-1) * var(--cs, 1));
+}
+
+.name {
+  composes: label from '../primitives/Label.module.css';
+  max-width: 44ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.console .name {
+  color: var(--fg);
+  font-size: inherit;
+}
+
+.info {
+  color: var(--fg-dim);
+}
+
+/* The upper floor: a drawer over the rail, at least its width, its own top L's. */
+.floor {
+  --mkb: transparent;
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  min-width: 100%;
+  width: max-content;
+  padding: calc(var(--space-2) * var(--cs, 1)) calc(var(--space-3) * var(--cs, 1));
+  background: var(--bg);
+  border-bottom: var(--mark-w) solid var(--line);
+  white-space: normal;
+}
+
+.console[data-at='foot'] .floor {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.floor:empty {
+  display: none;
+}
+
+.floor::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--space-1) * var(--cs, 1)) calc(-1 * var(--space-1) * var(--cs, 1)) 0;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--mk), var(--mk)) left top / var(--mark-len) var(--mark-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) left top / var(--mark-w) var(--mark-len) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right top / var(--mark-len) var(--mark-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right top / var(--mark-w) var(--mark-len) no-repeat;
+}
+
+.ftitle {
+  /* A row of its own over the drawer's contents, whatever they flow in. */
+  flex-basis: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  color: var(--accent-cyan);
+  font-size: inherit;
+  text-transform: uppercase;
+  letter-spacing: var(--track-label);
+}
+
+.ftitle::after {
+  content: '';
+  flex: 1;
+  align-self: center;
+  height: var(--line-w);
+  background: var(--line);
+}
+
+.summary {
+  color: var(--fg-dim);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.n {
+  color: var(--accent-magenta);
+}
+
+.caret {
+  margin-left: var(--space-1);
+  color: var(--fg-faint);
+}
+
+/* A drawer's rows: a faint caps name, then its cells (the view's switches, a deck's lanes). */
+.frow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.frow + .frow {
+  margin-top: var(--space-2);
+}
+
+.fkey {
+  min-width: calc(var(--space-6) * 3);
+}

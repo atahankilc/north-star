@@ -159,21 +159,6 @@
   opacity: 1;
 }
 
-.readout {
-  position: absolute;
-  top: 50%;
-  left: calc(100% + 4 * var(--hair));
-  padding: 0 calc(5 * var(--hair));
-  background: var(--accent-cyan);
-  color: var(--on-accent);
-  font-family: var(--font-mono);
-  font-size: calc(11 * var(--hair));
-  line-height: var(--lh-body);
-  white-space: nowrap;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
 /* A row's name: Inter, one line; a card's carries its type's colour on its left edge. */
 .name {
   display: flex;

@@ -172,14 +172,9 @@
 }
 
 
-/* What's in a console grows with it (D-264): the dropdown's text, the comment icon. */
+/* What's in a console grows with it (D-264): the dropdown's text. */
 .console :is(.linkPick, .linkPick *) {
   font-size: inherit;
-}
-
-.console svg {
-  width: 1em;
-  height: 1em;
 }
 
 .linkAt {
@@ -310,87 +305,16 @@
   font-weight: var(--weight-regular);
 }
 
-/* A piece's console (D-179, D-181, D-189, D-264): a tab inside its bottom-right corner, standing on its bottom edge (no
-   bottom border), magenta marks on its top corners, like the focus dock; over what the piece holds. Shown only while the
-   piece is pointed at (built cell by cell, CanvasView's PlaneConsole), in edit mode, with its setup open or the keyboard
-   in it. On the screen 11 px at 100 % and over, growing as the canvas zooms out (`--cs`, 1.4 times at most); everything
-   in it by the same factor. On a piece narrower than it, it runs past the left edge. Its actions Button cells joined in
-   a ButtonGroup (D-344). In edit mode a status line in cyan before them. */
-.console {
-  position: absolute;
-  z-index: var(--z-2);
-  right: calc(var(--space-4) * var(--cs, 1));
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  gap: calc(var(--space-2) * var(--cs, 1));
-  padding: calc(var(--space-1) * var(--cs, 1));
-  /* Its ButtonGroup's seam, scaled like everything in it: 1 px on the screen at any zoom (D-344). */
-  --seam: calc(var(--line-w) * var(--cs, 1));
-  border: calc(var(--line-w) * var(--cs, 1)) solid var(--piece-edge);
-  border-bottom: 0;
-  background: var(--bg);
-  color: var(--fg-dim);
-  font-family: var(--font-mono);
-  font-size: calc(var(--text-xs) * var(--cs, 1));
-  line-height: calc(var(--space-4) * var(--cs, 1));
-  white-space: nowrap;
-  cursor: default;
-}
-
-/* Hidden (its cells broken): takes nothing. */
+/* A piece's console (D-264, D-347): the kit's Console (src/ui/patterns/Console.tsx) cut into its bottom edge; here only
+   what's the canvas's: shown only while the piece is pointed at (built cell by cell, CanvasView's PlaneConsole), in edit
+   mode, with its setup open or the keyboard in it; something new inside a small magenta tab meanwhile. Its size follows
+   `--cs`, set on the piece. */
 .console:not([data-shown]):not([data-fresh]) {
   pointer-events: none;
 }
 
-.console::before,
-.console::after {
-  content: '';
-  position: absolute;
-  top: calc(-1 * var(--line-w) * var(--cs, 1));
-  width: calc(var(--corner-mark) * var(--cs, 1));
-  height: calc(var(--corner-mark) * var(--cs, 1));
-  border-top: calc(var(--line-w) * var(--cs, 1)) solid var(--accent-magenta);
-  pointer-events: none;
-}
-
-.console::before {
-  left: calc(-1 * var(--line-w) * var(--cs, 1));
-  border-left: calc(var(--line-w) * var(--cs, 1)) solid var(--accent-magenta);
-}
-
-.console::after {
-  right: calc(-1 * var(--line-w) * var(--cs, 1));
-  border-right: calc(var(--line-w) * var(--cs, 1)) solid var(--accent-magenta);
-}
-
-.console[data-editing='true'],
-.console[data-editing='true']::before,
-.console[data-editing='true']::after {
-  border-color: var(--accent-cyan);
-}
-
-/* Something new inside while the console's hidden: a small tab of its own, magenta (D-264). */
 .console[data-fresh] {
-  border-color: var(--accent-magenta);
-}
-
-.mode {
-  padding-left: calc(var(--space-2) * var(--cs, 1));
-  color: var(--accent-cyan);
-  letter-spacing: var(--track-label);
-}
-
-.readout {
-  color: var(--fg);
-}
-
-/* The console's buttons are the kit's Button (D-326, D-344); `.tool` only lets their text grow with the console (`--cs`,
-   D-264): the cell follows (its height is 2em at least). */
-.console .tool,
-.console [role='radio'] {
-  /* A console's text grows as the canvas zooms out (D-264): its buttons and a Choice in it (documents' table | shelf) too. */
-  font-size: inherit;
+  --mk: var(--accent-magenta);
 }
 
 /* A plane in focus (D-184, D-185): the whole screen, solid, carrying the plane's dot marks on its own grid (--mx, --my)
@@ -475,13 +399,10 @@
   content: none;
 }
 
-/* Unframed (D-267): the same console on the same hover rule, hanging 10 px under its contents' right end, its own edge
-   all round (nothing to stand on). */
+/* Unframed (D-267): the same console on the same hover rule, hanging 10 px under its contents' right end. */
 .piece[data-open='true'] > .console {
   top: calc(100% - 2 * var(--w-grid) + var(--space-3) * var(--cs, 1));
   right: var(--w-grid);
-  bottom: auto;
-  border-bottom: calc(var(--line-w) * var(--cs, 1)) solid var(--piece-edge);
 }
 
 /* Going between (D-267): the window it leaves or goes into, the piece's own look, breaking or building cell by cell

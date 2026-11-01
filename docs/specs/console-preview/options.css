@@ -1,0 +1,210 @@
+/* The console options, each under body[data-o]. Shared bits first (drawers' rows, chips, the scenes' extras). */
+
+/* ── Shared ── */
+.con { z-index: 5; font: 400 12px/1 var(--font-mono); color: var(--fg-dim); white-space: nowrap; }
+.con .nm { font: 500 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--fg); padding: 0 4px 0 6px; }
+.con .sep { color: var(--fg-faint); padding-right: 4px; }
+.con .who { display: inline-flex; align-items: center; gap: 4px; }
+.con .kw { font: 400 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--fg-dim); padding: 0 4px; }
+.b[data-fresh] { color: var(--accent-magenta); }
+.b .v { color: var(--fg); }
+.chip { display: inline-flex; align-items: center; height: 22px; padding: 0 7px; margin-right: 1px; background: color-mix(in srgb, var(--t) 14%, transparent); color: var(--t); font: 400 11px/1 var(--font-mono); }
+.chip.off { background: var(--wash-1); color: var(--fg-faint); text-decoration: line-through; }
+.pick { font: 400 12px/1 var(--font-mono); color: var(--fg); }
+.caret { color: var(--fg-faint); font-size: 10px; }
+.drw { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.drow { display: flex; align-items: center; gap: 10px; }
+.dk { width: 64px; flex: none; font: 400 10px/1 var(--font-mono); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--fg-faint); }
+.dv { display: inline-flex; align-items: center; gap: 1px; flex-wrap: wrap; }
+.dfoot { display: flex; justify-content: flex-end; padding-top: 4px; border-top: 1px dashed var(--line); }
+
+.focusScreen { background-color: var(--bg); }
+.focusCards { position: absolute; inset: 0; }
+.part { position: absolute; top: 0; bottom: 0; }
+.part.pane { background: var(--bg); }
+.sel { position: absolute; }
+.sel .hd { font: 500 29px/1.1 var(--font-display); color: var(--fg-strong); letter-spacing: var(--track-title); }
+.cellbox { display: flex; gap: 4px; padding: 10px; background: var(--piece-card); height: 100%; align-items: center; }
+.cellbox span { width: 16px; height: 16px; background: var(--link-solves); }
+.cellbox span.o { background: transparent; box-shadow: inset 0 0 0 1px var(--line-hover); }
+
+/* Magenta marks on a tab's top corners (D-189, D-264), for the options that keep the tab. */
+.tabMarks { position: relative; }
+
+/* ── now ── */
+[data-o='now'] .con,
+[data-o='a'] .con,
+[data-o='c'] .con {
+  position: absolute; display: flex; align-items: center; gap: 8px; padding: 4px;
+  background: var(--bg); border: 1px solid var(--piece-edge); border-bottom: 0;
+}
+[data-o='now'] .con::before, [data-o='now'] .con::after,
+[data-o='a'] .con::before, [data-o='a'] .con::after,
+[data-o='c'] .con::before, [data-o='c'] .con::after,
+[data-o='d'] .con::before, [data-o='d'] .con::after {
+  content: ''; position: absolute; top: -1px; width: 7px; height: 7px; border-top: 1px solid var(--accent-magenta); pointer-events: none;
+}
+[data-o='now'] .con::before, [data-o='a'] .con::before, [data-o='c'] .con::before, [data-o='d'] .con::before { left: -1px; border-left: 1px solid var(--accent-magenta); }
+[data-o='now'] .con::after, [data-o='a'] .con::after, [data-o='c'] .con::after, [data-o='d'] .con::after { right: -1px; border-right: 1px solid var(--accent-magenta); }
+[data-o='now'] .con[data-editing], [data-o='a'] .con[data-editing], [data-o='c'] .con[data-editing], [data-o='d'] .con[data-editing] { border-color: var(--accent-cyan); }
+[data-o='now'] .con[data-editing]::before, [data-o='now'] .con[data-editing]::after,
+[data-o='a'] .con[data-editing]::before, [data-o='a'] .con[data-editing]::after,
+[data-o='c'] .con[data-editing]::before, [data-o='c'] .con[data-editing]::after,
+[data-o='d'] .con[data-editing]::before, [data-o='d'] .con[data-editing]::after { border-color: var(--accent-cyan); }
+
+[data-o='now'] .con[data-at='piece'], [data-o='a'] .con[data-at='piece'], [data-o='c'] .con[data-at='piece'], [data-o='d'] .con[data-at='piece'] { right: 16px; bottom: 0; }
+[data-o='now'] .con[data-at='open'], [data-o='a'] .con[data-at='open'], [data-o='c'] .con[data-at='open'], [data-o='d'] .con[data-at='open'] { right: 0; top: calc(100% + 10px); border-bottom: 1px solid var(--piece-edge); }
+[data-o='now'] .con[data-at='screen'], [data-o='a'] .con[data-at='screen'], [data-o='c'] .con[data-at='screen'], [data-o='d'] .con[data-at='screen'] { left: 50%; bottom: 0; transform: translateX(-50%); }
+[data-o='now'] .con[data-at='under'] { left: 0; top: calc(100% + 10px); gap: 8px; border: 1px solid var(--line-hover); }
+[data-o='now'] .con[data-at='under']::before, [data-o='now'] .con[data-at='under']::after { display: none; }
+[data-o='now'] .part.pane .con[data-at='screen'] { max-width: 324px; overflow: hidden; }
+
+/* now's and A's strips. now: floating a little over the dock. */
+.strip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); width: max-content; padding: 10px 12px; background: var(--bg); border: 1px solid var(--line-hover); }
+.strip::before, .strip::after { content: ''; position: absolute; top: -1px; width: 5px; height: 5px; border-top: 1px solid var(--accent-magenta); }
+.strip::before { left: -1px; border-left: 1px solid var(--accent-magenta); }
+.strip::after { right: -1px; border-right: 1px solid var(--accent-magenta); }
+
+/* ── A · tidy tab ── */
+[data-o='a'] .con { gap: 10px; }
+[data-o='a'] .con .who { padding-right: 2px; }
+[data-o='a'] .con[data-at='under'] { left: 0; top: calc(100% + 10px); border: 1px solid var(--piece-edge); }
+[data-o='a'] .con[data-at='under']::before, [data-o='a'] .con[data-at='under']::after { display: none; }
+/* The strip touches the tab and shares its edge. */
+[data-o='a'] .strip { bottom: 100%; border-color: var(--piece-edge); border-bottom-color: var(--line); }
+[data-o='a'] .strip::before, [data-o='a'] .strip::after { width: 7px; height: 7px; }
+
+/* ── B · status line ── */
+[data-o='b'] .con {
+  position: absolute; display: flex; align-items: center; gap: 8px; height: 30px; padding: 3px 3px 3px 8px;
+  background: var(--bg); border-top: 1px solid var(--piece-edge);
+}
+[data-o='b'] .con .left, [data-o='b'] .con .right { display: inline-flex; align-items: center; gap: 8px; }
+[data-o='b'] .con .right { gap: 6px; }
+[data-o='b'] .con .sum { color: var(--accent-magenta); }
+[data-o='b'] .con .sum::before { content: '· '; color: var(--fg-faint); }
+[data-o='b'] .modeBlock { background: var(--accent-cyan); color: var(--on-accent); font: 500 11px/1 var(--font-mono); letter-spacing: var(--track-label); padding: 6px 8px; margin-left: -5px; }
+[data-o='b'] .con[data-editing] { border-top-color: var(--accent-cyan); }
+[data-o='b'] .con[data-at='piece'] { left: 0; right: 0; bottom: 0; }
+[data-o='b'] .con[data-at='open'] { left: 0; right: 0; top: calc(100% + 10px); }
+[data-o='b'] .con[data-at='screen'] { left: 220px; right: 0; bottom: 0; }
+[data-o='b'] .part .con[data-at='screen'] { left: 0; }
+[data-o='b'] .part[style^='left:0'] .con[data-at='screen'] { left: 220px; }
+[data-o='b'] .con[data-at='under'] { left: 0; top: calc(100% + 10px); min-width: 320px; border-top-color: var(--line-hover); height: 28px; }
+[data-o='b'] .sheet { position: absolute; left: 0; right: 0; bottom: 100%; padding: 12px 14px; background: var(--bg); border-top: 1px solid var(--line-hover); }
+[data-o='b'] .sheet .drw { flex-direction: row; flex-wrap: wrap; gap: 10px 24px; }
+
+/* ── C · prompt ── */
+[data-o='c'] .field { display: inline-flex; align-items: center; gap: 6px; height: 24px; min-width: 150px; padding: 0 8px; background: var(--wash-1); box-shadow: inset 0 0 0 1px var(--line); color: var(--fg-faint); cursor: text; }
+[data-o='c'] .field:hover { box-shadow: inset 0 0 0 1px var(--line-hover); }
+[data-o='c'] .gt { color: var(--accent-cyan); }
+[data-o='c'] .ph { color: var(--fg-faint); }
+[data-o='c'] .tag { display: inline-flex; align-items: center; height: 18px; padding: 0 5px; background: var(--wash-cyan); color: var(--accent-cyan); font-size: 11px; }
+[data-o='c'] .con[data-at='under'] { left: 0; top: calc(100% + 10px); border: 1px solid var(--piece-edge); }
+[data-o='c'] .con[data-at='under']::before, [data-o='c'] .con[data-at='under']::after { display: none; }
+[data-o='c'] .plist { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); width: 360px; padding: 6px 0; background: var(--bg); border: 1px solid var(--line-hover); font: 400 12px/1 var(--font-mono); }
+[data-o='c'] .pin { padding: 6px 12px 10px; color: var(--fg); border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+[data-o='c'] .cur { display: inline-block; width: 7px; height: 13px; background: var(--accent-cyan); vertical-align: -2px; margin-left: 1px; }
+[data-o='c'] .psec { padding: 8px 12px 4px; color: var(--fg-faint); font-size: 11px; }
+[data-o='c'] .prow { display: flex; justify-content: space-between; padding: 5px 12px 5px 22px; color: var(--fg-dim); }
+[data-o='c'] .prow.at { background: var(--wash-2); color: var(--fg-strong); padding-left: 12px; }
+[data-o='c'] .prow.at span:first-child::first-letter { color: var(--accent-cyan); }
+[data-o='c'] .pfoot { padding: 8px 12px 2px; border-top: 1px solid var(--line); margin-top: 4px; color: var(--fg-faint); font-size: 11px; text-align: right; }
+
+/* ── D · rail ── */
+[data-o='d'] .con { position: absolute; display: flex; flex-direction: column; background: var(--bg); border: 1px solid var(--piece-edge); border-bottom: 0; }
+[data-o='d'] .railrow { display: flex; align-items: center; gap: 8px; padding: 4px; }
+[data-o='d'] .con .who { padding: 0 2px 0 4px; }
+[data-o='d'] .con .who + * { margin-left: 2px; }
+[data-o='d'] .tabn .caret { margin-left: 2px; }
+[data-o='d'] .tabn[data-open] { background: var(--wash-cyan); color: var(--accent-cyan); box-shadow: inset 0 1px 0 var(--accent-cyan); }
+[data-o='d'] .tabn[data-open] .caret { color: var(--accent-cyan); }
+[data-o='d'] .floor { padding: 10px 12px 12px; border-bottom: 1px solid var(--line); min-width: 100%; }
+[data-o='d'] .ftitle { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; font: 400 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--accent-cyan); }
+[data-o='d'] .ftitle span { text-transform: none; letter-spacing: normal; color: var(--fg-dim); }
+[data-o='d'] .ftitle::after { content: ''; flex: 1; height: 1px; background: var(--line); align-self: center; }
+[data-o='d'] .con[data-at='under'] { left: 0; top: calc(100% + 10px); flex-direction: row; align-items: center; gap: 8px; padding: 4px; border: 1px solid var(--piece-edge); }
+[data-o='d'] .con[data-at='under']::before, [data-o='d'] .con[data-at='under']::after { display: none; }
+[data-o='d'] .g.go { margin-left: 2px; }
+
+/* ── E · notch ── */
+[data-o='e'] .con { position: absolute; display: flex; align-items: center; gap: 8px; padding: 0 6px; background: var(--bg); }
+[data-o='e'] .piece .con[data-at='piece'] { right: 16px; bottom: 0; transform: translateY(50%); }
+[data-o='e'] .piece[data-editing] .con .mode { padding-left: 0; }
+[data-o='e'] .con[data-at='open'] { right: 0; top: calc(100% + 10px); }
+[data-o='e'] .con[data-at='open']::before { content: ''; position: absolute; right: 100%; top: 50%; width: 260px; height: 1px; background: linear-gradient(to left, var(--piece-edge), transparent); }
+[data-o='e'] .con[data-at='screen'] { left: 50%; bottom: 10px; transform: translateX(-50%); }
+[data-o='e'] .con[data-at='screen']::before, [data-o='e'] .con[data-at='screen']::after { content: ''; position: absolute; top: 50%; width: 2000px; height: 1px; background: var(--piece-edge); pointer-events: none; }
+[data-o='e'] .con[data-at='screen']::before { right: 100%; }
+[data-o='e'] .con[data-at='screen']::after { left: 100%; }
+[data-o='e'] .part { overflow: hidden; }
+[data-o='e'] .part.pane .con[data-at='screen'] { max-width: 330px; }
+[data-o='e'] .con[data-at='under'] { left: 0; top: calc(100% + 12px); padding-left: 0; }
+[data-o='e'] .con[data-at='under']::after { content: ''; position: absolute; left: 100%; top: 50%; width: 30px; height: 1px; background: linear-gradient(to right, var(--line-hover), transparent); }
+[data-o='e'] .sel .con[data-at='under'] { box-shadow: -12px 0 0 var(--bg); }
+[data-o='e'] .strip { border-color: var(--line-hover); }
+
+/* ── D+E · the rail in a notch on the canvas ── */
+[data-notch='true'] .piece .con[data-at='piece'] { bottom: 0; transform: translateY(50%); border-bottom: 1px solid var(--piece-edge); }
+[data-notch='true'] .piece .con[data-at='piece'][data-editing] { border-bottom-color: var(--accent-cyan); }
+
+/* ── Every option but today's: past 70 % of where it hangs, the console takes the whole edge (the user, 2026-11-01) ──
+   Never shrinks, never hides a tool in `⋯`, never runs past the edge: it fills, then wraps upward; go keeps the right end. */
+body:not([data-o='now']) .con[data-full] { left: 0 !important; right: 0 !important; transform: none; flex-wrap: wrap; row-gap: 4px; white-space: normal; }
+body:not([data-o='now']) .con[data-full] .go { margin-left: auto; }
+body:not([data-o='now']) .con[data-full]::before,
+body:not([data-o='now']) .con[data-full]::after { display: none; }
+[data-o='a'] .con[data-full], [data-o='c'] .con[data-full], [data-o='d'] .con[data-full] { border-left: 0; border-right: 0; }
+[data-o='d'] .con[data-full] .railrow { flex-wrap: wrap; row-gap: 4px; }
+[data-o='b'] .con[data-full] { height: auto; min-height: 30px; }
+[data-o='b'] .con[data-full] .right { flex-wrap: wrap; row-gap: 4px; }
+[data-notch='true'] .piece .con[data-at='piece'][data-full] { transform: translateY(50%); border-left: 1px solid var(--piece-edge); border-right: 1px solid var(--piece-edge); }
+[data-o='e'] .piece .con[data-at='piece'][data-full] { transform: translateY(50%); }
+[data-o='e'] .con[data-at='screen'][data-full] { left: 0; transform: none; }
+
+/* ── CORNERS: what marks a console's frame (today the magenta L's on its top corners, D-189, D-264) ──
+   For the framed options (now, A, C, D, D+E) and the strips and floors that open from them. */
+.con[data-kind='plane'] { --kind: var(--fg); }
+.con[data-kind='table'] { --kind: var(--link-part); }
+.con[data-kind='kanban'] { --kind: var(--link-draws); }
+.con[data-kind='text'], .con[data-kind='link'], .con[data-kind='cell'] { --kind: var(--accent-cyan); }
+body:is([data-corner='band'], [data-corner='lead'], [data-corner='none']) :is(.con, .strip)::before,
+body:is([data-corner='band'], [data-corner='lead'], [data-corner='none']) :is(.con, .strip)::after { border-color: transparent !important; }
+
+/* kind band: a 2 px band in its piece's kind colour on top, as the piece itself has (D-263): says whose console it is. */
+body[data-corner='band'] .con:not([data-full])::before { display: block; left: -1px; right: -1px; width: auto; height: 2px; top: -1px; border: 0 !important; background: var(--kind, var(--fg)); }
+body[data-corner='band'] .con[data-full] { box-shadow: inset 0 2px 0 var(--kind, var(--fg)); }
+body[data-corner='band'] .con[data-editing]::before { background: var(--accent-cyan); }
+body[data-corner='band'] .strip { box-shadow: inset 0 2px 0 var(--kind, var(--fg)); }
+body[data-corner='band'] .con .strip { --kind: inherit; }
+
+/* cyan L: the Marks' colour, what you can do (D-265), on the same two corners. */
+body[data-corner='cyan'] .con::before, body[data-corner='cyan'] .con::after,
+body[data-corner='cyan'] .strip::before, body[data-corner='cyan'] .strip::after { border-color: var(--accent-cyan) !important; border-bottom-color: transparent !important; }
+
+/* marks (the user's pick, 2026-11-01): no edge line, only L's like a selection's at rest, faint, cyan while pointed at
+   or in edit mode. On every corner that can be seen: a rail standing on the screen's foot (focus, a pane) has only its
+   top two, its bottom ones would sit on the screen's edge. The bars under a heading, a link or a cell the same. */
+body[data-corner='marks'] .con:not([data-full]) { border-color: transparent !important; background: color-mix(in srgb, var(--bg) 92%, transparent); }
+body[data-corner='marks'] .con { --mk: var(--fg-faint); --mkb: var(--mk); }
+body[data-corner='marks'] .con:hover, body[data-corner='marks'] .con[data-editing] { --mk: var(--accent-cyan); }
+body[data-corner='marks'] .con[data-at='screen'] { --mkb: transparent; }
+body[data-corner='marks'] .con:not([data-full])::before {
+  content: ''; display: block !important; position: absolute; inset: -3px; width: auto; height: auto; transform: none;
+  border: 0 !important; pointer-events: none;
+  background:
+    linear-gradient(var(--mk), var(--mk)) left top / 7px 1px no-repeat,
+    linear-gradient(var(--mk), var(--mk)) left top / 1px 7px no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right top / 7px 1px no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right top / 1px 7px no-repeat,
+    linear-gradient(var(--mkb), var(--mkb)) left bottom / 7px 1px no-repeat,
+    linear-gradient(var(--mkb), var(--mkb)) left bottom / 1px 7px no-repeat,
+    linear-gradient(var(--mkb), var(--mkb)) right bottom / 7px 1px no-repeat,
+    linear-gradient(var(--mkb), var(--mkb)) right bottom / 1px 7px no-repeat;
+}
+body[data-corner='marks'] .con:not([data-full])::after { display: none !important; }
+
+/* lead: no corners; the edge plain, a short magenta lead on its top-left (D-266: a magenta lead starts something). */
+body[data-corner='lead'] .con:not([data-full])::before { display: block; width: 16px; height: 0; top: -1px; left: -1px; border: 0 !important; border-top: 2px solid var(--accent-magenta) !important; }
+body[data-corner='lead'] .con::after { display: none; }
+body[data-corner='lead'] .con[data-editing]::before { border-top-color: var(--accent-cyan) !important; }

@@ -19,7 +19,7 @@ import { useAuth } from '../../../data/auth'
 import { addTask, orderBetween, setTimeline, shownTasks, tasksIn, timelineKanbans, today, TIMELINE_ROWS, updateTask, type Task, type TaskFields, type TimelineRows } from '../../../data/tasks'
 import { camOf, type Bounds, type PlaneCam } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
-import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
+import { DrawerPick } from '../../../ui/patterns/Console'
 import { useWs, useWsNow } from '../canvas/context'
 import { DockAction } from '../canvas/FocusDock'
 import { kanbanOf, selectTask, useKanbanUi } from './Kanban'
@@ -1064,6 +1064,15 @@ const ROW_NAME: Record<TimelineRows, string> = { kanban: 'deck', assignee: 'give
 function TimelineRowsMenu({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const { wid } = useWs()
   const rows = piece.timeline?.rows ?? 'kanban'
-  const items: MenuEntry[] = TIMELINE_ROWS.map((r) => ({ key: r, label: `by ${ROW_NAME[r]}`, checked: rows === r, onSelect: () => editor && rows !== r && void setTimeline(wid, piece.id, { rows: r === 'kanban' ? undefined : r }, 'change a timeline’s rows') }))
-  return <Menu label="rows" up plain summary={ROW_NAME[rows]} items={items} ariaLabel="Rows" noun="ways" />
+  return (
+    <DrawerPick
+      id={`rows:${piece.id}`}
+      label="rows"
+      title="its rows: by deck, by who it's given to, or by card"
+      disabled={!editor}
+      options={TIMELINE_ROWS.map((r) => ({ value: r, label: ROW_NAME[r] }))}
+      value={rows}
+      onPick={(r) => r !== rows && void setTimeline(wid, piece.id, { rows: r === 'kanban' ? undefined : r }, 'change a timeline’s rows')}
+    />
+  )
 }

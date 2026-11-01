@@ -112,16 +112,19 @@ feature comes back as a piece, and check them with the user then.
   - Surface (D-263, D-274, D-289): pieces graphite (`--piece*`, white in light) with a 2 px band in their kind's colour
     on top; inside a framed piece `--bg`/`--bg-raised`/`--grid-mark` map to that surface. In focus, beside it and
     unframed the page's black (`--bg`), what's held still `--piece-card`.
-  - Console (D-264, D-275): where it is, shown only while pointed at (cells in 170 / out 90 ms), in edit mode, with its
-    setup open or the keyboard in it; fresh comments keep a small tab; grows as the canvas zooms out (`--cs`, ≤ 1.4 ×);
-    on touch a first tap shows it, a second focuses.
+  - Console (D-264, D-275, D-347): one `Console` for every console, dock and bar; a rail (who · nouns · tools · go
+    last), a noun's drawer its upper floor; on the canvas cut into the piece's bottom edge, in focus and panes on the
+    screen's foot; past 70 % of its edge it takes the whole edge and wraps; no size in edit mode; marks (faint L's,
+    cyan when pointed at) on its visible corners, no edge line, the selection bars too. Shown only while pointed at
+    (cells in 170 / out 90 ms), in edit mode, with its setup open or the keyboard in it; fresh comments keep a small
+    tab; grows as the canvas zooms out (`--cs`, ≤ 1.4 ×); on touch a first tap shows it, a second focuses.
   - `Marks` (D-265, D-270, D-272; `src/ui/primitives/Marks.tsx`) on everything selectable: three tiers in screen px (a step down
     when small), distance = state, tone = what it is, cyan = what you can do, press 70 ms, release a spring; a drag goes
     0.8 round the point held with `<Landing>` L's where it lands (a kanban opens a gap); `<BoxSelect>`; others'
     selections as L's + a name tag in every view.
   - Resize (D-273): cyan handles on the ring, only when selected (paragraph, sticky, title: the right bar; section:
     right, bottom, corner; a piece in edit mode: every corner and edge; a table column: its head's edge); the moving
-    edges lit and the size shown; pieces and sections move at 0.8 with landing L's.
+    edges lit, no size shown (D-347); pieces and sections move at 0.8 with landing L's.
   - Names and lines (D-266, D-276, D-277): two voices (system mono caps, user Inter); numbers magenta (a piece name's
     leading number, kanban columns, panel sections); containers edged, the name cut in (16 lead, 8 clear), held things
     banded; text's shade line by line (`src/ui/primitives/Ink.tsx`); lines: straight holds, fading opens, dashed separates rows, a
@@ -155,7 +158,7 @@ feature comes back as a piece, and check them with the user then.
   asks in the hazard confirm (`src/ui/patterns/HazardConfirm.tsx`: dark screen, `╱╱╱` tape round the box once, ~1.5 s; cancel
   focused; ⌘Z brings it back; reduced motion: the tape just there).
 - Planes (D-180, D-181, D-189): never "board" again (`kind: 'plane'`); terminal look, the name in the top edge, the console
-  a tab on the bottom edge in the bottom-right corner (`[focus] [edit]`; editing: `EDIT 960 × 600 [delete] [done]`), no
+  the console in the bottom edge (D-347: `focus edit`; editing: `delete done`, no size), no
   name or zoom in it (D-186); old looks (D-179) replaced by the surface, Marks and resize above.
 - While zooming only the canvas's (or a focus's view's) transform changes; what's at screen size settles 120 ms after
   it stops (D-278, D-280), hidden till then except piece names (`data-zooming` on the world, `data-screen-sized` on
@@ -180,7 +183,7 @@ feature comes back as a piece, and check them with the user then.
   reading order; typed, matches grouped by space (`here`, Tab `everywhere`) with a live preview of where you'll land.
   Enter or a double-click goes: it glides there, into a plane's focus first.
 - Right panel (D-219): every panel on the right is a terminal column flush with its space's right edge, 400 px, full
-  height, magenta corner marks, kind + `[×] esc`, an Inter title, `01 NAME ──` sections, a `[verb]` foot; cell by cell.
+  height, faint corner marks (D-347), kind + `[×] esc`, an Inter title, `01 NAME ──` sections, a `[verb]` foot; cell by cell.
 
 ## Cards and links on planes
 - Plane details (D-291, D-294): a card's face is `--card-tint` of its type's colour (16 %, light 9 %), on kanbans and a
@@ -219,10 +222,9 @@ feature comes back as a piece, and check them with the user then.
 - Several at once (D-227, D-229, D-230): shift+click, alt+drag a box, text too; drag together, arrows, ⌘C/⌘V/⌘D, Delete,
   Escape; the panel's `N selected` lines up, spaces out, tags all; others see it (`sel` + `more`), a follower takes it;
   a pan keeps it, only a click on the plane lets go.
-- Focus dock tools: guides (D-231: magenta lines while dragging; `a` guides, `g` snapping, per browser, in `[view ▾]`,
+- Focus dock tools: guides (D-231: magenta lines while dragging; `a` guides, `g` snapping, per browser, in the dock's `view` drawer (D-347),
   with comments `c`); `[filter]` (D-233: `SHOW FOR TAG REGION LINKS`, `for`/`relates`/`competes` hidden to start, its
-  menu saying so; only while the focus is open, D-308); `[linked · N]` (D-235: the pieces stuck to it); strips stack 8 px
-  over the dock.
+  menu saying so; only while the focus is open, D-308); `[linked · N]` (D-235: the pieces stuck to it); drawers open as the dock's upper floor (D-347).
 - Right-click in a focused plane (D-237): a card's open / fold / copy / duplicate / delete; text's edit / copy /
   duplicate / delete; a link's label / turn round / kind / remove; several's copy / duplicate / delete; the plane's
   paste and add here.
@@ -303,7 +305,7 @@ feature comes back as a piece, and check them with the user then.
 - Stuck to a plane (D-255, D-303): only that plane's tasks until unlinked (no switch, no note: the link shows it),
   beside it in its focus.
 - More (D-256, D-258): `[filter]` (GIVEN TO, DUE, FOR, LABEL; only while open, D-308); `#labels`, `P1`–`P3`; column limits (`4/3`
-  magenta); `[LANES ▾]` by person or card (dropping sets it), lanes fold; several at once like on planes.
+  magenta); `lanes` (a dock drawer, D-347) by person or card (dropping sets it), lanes fold; several at once like on planes.
 - Together (D-260, D-261): picked tasks are your presence selection, a held one a ghost in your colour (`drag`);
   comments on tasks; `☐` by your square counts tasks given to you since you last looked (`givenAt`/`givenBy`,
   `threadReads.tasks`); the finder finds tasks.

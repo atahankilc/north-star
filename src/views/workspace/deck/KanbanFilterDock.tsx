@@ -1,10 +1,8 @@
-// A kanban's filters in its dock (D-256), the plane's way (D-233): `[filter]` (`[filter · N]` while narrowing) opens a
-// strip over the dock in the console's look: GIVEN TO, DUE, FOR, LABEL, each its own menu, then `[reset]`. Escape
+// A kanban's filters in its dock (D-256), the plane's way (D-233): the `filter` tab (`filter N` while narrowing) opens
+// its drawer as the dock's upper floor (D-347): GIVEN TO, DUE, FOR, LABEL, each its own menu, then `[reset]`. Escape
 // closes it. In the kanban's focus and in its pane beside a plane; a timeline's too (D-262), over its kanbans' tasks
 // (`pool`). The filter lasts while one of these is open (D-308).
 import { AnimatePresence } from 'motion/react'
-import { useEffect } from 'react'
-import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import { useAuth } from '../../../data/auth'
@@ -12,17 +10,14 @@ import { useMembers } from '../../../data/workspaces'
 import type { Task } from '../../../data/tasks'
 import { Appear } from '../../../ui/primitives/Appear'
 import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
-import { useCanvasView } from '../../../state/canvasView'
 import { useWs } from '../canvas/context'
-import { DockAction } from '../canvas/FocusDock'
+import { ConsoleFloor, ConsoleTab, FloorTitle, useDrawer } from '../../../ui/patterns/Console'
 import { NO_FILTER, narrowing, setKanbanFilter, useHoldKanbanFilter, useKanbanFilter, type DueKey, type KanbanFilter } from './kanbanFilter'
 import { TYPE_ACCENT } from '../plane/PlaneCards'
 import { learn } from '../../../onboarding/learn'
 import styles from '../canvas/FilterDock.module.css'
 import { Button } from '../../../ui/primitives/Button'
 
-// The kanban whose strip is open.
-const useOpen = create<{ piece: string | null }>(() => ({ piece: null }))
 
 const DUE: { key: DueKey; label: string }[] = [
   { key: 'past', label: 'past its day' },
@@ -38,28 +33,16 @@ export function KanbanFilterDock(props: { piece: WithId<Piece>; pool?: Task[] })
 }
 
 function TaskFilterDock({ piece, pool }: { piece: WithId<Piece>; pool?: Task[] }) {
-  const open = useOpen((s) => s.piece === piece.id)
+  const [open, toggle] = useDrawer(`filter:${piece.id}`)
   const f = useKanbanFilter(piece.id)
   useHoldKanbanFilter(piece.id)
   const n = narrowing(f)
-  const room = useCanvasView((s) => s.size.w) - 2 * 72
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || (e.target as HTMLElement | null)?.closest('input, textarea, [role=menu], [role=listbox], [aria-modal=true], [data-coach]')) return
-      e.stopImmediatePropagation()
-      useOpen.setState({ piece: null })
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [open])
-  useEffect(() => () => useOpen.setState((s) => (s.piece === piece.id ? { piece: null } : s)), [piece.id])
   return (
     <>
-      <DockAction label={n ? `filter · ${n}` : 'filter'} pressed={open || n > 0} title={open ? 'close the filters' : 'which tasks it shows'} onClick={() => (useOpen.setState({ piece: open ? null : piece.id }), !open && learn('filter-open', { kind: 'kanban' }))} />
-      <div className={styles.shelf} style={{ maxWidth: room }}>
+      <ConsoleTab label="filter" n={n} open={open} title={open ? 'close the filters' : 'which tasks it shows'} onClick={() => (toggle(), !open && learn('filter-open', { kind: 'kanban' }))} />
+      <ConsoleFloor>
         <AnimatePresence>{open && <Strip key="filter" piece={piece} f={f} pool={pool} />}</AnimatePresence>
-      </div>
+      </ConsoleFloor>
     </>
   )
 }
@@ -110,6 +93,7 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
 
   return (
     <Appear className={styles.panel} role="group" aria-label="Filters" data-learn="filter-strip">
+      <FloorTitle summary={narrowing(f) ? `${narrowing(f)} narrowing its tasks` : 'every task'}>filter</FloorTitle>
       <Menu label="given to" up summary={named(f.who, whoName)} active={f.who.length > 0} items={who} ariaLabel="Only tasks given to" noun="people" />
       <Menu label="due" up summary={named(f.due, (d) => DUE.find((x) => x.key === d)!.label)} active={f.due.length > 0} items={due} ariaLabel="Only tasks due" noun="days" />
       <Menu label="for" up summary={named(f.for, forName)} active={f.for.length > 0} items={forItems} ariaLabel="Only tasks for" noun="cards" />

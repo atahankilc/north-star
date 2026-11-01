@@ -267,7 +267,7 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 | Delete several: panel (TaskPanel.tsx:99), ⌫ on the deck (Kanban.tsx:348) | `tasks.ts:deleteTasks` | `delete` | |
 | Column: add, rename (double-click), move `‹ ›`, limit, mark finished `✓` (Kanban.tsx:488–553) | `tasks.ts:setKanbanCols` | `create_deck_column`, `update_deck_column` (name, limit, done; `rename` too), `move_deck_column` | S8: the editor's whole list becomes the one column op when it's one change (`editorChange`), else `update_deck`'s `setup.cols`. |
 | Column `×` with its tasks (Kanban.tsx:546) | `tasks.ts:deleteColumn` | `delete` | S8: the op reads the deck's tasks (to the end of the column before; the first's to the next); `deck` when two decks share the column id. |
-| `[LANES ▾]` by person / card / none (Kanban.tsx:726–727) | `tasks.ts:setKanbanRows` | `update_deck` (`lanes`) | |
+| `lanes` drawer by person / card / none (Kanban.tsx:726–727) | `tasks.ts:setKanbanRows` | `update_deck` (`lanes`) | |
 | Card deck: rows by a field / none (Kanban.tsx:718–719; setup KanbanSetup.tsx:130) | `tasks.ts:setKanbanSetup` (`rowField`) | `update_deck` | |
 | Setup: holds tasks/cards, which cards (rules), columns from, box names (KanbanSetup.tsx:44 via `KanbanEditor` :78) | `tasks.ts:setKanbanSetup` | `update_deck` | |
 | Switch to cards with tasks on it: `[move the tasks to ▾]` (KanbanSetup.tsx:162, `moveTo` :151) | `tasks.ts:moveTasksAway` | `update_deck` (`tasks_to: deck`) | The UI passes its moves; for the model the op matches columns by name and orders them (`movesTo`). Without `tasks_to` the switch is refused. |
@@ -368,7 +368,7 @@ Paths: views are in `src/views/workspace/` unless a full path is given; data fun
 | Right-click `open` (planeMenu.ts:101), a matrix/table head click (D-247), a task click, `+` threads list | `open_panel(id)`: `openPanel` (a card's or a task's) |
 | Plane dock `[⇆ kind · name]` (D-211), documents `open beside` (CanvasView.tsx:556), tasks side view `t` and its icon, `[days ›]`, a plane's `⇆ deck` (TasksSide.tsx) | `show_beside(piece)`: `showBeside` (a stuck matrix or table: `beside=` in its plane's focus; a deck or timeline: the tasks side view; documents beside their list: not yet) |
 | `[filter]` on a plane (FilterDock.tsx) or a deck (KanbanFilterDock.tsx): passing, per tab (D-308) | none: the agent reads with `query` instead |
-| `[view ▾]`: snap `g`, guides `a`, comments `c` (ViewMenu.tsx:16–21) | none |
+| `view` drawer: snap `g`, guides `a`, comments `c` (ViewMenu.tsx:16–21) | none |
 | Edit mode on/off (console `[edit]`, `[done]`) | none: ops don't need edit mode |
 | `[setup]` open, its tab (MatrixSetup.tsx:67, TableSetup.tsx:66, KanbanSetup.tsx:62) | none: `update_matrix`/`update_table`/`update_deck` write directly |
 | Table page `‹ 2 / 5 ›` (yours), documents page, document zoom (DocumentPiece.tsx:52–56) | none |

@@ -532,7 +532,6 @@
   width: max-content;
   max-width: var(--size-lg);
   padding: var(--space-2) var(--space-3);
-  border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
   color: var(--fg-dim);
   font-family: var(--font-mono);
@@ -597,21 +596,42 @@
 
 /* The setup (D-212): a tabbed panel over the bottom middle of its space, just above the dock. No scrolling of its own:
    the card picker's list opens over its edge. */
+/* A matrix's, table's or deck's setup (D-228, D-347): the dock's upper floor, touching it (its height: a cell and its
+   padding), no edge line but one under it, faint L's on its top corners like every console's floor. */
 .setup {
+  --mk: var(--fg-faint);
   position: absolute;
   left: 50%;
-  bottom: calc(var(--space-8) + var(--space-2));
+  bottom: var(--space-8);
   z-index: var(--z-3);
   display: flex;
   flex-direction: column;
   width: min(calc(var(--size-xl) + var(--size-xs)), calc(100% - 2 * var(--space-4)));
-  border: var(--line-w) solid var(--line-hover);
+  border-bottom: var(--line-w) solid var(--line);
   background: var(--bg);
   color: var(--fg-dim);
   font-family: var(--font-display);
   font-size: var(--text-xs);
   transform: translateX(-50%);
   cursor: default;
+}
+
+.setup:hover,
+.setup:focus-within {
+  --mk: var(--accent-cyan);
+}
+
+.setup::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--space-1)) calc(-1 * var(--space-1)) auto;
+  height: var(--corner-mark);
+  pointer-events: none;
+  background:
+    linear-gradient(var(--mk), var(--mk)) left top / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) left top / var(--line-w) var(--corner-mark) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right top / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right top / var(--line-w) var(--corner-mark) no-repeat;
 }
 
 .setupHead {

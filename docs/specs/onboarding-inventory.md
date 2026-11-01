@@ -109,7 +109,7 @@ are dead leftovers from 1.0.)
 | package-panel | Rating, holds, plan; folded / unfolded. | CardPanel.tsx:492/512/564; `PackageFrame` PlaneCards.tsx:479 | E+ | packages |
 | shared-cards | `existing card…` (`e`): ↵ bring, ⇧↵ more, ⌥↵ move; `⧉ N`; `PLANES` section. | `bringing` → `BringCards` BringCards.tsx:35 → `bringIn` places.ts:153; CardPanel.tsx:1039 | E+ | card-panel |
 | guides-snap | `g` snapping, `a` guides. | PlaneCards.tsx:385-389; guides.ts:31/37 | E+ | focus |
-| view-menu | Dock `[view ▾]`: snap, guides, comments (`c`). | ViewMenu.tsx:8 | all | focus-dock |
+| view-menu | Dock `view` drawer: snap, guides, comments (`c`). | ViewMenu.tsx:8 | all | focus-dock |
 | plane-filter | Dock `[filter]`: SHOW FOR TAG REGION LINKS. | `PlaneDockExtras` FilterDock.tsx:26 | all | focus-dock |
 | linked-strip | Dock `[linked · N]`. | FilterDock.tsx; CanvasView.tsx:1116-1141 | all | stick-link |
 | right-click-plane | Cards, text, links, several, empty plane. | `planeCtx` / `planeItems` planeMenu.ts:209/203 | all / E+ | focus |
@@ -171,7 +171,7 @@ are dead leftovers from 1.0.)
 | task-select | Click opens the task panel; Delete; several. | **`selectTask`/`selectTasks`** Kanban.tsx:171/173 | all / E+ | deck |
 | task-panel | Column, given to, due, card, checklist, labels, P1–P3, notes, learned. | `TaskPanel` TaskPanel.tsx:35 | all / E+ | task-select |
 | deck-filter | GIVEN TO / DUE / FOR / LABEL. | KanbanFilterDock.tsx:34 | all | deck |
-| deck-lanes | `[LANES ▾]`, lanes fold. | Kanban.tsx:710/692 | all | deck |
+| deck-lanes | `lanes` drawer, lanes fold. | Kanban.tsx:710/692 | all | deck |
 | deck-soon | `▾ SOON` band. | `SoonBand` Kanban.tsx:648 | all | deck |
 | deck-setup | Holds · cards · columns · boxes. | KanbanSetup.tsx:36 | E+ | deck |
 | card-deck / priorities | A deck of cards by field; `[order]` P1–P3. | CardKanban.tsx:40/351/367 | E+ | deck-wizard |

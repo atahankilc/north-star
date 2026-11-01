@@ -1,78 +1,26 @@
-/* The focus dock (D-189): a tab on the bottom edge of the screen, in the middle; no bottom border, magenta corner marks
-   on its top corners. It rises in a few steps once the plane has arrived. */
+/* The focus dock (D-189, D-347): the kit's Console on the screen's foot; here only its rise once the piece has arrived,
+   and its place in a part of the screen. */
 .dock {
   composes: rise from '../../../ui/foundation/Enter.module.css';
   --rise-from: translate(-50%, var(--space-2));
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  z-index: var(--z-2);
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-1);
-  border: var(--line-w) solid var(--piece-edge);
-  border-bottom: 0;
-  /* On the piece in focus: the screen's black (D-289). */
-  background: var(--bg);
-  color: var(--fg-dim);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  line-height: var(--space-4);
-  white-space: nowrap;
-  transform: translateX(-50%);
-  cursor: default;
-}
-
-.dock::before,
-.dock::after {
-  content: '';
-  position: absolute;
-  top: calc(-1 * var(--line-w));
-  width: var(--space-2);
-  height: var(--space-2);
-  border-top: var(--line-w) solid var(--accent-magenta);
-  pointer-events: none;
-}
-
-.dock::before {
-  left: calc(-1 * var(--line-w));
-  border-left: var(--line-w) solid var(--accent-magenta);
-}
-
-.dock::after {
-  right: calc(-1 * var(--line-w));
-  border-right: var(--line-w) solid var(--accent-magenta);
 }
 
 .dock[data-reduced='true'] {
   animation: none;
 }
 
-/* In a part of the screen narrower than it (D-314): it scrolls sideways, no bar. */
-.dock[data-in-part='true'] {
-  overflow-x: auto;
-  scrollbar-width: none;
+/* In a part of the screen (D-211, D-314), taking its whole foot: from the part's left edge, the part's width. */
+.dock[data-in-part='true'][data-full] {
+  left: 0 !important;
+  right: auto;
+  width: var(--part-w);
 }
 
-/* What it's the dock of (a pane's, D-211): caps, a long name cut with `…`, then `|`. */
-.name {
-  composes: label from '../../../ui/primitives/Label.module.css';
-  max-width: 44ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.dock[data-full] {
+  --rise-from: translateY(var(--space-2));
 }
 
-/* Its own colour over the kit's label (which can come again later): outweighs it. */
-.dock .name {
-  color: var(--fg);
+/* A setup open on it (matrix, table, deck): the setup is its floor, so its own top L's go. */
+body:has(section[data-learn='setup']) .dock {
+  --mkt: transparent;
 }
-
-.name {
-  padding-left: var(--space-2);
-}
-
-.sep {
-  color: var(--fg-faint);
-}
-

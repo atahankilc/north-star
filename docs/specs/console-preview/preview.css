@@ -1,0 +1,183 @@
+/* The preview's frame and its scenes (screens, pieces, cards, the HUD's corner). Colours, sizes and type from the app's
+   tokens.css; the button cell and ButtonGroup as the kit draws them (D-344). A preview, not app code. The console
+   options themselves are in options.css. */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 400 var(--text-sm)/1.5 var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── The preview's bar ── */
+.bar {
+  position: sticky; top: 0; z-index: 50; height: 46px;
+  display: flex; align-items: center; gap: 10px; padding: 0 16px;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+  font: 400 12px/1 var(--font-mono); color: var(--fg-dim);
+}
+.bar button { font: inherit; background: none; border: 1px solid transparent; color: var(--fg-dim); padding: 5px 7px; cursor: pointer; }
+.bar button:hover { color: var(--fg); }
+.bar button[aria-pressed='true'] { color: var(--fg); border-color: var(--line-hover); background: var(--wash-2); }
+.tabs { display: flex; gap: 2px; flex-wrap: wrap; }
+.tabs button b { color: var(--accent-magenta); font-weight: 400; margin-right: 6px; }
+.tabs button i { font-style: normal; color: var(--accent-yellow); margin-left: 4px; }
+.ctl { display: flex; align-items: center; gap: 4px; letter-spacing: var(--track-label); font-size: 11px; color: var(--fg-faint); }
+.sp { flex: 1; }
+
+/* ── Notes ── */
+.notes {
+  position: fixed; top: 46px; right: 0; bottom: 0; z-index: 40; width: 380px; overflow-y: auto;
+  padding: 20px 22px 40px; background: var(--bg); border-left: 1px solid var(--line);
+  font-size: 13px; line-height: 1.55; color: var(--fg-muted);
+}
+.notes[hidden] { display: none; }
+.notes h2 { margin: 0 0 4px; font: 500 20px/1.2 var(--font-display); color: var(--fg-strong); letter-spacing: var(--track-title); }
+.notes h3 { margin: 22px 0 8px; font: 400 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--fg-faint); }
+.notes p { margin: 0 0 10px; }
+.notes ul { margin: 0 0 10px; padding-left: 16px; }
+.notes li { margin-bottom: 4px; }
+.notes code, .analysis code { font-family: var(--font-mono); font-size: 0.9em; color: var(--fg); }
+.notes .plus { color: var(--accent-green); }
+.notes .minus { color: var(--accent-magenta); }
+
+/* ── Stage ── */
+.stage { padding: 24px 28px 80px; margin-right: 380px; }
+body[data-notes='off'] .stage { margin-right: 0; }
+.lede { max-width: 900px; margin: 0 0 22px; color: var(--fg-dim); }
+.lede b { color: var(--fg); font-weight: 500; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(560px, 1fr)); gap: 18px; }
+.scene { position: relative; border: 1px solid var(--line); background: var(--bg); min-width: 0; }
+.scene.wide { grid-column: 1 / -1; }
+.sceneHead { display: flex; align-items: baseline; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); font: 400 12px/1.3 var(--font-mono); }
+.sceneHead .caps { color: var(--fg-dim); text-transform: uppercase; letter-spacing: var(--track-label); }
+.sceneHead .caps b { color: var(--accent-magenta); font-weight: 400; margin-right: 6px; }
+.sceneHead .where { color: var(--fg-faint); }
+
+/* A screen: a fixed box the scene draws into, cut at its edges. */
+.screen { position: relative; overflow: hidden; height: 420px; background: var(--bg); }
+.screen.tall { height: 500px; }
+.screen.short { height: 300px; }
+.dots { background-image: radial-gradient(var(--grid-mark) 1px, transparent 1.2px); background-size: 25px 25px; }
+
+/* A piece: graphite, its kind's band on top, the name cut into the top edge (D-223, D-263). */
+.piece {
+  position: absolute; background: var(--piece); box-shadow: var(--piece-shadow);
+  border: var(--line-w) solid var(--piece-edge);
+}
+.piece::before { content: ''; position: absolute; left: -1px; right: -1px; top: -1px; height: 2px; background: var(--kind, var(--fg)); }
+.piece[data-kind='table'] { --kind: var(--link-part); }
+.piece[data-kind='kanban'] { --kind: var(--link-draws); }
+.piece[data-kind='matrix'] { --kind: var(--link-solves); }
+.piece[data-kind='timeline'] { --kind: var(--link-competes); }
+.piece .pname {
+  position: absolute; top: -8px; left: 16px; padding: 0 8px; background: var(--bg); z-index: 1;
+  font: 500 11px/16px var(--font-mono); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--fg); white-space: nowrap;
+}
+.piece .pname em { font-style: normal; color: var(--accent-magenta); margin-right: 6px; }
+.piece .pname span { color: var(--fg-faint); }
+.piece .inner { position: absolute; inset: 14px 14px 14px; overflow: hidden; }
+.piece .inner.dots { background-color: transparent; }
+.piece[data-editing] { border-color: var(--accent-cyan); }
+.piece[data-editing] .handle { position: absolute; width: 7px; height: 7px; background: var(--accent-cyan); }
+
+/* Unframed (D-267): ink on the page, its name a small line. */
+.open { position: absolute; }
+.open .oname { font: 400 11px/1 var(--font-mono); letter-spacing: var(--track-label); color: var(--fg-dim); text-transform: uppercase; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
+.open .oname em { font-style: normal; color: var(--accent-magenta); }
+.open .oname i { flex: 0 0 34px; height: 1px; background: var(--line-hover); }
+
+/* Cards: their type's tint, a type edge on the left. */
+.card { position: absolute; width: 92px; height: 46px; background: color-mix(in srgb, var(--t) 16%, var(--piece-card)); border-left: 2px solid var(--t); padding: 5px 7px; font-size: 10px; line-height: 1.25; color: var(--fg); overflow: hidden; }
+.card small { display: block; font: 400 8px/1 var(--font-mono); color: var(--t); letter-spacing: var(--track-label); margin-bottom: 3px; text-transform: uppercase; }
+.card.big { width: 150px; height: 74px; font-size: 12px; padding: 8px 10px; }
+.card.big small { font-size: 9px; }
+.card.faded { opacity: 0.18; }
+.link { position: absolute; height: 1px; background: var(--link-solves); transform-origin: 0 0; }
+
+/* Table rows, a matrix's cells, a deck's columns: shapes only. */
+.trow { display: grid; grid-template-columns: 1.4fr 1fr 0.8fr; gap: 10px; padding: 5px 0; border-bottom: 1px dashed var(--line); font-size: 11px; color: var(--fg-muted); }
+.trow.head { font: 400 9px/1 var(--font-mono); color: var(--fg-faint); text-transform: uppercase; letter-spacing: var(--track-label); border-bottom: 1px solid var(--line-hover); padding-bottom: 7px; }
+.cols { display: flex; gap: 14px; }
+.col { flex: 1; min-width: 0; }
+.colHead { font: 400 10px/1 var(--font-mono); color: var(--fg-dim); letter-spacing: var(--track-label); display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+.colHead b { color: var(--accent-magenta); font-weight: 400; }
+.colHead i { flex: 1; height: 1px; background: var(--line-hover); }
+.task { background: var(--piece-card); border-left: 2px solid var(--t, var(--fg-faint)); padding: 6px 8px; margin-bottom: 6px; font-size: 11px; color: var(--fg); }
+.task small { display: block; font: 400 9px/1.2 var(--font-mono); color: var(--fg-faint); margin-top: 3px; }
+
+/* The HUD on a screen: breadcrumb top left, the side nav at the left's middle, the bottom-left corner. */
+.crumb { position: absolute; left: 14px; top: 12px; font: 400 12px/1 var(--font-mono); color: var(--fg-dim); z-index: 3; }
+.crumb b { color: var(--fg); font-weight: 400; }
+.sidenav { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 1px; z-index: 3; }
+.sidenav span { width: 30px; height: 30px; background: var(--wash-2); display: grid; place-items: center; color: var(--fg-dim); font: 400 13px/1 var(--font-mono); }
+.corner { position: absolute; left: 12px; bottom: 10px; display: flex; flex-direction: column; gap: 6px; z-index: 3; }
+.corner .ppl { display: flex; }
+.corner .ppl i { width: 22px; height: 22px; margin-right: -5px; box-shadow: 0 0 0 2px var(--bg); }
+.corner .me { display: flex; gap: 1px; }
+.corner .me span { width: 30px; height: 30px; background: var(--wash-2); }
+.corner .me span:first-child { background: var(--accent-green); opacity: 0.8; }
+.threadsTab { position: absolute; left: 92px; bottom: 0; height: 26px; width: 120px; border: 1px solid var(--piece-edge); border-bottom: 0; background: var(--bg); z-index: 3; font: 400 11px/26px var(--font-mono); color: var(--fg-dim); padding-left: 10px; }
+.rightPanel { position: absolute; right: 0; top: 0; bottom: 0; width: 220px; background: var(--piece); border-left: 1px solid var(--piece-edge); z-index: 2; padding: 14px; font: 400 11px/1.5 var(--font-mono); color: var(--fg-faint); }
+
+/* Selection Marks (D-265): L's at the corners. */
+.marks { position: absolute; pointer-events: none; }
+.marks i { position: absolute; width: 9px; height: 9px; border: 0 solid var(--accent-cyan); }
+.marks i:nth-child(1) { left: -5px; top: -5px; border-width: 1.5px 0 0 1.5px; }
+.marks i:nth-child(2) { right: -5px; top: -5px; border-width: 1.5px 1.5px 0 0; }
+.marks i:nth-child(3) { left: -5px; bottom: -5px; border-width: 0 0 1.5px 1.5px; }
+.marks i:nth-child(4) { right: -5px; bottom: -5px; border-width: 0 1.5px 1.5px 0; }
+
+/* A split screen (beside, D-211). */
+.split { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line-hover); z-index: 4; }
+
+/* ── The kit's button cell (D-344) and ButtonGroup: drawn here as the app draws them ── */
+.b {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  height: 24px; padding: 0 8px; border: 0; background: var(--wash-2); color: var(--fg-dim);
+  font: 400 12px/1 var(--font-mono); white-space: nowrap; cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+.b:hover { background: var(--wash-3); color: var(--fg-strong); }
+.b[data-icon] { min-width: 24px; padding: 0 4px; }
+.b[data-tone='main'] { background: var(--wash-4); color: var(--fg-strong); }
+.b[data-tone='primary'] { background: var(--accent-cyan); color: var(--on-accent); font-weight: 500; }
+.b[data-tone='danger']:hover { background: var(--wash-magenta); color: var(--accent-magenta); }
+.b[data-tone='warn'] { color: var(--accent-magenta); }
+.b[data-on] { background: color-mix(in srgb, var(--accent-cyan) var(--mix-wash), transparent); color: var(--accent-cyan); box-shadow: inset 0 -1px 0 var(--accent-cyan); }
+.b .n { color: var(--accent-magenta); }
+.b .caret { color: var(--fg-faint); font-size: 10px; }
+.b svg { width: 11px; height: 11px; }
+.g { display: inline-flex; gap: 1px; flex: none; }
+.ro { display: inline-flex; align-items: center; font: 400 12px/1 var(--font-mono); color: var(--fg); white-space: nowrap; padding: 0 4px; }
+.ro.dim { color: var(--fg-dim); }
+.mode { font: 400 12px/1 var(--font-mono); color: var(--accent-cyan); letter-spacing: var(--track-label); padding: 0 4px 0 6px; }
+.sw { width: 14px; height: 14px; display: inline-block; }
+
+/* Hidden until pointed at (the CONSOLES control). */
+body[data-show='hover'] .piece:not([data-editing]) .con:not([data-keep]):not([data-editing]),
+body[data-show='hover'] .open .con:not([data-keep]) { opacity: 0; transition: opacity var(--dur-fast); }
+body[data-show='hover'] .piece:hover .con,
+body[data-show='hover'] .open:hover .con { opacity: 1; }
+
+/* ── The analysis page ── */
+.analysis { max-width: 1000px; }
+.analysis h2 { font: 500 26px/1.2 var(--font-display); color: var(--fg-strong); letter-spacing: var(--track-title); margin: 0 0 6px; }
+.analysis h3 { margin: 30px 0 10px; font: 400 12px/1 var(--font-mono); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--fg-dim); display: flex; gap: 10px; align-items: center; }
+.analysis h3 b { color: var(--accent-magenta); font-weight: 400; }
+.analysis h3::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.analysis p, .analysis li { color: var(--fg-muted); max-width: 860px; }
+.analysis li { margin-bottom: 6px; }
+.analysis .big { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 18px 0; }
+.analysis .big div { border: 1px solid var(--line); padding: 14px; }
+.analysis .big b { display: block; font: 500 34px/1 var(--font-mono); color: var(--fg-strong); }
+.analysis .big b.m { color: var(--accent-magenta); }
+.analysis .big span { font-size: 12px; color: var(--fg-dim); }
+.looks { width: 100%; border-collapse: collapse; font-size: 13px; }
+.looks td, .looks th { padding: 8px 10px; border-top: 1px solid var(--line); text-align: left; vertical-align: top; color: var(--fg-muted); }
+.looks th { font: 400 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--fg-faint); border-top: 0; }
+.looks td:first-child { white-space: nowrap; color: var(--fg); font-family: var(--font-mono); font-size: 12px; }
+.looks .n { font-family: var(--font-mono); color: var(--fg); text-align: right; }
+.api { background: var(--piece); border: 1px solid var(--piece-edge); padding: 14px 16px; font: 400 12px/1.6 var(--font-mono); color: var(--fg-muted); white-space: pre; overflow-x: auto; }
+.api b { color: var(--accent-cyan); font-weight: 400; }
+.api i { color: var(--fg-faint); font-style: normal; }

@@ -3586,7 +3586,7 @@ categories shown like B, not in a card, and the features under them not indented
 - *Look:* a column flush with the right edge of its space, 400 px (narrower if the space is), the screen's full height
   (the user: "side panel neden en tepeye kadar uzanmıyor?"; it's in a portal over the HUD's bar, whose shade had dimmed
   its top line, and nothing of the bar's sits on the right), `--bg`, a `--line-hover` line on its left with 7 px
-  magenta marks on its two left corners (a plane console's, the focus dock's). Along the top the kind in uppercase in
+  magenta marks on its two left corners (a plane console's, the focus dock's; faint marks since D-347). Along the top the kind in uppercase in
   its colour and `[×] esc`; the title in Geist 22 px under it and a rule; then sections under rules that carry a number
   and a name (`01 STATUS ────`), the body scrolling; `[verb]` actions at the foot over a rule. It builds up cell by cell
   as it opens and breaks apart as it closes (`<Appear>`, D-034); one panel stays while what it shows changes.
@@ -4857,7 +4857,7 @@ The user asked for session 2 of the consistency plan.
 
 ### D-273 · 2026-10-27 · Accepted (builds D-265's resize language and its drag rule for pieces and sections; consistency session 3, docs/specs/consistency.md)
 **One resize language: cyan handles on the ring, only when selected (a piece in edit mode); the moving edges lit and the
-size beside them. Pieces in edit mode and sections move like everything else: 0.8 under the pointer, L's where they land.**
+size beside them (no size since D-347). Pieces in edit mode and sections move like everything else: 0.8 under the pointer, L's where they land.**
 The user asked for session 3 of the consistency plan.
 - *Handles (`Marks`' `handles`, `onHandle`, `resizing`, `readout`):* a corner's is its L in cyan, `len + 2 × 5 px` to
   grab; an edge's a bar at its middle, the L's stroke wide, `1.2 × L` long, 5 px of grab round it; both on the ring
@@ -6618,6 +6618,42 @@ Inside a workspace (`/workspaces/<id>`) the backdrop runs at 70 % brightness (`W
 src/three/sceneClock.ts, passed as `<Backdrop dim>` from App.tsx); the landing and the workspaces page stay at full.
 It eases there through the existing `backdropDim` (the curtain reads the same value). Replaces D-174's "full strength"
 on the canvas. *Not yet:* looked at in a browser by the user; 0.8 at first, then 0.7 (the user: "biraz daha azalt, 0.7 yap").
+
+### D-347 · 2026-11-01 · Accepted (the user: "seninle console alanlarını refactor edip redesing etmek istiyorum… hepsi aynı bileşene geçsin, önce seçenekleri göster"; "edit modunda dimentionlar gösterilmicek artık, umrumuzda değil dimentionlar"; "belki console yer yoksa tam alan kaplayabilir, küçülmeye zorlamasına gerek yok kendini, yada bi width ten sonra bütün alt kısmı kendine alabilir"; "kenardaki pembe L ler de tekrar gözden geçirilebilir"; the pick: "D+E ve marks olsun ancak mark sadece üst tarafta değil alt taraftada olsun eğer gözükcekse (mesela focus mod da consolun alt köşelerine onu koymak olmaz), bir de header yada linkler için de borderı kaldırıp markları kullanalım sadece")
+Every console, dock and bar is one component, `Console` (src/ui/patterns): a piece's console, the focus dock, the
+filter and linked strips, the panes' docks (Beside, the tasks side view, documents), a document reader's, the canvas
+setup's, and the bars under a selected heading/text, link or matrix cell. The look is option D+E of
+docs/specs/console-preview/ (options A–E kept there):
+- **The rail (D):** one row, left to right: who (a pane's or bar's name, the mode, readouts like `14 cards`, a page
+  `‹ 2 / 5 ›`) · nouns (`filter 2`, `view`, `linked 2`, `lanes`) · direct tools · go last (`focus`/`unfocus`/`done`/
+  `close`), each a ButtonGroup by role (state · view · open · edit · danger · go). A noun is a tab of the rail; picked,
+  its drawer opens as the rail's upper floor inside the same frame, its summary in the floor's title, one at a time.
+  Menus that were lists of switches (`view ▾`) become drawers; strips no longer float 8 px over the dock (D-233, D-235).
+- **Where (E):** on the canvas the rail sits cut into the piece's bottom edge, half in, half out, near the right
+  corner, so it never covers what the piece holds; unframed it hangs under the contents' right end; in focus and in a
+  pane it stands on the screen's foot in the middle, as the dock did. Shown on the same rule as before (D-264).
+- **No room:** past 70 % of the width it hangs on, the rail takes the whole edge and wraps upward; go keeps the right
+  end; it never shrinks, never hides a tool in `⋯`, never runs past the edge.
+- **Edit mode:** no size anywhere (`EDIT 960 × 600` gone); the rail just turns cyan with its tools and `done`.
+- **Corners (marks):** no edge line and no magenta L's (D-189); faint L's like a selection's at rest on every corner
+  that can be seen, cyan while pointed at or in edit mode. A rail standing on the screen's foot has only its top two.
+  The bars under a heading, a link or a cell the same: no border, marks only.
+- **Shown:** outside focus only while pointed at (D-264's rule: also in edit mode, with its setup open or the keyboard
+  in it; fresh comments keep their tab); in focus and in panes always (the user: "always göstermek yerine hover da
+  gösterelim focus mod dışında").
+- **The right panel (D-219)** takes the same marks instead of its magenta L's (the user: "geçsin bakalım").
+- **No live size while resizing** either (D-273's "the size shown" goes; the user: "canlı boyut kesin kalksın").
+Alternatives: A (tidy tab), B (status line), C (prompt console), D or E alone; corners: kind band, cyan L, a magenta
+lead, none. Built 2026-11-01: `Console`, `ConsoleTab`, `ConsoleFloor`, `FloorTitle` in src/ui/patterns (gallery
+page), CONSOLE_FILL in feel.ts; a piece's console, the focus dock and every pane's dock (FocusDock), the plane's and a
+deck's filter and the linked drawer (floors, one at a time), the heading/text, link and cell bars, the right panel's
+marks; the resize size gone (Marks, text, the table's column grip); lessons piece-console, plane-filter, deck-filter
+v2. Checked in the gallery (headless): pieces pointed at, edit mode (full edge), docks, the filter floor.
+Then (the user: "geriye kalan her şeyi yap"): `view`, a deck's `lanes`/`rows` and a timeline's `rows` are drawers
+too (`DrawerPick`, `useDrawer`: one drawer open on the screen at a time, Escape closes it), each floor titled; the
+documents dock keeps its words when narrow (no marks for words); a setup (matrix, table, deck) sits on the dock as
+its floor, faint L's on its top, a line under it, the dock's own top L's gone meanwhile; checked in both themes (gallery, headless). *Not yet:* a look in the app
+by the user.
 
 ### D-348 · 2026-11-01 · Accepted (the user: "hud ın büyüklüğünü ayarlara geçirmek istiyorum, display ayarlarına geçebilir. Eğer başka önerilerin varsa da dinlemek isterim"; picked "small / normal / large" and, of the other ideas, "Arka plan yoğunluğu")
 Settings → display gets two rows, saved in this browser like theme, motion and background:

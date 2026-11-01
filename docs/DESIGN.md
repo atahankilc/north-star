@@ -111,8 +111,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   what it holds on `--piece-card`) and exactly as big as its contents; under each row (a matrix's heads and cells, a table's
   rows, a kanban's heads and tasks, a list's rows and sheets) a shade that hugs it (page colour at 80 %, feathered
   `0 0 16px 10px` at 72 %), as under text; its name a heading's small line 8 px over its contents
-  (`04 ── RIVALS · TABLE`, mono 12 px on the screen, caps, tracked `--track-label`, the number magenta); its console the same, on
-  the same hover rule, hanging 10 px under the contents' right end. A dropdown in a console or dock is plain text, like
+  (`04 ── RIVALS · TABLE`, mono 12 px on the screen, caps, tracked `--track-label`, the number magenta); its console the same rail, on
+  the same hover rule, hanging 10 px under the contents' right end (D-347). A dropdown in a console or dock is plain text, like
   the link `Select` (`label value ▾`, no frame or fill).
   Going between: the window breaks (or builds) cell by cell while the contents grow from fitted to their own size (or
   shrink back), 320 ms, eased both ends; nothing else moves.
@@ -148,7 +148,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   never repaints, repads or resizes it.
 - **ButtonGroup** (D-344, `src/ui/primitives/ButtonGroup.tsx`): buttons that belong together join into one strip, a
   hairline between their cells instead of a gap: a dock's or console's actions, a panel's or a wizard's foot, a zoom's
-  `− 100% +`, a Choice's options. Menu's triggers (`SHOW all ▾`, `lanes ▾`, the side nav's `+`) are the same cell.
+  `− 100% +`, a Choice's options. Menu's triggers (`SHOW all ▾`, the side nav's `+`) are the same cell.
 - **Controls are toggle cells** (D-344), one kit component each: Checkbox (the label is the cell, `✓` before it while
   on; no label, a square box cell; `CheckMark` inside a row), Tabs (cells joined by the seam, filling their row; Choice
   is its segments, Steps its cell), one dropdown trigger (`Trigger.module.css`, Menu's and Select's). A menu's ticked
@@ -172,7 +172,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   unfolded package dragged by its band) shrinks with them as one, round the same point, in the same 160 ms, and only
   its L's show where it lands (D-291). Text's L's are on its edges (the project title's 7 px out); where a heading or
   paragraph lands is rounded up to the grid, so its L's sit on the grid's dots (D-294). Resizing: cyan handles on the ring
-  only while selected (a corner's L, an edge's bar), the moving edges lit cyan, the size beside them.
+  only while selected (a corner's L, an edge's bar), the moving edges lit cyan, no size shown (D-347).
 - **Cards** (D-055, D-152, D-205): flat, one shape for every type; a left border and a small uppercase label in the type's
   colour (customer green, problem magenta, competitor yellow, idea white, feature cyan, package blue), the face a dark
   tone of it (`--card-tint` of the colour over `--bg-raised`: 16 %, light 9 %; a matrix's card heads and a package's
@@ -214,7 +214,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   with its tools.
 - Alignment guides (D-117, D-231): while dragging on a plane, a card pulls into line with others' edges and centres
   within 6 px, 1 px magenta lines across what it lines up with. `a` guides, `g` snapping, per browser, in the focus
-  dock's `[view ▾]`; alt drags freely.
+  dock's `view` drawer (D-347); alt drags freely.
 - Right-click (D-117, D-237): the prompt (D-222) at the pointer. In a focused plane: a card's open / fold / copy /
   duplicate / delete; text's edit / copy / duplicate / delete; a link's label / turn round / kind / remove; several's
   copy / duplicate / delete; the plane's paste and add here; `comment` on any component (D-193). A right drag still pans.
@@ -228,13 +228,18 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Name (D-223, D-276): in the top edge (see *Names and lines*), 13 px × zoom on screen (11–15), `--fg` caps weight 500,
   the kind faint after it (`PAZAR · PLANE`; unnamed, the kind alone in `--fg-faint`); tight, the kind goes first, then
   the name takes a `…`; hovered, all of it. Edit mode: a cyan-framed field, a cyan `>` and `17/80`.
-- Console (D-181, D-264, D-275): a tab standing on the bottom edge inside the bottom-right corner, shown only while the
-  piece is pointed at (cell by cell), in edit mode, with its setup or the keyboard in it; 11 px, growing to 1.4 × as the
-  canvas zooms out; new comments keep a small magenta tab. Edit mode: marks in the kind's colour, a cyan handle on every
-  corner and edge, the console a cyan status line with the live size and `[done]`.
+- Console (D-264, D-275, D-347; docs/specs/console-preview/, option D+E): one `Console` everywhere. A rail: who (name,
+  mode, readouts, a page) · nouns (`filter 2`, `view`, `linked 2`), each opening its drawer as the rail's upper floor,
+  one at a time · tools · go last; groups by role, each a ButtonGroup. On the canvas cut into the piece's bottom edge,
+  half in, half out, near the right corner (never over what the piece holds); shown only while the piece is pointed
+  at (cell by cell), in edit mode, with its setup or the keyboard in it; 11 px, growing to 1.4 × as the canvas zooms
+  out; new comments keep a small magenta tab. Past 70 % of its edge's width it takes the whole edge and wraps upward,
+  go at the right end. No edge line: faint L's on its visible corners (only the top two when it stands on the
+  screen's foot), cyan while pointed at or in edit mode. Edit mode: marks in the kind's colour, a cyan handle on every
+  corner and edge, the rail cyan with `delete` and `done`, no size.
 - Focus (D-185, D-189, D-297): a plane spreads over the screen like ink, cell by cell, while its own view glides to fit
   what it holds (going out it glides home while the ink draws back); its page eases from the piece's graphite to the
-  black on the way in and back on the way out, everything on `--bg` inside with it. The focus dock is a tab on the bottom edge's middle, its actions one ButtonGroup, `unfocus` last. The right of the screen stays free,
+  black on the way in and back on the way out, everything on `--bg` inside with it. The focus dock is the same Console standing on the screen's foot in the middle (D-347), `unfocus` last. The right of the screen stays free,
   except what's beside the plane (D-211) and the right panel (D-219).
 
 ### HUD (D-027, D-175)

@@ -66,6 +66,7 @@ import { DUR } from '../../../ui/foundation/motion'
 import { MATRIX_PX } from '../../../model/world'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
+import { Console } from '../../../ui/patterns/Console'
 import { Empty } from '../../../ui/primitives/Empty'
 
 // The matrix's parts in its own px: model/world.ts (D-325).
@@ -998,7 +999,7 @@ function CellBar({ setup, cell, row, col, editor, onFold, at, room, write, onTyp
   }, [])
   const left = room && w ? Math.max(8, Math.min(at[0], room - w - 8)) : at[0]
   return (
-    <div ref={bar} className={styles.cellBar} data-learn="cell-bar" data-screen-sized style={{ left, top: at[1] + 8 }} role="toolbar" aria-label="Cell" onPointerDown={(e) => e.stopPropagation()}>
+    <Console ref={bar} at="under" fill={false} className={styles.cellBar} data-learn="cell-bar" data-screen-sized style={{ left, top: at[1] + 8 }} aria-label="Cell" onPointerDown={(e) => e.stopPropagation()}>
       <div className={styles.where}>
         <span>{row.name || 'untitled'}</span>
         <span className={styles.cross}>×</span>
@@ -1075,7 +1076,7 @@ function CellBar({ setup, cell, row, col, editor, onFold, at, room, write, onTyp
       ) : (
         cell?.notes && <p className={styles.noteText}>{cell.notes}</p>
       )}
-    </div>
+    </Console>
   )
 }
 

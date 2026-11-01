@@ -544,7 +544,6 @@ function WidthGrip({ x, height, zoom, sizing, onMove, onDone, onReset }: GripPro
       }}
       onDoubleClick={onReset}
     >
-      {sizing !== null && <span className={styles.readout}>{sizing}</span>}
     </div>
   )
 }

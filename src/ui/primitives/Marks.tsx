@@ -9,7 +9,7 @@
 // states switch at once.
 // Resizing (D-265): handles on the ring, in cyan, where the caller says (only while it's selected, or a piece in edit
 // mode): a corner's is that corner's L, an edge's a bar at its middle; hovered they grow like a pressed L. While one is
-// dragged (`resizing`) the edges it moves light cyan along their whole length, and `readout` says the size beside them.
+// dragged (`resizing`) the edges it moves light cyan along their whole length; no size is shown (D-347).
 // Drawn inside a space scaled by `zoom` (screen px per space px), so the sizes are divided back by it (`--zs`); without
 // `zoom` it's the `--zs` its space sets (`zsOf`), so a memoised cell needn't draw again as the view zooms.
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
@@ -84,12 +84,11 @@ type Props = {
   handles?: Handle[]
   onHandle?: (h: Handle, e: ReactPointerEvent<HTMLElement>) => void
   resizing?: Handle | null
-  readout?: string
 }
 
 type State = 'none' | 'hover' | 'sel' | 'press' | 'arrive' | 'drag' | 'target'
 
-export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live = true, hover, selected = false, pressed = false, dragging = false, target = false, peers, handles, onHandle, resizing, readout }: Props) {
+export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live = true, hover, selected = false, pressed = false, dragging = false, target = false, peers, handles, onHandle, resizing }: Props) {
   const reduced = useMotion((s) => s.reduced)
   // Selected without a press: a frame on the corners first, then the spring out (`arrive`). Let go after a drag: on the
   // corners while it grows back (`settle`), then the spring.
@@ -151,11 +150,6 @@ export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live 
             <span key={h} className={styles.handle} data-h={h} data-k={h.length === 2 ? 'c' : 'b'} data-on={resizing === h || undefined} onPointerDown={(e) => onHandle?.(h, e)} aria-hidden />
           ))}
           {resizing && [...resizing].map((e) => <span key={e} className={styles.edge} data-e={e} aria-hidden />)}
-          {resizing && readout && (
-            <span className={styles.readout} data-at={/[ns]/.test(resizing) ? 'below' : 'right'}>
-              {readout}
-            </span>
-          )}
         </span>
       )}
       {peers?.map((p, i) => (

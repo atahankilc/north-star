@@ -62,6 +62,7 @@ import { headingSize, kickPx, labelBox, STICKY_TEXT_TOP, type HeadingSize } from
 import { AUTOSAVE_MS, DRAG_PX } from '../../../ui/foundation/feel'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
+import { Console } from '../../../ui/patterns/Console'
 export { labelBox } from '../../../model/labelBox'
 
 // Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
@@ -302,7 +303,6 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   // text: the top reading upwards, the bottom reading down); a section's right, bottom and corner.
   const handles: Handle[] = kind === 'section' ? ['e', 's', 'se'] : kind === 'heading' ? [] : [turn === 90 ? 'n' : turn === -90 ? 's' : 'e']
   const onHandle = (hd: Handle, e: ReactPointerEvent<HTMLElement>) => resize(kind !== 'section' ? 'w' : hd === 'e' ? 'w' : hd === 's' ? 'h' : 'wh', hd)(e)
-  const readout = sizing && held ? (kind === 'section' ? `${Math.round(w ?? 0)} × ${Math.round(h ?? 0)}` : `${Math.round(held.w ?? w ?? 0)}`) : undefined
   const marks = (
     <>
       {live && (
@@ -319,7 +319,6 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
           handles={selected && editor && !typing ? handles : undefined}
           onHandle={onHandle}
           resizing={sizing}
-          readout={readout}
         />
       )}
       {live && <ThreadChip wid={wid} thread={threadOn(threads, l.id)} zoom={zoom} />}
@@ -901,7 +900,7 @@ const SIDES: ['top' | 'left', string, string][] = [
   ['left', '⌊ left', 'name up the left edge'],
 ]
 
-// Under the selected one, at the screen's own size: how it's set (a terminal line, like a plane's console). A heading
+// Under the selected one, at the screen's own size: how it's set, the Console named by its kind (D-347). A heading
 // or section name: H1–H3, B/I/AA; a paragraph or sticky note: S/M/L; a paragraph B/I/AA too. Headings and paragraphs
 // turn; a section's name goes in the top or left edge. Then its colour, edit (rename) and delete.
 function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
@@ -912,7 +911,7 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
   const named = kind === 'heading' || kind === 'section'
   const sizes = named ? SIZES : kind === 'paragraph' || kind === 'sticky' ? SCALES : []
   return (
-    <div className={styles.bar} data-learn="text-bar" data-screen-sized style={{ transform: `scale(${1 / zoom})` }} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+    <Console at="under" fill={false} name={kind} aria-label={kind} className={styles.bar} data-learn="text-bar" data-screen-sized style={{ transform: `scale(${1 / zoom})` }} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
       {sizes.length > 0 && (
         <ButtonGroup label="Size">
           {sizes.map(([s, name]) => (
@@ -983,7 +982,7 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
           delete
         </Button>
       </ButtonGroup>
-    </div>
+    </Console>
   )
 }
 

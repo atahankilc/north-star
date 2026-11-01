@@ -1,38 +1,33 @@
-// The focus dock (D-189): a tab sitting on the bottom edge of the screen, in the middle, while a plane is in focus. It
-// holds what can be done there, `unfocus` last; more actions come in before it, joined in one strip (ButtonGroup,
-// D-344). No plane name: the breadcrumb has it. The same dock is a pane's beside a plane (D-211), named. No keys shown
-// (Escape closes what's open next; onboarding teaches it).
+// The focus dock (D-189, D-347): the Console standing on the screen's foot, in the middle, while a piece is in focus. It
+// holds what can be done there, `unfocus` last; what opens from it (filters, what's linked) opens as its upper floor
+// (ConsoleFloor). No plane name: the breadcrumb has it. The same dock is a pane's beside a plane (D-211), named. No keys
+// shown (Escape closes what's open next; onboarding teaches it).
 import type { ReactNode } from 'react'
 import { isReducedMotion } from '../../../state/motion'
 import styles from './FocusDock.module.css'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
+import { Console } from '../../../ui/patterns/Console'
 
 // `center`: where its middle sits (screen px); its box's middle when unset (the screen's, or a pane's beside a plane:
-// each part has its own dock, D-211). `name`: what it's the dock of, first, set off by `|` (a pane's: `TABLE · costs`).
+// each part has its own dock, D-211). `name`: what it's the dock of, first (a pane's: `TABLE · costs`).
 export function FocusDock({ children, center, name, label = 'Focus' }: { children: ReactNode; center?: number; name?: ReactNode; label?: string }) {
   return (
-    <div
+    <Console
+      at="foot"
       className={styles.dock}
-      role="toolbar"
       aria-label={label}
+      name={name}
       data-learn="dock"
       data-reduced={isReducedMotion() || undefined}
-      // In a part of the screen (`center` its middle), kept inside it: past its width it scrolls sideways (D-314).
-      style={center !== undefined ? { left: center, maxWidth: Math.max(160, 2 * center - 16) } : undefined}
+      // In a part of the screen (`center` its middle): past most of its width it takes the part's whole foot (D-347).
+      room={center !== undefined ? 2 * center : undefined}
+      style={center !== undefined ? { left: center, ['--part-w' as string]: `${2 * center}px` } : undefined}
       data-in-part={center !== undefined || undefined}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      {name && (
-        <>
-          <span className={styles.name}>{name}</span>
-          <span className={styles.sep} aria-hidden>
-            |
-          </span>
-        </>
-      )}
       <ButtonGroup>{children}</ButtonGroup>
-    </div>
+    </Console>
   )
 }
 

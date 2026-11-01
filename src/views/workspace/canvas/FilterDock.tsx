@@ -1,6 +1,6 @@
-// A focused plane's filters (D-233): one `[filter]` in the focus dock; pressed, a strip opens over the dock in the
-// console's look (the same edge, magenta marks on its top corners), pressed again it closes. What's linked to the plane
-// (D-210) has its own `[linked · N]` and strip the same way (D-235), under the filter's when both are open. On it, the old board's
+// A focused plane's filters (D-233): `filter` in the focus dock, a tab of its rail (D-347); picked, its drawer opens as
+// the dock's upper floor, picked again it closes. What's linked to the plane (D-210) has its own `linked N` tab and
+// drawer the same way (D-235); one open at a time. On it, the old board's
 // filters in a row, each its own menu (the user): SHOW (card types), FOR (the plane's customers), TAG (its tags),
 // REGION (where its competitors are), LINKS (kinds of link, each in its colour), then `[reset]`. Builds and breaks cell
 // by cell (D-034). The filter lasts while the focus is open (D-308).
@@ -9,69 +9,47 @@ import { useEffect, type ReactNode } from 'react'
 import { create } from 'zustand'
 import { ALL_TYPES, type Card } from '../../../data/cards'
 import { Appear } from '../../../ui/primitives/Appear'
-import { useCanvasView } from '../../../state/canvasView'
 import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
 import menuStyles from '../../../ui/patterns/Menu.module.css'
-import { DockAction } from './FocusDock'
+import { ConsoleFloor, ConsoleTab, FloorTitle, useEscapeCloses } from '../../../ui/patterns/Console'
 import { linkTone } from '../plane/PlaneLinks'
 import { LINK_GROUPS, narrowing, setFilter, START, useFilter, useHoldFilter, type Filter } from './planeFilter'
 import styles from './FilterDock.module.css'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { Button } from '../../../ui/primitives/Button'
 
-// What opens over the focus dock (D-233, D-235): each its own strip in the console's look, stacked with a gap; Escape
-// closes the top one (once no menu in it is open).
-type Shelf = { filter: boolean; linked: boolean }
-export const useShelf = create<Shelf>(() => ({ filter: false, linked: false }))
+// What's open over the focus dock (D-233, D-235, D-347): one drawer at a time; Escape closes it (once no menu in it is
+// open).
+type Shelf = { filter: boolean; linked: boolean; view: boolean }
+export const useShelf = create<Shelf>(() => ({ filter: false, linked: false, view: false }))
+export const SHUT: Shelf = { filter: false, linked: false, view: false }
 
-// The plane's dock: `[filter]` and `[linked · N]` (what's stuck to it, D-210), each opening its strip over the dock.
+// The plane's dock: `filter` and `linked N` (what's stuck to it, D-210), each opening its drawer as the dock's floor.
 export function PlaneDockExtras({ plane, cards, stuck }: { plane: string; cards: Card[]; stuck?: { count: number; strip: ReactNode } }) {
   const { filter, linked } = useShelf()
-  // No wider than the plane's own part of the screen (its half with something open beside it, D-211), clear of the
-  // side nav on the left.
-  const room = useCanvasView((s) => (s.beside ? Math.round(s.size.w * s.split) : s.size.w)) - 2 * 72
   const f = useFilter(plane)
   useHoldFilter(plane)
   const n = narrowing(f)
-  useEffect(() => {
-    if (!filter && !linked) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      if ((e.target as HTMLElement | null)?.closest('input, textarea, [role=menu], [role=listbox], [aria-modal=true], [data-coach]')) return
-      e.stopImmediatePropagation()
-      useShelf.setState(filter ? { filter: false } : { linked: false })
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [filter, linked])
-  useEffect(() => () => useShelf.setState({ filter: false, linked: false }), [])
+  const view = useShelf((s) => s.view)
+  useEscapeCloses(filter || linked || view, () => useShelf.setState(SHUT))
+  useEffect(() => () => useShelf.setState(SHUT), [])
   return (
     <>
-      <DockAction
-        label={n ? `filter · ${n}` : 'filter'}
-        pressed={filter || n > 0}
-        title={filter ? 'close the filters' : 'what this plane shows'}
-        onClick={() => useShelf.setState({ filter: !filter })}
-      />
+      <ConsoleTab label="filter" n={n} open={filter} title={filter ? 'close the filters' : 'what this plane shows'} onClick={() => useShelf.setState({ ...SHUT, filter: !filter })} />
       {stuck && stuck.count > 0 && (
-        <DockAction
-          label={`linked · ${stuck.count}`}
-          pressed={linked}
-          title={linked ? 'close what is linked' : 'what is linked to this plane: open it beside'}
-          onClick={() => useShelf.setState({ linked: !linked })}
-        />
+        <ConsoleTab label="linked" n={stuck.count} open={linked} title={linked ? 'close what is linked' : 'what is linked to this plane: open it beside'} onClick={() => useShelf.setState({ ...SHUT, linked: !linked })} />
       )}
-      {/* Stacked upwards: what's linked nearest the dock, the filter over it. */}
-      <div className={styles.shelf} style={{ maxWidth: room }}>
+      <ConsoleFloor>
         <AnimatePresence>
           {linked && stuck && stuck.count > 0 && (
             <Appear key="linked" className={styles.panel} role="group" aria-label="Linked">
+              <FloorTitle summary="open one beside the plane">linked</FloorTitle>
               {stuck.strip}
             </Appear>
           )}
           {filter && <Panel key="filter" plane={plane} cards={cards} f={f} />}
         </AnimatePresence>
-      </div>
+      </ConsoleFloor>
     </>
   )
 }
@@ -109,6 +87,7 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   const linksNarrow = f.links.some((g) => !START.links.includes(g))
   return (
     <Appear className={styles.panel} role="group" aria-label="Filters" data-learn="filter-strip">
+      <FloorTitle summary={narrowing(f) ? `${narrowing(f)} narrowing what's shown` : "everything's shown"}>filter</FloorTitle>
       <Menu label="show" up summary={swatches(ALL_TYPES.map((t) => ({ key: t, tone: TYPE_TONE[t], on: !f.hide.includes(t) })))} active={f.hide.length > 0} items={show} ariaLabel="Show card types" noun="types" />
       <Menu label="for" up summary={named(f.for, (id) => customers.find((c) => c.id === id)?.title || '1')} active={f.for.length > 0} items={customers.length ? forItems : []} ariaLabel="Only cards for these customers" empty="No customers on this plane" noun="customers" />
       <Menu label="tag" up summary={named(f.tags, (t) => `#${t}`)} active={f.tags.length > 0} items={tags.length ? tagItems : []} ariaLabel="Only cards with these tags" empty="No tags on this plane" noun="tags" />

@@ -88,8 +88,6 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
-  border: var(--line-w) solid var(--line-hover);
-  border-top: var(--line-w-bold) solid var(--tone);
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-mono);

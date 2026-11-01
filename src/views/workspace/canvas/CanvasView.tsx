@@ -16,6 +16,7 @@ import { HazardConfirm } from '../../../ui/patterns/HazardConfirm'
 import type { MenuEntry } from '../../../ui/patterns/Menu'
 import { Select } from '../../../ui/primitives/Select'
 import { Button } from '../../../ui/primitives/Button'
+import { Console } from '../../../ui/patterns/Console'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { canEditIn } from '../../../data/workspaces'
@@ -1565,7 +1566,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
   // Carried by a section being dragged (D-188).
   const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(piece.id) ? s.dragShift : null))
   // Moved (D-265): where it is under the pointer (canvas px) and the point held in it, while its box is where it lands;
-  // resized: by which handle, for its lit edges and the readout.
+  // resized: by which handle, for its lit edges.
   const [moving, setMoving] = useState<{ free: [number, number]; at: [number, number] } | null>(null)
   const [sizing, setSizing] = useState<Handle | null>(null)
   // Its console (D-264) shows while the pointer's on it, or after a first tap on a touch screen (a second goes in);
@@ -1799,7 +1800,6 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
         handles={editing && !open ? EVERY_HANDLE : undefined}
         onHandle={(h, ev) => press(h)(ev)}
         resizing={sizing === 'move' ? null : sizing}
-        readout={sizing && sizing !== 'move' ? `${Math.round(box.w)} × ${Math.round(box.h)}` : undefined}
       />
       {/* A comment on the plane itself (D-195), not on what's in it. */}
       <ThreadChip wid={wid} thread={own} zoom={zoom} />
@@ -1848,7 +1848,8 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
         // In focus, or on its way there or back (D-185), the plane's console isn't here.
         className={focusing ? styles.consoleAway : undefined}
         shown={pointed || tapped || setupOn}
-        size={editing ? box : null}
+        editing={editing}
+        unframed={open}
         noun={KIND_NAME[kind]}
         onEdit={editor ? () => setEditing(piece.id, !editing) : undefined}
         onDelete={() => askDeleteHere(piece.id)}
@@ -1923,15 +1924,17 @@ function NameField({ value, placeholder, onSave }: { value: string; placeholder:
   )
 }
 
-// A plane's console (D-179, D-180, D-181, D-189): always open, a tab inside the plane's bottom-right corner, its
-// actions bracketed: `[focus] [edit]` (no name: it's on the plane, D-182; no zoom: the wheel does it,
-// D-186). `focus` makes the plane the view (D-184); in focus `unfocus` is on the focus dock (D-189).
-// In edit mode it turns into a status line with the plane's live size and what can be done, `[delete]` (confirmed first,
-// D-182) and `[done]`, which ends edit mode. Viewers never get to edit mode.
+// A piece's console (D-264, D-347): the Console cut into its bottom edge (unframed, under its contents): `focus edit`
+// last (no name: it's on the piece, D-182; no zoom: the wheel does it, D-186). `focus` makes the piece the view
+// (D-184); in focus `unfocus` is on the focus dock. In edit mode its edit tools, `delete` (confirmed first, D-182) and
+// `done`, which ends edit mode; no size (D-347). Viewers never get to edit mode.
 type ConsoleProps = {
   // Its comments (D-193): on the plane and inside it, seen without going in; opens the threads panel on them.
   comments?: { count: number; fresh: boolean; mentioned: boolean; onOpen: () => void }
-  size: Box | null
+  // In edit mode (D-180): its edit tools, `delete` and `done`; no size (D-347).
+  editing?: boolean
+  // Out of its window (D-228): it hangs under the contents instead of in the edge.
+  unframed?: boolean
   // What it is, in its tips: a plane, a matrix.
   noun?: string
   onFocus: () => void
@@ -1981,15 +1984,14 @@ const movingWith = (id: string) => {
 // (70 %: 13.1 px; 50 % and under: 15.4 px). In the canvas's px, so its zoom's divided back out.
 const consoleScale = (zoom: number) => Math.min(1.4, Math.max(1, zoom ** -0.5)) / zoom
 
-function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelete, onMove, onAlso, shared, className, link, open, extra, shown = true }: ConsoleProps) {
+function PlaneConsole({ comments, editing = false, unframed = false, noun = 'plane', onFocus, onEdit, onDelete, onMove, onAlso, shared, className, link, open, extra, shown = true }: ConsoleProps) {
   // Shown only while the piece is pointed at (D-264), in edit mode, or with the keyboard in it: built cell by cell as it
   // comes (170 ms), broken as it goes (90 ms). Something new in its comments stays meanwhile, a small magenta tab.
   const ref = useRef<HTMLDivElement>(null)
   const [keys, setKeys] = useState(false)
-  const on = shown || !!size || keys
+  const on = shown || editing || keys
   const first = useRef(true)
   // Said again when edit mode ends with it still shown (pointed at): the console lesson is about that one, not edit's.
-  const editing = !!size
   useLayoutEffect(() => {
     const el = ref.current
     if (el && on) learn('console-shown', { kind: el.closest<HTMLElement>('[data-kind]')?.dataset.kind ?? noun, editing }, el.closest<HTMLElement>('[data-target]')?.dataset.target)
@@ -2008,31 +2010,27 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
   return (
     <>
     {fresh && (
-      <div className={`${styles.console} ${className ?? ''}`} data-fresh data-screen-sized onPointerDown={(e) => e.stopPropagation()}>
+      <Console at={unframed ? 'under' : 'edge'} className={`${styles.console} ${className ?? ''}`} data-fresh data-screen-sized onPointerDown={(e) => e.stopPropagation()}>
         <Button className={styles.tool} data-new title={`something new in the conversations inside this ${noun}`} aria-label={`Comments inside, ${comments!.count}, something new`} onClick={comments!.onOpen}>
           {comments!.mentioned ? '@' : <CommentIcon size={11} />} {comments!.count}
         </Button>
-      </div>
+      </Console>
     )}
-    <div
+    <Console
       ref={ref}
+      at={unframed ? 'under' : 'edge'}
       className={`${styles.console} ${className ?? ''}`}
-      role="toolbar"
       aria-label={noun}
       {...(on && { 'data-learn': 'console' })}
       data-screen-sized
-      data-editing={size ? true : undefined}
+      editing={editing}
       data-shown={on || undefined}
       onPointerDown={(e) => e.stopPropagation()}
       onFocus={() => setKeys(true)}
       onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setKeys(false)}
     >
-      {size ? (
+      {editing ? (
         <>
-          <span className={styles.mode}>EDIT</span>
-          <span className={styles.readout}>
-            {size.w} × {size.h}
-          </span>
           <ButtonGroup>
           {open && (
             <Button className={styles.tool} data-learn="console-unframe" title={open.on ? 'back into its window' : 'out of its window onto the canvas, live there'} onClick={open.onToggle}>
@@ -2056,19 +2054,24 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
               also on…
             </Button>
           )}
+          </ButtonGroup>
           {onDelete && (
-            <Button className={styles.tool} tone="danger" title={`delete the ${noun} (Delete)`} onClick={onDelete}>
-              delete
-            </Button>
+            <ButtonGroup>
+              <Button className={styles.tool} tone="danger" title={`delete the ${noun} (Delete)`} onClick={onDelete}>
+                delete
+              </Button>
+            </ButtonGroup>
           )}
           {onEdit && (
-            <Button className={styles.tool} tone="primary" title="stop moving, resizing and renaming" onClick={onEdit}>
-              done
-            </Button>
+            <ButtonGroup>
+              <Button className={styles.tool} tone="primary" title="stop moving, resizing and renaming" onClick={onEdit}>
+                done
+              </Button>
+            </ButtonGroup>
           )}
-          </ButtonGroup>
         </>
       ) : (
+        <>
         <ButtonGroup>
           {shared && (
             <Button className={styles.tool} title={`on ${shared.count} canvases: where`} aria-label={`On ${shared.count} canvases`} onClick={(e) => shared.onWhere(under(e))}>
@@ -2101,7 +2104,9 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
             ) : (
               link.at && <span className={styles.linkAt}>⇆ {link.planes.find((p) => p.id === link.at)?.name || 'plane'}</span>
             ))}
-          {extra}
+        </ButtonGroup>
+        {extra && <ButtonGroup>{extra}</ButtonGroup>}
+        <ButtonGroup>
           <Button className={styles.tool} pressed={false} title={`make the ${noun} the view`} onClick={onFocus}>
             focus
           </Button>
@@ -2111,8 +2116,9 @@ function PlaneConsole({ comments, size, noun = 'plane', onFocus, onEdit, onDelet
             </Button>
           )}
         </ButtonGroup>
+        </>
       )}
-    </div>
+    </Console>
     </>
   )
 }
