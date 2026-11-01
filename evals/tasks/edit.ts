@@ -285,6 +285,8 @@ export const EDIT: Task[] = [
     group: 'edit',
     set: 'regression',
     fixture: 'medium',
+    // The fixture already had them in that row (Sonnet rightly changed nothing): Bets starts out of it.
+    setup: (ws) => ({ ...ws, pieces: ws.pieces.map((p) => (p.id === R('p3') ? { ...p, y: p.y + 1500 } : p)) }),
     ask: "On the Discovery canvas, line the four planes up in one row below the 'Open questions' heading.",
     graders: [rowBelow([R('p1'), R('p2'), R('p3'), R('p4')], R('x28')), onlyChanged({ allow: [(_, c) => c.kind === 'pieces' && (c.fields ?? []).every((f) => ['x', 'y', 'updatedAt'].includes(f))] }), undoRestores()],
     reference: [

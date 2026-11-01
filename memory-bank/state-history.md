@@ -1225,3 +1225,7 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Prompt: 19 (a dry run when asked whether it would work), 20 (a vague verb: list and ask), 23 (one plane's cards,
   others as marked context), 24 (make what was asked, naming the one there); `change` refused while a plan waits for
   go (a dry run aside). Prompt at ≤ 4k tokens; vitest, stub evals 0 failed, `--wrong` 116 failed. Not measured yet.
+- Measured the prompt fixes (terra ×3 on their tasks) and ran sonnet ×1 (75 %); fixed: Claude's eval cost (priced by
+  the bare name), the API's "please retry" mid-stream retried once, shortened titles, advice about the planted note,
+  edit-16's start state, a card marked once counts as marked. Verified: tsc, vitest 976, stub evals 0 failed, `--wrong`
+  116 failed; replays 94 → 98 (sonnet) and 19 → 20 of 27 (terra ×3).

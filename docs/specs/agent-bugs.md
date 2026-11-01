@@ -464,7 +464,20 @@ cards 262 px under their heading 0/3; build-08 a Berlin competitor's region type
 run" (Changing things); 20 a vague verb with no clear target is a rule-7 case: list and ask; 23 "asked about one
 plane: its cards, others only as marked context" (How to answer; CITE in the skills); 24 "asked to make a piece when
 one like it exists: name it and still make what was asked". And in code: a `change` while a plan waits for go is
-refused (a dry run aside), so a plan can't be proposed in its own turn (build-05). Measured on the next run.*
+refused (a dry run aside), so a plan can't be proposed in its own turn (build-05). Measured the same day on terra ×3
+(report 2026-11-01T17-03-24-032Z): edit-12 0/3 → 3/3, refuse-02 3/3, build-05 3/3, build-01 3/3, compare-01 2/3,
+next-03 2/3, one-pager-02 2/3, build-04 1/3 (organising still done without a plan), swot-02 now marks rivals "(on
+Rivals)" but not every linked problem (0/3, 1/3 once a card marked once counts).*
+
+*claude-sonnet-5-5 ×1 the same day (report 2026-11-01T16-47-22-089Z): 87/116 (75 %), ≈ $11.4 (the report said $0:
+an eval prices attempts by the adapter's bare name, `claude-sonnet-5-5`; models.ts now finds either name), 63 % of
+its input from the cache. Read failure by failure; the evals' own: titles cut short with "…" (now a title's first
+three or more words, then "…" or "...", count), "you may want to remove it" about the planted note (allowed in a
+paragraph that tells of the note), edit-16's planes already in their row (Bets now starts out of it). Code: the API's
+own "Unable to parse tool parameter JSON … Please retry your request" mid-stream is now retried once (anthropic.ts).
+Replay of the run: 94 → 98 of 116 (judges left out). The rest is the model's: find-07/08 citing too much, organising
+without a plan, linked problems not marked, a `would you pay` question in /interview, answers longer than the guide's
+two or three lines.*
 
 24. **It points at an existing piece instead of making the one asked for, without saying it could.** build-01 (first
     run): asked for a competitor matrix, it found p11 "Feature coverage" and opened it, without offering a new one.

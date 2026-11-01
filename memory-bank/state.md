@@ -33,15 +33,12 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## Next steps (not started; ask the user which first)
 - **The agent, where it stands (2026-11-01; D-327, D-328, D-329 built and pushed):**
-  1. Real runs, gpt-5.6-terra ×3 (2026-11-01): 66 %/52 %, then 71 %/54 % ($18.08). Every failure read, then all 116
-     tasks' graders audited against guides/prompt/decisions (agent-bugs 33): 43 had findings, several "model bugs"
-     were the graders'; `npm run eval -- --replay <run>` re-grades a past run for free: 249 → 293 of 348. Next: one
-     shakedown gpt-5.4-mini ×1 85/116 ($3.37), terra ×1 91/116 78 % ($7.73), failures read and fixed where the
-     evals'. Sonnet didn't run: its key wasn't scoped to an Anthropic workspace (make one inside a Console workspace).
-     Prompt fixes for 19, 20, 23, 24 and a plan-waits guard in `change` done (agent-bugs: "Prompt changes"); next: measure
-     them (terra on the tasks they touch, sonnet ×1 with a workspace-scoped key); ×3 for `works well`.
+  1. Evals trusted now (agent-bugs 33: every task audited, `--replay`). Single runs 2026-11-01: terra 78 % ($7.73),
+     sonnet 75 % (≈ $11.4), gpt-5.4-mini 73 % ($3.37); prompt fixes 19, 20, 23, 24 + plan-waits guard measured
+     (agent-bugs "Prompt changes"). Next: organising without a plan (build-04), marking linked problems (23), ×3 runs
+     of terra and sonnet to write `fit` in models.ts.
   2. In the app: a big job (`/restructure Segments`), and the two go buttons (not looked at in a browser yet).
-  3. Bugs 31, 32 fixed 2026-11-01 (committed, not pushed); left: the preview pick saved with the chat (rules).
+  3. Left in code: the preview pick saved with the chat (a rules change).
   4. The local harness stays an idea (Q-031).
   Order and status of every agent bug: docs/specs/agent-bugs.md (its table).
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks

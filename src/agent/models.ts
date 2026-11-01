@@ -114,11 +114,13 @@ export const PRICES: Record<string, Price> = {
   ...Object.fromEntries(KNOWN_MODELS.filter((m) => m.price).map((m) => [m.id, m.price!])),
 }
 
-const bare = (model: string) => model.replace(/^openai:/, '')
-export const priced = (model: string) => bare(model) in PRICES
+// A model's price by any of its names: `openai:gpt-…` or bare, `anthropic:claude-…` or the bare name its adapter
+// reports (an eval's attempts are priced by the adapter's name: Claude's runs showed $0).
+const priceOf = (model: string): Price | undefined => PRICES[model.replace(/^openai:/, '')] ?? PRICES[claudeId(model)]
+export const priced = (model: string) => !!priceOf(model)
 
 export function costOf(model: string, u: Usage): number {
-  const p = PRICES[bare(model)]
+  const p = priceOf(model)
   if (!p) return 0
   const cached = u.cached ?? 0
   return ((u.input - cached) * p.input + cached * p.cachedInput + u.output * p.output) / 1_000_000

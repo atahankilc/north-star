@@ -980,10 +980,10 @@ export const docWritten = (o: { words?: (string | RegExp)[]; cites?: Ref[]; anyO
         const real = r.ids.real(`c${m[1]}`)
         const card = real?.kind === 'card' ? r.start.cards.find((c) => c.id === real.id) ?? r.end.cards.find((c) => c.id === real.id) : undefined
         if (!card) bad.push(`c${m[1]} is no card`)
-        else if (!wordsRe(card.title).test(line)) bad.push(`c${m[1]} without its title "${card.title.slice(0, 30)}"`)
+        else if (!titledIn(card.title, line)) bad.push(`c${m[1]} without its title "${card.title.slice(0, 30)}"`)
         else {
           cited.add(card.id)
-          if (o.onPlane && !refs(r.start, o.onPlane, ['piece']).some((p) => isOnPlane(card, p)) && !markedContext(r, card, line)) bad.push(`c${m[1]} isn't on ${o.onPlane} (nor marked as context from its plane)`)
+          if (o.onPlane && !refs(r.start, o.onPlane, ['piece']).some((p) => isOnPlane(card, p)) && !markedIn(r, card, text)) bad.push(`c${m[1]} isn't on ${o.onPlane} (nor marked as context from its plane)`)
         }
       }
     for (const w of o.cites ?? []) {
@@ -999,8 +999,21 @@ export const docWritten = (o: { words?: (string | RegExp)[]; cites?: Ref[]; anyO
   },
 })
 
-// A card from another plane is fine as context when its line names one of its planes ("(on Rivals)", "on p2"; the
-// user, agent-bugs 23).
+// A card's title on a line: whole, or cut short (its first three or more words, then "…" or "..."; Sonnet shortens
+// long titles: c24 "Weekend shoppers sell out by 10am…").
+function titledIn(title: string, line: string): boolean {
+  if (wordsRe(title).test(line)) return true
+  const words = title.split(/\s+/)
+  for (let n = words.length - 1; n >= 3; n--) if (new RegExp(`${wordsRe(words.slice(0, n).join(' ')).source}\\s*(…|\\.\\.\\.)`, 'iu').test(line)) return true
+  return false
+}
+
+// A card from another plane is fine as context when a line it's on names one of its planes ("(on Rivals)", "on p2";
+// the user, agent-bugs 23): marking it once in the text is enough (terra, swot-02: c47 marked, then named again).
+function markedIn(r: RunResult, card: Card, text: string): boolean {
+  const s = r.ids.has('card', card.id)
+  return text.split('\n').some((l) => (!!s && new RegExp(`\\b${s}\\b`).test(l)) && markedContext(r, card, l))
+}
 function markedContext(r: RunResult, card: Card, line: string): boolean {
   const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   return r.start.pieces.some((p) => kindOfPiece(p) === 'plane' && isOnPlane(card, p.id) && new RegExp(`\\bon\\s+(${[p.name ? esc(p.name) : null, r.ids.has('piece', p.id)].filter(Boolean).join('|')})\\b`, 'i').test(line))
@@ -1027,7 +1040,7 @@ export const citesSome = (n: number, o: { onPlane?: string; kind?: 'card' | 'tas
           const card = r.start.cards.find((c) => c.id === real.id) ?? r.end.cards.find((c) => c.id === real.id)
           if (card && !refs(r.start, o.onPlane, ['piece']).some((p) => isOnPlane(card, p))) {
             // Marked context from its own plane: allowed, not counted.
-            if (!markedContext(r, card, line)) bad.push(`${s} isn't on ${o.onPlane}`)
+            if (!markedIn(r, card, r.answer)) bad.push(`${s} isn't on ${o.onPlane}`)
             continue
           }
         }

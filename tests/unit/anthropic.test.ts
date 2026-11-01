@@ -192,6 +192,16 @@ describe('the response', () => {
   })
 })
 
+describe('the API asks to retry', () => {
+  it('a mid-stream "Unable to parse tool parameter JSON … Please retry your request": the same request once more', async () => {
+    const broke = { type: 'error', error: { type: 'invalid_request_error', message: 'Unable to parse tool parameter JSON from model. Please retry your request or adjust your prompt.' } }
+    const { f, calls } = fakeFetch(stream([start(), broke as never]), stream([start(), ...textBlock(0, 'ok'), ...end('end_turn')]))
+    const r = await anthropicModel({ key: KEY, model: MODEL, fetch: f }).respond(ask([{ role: 'user', content: 'x' }]))
+    expect(r.text).toBe('ok')
+    expect(calls.length).toBe(2)
+  })
+})
+
 describe('errors', () => {
   const err = (status: number, type: string, message: string) => json(status, { type: 'error', error: { type, message } })
 
@@ -235,6 +245,8 @@ describe('models and the picker', () => {
     expect([providerOf('gpt-5.6-terra'), providerOf('anthropic:claude-opus-5-5')]).toEqual(['openai', 'anthropic'])
     expect([reasons('anthropic:claude-opus-5-5'), reasons('anthropic:claude-haiku-4-5'), canChat(claudeId('claude-opus-5-5'))]).toEqual([true, false, true])
     expect(costOf('anthropic:claude-opus-5-5', { input: 1_000_000, output: 0, cached: 0 })).toBe(4)
+    // By the bare name the adapter reports too (an eval prices its attempts by it: Claude's runs showed $0).
+    expect(costOf('claude-opus-5-5', { input: 1_000_000, output: 0, cached: 0 })).toBe(4)
     const rows = pickerRows(['gpt-5.6-terra', 'anthropic:claude-opus-5-5'], undefined, 'anthropic:claude-opus-5-5')
     expect(rows.find((r) => r.suggested)?.id).toBe('anthropic:claude-opus-5-5')
     const m = await makeModel({ model: 'anthropic:claude-sonnet-5-5', key: KEY, env: { getWs: () => ({ wid: 'w' }) as never, ids: {} as never }, stub: false, effort: 'low' })

@@ -196,6 +196,9 @@ export function responseOf(msg: BetaMessage): ModelResponse {
 const abortError = () => Object.assign(new Error('stopped'), { name: 'AbortError' })
 
 const bindingRefused = (e: unknown) => e instanceof BadRequestError && /bound to a different conversation/i.test(String(e.message))
+// The API's own "retry" failures mid-stream (Sonnet, prioritize-01: "Unable to parse tool parameter JSON from model.
+// Please retry your request"): the same request once more.
+const askedToRetry = (e: unknown) => /please retry your request|unable to parse tool parameter json/i.test(String((e as Error)?.message ?? e))
 
 export function plainFailure(e: unknown, model: string, key: string): Error {
   const say = (m: string, kind: AnthropicErrorKind, status?: number) => new AnthropicError(redact(m, key), kind, status)
@@ -245,6 +248,15 @@ export function anthropicModel(o: AnthropicOptions): AnthropicModel {
       if (!sent && bindingRefused(e) && modern(o.model)) {
         try {
           yield* once(req, 'drop_block')
+          return
+        } catch (e2) {
+          if (req.signal?.aborted) throw abortError()
+          throw plainFailure(e2, o.model, key)
+        }
+      }
+      if (askedToRetry(e)) {
+        try {
+          yield* once(req)
           return
         } catch (e2) {
           if (req.signal?.aborted) throw abortError()
