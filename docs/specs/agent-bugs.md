@@ -34,7 +34,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 |----|--------------------------------------------------|--------------|----------|------------------|--------|
 | 17 | `go` taken as yes to a delete                    | Guards       | mid      | code (preview)   | fixed  |
 | 26 | turning text into cards rewrites its words       | Guards       | mid      | code + prompt    | open   |
-| 18 | a viewer's agent calls `change`                  | Guards       | low      | code             | open   |
+| 18 | a viewer's agent calls `change`                  | Guards       | low      | code             | fixed  |
 | 16 | ops nobody asked for                             | Guards       | mid      | code + prompt    | open   |
 | 6  | items land on top of each other                  | Guards       | mid      | code             | place_on fixed (text); paragraphs open |
 | 11 | links no plane can draw                          | Guards       | mid      | code (`lint`)    | open   |
@@ -44,7 +44,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 5  | an apply is never told to the model              | Plumbing     | mid      | code             | fixed  |
 | 2  | bare short ids in the chat                       | Plumbing     | mid      | code             | fixed  |
 | 22 | bare ids in documents                            | Plumbing     | mid      | code             | fixed  |
-| 9  | skills list doesn't scroll                       | Plumbing     | low      | code             | open   |
+| 9  | skills list doesn't scroll                       | Plumbing     | low      | code             | fixed  |
 | 7  | preview inside a piece spills onto the canvas    | Preview      | high     | code             | fixed  |
 | 3  | the stepper's item doesn't stand out             | Preview      | mid      | code             | fixed  |
 | 4  | plane layouts ignore links                       | Layout       | high     | code + prompt    | built (flow, D-327); no real-model eval yet |
@@ -113,6 +113,9 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     list (src/agent/tools.ts:140) and the refusal already works (src/agent/change.ts:265); the list goes to `runTurn` as
     an argument (agentStore.ts), so it is filtered there by `actor.role`. The prompt names `change` in "Changing
     things": a viewer's prompt leaves that section out, or the prompt test (every tool it names exists) fails on it.
+    *Fixed 2026-11-01:* the app already dropped the write tools for a viewer and added a read-only note; the evals
+    didn't (the same drift as 25). Now the loop does both from `env.actor.role`, so the app and the evals get the same
+    (`systemPrompt({ viewer })` adds `READ_ONLY` after the unchanged prompt, so the cached prefix holds).
 16. **It adds ops nobody asked for.** edit-09/edit-13 "add three ideas": three `create_card`s plus an `arrange` of them,
     so the preview has 4 items for 3 asked, and unticking one leaves an arrange of the rest. Same family: prioritize-03
     changed 14 features' impact/effort when asked only to fill the deck; learn-03 made a problem and a link from notes
@@ -206,7 +209,8 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     `c12` without its title, so the document tasks guard 22; tests/unit/agentNames.test.ts holds the resolver.
 9.  **The skills list (`/`) doesn't scroll with the arrow keys.** ↑/↓ move the pick (SkillMenu.tsx `setAt`) but the
     picked row goes below the list's edge. Fix: `scrollIntoView({ block: 'nearest' })` on the picked row when `at`
-    changes.
+    changes. *Fixed 2026-11-01:* that, and with nothing typed the list is now in its drawn order (group by group), so
+    ↑↓ step down the rows as seen; before, they followed the ungrouped order and the pick jumped between groups.
 
 ## Preview: what the person sees before applying
 

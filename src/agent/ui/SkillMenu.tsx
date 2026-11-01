@@ -2,7 +2,7 @@
 // look (D-222). The prompt itself is the `>` line: what's typed after the slash narrows the list (names that start with
 // it first: one letter puts its names first, more letters narrow), rows read `› /name  summary`, `# analysis` / `# building` / `# documents` while
 // nothing is typed, a counting foot. ↑↓ move, Enter or Tab picks (the prompt becomes `/name `), Esc closes. A click picks.
-import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { SKILLS, type Skill } from '../skills'
 import styles from './Agent.module.css'
 
@@ -18,8 +18,11 @@ const typedName = (text: string): string | null => {
   return m ? m[1].toLowerCase() : null
 }
 
+// Nothing typed: in the order the list draws them, group by group, so ↑↓ step down the rows as seen (agent-bugs 9).
+const GROUPED = GROUPS.flatMap(([g]) => SKILLS.filter((s) => s.group === g))
+
 export function matchSkills(q: string): Skill[] {
-  if (!q) return SKILLS
+  if (!q) return GROUPED
   const starts = SKILLS.filter((s) => s.name.startsWith(q))
   // One letter puts the names it starts first (D-222), the rest after; more letters narrow, by names, then (from three
   // letters) by summaries.
@@ -66,13 +69,16 @@ function Lit({ text, q }: { text: string; q: string }) {
 }
 
 function SkillList({ q, list, at, onPick, onHover }: { q: string; list: Skill[]; at: number; onPick: (s: Skill) => void; onHover: (i: number) => void }) {
-  const rows = q
-    ? list.map((s, i) => ({ s, i }))
-    : GROUPS.flatMap(([g]) => list.map((s, i) => ({ s, i })).filter((x) => x.s.group === g))
+  const rows = list.map((s, i) => ({ s, i }))
+  // The picked row kept in view as ↑↓ move it (agent-bugs 9).
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    box.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
+  }, [at])
   let group = ''
   return (
     <div className={styles.skillMenu} role="listbox" aria-label="Skills" data-skill-menu onPointerDown={(e) => e.preventDefault()}>
-      <div className={styles.skillList}>
+      <div className={styles.skillList} ref={box}>
         {rows.map(({ s, i }) => {
           const head = !q && s.group !== group ? (group = s.group) : null
           return (

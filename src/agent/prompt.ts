@@ -124,8 +124,13 @@ export function promptSections(o: { workspaceName?: string } = {}): PromptSectio
   ]
 }
 
-export function systemPrompt(o: { workspaceName?: string } = {}): string {
-  return promptSections(o)
+// A viewer's agent (agent-bugs 18): the same prompt (so the cached prefix holds) and this note after it; the loop
+// also drops the write tools for a viewer.
+export const READ_ONLY = "## You only read here\nThe person is a viewer in this workspace, so you can read and answer but never change anything: there is no change tool. When they ask for a change, say that an editor can make it, and offer the exact words or steps so they can pass it on."
+
+export function systemPrompt(o: { workspaceName?: string; viewer?: boolean } = {}): string {
+  const base = promptSections(o)
     .map((s) => `## ${s.title}\n${s.body}`)
     .join('\n\n')
+  return o.viewer ? `${base}\n\n${READ_ONLY}` : base
 }

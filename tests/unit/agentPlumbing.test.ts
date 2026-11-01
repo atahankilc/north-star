@@ -123,3 +123,20 @@ describe("a step whose last change was refused can't be marked done (bug 28)", (
     expect((await tool('progress').run(env, { step: 2, state: 'skipped', why: 'no card to link to' })).ok).toBe(true)
   })
 })
+
+describe("a viewer's agent is offered no write tool (bug 18)", () => {
+  it('the loop drops change and adds the read-only note for a viewer, in the evals as in the app', async () => {
+    const { READ_ONLY } = await import('../../src/agent/prompt')
+    const seen: { tools: string[]; system: string }[] = []
+    const model = { name: 'spy', async respond(req: { tools: { name: string }[]; messages: { role: string; content: unknown }[] }) {
+      seen.push({ tools: req.tools.map((t) => t.name), system: String(req.messages.find((m) => m.role === 'system')?.content ?? '') })
+      return { text: 'ok', toolCalls: [], usage: { input: 0, output: 0, cached: 0, reasoning: 0 }, stop: 'end' as const }
+    } }
+    await runTurn(model as never, makeEnv(loadFixture('medium'), { role: 'viewer' }), AGENT_TOOLS, [], 'mark it global')
+    await runTurn(model as never, makeEnv(loadFixture('medium'), { role: 'editor' }), AGENT_TOOLS, [], 'mark it global')
+    expect(seen[0].tools).not.toContain('change')
+    expect(seen[0].system).toContain(READ_ONLY)
+    expect(seen[1].tools).toContain('change')
+    expect(seen[1].system).not.toContain(READ_ONLY)
+  })
+})

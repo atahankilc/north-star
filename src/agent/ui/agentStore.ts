@@ -30,7 +30,6 @@ import { makeIds, type Ids } from '../read'
 import { namedShort, type Named } from '../read/names'
 import { agentUi, leaveGoneCanvas } from '../ui'
 import { recordTurn } from '../usage'
-import { systemPrompt } from '../prompt'
 import { freshWs } from '../../ops'
 import type { OpActor } from '../../ops'
 import type { AgentEnv, AgentTool, AgentWs, ModelMessage, TurnEnd, Usage } from '../contract'
@@ -101,7 +100,6 @@ type AgentState = {
   notes: string | null
 }
 
-export const READ_ONLY = "## You only read here\nThe person is a viewer in this workspace, so you can read and answer but never change anything: there is no change tool. When they ask for a change, say that an editor can make it, and offer the exact words or steps so they can pass it on."
 
 // ---- Per chat, outside React: the model's history, the chat's ids, the pending changes, the running turn's abort.
 
@@ -560,11 +558,9 @@ async function turn(chat: Chat, text: string, n: number) {
     if (!stub && !key) throw new Error(`An ${provider === 'anthropic' ? 'Anthropic' : 'OpenAI'} key is needed (Settings → the agent).`)
     const env = envOf(chat, rt)
     const m = await makeModel({ model, key, env, stub, effort: useAgentSettings.getState().effort })
-    // A viewer's agent gets no write tool at all, and is told up front that it reads only (§7.2 point 7).
-    const viewer = env.actor.role === 'viewer'
-    const tools = viewer ? TOOLS.filter((t) => t.kind !== 'write') : TOOLS
-    const system = viewer ? `${systemPrompt({ workspaceName: env.getWs().workspace?.name })}\n\n${READ_ONLY}` : undefined
-    const r = await runTurn(m, env, tools, rt.history, text, { signal: controller.signal, onEvent: on, turnId: `${chat.id}:${n}`, steer: () => rt.steer.splice(0), ...(system ? { system } : {}) })
+    // A viewer's agent gets no write tool and the read-only note: the loop does it from the actor's role (agent-bugs 18,
+    // the evals run the same loop).
+    const r = await runTurn(m, env, TOOLS, rt.history, text, { signal: controller.signal, onEvent: on, turnId: `${chat.id}:${n}`, steer: () => rt.steer.splice(0) })
     rt.history = r.history
     // What the job used (D-328): its budget counts every token of its turns, in and out.
     if (rt.job && rt.job.status !== 'done') jobHost(chat.id, rt).set({ ...rt.job, tokens: rt.job.tokens + r.turn.usage.input + r.turn.usage.output })

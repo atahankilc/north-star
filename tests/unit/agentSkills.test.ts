@@ -91,3 +91,12 @@ describe('skills', () => {
     expect(unknownSkillReply('zzz')).toContain('/swot')
   })
 })
+
+describe('the / menu (agent-bugs 9)', () => {
+  it('with nothing typed, the list is in its drawn order, group by group, so ↑↓ step down the rows as seen', async () => {
+    const { matchSkills } = await import('../../src/agent/ui/SkillMenu')
+    const groups = matchSkills('').map((s) => s.group)
+    const firsts = groups.filter((g, i) => g !== groups[i - 1])
+    expect(firsts).toEqual(['analysis', 'building', 'documents'])
+  })
+})

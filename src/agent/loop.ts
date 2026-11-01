@@ -321,7 +321,11 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   const ws = agentEnv.getWs()
   env.ids.sync(ws)
   const appendOnly = !!model.appendOnly
-  const system = opts.system ?? systemPrompt({ workspaceName: ws.workspace?.name })
+  // A viewer's agent reads only (agent-bugs 18): no write tool offered and the read-only note, in the app and the
+  // evals alike, since both run this loop.
+  const viewer = env.actor.role === 'viewer'
+  if (viewer) tools = tools.filter((t) => t.kind !== 'write')
+  const system = opts.system ?? systemPrompt({ workspaceName: ws.workspace?.name, viewer })
   const map = workspaceMap(ws, env.ids)
   // The job (D-328), when there is one, read with where the person is: the model sees its plan every turn.
   const job = env.job?.get()
