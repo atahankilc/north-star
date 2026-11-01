@@ -84,7 +84,7 @@ function SkillList({ q, list, at, onPick, onHover }: { q: string; list: Skill[];
           return (
             <div key={s.name}>
               {head && <div className={styles.skillHead}>{head}</div>}
-              <button type="button" role="option" aria-selected={i === at} className={styles.skillRow} data-on={i === at || undefined} onMouseEnter={() => onHover(i)} onClick={() => onPick(s)}>
+              <button /* kit-ok: an option of the chat prompt's own list (its keys stay in the prompt); MenuPanel brings its own `>` line */ type="button" role="option" aria-selected={i === at} className={styles.skillRow} data-on={i === at || undefined} onMouseEnter={() => onHover(i)} onClick={() => onPick(s)}>
                 <span className={styles.skillCursor} aria-hidden>
                   ›
                 </span>

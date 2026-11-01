@@ -35,12 +35,13 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Label } from '../../../ui/primitives/Label'
+import { CATEGORY_MAX, FACT_MAX, CRITERION_MAX, LONG_TEXT_MAX, REGION_MAX, TITLE_MAX, URL_MAX } from '../../../model/limits'
 
 const MAX_CRITERIA = 8
 
 // A text field shown as its value. What's typed is kept only on Enter or on leaving the field (the user: not while
 // still typing); Escape puts it back; shift+Enter is a new line where it may have several. Leaving the panel keeps it.
-function ValueField({ value, placeholder, editor, multiline, onSave, link }: { value?: string; placeholder: string; editor: boolean; multiline?: boolean; onSave: (v: string) => void; link?: boolean }) {
+function ValueField({ value, placeholder, editor, multiline, onSave, link, max }: { value?: string; placeholder: string; editor: boolean; multiline?: boolean; onSave: (v: string) => void; link?: boolean; max: number }) {
   const ref = useRef<HTMLTextAreaElement>(null)
   const { draft, setDraft, commit, revert } = useCommit(value ?? '', (v) => onSave(v.trim()))
   if (!editor)
@@ -65,7 +66,7 @@ function ValueField({ value, placeholder, editor, multiline, onSave, link }: { v
       rows={1}
       value={draft}
       placeholder={placeholder}
-      maxLength={2000}
+      maxLength={max}
       onChange={(v) => setDraft(multiline ? v : v.replace(/\n/g, ''))}
       onBlur={commit}
       onKeyDown={(e) => {
@@ -88,11 +89,11 @@ export function CompetitorProfile({ n, card, editor }: P) {
     <PanelSection n={n} name="profile">
       <div className={styles.plan}>
         <Label>does</Label>
-        <ValueField value={card.description} placeholder="what they offer" editor={editor} multiline onSave={save('description')} />
+        <ValueField value={card.description} placeholder="what they offer" editor={editor} multiline onSave={save('description')} max={LONG_TEXT_MAX} />
         <Label>for</Label>
-        <ValueField value={card.audience} placeholder="who buys it" editor={editor} onSave={save('audience')} />
+        <ValueField value={card.audience} placeholder="who buys it" editor={editor} onSave={save('audience')} max={FACT_MAX} />
         <Label>pricing</Label>
-        <ValueField value={card.pricing} placeholder="what it costs" editor={editor} onSave={save('pricing')} />
+        <ValueField value={card.pricing} placeholder="what it costs" editor={editor} onSave={save('pricing')} max={FACT_MAX} />
         <Label>where</Label>
         <div className={styles.tags}>
           {regions.map((r) => (
@@ -108,7 +109,7 @@ export function CompetitorProfile({ n, card, editor }: P) {
               autoFocus
               placeholder="US, Germany…"
               value={region}
-              maxLength={60}
+              maxLength={REGION_MAX}
               onChange={setRegion}
               onBlur={() => setRegion(null)}
               onKeyDown={(e) => {
@@ -127,7 +128,7 @@ export function CompetitorProfile({ n, card, editor }: P) {
           )}
         </div>
         <Label>site</Label>
-        <ValueField value={card.url} placeholder="their website" editor={editor} link onSave={save('url')} />
+        <ValueField value={card.url} placeholder="their website" editor={editor} link onSave={save('url')} max={URL_MAX} />
       </div>
     </PanelSection>
   )
@@ -206,13 +207,13 @@ function NewFeature({ card, cards, categories, onDone }: { card: Card; cards: Ca
   }
   return (
     <div className={styles.form}>
-      <Field size="sm" label="Its name" autoFocus placeholder="its name" value={f.name} maxLength={200} onChange={(v) => setF({ ...f, name: v })} onKeyDown={keys} />
+      <Field size="sm" label="Its name" autoFocus placeholder="its name" value={f.name} maxLength={TITLE_MAX} onChange={(v) => setF({ ...f, name: v })} onKeyDown={keys} />
       <div className={styles.plan}>
         <Label>about</Label>
-        <Field multiline size="sm" rows={1} label="What it does" placeholder="what it does" value={f.description ?? ''} maxLength={20000} onChange={(v) => setF({ ...f, description: v })} onKeyDown={keys} />
+        <Field multiline size="sm" rows={1} label="What it does" placeholder="what it does" value={f.description ?? ''} maxLength={LONG_TEXT_MAX} onChange={(v) => setF({ ...f, description: v })} onKeyDown={keys} />
         <Label>category</Label>
         <div className={styles.cats}>
-          <Field size="sm" label="Category" placeholder="booking, operations…" value={f.category ?? ''} maxLength={100} onChange={(v) => setF({ ...f, category: v })} onKeyDown={keys} />
+          <Field size="sm" label="Category" placeholder="booking, operations…" value={f.category ?? ''} maxLength={CATEGORY_MAX} onChange={(v) => setF({ ...f, category: v })} onKeyDown={keys} />
           {categories.length > 0 && (
             <Choice bare clearable options={categories} value={f.category} label="Categories in use" onChange={(v) => setF({ ...f, category: v })} />
           )}
@@ -227,7 +228,7 @@ function NewFeature({ card, cards, categories, onDone }: { card: Card; cards: Ca
           onChange={setOurs}
         />
         <Label>seen at</Label>
-        <Field size="sm" label="Seen at" placeholder="where it was seen" value={f.url ?? ''} maxLength={2000} onChange={(v) => setF({ ...f, url: v })} onKeyDown={keys} />
+        <Field size="sm" label="Seen at" placeholder="where it was seen" value={f.url ?? ''} maxLength={URL_MAX} onChange={(v) => setF({ ...f, url: v })} onKeyDown={keys} />
       </div>
       <div className={styles.formActions}>
         <ButtonGroup>
@@ -250,16 +251,16 @@ function FeatureDetails({ f, card, cards, ours, editor, categories, onClose }: {
   return (
     <div className={styles.cfOpen}>
       <div className={styles.cfHead}>
-        <ValueField value={f.name} placeholder="its name" editor={editor} onSave={(v) => v && set({ name: v })} />
+        <ValueField value={f.name} placeholder="its name" editor={editor} onSave={(v) => v && set({ name: v })} max={TITLE_MAX} />
         <Button onClick={onClose}>
           close
         </Button>
       </div>
       <div className={styles.plan}>
         <Label>about</Label>
-        <ValueField value={f.description} placeholder="what it does" editor={editor} multiline onSave={(v) => set({ description: v })} />
+        <ValueField value={f.description} placeholder="what it does" editor={editor} multiline onSave={(v) => set({ description: v })} max={LONG_TEXT_MAX} />
         <Label>category</Label>
-        <ValueField value={f.category} placeholder={categories.length ? categories.join(', ') : 'booking, operations…'} editor={editor} onSave={(v) => set({ category: v })} />
+        <ValueField value={f.category} placeholder={categories.length ? categories.join(', ') : 'booking, operations…'} editor={editor} onSave={(v) => set({ category: v })} max={CATEGORY_MAX} />
         <Label>offered</Label>
         <Choice bare clearable options={AVAILABILITIES} value={f.availability} disabled={!editor} label="Offered" onChange={(v) => set({ availability: v })} />
         <Label>ours</Label>
@@ -274,7 +275,7 @@ function FeatureDetails({ f, card, cards, ours, editor, categories, onClose }: {
           <span>{ours?.title ?? '—'}</span>
         )}
         <Label>seen at</Label>
-        <ValueField value={f.url} placeholder="where it was seen" editor={editor} link onSave={(v) => set({ url: v })} />
+        <ValueField value={f.url} placeholder="where it was seen" editor={editor} link onSave={(v) => set({ url: v })} max={URL_MAX} />
       </div>
       {editor && (
         <div className={styles.formActions}>
@@ -435,7 +436,7 @@ export function Criteria({ n, card, editor }: P) {
         return (
           <div key={c.id} className={styles.crit}>
             <span className={styles.critN}>{i + 1}</span>
-            <ValueField value={c.text} placeholder="what users judge it on" editor={editor} onSave={(v) => v && set(list.map((x) => (x.id === c.id ? { ...x, text: v } : x)))} />
+            <ValueField value={c.text} placeholder="what users judge it on" editor={editor} onSave={(v) => v && set(list.map((x) => (x.id === c.id ? { ...x, text: v } : x)))} max={CRITERION_MAX} />
             <span className={styles.critRead} data-open={!scored ? undefined : met ? 'met' : 'open'} title={scored ? `${met} of ${scored} scored cells meet it` : 'not scored in a matrix yet'}>
               {reading}
             </span>
@@ -455,7 +456,7 @@ export function Criteria({ n, card, editor }: P) {
           autoFocus
           placeholder="what users judge it on"
           value={adding}
-          maxLength={200}
+          maxLength={CRITERION_MAX}
           onChange={setAdding}
           onBlur={() => setAdding(null)}
           onKeyDown={(e) => {

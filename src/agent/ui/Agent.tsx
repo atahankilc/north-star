@@ -6,7 +6,7 @@
 // screen. `[×] esc` folds it back to the box, the chat kept. Chats are saved (S16): `[chats]` lists them (yours and
 // shared ones) to reopen, rename, share or delete; `[notes]` opens the agent notes (AgentMemory.tsx).
 //
-// The column and the box are dialogs to the onboarding (`role="dialog"`, an <aside>): lessons treat them as obstacles.
+// The column (a Window, D-326) and the open box are dialogs to the onboarding: lessons treat them as obstacles.
 // Everything it shows is DOM text, never under the ASCII effect; colours are tokens (light under [data-theme='light']);
 // every animation reads useMotion().reduced (Appear and the spinner do).
 import { AnimatePresence } from 'motion/react'
@@ -17,6 +17,7 @@ import { KIND_NAME, kindOfPiece } from '../../model/pieces'
 import { Appear } from '../../ui/primitives/Appear'
 import { Select } from '../../ui/primitives/Select'
 import { openSettingsAt } from '../../ui/patterns/Settings'
+import { Window } from '../../ui/patterns/Window'
 import { useWs } from '../../views/workspace/canvas/context'
 import { isTyping } from '../../views/workspace/canvas/useEditKeys'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
@@ -275,11 +276,17 @@ function Column() {
   }
 
   return (
-    <Appear
-      as="aside"
+    // The kit's Window (D-326), not modal: the page beside it stays live, its own Escape (a list, a view, a preview, then
+    // closing) and its own first focus (the prompt).
+    <Window
+      look="bare"
+      modal={false}
+      escape={false}
+      focus={false}
+      entrance="cells"
+      portal={false}
       className={styles.column}
-      role="dialog"
-      aria-label="The agent"
+      label="The agent"
       data-agent
       data-side-panel
       data-learn="agent-column"
@@ -355,7 +362,7 @@ function Column() {
           <Label tone="faint" className={styles.scopeLabel}>sees</Label> whole workspace{here ? <> · you're in <span className={styles.scopeHere}>"{here}"</span></> : <> · {workspace}</>}
         </p>
       </footer>
-    </Appear>
+    </Window>
   )
 }
 

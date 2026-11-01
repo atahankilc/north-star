@@ -48,6 +48,7 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { Options } from '../../../ui/patterns/Options'
+import { AXIS_NOUN_MAX, UNIT_MAX } from '../../../model/limits'
 
 const ANY = 'any'
 const TAB_NAME: Record<SetupTab, string> = { rows: 'rows', cols: 'columns', cells: 'cells', options: 'options' }
@@ -178,7 +179,7 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
       </Row>
       <Unfold axis={axis} onChange={onChange} />
       <Row label="called" hint="what one of them is, in the table's corner">
-        <AutosaveField className={styles.pillField} label="called" placeholder={axis.type ? `${axis.type}s` : 'names'} maxLength={40} value={axis.noun ?? ''} onSave={(n) => n.trim() !== (axis.noun ?? '') && onChange({ ...axis, noun: n.trim() || undefined }, 'noun')} />
+        <AutosaveField className={styles.pillField} label="called" placeholder={axis.type ? `${axis.type}s` : 'names'} maxLength={AXIS_NOUN_MAX} value={axis.noun ?? ''} onSave={(n) => n.trim() !== (axis.noun ?? '') && onChange({ ...axis, noun: n.trim() || undefined }, 'noun')} />
       </Row>
     </>
   )
@@ -355,7 +356,7 @@ export function CellsEditor({ setup, onChange }: { setup: MatrixSetup; onChange:
       )}
       {setup.cell === 'number' && (
         <Row label="unit">
-          <AutosaveField className={styles.field} label="unit" placeholder="€, h, %…" maxLength={20} value={setup.unit ?? ''} onSave={(u) => onChange('unit', u.trim() || undefined, 'unit')} />
+          <AutosaveField className={styles.field} label="unit" placeholder="€, h, %…" maxLength={UNIT_MAX} value={setup.unit ?? ''} onSave={(u) => onChange('unit', u.trim() || undefined, 'unit')} />
         </Row>
       )}
     </>

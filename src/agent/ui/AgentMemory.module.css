@@ -20,16 +20,6 @@
   line-height: var(--lh-body);
 }
 
-/* The prompt list sits in a hairline frame, as a dropdown's panel does, the full width of the column. */
-.panel {
-  border: var(--line-w) solid var(--line-hover);
-  background: var(--bg);
-}
-
-.panel > div {
-  max-height: none;
-}
-
 /* ---- The notes page */
 
 .page {
@@ -53,7 +43,10 @@
   gap: var(--space-2);
 }
 
-.area {
+/* The notes' Field (D-326) as a framed box: outweighs the Field's underline (`.edit` first). */
+.edit .area,
+.edit .area:hover,
+.edit .area:focus-visible {
   width: 100%;
   min-height: var(--size-sm);
   padding: var(--space-3);
@@ -63,12 +56,10 @@
   font-family: var(--font-display);
   font-size: var(--text-sm);
   line-height: var(--lh-body);
+  outline: none;
   resize: vertical;
 }
 
-.area:focus-visible {
-  outline: none;
-}
 
 .foot {
   display: flex;

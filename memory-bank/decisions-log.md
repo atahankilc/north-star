@@ -6086,6 +6086,18 @@ docs/foundation-audit-2026-10-31.md).
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
   MenuPanel, the settings gear's badge 4 px higher once moved); patterns (Dialog/Window, WizardShell, SetupPanel,
   Dock); `check:kit`; folders.
+- *Built:* check:kit to 0 (2026-11-01, the user: "kit ve klasör yapalım"; folders were already done). The agent's column
+  on Window (`look="bare"`, not modal, no trap, `escape={false}`: its own Escape order, list → view → preview → close,
+  kept; `focus={false}`: the prompt takes it; a <section> now, not an <aside>; a click on its blank part now keeps the
+  keyboard in it, so Escape still works there). A new kit pattern, `InPlaceMenu` (src/ui/patterns): MenuPanel laid in
+  the page in the dropdown's frame, `height` panel | full; the card panel's picker and the agent's saved chats on it.
+  The agent notes' textarea → Field (⌘Enter saves, Escape cancels, its framed box kept). The agent's three caps compose
+  Label. Raw `maxLength={n}` → limits.ts (TAG_MAX, REGION_MAX, FACT_MAX, URL_MAX, CATEGORY_MAX, CRITERION_MAX,
+  EVIDENCE_TEXT_MAX, SOURCE_MAX, LINK_LABEL_MAX, AXIS_NOUN_MAX, UNIT_MAX; tested against firestore.rules, the list
+  items client-only); a competitor's fields now take their own cap (ValueField `max`: its name was 2000, the rules'
+  200; its description 2000, the rules' 20000). Kept with `kit-ok`: the canvas piece's own graphite (PieceCard copies
+  it), the `/` menu's rows (options of the chat prompt's list, its keys stay in the prompt). Checked headless on
+  emulators: column, chats, notes editing, Escape order; build, 991 unit tests, check:gallery/tokens/kit.
 
 ### D-327 · 2026-10-31 · Accepted (agent-bugs 27; the user: "bunlar hardcoded kurallar olmamalı, agent sadece sistemi ve ne yapmaya çalıştığımızı bence daha iyi anlamalı. Bu uygulama insanlar için bir visualization… biz de visualization konusunda iyi olmamız lazım"; then "27 ve 28'i kabul ediyorum")
 **The agent organises by understanding what a structure says to a person, not by rules.** When it organises or

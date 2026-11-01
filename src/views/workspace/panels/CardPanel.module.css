@@ -185,13 +185,6 @@
 
 .picker {
   margin: var(--space-half) 0 var(--space-2);
-  border: var(--line-w) solid var(--line-hover);
-  background: var(--bg);
-}
-
-/* The prompt (Menu.module.css .prompt) in a panel: shorter, the rest scrolls. */
-.picker > * {
-  max-height: min(50vh, var(--list-h));
 }
 
 /* Label | value rows: a feature's plan, a competitor's profile, a competitor feature's details. */

@@ -29,6 +29,7 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Choice } from '../../../ui/primitives/Choice'
 import { Field } from '../../../ui/primitives/Field'
 import { Label } from '../../../ui/primitives/Label'
+import { TASK_NOTES_MAX } from '../../../model/limits'
 
 const TONE = 'var(--accent-cyan)'
 
@@ -643,7 +644,7 @@ function Notes({ task, editor, n }: { task: Task; editor: boolean; n: number }) 
         value={draft}
         readOnly={!editor}
         placeholder="What it takes, what done looks like."
-        maxLength={20000}
+        maxLength={TASK_NOTES_MAX}
         label="Notes"
         onChange={setDraft}
         onBlur={commit}

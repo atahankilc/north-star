@@ -19,6 +19,7 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Console } from '../../../ui/patterns/Console'
 import { Field } from '../../../ui/primitives/Field'
+import { LINK_LABEL_MAX } from '../../../model/limits'
 
 type LinkGroup = 'solves' | 'part' | 'competes' | 'clashes' | 'draws' | 'depends' | 'plain' | 'for'
 
@@ -279,7 +280,7 @@ function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
           size="sm"
           className={styles.input}
           value={draft}
-          maxLength={200}
+          maxLength={LINK_LABEL_MAX}
           placeholder="label…"
           label="Link label"
           onChange={setDraft}

@@ -27,6 +27,14 @@ const list = (path: string) => new RegExp(`${path.replace('.', '\\.')}\\.size\\(
 const CASES: [keyof typeof L, () => number][] = [
   ['TITLE_MAX', () => num(body('validCard'), text('title'))],
   ['LONG_TEXT_MAX', () => num(body('validCard'), opt('d', 'body'))],
+  ['FACT_MAX', () => num(body('validCompetitor'), opt('d', 'pricing'))],
+  ['URL_MAX', () => num(body('validCompetitor'), opt('d', 'url'))],
+  ['CATEGORY_MAX', () => num(body('validCompetitorFeature'), opt('d', 'category'))],
+  ['EVIDENCE_TEXT_MAX', () => num(body('validEvidence'), text('text'))],
+  ['SOURCE_MAX', () => num(body('validEvidence'), opt('d', 'source'))],
+  ['LINK_LABEL_MAX', () => num(body('validEdge'), opt('d', 'label'))],
+  ['AXIS_NOUN_MAX', () => num(body('validAxis'), opt('a', 'noun'))],
+  ['UNIT_MAX', () => num(body('validMatrix'), opt('m', 'unit'))],
   ['PIECE_NAME_MAX', () => num(body('validPiece'), opt('d', 'name'))],
   ['CANVAS_NAME_MAX', () => num(body('validCanvas'), text('name'))],
   ['KICKER_MAX', () => num(body('validLabel'), opt('d', 'kicker'))],
@@ -51,6 +59,9 @@ const CASES: [keyof typeof L, () => number][] = [
 // Limits the rules can't hold, each with why: they bound an item inside a list or map (Firestore rules can't loop over
 // one), or Firestore itself. The client and the ops enforce them.
 const CLIENT_ONLY: Partial<Record<keyof typeof L, string>> = {
+  TAG_MAX: "a card's #tag, inside the tags list",
+  REGION_MAX: "a competitor's region, inside the regions list",
+  CRITERION_MAX: "a feature's criterion, inside the criteria list",
   COL_NAME_MAX: "a deck column's name, inside the kanban's cols list",
   LIMIT_MAX: "a deck column's limit, inside the cols list",
   BOX_NAME_MAX: "a box's name, inside the kanban's names list",

@@ -44,7 +44,7 @@
   display: grid;
   place-items: center;
   border: var(--line-w) solid var(--piece-edge);
-  background: var(--piece);
+  background: var(--piece); /* kit-ok: the canvas's own piece, the one PieceCard copies off the canvas */
   box-shadow:
     var(--piece-shadow),
     inset 0 var(--line-w) 0 var(--piece-hi);
@@ -412,7 +412,7 @@
   top: calc(-1 * var(--line-w));
   left: calc(-1 * var(--line-w));
   border: var(--line-w) solid var(--piece-edge);
-  background: var(--piece);
+  background: var(--piece); /* kit-ok: the canvas piece's own window, breaking or building cell by cell */
   box-shadow:
     var(--piece-shadow),
     inset 0 var(--line-w) 0 var(--piece-hi);

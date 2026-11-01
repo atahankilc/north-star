@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-01 (buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-01 (check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -51,10 +51,9 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
-- Gallery and foundation (D-324, D-326): map, motion, kit, every area on it, patterns, `check:kit` pushed 2026-11-01
-  (4a07c52). Landing + workspaces on the kit: pushed 2026-11-01 (f15f8d7). The whole UI but the agent on the kit:
-  check:kit 238 → 13 (only src/agent/ui left); D-334 (:where); folders by layer/area (2026-11-01, not pushed). Next, agreed with the user: the agent's column on Window (only when
-  the user says), check:kit lower area by area, folders last; the plan is D-326's *Not yet*.
+- Gallery and foundation (D-324, D-326): done 2026-11-01: the whole UI on the kit, `check:kit` at 0 (baseline `{}`),
+  folders by layer/area; the agent's column on Window, InPlaceMenu added, text caps in limits.ts (pushed 2026-11-01;
+  checked headless on emulators). Left: D-326's smaller *Not yet* notes (Chip world size, a third Tabs look).
 - D-335 (Q-029 + old-data code deleted): pushed; firestore:rules deployed 2026-11-01 (rules tests 616/0).
 - D-337 fonts and greys (2026-11-01): Inter + JetBrains Mono, mono only on system bits, brighter greys, the agent's
   column and picture too; pushed 2026-11-01. evals/fonts → Inter: the agent session's (after its terra run). Preview: docs/specs/font-preview/. Left: `--fg-faint`'s uses one by one, the world's 7/8 px sizes.

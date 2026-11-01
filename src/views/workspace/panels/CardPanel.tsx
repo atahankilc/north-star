@@ -31,7 +31,8 @@ import { CompetitorProfile, CompetitorFeatures, Criteria, hasMatches, InPackages
 import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } from '../../../data/edges'
 import { addEvidence, EVIDENCE_KINDS, mismatch, removeEvidence, tally, updateEvidence, type Evidence, type EvidenceKind, type Stance } from '../../../data/evidence'
 import { glide, useCanvasView } from '../../../state/canvasView'
-import { MenuPanel, type MenuEntry } from '../../../ui/patterns/Menu'
+import { type MenuEntry } from '../../../ui/patterns/Menu'
+import { InPlaceMenu } from '../../../ui/patterns/InPlaceMenu'
 import { PanelAction, PanelSection, SIDE_PANEL_W, SidePanel } from '../../../ui/patterns/SidePanel'
 import { factsOf } from '../plane/cardFacts'
 import { packageTree } from '../plane/cardInside'
@@ -56,6 +57,7 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Label as UiLabel } from '../../../ui/primitives/Label'
+import { EVIDENCE_TEXT_MAX, LONG_TEXT_MAX, SOURCE_MAX, TAG_MAX, URL_MAX } from '../../../model/limits'
 
 // Type = the panel's colour, as the card's edge (D-055).
 const TONE: Record<AnyType, string> = CARD_TONE
@@ -351,7 +353,7 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
               autoFocus
               placeholder="tag"
               value={adding}
-              maxLength={40}
+              maxLength={TAG_MAX}
               onChange={setAdding}
               onBlur={() => setAdding(null)}
               onKeyDown={(e) => {
@@ -807,14 +809,14 @@ export function EvidenceForm({ start, onDone }: { start?: Partial<Evidence>; onD
   }
   return (
     <div className={styles.form}>
-      <Field multiline size="sm" rows={1} label="What was learned" autoFocus placeholder="What was learned, in a sentence or a quote" value={f.text} maxLength={2000} onChange={(v) => setF({ ...f, text: v })} onKeyDown={keys} />
+      <Field multiline size="sm" rows={1} label="What was learned" autoFocus placeholder="What was learned, in a sentence or a quote" value={f.text} maxLength={EVIDENCE_TEXT_MAX} onChange={(v) => setF({ ...f, text: v })} onKeyDown={keys} />
       <Choice bare clearable options={['supports', 'contradicts'] as const} value={f.stance} label="For or against" onChange={(v) => setF({ ...f, stance: v ?? f.stance })} />
       <Choice bare clearable options={EVIDENCE_KINDS} value={f.kind} label="Kind" onChange={(v) => setF({ ...f, kind: v ?? f.kind })} />
       <div className={styles.formRow}>
-        <Field size="sm" label="From" placeholder="from (who, where)" value={f.source ?? ''} maxLength={200} onChange={(v) => setF({ ...f, source: v })} onKeyDown={keys} />
+        <Field size="sm" label="From" placeholder="from (who, where)" value={f.source ?? ''} maxLength={SOURCE_MAX} onChange={(v) => setF({ ...f, source: v })} onKeyDown={keys} />
         <Field size="sm" type="date" label="When" value={f.date ?? ''} onChange={(v) => setF({ ...f, date: v || undefined })} onKeyDown={keys} />
       </div>
-      <Field size="sm" label="Link" placeholder="link (optional)" value={f.url ?? ''} maxLength={2000} onChange={(v) => setF({ ...f, url: v })} onKeyDown={keys} />
+      <Field size="sm" label="Link" placeholder="link (optional)" value={f.url ?? ''} maxLength={URL_MAX} onChange={(v) => setF({ ...f, url: v })} onKeyDown={keys} />
       <div className={styles.formActions}>
         <ButtonGroup>
           <Button tone="primary" onClick={save}>
@@ -973,18 +975,18 @@ export function CardPicker({
   }, [cards, all, edges, exclude, types, places, pieces, suggest, card.id, card.x, card.y])
   const more = makeType ? (typed: string): MenuEntry[] => [{ key: '+new', label: `“${typed}”`, glyph: '+', tone: TONE[makeType], hint: `NEW ${makeType.toUpperCase()}`, onSelect: () => void make(typed) }] : orTyped ? (typed: string) => [orTyped(typed)] : undefined
   return (
-    <div ref={root} className={styles.picker}>
-      <MenuPanel
-        items={items}
-        ariaLabel={types ? `Pick a ${types.join(' or ')}` : 'Pick a card'}
-        prompt={prompt ?? (types && types.length < 3 ? `find ${types.map((t) => PICK_MANY[t]).join(', ')}…` : 'find a card…')}
-        noun="cards"
-        empty={types ? `No ${types.map((t) => PICK_MANY[t]).join(' or ')} to pick yet` : 'No cards to pick yet'}
-        foot={makeType ? 'or type a new name to make it' : undefined}
-        more={more}
-        onClose={onClose}
-      />
-    </div>
+    <InPlaceMenu
+      ref={root}
+      className={styles.picker}
+      items={items}
+      ariaLabel={types ? `Pick a ${types.join(' or ')}` : 'Pick a card'}
+      prompt={prompt ?? (types && types.length < 3 ? `find ${types.map((t) => PICK_MANY[t]).join(', ')}…` : 'find a card…')}
+      noun="cards"
+      empty={types ? `No ${types.map((t) => PICK_MANY[t]).join(' or ')} to pick yet` : 'No cards to pick yet'}
+      foot={makeType ? 'or type a new name to make it' : undefined}
+      more={more}
+      onClose={onClose}
+    />
   )
 }
 
@@ -1097,7 +1099,7 @@ function TagsSection({ n, card, editor }: P) {
             autoFocus
             placeholder="tag"
             value={draft}
-            maxLength={40}
+            maxLength={TAG_MAX}
             onChange={setDraft}
             onBlur={() => (setAdding(false), setDraft(''))}
             onKeyDown={(e) => {
@@ -1129,7 +1131,7 @@ function NotesSection({ n, card, editor }: P) {
         value={draft}
         readOnly={!editor}
         placeholder={NOTES_HINT[card.type]}
-        maxLength={20000}
+        maxLength={LONG_TEXT_MAX}
         label="Notes"
         onChange={setDraft}
         onBlur={commit}

@@ -3,11 +3,12 @@
 // actions on top (`[r] rename`, `[s] share`, `[d] delete`); the agent notes as a page (Markdown), editable by owners and
 // editors (one undo step, as the person); and a notes change in the preview as a line diff (+ added, − taken out).
 // DOM text only (never under the ASCII effect); tokens only; the list's build-up is MenuPanel's.
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
-import { MenuPanel, type MenuEntry } from '../../ui/patterns/Menu'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { type MenuEntry } from '../../ui/patterns/Menu'
+import { InPlaceMenu } from '../../ui/patterns/InPlaceMenu'
 import { Markdown } from '../../ui/primitives/Markdown'
 import { ago } from '../../ui/foundation/ago'
-import { useAutoGrow } from '../../ui/foundation/autoGrow'
+import { Field } from '../../ui/primitives/Field'
 import { useWs } from '../../views/workspace/canvas/context'
 import { useAuth } from '../../data/auth'
 import { diffShown, NOTES_MAX, NOTES_TITLE, type DiffLine } from '../../model/notes'
@@ -82,17 +83,16 @@ export function ChatsView() {
     <div className={styles.view} data-agent-chats>
       <Rule n="01" label="chats" aside={list ? undefined : 'loading…'} />
       <p className={styles.lead}>Saved for you, private unless you share one. Pick one to go on with it.</p>
-      <div className={styles.panel}>
-        <MenuPanel
-          items={items}
-          ariaLabel="Saved chats"
-          prompt={open ? 'find, or type a new name…' : 'find a chat…'}
-          noun="entries"
-          empty="No saved chats yet: they're kept after the first answer."
-          more={(typed) => (open ? [{ key: 'a-rename', letter: 'r', label: `rename this chat to "${typed.slice(0, 120)}"`, onSelect: () => (void agentActions.renameChat(chat.id, typed), 'keep') }] : [])}
-          onClose={() => agentActions.show('chat')}
-        />
-      </div>
+      <InPlaceMenu
+        height="full"
+        items={items}
+        ariaLabel="Saved chats"
+        prompt={open ? 'find, or type a new name…' : 'find a chat…'}
+        noun="entries"
+        empty="No saved chats yet: they're kept after the first answer."
+        more={(typed) => (open ? [{ key: 'a-rename', letter: 'r', label: `rename this chat to "${typed.slice(0, 120)}"`, onSelect: () => (void agentActions.renameChat(chat.id, typed), 'keep') }] : [])}
+        onClose={() => agentActions.show('chat')}
+      />
     </div>
   )
 }
@@ -109,7 +109,6 @@ export function NotesView() {
   const [draft, setDraft] = useState('')
   const [said, setSaid] = useState('')
   const area = useRef<HTMLTextAreaElement>(null)
-  useAutoGrow(area, draft)
   useEffect(() => {
     // The caret at the end, where a new line usually goes.
     if (!editing || !area.current) return
@@ -126,23 +125,13 @@ export function NotesView() {
     await agentActions.saveNotes(draft)
     setEditing(false)
   }
-  const onKey = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      e.stopPropagation()
-      setEditing(false)
-    } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault()
-      void save()
-    }
-  }
   return (
     <div className={styles.view} data-agent-notes>
       <Rule n="01" label="agent notes" aside={doc ? `${doc.words ?? 0} words · ${ago(doc.updatedAt)}` : 'none yet'} />
       <p className={styles.lead}>The workspace's memory: read at the start of every chat. Everyone here reads it; owners and editors change it, and the agent proposes changes in its preview.</p>
       {editing ? (
         <div className={styles.edit}>
-          <textarea ref={area} className={styles.area} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={onKey} aria-label="The agent notes" spellCheck />
+          <Field ref={area} multiline rows={4} className={styles.area} value={draft} onChange={setDraft} onEnter={() => void save()} onEscape={() => setEditing(false)} label="The agent notes" />
           <div className={styles.foot}>
             <ButtonGroup>
               <Button tone="primary" onClick={() => void save()}>

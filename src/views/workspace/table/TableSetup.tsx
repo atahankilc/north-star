@@ -43,6 +43,7 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Options } from '../../../ui/patterns/Options'
+import { UNIT_MAX, VALUE_MAX } from '../../../model/limits'
 
 const TAB_NAME: Record<TableTab, string> = { rows: 'rows', cols: 'columns', view: 'view' }
 
@@ -177,7 +178,7 @@ function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: bool
           onPick={() => onChange({ ...rule, not: rule.not ? undefined : true })}
         />
         {rule.field === 'title' ? (
-          <AutosaveField className={m.pillField} label="the words" placeholder="words in the title" maxLength={200} value={rule.values[0] ?? ''} onSave={(w) => onChange({ ...rule, values: w.trim() ? [w] : [] }, 'words')} />
+          <AutosaveField className={m.pillField} label="the words" placeholder="words in the title" maxLength={VALUE_MAX} value={rule.values[0] ?? ''} onSave={(w) => onChange({ ...rule, values: w.trim() ? [w] : [] }, 'words')} />
         ) : choices.length ? (
           <Options
             pick="many"
@@ -279,7 +280,7 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
                     onChange={(k) => edit(c, { kind: k, ...(k === 'scale' && !c.steps ? { steps: DEFAULT_STEPS } : {}) })}
                   />
                   {c.kind === 'number' && (
-                    <AutosaveField className={m.field} label="unit" placeholder="unit: €, h, %…" maxLength={20} value={c.unit ?? ''} onSave={(u) => edit(c, { unit: u.trim() || undefined }, 'unit')} />
+                    <AutosaveField className={m.field} label="unit" placeholder="unit: €, h, %…" maxLength={UNIT_MAX} value={c.unit ?? ''} onSave={(u) => edit(c, { unit: u.trim() || undefined }, 'unit')} />
                   )}
                   {c.kind === 'scale' && (
                     <Select<string>

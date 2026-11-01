@@ -5,6 +5,21 @@
 // Cards (D-187): a title; its notes (body) share the long-text cap.
 export const TITLE_MAX = 200
 export const LONG_TEXT_MAX = 20000
+// A card's #tag, a competitor's region (D-056, D-145): one item in its list.
+export const TAG_MAX = 40
+export const REGION_MAX = 60
+// A competitor's short facts (pricing, audience) and any card's web address (D-164).
+export const FACT_MAX = 2000
+export const URL_MAX = 2000
+// A competitor feature's category (D-164).
+export const CATEGORY_MAX = 100
+// What a feature is judged on (D-133): one criterion.
+export const CRITERION_MAX = 200
+// Evidence (D-137): what was learned, and from whom.
+export const EVIDENCE_TEXT_MAX = 2000
+export const SOURCE_MAX = 200
+// A link's own label (D-207).
+export const LINK_LABEL_MAX = 200
 
 // A workspace's name as typed on the workspaces page and in settings (D-338).
 export const WORKSPACE_NAME_MAX = 80
@@ -38,6 +53,9 @@ export const CELL_TEXT_MAX = 200
 export const CELL_NOTES_MAX = LONG_TEXT_MAX
 export const GLYPH_MAX = 4
 export const STEP_LABEL_MAX = 40
+// What one of an axis's entries is called, in the corner (D-204); a number cell's unit.
+export const AXIS_NOUN_MAX = 40
+export const UNIT_MAX = 20
 
 // Tables (D-209): a column's own name; a rule's typed value (sources, D-268).
 export const TABLE_COL_NAME_MAX = 40

@@ -1,0 +1,15 @@
+/* The prompt in place (D-222): a dropdown's panel laid in the page, the same hairline frame on the page's black. */
+.frame {
+  border: var(--line-w) solid var(--line-hover);
+  background: var(--bg);
+}
+
+/* In a panel: shorter than a dropdown's, the rest scrolls. */
+.frame[data-height='panel'] > * {
+  max-height: min(50vh, var(--list-h));
+}
+
+/* The whole list: its column scrolls instead. */
+.frame[data-height='full'] > * {
+  max-height: none;
+}
