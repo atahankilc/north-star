@@ -1222,3 +1222,6 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   pieces and picture, the glance hooks, `summary/main` and `threadReads.visited` with their rules and tests, the
   onboarding's choices v2. Its gallery page first made possible by `setDemoLists` (Firebase-less lists).
   Verified: see D-338's log entry (tsc, build, vitest 974, rules 629/0, checks, headless runs on the emulators).
+- Prompt: 19 (a dry run when asked whether it would work), 20 (a vague verb: list and ask), 23 (one plane's cards,
+  others as marked context), 24 (make what was asked, naming the one there); `change` refused while a plan waits for
+  go (a dry run aside). Prompt at ≤ 4k tokens; vitest, stub evals 0 failed, `--wrong` 116 failed. Not measured yet.

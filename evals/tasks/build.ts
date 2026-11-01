@@ -5,7 +5,7 @@
 // §4.10) is two turns: a plan that writes nothing, then "go" (`followUps`, `noWritesInTurn(1)`).
 import { MADE, count, deletesHaveWhy, groupedTogether, madeIds, planWaits, exists, field, grouped, judge, linked, made, noOverlaps, noWritesInTurn, onPlane, onlyChanged, under, undoRestores } from '../graders'
 import type { Grader, Task } from '../types'
-import { answer, call, change, realOf } from './util'
+import { answer, call, calls, change, realOf } from './util'
 
 const R = (s: string) => realOf('medium', s)
 // Every task on the deck this run made sits in a column that isn't its finished one (`done`), and there are some.
@@ -163,7 +163,10 @@ export const BUILD: Task[] = [
       // The plan as state (D-328): what the runner's automatic go looks for (never the answer's words, D-333).
       call('plan', { title: 'Ideas on Bets by status', steps: [{ title: 'Group the 22 ideas by status' }, { title: 'A heading over each group' }] }),
       answer('Plan: group the 22 ideas on p3 Bets by status (hypothesis, testing, validated, invalidated), each group under its own heading; the problems and sticky notes stay where they are. Say go, or change the plan.'),
+      // On go: the step started with progress (a plan waiting for go refuses a change, D-328), one arrange for both.
+      call('progress', { step: 1, state: 'doing' }),
       change([['arrange', { items: IDEAS_ON_BETS, layout: 'cluster', group_by: 'status', headings: true }]], 'ideas on Bets by status'),
+      calls(['progress', { step: 1, state: 'done' }], ['progress', { step: 2, state: 'done' }]),
       answer('Grouped the 22 ideas on p3 Bets by status, each group under its own heading; the problems section and the sticky notes stayed where they were.'),
     ],
     // Clustered by type: every idea in one block, statuses mixed.

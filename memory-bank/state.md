@@ -38,7 +38,8 @@ something is finished, add its entry to state-history.md and leave at most one l
      were the graders'; `npm run eval -- --replay <run>` re-grades a past run for free: 249 → 293 of 348. Next: one
      shakedown gpt-5.4-mini ×1 85/116 ($3.37), terra ×1 91/116 78 % ($7.73), failures read and fixed where the
      evals'. Sonnet didn't run: its key wasn't scoped to an Anthropic workspace (make one inside a Console workspace).
-     Next: the prompt bugs measured on terra's failing tasks (19, 20, 23, 24, plan before a big job); ×3 for `works well`.
+     Prompt fixes for 19, 20, 23, 24 and a plan-waits guard in `change` done (agent-bugs: "Prompt changes"); next: measure
+     them (terra on the tasks they touch, sonnet ×1 with a workspace-scoped key); ×3 for `works well`.
   2. In the app: a big job (`/restructure Segments`), and the two go buttons (not looked at in a browser yet).
   3. Bugs 31, 32 fixed 2026-11-01 (committed, not pushed); left: the preview pick saved with the chat (rules).
   4. The local harness stays an idea (Q-031).

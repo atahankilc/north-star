@@ -50,11 +50,11 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 4  | plane layouts ignore links                       | Layout       | high     | code + prompt    | built (flow, D-327); no real-model eval yet |
 | 10 | can't rearrange a canvas                         | Layout       | mid      | code             | fixed  |
 | 15 | lists answered from the map                      | Judgment     | mid      | code, then prompt| code part fixed |
-| 19 | "would it work" not dry-run                      | Judgment     | low      | prompt           | open   |
-| 20 | vague verb run without asking                    | Judgment     | mid      | prompt           | open   |
+| 19 | "would it work" not dry-run                      | Judgment     | low      | prompt           | prompt done, to measure |
+| 20 | vague verb run without asking                    | Judgment     | mid      | prompt           | prompt done, to measure |
 | 21 | skill guides not followed step by step           | Judgment     | mid      | code + methods   | code part fixed |
-| 23 | "for a plane" leans on other planes              | Judgment     | low      | methods          | open   |
-| 24 | points at an existing piece instead of making it | Judgment     | low      | prompt           | open   |
+| 23 | "for a plane" leans on other planes              | Judgment     | low      | methods          | prompt done, to measure |
+| 24 | points at an existing piece instead of making it | Judgment     | low      | prompt           | prompt done, to measure |
 | 13 | no coverage map for a big document               | New parts    | mid      | new              | open   |
 | 14 | one plane or several, never weighed              | New parts    | mid      | code + prompt    | numbers built (`structure`, D-327) |
 | 28 | a big job stops after one preview                | New parts    | high     | new (workflow)   | built (job, steering, saved with the chat; done checked) |
@@ -460,6 +460,12 @@ cards 262 px under their heading 0/3; build-08 a Berlin competitor's region type
     Sometimes right (a SWOT needs the competitors), but one plane was asked about. Fix: "for <plane>" means that
     plane's cards first, others only as context, marked "(on Rivals)". The eval's `onPlane` accepts marked context
     cards (the user, 2026-10-31: a SWOT needs the competitors); an unmarked card from elsewhere still fails.
+*Prompt changes, 2026-11-01 (after terra ×1's failures): 19 "asked whether something would work: change as a dry
+run" (Changing things); 20 a vague verb with no clear target is a rule-7 case: list and ask; 23 "asked about one
+plane: its cards, others only as marked context" (How to answer; CITE in the skills); 24 "asked to make a piece when
+one like it exists: name it and still make what was asked". And in code: a `change` while a plan waits for go is
+refused (a dry run aside), so a plan can't be proposed in its own turn (build-05). Measured on the next run.*
+
 24. **It points at an existing piece instead of making the one asked for, without saying it could.** build-01 (first
     run): asked for a competitor matrix, it found p11 "Feature coverage" and opened it, without offering a new one.
     Fix: when something like it exists, say so and ask (or offer both); never substitute silently.

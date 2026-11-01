@@ -184,3 +184,19 @@ describe('the preview, picked at go (D-328: one at the end or one per step)', ()
     expect('suggest' in saved || 'preview' in saved).toBe(false)
   })
 })
+
+describe('a plan waits for go (build-05: planned and proposed in one turn)', () => {
+  it('while the job is planned a change is refused, a dry run passes; once a step is doing, it goes through', async () => {
+    const e = makeEnv(loadFixture('medium'))
+    let job: Job | null = null
+    e.job = { get: () => job, set: (j) => void (job = j) }
+    const tool = (n: string) => AGENT_TOOLS.find((t) => t.def.name === n)!
+    await tool('plan').run(e, { title: 'Two ideas', steps: [{ title: 'Add them' }, { title: 'Link them' }] })
+    const ops = [{ op: 'create_card', args: { type: 'idea', plane: 'p3', title: 'Bread club' } }]
+    const refused = await tool('change').run(e, { ops })
+    expect(refused).toMatchObject({ ok: false, text: expect.stringMatching(/the plan waits for the person's go/) })
+    expect((await tool('change').run(e, { ops, dry_run: true })).ok).toBe(true)
+    await tool('progress').run(e, { step: 1, state: 'doing' })
+    expect((await tool('change').run(e, { ops })).ok).toBe(true)
+  })
+})

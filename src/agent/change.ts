@@ -336,6 +336,10 @@ export function describeResult(o: { cs: Changeset; added: ChangeItem[]; handles:
 
 export async function runChange(env: AgentEnv, args: Record<string, unknown>): Promise<{ ok: boolean; text: string }> {
   if (env.actor.role === 'viewer') return { ok: false, text: "change refused: a viewer's agent is read-only (viewers can only read this workspace). Answer, explain and suggest; an editor can make the change." }
+  // A plan waits for the person's go (D-328, prompt's "Big jobs"): nothing is proposed meanwhile, a dry run aside
+  // (build-05: planned and proposed in the same turn).
+  if (env.job?.get()?.status === 'planned' && !args.dry_run)
+    return { ok: false, text: "change refused: the plan waits for the person's go. If they said go, mark the step you start with progress doing first; else end your turn with the plan (a dry run can check a step meanwhile)." }
   const live = env.liveWs?.() ?? env.getWs()
   const cs = env.changes ?? emptyChangeset()
   const seen = env.getWs()
