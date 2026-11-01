@@ -156,12 +156,14 @@ a.cite:hover {
 }
 
 .inferred {
-  margin-left: var(--space-2);
-  color: var(--fg-faint);
+  composes: label from '../../ui/Label.module.css';
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  margin-left: var(--space-2);
+}
+
+/* Its own over the kit's label (which can come again later): outweighs it */
+.points .inferred {
+  color: var(--fg-faint);
 }
 
 .block {
@@ -171,13 +173,10 @@ a.cite:hover {
 }
 
 .blockLabel {
-  margin: 0 0 var(--space-3);
-  color: var(--fg-dim);
+  composes: label from '../../ui/Label.module.css';
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  margin: 0 0 var(--space-3);
   font-weight: var(--weight-regular);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .sources {

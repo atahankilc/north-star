@@ -6072,7 +6072,13 @@ docs/foundation-audit-2026-10-31.md).
   after a caller's CSS in dev, so a caller's override must outweigh them (`.x[data-icon]`, `.parent .parentTo[data-link]`).
   The deck and timeline done 2026-11-01 (152 → 131): their caps compose Label, `+ column`/`+ add a task`/the SOON fold
   Button icons, five drawn things `kit-ok`; no visible change. Label's rule is in 4 CSS files of the live build too
-  (Q-032).
+  (Q-032). The rest done 2026-11-01 without screenshots (the user: speed over pixel checks, "I will deal with
+  perfecting it later"): table/matrix/setups/wizards (the three wizards' template boxes one Options), documents, text,
+  threads, the canvas's small parts, finder, side nav, onboarding; ToolButton (six hand-made HUD icon buttons: fit,
+  compass, ?, decks and days, threads; the gear keeps its own look, its badge now CountBadge) and Steps (WizardShell's
+  and the welcome's step tabs) added to the kit; 131 → 13, only src/agent/ui left. Things drawn in the world (cells,
+  rows, typed-in-place text, world-sized caps) stay raw with `kit-ok`. Snaps noted by the forks: Matrix fold `[+ 3]`,
+  wizards' templates three to a row and picked on arrow keys, thread prompt `>` magenta, Finder's fold in brackets.
   (4) Folders by layer (src/ui foundation/primitives/patterns; src/views/workspace by area) in one commit when no
   other session works. Also still open (what each copy still needs is in those forks' notes: a world size for
   Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and

@@ -216,26 +216,20 @@
 }
 
 /* `×` to take a row out: shown while hovered. */
+/* A row's `×` (a Button icon, tone danger), shown while the row is pointed at. */
 .remove {
   flex-shrink: 0;
-  padding: 0 var(--space-half);
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  font-size: var(--text-xs);
-  cursor: pointer;
   opacity: 0;
   transition: opacity var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.remove[data-icon] {
+  padding: 0 var(--space-half);
 }
 
 .name:hover .remove,
 .remove:focus-visible {
   opacity: 1;
-}
-
-.remove:hover {
-  color: var(--accent-magenta);
 }
 
 /* A cell: a card's field left-aligned in grey (its type in its colour); its own values centred, in their step's colour. */
@@ -259,9 +253,9 @@
   font-size: var(--text-xs);
 }
 
-.cell[data-field='type'] {
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
+/* A card's type: the kit's Label, in the cell's colour (the type's). */
+.cell .typeText {
+  color: inherit;
 }
 
 .cell[data-kind='text'] {
@@ -323,8 +317,8 @@
 }
 
 /* `+` for a column at the end of the heads, `+ row` under the rows. */
-.add {
-  composes: small from '../../ui/AsciiButton.module.css';
+/* (Button icons, placed in the grid; `[data-icon]` outweighs the Button's own padding and colour.) */
+.add[data-icon] {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -332,12 +326,12 @@
   color: var(--fg-faint);
 }
 
-.add[data-col] {
+.add[data-icon][data-col] {
   justify-content: center;
   padding: 0;
 }
 
-.add:hover {
+.add[data-icon]:hover {
   color: var(--accent-magenta);
 }
 

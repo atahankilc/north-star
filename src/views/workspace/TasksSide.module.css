@@ -52,6 +52,7 @@
 
 /* Opened from a plane's dock: whose linked deck this is. */
 .strip {
+  composes: label from '../../ui/Label.module.css';
   position: absolute;
   left: 0;
   right: 0;
@@ -60,11 +61,12 @@
   justify-content: space-between;
   padding: 0 var(--space-4);
   border-bottom: var(--line-w) solid var(--line);
-  color: var(--accent-cyan);
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
+}
+
+/* Its own colour over the kit's label (which can come again later): outweighs it. */
+.side .strip {
+  color: var(--accent-cyan);
 }
 
 .strip b {

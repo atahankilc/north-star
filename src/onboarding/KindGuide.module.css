@@ -66,13 +66,15 @@
 }
 
 .noDemo {
+  composes: label from '../ui/Label.module.css';
   display: grid;
   place-items: center;
   border: var(--line-w) dashed var(--line);
+}
+
+/* Its own over the kit's label (which can come again later): outweighs it. */
+.glued .noDemo {
   color: var(--fg-faint);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 /* What it is (a title-weight line), when to use it. Room kept for their longest, so moving through the rows doesn't

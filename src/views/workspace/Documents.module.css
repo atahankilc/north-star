@@ -296,33 +296,27 @@
   justify-content: flex-end;
 }
 
-.act {
+/* A row's glyph actions: Button icons in a square, the glyph a size up. `[data-icon]` outweighs the Button's own
+   padding and size (kit CSS can come again later). */
+.act[data-icon] {
   display: grid;
   place-items: center;
   width: var(--control);
   height: var(--control);
   padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font-family: var(--font-mono);
   font-size: var(--text-lg);
   line-height: var(--lh-none);
-  cursor: pointer;
   transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 
 /* No frame: the mark itself lights, on a faint wash. */
-.act:hover {
+.act[data-icon]:hover {
   background: var(--wash-2);
   color: var(--accent-cyan);
 }
 
-.act[data-on] {
-  color: var(--fg);
-}
 
-.act[data-tone='danger']:hover {
+.act[data-icon][data-tone='danger']:hover {
   color: var(--accent-magenta);
 }
 
@@ -332,16 +326,13 @@
 }
 
 /* Its title typed over, in place: the title's face, a cyan frame. */
+/* The title typed over in its row: a Field in a cyan box, in the title's face. */
 .rename {
-  width: 100%;
-  min-width: 0;
   padding: var(--space-half) var(--space-1);
   border: var(--line-w) solid var(--accent-cyan);
   background: var(--bg);
-  color: var(--fg-strong);
   font-family: var(--font-display);
   font-size: var(--text-md);
-  outline: none;
   caret-color: var(--accent-cyan);
   user-select: text;
 }

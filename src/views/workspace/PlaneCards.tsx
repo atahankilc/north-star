@@ -545,7 +545,7 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
             ))}
           </span>
           {editor && (
-            <button className={styles.fold} onPointerDown={(e) => e.stopPropagation()} onClick={fold} title="Fold its members into it">
+            <button /* kit-ok: on the package's band at the world's size */ className={styles.fold} onPointerDown={(e) => e.stopPropagation()} onClick={fold} title="Fold its members into it">
               [−] {members.length}
             </button>
           )}
@@ -790,7 +790,7 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
                 </p>
               )}
               {g.items.map((f) => (
-                <button
+                <button /* kit-ok: a competitor's feature drawn small inside its card, at the world's size */
                   key={f.id}
                   className={styles.mini}
                   data-match={matched.has(f.id) || undefined}
@@ -811,7 +811,7 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
             // down, so what's under what shows; its status or priority; a package's row, how much it holds.
             const held = r.card.type === 'package' ? (inPkg?.get(r.card.id) ?? 0) : 0
             return (
-              <button
+              <button /* kit-ok: a member's row inside a folded package, at the world's size */
                 key={r.card.id}
                 className={styles.memberRow}
                 style={{ ['--tone' as string]: TYPE_ACCENT[r.card.type], paddingLeft: r.depth * INDENT }}
@@ -852,7 +852,7 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
           </span>
         )}
         {parts > 0 && (
-          <button
+          <button /* kit-ok: a card face's `[+] N parts`, at the world's size */
             className={styles.fold}
             disabled={!editor}
             title={card.type === 'package' ? 'Lay what it holds out on the plane' : card.folded ? 'Unfold its parts onto the plane' : 'Fold its parts into it'}

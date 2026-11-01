@@ -8,6 +8,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { Button } from './Button'
 import { Label } from './Label'
 import { Window } from './Window'
+import { Steps } from './Steps'
 import styles from './WizardShell.module.css'
 
 // Enter in a wizard (D-250): the next step, or on the last one makes it; ⌘Enter makes it from any step. Not while typing
@@ -52,14 +53,7 @@ export function WizardShell({ label, steps, step, onStep, title, children, previ
   }, [])
   return (
     <Window label={label} onClose={onClose} className={styles.wizard} data-learn="wizard" onKeyDown={(e) => e.stopPropagation()}>
-      <nav className={styles.steps} role="tablist">
-        {steps.map((s, i) => (
-          <button key={s} type="button" role="tab" aria-selected={step === i} className={styles.step} onClick={() => onStep(i)}>
-            <span className={styles.num}>{i + 1}</span>
-            {s}
-          </button>
-        ))}
-      </nav>
+      <Steps steps={steps} step={step} onStep={onStep} />
       <div className={styles.main}>
         <div className={styles.q}>
           <h3 className={styles.title}>{title}</h3>

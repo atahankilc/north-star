@@ -169,19 +169,12 @@ button.send {
   color: var(--accent-cyan);
 }
 
+/* Editing one's own message: a Field under its head, in the message's text. */
 .editField {
-  display: block;
   width: calc(100% - 2ch);
   margin-left: 2ch;
-  padding: 0;
-  border: 0;
-  border-bottom: var(--line-w) solid var(--accent-cyan);
-  background: none;
-  color: var(--fg-strong);
   font: inherit;
   line-height: var(--lh-body);
-  resize: none;
-  outline: none;
 }
 
 /* The prompt, as the chat's: a rule above that turns cyan while you type, `>` before the line. */
@@ -196,40 +189,6 @@ button.send {
 
 .composer:focus-within {
   border-top-color: var(--accent-cyan);
-}
-
-.promptLine {
-  display: flex;
-  gap: 1ch;
-}
-
-.ps {
-  flex: none;
-  color: var(--accent-cyan);
-  line-height: var(--lh-body);
-}
-
-.input {
-  flex: 1;
-  min-width: 0;
-  min-height: calc(var(--text-sm) * var(--lh-body));
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-strong);
-  font: inherit;
-  line-height: var(--lh-body);
-  resize: none;
-  outline: none;
-  caret-color: var(--accent-cyan);
-}
-
-.input::placeholder {
-  color: var(--placeholder);
-}
-
-.input:focus-visible {
-  outline: none;
 }
 
 .bar {
@@ -578,41 +537,6 @@ button.goThere:focus-visible {
   flex: none;
 }
 
-/* The threads button (D-167): square, framed, as the board's other toolbar buttons; a count or a dot in its corner. */
-/* In the side nav (D-192): an unframed icon button like the fit and the gear. */
-.inboxButton {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--control);
-  height: var(--control);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  cursor: pointer;
-}
-
-.inboxButton:hover,
-.inboxButton[aria-pressed='true'] {
-  color: var(--fg-strong);
-}
-
-.inboxButton[aria-pressed='true'] {
-  color: var(--accent-cyan);
-}
-
-.dot {
-  position: absolute;
-  top: calc(-1 * var(--space-1));
-  right: calc(-1 * var(--space-1));
-  width: var(--dot);
-  height: var(--dot);
-  background: var(--accent-magenta);
-  box-shadow: 0 0 0 var(--line-w-bold) var(--bg);
-}
-
 /* A thread on another plane than the one open (D-168). */
 .rowPlane {
   color: var(--accent-cyan);
@@ -625,16 +549,13 @@ button.goThere:focus-visible {
 
 /* Which threads the panel shows (D-195): the whole workspace, or (cyan, with a way back) what's inside one plane. */
 .scope {
+  composes: label from '../../ui/Label.module.css';
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-4);
   border-bottom: var(--line-w) solid var(--line);
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .scope[data-scoped] {

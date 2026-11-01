@@ -44,7 +44,7 @@ export function MoveToCanvas() {
   const { canvas, canvases } = useWs()
   if (!asked) return <CanvasKeys />
   const close = () => useCanvasView.setState({ toCanvas: null })
-  return createPortal(
+  return createPortal( // kit-ok: the prompt over everything, not a dialog
     <div className={styles.layer}>
       <CanvasKeys />
       {asked.where ? <WherePrompt key={`where ${asked.screen}`} asked={asked} onClose={close} /> : <Prompt key={`${asked.share} ${asked.screen}`} asked={asked} canvas={canvas} canvases={canvases} onClose={close} />}

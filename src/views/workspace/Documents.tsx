@@ -4,7 +4,7 @@
 // canvas a picture; unframed, live there, a row's `↗` places it (or drags it out onto the canvas on its own, DocPlace); in
 // focus live: a click opens the document beside the list (DocReader), a right-click has the rest (open, place on the
 // canvas, share, download, delete). Paged like a table (D-213); which page is yours. Files dropped on it are uploaded.
-import { useLayoutEffect, useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../data/hooks'
 import type { Piece } from '../../data/model'
@@ -23,6 +23,7 @@ import { Marks, useSettledZoom, zsIn } from '../../ui/Marks'
 import styles from './Documents.module.css'
 import { DOCS_PX } from '../../model/world'
 import { Button } from '../../ui/Button'
+import { Field } from '../../ui/Field'
 import { Empty } from '../../ui/Empty'
 
 // Its parts in its own px: model/world.ts (D-325).
@@ -342,27 +343,27 @@ function RowActions({ d, list, editor, onCanvas }: { d: WithId<Doc>; list: WithI
   return (
     <span className={styles.actions} role="group" aria-label={`${d.title}: actions`}>
       {mine && (
-        <button className={styles.act} title="rename" aria-label="Rename" onClick={act(() => useDocUi.setState({ renaming: d.id }))}>
+        <Button icon className={styles.act} title="rename" aria-label="Rename" onClick={act(() => useDocUi.setState({ renaming: d.id }))}>
           ✎
-        </button>
+        </Button>
       )}
       {mine && d.id !== 'agent-notes' && (
-        <button className={styles.act} data-on={d.shared || undefined} title={d.shared ? 'unshare: only you see it again' : 'share with everyone'} aria-label={d.shared ? 'Unshare' : 'Share'} onClick={act(() => shareOrAsk(wid, d, pieces))}>
+        <Button icon className={styles.act} pressed={!!d.shared} title={d.shared ? 'unshare: only you see it again' : 'share with everyone'} aria-label={d.shared ? 'Unshare' : 'Share'} onClick={act(() => shareOrAsk(wid, d, pieces))}>
           ◐
-        </button>
+        </Button>
       )}
       {editor && (
-        <button className={styles.act} title={`place it on the canvas where you're looking${onCanvas ? ', or drag it where you want it' : ''}${d.shared ? '' : ' (shares it; asks first)'}`} aria-label="Place on the canvas" onPointerDown={onCanvas ? dragOut(d.id) : undefined} onClick={act(() => useDocUi.setState({ placing: { docId: d.id, near: list.id } }))}>
+        <Button icon className={styles.act} title={`place it on the canvas where you're looking${onCanvas ? ', or drag it where you want it' : ''}${d.shared ? '' : ' (shares it; asks first)'}`} aria-label="Place on the canvas" onPointerDown={onCanvas ? dragOut(d.id) : undefined} onClick={act(() => useDocUi.setState({ placing: { docId: d.id, near: list.id } }))}>
           ↗
-        </button>
+        </Button>
       )}
-      <button className={styles.act} title="download .md" aria-label="Download" onClick={act(() => void downloadDocument(wid, d))}>
+      <Button icon className={styles.act} title="download .md" aria-label="Download" onClick={act(() => void downloadDocument(wid, d))}>
         ↓
-      </button>
+      </Button>
       {(mine || (d.shared && owner)) && (
-        <button className={styles.act} data-tone="danger" title="delete (asks first)" aria-label="Delete" onClick={act(() => useDocUi.setState({ deleting: d.id }))}>
+        <Button icon tone="danger" className={styles.act} title="delete (asks first)" aria-label="Delete" onClick={act(() => useDocUi.setState({ deleting: d.id }))}>
           ⌫
-        </button>
+        </Button>
       )}
     </span>
   )
@@ -375,22 +376,28 @@ function RenameField({ d }: { d: WithId<Doc> }) {
     useDocUi.setState({ renaming: null })
     if (save && value.trim() && value.trim() !== d.title) void renameDocument(wid, d.id, value)
   }
+  return <RenameInput d={d} done={done} />
+}
+
+function RenameInput({ d, done }: { d: WithId<Doc>; done: (save: boolean, value: string) => void }) {
+  const [value, setValue] = useState(d.title)
   return (
-    <input
+    <Field
       className={styles.rename}
-      defaultValue={d.title}
+      value={value}
+      onChange={setValue}
       maxLength={DOC_LIMITS.title}
-      aria-label="Document title"
+      label="Document title"
       autoFocus
       onFocus={(e) => e.currentTarget.select()}
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => {
         e.stopPropagation()
-        if (e.key === 'Enter') done(true, e.currentTarget.value)
+        if (e.key === 'Enter') done(true, value)
         if (e.key === 'Escape') done(false, '')
       }}
-      onBlur={(e) => useDocUi.getState().renaming === d.id && done(true, e.currentTarget.value)}
+      onBlur={() => useDocUi.getState().renaming === d.id && done(true, value)}
     />
   )
 }
@@ -416,7 +423,7 @@ function Head({ col, setup, live, piece }: { col: DocCol; setup: DocumentsSetup;
   const on = s.col === col
   const next = (): DocumentsSetup['sort'] => (!on ? { col, desc: col === 'added' || col === 'size' } : s.desc === (col === 'added' || col === 'size') ? { col, desc: !s.desc } : undefined)
   return (
-    <button
+    <button /* kit-ok: a column's head that sorts it, in the label's look (as a table's heads) */
       className={styles.head}
       style={{ width: COL_W[col] }}
       data-on={on || undefined}
@@ -501,7 +508,7 @@ export function UploadAction({ className }: { className?: string }) {
       <Button className={className} title="add .md files (images and PDFs come with Storage)" onClick={() => input.current?.click()}>
         upload
       </Button>
-      <input
+      <input /* kit-ok: the hidden file picker the button above opens */
         ref={input}
         type="file"
         multiple

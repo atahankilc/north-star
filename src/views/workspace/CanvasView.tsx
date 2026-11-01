@@ -16,6 +16,7 @@ import { HazardConfirm } from '../../ui/HazardConfirm'
 import type { MenuEntry } from '../../ui/Menu'
 import { Select } from '../../ui/Select'
 import { Button } from '../../ui/Button'
+import { Field } from '../../ui/Field'
 import { canEditIn } from '../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, setFitter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../state/canvasView'
 import { useWs, useWsNow } from './context'
@@ -1911,15 +1912,15 @@ function NameField({ value, placeholder, onSave }: { value: string; placeholder:
       <span className={styles.namePrompt} aria-hidden>
         &gt;
       </span>
-      <input
+      <Field
         className={styles.nameField}
-        aria-label={`${placeholder} name`}
+        label={`${placeholder} name`}
         value={draft}
         placeholder={`name this ${placeholder}`}
         maxLength={PIECE_NAME_MAX}
         // As wide as what's typed (or the placeholder), plus room for the caret.
         style={{ width: `${Math.max(draft.length, placeholder.length + 10) + 1}ch` }}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={setDraft}
         onFocus={() => setFocused(true)}
         onBlur={() => {
           setFocused(false)

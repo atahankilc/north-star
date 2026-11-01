@@ -329,8 +329,9 @@ function Panel() {
                   <span className={styles.text}>{r.inside || !(found instanceof RegExp) ? r.text : marked(r.text, found)}</span>
                   {r.hint && <span className={styles.hint}>{r.hint}</span>}
                   {r.fold && (
-                    <button
+                    <Button
                       className={styles.fold}
+                      pressed={r.fold.open}
                       aria-expanded={r.fold.open}
                       title={r.fold.open ? 'fold its places (←)' : 'show its places (→)'}
                       onClick={(e) => {
@@ -340,7 +341,7 @@ function Panel() {
                       }}
                     >
                       {r.fold.open ? '▾' : '▸'} {r.fold.count} inside
-                    </button>
+                    </Button>
                   )}
                 </div>
               )
@@ -498,9 +499,9 @@ function PreviewHead({ dest, zoom, onZoom, drawing }: { dest: Dest | null; zoom:
         <Button disabled={zoom <= ZOOM.min} title="zoom out (wheel)" aria-label="Zoom out" onClick={() => onZoom(zoom / ZOOM.step)}>
           −
         </Button>
-        <button className={styles.zoomAt} title="back to 100 %" onClick={() => onZoom(1)}>
+        <Button icon className={styles.zoomAt} title="back to 100 %" onClick={() => onZoom(1)}>
           {Math.round(zoom * 100)}%
-        </button>
+        </Button>
         <Button disabled={zoom >= ZOOM.max} title="zoom in (wheel)" aria-label="Zoom in" onClick={() => onZoom(zoom * ZOOM.step)}>
           +
         </Button>

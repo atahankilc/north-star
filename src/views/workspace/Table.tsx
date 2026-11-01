@@ -26,6 +26,7 @@ import styles from './Table.module.css'
 import { DUR } from '../../ui/motion'
 import { Button } from '../../ui/Button'
 import { Empty } from '../../ui/Empty'
+import { Label } from '../../ui/Label'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
 export const T = { head: 40, row: 32, name: 260, add: 40 }
@@ -351,12 +352,12 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
         ))}
         <div className={styles.headRule} style={box(0, T.head - 1, width, 1)} />
 
-        <button className={styles.head} data-name style={box(0, 0, nameW, T.head)} onPointerDown={own} onClick={() => sortBy(NAME_COL)} tabIndex={live ? 0 : -1} title={live && editor ? 'sort by it' : undefined}>
+        <button /* kit-ok: a column's head in the table's grid (sorts it), not a [verb] */ className={styles.head} data-name style={box(0, 0, nameW, T.head)} onPointerDown={own} onClick={() => sortBy(NAME_COL)} tabIndex={live ? 0 : -1} title={live && editor ? 'sort by it' : undefined}>
           {setup.manual ? 'name' : 'title'}
           <span className={styles.arrow}>{arrow(NAME_COL)}</span>
         </button>
         {cols.map((c, i) => (
-          <button
+          <button /* kit-ok: a column's head in the table's grid (sorts it), not a [verb] */
             key={c.id}
             className={styles.head}
             data-own={c.field ? undefined : true}
@@ -439,10 +440,11 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
 
         {live && editor && (
           <>
-            <button className={styles.add} data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: piece.id, tab: 'cols' })}>
+            <Button icon className={styles.add} data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: piece.id, tab: 'cols' })}>
               +
-            </button>
-            <button
+            </Button>
+            <Button
+              icon
               className={styles.add}
               style={box(0, bottom, nameW, T.add)}
               title="add a named row"
@@ -454,7 +456,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
               }}
             >
               + row
-            </button>
+            </Button>
           </>
         )}
         {!rows.length && (
@@ -605,9 +607,9 @@ const RowCells = memo(function RowCells({ pieceId, row: r, ri, cols, geo, cells,
           const text = fieldText(r, c.field)
           const tone = c.field === 'type' && r.card ? TYPE_ACCENT[r.card.type] : undefined
           return (
-            <button key={key} className={styles.cell} data-field={c.field} data-cell={key} data-find={key} data-find-box data-selected={isSel || undefined} style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
+            <button /* kit-ok: a cell of the grid, not a [verb] */ key={key} className={styles.cell} data-field={c.field} data-cell={key} data-find={key} data-find-box data-selected={isSel || undefined} style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
               tabIndex={live ? 0 : -1} onClick={live ? () => acts.current.press(ri, ci) : undefined} aria-label={`${r.name || 'untitled'}, ${colName(c)}: ${text || 'empty'}`}>
-              {text ? <span className={styles.text}>{text}</span> : <span className={styles.unset}>·</span>}
+              {text ? c.field === 'type' ? <Label className={`${styles.text} ${styles.typeText}`}>{text}</Label> : <span className={styles.text}>{text}</span> : <span className={styles.unset}>·</span>}
               <Marks tier="s" live={live} selected={isSel} />
             </button>
           )
@@ -658,7 +660,7 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
   return (
     <div className={styles.name} style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }} data-find-box data-card={row.card ? true : undefined} title={row.name || undefined} data-pick={onPick ? true : undefined} onPointerDown={onPress} onClick={live && !open && onPick ? (e) => !(e.target as HTMLElement).closest('button') && onPick() : undefined} onDoubleClick={live && editor ? () => setEditing(true) : undefined}>
       {open ? (
-        <input
+        <input /* kit-ok: the name typed in place in its world-sized row, the row's own face */
           className={styles.nameField}
           autoFocus
           aria-label={row.card ? `${row.card.type} title` : 'Row name'}
@@ -685,9 +687,9 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
         </span>
       )}
       {live && editor && !open && (
-        <button className={styles.remove} title={row.auto ? `take it out of the table (it stays a ${row.card!.type})` : 'take it out'} aria-label="Take it out" onClick={onRemove}>
+        <Button icon tone="danger" className={styles.remove} title={row.auto ? `take it out of the table (it stays a ${row.card!.type})` : 'take it out'} aria-label="Take it out" onClick={onRemove}>
           ×
-        </button>
+        </Button>
       )}
       <Marks tier="s" tone={tone} live={live && !!onPick} peers={live ? peers : undefined} />
     </div>
@@ -718,7 +720,7 @@ function OwnCell({ id, col, cell, style, label, selected, live, typing, onPress,
     return (
       <div className={styles.cell} style={style} data-selected onPointerDown={onPress}>
         <Marks tier="s" selected />
-        <input
+        <input /* kit-ok: a value typed in place in its world-sized cell, the cell's own face */
           className={styles.cellField}
           autoFocus
           aria-label={label}
@@ -744,7 +746,7 @@ function OwnCell({ id, col, cell, style, label, selected, live, typing, onPress,
       </div>
     )
   return (
-    <button
+    <button /* kit-ok: a cell of the grid, not a [verb] */
       className={styles.cell}
       data-kind={col.kind}
       style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}

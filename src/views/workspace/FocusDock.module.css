@@ -57,12 +57,15 @@
 
 /* What it's the dock of (a pane's, D-211): caps, a long name cut with `…`, then `|`. */
 .name {
+  composes: label from '../../ui/Label.module.css';
   max-width: 44ch;
   overflow: hidden;
-  color: var(--fg);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
   text-overflow: ellipsis;
+}
+
+/* Its own colour over the kit's label (which can come again later): outweighs it. */
+.dock .name {
+  color: var(--fg);
 }
 
 .sep {

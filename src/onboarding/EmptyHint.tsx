@@ -53,7 +53,7 @@ export function EmptyHint({ line, toward, anchor }: { line: string; toward?: str
     const cy = box ? box.top + box.height / 2 : innerHeight / 2
     setAt({ x: Math.round(cx - w / 2), y: Math.round(cy), arrow: null })
   }, [line, toward, anchor, tick, share])
-  return createPortal(
+  return createPortal( // kit-ok: a hint drawn on the empty canvas at its anchor, not a dialog
     <>
       {at?.arrow && (
         <Appear as="div" className={styles.arrow} style={{ left: at.arrow.x1, top: Math.round(at.y), width: Math.max(0, at.arrow.x2 - at.arrow.x1) }} aria-hidden>

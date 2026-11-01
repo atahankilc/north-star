@@ -11,6 +11,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useMotion } from '../state/motion'
 import { useTheme } from '../state/theme'
 import { useCanvasView } from '../state/canvasView'
+import { Button } from '../ui/Button'
 import styles from './Demo.module.css'
 import { DEMO_NS, STAGE, canMove, giveBack, lend, setFrameClass, setSrcBase, type Pool } from './demoPool'
 import { DRAG_PX } from '../ui/feel'
@@ -308,9 +309,9 @@ export function Demo({ scene, width, label, compact, own }: { scene: string; wid
         {reduced ? (
           <span className={styles.still}>still</span>
         ) : (
-          <button type="button" className={styles.toggle} onClick={toggle} aria-label={playing ? 'pause the demo' : 'play the demo'}>
-            {playing ? '[❚❚]' : '[▶ play]'}
-          </button>
+          <Button className={styles.toggle} onClick={toggle} aria-label={playing ? 'pause the demo' : 'play the demo'}>
+            {playing ? '❚❚' : '▶ play'}
+          </Button>
         )}
       </div>
     </div>

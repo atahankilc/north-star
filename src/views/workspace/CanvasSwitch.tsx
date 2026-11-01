@@ -75,7 +75,7 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
   const goes = deleting ? canvasGoes(deleting.id, now()) : null
   return (
     <>
-      <button
+      <button /* kit-ok: the breadcrumb's canvas crumb, opening the canvases' prompt */
         className={styles.crumb}
         data-learn="crumb"
         data-current={current || undefined}
@@ -96,7 +96,7 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
         </span>
       </button>
       {open &&
-        createPortal(
+        createPortal( // kit-ok: the prompt (ContextMenu) over everything, not a dialog
           <div className={styles.layer}>
             {open.mode === 'list' ? (
               <ContextMenu key="list" at={open.at} what="canvas" items={list} onClose={close} prompt="go to a canvas…" more={offerNew} />

@@ -124,26 +124,3 @@
   display: none;
 }
 
-/* The side nav's fit (D-186): an unframed icon button like the gear. */
-.fit {
-  display: inline-grid;
-  place-items: center;
-  width: var(--control);
-  height: var(--control);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.fit:hover,
-.fit:focus-visible {
-  color: var(--fg-strong);
-}
-
-/* A switch that's on: find open (D-236). */
-.fit[data-on='true'] {
-  color: var(--accent-cyan);
-}

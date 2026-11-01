@@ -569,7 +569,7 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
       onDoubleClick={live && editor && typed ? () => setEditing(true) : undefined}
     >
       {open ? (
-        <input
+        <input /* kit-ok: the name typed in place in its world-sized head, the head's own face */
           className={styles.nameField}
           autoFocus
           aria-label={which === 'rows' ? 'Row name' : 'Column name'}
@@ -616,21 +616,21 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
               ◇ {unfold.open} open
             </span>
           )}
-          <button
+          <Button
             className={styles.fold}
             disabled={!(live && editor)}
             aria-expanded={unfold.shown}
             title={unfold.shown ? 'fold what it is judged on into its cells' : 'unfold what it is judged on, to score each'}
             onClick={(e) => (e.stopPropagation(), unfold.toggle(!unfold.shown))}
           >
-            {unfold.shown ? '[−]' : `[+] ${entry.subs!.length}`}
-          </button>
+            {unfold.shown ? '−' : `+ ${entry.subs!.length}`}
+          </Button>
         </span>
       )}
       {live && editor && !open && !sub && (
-        <button className={styles.remove} title={entry.auto ? `take it out (it stays a ${entry.card!.type})` : 'take it out'} aria-label="Take it out" onClick={onRemove}>
+        <Button icon tone="danger" className={styles.remove} title={entry.auto ? `take it out (it stays a ${entry.card!.type})` : 'take it out'} aria-label="Take it out" onClick={onRemove}>
           ×
-        </button>
+        </Button>
       )}
     </div>
   )
@@ -719,13 +719,13 @@ function AddEntry({ which, label, style, piece, setup, shown, onPress, onAdded }
   }
   if (!open)
     return (
-      <button className={styles.add} data-which={which} style={style} onPointerDown={onPress} onClick={() => setOpen(true)} title={`add a ${label}`}>
+      <button /* kit-ok: the dashed card that ends an axis, to add to it */ className={styles.add} data-which={which} style={style} onPointerDown={onPress} onClick={() => setOpen(true)} title={`add a ${label}`}>
         + {label}
       </button>
     )
   return (
     <div className={styles.add} data-which={which} data-open style={style} onPointerDown={onPress}>
-      <input
+      <input /* kit-ok: a name typed in place in the axis' dashed card, its own face */
         ref={field}
         className={styles.addField}
         autoFocus
@@ -752,7 +752,7 @@ function AddEntry({ which, label, style, piece, setup, shown, onPress, onAdded }
       {matches.length > 0 && (
         <div className={styles.picks} role="listbox" aria-label="Cards that match">
           {matches.map((c) => (
-            <button key={c.id} role="option" aria-selected={false} className={styles.pick} style={{ ['--type' as string]: TYPE_ACCENT[c.type] }} onClick={() => (onAdded?.(which), void addCardEntry(wid, piece.id, setup, which, c).then(done))}>
+            <button /* kit-ok: a card offered under the add field, its type's colour */ key={c.id} role="option" aria-selected={false} className={styles.pick} style={{ ['--type' as string]: TYPE_ACCENT[c.type] }} onClick={() => (onAdded?.(which), void addCardEntry(wid, piece.id, setup, which, c).then(done))}>
               <span className={styles.pickName}>{c.title || `untitled ${c.type}`}</span>
               <span className={styles.pickType}>{c.type}</span>
             </button>
@@ -886,7 +886,7 @@ const CellBox = memo(function CellBox({ id, r, c, x, y, setup, cell, label, sele
   if (typing)
     return (
       <div className={styles.cell} style={style} data-selected>
-        <input
+        <input /* kit-ok: a value typed in place in its world-sized cell, the cell's own face */
           className={styles.cellField}
           autoFocus
           aria-label={label}
@@ -913,7 +913,7 @@ const CellBox = memo(function CellBox({ id, r, c, x, y, setup, cell, label, sele
       </div>
     )
   return (
-    <button
+    <button /* kit-ok: a cell of the grid, not a [verb] */
       className={styles.cell}
       style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
       data-cell={id}

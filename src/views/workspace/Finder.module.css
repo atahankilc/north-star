@@ -89,12 +89,10 @@
 }
 
 .group {
+  composes: label from '../../ui/Label.module.css';
   display: flex;
   justify-content: space-between;
   padding: var(--space-2) var(--space-3) var(--space-half);
-  color: var(--fg-dim);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .hash {
@@ -187,6 +185,7 @@
 }
 
 .previewHead {
+  composes: label from '../../ui/Label.module.css';
   display: flex;
   flex: none;
   justify-content: space-between;
@@ -194,9 +193,6 @@
   height: var(--control-sm);
   padding: 0 var(--space-3);
   align-items: center;
-  color: var(--fg-dim);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .previewWhere {
@@ -238,19 +234,16 @@
   text-transform: none;
 }
 
-.zoomAt {
+/* `100%`, a Button icon between `[−]` and `[+]`. */
+.zoomAt[data-icon] {
   min-width: 5ch;
   padding: 0;
-  border: 0;
-  background: none;
   color: var(--fg);
-  font: inherit;
   font-variant-numeric: tabular-nums;
   text-align: center;
-  cursor: pointer;
 }
 
-.zoomAt:hover {
+.zoomAt[data-icon]:hover {
   color: var(--fg-strong);
 }
 
@@ -259,19 +252,9 @@
   padding-left: calc(var(--space-3) + 3ch);
 }
 
+/* `[▸ 3 inside]`, a Button, pressed while open. */
 .fold {
   flex: none;
-  padding: 0 var(--space-1);
-  border: var(--line-w) solid var(--line-hover);
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  cursor: pointer;
-}
-
-.fold:hover,
-.fold[aria-expanded='true'] {
-  color: var(--accent-cyan);
 }
 
 .drawing {

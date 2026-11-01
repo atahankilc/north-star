@@ -30,7 +30,7 @@ export function Nudge({ line, anchor, names, onClose }: { line: string; anchor?:
       setAt({ left: right + w < innerWidth - 16 ? right : Math.max(16, r.left - 12 - w), top: Math.round(r.top + r.height / 2 - h / 2) })
     } else setAt({ left: Math.round((innerWidth - w) / 2), top: innerHeight - 96 })
   }, [anchor, line, tick])
-  return createPortal(
+  return createPortal( // kit-ok: a nudge placed beside what it points at, not a dialog
     <Appear
       as="div"
       elRef={el}

@@ -13,6 +13,10 @@ import { useKanbanUi, type KanbanTab } from './Kanban'
 import { KanbanEditor, type SetKanban } from './KanbanSetup'
 import { boxKey, byBox, byColumn, columnsOf, heldCards, KANBAN_TEMPLATES, NO_VALUE, rowFieldOf, rowsOfField, type CardCol } from './kanbanCards'
 import m from './Matrix.module.css'
+import { Options } from '../../ui/Options'
+
+// The `my own` option of the start (its own setup, the next steps).
+const OWN = '__own'
 
 const STEPS = ['start from', 'holds', 'columns · rows'] as const
 const QUESTION = ['Start from', 'What does it hold?', 'Its columns and rows']
@@ -108,26 +112,19 @@ function Wizard() {
       }
     >
       {step === 0 && (
-        <div className={m.templates}>
-          {KANBAN_TEMPLATES.map((t) => (
-            <button
-              key={t.key}
-              className={m.template}
-              aria-pressed={template === t.key}
-              onClick={() => {
-                setDraft({ ...emptyKanban(), ...t.setup() })
-                setTemplate(t.key)
-              }}
-            >
-              {t.name}
-              <small>{t.hint}</small>
-            </button>
-          ))}
-          <button className={m.template} aria-pressed={template === null} onClick={() => setStep(1)}>
-            my own
-            <small>answer the next two</small>
-          </button>
-        </div>
+        <Options
+          pick="one"
+          cards
+          label="Start from"
+          value={template ?? OWN}
+          options={[...KANBAN_TEMPLATES.map((t) => ({ value: t.key, label: t.name, line: t.hint })), { value: OWN, label: 'my own', line: 'answer the next two' }]}
+          onChange={(key) => {
+            const t = KANBAN_TEMPLATES.find((x) => x.key === key)
+            if (!t) return setStep(1)
+            setDraft({ ...emptyKanban(), ...t.setup() })
+            setTemplate(t.key)
+          }}
+        />
       )}
       {step === 1 && (
         <>

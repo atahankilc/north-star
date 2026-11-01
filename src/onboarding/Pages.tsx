@@ -1,5 +1,5 @@
 // The welcome and what's new (D-315, docs/specs/onboarding.md §4.1, §4.4): one paged modal, the wizard's shade, z 40,
-// `role="dialog"`, focus inside and back where it was on close; `←` `→` `Enter` page, `esc` skips. The wizard window
+// the dialog role, focus inside and back where it was on close; `←` `→` `Enter` page, `esc` skips. The wizard window
 // (D-316): the matrix/table/deck wizards' frame, the pages as tabs, the demo on top, words on black.
 // What's new is the same frame: the pages are the changes, `[show me]` where an item has somewhere to go, the last
 // page `+ N more` as a list.
@@ -12,6 +12,7 @@ import type { ReleaseItem } from './releases'
 import styles from './Pages.module.css'
 import { Button } from '../ui/Button'
 import { Num } from '../ui/Rule'
+import { Steps } from '../ui/Steps'
 
 export type PagesEnd = { how: 'done' | 'skipped'; go?: NonNullable<ReleaseItem['go']>['action'] }
 
@@ -231,17 +232,14 @@ function PageWindow({ page, pages, i, n, last, go, forward, skip, showMe, name, 
   const max = tabChars(demoW + 2, n)
   return (
     <>
-      <nav className={styles.steps} aria-label="pages">
-        {pages.map((p, k) => {
-          const tab = fitTab(p.tab, max)
-          return (
-            <button key={k} type="button" tabIndex={-1} className={styles.step} data-on={k === i || undefined} data-done={k < i || undefined} onClick={() => go(k)} title={tab === p.tab ? undefined : p.tab}>
-              <b>{two(k + 1)}</b>
-              {tab}
-            </button>
-          )
-        })}
-      </nav>
+      <Steps
+        label="pages"
+        keyboard={false}
+        steps={pages.map((p) => fitTab(p.tab, max))}
+        titles={pages.map((p) => (fitTab(p.tab, max) === p.tab ? undefined : p.tab))}
+        step={i}
+        onStep={go}
+      />
       <Stage page={page} scene={scene} width={demoW} />
       <div className={styles.text}>
         <div className={styles.count}>

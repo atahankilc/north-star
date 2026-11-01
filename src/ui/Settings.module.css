@@ -86,21 +86,6 @@
 }
 
 /* People waiting to join: a count pinned to the corner. */
-.badge {
-  position: absolute;
-  top: calc(-1 * var(--space-1));
-  right: calc(-1 * var(--space-2));
-  display: inline-grid;
-  place-items: center;
-  min-width: var(--control-xs);
-  height: var(--control-xs);
-  padding: 0 var(--space-1);
-  background: var(--accent-cyan);
-  color: var(--on-accent);
-  font-size: var(--text-xs);
-  line-height: var(--lh-none);
-}
-
 @media (max-width: 760px) {
   .account {
     padding-left: var(--space-2);

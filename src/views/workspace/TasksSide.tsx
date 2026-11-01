@@ -360,7 +360,7 @@ function Mine({ decks, top, children }: { decks: WithId<Piece>[]; top: number; c
             {list.map((t) => {
               const late = overdue(t, false)
               return (
-                <button key={t.id} className={styles.row} aria-pressed={picked === t.id} onClick={() => selectTask(d.id, t.id)}>
+                <button /* kit-ok: a task's whole row (mark, title, due) that picks it */ key={t.id} className={styles.row} aria-pressed={picked === t.id} onClick={() => selectTask(d.id, t.id)}>
                   <span className={isNew(t) ? styles.new : styles.dim}>{isNew(t) ? '●' : '☐'}</span>
                   <span className={styles.title}>{t.title}</span>
                   <span className={late ? styles.late : styles.dim}>{t.due ? `${late ? 'was due ' : ''}${dueText(t.due)}` : '—'}</span>

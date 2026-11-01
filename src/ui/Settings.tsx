@@ -11,6 +11,7 @@ import { themeAccent, useTheme, type ThemePref } from '../state/theme'
 import { AgentSettings } from '../agent/ui/AgentSettings'
 import { AsciiButton } from './AsciiButton'
 import { Choice } from './Choice'
+import { CountBadge } from './CountBadge'
 import styles from './Settings.module.css'
 
 const MOTION: readonly MotionPref[] = ['full', 'reduced', 'system']
@@ -101,11 +102,7 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
         <span className={styles.gear} aria-hidden>
           ⚙&#xFE0E;
         </span>
-        {badge > 0 && (
-          <span className={styles.badge} aria-hidden>
-            {badge}
-          </span>
-        )}
+        <CountBadge count={badge} tone="cyan" />
       </button>
       <dialog
         ref={dialog}

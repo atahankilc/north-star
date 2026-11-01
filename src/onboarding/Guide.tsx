@@ -64,7 +64,7 @@ function useModel(role: Role | null): GuideModel {
 export function Guide({ onClose, onPlay, role = null, now = null, onReach, resume = false }: Props) {
   const model = useModel(role)
   const reach = now && onReach ? { title: now.title, go: onReach } : null
-  return createPortal(
+  return createPortal( // kit-ok: the guide is the finder's twin (D-316), not the wizard Window
     <>
       <div className={styles.scrim} data-coach onPointerDown={onClose} aria-hidden />
       <ListGuide model={model} onClose={onClose} onPlay={onPlay} reach={reach} resume={resume} />
@@ -236,7 +236,7 @@ function ListGuide({ model, onClose, onPlay, reach, resume }: { model: GuideMode
   return (
     <Appear
       className={styles.guide}
-      role="dialog"
+      role="dialog" // kit-ok: the finder's twin (D-316)
       aria-modal="true"
       aria-label="Guide: every note again"
       data-coach
@@ -362,7 +362,7 @@ function RowView({ row: r, model, picked, typed, onClick, onFold }: { row: Row; 
         <span className={styles.what}>{a ? `${a.seen} / ${a.notes.length} seen` : ''}</span>
         {a?.isNew && <New />}
         {!typed && (
-          <button
+          <button /* kit-ok: a framed count that folds its row, like the finder's [▸ N inside] */
             type="button"
             tabIndex={-1}
             className={styles.fold}

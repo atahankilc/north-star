@@ -15,6 +15,8 @@ import { Marks } from '../../ui/Marks'
 import { ThreadChip, threadOn } from './Threads'
 import styles from './PlaneLinks.module.css'
 import { Chip } from '../../ui/Chip'
+import { Button } from '../../ui/Button'
+import { Field } from '../../ui/Field'
 
 type LinkGroup = 'solves' | 'part' | 'competes' | 'clashes' | 'draws' | 'depends' | 'plain' | 'for'
 
@@ -238,7 +240,7 @@ function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
   const { wid } = useWs()
   const [draft, setDraft] = useState(edge.label ?? '')
   useEffect(() => setDraft(edge.label ?? ''), [edge.label])
-  const input = useRef<HTMLInputElement>(null)
+  const input = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
   const labelling = useCanvasView((s) => s.linkLabelling)
   useEffect(() => {
     if (!labelling) return
@@ -268,37 +270,33 @@ function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
           ariaLabel="Link type"
         />
         <span className={styles.rule} />
-        <input
+        <Field
           ref={input}
+          size="sm"
           className={styles.input}
           value={draft}
           maxLength={200}
           placeholder="label…"
-          aria-label="Link label"
-          onChange={(e) => setDraft(e.target.value)}
+          label="Link label"
+          onChange={setDraft}
           onBlur={save}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            if (e.key === 'Enter') e.currentTarget.blur()
-            if (e.key === 'Escape') {
-              setDraft(edge.label ?? '')
-              requestAnimationFrame(() => (e.target as HTMLInputElement).blur())
-            }
+          onEnter={() => input.current?.blur()}
+          onEscape={() => {
+            setDraft(edge.label ?? '')
+            requestAnimationFrame(() => input.current?.blur())
           }}
         />
         <span className={styles.rule} />
         {/* A customer tag always points item → customer (D-044). */}
-        <button
-          className={styles.button}
+        <Button
           disabled={edge.kind === FOR}
           title={edge.kind === FOR ? 'A customer tag always points at the customer' : 'Turn the arrow around'}
           onClick={() => void reverseEdge(wid, edge)}
         >
           ⇄ reverse
-        </button>
-        <button
-          className={styles.button}
-          data-tone="danger"
+        </Button>
+        <Button
+          tone="danger"
           title="Delete or Backspace"
           onClick={() => {
             useCanvasView.setState({ linkSelected: null })
@@ -306,7 +304,7 @@ function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
           }}
         >
           × remove
-        </button>
+        </Button>
       </div>
     </div>
   )

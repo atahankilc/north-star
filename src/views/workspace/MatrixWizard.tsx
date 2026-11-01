@@ -13,6 +13,10 @@ import { WizardShell } from '../../ui/WizardShell'
 import { StepSquare, useMatrixUi } from './Matrix'
 import { AxisEditor, CellsEditor, type SetPart } from './MatrixSetup'
 import styles from './Matrix.module.css'
+import { Options } from '../../ui/Options'
+
+// The `my own` option of the start (its own setup, the next steps).
+const OWN = '__own'
 
 const STEPS = ['start from', 'rows', 'columns', 'cells'] as const
 const QUESTION = ['Start from', 'What goes down the side?', 'What goes across the top?', 'What goes in a cell?']
@@ -94,26 +98,19 @@ function Wizard() {
       }
     >
       {step === 0 && (
-        <div className={styles.templates}>
-          {TEMPLATES.map((t) => (
-            <button
-              key={t.key}
-              className={styles.template}
-              aria-pressed={template === t.key}
-              onClick={() => {
-                setDraft(t.setup())
-                setTemplate(t.key)
-              }}
-            >
-              {t.name}
-              <small>{t.hint}</small>
-            </button>
-          ))}
-          <button className={styles.template} aria-pressed={template === null} onClick={() => setStep(1)}>
-            my own
-            <small>answer the next three</small>
-          </button>
-        </div>
+        <Options
+          pick="one"
+          cards
+          label="Start from"
+          value={template ?? OWN}
+          options={[...TEMPLATES.map((t) => ({ value: t.key, label: t.name, line: t.hint })), { value: OWN, label: 'my own', line: 'answer the next three' }]}
+          onChange={(key) => {
+            const t = TEMPLATES.find((x) => x.key === key)
+            if (!t) return setStep(1)
+            setDraft(t.setup())
+            setTemplate(t.key)
+          }}
+        />
       )}
       {step === 1 && <AxisEditor which="rows" axis={draft.rows} onChange={(a) => edit({ ...draft, rows: a })} />}
       {step === 2 && <AxisEditor which="cols" axis={draft.cols} onChange={(a) => edit({ ...draft, cols: a })} />}

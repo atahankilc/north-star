@@ -182,16 +182,9 @@
 }
 
 /* `×` to take a head out: in its top-right corner, shown while hovered. */
+/* A head's `×` (a Button icon, tone danger), shown while the head is pointed at. */
 .remove {
   flex-shrink: 0;
-  padding: 0 var(--space-half);
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  font-size: var(--text-xs);
-  line-height: var(--lh-none);
-  cursor: pointer;
   opacity: 0;
   transition: opacity var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
@@ -210,8 +203,9 @@
   opacity: 1;
 }
 
-.remove:hover {
-  color: var(--accent-magenta);
+.remove[data-icon] {
+  padding: 0 var(--space-half);
+  line-height: var(--lh-none);
 }
 
 /* The totals (D-212): squares, one per cell; a line of the steps' shares; or a number. */
@@ -725,17 +719,10 @@
   box-shadow: none;
 }
 
-.pillX {
+/* A pill's `×` (a Button icon, tone danger). */
+.pillX[data-icon] {
   padding: 0 var(--space-half);
-  border: 0;
-  background: none;
   color: var(--fg-faint);
-  font: inherit;
-  cursor: pointer;
-}
-
-.pillX:hover {
-  color: var(--accent-magenta);
 }
 
 .addPill {
@@ -919,41 +906,6 @@
 }
 
 /* A wizard's step content (the shell is src/ui/WizardShell.tsx, D-326): templates to start from, the preview's table. */
-.templates {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-2);
-}
-
-.template {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-half);
-  padding: var(--space-3);
-  border: var(--line-w) solid var(--line);
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  font-size: var(--text-sm);
-  text-align: left;
-  cursor: pointer;
-}
-
-.template:hover {
-  border-color: var(--line-hover);
-  background: var(--wash-1);
-}
-
-.template[aria-pressed='true'] {
-  border-color: var(--accent-cyan);
-  background: var(--wash-cyan);
-}
-
-.template small {
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-}
-
 .mini {
   width: 100%;
   border-collapse: collapse;
@@ -987,7 +939,6 @@
 }
 
 @media (max-width: 760px) {
-  .templates,
   .kinds {
     grid-template-columns: 1fr;
   }
@@ -1071,25 +1022,10 @@
   gap: var(--space-2);
 }
 
-.fold {
+/* `[−]` / `[+] 3`: a Button, no padding of its own on the axis. */
+.fold[data-tone],
+.fold:not([data-tone]) {
   padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg-dim);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out);
-}
-
-.fold:hover:not(:disabled),
-.fold:focus-visible {
-  color: var(--accent-cyan);
-}
-
-.fold:disabled {
-  cursor: default;
 }
 
 .endCell[data-sub] {

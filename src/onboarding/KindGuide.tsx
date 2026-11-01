@@ -123,9 +123,9 @@ export function KindGuide({ menu, row, where, onHide }: Props) {
     )
   }
 
-  if (host) return createPortal(body, host)
+  if (host) return createPortal(body, host) // kit-ok: glued into the + menu's own column (D-316)
   // No panel found: over the page at the menu's box.
-  return createPortal(
+  return createPortal( // kit-ok: over the page at the menu's box
     <div className={styles.over} style={{ left: menu.left, top: menu.top, width: menu.width, height: menu.height }}>
       {body}
     </div>,

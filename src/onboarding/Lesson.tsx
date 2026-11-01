@@ -60,7 +60,7 @@ const onScreen = (r: Rect) => r.w > 0 && r.h > 0 && r.x < innerWidth && r.y < in
 // focused plane, the piece being taught and what the event was about (`target`), every console and dock on screen, an
 // open menu (the `+` menu, a right-click, a Select), the HUD (side nav, breadcrumb, the bottom-left corner), and the
 // coach's other surfaces (a hint, the kind guide). Its lead never crosses a console's or a dock's buttons.
-const PANELS = '[role="dialog"], [role="alertdialog"], aside, dialog[open]'
+const PANELS = '[role="dialog"], [role="alertdialog"], aside, dialog[open]' // kit-ok: a selector for others' panels, not a dialog
 export const MENUS = '[role="menu"], [role="listbox"], [data-learn="plus-menu"]'
 const CONSOLES = '[data-learn="console"], [data-learn="console-unframe"], [data-learn="dock"], [data-learn="dock-view"]'
 // The HUD (D-027, D-175, D-178): the side nav, the breadcrumb and the bottom-left corner (people here, threads, your square,
@@ -137,7 +137,7 @@ function obstacles(anchor: HTMLElement | null, target: string | undefined, own: 
   }
   // The coach's other surfaces: an empty hint, the kind guide, a nudge.
   for (const el of document.querySelectorAll<HTMLElement>('[data-coach]')) {
-    if (mine(el) || el.closest('[role="dialog"]')) continue
+    if (mine(el) || el.closest('[role="dialog"]')) continue // kit-ok: a selector, not a dialog
     const r = rectOf(el)
     if (onScreen(r) && r.w * r.h < screen * 0.5) hard.push(r)
   }
@@ -420,10 +420,10 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
   const inner = done ? <Done name={name} /> : <Card {...common} />
 
   if (played) {
-    return createPortal(
+    return createPortal( // kit-ok: a played lesson is the prompt card in the middle (D-316's look), not the wizard Window
       <div className={styles.shade} data-coach {...stopCanvas} {...keepFocus}>
         <Middle root={root} first={first} onClose={onClose} back={back} forward={forward}>
-          <Appear as="section" className={styles.card} role="dialog" aria-modal="true" aria-label={`lesson: ${plain(title)}`} data-played>
+          <Appear /* kit-ok: the lesson's prompt card (D-316) */ as="section" className={styles.card} role="dialog" aria-modal="true" aria-label={`lesson: ${plain(title)}`} data-played>
             {inner}
           </Appear>
         </Middle>
@@ -434,7 +434,7 @@ export function Lesson({ shown, names, onClose, onTipsOff, onGuide, reachRef }: 
 
   const style = pos && !aside ? { left: pos.x - off.x, top: pos.y - off.y } : pos ? { left: pos.x - off.x, top: pos.y - off.y, visibility: 'hidden' as const, pointerEvents: 'none' as const } : { left: -9999, top: 0, visibility: 'hidden' as const }
   const side = pos?.at === 'beside' ? pos.side : 'bottom'
-  return createPortal(
+  return createPortal( // kit-ok: the lesson card beside what it teaches, placed on the page
     <>
       {pos?.lead && !done && !aside && !orphan && <LeadLine lead={{ x1: pos.lead.x1 - off.x, y1: pos.lead.y1 - off.y, x2: pos.lead.x2 - off.x, y2: pos.lead.y2 - off.y }} over={overWizard} />}
       <Appear

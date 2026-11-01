@@ -17,11 +17,11 @@ const GO: (() => void)[] = [
 ]
 
 export function Choices({ into, choices }: { into: Element; choices: readonly Choice[] }) {
-  return createPortal(
+  return createPortal( // kit-ok: the three choices drawn into the page's own empty box
     <ul className={styles.choices} data-coach aria-label="ways to start">
       {choices.map((c, i) => (
         <Appear as="li" key={c.label} className={styles.choiceItem}>
-          <button type="button" className={styles.choice} onClick={() => GO[i]?.()}>
+          <button /* kit-ok: a choice drawn as a small card (number, label, line), the whole card the target */ type="button" className={styles.choice} onClick={() => GO[i]?.()}>
             <Num n={i + 1} className={styles.choiceNo} />
             <span className={styles.choiceLabel}>{c.label}</span>
             <span className={styles.choiceLine}>{c.line}</span>

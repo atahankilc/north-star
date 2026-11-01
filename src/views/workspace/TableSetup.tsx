@@ -137,9 +137,9 @@ export function RowsEditor({ setup, onChange, onRemoveItem, cardsOnly }: EditorP
               <span key={item.id} className={m.pill} data-card={c ? true : undefined} style={c ? { ['--type' as string]: TYPE_ACCENT[c.type] } : undefined} title={c ? c.type : 'a typed name'}>
                 <span className={m.pillMark} aria-hidden />
                 {c ? c.title || `untitled ${c.type}` : item.name || 'name'}
-                <button className={m.pillX} aria-label="Take it out" onClick={() => drop(item)}>
+                <Button icon tone="danger" className={m.pillX} aria-label="Take it out" onClick={() => drop(item)}>
                   ×
-                </button>
+                </Button>
               </span>
             )
           })}
@@ -194,9 +194,9 @@ function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: bool
             · auto
           </span>
         )}
-        <button className={m.pillX} title="take the rule out" aria-label="Take the rule out" onClick={onRemove}>
+        <Button icon tone="danger" className={m.pillX} title="take the rule out" aria-label="Take the rule out" onClick={onRemove}>
           ×
-        </button>
+        </Button>
       </span>
     </Row>
   )
@@ -293,9 +293,9 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
                   )}
                 </>
               )}
-              <button className={m.pillX} title="take the column out (its values go; ⌘Z brings them back)" aria-label={`Take ${colName(c)} out`} onClick={() => drop(c)}>
+              <Button icon tone="danger" className={m.pillX} title="take the column out (its values go; ⌘Z brings them back)" aria-label={`Take ${colName(c)} out`} onClick={() => drop(c)}>
                 ×
-              </button>
+              </Button>
             </li>
           ))}
         </ol>

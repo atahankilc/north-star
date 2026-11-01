@@ -45,6 +45,7 @@ import styles from './Matrix.module.css'
 import { Tabs } from '../../ui/Tabs'
 import { Checkbox } from '../../ui/Checkbox'
 import { Button } from '../../ui/Button'
+import { Field } from '../../ui/Field'
 import { Options } from '../../ui/Options'
 
 const ANY = 'any'
@@ -161,9 +162,9 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
               <span key={item.id} className={styles.pill} data-card={c ? true : undefined} style={c ? { ['--type' as string]: TYPE_ACCENT[c.type] } : undefined} title={c ? c.type : 'a typed name'}>
                 <span className={styles.pillMark} aria-hidden />
                 {c ? c.title || `untitled ${c.type}` : item.name || 'name'}
-                <button className={styles.pillX} aria-label="Take it out" onClick={() => drop(item)}>
+                <Button icon tone="danger" className={styles.pillX} aria-label="Take it out" onClick={() => drop(item)}>
                   ×
-                </button>
+                </Button>
               </span>
             )
           })}
@@ -241,19 +242,19 @@ export function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<stri
       <span className={styles.pillPlus} aria-hidden>
         +
       </span>
-      <input
+      <Field
         ref={field}
         className={styles.addPillField}
+        label={onName ? 'Add a card or a name' : 'Add a card'}
         value={q}
         maxLength={NAME_MAX}
         placeholder={onName ? 'a card, or type a name' : 'find a card'}
-        aria-label={onName ? 'Add a card or a name' : 'Add a card'}
         role="combobox"
         aria-expanded={open && options.length > 0}
         onFocus={() => setOpen(true)}
         onBlur={(e) => !e.currentTarget.parentElement?.contains(e.relatedTarget as Node) && setOpen(false)}
-        onChange={(e) => {
-          setQ(e.target.value)
+        onChange={(v) => {
+          setQ(v)
           setLit(0)
         }}
         onKeyDown={(e) => {
@@ -273,7 +274,7 @@ export function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<stri
       {open && options.length > 0 && (
         <span className={styles.addList} role="listbox">
           {options.map((o, i) => (
-            <button
+            <button /* kit-ok: a card or a name offered under the field, in its type's colour */
               key={'card' in o ? o.card.id : 'name'}
               role="option"
               aria-selected={i === lit}
@@ -371,7 +372,7 @@ function StepsEditor({ steps, marks, onChange }: { steps: Step[]; marks: boolean
           </span>
           <AutosaveField className={styles.glyphField} label={`step ${i + 1} glyph`} maxLength={GLYPH_MAX} value={s.glyph} onSave={(g) => g.trim() && edit(i, { glyph: g.trim() }, `glyph:${s.id}`)} />
           <AutosaveField className={styles.field} label={`step ${i + 1} name`} maxLength={LABEL_MAX} value={s.label} onSave={(l) => l.trim() && edit(i, { label: l.trim() }, `label:${s.id}`)} />
-          <button
+          <button /* kit-ok: the step's colour swatch, stepping through the tones */
             className={styles.tone}
             style={{ ['--tone' as string]: TONE_VAR[s.tone] }}
             title={`colour: ${s.tone} (click for the next)`}
@@ -381,9 +382,9 @@ function StepsEditor({ steps, marks, onChange }: { steps: Step[]; marks: boolean
             ■
           </button>
           {steps.length > 1 && (
-            <button className={styles.remove} data-shown title="take the step out (cells set to it read as empty)" aria-label={`Take step ${i + 1} out`} onClick={() => onChange(steps.filter((x) => x !== s))}>
+            <Button icon tone="danger" className={styles.remove} data-shown title="take the step out (cells set to it read as empty)" aria-label={`Take step ${i + 1} out`} onClick={() => onChange(steps.filter((x) => x !== s))}>
               ×
-            </button>
+            </Button>
           )}
         </li>
       ))}

@@ -15,8 +15,8 @@ import { ago } from '../../ui/ago'
 import { runCells } from '../../ui/Appear'
 import { DURATION_MS, CELLS_SHUT } from '../../ui/cellReveal'
 import { CommentIcon, myUid, ThreadPanel, toggleInbox, useThreadView } from './Threads'
-import { CountBadge } from '../../ui/CountBadge'
 import { Button } from '../../ui/Button'
+import { ToolButton } from '../../ui/ToolButton'
 import styles from './Threads.module.css'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
@@ -82,17 +82,17 @@ export function InboxButton({ wid, threads }: Pick<Props, 'wid' | 'threads'>) {
   const fresh = threads.filter((t) => !t.resolved && isNew(t, seen, t.id, me))
   const mentions = fresh.filter((t) => t.mentions?.includes(me)).length
   return (
-    <button
-      className={styles.inboxButton}
-      aria-pressed={open}
-      aria-label={`Threads${mentions ? `, ${mentions} new mention${mentions === 1 ? '' : 's'}` : fresh.length ? `, ${fresh.length} new` : ''}`}
+    <ToolButton
+      pressed={open}
+      badge={mentions}
+      dot={fresh.length > 0}
+      label={`Threads${mentions ? `, ${mentions} new mention${mentions === 1 ? '' : 's'}` : fresh.length ? `, ${fresh.length} new` : ''}`}
       title={mentions ? `${mentions} new mention${mentions === 1 ? '' : 's'}` : fresh.length ? `${fresh.length} thread${fresh.length === 1 ? '' : 's'} with something new` : 'Threads'}
       data-viewer-ok
       onClick={() => toggleInbox()}
     >
       <CommentIcon />
-      {mentions > 0 ? <CountBadge count={mentions} /> : fresh.length > 0 && <span className={styles.dot} />}
-    </button>
+    </ToolButton>
   )
 }
 
@@ -292,7 +292,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
         )}
         {rows.map((t) => (
           <li key={t.id}>
-            <button className={styles.row} data-new={fresh(t) || undefined} data-open={t.id === openId || undefined} onClick={() => onGo(t)}>
+            <button /* kit-ok: a thread's whole row (mark, title, when, last words) that opens it */ className={styles.row} data-new={fresh(t) || undefined} data-open={t.id === openId || undefined} onClick={() => onGo(t)}>
               <span className={styles.rowHead}>
                 <span className={styles.rowMark} aria-hidden>
                   {fresh(t) ? (mentioned(t) ? '@' : '●') : t.resolved ? '✓' : <CommentIcon size={11} />}

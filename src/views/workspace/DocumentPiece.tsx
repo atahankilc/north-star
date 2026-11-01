@@ -54,9 +54,9 @@ function DocZoom({ reader }: { reader: string }) {
   return (
     <span className={styles.zoom} role="group" aria-label="Zoom">
       <DockAction label="−" title="zoom out" onClick={() => set(stepZoom(zoom, -1))} />
-      <button className={styles.zoomAt} title="back to 100 %" onClick={() => set(1)}>
+      <Button icon className={styles.zoomAt} title="back to 100 %" onClick={() => set(1)}>
         {Math.round(zoom * 100)}%
-      </button>
+      </Button>
       <DockAction label="+" title="zoom in" onClick={() => set(stepZoom(zoom, 1))} />
     </span>
   )
@@ -354,7 +354,8 @@ function PageOutline({ scroller, at }: { scroller: React.RefObject<HTMLDivElemen
         on this page
       </Label>
       {parts.map((p, i) => (
-        <button
+        <Button
+          link
           key={i}
           className={styles.outlineItem}
           data-on={i === now || undefined}
@@ -363,7 +364,7 @@ function PageOutline({ scroller, at }: { scroller: React.RefObject<HTMLDivElemen
           title={p.text}
         >
           {p.text}
-        </button>
+        </Button>
       ))}
     </nav>
   )

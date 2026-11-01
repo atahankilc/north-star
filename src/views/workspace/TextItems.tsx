@@ -466,8 +466,8 @@ function StickyBody({ l, who, typing, fold }: { l: Label; who: string; typing: b
         </span>
         <span className={styles.stickyTools}>
           {fold && (long || folded) && (
-            <button
-              type="button"
+            <Button
+              icon
               className={styles.stickyFold}
               title={folded ? 'open' : 'fold'}
               aria-label={folded ? 'open the note' : 'fold the note'}
@@ -479,7 +479,7 @@ function StickyBody({ l, who, typing, fold }: { l: Label; who: string; typing: b
               }}
             >
               {folded ? '▸' : '▾'}
-            </button>
+            </Button>
           )}
           <Checks />
         </span>
@@ -562,7 +562,7 @@ function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickS
         if (!root.current?.contains(e.relatedTarget as Node)) finish()
       }}
     >
-      <input
+      <input /* kit-ok: the small line typed in place on the canvas, as it reads (D-190) */
         className={`${styles.field} ${styles.kickField}`}
         style={{ fontSize: kickSize, ...(row ? { marginRight: kickSize * 0.7 } : {}) }}
         value={k}
@@ -573,7 +573,7 @@ function NamedFields({ l, kick, kickSize, row }: { l: Label; kick: string; kickS
         onChange={(e) => setK(e.target.value)}
         onKeyDown={onKeyDown}
       />
-      <input
+      <input /* kit-ok: a heading typed in place on the canvas, as it reads (D-190) */
         ref={main}
         className={styles.field}
         value={text}
@@ -619,7 +619,7 @@ function Field({ l }: { l: Label }) {
     end.write({ text })
   }
   return (
-    <textarea
+    <textarea /* kit-ok: a paragraph or note typed in place on the canvas, as it reads (D-190) */
       ref={ref}
       className={styles.field}
       rows={1}
@@ -868,11 +868,11 @@ function TitleFields({ wid, id, name, description }: { wid: string; id: string; 
       }}
     >
       {/* Laid out as it reads (name, rule, what it's building), so typing doesn't change how it looks. */}
-      <input className={`${styles.field} ${styles.titleName}`} style={{ fontSize: T.name }} aria-label="Workspace name" value={n} maxLength={80} onChange={(e) => setN(e.target.value)} />
+      <input /* kit-ok: the project title typed in place, as it reads */ className={`${styles.field} ${styles.titleName}`} style={{ fontSize: T.name }} aria-label="Workspace name" value={n} maxLength={80} onChange={(e) => setN(e.target.value)} />
       <i className={styles.spacer} style={{ height: T.gap }} />
       <span className={styles.titleRule} style={{ height: T.rule }} aria-hidden />
       <i className={styles.spacer} style={{ height: T.gap }} />
-      <textarea
+      <textarea /* kit-ok: the project's description typed in place, as it reads */
         ref={about}
         className={`${styles.field} ${styles.titleAbout}`}
         style={{ width: `${DESC_SHARE * 100}%` }}
@@ -953,7 +953,7 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
       )}
       <span className={styles.rule2} />
       {LABEL_COLORS.filter((c) => kind !== 'sticky' || c !== 'ink').map((c) => (
-        <button
+        <button /* kit-ok: a colour swatch, filled with its colour */
           key={c}
           className={styles.dot}
           style={{ background: COLOR_VAR[c] }}

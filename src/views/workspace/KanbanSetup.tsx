@@ -201,7 +201,7 @@ function HeldTasks({ piece, held, onDone }: { piece: WithId<Piece>; held: Task[]
               const count = allTasks.filter((t) => t.pieceId === p.id).length
               const same = setup.cols.every((c) => cols.cols.some((x) => x.name.trim().toLowerCase() === c.name.trim().toLowerCase()))
               return (
-                <button key={p.id} role="listitem" className={styles.heldTo} onClick={() => moveTo(p)}>
+                <button /* kit-ok: a deck offered in the list to move the tasks to */ key={p.id} role="listitem" className={styles.heldTo} onClick={() => moveTo(p)}>
                   {p.name || 'deck'}
                   <span className={styles.heldHint}>
                     {count} task{count === 1 ? '' : 's'} · {same ? 'same columns' : `others into ${cols.cols[0]?.name ?? 'its first'}`}
@@ -276,7 +276,7 @@ function BoxesEditor({ setup, onChange }: { setup: KanbanSetup; onChange: SetKan
               return (
                 <td key={c.id} data-tone={n?.tone}>
                   <AutosaveField className={styles.boxField} label={`Name of ${c.name} × ${r.name}`} placeholder="name" maxLength={BOX_NAME_MAX} value={n?.name ?? ''} onSave={(v) => put(c.id, r.id, { name: v }, 'name a box', `box:${c.id}|${r.id}`)} />
-                  <button className={styles.boxTone} data-tone={n?.tone} title={`${TONES[i < 0 ? 0 : i].hint}; click: ${tone.hint}`} onClick={() => put(c.id, r.id, { tone: tone.tone }, tone.tone ? `${tone.label} a box` : 'a plain box')}>
+                  <button /* kit-ok: the box's tone, cycling, in its colour (data-tone is the box's, not a Button's) */ className={styles.boxTone} data-tone={n?.tone} title={`${TONES[i < 0 ? 0 : i].hint}; click: ${tone.hint}`} onClick={() => put(c.id, r.id, { tone: tone.tone }, tone.tone ? `${tone.label} a box` : 'a plain box')}>
                     {TONES[i < 0 ? 0 : i].label}
                   </button>
                 </td>

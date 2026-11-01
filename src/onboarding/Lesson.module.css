@@ -120,12 +120,11 @@
 }
 
 .top {
+  composes: label from '../ui/Label.module.css';
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3) var(--space-2);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
   white-space: nowrap;
 }
 

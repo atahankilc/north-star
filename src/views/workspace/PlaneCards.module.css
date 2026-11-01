@@ -84,7 +84,7 @@
   flex: none;
   color: var(--type-ink);
   letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  text-transform: uppercase; /* kit-ok: the type on a card's face, at the world's size (a Label is text-xs) */
 }
 
 .status {
@@ -262,7 +262,7 @@
   font-size: var(--w-text-3xs);
   line-height: calc(var(--w-row-category) - calc(var(--space-1) - var(--line-w)));
   letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  text-transform: uppercase; /* kit-ok: a category inside a card, at the world's size */
 }
 
 .innerCat span {

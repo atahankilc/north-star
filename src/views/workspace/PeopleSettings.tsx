@@ -27,6 +27,7 @@ import { Loading } from '../../ui/Loading'
 import { Select } from '../../ui/Select'
 import { Note, Row, Section } from '../../ui/Settings'
 import type { WorkspaceCtx } from './context'
+import { Field } from '../../ui/Field'
 import styles from './PeopleSettings.module.css'
 
 const ROLE_HINT: Record<Role, string> = {
@@ -249,15 +250,13 @@ function EmailInvites({ workspace, onError }: { workspace: WorkspaceCtx['workspa
   return (
     <Row label="invite by email" hint="No mail is sent: they find the invite when they sign in with that Google address.">
       <form className={styles.inviteForm} onSubmit={submit}>
-        <input
+        <Field
           className={styles.input}
           type="email"
           placeholder="name@gmail.com"
-          aria-label="Email to invite"
+          label="Email to invite"
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          autoComplete="off"
-          spellCheck={false}
+          onChange={setDraft}
         />
         <AsciiButton type="submit" accent="cyan" disabled={!valid || invited.includes(email)}>
           invite

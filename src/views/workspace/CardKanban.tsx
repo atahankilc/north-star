@@ -378,7 +378,7 @@ function OrderList({ order, unrated, live, selected, onPick, onPress }: OrderPro
         const own = r.card.priority
         const differs = !!own && own !== r.suggested
         return (
-          <button
+          <button /* kit-ok: a whole row of the suggested order (number, title, priorities) that picks its card */
             key={r.card.id}
             className={styles.orderRow}
             data-selected={selected === r.card.id || undefined}

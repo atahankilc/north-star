@@ -30,6 +30,8 @@ import { useHistory } from '../../data/history'
 import { isOnPlane, type Card } from '../../data/cards'
 import { ago } from '../../ui/ago'
 import { Button } from '../../ui/Button'
+import { Field } from '../../ui/Field'
+import { PromptField } from '../../ui/PromptField'
 import styles from './Threads.module.css'
 
 type ThreadView = {
@@ -98,7 +100,7 @@ export function ThreadChip({ wid, thread, zoom }: { wid: string; thread: WithId<
   const mentioned = fresh && !!thread.mentions?.includes(me)
   return (
     <span className={styles.chipAt} data-screen-sized style={{ transform: `scale(${1 / zoom})` }}>
-      <button
+      <button /* kit-ok: a thread's chip on the canvas, under its component's corner (D-192) */
         className={styles.chip}
         data-open={thread.id === openId || undefined}
         data-new={fresh || undefined}
@@ -242,7 +244,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
   return (
     <div
       className={styles.panel}
-      role="dialog"
+      role="dialog" /* kit-ok: the threads panel's half, built and broken cell by cell (D-199), docked, not a Window */
       aria-label={`Thread on ${title}`}
       data-learn="thread"
       data-viewer-ok
@@ -318,13 +320,15 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
               )}
             </div>
             {editing?.id === m.id ? (
-              <textarea
+              <Field
+                multiline
+                rows={1}
                 className={styles.editField}
                 value={editing.text}
                 maxLength={MESSAGE_MAX}
                 autoFocus
-                aria-label="Edit your message"
-                onChange={(e) => setEditing({ id: m.id, text: e.target.value })}
+                label="Edit your message"
+                onChange={(v) => setEditing({ id: m.id, text: v })}
                 onBlur={saveEdit}
                 onKeyDown={(e) => {
                   e.stopPropagation()
@@ -351,7 +355,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
             <ul className={styles.suggest} role="listbox" aria-label="Mention someone">
               {matches.map((m, i) => (
                 <li key={m.id}>
-                  <button
+                  <button /* kit-ok: a mention's option in the list under the prompt */
                     type="button"
                     role="option"
                     aria-selected={i === hi}
@@ -365,40 +369,26 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
               ))}
             </ul>
           )}
-          <div className={styles.promptLine}>
-            <span className={styles.ps} aria-hidden>
-              &gt;
-            </span>
-            <textarea
-              ref={field}
-              className={styles.input}
-              value={text}
-              rows={1}
-              maxLength={MESSAGE_MAX}
-              placeholder={thread ? 'reply · @ mentions' : 'say something · @ mentions'}
-              aria-label={thread ? 'Reply' : 'First message'}
-              // Not `disabled`: that drops the focus, and the next message typed goes nowhere.
-              readOnly={busy}
-              onChange={(e) => {
-                onType(e.target.value, e.target.selectionStart)
-                e.target.style.height = '0px'
-                e.target.style.height = `${e.target.scrollHeight}px`
-              }}
-              onKeyDown={(e) => {
-                if (suggest && matches.length) {
-                  if (e.key === 'ArrowDown') return (e.preventDefault(), setHi((hi + 1) % matches.length))
-                  if (e.key === 'ArrowUp') return (e.preventDefault(), setHi((hi - 1 + matches.length) % matches.length))
-                  if (e.key === 'Enter' || e.key === 'Tab') return (e.preventDefault(), pick(matches[hi]))
-                  if (e.key === 'Escape') return (e.preventDefault(), setSuggest(null))
-                }
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  void send()
-                }
-                if (e.key === 'Escape') closeThread()
-              }}
-            />
-          </div>
+          <PromptField
+            ref={field}
+            multiline
+            value={text}
+            maxLength={MESSAGE_MAX}
+            placeholder={thread ? 'reply · @ mentions' : 'say something · @ mentions'}
+            label={thread ? 'Reply' : 'First message'}
+            onChange={(v) => onType(v, field.current?.selectionStart ?? v.length)}
+            // Enter sends, unless it's picking a mention (the keys below take it).
+            onSubmit={() => !(suggest && matches.length) && void send()}
+            onKeyDown={(e) => {
+              if (suggest && matches.length) {
+                if (e.key === 'ArrowDown') return (e.preventDefault(), setHi((hi + 1) % matches.length))
+                if (e.key === 'ArrowUp') return (e.preventDefault(), setHi((hi - 1 + matches.length) % matches.length))
+                if (e.key === 'Enter' || e.key === 'Tab') return (e.preventDefault(), pick(matches[hi]))
+                if (e.key === 'Escape') return (e.preventDefault(), setSuggest(null))
+              }
+              if (e.key === 'Escape') closeThread()
+            }}
+          />
           <div className={styles.bar}>
             <span className={styles.footnote}>enter sends · shift+enter: new line · @: mention</span>
             <Button type="submit" className={styles.send} tone="primary" disabled={!text.trim() || busy}>

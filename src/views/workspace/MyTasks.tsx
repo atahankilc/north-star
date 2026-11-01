@@ -12,8 +12,7 @@ import { finished } from '../../data/tasks'
 import { useReads } from '../../data/threads'
 import { useWs } from './context'
 import { loadTasksSide, sideShared, toggleTasksSide, useTasksSide } from './sideState'
-import nav from './WorkspaceLayout.module.css'
-import styles from './MyTasks.module.css'
+import { ToolButton } from '../../ui/ToolButton'
 
 export function TasksButton() {
   const { wid, tasks, pieces, canvas, spots } = useWs()
@@ -31,12 +30,11 @@ export function TasksButton() {
   const fresh = reads.isLoading ? 0 : mine.filter((t) => (t.givenAt ?? 0) > lookedAt && t.givenBy !== me).length
   if (!piecesOn(canvas, pieces, spots).some((p) => p.kind === 'kanban' || p.kind === 'timeline')) return null
   return (
-    <button
-      className={`${nav.fit} ${styles.button}`}
+    <ToolButton
       data-learn="tasks"
-      data-on={open || undefined}
-      aria-pressed={open}
-      aria-label={`Decks and their days${fresh ? `: ${fresh} task${fresh === 1 ? '' : 's'} given to you, new` : ''}`}
+      pressed={open}
+      badge={fresh}
+      label={`Decks and their days${fresh ? `: ${fresh} task${fresh === 1 ? '' : 's'} given to you, new` : ''}`}
       title={fresh ? `decks and days (t) · ${fresh} given to you since you last looked` : 'decks and days (t)'}
       data-viewer-ok
       onClick={() => toggleTasksSide(fresh && !open ? 'mine' : undefined)}
@@ -47,7 +45,6 @@ export function TasksButton() {
         <path d="M2 17.5h16" stroke="currentColor" strokeWidth="1.6" />
         <path d="M6 15.5v4M14 15.5v4" stroke="currentColor" strokeWidth="1.2" />
       </svg>
-      {fresh > 0 && <span className={styles.badge}>{fresh > 9 ? '9+' : fresh}</span>}
-    </button>
+    </ToolButton>
   )
 }

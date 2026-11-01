@@ -219,7 +219,7 @@
   font-weight: var(--weight-medium);
   line-height: var(--lh-body);
   letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  text-transform: uppercase; /* kit-ok: a piece's name in its top edge, sized against the zoom (D-223) */
   white-space: nowrap;
 }
 
@@ -296,25 +296,15 @@
   color: var(--accent-cyan);
 }
 
+/* A Field in the name's own face (the cyan frame round it says it's being typed in). */
 .nameField {
   min-width: 0;
   padding: 0;
   border: 0;
-  background: none;
   color: inherit;
   font: inherit;
   letter-spacing: inherit;
-  outline: none;
   caret-color: var(--accent-cyan);
-}
-
-/* The cyan frame round it already says it's being typed in. */
-.nameField:focus-visible {
-  outline: none;
-}
-
-.nameField::placeholder {
-  color: var(--placeholder);
 }
 
 .nameCount {
@@ -575,6 +565,7 @@
 }
 
 .dragGhostName {
+  composes: label from '../../ui/Label.module.css';
   position: absolute;
   top: 0;
   left: var(--space-3);
@@ -583,13 +574,14 @@
   padding: 0 var(--space-2);
   transform: translateY(-50%);
   background: var(--bg);
-  color: var(--fg);
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: var(--track-label);
   text-overflow: ellipsis;
-  text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* Its own colour over the kit's label (which can come again later): outweighs it. */
+.dragGhost .dragGhostName {
+  color: var(--fg);
 }
 
 /* A piece on several canvases (D-302's session 3): `⧉ 2` after its kind, its number magenta like a name's (D-266). */

@@ -27,7 +27,7 @@ import { TasksButton } from './MyTasks'
 import { openFinder, useFind } from './find'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import { useWs } from './context'
-import styles from './WorkspaceLayout.module.css'
+import { ToolButton } from '../../ui/ToolButton'
 
 // `focused`: the piece in focus, if any; `editor`: whether you may make things (viewers make nothing, D-098).
 export function SideNav({ wid, focused, editor }: { wid: string; focused?: WithId<Piece>; editor: boolean }) {
@@ -47,9 +47,8 @@ export function SideNav({ wid, focused, editor }: { wid: string; focused?: WithI
 function FitButton({ plane }: { plane: string | null }) {
   const focused = plane !== null
   return (
-    <button
-      className={styles.fit}
-      aria-label={focused ? 'Fit the plane to the screen' : 'Fit everything on the canvas'}
+    <ToolButton
+      label={focused ? 'Fit the plane to the screen' : 'Fit everything on the canvas'}
       title={focused ? 'fit the plane (0)' : 'fit everything (0)'}
       onClick={fitHere}
     >
@@ -57,7 +56,7 @@ function FitButton({ plane }: { plane: string | null }) {
         <path d="M1 6V1h5M12 1h5v5M17 12v5h-5M6 17H1v-5" fill="none" stroke="currentColor" strokeWidth="1.5" />
         <rect x="6" y="6" width="6" height="6" fill="none" stroke="currentColor" strokeWidth="1" />
       </svg>
-    </button>
+    </ToolButton>
   )
 }
 
@@ -67,14 +66,14 @@ function FinderButton() {
   const open = useFind((s) => s.open)
   return (
     <>
-      <button className={styles.fit} data-on={open || undefined} aria-pressed={open} aria-label="Find and go to" title="find, go to (⌘F)" onClick={openFinder} data-learn="finder">
+      <ToolButton pressed={open} label="Find and go to" title="find, go to (⌘F)" onClick={openFinder} data-learn="finder">
         <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
           {/* A compass, its needle to the north. */}
           <circle cx="9" cy="9" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
           <path d="M9 3.5 11 9H7z" fill="currentColor" />
           <path d="M7 9h4l-2 5.5z" fill="none" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
         </svg>
-      </button>
+      </ToolButton>
       <GuideButton />
     </>
   )

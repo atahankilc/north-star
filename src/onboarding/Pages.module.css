@@ -53,11 +53,6 @@
   display: contents;
 }
 
-.step:focus-visible {
-  outline: var(--line-w) solid var(--accent-cyan);
-  outline-offset: var(--space-half);
-}
-
 /* The demo kept across pages; on a page without one (the `+ N more` list) it's out of sight, its rows in its place. */
 .stage {
   position: relative;
@@ -148,46 +143,6 @@
   border-right: var(--line-w) solid var(--accent-magenta);
 }
 
-.steps {
-  display: flex;
-  border-bottom: var(--line-w) solid var(--line);
-}
-
-.step {
-  flex: 1;
-  min-width: 0;
-  padding: var(--space-3) var(--space-4);
-  overflow: hidden;
-  border: 0;
-  background: none;
-  font: inherit;
-  color: var(--fg-dim);
-  letter-spacing: var(--track-label);
-  text-align: left;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.step b {
-  margin-right: var(--space-2);
-  font-weight: var(--weight-regular);
-}
-
-.step[data-done] {
-  color: var(--fg-muted);
-}
-
-.step[data-on] {
-  box-shadow: inset 0 calc(-1 * var(--line-w-bold)) 0 var(--accent-magenta);
-  color: var(--fg-strong);
-}
-
-.step[data-on] b {
-  color: var(--accent-magenta);
-}
-
 .wa .newsList {
   border-bottom: var(--line-w) solid var(--line);
 }
@@ -197,10 +152,13 @@
 }
 
 .count {
+  composes: label from '../ui/Label.module.css';
   margin-bottom: var(--space-2);
+}
+
+/* Its own over the kit's label (which can come again later): outweighs it. */
+.text .count {
   color: var(--accent-magenta);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
 }
 
 .count > span:last-child {

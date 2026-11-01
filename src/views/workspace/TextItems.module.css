@@ -32,7 +32,7 @@
 }
 
 [data-caps='true'] {
-  text-transform: uppercase;
+  text-transform: uppercase; /* kit-ok: the person's own AA (all caps) on their text, not a label */
 }
 
 [data-empty='true'],
@@ -115,7 +115,7 @@
 .kickRest {
   color: var(--fg-dim);
   letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  text-transform: uppercase; /* kit-ok: a heading's small line at its heading's world size (a Label is text-xs) */
 }
 
 /* An H1 opens a region: its rule fades out to the right, from a short magenta lead, as the project title's does (one
@@ -214,18 +214,16 @@
 }
 
 /* Folding a long note: a small glyph in the band, a size over its signature, ink, darker on hover. */
-.stickyFold {
+/* `▾`, a Button icon in the note's ink at the world's size. `[data-icon]` outweighs the Button's own. */
+.stickyFold[data-icon] {
   padding: 0 var(--space-half);
-  border: 0;
-  background: none;
   color: inherit;
-  font: inherit;
+  font-family: inherit;
   font-size: var(--w-text-3xs);
   line-height: var(--lh-none);
-  cursor: pointer;
 }
 
-.stickyFold:hover {
+.stickyFold[data-icon]:hover {
   color: var(--sticky-ink);
 }
 
@@ -496,7 +494,7 @@
   font-style: normal;
   font-weight: var(--weight-regular);
   letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  text-transform: uppercase; /* kit-ok: the small line typed in place, as it reads */
 }
 
 .fields[data-row='true'] .kickField {

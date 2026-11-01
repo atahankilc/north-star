@@ -1176,3 +1176,11 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   01/02, find-04, dedupe-03, build-08 graded as their guides say; create_card `near` a heading or paragraph (bug 32 for
   a sticky). Verified: tsc (app, evals), vitest 964, stub evals 116 tasks 0 failed, `--wrong` 116 failed, the 348
   transcripts replayed on the new graders (249 → 262 with no non-judge failure; the rest diverge where ops changed).
+
+## Done (2026-11-01): the rest of the UI on the kit (D-326)
+- Three forks (table/matrix/deck setups and wizards; documents/text/threads/canvas/finder/side nav; onboarding), then
+  ToolButton and Steps in src/ui (six HUD icon buttons and two step-tab copies made one), the gear's badge CountBadge.
+  check:kit 131 → 13 (src/agent/ui only).
+- Verified: tsc, build, vitest 964/964, check:kit/tokens/gallery (89)/lessons, lint 0 errors. No screenshots (the
+  user's call); not tried in a browser: the thread prompt's mention keys, a document's rename (now controlled).
+
