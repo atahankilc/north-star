@@ -92,7 +92,7 @@
 }
 
 .action {
-  composes: small from '../primitives/AsciiButton.module.css';
+  composes: sm from '../primitives/Button.module.css';
   font-size: var(--text-sm);
 }
 

@@ -21,7 +21,6 @@ import {
   uninviteEmail,
   useMembers,
 } from '../../../data/workspaces'
-import { AsciiButton } from '../../../ui/primitives/AsciiButton'
 import { Button } from '../../../ui/primitives/Button'
 import { Loading } from '../../../ui/primitives/Loading'
 import { Select } from '../../../ui/primitives/Select'
@@ -211,9 +210,9 @@ function InviteCode({ wid, workspace, isOwner, run }: { wid: string; workspace: 
     >
       <Row label="code" hint="Share it with the people you want in.">
         <span className={styles.code}>{`${code.slice(0, 4)}-${code.slice(4)}`}</span>
-        <AsciiButton accent="cyan" onClick={copy}>
+        <Button size="md" accent="cyan" onClick={copy}>
           {copied ? 'copied' : 'copy'}
-        </AsciiButton>
+        </Button>
         {isOwner && user && (
           <Button onClick={() => run(renewInviteCode(wid, code, user.id))}>
             new code
@@ -257,9 +256,9 @@ function EmailInvites({ workspace, onError }: { workspace: WorkspaceCtx['workspa
           value={draft}
           onChange={setDraft}
         />
-        <AsciiButton type="submit" accent="cyan" disabled={!valid || invited.includes(email)}>
+        <Button size="md" type="submit" accent="cyan" disabled={!valid || invited.includes(email)}>
           invite
-        </AsciiButton>
+        </Button>
       </form>
       {invited.length > 0 && (
         <ul className={styles.list}>

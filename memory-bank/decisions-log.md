@@ -6472,7 +6472,7 @@ duplicate another module's (a regex of an alphabet) are still a reviewer's catch
   until they move; deleting it is a later task.
 Verified: headless Chrome 1440×900 at 4 s and 12 s, 1920×1080, 390×844, light theme at 3 s and 12 s; typecheck,
 check:tokens 0, check:kit, check:gallery.
-Not yet: AsciiButton's last callers (Settings.tsx, PeopleSettings.tsx) onto Button, then delete it.
+Done 2026-11-01: AsciiButton's last callers (Settings, People, export) on `Button size="md"`, AsciiButton deleted; check:kit's `small` now counts composing Button.module.css outside src/ui.
 
 
 ### D-341 · 2026-11-01 · Accepted (the user: "Gerçekten çalışan bir pipeline gibi düşün… kendime bir backoffice kurmam lazım, çoğu agentın nasıl çalıştığının ölçümlerini görebildiğim, değişiklikler sonucunda tekrar runlar yapabildiğim… şimdi değil… ancak temelleri sağlam atalım"; on cost: "her iş için aynı agentı runlıyoruz ama bu çok maliyetli olabiliyor")

@@ -1,5 +1,5 @@
 import { example } from '../../gallery/example'
-import { AsciiButton } from '../primitives/AsciiButton'
+import { Button } from '../primitives/Button'
 import { Choice } from '../primitives/Choice'
 import { Note, Row, Section, SettingsButton } from './Settings'
 
@@ -40,7 +40,7 @@ export default example({
             <Choice label="theme" bare options={['dark', 'light', 'system'] as const} value="dark" onChange={() => {}} />
           </Row>
           <Row label="leave" hint="you can be invited back">
-            <AsciiButton>leave</AsciiButton>
+            <Button size="md">leave</Button>
           </Row>
         </Section>
         <Note tone="error">Couldn’t save: you’re offline.</Note>

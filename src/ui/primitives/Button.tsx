@@ -8,7 +8,7 @@
 // - `link`: no brackets, in the row's own colour and size, wrapping, underlined faint on hover: a name that goes
 //   somewhere (a card's links, parts and planes in its panel).
 // - `look`: the same `[verb]` drawn as a span, for inside something that is itself the button (a card that's one target).
-// AsciiButton, PanelAction and DockAction draw this; so should every new button (check:kit, D-326).
+// PanelAction and DockAction draw this; so should every new button (check:kit, D-326).
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react'
 import styles from './Button.module.css'
 

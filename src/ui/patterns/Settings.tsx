@@ -9,7 +9,7 @@ import { useDisplay, type BackgroundPref } from '../../state/display'
 import { useMotion, type MotionPref } from '../../state/motion'
 import { themeAccent, useTheme, type ThemePref } from '../../state/theme'
 import { AgentSettings } from '../../agent/ui/AgentSettings'
-import { AsciiButton } from '../primitives/AsciiButton'
+import { Button } from '../primitives/Button'
 import { Choice } from '../primitives/Choice'
 import { CountBadge } from '../primitives/CountBadge'
 import styles from './Settings.module.css'
@@ -158,9 +158,9 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
                   </div>
                   <Row label="method" hint="North Star signs in with Google only.">
                     <span>Google</span>
-                    <AsciiButton accent="cyan" onClick={() => signOut()}>
+                    <Button size="md" accent="cyan" onClick={() => signOut()}>
                       sign out
-                    </AsciiButton>
+                    </Button>
                   </Row>
                 </Section>
               )}

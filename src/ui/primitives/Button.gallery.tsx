@@ -18,7 +18,7 @@ export default example({
   name: 'Button',
   place: 'actions/buttons',
   file: 'src/ui/primitives/Button.tsx',
-  note: 'the one button (D-326): sm the [verb] of rows and bars, md the page’s; AsciiButton, PanelAction and DockAction draw it',
+  note: 'the one button (D-326): sm the [verb] of rows and bars, md the page’s; PanelAction and DockAction draw it',
   states: {
     'look (inside a target)': () => (
       <Button look>choose file</Button>

@@ -29,7 +29,7 @@ import {
 } from '../../../data/workspaces'
 import { swapCam } from '../../../state/canvasView'
 import { useHoldCurtain } from '../../../state/curtain'
-import { AsciiButton } from '../../../ui/primitives/AsciiButton'
+import { Button } from '../../../ui/primitives/Button'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { DecodeText } from '../../../ui/primitives/DecodeText'
 import { Hud } from '../../../ui/patterns/Hud'
@@ -265,9 +265,9 @@ function ExportSection({ wid, workspace }: { wid: string; workspace: WorkspaceCt
         }
       >
         <Row label="workspace" hint="Everything, to import again later.">
-          <AsciiButton accent="cyan" onClick={() => void run()} disabled={busy}>
+          <Button size="md" accent="cyan" onClick={() => void run()} disabled={busy}>
             {busy ? 'packing' : 'download .zip'}
-          </AsciiButton>
+          </Button>
         </Row>
       </Section>
       {error && <Note tone="error">! {error}</Note>}

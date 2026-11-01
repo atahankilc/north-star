@@ -135,9 +135,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
 ## 6. Components (ASCII-styled DOM)
 
 - Boxes drawn with box characters (`┌─┐│└┘`) or 1px lines that echo them
-- Buttons, two sizes, both lowercase (`src/ui/primitives/AsciiButton.module.css`, D-093): `<AsciiButton>` `[ create ]` (spaced coloured
-  brackets, accent fill on hover) for the main action of a form or panel; `small` `[share]` (dim, faint brackets;
-  `data-tone="primary"` cyan, `"danger"` magenta on hover) for row and inline actions. Compose `small`; never redraw brackets.
+- Buttons, two sizes, both lowercase (`src/ui/primitives/Button.tsx`, D-093, D-326): `<Button size="md">` `[ create ]` (spaced
+  coloured brackets, accent fill on hover) for the main action of a form or panel; `<Button>` (`sm`) `[share]` (dim, faint
+  brackets; `tone="primary"` cyan, `"danger"` magenta on hover) for row and inline actions. Use `Button`; never redraw brackets.
 - Inputs: underscore or caret cursor `▌`, mono text
 - Tags: `#tag` in an accent colour
 - **Marks** (D-265, `src/ui/primitives/Marks.tsx`, tokens `--mark-*`): hover and selection on everything selectable (cards, text,

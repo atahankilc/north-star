@@ -31,7 +31,7 @@ const RULES = {
   css: [
     ['bracket', /content:\s*['"][[\]]['"]/g],
     ['caps', /text-transform:\s*uppercase/g],
-    ['small', /composes:\s*(small|button)\s+from\s+['"][^'"]*AsciiButton\.module\.css['"]/g],
+    ['small', /composes:\s*\w+\s+from\s+['"][^'"]*Button\.module\.css['"]/g],
     // D-338's round: numbers made by a CSS counter (the kit's Num), a piece's graphite drawn by hand (PieceCard).
     ['counter', /counter-increment\s*:/g],
     ['pieceSurface', /background:\s*var\(--piece\)\s*;/g],
