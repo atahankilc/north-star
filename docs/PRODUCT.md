@@ -68,7 +68,9 @@ resized, renamed or deleted. A matrix, table or documents piece can be **unframe
 5. **Kanban** (D-251) and **timeline** (D-262): see §6.
 6. **Finder** (D-236). ⌘F or the side nav's compass: the places (planes, headings, sections, the project title) and
    anything typed, with a preview of where you'll land.
-7. **Settings.** You (account, display) and the workspace (general, people, export) (D-064, D-097, D-246).
+7. **Workspaces page** (D-338, [specs/workspaces-page.md](specs/workspaces-page.md)). After sign-in: the big title, one
+   prompt that finds, starts or joins, the workspace you left with what happened since, what needs you, the others.
+8. **Settings.** You (account, display) and the workspace (general, people, export) (D-064, D-097, D-246).
 
 **1.0's pages** (D-177, D-248; code deleted, in git at `493bf87`): one board (Board, Flow, Table, Matrix tabs, D-040,
 [specs/board.md](specs/board.md)), Focus (one card's chain, D-127), Priorities (D-138; back as a kanban, D-271),

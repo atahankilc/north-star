@@ -1,0 +1,6 @@
+/* A workspace's picture (D-338): fills the box it's given. */
+.picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

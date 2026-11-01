@@ -57,10 +57,11 @@ Each page's scene is the real side nav at the stage's left edge, the canvas besi
 when `canvas-open` with no pieces, after `welcome` · done `piece-made` · anchor `plus` (an arrow toward it)
 Faint, centred: **press + to add your first piece** · no scene.
 
-### `workspaces-empty` · empty · all · D-062
+### `workspaces-empty` · empty · all · D-062, D-338 · v2
 when the workspaces page with no workspaces · done `ws-made` or `join-requested`
-Three framed choices: `create a workspace` (a name, then you're in) · `join with a code` (an owner lets you in) ·
-`import a .zip` (a workspace someone exported).
+The page's three ways in, drawn as its pieces (`new`, `join`, `import` cut in): `Start one` (type its name in the line
+above and press ↵) · `Join a teammate's` (paste the code they gave you above) · `Bring one in` (a .zip someone
+exported: pick the file).
 
 ### `join-pending` · lesson · all · D-062
 when `join-requested` · anchor the pending row

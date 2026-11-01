@@ -3,7 +3,7 @@
 // refusal for viewers). A thread and its first message are written together; each reply bumps the thread's count and
 // says who wrote last. Mentions (D-166) are member ids on the message and, gathered, on the thread. What you've read is
 // `threadReads/{your uid}`: each thread's `lastAt` when you last had it open.
-import { arrayUnion, collection, doc, getDocs, increment, limit, orderBy, query, setDoc, updateDoc, writeBatch, deleteField } from 'firebase/firestore'
+import { arrayUnion, collection, doc, getDoc, getDocs, increment, limit, orderBy, query, setDoc, updateDoc, writeBatch, deleteField } from 'firebase/firestore'
 import { db, firebase } from './firebase'
 import { useDoc, useQuery, type Live, type WithId } from './hooks'
 import { MENTIONS_MAX, MESSAGE_MAX, type Member, type Thread, type ThreadMessage, type ThreadReads, type ThreadTarget } from './model'
@@ -157,7 +157,8 @@ export async function markTasksSeen(wid: string, at = Date.now()) {
   try {
     await updateDoc(ref, { tasks: at, updatedAt: Date.now() })
   } catch (e) {
-    if ((e as { code?: string }).code !== 'not-found') throw e
+    // Not there yet, the rules refuse the update (permission-denied, not not-found: a new doc wants `seen`): look first.
+    if ((await getDoc(ref)).exists()) throw e
     await setDoc(ref, { seen: {}, tasks: at, updatedAt: Date.now() }, { merge: true })
   }
 }

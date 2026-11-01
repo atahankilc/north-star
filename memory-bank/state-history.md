@@ -1215,3 +1215,10 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - terra ×1 (91/116, 78 %, $7.73) read failure by failure: dedupe-03's wording, CITE's "(on X)" only for an ask about
   one plane. The evals' picture font swapped to Inter (D-337; evals/fonts, render.ts; with no font file resvg draws no
   text, with them it does). Sonnet's run refused: a key not scoped to an Anthropic workspace.
+
+## Done (2026-11-01): the workspaces page (D-338)
+- Five options previewed (docs/specs/workspaces-preview/, `python3 -m http.server` at the repo root): the user took E
+  (D's continue page + B's prompt + the big title), centred, the first visit on the same skeleton. Built: the page, its
+  pieces and picture, the glance hooks, `summary/main` and `threadReads.visited` with their rules and tests, the
+  onboarding's choices v2. Its gallery page first made possible by `setDemoLists` (Firebase-less lists).
+  Verified: see D-338's log entry (tsc, build, vitest 974, rules 629/0, checks, headless runs on the emulators).

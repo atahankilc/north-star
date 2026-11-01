@@ -82,11 +82,12 @@
   border-right: calc(var(--arrow) - var(--line-w)) solid var(--fg-dim);
 }
 
-/* The workspaces page with none yet (Choices.tsx): three framed choices in the page's empty box, each one line. */
+/* The workspaces page with none yet (Choices.tsx, D-338): the page's three ways in, drawn as its pieces are (graphite,
+   a band on top, the name cut into the edge). */
 .choices {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(var(--size-sm), 1fr));
+  gap: var(--space-6) var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -97,39 +98,51 @@
 }
 
 .choice {
-  composes: interactive from '../ui/foundation/Frame.module.css';
+  position: relative;
   flex: 1;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--space-1) var(--space-3);
-  align-items: baseline;
-  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: var(--line-w) solid var(--piece-edge);
+  background: var(--piece);
+  box-shadow: var(--piece-shadow);
   color: var(--fg);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
+.choice::before {
+  content: '';
+  position: absolute;
+  top: calc(-1 * var(--line-w));
+  left: calc(-1 * var(--line-w));
+  right: calc(-1 * var(--line-w));
+  height: var(--piece-band);
+  background: var(--band);
+}
+
+.choice:hover,
+.choice:focus-visible {
+  border-color: var(--line-hover);
+}
+
 .choiceNo {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  position: absolute;
+  top: calc(-1 * var(--space-2));
+  left: var(--space-4);
+  padding: 0 var(--space-2);
+  background: var(--bg);
+  color: var(--fg);
 }
 
 .choiceLabel {
   color: var(--fg-strong);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
 }
 
 .choiceLine {
-  grid-column: 2;
-  color: var(--fg-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-}
-
-@media (max-width: 760px) {
-  .choices {
-    grid-template-columns: 1fr;
-  }
+  color: var(--fg-dim);
+  font-size: var(--text-sm);
 }

@@ -51,5 +51,12 @@ export const AGENT_NOTES_MAX = 8000
 export const CHANGE_IDS_MAX = 100
 export const CHANGE_KINDS_MAX = 20
 
+// A workspace's picture for the workspaces page (D-338, `summary/main`): its first canvas's pieces and their cards, as
+// numbers and letters; the strings' caps hold that many entries at their longest (22 and 13 characters).
+export const SUMMARY_PIECES_MAX = 60
+export const SUMMARY_CARDS_MAX = 300
+export const SUMMARY_PIECES_CHARS = 1400
+export const SUMMARY_CARDS_CHARS = 4000
+
 // Writes in one Firestore batch (its own cap is 500; room left for the tracked undo snapshot).
 export const WRITE_BATCH_MAX = 450

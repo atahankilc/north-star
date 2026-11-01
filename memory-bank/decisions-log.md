@@ -6376,3 +6376,57 @@ Verified: build, vitest 968, check:tokens 0, check:kit 13, check:gallery; headle
 deck, table, menu typed, settings, plane; dark and light) against a worktree of the code before.
 Not yet: `--fg-faint`'s 129 uses not read one by one (some hold words that should be `--fg-dim`); the world's smallest
 sizes (`--w-text-3xs` 7, `-2xs` 8) unchanged.
+
+### D-338 · 2026-11-01 · Accepted (the user, from docs/specs/workspaces-preview/: "D çok iyi duruyor, B nin de arama çubuğu ile her şeyi birleştirmesi mükemmel fikir olmuş… büyük Workspaces yazısını seviyorum"; "centre daha iyi"; "first visit ile bir tane workspace a sahip olduktan sonraki görüntü… uyumlu olsa daha iyi"; "E yi yapalım")
+**The workspaces page is for going back to work: the big title, one prompt, the workspace you left, what needs you.**
+(Replaces the page's 1.0 look: create/join/import boxes on top, cards that lifted on hover, `┌` labels, dashed boxes.)
+Spec: [docs/specs/workspaces-page.md](../docs/specs/workspaces-page.md). Centred at `--page-w`, top to bottom:
+- **Title** `Workspaces` (hero size, as before) with the count after it, magenta mono (`05`; `00` on a first visit).
+- **The prompt** (PromptField) is the page's first line: typing filters your workspaces into ledger rows (`01 Name`,
+  the match lit, people, role, last visit); a name nobody has adds `+ new workspace "…"` (↵ makes it and opens its
+  canvas); an invite code (`ABCD-EFGH`) turns into `ask to join ABCD-EFGH`; a `.zip` dropped anywhere on the page
+  imports. Nothing typed, ↵ continues the workspace you left. Typing anywhere on the page types into it.
+- **Nothing typed**: the *continue* piece (the workspace you visited last: its picture, name, description, *since you
+  left* by person, who's here now, `continue ↵`, `⋯`); a row of what needs you (tasks given to you since you last
+  looked, people asking to join a workspace you own, invites to your address, your own requests waiting); `others` as
+  small pieces (picture, name, role, people, here now, new for you, last visit); while you have ≤ 2, `start another`:
+  the three ways in (new, join, import).
+- **First visit** on the same skeleton: `Workspaces 00`, a `01 START` piece (a sample canvas of shapes only: a heading,
+  a plane with its grid and card shapes, a deck, a table; no words) with how it starts, then the three ways in. The
+  three are the onboarding's `workspaces-empty` choices (v2): the coach draws them there, the page's own words the same.
+- **A workspace's actions** (open, rename, copy invite code, leave, delete) in its `⋯` and right-click prompt menu, never
+  on its face; delete through the hazard confirm (D-182). Pieces as on the canvas (graphite, band, name cut in, Marks
+  on hover and pick); no lift (D-061), no `┌`.
+- **Order**: your last visit, newest first (`threadReads/{you}.visited`, written on open and on leaving); never visited
+  → created.
+Data (cheap by design, ~50 reads a page open instead of reading every workspace's content):
+- **Picture**: `workspaces/{wid}/summary/main` = { by, at, w, h, pieces, cards, counts } written by an editor's
+  browser from what it already has loaded: the first canvas's pieces (kind, box) and its planes' cards (type, spot,
+  ≤ 300), numbers only, never text; at most every 5 minutes while it changes, and on leaving. Drawn with tokens, so both
+  themes. A workspace nobody opened since has none: a plain piece. One read per workspace.
+- **Since you left**: the change log (D-312, `changes/`), entries after your visit by others, grouped by person with
+  their kinds counted (`Ayşe · 4 cards, 2 tasks · 40m`): the log holds no text, so no names of cards or planes. 20 for
+  the continue piece, 5 for each other (a `new` mark).
+- **Here now**: RTDB `presence/{wid}`, members only, away left out (D-331). **New for you**: tasks with you as assignee
+  given after `threadReads.tasks` (D-261).
+Why: the page's main job (back to where you were) sat at the bottom under three boxes for its rarest jobs; cards said
+nothing that told one workspace from another; what needed you was hidden or lost in a card.
+Alternatives (the preview, docs/specs/workspaces-preview/): A pieces only, B the ledger + prompt + right panel, C a sky
+of stars, D continue with a greeting; E (taken) is D + B's prompt + the title. Full width (a right column of activity
+across workspaces): the user: "centre daha iyi… bakılması gereken alan çok genişliyo". Reading every workspace's
+content for the picture: ~5,000 reads a page open.
+Built (2026-11-01, pushed; firestore:rules deployed the same day): src/views/workspaces/ (Workspaces.tsx the page, pieces.tsx its pieces,
+WorkspacePicture.tsx the 2D picture from tokens, Workspaces.gallery.tsx 7 states), src/data/glance.ts (visits, picture
+reader and writer, since-you-left, new tasks, here now; the gallery's setDemoGlance), src/model/summary.ts (cards in
+tenths of a card's width, a card 10 × 5, so their spacing keeps its shape), rules `summary/{sid}` + `threadReads.visited`,
+the workspace delete taking `summary`. `workspaces-empty` v2 (Choices drawn as the page's pieces, going to the prompt).
+Fixed on the way: a first read-marks write is refused as permission-denied, not not-found (the rules want `seen`), so
+markVisited and markTasksSeen (D-261's, same bug) look whether the doc is there before creating it.
+Verified: tsc, build, vitest 974, rules tests 629/0 (the picture: editor yes, viewer/outsider/someone else's name/words/
+more keys/too long/stale/another id no; visits), check:tokens 0, check:kit 13, check:gallery, check:lessons, lint (no
+new warnings); headless Chrome on the emulators: first visit `00`, `Pazar` ↵ makes and opens it, a plane added, back by
+the breadcrumb: its picture drawn, the visit `now`; a second one comes first; `ABCD-EFGH` ↵ says the code does not exist;
+right-click → `d` ↵ → the hazard confirm → deleted (`02` → `01`). The gallery's states shot at 1500 × 1100.
+Not yet: no release entry (the first `what's new` opens for everyone: the user's
+call, as D-330); the light theme and reduced motion not shot; a `.zip` dropped not tried in a browser; names in
+since-you-left only from the people list (≤ 10 a query).

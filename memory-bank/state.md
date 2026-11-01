@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-01 (the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-01 (the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -60,6 +60,9 @@ something is finished, add its entry to state-history.md and leave at most one l
 - D-335 (Q-029 + old-data code deleted): pushed; firestore:rules deployed 2026-11-01 (rules tests 616/0).
 - D-337 fonts and greys (2026-11-01): Inter + JetBrains Mono, mono only on system bits, brighter greys, the agent's
   column and picture too; pushed 2026-11-01. evals/fonts → Inter: the agent session's (after its terra run). Preview: docs/specs/font-preview/. Left: `--fg-faint`'s uses one by one, the world's 7/8 px sizes.
+- Workspaces page (D-338, docs/specs/workspaces-page.md): built and pushed 2026-11-01, firestore:rules deployed (summary +
+  visited); the user's pick E from docs/specs/workspaces-preview/. Left: whether to add a release entry (the first what's
+  new), a look at it in light theme. Verified: state-history D-338.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers

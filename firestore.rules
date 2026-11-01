@@ -797,15 +797,34 @@ service cloud.firestore {
         }
       }
 
+      // A workspace's picture for the workspaces page (D-338, docs/specs/workspaces-page.md §3): one doc, `main`, of
+      // numbers and letters (src/model/summary.ts); owners and editors write it as themselves, members read it.
+      match /summary/{sid} {
+        function validSummary(d) {
+          return d.keys().hasOnly(['by', 'at', 'n', 'pieces', 'cards'])
+            && d.keys().hasAll(['by', 'at', 'n', 'pieces', 'cards'])
+            && d.by == request.auth.uid
+            && d.at is int && d.at <= request.time.toMillis() + 60000 && d.at >= request.time.toMillis() - 300000
+            && d.n is int && d.n >= 0 && d.n <= 100000
+            && d.pieces is string && d.pieces.size() <= 1400 && d.pieces.matches('[a-z0-9 ;]*')
+            && d.cards is string && d.cards.size() <= 4000 && d.cards.matches('[a-z0-9 ;]*');
+        }
+        allow read: if isMember(wid);
+        allow create, update: if sid == 'main' && canEdit(wid) && validSummary(request.resource.data);
+        allow delete: if isOwner(wid);
+      }
+
       // What each member has read of the threads (D-166): theirs alone to read and write; owners clear them with the
       // workspace.
       match /threadReads/{uid} {
         allow read: if isMember(wid) && request.auth.uid == uid;
         allow create, update: if isMember(wid) && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['seen', 'tasks', 'updatedAt'])
+          && request.resource.data.keys().hasOnly(['seen', 'tasks', 'visited', 'updatedAt'])
           && request.resource.data.seen is map
           // When you last looked at the tasks given to you (D-261).
           && (!('tasks' in request.resource.data) || request.resource.data.tasks is number)
+          // When you were last in it (D-338): the workspaces page's order and its since-you-left.
+          && (!('visited' in request.resource.data) || request.resource.data.visited is number)
           && request.resource.data.updatedAt is number;
         allow delete: if signedIn() && (request.auth.uid == uid || isOwner(wid));
       }

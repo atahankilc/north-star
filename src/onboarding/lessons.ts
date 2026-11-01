@@ -241,12 +241,12 @@ export const LESSONS: readonly Lesson[] = [
     line: 'press + to add your first piece',
   },
   {
-    id: 'workspaces-empty', v: 1, format: 'empty', roles: ALL, area: 'start', since: 'D-062',
+    id: 'workspaces-empty', v: 2, format: 'empty', roles: ALL, area: 'start', since: 'D-062, D-338',
     trigger: [{ event: 'workspaces-open', when: { empty: true } }], doneWhen: [{ event: 'ws-made' }, { event: 'join-requested' }], anchor: 'workspaces-empty',
     choices: [
-      { label: 'create a workspace', line: "a name, then you're in" },
-      { label: 'join with a code', line: 'an owner lets you in' },
-      { label: 'import a .zip', line: 'a workspace someone exported' },
+      { label: 'Start one', line: 'type its name in the line above and press ↵' },
+      { label: "Join a teammate's", line: 'paste the code they gave you above' },
+      { label: 'Bring one in', line: 'a .zip someone exported: pick the file' },
     ],
   },
   {

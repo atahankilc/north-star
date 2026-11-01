@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "wide-tracking",
+        "value": "*",
+        "files": [
+          "docs/specs/workspaces-preview/index.html"
+        ],
+        "createdAt": "2026-11-01T15:28:16.781Z",
+        "reason": "Claude checked: index.html sets no letter-spacing; the preview's tracking is var(--track-label) = 0.05em (D-337), already fixed in preview.css/js"
+      }
+    ]
+  }
+}

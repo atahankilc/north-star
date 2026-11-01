@@ -44,6 +44,8 @@ const CASES: [keyof typeof L, () => number][] = [
   ['MENTIONS_MAX', () => num(rules.slice(rules.indexOf('match /messages/')), list('d.mentions'))],
   ['AGENT_NOTES_MAX', () => num(rules, /b\.keys\(\)\.hasOnly\(\['text'\]\) && b\.text is string && b\.text\.size\(\) <= (\d+)/)],
   ['CHANGE_KINDS_MAX', () => num(rules.slice(rules.indexOf('match /changes/')), list('d.kinds'))],
+  ['SUMMARY_PIECES_CHARS', () => num(body('validSummary'), list('d.pieces'))],
+  ['SUMMARY_CARDS_CHARS', () => num(body('validSummary'), list('d.cards'))],
 ]
 
 // Limits the rules can't hold, each with why: they bound an item inside a list or map (Firestore rules can't loop over
@@ -60,6 +62,8 @@ const CLIENT_ONLY: Partial<Record<keyof typeof L, string>> = {
   TABLE_COL_NAME_MAX: "a table column's name, inside the cols list",
   CHANGE_IDS_MAX: 'ids in one change entry: the rules cap the joined string (6600), not the count',
   WRITE_BATCH_MAX: "Firestore's own batch cap (500), not a rule",
+  SUMMARY_PIECES_MAX: 'pieces in a workspace summary: the rules cap the joined string (SUMMARY_PIECES_CHARS), not the count',
+  SUMMARY_CARDS_MAX: 'cards in a workspace summary: the rules cap the joined string (SUMMARY_CARDS_CHARS), not the count',
 }
 
 describe('limits match firestore.rules', () => {

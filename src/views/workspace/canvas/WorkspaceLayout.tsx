@@ -12,6 +12,7 @@ import { InboxButton } from '../threads/ThreadInbox'
 import { Finder } from '../find/Finder'
 import { usePresenceSession } from '../../../data/presence'
 import { useWorkspaceData } from '../../../data/workspaceData'
+import { useMarkVisits, useSummaryWriter } from '../../../data/glance'
 import { canvasOf, MAIN, setCanvasHere } from '../../../data/canvases'
 import { CanvasCrumb } from './CanvasSwitch'
 import { runCells } from '../../../ui/primitives/Appear'
@@ -97,6 +98,9 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   }, [editor])
   // Presence (D-065): who's here. The canvas is the only view (D-174), on one of the canvases (D-302).
   usePresenceSession(wid, user, 'canvas', shown)
+  // The workspaces page (D-338): when you were last here, and the picture of its first canvas (owners and editors).
+  useMarkVisits(wid)
+  useSummaryWriter(wid, data, isLoading, editor)
   useEditKeys(wid)
   // With one canvas the workspace's name opens the canvases (D-302); with more, the canvas's own crumb does.
   const several = data.canvases.length > 1

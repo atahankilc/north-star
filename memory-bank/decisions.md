@@ -359,6 +359,12 @@ feature comes back as a piece, and check them with the user then.
 - Its look (D-316, Q-028): `a` for every frame: the welcome the wizard window, the lesson the prompt card, the kind
   guide the glued column, `?` the finder's twin; the other options deleted (onboarding-preview/ keeps them).
 
+## Workspaces page
+- The page is for going back to work (D-338, docs/specs/workspaces-page.md): centred; the big title with its count, one
+  prompt (filter, a new name ↵, an invite code ↵, a dropped .zip imports), the continue piece (picture, since you left,
+  here now), what needs you, others as small pieces, the three ways in while ≤ 2; a first visit on the same skeleton;
+  actions in `⋯`/right-click; pictures from one `summary/main` doc per workspace, never its content.
+
 ## Settings
 - A modal from the gear or your square: YOU (account, display), WORKSPACE (general: name and "building" description;
   people; export); framed sections, rows with name + hint, notes at the foot; 960 × 720. The assistant's keys and usage
@@ -387,6 +393,7 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - Orb: glossy anime eyes, eyes with pupils, pink blush on hover, kaomoji faces, glyph-cell faces; pomegranate as a "red
   queen with a crown"; `/nar` in the chat (D-078, D-092).
 - The threads panel sliding up from the edge, its halves sliding their width; a new kind of motion (D-199): cells only.
+- The workspaces page at full width with an activity column (D-338): too much to look over.
 - Chat window sliding in from the right (D-081). Saving whole chats (reports instead) (D-090).
 - OpenAI deep-research models (need stored answers) (D-088). MCP for tools (no server) (D-074).
 - Comma CSV for the matrix (D-080). A copy button for the TSV (D-080).

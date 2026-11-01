@@ -13,7 +13,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore'
-import { db, firebase } from './firebase'
+import { db, firebase, isDemo } from './firebase'
 import { useDoc, usePaged, useQuery, type WithId } from './hooks'
 import type { AuthUser } from './auth'
 import { deleteThread } from './threads'
@@ -43,11 +43,18 @@ export const canEditIn = (w: Pick<Workspace, 'roles' | 'memberIds'>, uid: string
 }
 export const ownerCount = (w: Pick<Workspace, 'roles'>) => Object.values(w.roles).filter((r) => r === 'owner').length
 
+// Without Firebase (the gallery, D-324) the workspaces page reads these made-up lists instead; the app never sets them.
+type DemoLists = { workspaces: WithId<Workspace>[]; invites: WithId<Invite>[]; requests: WithId<JoinRequest>[]; asking: Record<string, number> }
+let demo: DemoLists = { workspaces: [], invites: [], requests: [], asking: {} }
+export const setDemoLists = (lists: Partial<DemoLists>) => void (demo = { workspaces: [], invites: [], requests: [], asking: {}, ...lists })
+const demoList = <T,>(data: T[]) => ({ data, isLoading: false, error: null })
+
 export function useMyWorkspaces(uid: string) {
-  return useQuery<Workspace>(
-    query(collection(db(), 'workspaces'), where('memberIds', 'array-contains', uid)),
+  const live = useQuery<Workspace>(
+    isDemo ? null : query(collection(db(), 'workspaces'), where('memberIds', 'array-contains', uid)),
     `workspaces:${uid}`,
   )
+  return isDemo ? demoList(demo.workspaces) : live
 }
 
 export function useWorkspace(wid: string) {
@@ -116,15 +123,18 @@ export async function requestToJoin(rawCode: string, user: AuthUser): Promise<Jo
 
 // Requests you sent that are still waiting.
 export function useMyJoinRequests(uid: string) {
-  return useQuery<JoinRequest>(query(collection(db(), 'joinRequests'), where('uid', '==', uid)), `joinRequests:mine:${uid}`)
+  const live = useQuery<JoinRequest>(isDemo ? null : query(collection(db(), 'joinRequests'), where('uid', '==', uid)), `joinRequests:mine:${uid}`)
+  return isDemo ? demoList(demo.requests) : live
 }
 
 // Requests to join a workspace; only its owners may list them (D-098), so pass null when you aren't one.
 export function useJoinRequests(wid: string | null) {
-  return useQuery<JoinRequest>(
-    wid ? query(collection(db(), 'joinRequests'), where('workspaceId', '==', wid)) : null,
+  const live = useQuery<JoinRequest>(
+    wid && !isDemo ? query(collection(db(), 'joinRequests'), where('workspaceId', '==', wid)) : null,
     `joinRequests:${wid ?? ''}`,
   )
+  // In the gallery: only the count is drawn (`N waiting`), so placeholders of the right length.
+  return isDemo ? demoList(Array.from({ length: (wid && demo.asking[wid]) || 0 }, (_, i) => ({ id: `r${i}` }) as WithId<JoinRequest>)) : live
 }
 
 export function withdrawJoinRequest(wid: string, uid: string) {
@@ -250,7 +260,8 @@ export async function syncInvites(w: WithId<Workspace>) {
 // Invites to your (verified) address.
 export function useMyInvites(email: string | null) {
   const me = email ? normalizeEmail(email) : ''
-  return useQuery<Invite>(me ? query(collection(db(), 'invites'), where('email', '==', me)) : null, `invites:${me}`)
+  const live = useQuery<Invite>(me && !isDemo ? query(collection(db(), 'invites'), where('email', '==', me)) : null, `invites:${me}`)
+  return isDemo ? demoList(demo.invites) : live
 }
 
 export async function acceptInvite(wid: string, user: AuthUser) {
@@ -313,8 +324,9 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
     getDocs(query(collection(db(), 'joinRequests'), where('workspaceId', '==', wid))),
     // Its invites (D-323); their rules read the workspace, so they go before it.
     invitesOf(wid),
-    // The change log (S16): owners may clear it.
+    // The change log (S16): owners may clear it. The page's picture (D-338) too.
     getDocs(collection(db(), 'workspaces', wid, 'changes')),
+    getDocs(collection(db(), 'workspaces', wid, 'summary')),
     getDocs(collection(db(), 'workspaces', wid, 'members')),
   ])
   // Once each: your own shared documents and chats come back from both queries. A body goes before its summary, which

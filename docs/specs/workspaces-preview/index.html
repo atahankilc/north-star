@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workspaces page · options</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=JetBrains+Mono:wght@300..700&display=swap">
+<link rel="stylesheet" href="preview.css">
+</head>
+<body>
+
+<!-- The preview's own bar: options, state, theme. Not part of any design. -->
+<header class="bar">
+  <span class="barName">WORKSPACES PAGE · OPTIONS</span>
+  <nav class="tabs" id="tabs"></nav>
+  <span class="sp"></span>
+  <span class="ctl">STATE
+    <button data-state="normal" aria-pressed="true">5 + invite</button>
+    <button data-state="first">first visit</button>
+    <button data-state="one">1</button>
+    <button data-state="many">12</button>
+  </span>
+  <span class="ctl">THEME
+    <button data-theme-set="dark" aria-pressed="true">dark</button>
+    <button data-theme-set="light">light</button>
+  </span>
+  <button class="notesBtn" id="notesBtn" aria-pressed="true">notes</button>
+</header>
+
+<aside class="notes" id="notes"></aside>
+
+<main id="stage" class="stage"></main>
+
+<!-- The HUD every option shares: breadcrumb, your square, the gear. -->
+<div class="hud">
+  <div class="crumb"><span class="hash">#</span> north-star <span class="sep">/</span> <b>workspaces</b></div>
+  <div class="corner"><span class="me">Y</span><span class="gear">⚙</span></div>
+</div>
+
+<script src="preview.js"></script>
+</body>
+</html>
