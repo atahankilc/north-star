@@ -74,25 +74,6 @@
 
 .input {
   flex: 1;
-  min-width: 0;
-  padding: var(--space-2) 0;
-  border: 0;
-  border-bottom: var(--line-w) solid var(--line);
-  background: none;
-  color: var(--fg-strong);
-  font: inherit;
-  font-size: var(--text-md);
-  outline: none;
-  caret-color: var(--accent, var(--accent-magenta));
-  transition: border-color var(--dur-fast) var(--ease-out);
-}
-
-.input::placeholder {
-  color: var(--placeholder);
-}
-
-.input:focus {
-  border-bottom-color: var(--accent, var(--accent-magenta));
 }
 
 .codeInput {
@@ -285,18 +266,13 @@ span.cardName {
   opacity: 1;
 }
 
-.action {
-  composes: small from '../../ui/AsciiButton.module.css';
-}
-
-.nameInput {
-  width: 100%;
-  padding: 0 0 var(--space-half);
-  border: 0;
-  border-bottom: var(--line-w) solid var(--accent-magenta);
-  background: none;
-  outline: none;
-  caret-color: var(--accent-magenta);
+/* The name being renamed keeps the name's own face (the Field is mono otherwise). */
+.cardHead .nameInput {
+  position: relative;
+  z-index: var(--z-1);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  letter-spacing: var(--track-title);
 }
 
 .warn {
@@ -305,7 +281,7 @@ span.cardName {
   font-size: var(--text-xs);
 }
 
-.card[data-mode='confirm'] .action[data-tone='danger'] {
+.card[data-mode='confirm'] .actions [data-tone='danger'] {
   color: var(--accent-magenta);
 }
 

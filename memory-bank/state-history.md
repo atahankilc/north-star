@@ -1126,3 +1126,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   honours kit-ok), lint; gallery states old against new for nowrap (112: one real change, the panel's button no
   longer broken), Options (setups) and Window/WizardShell (76 + 30 reruns, keys in headless Chrome); the window's own
   focus ring caught and removed. No visible change otherwise but the small snaps in D-326's log.
+
+## Done (2026-11-01): landing and workspaces on the kit (D-326, step 1)
+- Workspaces.tsx: every action (card, invites, request) a Button, the new name / invite code / rename inputs Fields,
+  the labels Label, the empty line Empty; the card's open layer and the hidden file picker `kit-ok`. Its CSS lost the
+  input styles and `composes: small`. Landing already on the kit: unchanged. kit-baseline 238 → 222 (62 files).
+- Verified: tsc, build, check:kit/tokens/gallery/lessons, eslint; the page in headless Chrome (emulators, Alice with
+  owner / co-owner / editor / viewer workspaces, an invite, a request; Carol empty), 9 states × 2 themes from old,
+  a second old and new worktrees: noise 0; the only changes the fields' snaps in D-326's log (with the 4 px shift
+  taken out, everything else pixel-equal).

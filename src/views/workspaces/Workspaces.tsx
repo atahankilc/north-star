@@ -30,6 +30,10 @@ import {
 } from '../../data/workspaces'
 import { useHoldCurtain } from '../../state/curtain'
 import { AsciiButton } from '../../ui/AsciiButton'
+import { Button } from '../../ui/Button'
+import { Empty } from '../../ui/Empty'
+import { Field } from '../../ui/Field'
+import { Label } from '../../ui/Label'
 import { DecodeText } from '../../ui/DecodeText'
 import { Hud } from '../../ui/Hud'
 import { Appear } from '../../ui/Appear'
@@ -83,8 +87,10 @@ export function Workspaces({ user }: { user: AuthUser }) {
           {!workspaces.isLoading && sorted.length === 0 && (
             // The onboarding's coach puts its three choices here the first time (data-learn, D-315), in place of the line.
             <Appear key="empty" className={styles.empty} data-learn="workspaces-empty">
-              <span className={styles.label}>no workspaces yet</span>
-              <p className={styles.emptyText}>Create one above, or ask to join a teammate's with their invite code.</p>
+              <Label className={styles.label}>no workspaces yet</Label>
+              <Empty tone="dim" className={styles.emptyText}>
+                Create one above, or ask to join a teammate's with their invite code.
+              </Empty>
             </Appear>
           )}
         </AnimatePresence>
@@ -118,7 +124,7 @@ function WorkspaceCard({ workspace: w, uid, onOpen }: CardProps) {
   const [doing, setDoing] = useState<'delete' | 'leave'>(isOwner ? 'delete' : 'leave')
   const [draft, setDraft] = useState(w.name)
   const [error, setError] = useState<string | null>(null)
-  const nameInput = useRef<HTMLInputElement>(null)
+  const nameInput = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
 
   // An unanswered delete/leave confirm quietly backs off.
   useEffect(() => {
@@ -163,21 +169,19 @@ function WorkspaceCard({ workspace: w, uid, onOpen }: CardProps) {
   return (
     <article className={styles.card} data-mode={mode}>
       {/* The whole card opens the workspace; name and actions sit above this layer. */}
-      <button className={styles.open} onClick={onOpen} disabled={mode !== 'idle'} aria-label={`Open ${w.name}`} />
+      {/* kit-ok: an invisible layer over the whole card, not a [verb] */}<button className={styles.open} onClick={onOpen} disabled={mode !== 'idle'} aria-label={`Open ${w.name}`} />
 
       <div className={styles.cardHead}>
         {mode === 'renaming' ? (
-          <input
+          <Field
             ref={nameInput}
-            className={`${styles.cardName} ${styles.nameInput}`}
+            className={styles.nameInput}
             value={draft}
             maxLength={80}
-            aria-label="Workspace name"
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') saveRename()
-              if (e.key === 'Escape') setMode('idle')
-            }}
+            label="Workspace name"
+            onChange={setDraft}
+            onEnter={saveRename}
+            onEscape={() => setMode('idle')}
           />
         ) : (
           <span className={styles.cardName}>{w.name}</span>
@@ -193,24 +197,20 @@ function WorkspaceCard({ workspace: w, uid, onOpen }: CardProps) {
           <>
             <span className={styles.cardMeta}>enter a new name</span>
             <span className={styles.actions} data-active>
-              <button className={styles.action} data-tone="primary" onClick={saveRename} disabled={!draft.trim()}>
+              <Button tone="primary" onClick={saveRename} disabled={!draft.trim()}>
                 save
-              </button>
-              <button className={styles.action} onClick={() => setMode('idle')}>
-                cancel
-              </button>
+              </Button>
+              <Button onClick={() => setMode('idle')}>cancel</Button>
             </span>
           </>
         ) : mode === 'confirm' ? (
           <>
             <span className={styles.warn}>{doing === 'delete' ? 'Delete it and all its ideas?' : 'Leave this workspace?'}</span>
             <span className={styles.actions} data-active>
-              <button className={styles.action} data-tone="danger" onClick={remove}>
+              <Button tone="danger" onClick={remove}>
                 {doing}
-              </button>
-              <button className={styles.action} onClick={() => setMode('idle')}>
-                cancel
-              </button>
+              </Button>
+              <Button onClick={() => setMode('idle')}>cancel</Button>
             </span>
           </>
         ) : mode === 'busy' ? (
@@ -223,18 +223,14 @@ function WorkspaceCard({ workspace: w, uid, onOpen }: CardProps) {
             </span>
             <span className={styles.actions}>
               {canEditIn(w, uid) && (
-                <button className={styles.action} onClick={startRename}>
-                  rename
-                </button>
+                <Button onClick={startRename}>rename</Button>
               )}
               {isOwner && canLeave && (
-                <button className={styles.action} onClick={() => ask('leave')}>
-                  leave
-                </button>
+                <Button onClick={() => ask('leave')}>leave</Button>
               )}
-              <button className={styles.action} data-tone="danger" onClick={() => ask(isOwner ? 'delete' : 'leave')}>
+              <Button tone="danger" onClick={() => ask(isOwner ? 'delete' : 'leave')}>
                 {isOwner ? 'delete' : 'leave'}
-              </button>
+              </Button>
             </span>
           </>
         )}
@@ -265,16 +261,17 @@ function CreateForm({ uid, onCreated }: { uid: string; onCreated: (id: string) =
 
   return (
     <Appear as="form" className={styles.form} onSubmit={submit}>
-      <label className={styles.label} htmlFor="ws-name">
+      <Label as="label" htmlFor="ws-name" className={styles.label}>
         new workspace
-      </label>
+      </Label>
       <div className={styles.row}>
-        <input
+        <Field
           id="ws-name"
           className={styles.input}
+          label="New workspace name"
           placeholder="e.g. Pet-sitting marketplace"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={setName}
           maxLength={80}
         />
         <AsciiButton type="submit" disabled={busy || !name.trim()}>
@@ -313,18 +310,17 @@ function JoinForm({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =
 
   return (
     <Appear as="form" className={styles.form} data-accent="cyan" onSubmit={submit}>
-      <label className={styles.label} htmlFor="ws-code">
+      <Label as="label" htmlFor="ws-code" className={styles.label}>
         ask to join with a code
-      </label>
+      </Label>
       <div className={styles.row}>
-        <input
+        <Field
           id="ws-code"
           className={`${styles.input} ${styles.codeInput}`}
+          label="Invite code"
           placeholder="ABCD-EFGH"
           value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
-          autoComplete="off"
-          spellCheck={false}
+          onChange={(v) => setCode(v.toUpperCase())}
           maxLength={12}
         />
         <AsciiButton type="submit" accent="cyan" disabled={busy || !code.trim()}>
@@ -359,16 +355,15 @@ function Pending({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =>
 
   return (
     <Appear className={styles.pending}>
-      <span className={styles.label}>waiting</span>
+      <Label className={styles.label}>waiting</Label>
       <ul className={styles.pendingList}>
         {invites.data.map((i) => (
           <li key={i.id} className={styles.pendingItem}>
             <span className={styles.pendingName}>{i.name}</span>
             <span className={styles.pendingMeta}>invited you · {i.memberCount} {i.memberCount === 1 ? 'member' : 'members'}</span>
             <span className={styles.pendingActions}>
-              <button
-                className={styles.action}
-                data-tone="primary"
+              <Button
+                tone="primary"
                 disabled={busy !== null}
                 onClick={() => run(i.id, async () => {
                   await acceptInvite(i.workspaceId, user)
@@ -376,10 +371,10 @@ function Pending({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =>
                 })}
               >
                 join
-              </button>
-              <button className={styles.action} data-tone="danger" disabled={busy !== null} onClick={() => run(i.id, () => declineInvite(i.workspaceId, user.email ?? ''))}>
+              </Button>
+              <Button tone="danger" disabled={busy !== null} onClick={() => run(i.id, () => declineInvite(i.workspaceId, user.email ?? ''))}>
                 decline
-              </button>
+              </Button>
             </span>
           </li>
         ))}
@@ -388,9 +383,9 @@ function Pending({ user, onJoined }: { user: AuthUser; onJoined: (id: string) =>
             <span className={styles.pendingName}>{r.code.slice(0, 4)}-{r.code.slice(4)}</span>
             <span className={styles.pendingMeta}>you asked to join · waiting for an owner to let you in</span>
             <span className={styles.pendingActions}>
-              <button className={styles.action} disabled={busy !== null} onClick={() => run(r.id, () => withdrawJoinRequest(r.workspaceId, user.id))}>
+              <Button disabled={busy !== null} onClick={() => run(r.id, () => withdrawJoinRequest(r.workspaceId, user.id))}>
                 withdraw
-              </button>
+              </Button>
             </span>
           </li>
         ))}
@@ -432,11 +427,11 @@ function ImportStrip({ user, onCreated }: { user: AuthUser; onCreated: (id: stri
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
   return (
     <div className={styles.import}>
-      <span className={styles.label}>import</span>
+      <Label className={styles.label}>import</Label>
       <p className={styles.importText}>
         A workspace exported from North Star (.zip, in settings → workspace → export) becomes a new workspace you own.
       </p>
-      <input ref={input} id="ws-import" type="file" accept=".zip,.json,application/zip,application/json" hidden onChange={(e) => void load(e.target.files?.[0])} />
+      {/* kit-ok: the hidden file picker the button below opens */}<input ref={input} id="ws-import" type="file" accept=".zip,.json,application/zip,application/json" hidden onChange={(e) => void load(e.target.files?.[0])} />
       <AsciiButton accent="cyan" onClick={() => input.current?.click()} disabled={busy}>
         {busy ? 'importing' : 'choose file'}
       </AsciiButton>

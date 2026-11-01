@@ -46,7 +46,7 @@ feature comes back as a piece, and check them with the user then.
   colours in `--type-*` and src/ui/cardTone.ts; one Spinner, the small entrances in src/ui/Enter.module.css, one
   cell-path builder. The kit in src/ui: Button, Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge. The gallery's `[tree]` shows what each
   component draws and where it's used. Patterns: Options, Window, WizardShell. `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
-  from coming back. Next: folders; the agent's column, landing and workspaces onto the kit.
+  from coming back. Landing and workspaces are on it; next: the agent's column, folders.
 - ESLint with only `eslint-plugin-react-hooks`, as warnings: `npm run lint` counts them, CI never fails on them (D-320).
 
 ## Accounts, sharing, roles

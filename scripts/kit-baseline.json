@@ -210,12 +210,5 @@
   "src/views/workspace/Timeline.tsx": {
     "button": 3,
     "portal": 1
-  },
-  "src/views/workspaces/Workspaces.module.css": {
-    "small": 1
-  },
-  "src/views/workspaces/Workspaces.tsx": {
-    "button": 11,
-    "input": 4
   }
 }

@@ -6056,11 +6056,11 @@ docs/foundation-audit-2026-10-31.md).
   CanvasSwitch and MoveToCanvas (menus), Threads (a docked panel), the agent's column (left alone while the user tries
   a big job on this tree). `npm run check:kit` in CI (scripts/check-kit.mjs, baseline 238 in 64 files, only shrinks),
   the rule in CLAUDE.md.
-- *Not yet* (agreed with the user 2026-11-01, in this order): (1) landing and workspaces onto the kit: Workspaces.tsx's
-  card actions ([rename] [leave] [delete] [save] [cancel]) and invites' [accept]/[decline] → Button (delete `danger`,
-  its `composes: small` gone), the rename / new name / invite code inputs → Field, the caps labels (name, invite code,
-  "no workspaces yet", "waiting") → Label, the empty line → Empty, the whole-card open button kept (`// kit-ok`),
-  Landing's CSS only (already on the kit); then `check:kit -- --write`. (2) The agent's column (Agent.tsx) on Window,
+- *Not yet* (agreed with the user 2026-11-01, in this order): (1) ~~landing and workspaces onto the kit~~ done
+  2026-11-01: Workspaces.tsx's actions → Button, its three inputs → Field, its labels → Label (still with Frame's `┌`),
+  the empty line → Empty, the card's open layer and the file picker `kit-ok`; Landing needed nothing; baseline 238 →
+  222. Its snaps: the page's two fields at the Field's size (text-sm, 4 px shorter forms, everything under them 4 px
+  up), no focus box round a field, the underline cyan with the keyboard (rename's was magenta). (2) The agent's column (Agent.tsx) on Window,
   only after the user's browser test of a big job; the agent session asked that its job checklist, [stop], steering,
   the stepper, `apply · N deletes` and the `/` menu stay exactly as they are. (3) Lower check:kit area by area.
   (4) Folders by layer (src/ui foundation/primitives/patterns; src/views/workspace by area) in one commit when no

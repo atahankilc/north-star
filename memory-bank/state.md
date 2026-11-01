@@ -67,8 +67,8 @@ something is finished, add its entry to state-history.md and leave at most one l
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
 - Gallery and foundation (D-324, D-326): map, motion, kit, every area on it, patterns, `check:kit` pushed 2026-11-01
-  (4a07c52). Next, agreed with the user, not started: landing + workspaces onto the kit, then the agent's column on
-  Window (after the user's browser test), check:kit lower, folders last; the plan is D-326's *Not yet* in the log.
+  (4a07c52). Landing + workspaces on the kit: committed, not pushed (2026-11-01). Next, agreed with the user: the
+  agent's column on Window (only when the user says), check:kit lower, folders last; the plan is D-326's *Not yet*.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers
