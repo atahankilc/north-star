@@ -6332,3 +6332,14 @@ field refused per kind, create and update), vitest 968, tsc (app + evals), build
 Not yet: deploying the rules (asked first, D-322); the live data isn't read (the permission check refused it), so a
 live doc with an old field would refuse its next partial update.
 
+### D-336 · 2026-11-01 · Accepted (the user: "yaptığın galleryi düzelt. Hiçbir sik anlamıyorum şu anda ne nerde nasıl kullanılmış. Bok gibi bir ui"; picked "Bileşen sayfası" over a smaller fix; and "tree viewdaki bazı componentler disabled olmuş… Neden")
+The gallery is a page per component (docs/specs/gallery.md §3). Left: every component file by layer and area (where
+the file lives, src/gallery/pages.ts; D-326's "by what it is, never by folder" no longer holds, since the folders are
+now by layer and area), its number of states or `—`. With nothing picked, an overview of them all. A page: name, area,
+file, what it is; every state side by side (frames, small parts at their own size, full-screen ones at a third), one
+opened large and live on a click; BUILT FROM and USED IN by area, each a link. Files with no example (the agent's, the
+landing, workspaces, the backdrop) have a page too, and open from the tree (they were disabled: no example). Why: the
+old page showed one state at a time, its "used in" was a run-on line of 40 names, and the bar crowded the example.
+Verified: tsc, vitest 968, check:gallery; headless shots of the overview, Button (all states and one live), Card panel
+and Agent (no example), no console errors. `place`/`also` stay in the example files (unused by the page now).
+

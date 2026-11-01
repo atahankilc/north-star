@@ -38,45 +38,41 @@ it brings its own look).
 
 ## 3. The page
 
-`npm run dev` (or another port, e.g. `npm run dev -- --port 5179`), then `/gallery.html`.
+`npm run dev` (or another port, e.g. `npm run dev -- --port 5179`), then `/gallery.html`. Rebuilt by D-336 (the user:
+"hiçbir şey anlamıyorum… ne nerde nasıl kullanılmış"): a page per component.
 
 ```
-┌─ > find a component… ─┬────────────────────────────────────────────────┐
-│ # ui              14  │                                                │
-│ › Select              │                                                │
-│ › Menu                │          [the example, live, made-up data]     │
-│ › HazardConfirm       │                                                │
-│ # canvas           7  │                                                │
-│ › plane               │                                                │
-│ › matrix              │                                                │
-│ # panels           3  ├────────────────────────────────────────────────┤
-│ › card panel          │ STATE   default · open · long · empty  [grid]  │
-│                       │ THEME   dark | light    MOTION  full | reduced │
-│ 26 components         │ ON      page | piece    ZOOM    1 | 2          │
-│                       │ src/ui/primitives/Select.tsx   refused 0  [reset] [alone ↗]│
-└───────────────────────┴────────────────────────────────────────────────┘
+┌─ > find a component… ─┬──────────────────────────────────────────────────┐
+│ # PRIMITIVES          │ Button                                           │
+│   Button            7 │ [PRIMITIVES]  src/ui/primitives/Button.tsx        │
+│   Label             3 │ the one button: sm the [verb] of rows and bars…  │
+│ # PATTERNS            │ STATES · 7 ─────────── THEME  MOTION  ON  (ZOOM) │
+│   Window            4 │ ┌sm tones──┐┌sm with key┐┌link─────┐ …            │
+│ # PANELS              │ BUILT FROM · 0 ─────────────────────────────────  │
+│   Card panel        8 │ USED IN · 37 ───────────────────────────────────  │
+│ # AGENT               │   PANELS   Card panel · Task panel · …           │
+│   Agent             — │   DECKS    Deck · Timeline · …                   │
+└───────────────────────┴──────────────────────────────────────────────────┘
 ```
 
-- **Left column**: the map (D-326): categories in the building's order (FOUNDATIONS, MOTION, ACTIONS, FORMS, TEXT AND
-  LABELS, FEEDBACK, OVERLAYS, HUD AND NAVIGATION, PANELS, CANVAS PIECES, SCREENS, ONBOARDING), each with its groups
-  (`› text`), a component listed under its `place` and every `also`. In the prompt look (D-222): a `>` line narrowing the list (Enter opens the first), `# section` lines
-  with a count, rows `› name`, a counting foot. ↑/↓ move, Enter opens. Keys `[` / `]` step through the states, `\` mounts again. `window.__gallery` lists every example and its
-  states, for scripts.
-- **Middle**: the example, mounted fresh each time it's picked (new store, every outside-React store reset). An error
-  while drawing is caught for that example only: a magenta line with the message, the rest of the page goes on.
-- **Bottom bar** (the dock look, D-264):
-  - `STATE`: the example's states; `[grid]` shows them all at once, each in its own tile with its name (G2).
-  - `THEME` / `MOTION`: the gallery's own stores (`useTheme`, `useMotion`), changed at once; never written to the app's
-    storage.
-  - `ON`: what it stands on: the page's black (`--bg`), or a piece's graphite surface (inside a framed piece the
-    tokens map to that surface, D-263) — so a component used in both places is checked in both.
-  - `ZOOM`: `1` or `2` (twice the size, to look at small things: marks, chips).
-  - An example's box: as big as it draws, in the middle; or a state's `size` (`[w, h]`, or `full` for what places
-    itself on the screen: the HUD, a side panel, the toast). The middle is a transform, so `position: fixed` lands in
-    it; what an example puts in the body (a confirm's portal, a `<dialog>`) is over the page.
-  - the component's file (click copies the path), the refused-writes count, `[reset]` (mount again), `[alone ↗]` (the
-    same address with `alone`: the example by itself, no column, no bar, for shots).
-- **Address**: `gallery.html#c=select&s=open&theme=light&motion=reduced&on=piece&zoom=2` (`&alone` for the bare example). Every state
+- **Left column**: every component file, grouped by layer and area (`src/gallery/pages.ts`'s AREAS, from where the file
+  lives: foundation, primitives, patterns, canvas, planes, panels, decks and days, table, matrix, documents, text,
+  threads, finder, settings, screens, onboarding, agent, backdrop), with its number of states, or `—` without an
+  example. In the prompt look (D-222). `tree`: the same files by what they're made of (uses.ts); every row opens. The
+  title goes to the overview. `window.__gallery` lists every example and its states, for scripts.
+- **Overview** (nothing picked): every component, area by area: name, what it is, its states, how many use it.
+- **A component's page**: its name, area and file (a click copies it), what it is. `STATES`: every state side by
+  side, each the address with `&alone` in a frame of its own (a small part at its own size, a `size: 'full'` one at a
+  third); a click opens it large and live, with the state tabs, `ZOOM`, `[‹ all states]` (Esc), `[ ]` / `]` step,
+  `\` mounts again. `BUILT FROM` and `USED IN`: the component files it draws and that draw it (uses.ts), a line per
+  area, each a link (faint: no example yet, its page still says where it's used). A file with no example has a page
+  too: no states, only those two.
+- **Live**: a state open large is mounted fresh each time it's picked (new store, every outside-React store reset). An
+  error while drawing is caught for that example only: a magenta line with the message. `THEME` / `MOTION` are the
+  gallery's own stores (never the app's storage); `ON` the page's black or a piece's graphite surface (D-263); `ZOOM`
+  `1` or `2`. A state's box is as big as it draws, or its `size` (`[w, h]`, or `full` for what places itself on the
+  screen); the box is a transform, so `position: fixed` lands in it. Under it: writes refused, `[again]`, `[alone ↗]`.
+- **Address**: `gallery.html#c=select&s=open&theme=light&motion=reduced&on=piece&zoom=2` (no `s`: every state side by side; `&alone` for the bare example). Every state
   of every component has one; back/forward work.
 - Text in the gallery's own chrome follows the rules of the app: tokens only, Geist Mono, labels uppercase, actions
   lowercase. It is a dev page, but it's the same design language.

@@ -24,6 +24,11 @@
 
 .title {
   padding: var(--space-4) var(--space-3) var(--space-2);
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
   color: var(--fg-strong);
   font-size: var(--text-xs);
   letter-spacing: var(--track-label);
@@ -32,13 +37,6 @@
 .faint {
   color: var(--fg-faint);
   font-size: var(--text-xs);
-}
-
-.main {
-  display: grid;
-  grid-template-rows: 1fr auto;
-  min-width: 0;
-  min-height: 0;
 }
 
 /* The example's room: a transform, so what it draws `position: fixed` (the HUD, a side panel, the toast) is placed in
@@ -88,36 +86,6 @@
   max-height: none;
 }
 
-.bar {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--line);
-  background: var(--bg);
-  --label-w: 64px;
-}
-
-.head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-}
-
-.name {
-  color: var(--fg-strong);
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  letter-spacing: var(--track-title);
-}
-
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-8);
-}
-
 .note {
   color: var(--fg-muted);
   font-size: var(--text-xs);
@@ -162,15 +130,12 @@
   font-size: var(--text-xs);
 }
 
-/* `[grid]`: every state at once, each the address with `alone` in a frame, a third of its size. */
+/* Every state side by side, each the address with `alone` in a frame: a small part at its own size, one that fills
+   the screen (`size: 'full'`: the canvas, a panel) drawn at a third. */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  align-content: start;
-  gap: var(--space-6);
-  padding: var(--space-6);
-  min-height: 0;
-  overflow: auto;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: var(--space-6) var(--space-4);
 }
 
 .tile {
@@ -192,6 +157,11 @@
   border: 1px solid var(--line);
 }
 
+.tileFrame[data-small] {
+  aspect-ratio: auto;
+  height: 220px;
+}
+
 .tile:hover .tileFrame {
   border-color: var(--accent-cyan);
 }
@@ -209,23 +179,7 @@
   pointer-events: none;
 }
 
-.tileName,
-.tileNameOn {
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-}
-
-.tileNameOn,
-.tile:hover .tileName {
-  color: var(--fg-strong);
-}
-
-.actionOn {
-  composes: action;
-  color: var(--accent-cyan);
-}
-
-/* The list's switch: the map (what a thing is) or the tree (what it's made of, D-326). */
+/* The list's switch: the map (by layer and area, D-336) or the tree (what it's made of, D-326). */
 .sideTabs {
   display: flex;
   align-items: baseline;
@@ -300,39 +254,219 @@
 }
 
 /* The bar's uses / used in. */
-.uses {
-  display: grid;
-  gap: var(--space-1);
+
+.tileFrame[data-small] .tileView {
+  width: 100%;
+  height: 100%;
+  transform: none;
 }
 
-.usesRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-3);
+.tileName {
+  color: var(--fg-dim);
   font-size: var(--text-xs);
 }
 
-.usesLabel {
-  width: var(--label-w);
+.tile:hover .tileName {
+  color: var(--fg-strong);
+}
+
+/* ---- A component's page (D-336), and the overview: one scrolling column. ---- */
+.doc {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  --label-w: 64px;
+}
+
+.article {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  max-width: 1280px;
+  padding: var(--space-8) var(--space-8) var(--space-12);
+}
+
+.docHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.docName {
+  margin: 0;
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: var(--text-hero);
+  font-weight: var(--weight-regular);
+  letter-spacing: var(--track-display);
+  line-height: var(--lh-none);
+}
+
+.docMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.areaTag {
+  padding: var(--space-half) var(--space-2);
+  border: 1px solid var(--line-hover);
+  background: none;
+  color: var(--accent-cyan);
+  font: inherit;
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.docNote {
+  max-width: 80ch;
+  margin: 0;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  line-height: var(--lh-body);
+}
+
+.sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* `STATES · 7 ──── tools`: a section's head on a rule. */
+.secHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.secName {
+  color: var(--fg-strong);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+}
+
+.secTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin-left: auto;
+}
+
+.stateTabs {
+  overflow-x: auto;
+}
+
+/* One state, live, large: the stage fills it. */
+.liveBox {
+  position: relative;
+  height: min(72vh, 820px);
+  border: 1px solid var(--line);
+}
+
+.liveBox > .stage {
+  height: 100%;
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.linkRow {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: var(--space-4);
+  align-items: baseline;
+}
+
+.linkArea {
   color: var(--fg-faint);
+  font-size: var(--text-xs);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
 
-.usesItem {
+.linkList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+}
+
+.link,
+.linkFaint {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--fg-dim);
+  color: var(--fg);
   font: inherit;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
-.usesItem:hover {
-  color: var(--accent-cyan);
-}
-
-.usesNone {
+.linkFaint {
   color: var(--fg-faint);
 }
+
+.link:hover,
+.linkFaint:hover {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: var(--underline-offset);
+}
+
+/* The overview: a row per component. */
+.table {
+  display: flex;
+  flex-direction: column;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 200px 1fr 80px 90px;
+  gap: var(--space-4);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-2);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tableRow:hover {
+  background: var(--bg-raised);
+}
+
+.tableName,
+.tableNameFaint {
+  color: var(--fg-strong);
+  font-size: var(--text-sm);
+}
+
+.tableNameFaint {
+  color: var(--fg-faint);
+}
+
+.tableNote {
+  overflow: hidden;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tableNum {
+  color: var(--fg-faint);
+  font-size: var(--text-xs);
+  text-align: right;
+}
+

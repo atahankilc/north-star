@@ -41,8 +41,8 @@ feature comes back as a piece, and check them with the user then.
   time; one `X.gallery.tsx` beside each component in a covered folder (`src/ui`, `src/views/workspace`, `src/onboarding`), required with a new or changed
   component, `npm run check:gallery`.
 - Foundation (D-326, docs/foundation-audit-2026-10-31.md): the UI built from the bottom: tokens and motion, the kit in
-  src/ui, patterns, then features; the gallery's map by what a thing is (`place` category/group, `also`), never by
-  folder. Motion's numbers and the tween in src/ui/foundation/motionTokens.ts and motion.ts (held to tokens.css by a test), card
+  src/ui, patterns, then features; the gallery a page per component, grouped by layer and area (where its file lives), every
+  state side by side, what it's built from and where it's used by area (D-336). Motion's numbers and the tween in src/ui/foundation/motionTokens.ts and motion.ts (held to tokens.css by a test), card
   colours in `--type-*` and src/ui/foundation/cardTone.ts; one Spinner, the small entrances in src/ui/foundation/Enter.module.css, one
   cell-path builder. The kit in src/ui: Button (`sm`, `md`, `icon`, `link`), ToolButton (the HUD's icon tools), Steps (a wizard's tabs), Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge. The gallery's `[tree]` shows what each
   component draws and where it's used. Patterns: Options, Window, WizardShell. Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI

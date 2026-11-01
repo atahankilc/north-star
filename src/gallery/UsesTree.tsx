@@ -1,11 +1,11 @@
 // The gallery's tree (the user: "basic olanlar listenin başında durur, sonrasında kullanıldıkları yerleri ağaç üzerinde
 // görürüm… her şeyi göstersin"): every component file, by level (primitives first: they draw no other component), each
 // opening into what uses it, and that into what uses that, up to the screens. In the prompt's look (Menu.module.css,
-// D-222). A row opens its example; its `▸ N` opens what uses it. A file with no example is listed faint, so the tree
-// still says where a primitive ends up (the agent, the landing).
+// D-222). A row opens its page; its `▸ N` opens what uses it. A file with no example is faint but opens too (its page
+// says what it's built from and where it's used), so the tree still says where a primitive ends up (the agent).
 import { useMemo, useState } from 'react'
 import { NODES, type Node } from './uses'
-import type { Entry } from './registry'
+import { pageOfFile } from './pages'
 import menu from '../ui/patterns/Menu.module.css'
 import styles from './Gallery.module.css'
 
@@ -13,13 +13,13 @@ const LEVEL_NAME = ['primitives', 'built from primitives']
 
 type Row = { key: string; node: Node; depth: number; prefix: string; open: boolean; canOpen: boolean }
 
-export function UsesTree({ entryOf, current, onPick }: { entryOf: (file: string) => Entry | undefined; current?: string; onPick: (e: Entry) => void }) {
+export function UsesTree({ current, onPick }: { current?: string; onPick: (file: string) => void }) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<Set<string>>(() => new Set())
   const q = query.trim().toLowerCase()
   const nodes = useMemo(() => [...NODES.values()].sort((a, b) => a.level - b.level || label(a).localeCompare(label(b))), [])
   function label(n: Node) {
-    return entryOf(n.file.slice(1))?.name ?? n.name
+    return pageOfFile(n.file)?.name ?? n.name
   }
 
   // The rows shown: by level, each node's users under it while it's open (a path key, so one node can be open in one
@@ -76,7 +76,7 @@ export function UsesTree({ entryOf, current, onPick }: { entryOf: (file: string)
               {r.heading}
             </div>
           ) : (
-            <TreeRow key={r.key} row={r} entry={entryOf(r.node.file.slice(1))} current={current} name={label(r.node)} onPick={onPick} onToggle={() => toggle(r.key)} />
+            <TreeRow key={r.key} row={r} example={!!pageOfFile(r.node.file)?.entry} current={current} name={label(r.node)} onPick={onPick} onToggle={() => toggle(r.key)} />
           ),
         )}
       </div>
@@ -87,14 +87,14 @@ export function UsesTree({ entryOf, current, onPick }: { entryOf: (file: string)
   )
 }
 
-function TreeRow({ row, entry, current, name, onPick, onToggle }: { row: Row; entry?: Entry; current?: string; name: string; onPick: (e: Entry) => void; onToggle: () => void }) {
-  const here = !!entry && entry.id === current
+function TreeRow({ row, example, current, name, onPick, onToggle }: { row: Row; example: boolean; current?: string; name: string; onPick: (file: string) => void; onToggle: () => void }) {
+  const here = row.node.file.slice(1) === current
   return (
-    <div className={styles.treeRow} data-depth={row.depth} data-none={!entry || undefined} role="listitem">
+    <div className={styles.treeRow} data-depth={row.depth} data-none={!example || undefined} role="listitem">
       <span className={styles.treePrefix} aria-hidden>
         {row.prefix}
       </span>
-      <button className={styles.treeName} data-here={here || undefined} disabled={!entry} title={entry ? `open ${name}` : `${row.node.file.slice(1)}: no example`} onClick={() => entry && onPick(entry)}>
+      <button className={styles.treeName} data-here={here || undefined} title={example ? `open ${name}` : `${row.node.file.slice(1)}: no example yet; open what it's built from and where it's used`} onClick={() => onPick(row.node.file)}>
         {here ? '• ' : ''}
         {name}
       </button>
