@@ -1,4 +1,5 @@
 import { example } from '../../gallery/example'
+import { Button } from '../primitives/Button'
 import { PanelAction, PanelSection, SidePanel } from './SidePanel'
 
 const none = () => {}
@@ -37,7 +38,7 @@ export default example({
   name: 'SidePanel',
   place: 'panels/frame',
   file: 'src/ui/patterns/SidePanel.tsx',
-  note: 'every right panel (D-219): 400 px, flush right, full height; with PanelSection and PanelAction; its × and its foot Button cells, joined (D-344)',
+  note: 'every right panel (D-219): on EdgeColumn with PanelHead (D-359), 400 px, flush right, full height, Escape on the one stack; with PanelSection and PanelAction; its × and its foot Button cells, joined (D-344)',
   states: {
     default: { size: 'full', render: () => <Problem /> },
     'long title': {
@@ -47,7 +48,7 @@ export default example({
     'tools and width': {
       size: 'full',
       render: () => (
-        <SidePanel kind="task" title="Call the office park" label="task" onClose={none} width={320} tools={<button style={{ background: 'none', border: 0, color: 'var(--fg-dim)', font: 'inherit' }}>[full]</button>}>
+        <SidePanel kind="task" title="Call the office park" label="task" onClose={none} width={320} tools={<Button onClick={none}>full</Button>}>
           <PanelSection n={1} name="checklist" count="1/3" />
         </SidePanel>
       ),

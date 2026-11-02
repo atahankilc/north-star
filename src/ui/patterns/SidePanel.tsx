@@ -1,17 +1,15 @@
 // The right panel (D-219): one look for every panel that opens on the right, whatever fills it. A terminal column flush
-// with the right edge of the space it belongs to, the screen's full height, over the HUD's bar (in a portal): a piece's own view in focus (its part of the screen when
-// something is open beside it), or the screen's right edge for what's on the canvas itself. A thin line on its left
-// with magenta marks at its corners (a plane console's), the kind in its colour and a `×` along the top, the title
-// under it, then sections under rules that carry a number and a name (`01 STATUS ────`), actions at the foot, joined
-// (D-344). It
-// builds up cell by cell as it opens and breaks apart as it closes (D-034): wrap it in <AnimatePresence>.
+// with the right edge of the space it belongs to (EdgeColumn, D-359): a piece's own view in focus (its part of the
+// screen when something is open beside it), or the screen's right edge for what's on the canvas itself. Its head
+// (PanelHead: the kind in its colour, tools, `×`), the title under it, then sections under rules that carry a number and
+// a name (`01 STATUS ────`), actions at the foot, joined (D-344). It builds up cell by cell as it opens and breaks apart
+// as it closes (D-034): wrap it in <AnimatePresence>.
 import type { ReactNode } from 'react'
-import { createPortal } from 'react-dom'
-import { Appear } from '../primitives/Appear'
 import styles from './SidePanel.module.css'
 import { Button } from '../primitives/Button'
-import { ButtonGroup } from '../primitives/ButtonGroup'
 import { Rule } from '../primitives/Rule'
+import { EdgeColumn } from './EdgeColumn'
+import { PanelHead } from './PanelHead'
 
 type Props = {
   // What it shows, in words (`problem`), and that kind's colour.
@@ -19,6 +17,7 @@ type Props = {
   tone?: string
   title: ReactNode
   label: string
+  // The `×` and Escape (on the one Escape stack, D-359: a menu or a thread over it closes first).
   onClose: () => void
   // Actions at its foot (PanelAction), joined; a danger one goes to the far right.
   actions?: ReactNode
@@ -34,34 +33,23 @@ type Props = {
 // How wide it is at most: what it sits in may scroll its view to keep the thing it's for clear of it.
 export const SIDE_PANEL_W = 400
 
+// On the docked column (EdgeColumn, D-359): fixed right, full height, the marks, cell by cell, Escape; this is what's in it.
 export function SidePanel({ kind, tone, title, label, onClose, actions, right = 0, width, tools, children }: Props) {
-  return createPortal(
-    <Appear
-      as="aside"
-      className={styles.panel}
+  return (
+    <EdgeColumn
       // Left of the agent's column when it's open (`--ai-w`, S14).
-      style={{ right: `calc(${right}px + var(--ai-w, 0px))`, ...(width ? { width } : {}), ['--tone' as string]: tone ?? 'var(--accent-magenta)' }}
-      // A dialog to the canvas: its wheel scrolls it, a press here doesn't pan, right-click is the browser's.
-      role="dialog"
-      aria-label={label}
+      offset={`calc(${right}px + var(--ai-w, 0px))`}
+      width={width}
+      label={label}
+      onClose={onClose}
       data-learn="card-panel"
-      onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
-      onDoubleClick={(e: React.MouseEvent) => e.stopPropagation()}
+      style={{ ['--tone' as string]: tone ?? 'var(--accent-magenta)' }}
     >
-      <header className={styles.top}>
-        <span className={styles.kind}>{kind}</span>
-        <ButtonGroup className={styles.tools}>
-          {tools}
-          <Button icon onClick={onClose} title="Close (Esc)" aria-label="close">
-            ×
-          </Button>
-        </ButtonGroup>
-      </header>
+      <PanelHead kind={kind} tools={tools} onClose={onClose} />
       <div className={styles.title}>{title}</div>
       <div className={styles.body}>{children}</div>
       {actions && <footer className={styles.foot}>{actions}</footer>}
-    </Appear>,
-    document.body,
+    </EdgeColumn>
   )
 }
 

@@ -113,6 +113,9 @@ export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: num
 
 export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, deleting: null, bringing: null, toCanvas: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, fresh: null, panelShut: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
 
+// How wide what's open beside the focused plane is (D-211), 0 with nothing there: a right panel opens left of it.
+export const useBesideW = () => useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
+
 // A panel Enter shut opens again once the card is let go or another is picked.
 useCanvasView.subscribe((s, was) => {
   if (s.panelShut && s.cardSelected !== was.cardSelected) useCanvasView.setState({ panelShut: null })

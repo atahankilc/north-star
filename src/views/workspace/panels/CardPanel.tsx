@@ -30,7 +30,7 @@ import {
 import { CompetitorProfile, CompetitorFeatures, Criteria, hasMatches, InPackages, MatchedBy, Parent, Parts, RestsOn } from './CardPanelKinds'
 import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } from '../../../data/edges'
 import { addEvidence, EVIDENCE_KINDS, mismatch, removeEvidence, tally, updateEvidence, type Evidence, type EvidenceKind, type Stance } from '../../../data/evidence'
-import { glide, useCanvasView } from '../../../state/canvasView'
+import { glide, useBesideW, useCanvasView } from '../../../state/canvasView'
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { cardEntry, whereList } from '../plane/cardEntry'
 import { InPlaceMenu } from '../../../ui/patterns/InPlaceMenu'
@@ -134,7 +134,7 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
   const count = many.length + texts.length
   const plane = new URLSearchParams(location.search).get('focus')
   const shared = many.filter((c) => plane && elsewhere(c, places, plane).length)
-  const right = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
+  const right = useBesideW()
   const card = cards.find((c) => c.id === id)
   // Enter shut it on a card just made (D-250); the card stays selected.
   const shut = useCanvasView((s) => s.panelShut)

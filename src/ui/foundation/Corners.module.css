@@ -52,3 +52,20 @@
   right: calc(-1 * var(--line-w));
   border-right: var(--line-w) solid var(--mk);
 }
+
+/* `data-corners="right"`: a column on the left, its top and bottom right corners. */
+.corners[data-corners='right']::before,
+.corners[data-corners='right']::after {
+  right: calc(-1 * var(--line-w));
+  border-right: var(--line-w) solid var(--mk);
+}
+
+.corners[data-corners='right']::before {
+  top: 0;
+  border-top: var(--line-w) solid var(--mk);
+}
+
+.corners[data-corners='right']::after {
+  bottom: 0;
+  border-bottom: var(--line-w) solid var(--mk);
+}

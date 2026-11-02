@@ -1,0 +1,22 @@
+/* A docked panel's top line (src/ui/patterns/PanelHead.tsx, D-359): the kind, then the tools and `×` at the far right. */
+.head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6) 0;
+}
+
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--tone, var(--fg-dim));
+  letter-spacing: var(--track-label);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+.tools {
+  margin-left: auto;
+}

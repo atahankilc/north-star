@@ -12,7 +12,7 @@ import { isOnPlane, type Card } from '../../../data/cards'
 import { CHECK_MAX, LABEL_MAX, LABELS_MAX, TASK_PRIORITIES, deleteTask, deleteTasks, moveTasks, updateTasks, logLearned, moveTask, newCheck, orderBetween, overdue, setChecks, tasksIn, TASK_TITLE_MAX, today, untested, updateTask, type Check, type Task } from '../../../data/tasks'
 import type { Evidence } from '../../../data/evidence'
 import { useMembers } from '../../../data/workspaces'
-import { useCanvasView } from '../../../state/canvasView'
+import { useBesideW, useCanvasView } from '../../../state/canvasView'
 import { PanelAction, PanelSection, SidePanel } from '../../../ui/patterns/SidePanel'
 import { Select } from '../../../ui/patterns/Select'
 import { CardPicker, EvidenceForm, PLACEHOLDER, useCommit } from './CardPanel'
@@ -51,7 +51,7 @@ export function TaskPanel({ editor }: { editor: boolean }) {
   const piece = task ? pieces.find((p) => p.id === task.pieceId) : undefined
   const close = () => selectTask('', null)
   // Beside a plane, over the plane's part of the screen (as a card's, D-211).
-  const beside = useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
+  const beside = useBesideW()
   // Inside the tasks side view (D-300): flush with its right edge, narrow or filling it.
   const inSide = useTasksSide((s) => s.open)
   const full = useTasksSide((s) => s.taskFull)
@@ -70,19 +70,6 @@ export function TaskPanel({ editor }: { editor: boolean }) {
     if (card && card !== was.current) close()
     was.current = card
   }, [card])
-  // Escape closes it, unless typing somewhere or a menu or thread hears it first.
-  const open = !!task || many.length > 1
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null
-      if (e.key !== 'Escape' || t?.closest('input, textarea, [contenteditable], [role=menu], [role=dialog], [role=listbox]')) return
-      e.stopImmediatePropagation()
-      close()
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [open])
   return (
     <AnimatePresence>
       {many.length > 1 && manyPiece && (
