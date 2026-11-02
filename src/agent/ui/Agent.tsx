@@ -25,6 +25,8 @@ import { isTyping } from '../../views/workspace/canvas/useEditKeys'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
 import { pickerRows } from '../models'
 import { previewOf, type Job, type JobStep } from '../job'
+import { siteOf } from '../web'
+import type { Source } from '../contract'
 import { plainCites } from '../read/names'
 import { pickable, suggested, useAgentSettings } from './settings'
 import { firstAsks } from './suggest'
@@ -663,6 +665,7 @@ function AgentAnswer({ entry }: { entry: Extract<Entry, { kind: 'agent' }> }) {
           {entry.running && <span className={styles.caret} aria-hidden />}
         </div>
       )}
+      {!entry.running && entry.sources?.length ? <Sources sources={entry.sources} /> : null}
       {entry.end === 'stopped' && <p className={styles.meta}>stopped</p>}
       {entry.end === 'budget' && <p className={styles.meta}>it ran out of steps for this turn: ask it to go on</p>}
       {entry.error && (
@@ -687,6 +690,35 @@ function AgentAnswer({ entry }: { entry: Extract<Entry, { kind: 'agent' }> }) {
   )
 }
 
+// The pages the answer's searches read (D-360): the cited ones first, each its site and title, opening in a new tab;
+// past SOURCES_SHOWN the rest folded.
+const SOURCES_SHOWN = 6
+function Sources({ sources }: { sources: Source[] }) {
+  const [all, setAll] = useState(false)
+  const shown = all ? sources : sources.slice(0, SOURCES_SHOWN)
+  return (
+    <div className={styles.sources}>
+      <Label tone="faint">sources</Label>
+      <ol className={styles.sourceList}>
+        {shown.map((src, i) => (
+          <li key={src.url} className={styles.source} data-cited={src.cited ? 'yes' : undefined}>
+            <span className={styles.sourceNum}>{i + 1}</span>
+            <WebLink href={src.url}>
+              <span className={styles.sourceSite}>{siteOf(src.url)}</span>
+              {src.title ? <span className={styles.sourceTitle}> {src.title}</span> : null}
+            </WebLink>
+          </li>
+        ))}
+      </ol>
+      {sources.length > SOURCES_SHOWN && (
+        <Button link onClick={() => setAll((a) => !a)}>
+          {all ? 'fewer' : `${sources.length - SOURCES_SHOWN} more`}
+        </Button>
+      )}
+    </div>
+  )
+}
+
 function Step({ s }: { s: StepLine }) {
   if (s.say) return <li className={styles.say}>{s.say}</li>
   return (
@@ -703,7 +735,16 @@ function Step({ s }: { s: StepLine }) {
 // The answer in light Markdown (paragraphs, `- ` bullets, **bold**, `code`), with cited things as links: `c12 "title"`
 // goes there (the UI facade's goTo). Every short id, of every letter, shows its name (agent-bugs 2): a bare `c12` reads
 // `c12 "Bread club"`; one with no place to go to (a document, a person) is named but not a link.
-const CITE = /\*\*[^*]+\*\*|`[^`]+`|\b[cptxkevfdmu]\d+\b(?:\s+"[^"\n]{1,90}")?/g
+// A web page (D-360): `[title](https://…)` or a bare `https://…` is a link that opens in a new tab.
+const CITE = /\[[^\]\n]{1,200}\]\(https?:\/\/[^\s)]+\)|https?:\/\/[^\s<>()]*[^\s<>().,;:!?'"]|\*\*[^*]+\*\*|`[^`]+`|\b[cptxkevfdmu]\d+\b(?:\s+"[^"\n]{1,90}")?/g
+const MD_LINK = /^\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)$/
+
+// A link to a page outside the app: a new tab, no referrer, nothing of ours passed on.
+const WebLink = ({ href, children }: { href: string; children: ReactNode }) => (
+  <a className={styles.web} href={href} target="_blank" rel="noopener noreferrer nofollow" title={href}>
+    {children}
+  </a>
+)
 
 function inline(line: string): ReactNode[] {
   const out: ReactNode[] = []
@@ -712,7 +753,20 @@ function inline(line: string): ReactNode[] {
     const t = m[0]
     const i = m.index!
     if (i > at) out.push(line.slice(at, i))
-    if (t.startsWith('**')) out.push(<strong key={i}>{t.slice(2, -2)}</strong>)
+    const md = t.startsWith('[') ? MD_LINK.exec(t) : null
+    if (md)
+      out.push(
+        <WebLink key={i} href={md[2]}>
+          {md[1]}
+        </WebLink>,
+      )
+    else if (/^https?:\/\//.test(t))
+      out.push(
+        <WebLink key={i} href={t}>
+          {siteOf(t)}
+        </WebLink>,
+      )
+    else if (t.startsWith('**')) out.push(<strong key={i}>{t.slice(2, -2)}</strong>)
     else if (t.startsWith('`')) out.push(<code key={i}>{t.slice(1, -1)}</code>)
     else {
       const short = /^[a-z]\d+/.exec(t)![0]

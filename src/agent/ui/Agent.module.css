@@ -1028,3 +1028,65 @@
   composes: label from '../../ui/primitives/Label.module.css';
   color: var(--accent-cyan);
 }
+
+/* The web (D-360): a page linked in the answer, and the sources under it (cited first; the rest a step quieter). */
+.web {
+  color: var(--fg-strong);
+  text-decoration: underline var(--line-hover);
+  text-decoration-thickness: var(--line-w);
+  text-underline-offset: var(--underline-offset);
+}
+
+.web:hover,
+.web:focus-visible {
+  text-decoration-color: var(--accent-cyan);
+  outline: none;
+}
+
+.sources {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sourceList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.source {
+  display: flex;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: var(--text-xs);
+  color: var(--fg-muted);
+}
+
+.source:not([data-cited]) {
+  color: var(--fg-dim);
+}
+
+.source .web {
+  color: inherit;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sourceNum {
+  flex: none;
+  min-width: 1.5ch;
+  color: var(--accent-magenta);
+  font-family: var(--font-mono);
+}
+
+.sourceSite {
+  font-family: var(--font-mono);
+}
+
+.sourceTitle {
+  color: inherit;
+}
