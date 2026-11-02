@@ -13,6 +13,8 @@ import { stubModel } from '../../src/agent/stubModel'
 import { canAutoApply, closure, previewDiff, viewOf, emptyChangeset, inNames, type Changeset } from '../../src/agent/changeset'
 import { parseChange, MAX_OPS } from '../../src/agent/change'
 import { deleteAny } from '../../src/ops/delete'
+import { arrangeAny } from '../../src/ops/arrange'
+import { counterIds } from '../../src/ops/newId'
 import { project } from '../../src/ops/project'
 import { diff } from '../../src/ops/diff'
 import type { AgentWs } from '../../src/agent/contract'
@@ -411,5 +413,46 @@ describe('a new compare matrix names the matches it holds (agent-bugs 40)', () =
     expect(r.text).toMatch(/1 cell with no recorded match stated as documented/)
     const g = await change.run(env(), { ops: [make, ...[['c146', 'c42'], ['c146', 'c43'], ['c147', 'c44']].map(([row, col]) => ({ op: 'update_cell', args: { id: '$m', row, col, value: 'full' } })), { op: 'update_cell', args: { id: '$m', row: 'c141', col: 'c35', value: 'partial', confidence: 'guess' } }] })
     expect(g.text).not.toMatch(/still empty|stated as documented/)
+  })
+})
+
+// agent-bugs 44: an organise or restructure took things already there far from where they were. Moving one of them far
+// is said (to the model and in the preview); arranging in place, or at the nearest clear area, isn't.
+describe('things already there moved far are said', () => {
+  it('a card taken across the plane: a warning naming it; arranged where it is: none', async () => {
+    const e = env()
+    const r = await change.run(e, { ops: [{ op: 'arrange', args: { items: ['c49'], where: { near: 'c54', side: 'right' } } }] })
+    expect(r.ok, r.text).toBe(true)
+    const far = e.changes!.warnings.filter((w) => /moved far/.test(w.model))
+    expect(far).toHaveLength(1)
+    expect(far[0].model).toMatch(/c49 .*moved far from where it was/)
+    expect(far[0].person).toMatch(/moved far from where it was$/)
+    const near = env()
+    const r2 = await change.run(near, { ops: [{ op: 'arrange', args: { items: ['c53'], layout: 'grid', where: { at: 'clear' } } }] })
+    expect(r2.ok, r2.text).toBe(true)
+    expect(near.changes?.warnings.filter((w) => /moved far/.test(w.model)) ?? []).toEqual([])
+  })
+})
+
+// agent-bugs 44, measured on the medium fixture: tidying in place keeps what's there near where it was.
+describe('tidied in place, things stay near their spot', () => {
+  const moves = (ids: string[], args: Record<string, unknown>) => {
+    const ws = env().start
+    const ctx = { ws, actor: { uid: 'u-alice', role: 'owner' as const, agent: true }, now: 1, newId: counterIds('n') }
+    const after = project(ws, [arrangeAny(ctx, { items: ids, ...args })])
+    return [...after.cards, ...after.pieces].flatMap((x) => {
+      const was = [...ws.cards, ...ws.pieces].find((y) => y.id === x.id)!
+      return was.x !== x.x || was.y !== x.y ? [Math.hypot(was.x - x.x, was.y - x.y)] : []
+    })
+  }
+  it('22 ideas already in a 6-wide grid, arranged as a grid: each keeps its place in it (was up to 1143 px)', () => {
+    const d = moves(Array.from({ length: 22 }, (_, i) => R(`c${55 + i}`)), { layout: 'grid' })
+    expect(Math.max(...d)).toBeLessThan(200)
+  })
+  it('three planes in a row, one with a piece stuck under it in a section: only the gaps close (was 1124 px, at clear 3640)', () => {
+    for (const where of [undefined, { at: 'clear' }]) expect(Math.max(...moves(['p1', 'p2', 'p3'].map(R), { layout: 'row', ...(where ? { where } : {}) }))).toBeLessThanOrEqual(200)
+  })
+  it('problems and ideas clustered by type: each group keeps its shape (was up to 1125 px)', () => {
+    expect(Math.max(...moves([...Array.from({ length: 6 }, (_, i) => R(`c${49 + i}`)), ...Array.from({ length: 22 }, (_, i) => R(`c${55 + i}`))], { layout: 'cluster', headings: true }))).toBeLessThan(500)
   })
 })

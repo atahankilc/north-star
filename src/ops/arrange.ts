@@ -34,7 +34,6 @@ import {
   clashes,
   clearOffset,
   clusterSpots,
-  firstClear,
   flowSpots,
   GAP,
   gridCols,
@@ -65,7 +64,8 @@ export type GroupBy = (typeof GROUP_KEYS)[number] | { name: string; items: strin
 export type LayoutArgs = ArrangeArgs & {
   // How they go together; left out with `where`: a grid.
   layout?: Layout
-  // Where the block goes; left out: where they are now (its top-left), pushed clear when it would land on something.
+  // Where the block goes; left out (or `at: 'clear'`): where they are now (its top-left), pushed to the nearest clear
+  // spot when it would land on something.
   where?: Where
   // cluster: by card type (default), first tag, status, or groups given (each item in its first group; the rest last).
   group_by?: GroupBy
@@ -135,14 +135,22 @@ export function arrangeAny(ctx: OpCtx, args: LayoutArgs): Plan {
     const pkg = scene.packageHolding(id)
     if (pkg && !moving.has(pkg)) refuse(OP, `${id} is in package ${pkg}, which isn't moving`, `take it out of the package first (update_card on ${pkg}'s memberIds), or arrange the package`)
   }
-  const feet = new Map(units.map((u) => [u.id, boundsOf([u.shown!, ...carriedOf(u.id).flatMap((c) => byId.get(c)?.shown ?? [])])]))
+  // Each unit's boxes as drawn (itself and what it carries), and their bounds (its foot, what the layout spaces). Clear
+  // of what stays is tested box by box (agent-bugs 44: a plane and the piece stuck under it as one box cut the section
+  // that piece sat in, and the planes, already in a row, were pushed 1000 px away).
+  const parts = new Map(units.map((u) => [u.id, [u.shown!, ...carriedOf(u.id).flatMap((c) => byId.get(c)?.shown ?? [])]]))
+  const feet = new Map(units.map((u) => [u.id, boundsOf(parts.get(u.id)!)]))
+  const partsAt = (u: Thing, d: { dx: number; dy: number }) => parts.get(u.id)!.map((b) => shift(b, d))
 
   // What stays.
   const section = args.where && 'in_section' in args.where ? sectionIn(scene, args.where.in_section, moving, space) : undefined
   // Sections nobody named are solid (nothing lands in one, nor on its name); only the section named, and those round it,
   // are open. `framed`: every section as a frame, for whether a grown section cuts or swallows something.
+  // A section that already holds something moving is open too (it may stay where it was, wholly inside).
   const framed = scene.obstacles(moving, section?.id)
-  const obstacles: Obstacle[] = framed.map((o) => (o.frame && !(section && within(section.box, o)) ? { x: o.x, y: o.y, w: o.w, h: o.h } : o))
+  const before = [...parts.values()].flat()
+  const open = (o: Obstacle) => (section && within(section.box, o)) || before.some((b) => within(b, o))
+  const obstacles: Obstacle[] = framed.map((o) => (o.frame && !open(o) ? { x: o.x, y: o.y, w: o.w, h: o.h } : o))
   const bounds = scene.bounds
 
   // Each unit's move (dx, dy), on the grid.
@@ -171,9 +179,14 @@ export function arrangeAny(ctx: OpCtx, args: LayoutArgs): Plan {
     }
     if (bounds && perp === 'x' && Math.max(...units.map((u) => moved(u).x + moved(u).w)) > bounds.x + bounds.w - GRID)
       refuse(OP, `lined up, these would run past the plane's right edge (they sit on top of each other, so they step apart sideways)`, "use layout: 'row' or 'grid' for them instead, or line up fewer")
-    const o = clearOffset(units.map(moved), obstacles, bounds)
+    const o = clearOffset(units.flatMap((u) => partsAt(u, delta.get(u.id)!)), obstacles, bounds)
     for (const d of delta.values()) ((d.dx += o.dx), (d.dy += o.dy))
   } else {
+    // Tidied where they are (where left out, or at: clear): a grid or a cluster takes them in the order they read now,
+    // a grid as wide as they stand (agent-bugs 44: a 6-wide grid of ideas re-laid 5 wide in the order named sent each
+    // card across the plane). Beside a thing or in a section, the order named.
+    const inPlace = !args.where || 'at' in args.where
+    if (inPlace && (layout === 'grid' || layout === 'cluster')) readingOrder(units, feet)
     const sizes = units.map((u) => feet.get(u.id)!)
     const inner = section ? sectionInner(section.box, section.side) : undefined
     const maxW = inner ? Math.max(inner.w, Math.max(...sizes.map((s) => s.w))) : bounds ? bounds.w - 4 * GRID : undefined
@@ -182,7 +195,7 @@ export function arrangeAny(ctx: OpCtx, args: LayoutArgs): Plan {
     let groupBoxes: ReturnType<typeof clusterSpots>['groups'] = []
     if (layout === 'cluster') {
       const groups = groupsOf(units, args.group_by ?? 'type', !!args.headings)
-      const c = clusterSpots(sizes, groups, maxW)
+      const c = clusterSpots(sizes, groups, maxW, inPlace ? (own) => colsNow(own, boundsOf(own as Box[]), maxW) : undefined)
       ;[rel, size, groupBoxes] = [c.spots, c, c.groups]
     } else if (layout === 'flow') {
       // By the links among them (graph.ts): each topic of each connected group a band along the chain; the rest below.
@@ -211,7 +224,7 @@ export function arrangeAny(ctx: OpCtx, args: LayoutArgs): Plan {
         let cols = units.length
         g = gridSpots(sizes, cols)
         while (cols > 1 && g.w > room) g = gridSpots(sizes, --cols)
-      } else g = gridSpots(sizes, gridCols(sizes, maxW))
+      } else g = gridSpots(sizes, inPlace ? colsNow(sizes, boundsOf(sizes), maxW) : gridCols(sizes, maxW))
       ;[rel, size] = [g.spots, g]
     }
     // The block at `o`: each unit's foot there (its stored spot kept on the grid), and the headings' boxes.
@@ -223,7 +236,7 @@ export function arrangeAny(ctx: OpCtx, args: LayoutArgs): Plan {
         return { dx: nx - u.at.x, dy: ny - u.at.y }
       })
       const hs = groupBoxes.flatMap((g) => (g.head ? [{ name: g.name, x: o.x + g.head.x, y: o.y + g.head.y }] : []))
-      const boxes = [...units.map((u, i) => shift(feet.get(u.id)!, ds[i])), ...hs.map((h) => headBox(h))]
+      const boxes = [...units.flatMap((u, i) => partsAt(u, ds[i])), ...hs.map((h) => headBox(h))]
       return { ds, hs, boxes }
     }
     const w = args.where
@@ -245,12 +258,12 @@ export function arrangeAny(ctx: OpCtx, args: LayoutArgs): Plan {
       o = { x: inner!.x, y: inner!.y }
       // Under what's already in it, a row at a time.
       for (let k = 0; k < 400 && clashes(at(o).boxes, obstacles); k++) o = { x: o.x, y: o.y + GAP }
-    } else if (w && 'at' in w) {
-      if (w.at !== 'clear') refuse(OP, `at: ${String(w.at)} isn't a place`, "say where: { at: 'clear' }")
-      o = firstClear(size, obstacles, bounds)
-    } else if (w) {
+    } else if (w && !('at' in w)) {
       refuse(OP, 'where is { near }, { in_section } or { at: "clear" }', 'name a thing to go beside, a section to go in, or the nearest clear area')
     } else {
+      // Left out, or `at: 'clear'`: where they are now, pushed to the nearest clear spot below (agent-bugs 44: a clear
+      // area searched from the plane's top-left, or under everything on a canvas, took things already there far away).
+      if (w && w.at !== 'clear') refuse(OP, `at: ${String(w.at)} isn't a place`, "say where: { at: 'clear' }")
       const now = boundsOf(units.map((u) => feet.get(u.id)!))
       o = { x: snapTo(now.x), y: snapTo(now.y) }
     }
@@ -303,6 +316,28 @@ export function arrangeAny(ctx: OpCtx, args: LayoutArgs): Plan {
         ? `group ${n} things`
         : `arrange ${n} things${layout === 'grid' ? '' : ` in a ${layout}`}`
   return { op: OP, label, writes, ids, meta: { kind: layout, ...(made.length ? { ids: made } : {}) } }
+}
+
+// ---- Where they are now
+
+// In reading order: rows (one starting below the middle of its row's first starts the next), each left to right.
+function readingOrder(units: Thing[], feet: Map<string, Box>) {
+  const f = (u: Thing) => feet.get(u.id)!
+  const rows: Thing[][] = []
+  for (const u of [...units].sort((a, b) => f(a).y - f(b).y || f(a).x - f(b).x)) {
+    const row = rows[rows.length - 1]
+    if (row && f(u).y < f(row[0]).y + f(row[0]).h / 2) row.push(u)
+    else rows.push([u])
+  }
+  units.splice(0, units.length, ...rows.flatMap((r) => r.sort((a, b) => f(a).x - f(b).x)))
+}
+
+// A grid's columns as wide as they stand now (no fewer than a fresh grid's), within the plane.
+function colsNow(sizes: { w: number; h: number }[], now: Box, maxW?: number): number {
+  const cw = Math.max(...sizes.map((s) => s.w)) + GAP
+  let cols = Math.min(sizes.length, Math.max(gridCols(sizes, maxW), Math.round((now.w + GAP) / cw)))
+  if (maxW !== undefined) while (cols > 1 && cols * cw - GAP > maxW) cols--
+  return cols
 }
 
 // ---- The space and what's in it

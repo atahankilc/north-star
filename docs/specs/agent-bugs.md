@@ -75,6 +75,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 41 | a task given by name in assigneeName stays given to nobody | Plumbing | mid | code (change)    | fixed, replayed   |
 | 42 | the preview shows the model's warnings word for word | Preview | mid      | code (changeset) | fixed             |
 | 43 | a "we won't build this" line made a task         | Judgment     | mid      | prompt, eval     | open              |
+| 44 | organising takes things already there far away   | Guards       | mid      | code (arrange, changeset) | fixed, to measure |
 
 ## Order
 
@@ -555,6 +556,24 @@ two or three lines.*
     in as a new task. A non-goal is a decision, not work to do: it belongs on the card it limits (a note, or the
     feature's plan), or as text on the plane. Not looked at which skill or ask made it. Fix: an eval with a list mixing
     to-dos and non-goals (graded on no task for a non-goal), then a line in the prompt's tasks rule if it fails.
+44. **Organising takes things already there far away.** The user, 2026-11-02: while organising or restructuring a
+    plane or canvas, the agent moves things that were already there to somewhere new, some very far from where they
+    were, even when it only meant to tidy them. Causes in code, measured on the medium fixture: (1) `where: { at:
+    'clear' }` searched from the plane's top-left (on a canvas: under everything; three planes in a row went 3640 px);
+    (2) a thing and what it carries were tested as one box, so Segments with Pain map stuck under it "cut" the section
+    Pain map sat in and the row, left where it was, still went 1124 px; (3) a grid or cluster in place was laid out
+    afresh (other column count, the order named), so 22 ideas already in a 6-wide grid each went up to 1143 px, a
+    cluster of problems and ideas 1125; (4) nothing told the model or the person. *Fixed 2026-11-02 (code,
+    src/ops/arrange.ts):* `at: 'clear'` is the nearest clear spot to where they are (as leaving where out); clear of
+    what stays is tested box by box, and a section already holding something moving stays open to it; tidied in
+    place, a grid or cluster takes the things in the order they read now and keeps their width (`readingOrder`,
+    `colsNow`). Now: the row 200 px (the gaps closing), the grid ≤ 160, the cluster ≤ 481 (the plane's own heading in
+    the middle pushes the block down; flow and a row with no room among what stays still move 500–1100, they re-lay
+    by meaning). And a change that takes a card, text or piece
+    already there more than `FAR_MOVE` (1000 px, src/model/world.ts) from its spot in the same space warns the model
+    and says so in the preview (src/agent/changeset.ts `warningsOf`). The organize and restructure skills say to leave
+    where out and put a new plane beside the one it came from. Tests: tests/unit/arrangeOps.test.ts,
+    tests/unit/changeset.test.ts. To measure on a real model: an organise eval graded on how far things moved.
 
 *23, the code half (2026-11-01):* the planes a turn is about (the one in focus or beside it, or one the message names
 whole: read/names.ts `aboutPlanes`, a name lookup) mark cards from another plane `(on Rivals)` after their first

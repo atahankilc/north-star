@@ -220,7 +220,7 @@ describe('arrange: where', () => {
     expect(again.writes).toEqual([])
   })
 
-  it("near with a side; at: 'clear' takes the first clear area; left out, the block keeps its top-left when clear", () => {
+  it("near with a side; at: 'clear' is the nearest clear spot to where they are; left out, the block keeps its top-left when clear", () => {
     const { ws, items } = crowded(3)
     const ctx = ctxOf(ws)
     const anna = ws.cards.find((c) => c.id === ID.anna)!
@@ -229,6 +229,8 @@ describe('arrange: where', () => {
     expect(Math.min(...ys)).toBeGreaterThanOrEqual(anna.y + CARD.h + 50)
     const clear = run(ctx, [arrangeAny(ctx, { items, where: { at: 'clear' } })])
     expect(overlapsOf(planeBoxes(clear, ID.planeA), new Set(items))).toEqual([])
+    // The same as leaving where out (agent-bugs 44: no longer searched from the plane's top-left).
+    expect(arrangeAny(ctx, { items, where: { at: 'clear' } }).writes).toEqual(arrangeAny(ctx, { items, layout: 'grid' }).writes)
     // On plane B's empty bottom: stays there.
     const d = fixtureDocs()
     d.ideas.push({ id: 'idea0000000000000091', title: 'a', pieceId: ID.planeB, x: 100, y: 800, ...times }, { id: 'idea0000000000000092', title: 'b', pieceId: ID.planeB, x: 700, y: 1100, ...times })
@@ -401,5 +403,25 @@ describe('arrange: review fixes (sections, packages, headings, wrapping)', () =>
     expect(() => arrangeAny(ctxOf(ws), { items: [ID.qr], where: { at: 'clear' } })).toThrow(/in package/)
     // With its package: fine (it rides along).
     expect(() => arrangeAny(ctxOf(ws), { items: [ID.qr, ID.pkg], where: { at: 'clear' } })).not.toThrow()
+  })
+})
+
+// agent-bugs 44: on a canvas `at: 'clear'` put the pieces under everything there, far from where they were; now they
+// stay near their spot, clear of the rest.
+describe("arrange at: 'clear' keeps things near where they are", () => {
+  it('pieces on a canvas: the block starts where they are, not under everything', () => {
+    const { ws, pieces } = crowded(3)
+    const ctx = ctxOf(ws)
+    const before = piecesShown('main', ws.pieces, ws.spots)
+    const after = run(ctx, [arrangeAny(ctx, { items: pieces, layout: 'row', where: { at: 'clear' } })])
+    const shown = piecesShown('main', after.pieces, after.spots)
+    const was = before.filter((p) => pieces.includes(p.id))
+    const now = shown.filter((p) => pieces.includes(p.id))
+    const lowest = Math.max(...before.filter((p) => !pieces.includes(p.id)).map((p) => p.y + p.h))
+    // Not pushed under everything that stays.
+    expect(Math.min(...now.map((p) => p.y))).toBeLessThan(lowest)
+    // The block's top-left near the pieces' old top-left.
+    const dist = Math.hypot(Math.min(...now.map((p) => p.x)) - Math.min(...was.map((p) => p.x)), Math.min(...now.map((p) => p.y)) - Math.min(...was.map((p) => p.y)))
+    expect(dist).toBeLessThan(1000)
   })
 })

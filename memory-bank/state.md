@@ -74,7 +74,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Blaze: the user's payments profile was refused once (OR_BAOOC_15, likely profile country vs German card); retrying.
 
 ## Known issues
-- Agent: bugs 1–43, order and status in docs/specs/agent-bugs.md (add new ones there). Other providers: Q-031.
+- Agent: bugs 1–44 (44, organising moving things far: fixed in code 2026-11-02, to measure), order and status in docs/specs/agent-bugs.md (add new ones there). Other providers: Q-031.
 - Emulators only: after a Storage URL fetch, a tab's next Firestore write can queue ~55 s in Chrome (HTTP/1.1 connection limit).
 - Emulators only: the 6th page load in one Chrome tab stalls ~60 s (connections per host); use a new tab per few loads.
 - Emulators only: a Firestore emulator left running for days can stop sending one workspace's live updates; restart it.

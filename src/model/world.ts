@@ -48,3 +48,7 @@ export const DOCS_PX = { head: 40, row: 54, pad: 16, sheet: { w: 140, h: 186, ga
 // The project title (titleLayout.ts `T`), top to bottom: the caption (the north star and PROJECT), the name, the rule,
 // what it's building; the caption's text starts two stars and kickGap in.
 export const TITLE_PX = { pad: 44, caption: 18, name: 92, nameLead: 1, desc: 26, descLead: 1.5, gap: 27, rule: 4, star: 15, arm: 48, stroke: 3, kickGap: 13 }
+
+// How far a change may take something already there (a card, text, a piece, in its own space's px) before the agent is
+// told and the preview says so (agent-bugs 44): five cards' widths.
+export const FAR_MOVE = 1000

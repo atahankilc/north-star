@@ -108,13 +108,13 @@ export type Group = { name: string; members: number[]; head?: { w: number; h: nu
 
 // Clusters: each group a small grid (taller than wide), the groups side by side GROUP_GAP apart, wrapping to a new
 // band of groups past `maxW`. A group's heading (when it has one) sits on top of its block, a grid step over it.
-export function clusterSpots(sizes: { w: number; h: number }[], groups: Group[], maxW?: number) {
+export function clusterSpots(sizes: { w: number; h: number }[], groups: Group[], maxW?: number, colsOf?: (own: { w: number; h: number }[]) => number) {
   const spots: { x: number; y: number }[] = sizes.map(() => ({ x: 0, y: 0 }))
   const boxes: (Box & { name: string; head?: { x: number; y: number } })[] = []
   let [x, y, bandH, w] = [0, 0, 0, 0]
   for (const g of groups) {
     const own = g.members.map((i) => sizes[i])
-    const grid = gridSpots(own, gridCols(own, maxW, 0.8))
+    const grid = gridSpots(own, colsOf ? colsOf(own) : gridCols(own, maxW, 0.8))
     const headH = g.head ? up(g.head.h) + GRID : 0
     const gw = Math.max(grid.w, g.head ? up(g.head.w) : 0)
     const gh = headH + grid.h

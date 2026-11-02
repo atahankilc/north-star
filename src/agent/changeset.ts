@@ -28,6 +28,7 @@ import { CARD_COLLECTION, type Card } from '../model/cards'
 import { canvasOf } from '../model/canvases'
 import { kindOf } from '../model/labels'
 import { kindOfPiece, KIND_NAME } from '../model/pieces'
+import { FAR_MOVE } from '../model/world'
 import { labelBox } from '../model/labelBox'
 import { cardBoxes, piecesShown, sectionHolds } from '../model/textPlace'
 import type { WorkspaceCtx } from '../state/wsStore'
@@ -546,6 +547,40 @@ function warningsOf(cs: Pick<Changeset, 'items'>, live: WorkspaceCtx, after: Wor
     const list = (withId: boolean) => found.slice(0, 3).map((o) => `${name(o.a, withId)} ${o.cuts ? 'cuts through' : 'on'} ${name(o.b, withId)}`).join('; ') + (found.length > 3 ? `; … ${found.length - 3} more` : '')
     const plane = q(n.d.pieceName(n.d.pieces.get(p)!), 40)
     warn(`on ${plane} things land on each other: ${list(true)}. Place them by meaning again (arrange with a where or a layout)`, `on ${plane} things land on each other: ${list(false)}`)
+  }
+  // Things already there taken far from their spot in the same space (agent-bugs 44): an organise or restructure that
+  // re-placed what was there instead of leaving it near where the person knew it.
+  const far: { kind: IdKind; id: string; name: string }[] = []
+  const away = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y) > FAR_MOVE
+  const byId = <T extends { id: string }>(xs: T[]) => new Map(xs.map((x) => [x.id, x]))
+  const [cardsWas, labelsWas, piecesWas, placesWas, spotsWas] = [byId(live.cards), byId(live.labels), byId(live.pieces), byId(live.places), byId(live.spots)]
+  for (const c of after.cards) {
+    const was = cardsWas.get(c.id)
+    if (was && was.pieceId === c.pieceId && away(was, c)) far.push({ kind: 'card', id: c.id, name: title(c.id) })
+  }
+  for (const p of after.places) {
+    const was = placesWas.get(p.id)
+    if (was && was.planeId === p.planeId && away(was, p)) far.push({ kind: 'card', id: p.cardId, name: title(p.cardId) })
+  }
+  for (const l of after.labels) {
+    const was = labelsWas.get(l.id)
+    if (was && was.pieceId === l.pieceId && canvasOf(was) === canvasOf(l) && away(was, l)) far.push({ kind: 'text', id: l.id, name: q(l.text.split('\n')[0], 30) })
+  }
+  const pieceName = (id: string) => q(n.d.pieceName(n.d.pieces.get(id)!) || 'untitled', 30)
+  for (const p of after.pieces) {
+    const was = piecesWas.get(p.id)
+    if (was && canvasOf(was) === canvasOf(p) && away(was, p)) far.push({ kind: 'piece', id: p.id, name: pieceName(p.id) })
+  }
+  for (const s of after.spots) {
+    const was = spotsWas.get(s.id)
+    if (was && was.canvasId === s.canvasId && away(was, s) && n.d.pieces.get(s.pieceId)) far.push({ kind: 'piece', id: s.pieceId, name: pieceName(s.pieceId) })
+  }
+  if (far.length) {
+    const list = (withId: boolean) => far.slice(0, 3).map((f) => `${withId ? sid(f.kind, f.id) : ''}${f.name}`).join(', ') + (far.length > 3 ? ` and ${far.length - 3} more` : '')
+    warn(
+      `${list(true)} moved far from where ${far.length === 1 ? 'it was' : 'they were'} (over ${FAR_MOVE} px). Things already there stay near their spot unless the person asked to move them: arrange them with where left out, or say why they had to go there`,
+      `${list(false)} moved far from where ${far.length === 1 ? 'it was' : 'they were'}`,
+    )
   }
   return out
 }

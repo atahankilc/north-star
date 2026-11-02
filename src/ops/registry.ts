@@ -365,7 +365,7 @@ export const OPS: OpDef[] = [
     name: 'arrange',
     kind: 'any',
     summary:
-      "Lay out text, cards and pieces of one space (a plane, or a canvas) by meaning: never coordinates. layout: grid, row, column (in a section rows and columns wrap), cluster (groups by type, tag, status or given groups, optionally with headings, named by handle: <handle>_heading1…), flow (cards by their links: each connected group, or each topic of a big one, a band read left to right along the chain customer → problem → competitor → idea → feature, linked cards level with each other; cards with no link below), align-left/centre/right/top/middle/bottom, spread-x/y. where: beside a thing (near, side), inside a section (it grows to hold them; refused when that would cover things outside it), the nearest clear area, or left out: where they are. The app keeps them on the grid, apart, and clear of everything else; other sections are never entered. A member of an unfolded package moves only with its package. A section carries what's wholly inside it, a folded card its parts, a package its members, a plane or deck what's stuck to it. Or move by [dx, dy] (by). A card's spot on a plane other than its home needs that plane.",
+      "Lay out text, cards and pieces of one space (a plane, or a canvas) by meaning: never coordinates. layout: grid, row, column (in a section rows and columns wrap), cluster (groups by type, tag, status or given groups, optionally with headings, named by handle: <handle>_heading1…), flow (cards by their links: each connected group, or each topic of a big one, a band read left to right along the chain customer → problem → competitor → idea → feature, linked cards level with each other; cards with no link below), align-left/centre/right/top/middle/bottom, spread-x/y. where: beside a thing (near, side), inside a section (it grows to hold them; refused when that would cover things outside it), or left out (the same as at: clear): where they are, pushed to the nearest clear spot. Things already there stay near their spot unless the person asks to move them. The app keeps them on the grid, apart, and clear of everything else; other sections are never entered. A member of an unfolded package moves only with its package. A section carries what's wholly inside it, a folded card its parts, a package its members, a plane or deck what's stuck to it. Or move by [dx, dy] (by). A card's spot on a plane other than its home needs that plane.",
     args: obj(
       {
         items: ids('what moves (one space: a plane\'s cards and text, or a canvas\'s pieces and text)'),
@@ -374,9 +374,9 @@ export const OPS: OpDef[] = [
           anyOf: [
             obj({ near: s('a thing that stays, in the same space'), side: { type: 'string', enum: SIDES, description: 'left out: the first side with room (right, below, left, above)' } }, ['near']),
             obj({ in_section: s('a section in the same space: the block goes inside, under what it holds; the section grows to fit') }, ['in_section']),
-            obj({ at: { type: 'string', enum: ['clear'], description: 'the first clear area (a plane: from its top-left; a canvas: under everything)' } }, ['at']),
+            obj({ at: { type: 'string', enum: ['clear'], description: 'the nearest clear area to where they are now (the same as leaving where out)' } }, ['at']),
           ],
-          description: 'where the block goes; left out: where they are now, pushed clear if it would land on something',
+          description: 'where the block goes; left out: where they are now, pushed to the nearest clear spot if it would land on something',
         },
         group_by: {
           anyOf: [{ type: 'string', enum: GROUP_KEYS }, { type: 'array', items: obj({ name: s(), items: ids('its things') }, ['name', 'items']) }],
