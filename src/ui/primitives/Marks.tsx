@@ -162,6 +162,21 @@ export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live 
   )
 }
 
+// What's carried goes this small under the pointer (D-265; the old board's CARRIED): a card, text, a piece, a task.
+export const CARRIED = 0.8
+// A thing carried by a move (the canvas's `dragShift`: its own drag, a selection's, what holds it, D-229, D-358): drawn
+// where it lands moved back to under the pointer, CARRIED round the point held, so it follows the pointer and its
+// `<Landing>` marks show where it lands. `origin`: the thing's own top-left before the move, in the same px as `at`.
+// Nothing when it isn't carried (a move that doesn't shrink it, as an arrow key's).
+export function carriedStyle(shift: { dx: number; dy: number; shrink?: boolean; free?: [number, number]; at?: [number, number] } | null | undefined, origin: [number, number]): CSSProperties | undefined {
+  if (!shift?.shrink || !shift.free || !shift.at) return undefined
+  return {
+    translate: `${shift.free[0] - shift.dx}px ${shift.free[1] - shift.dy}px`,
+    scale: `${CARRIED}`,
+    transformOrigin: `${shift.at[0] - origin[0]}px ${shift.at[1] - origin[1]}px`,
+  }
+}
+
 // Where something being dragged will land (D-265): its L's at full size there, on the corners, stepping grid to grid.
 export function Landing({ x, y, w, h, zoom, tier = 'm', tone, pad = 0 }: { x: number; y: number; w: number; h: number; zoom: number; tier?: Tier; tone?: string; pad?: number }) {
   const reduced = useMotion((s) => s.reduced)

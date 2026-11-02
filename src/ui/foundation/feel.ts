@@ -15,6 +15,14 @@ const PINCH = 0.01
 export const wheelStep = (zoom: number, e: { deltaY: number; ctrlKey: boolean }) =>
   Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom * Math.exp(-e.deltaY * (e.ctrlKey ? PINCH : WHEEL))))
 
+// Zooming round a point (D-186, D-361): where a view's offset goes so the point under the pointer stays put, from one
+// zoom to another. `at` and `o` are in the same px (from the view's own origin: an element's top-left, the canvas's
+// middle); every view zooms round the pointer by it.
+export const zoomAt = (from: number, to: number, at: [number, number], o: [number, number]): [number, number] => {
+  const k = to / from
+  return [at[0] - (at[0] - o[0]) * k, at[1] - (at[1] - o[1]) * k]
+}
+
 // Sticking's reach (48 screen px, D-210) is STICK_REACH in model/pieceMoves.ts: the agent's ops read it too.
 
 // Typing on the canvas is kept as it's typed: a pause this long (ms) writes what's there (the user lost ten minutes of

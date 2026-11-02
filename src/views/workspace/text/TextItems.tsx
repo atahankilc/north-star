@@ -45,7 +45,7 @@ import {
 } from '../../../data/labels'
 import { DESCRIPTION_MAX, describeWorkspace, renameWorkspace } from '../../../data/workspaces'
 import { useCanvasView } from '../../../state/canvasView'
-import { heldAt, landed, startGroupDrag, startMove, toggleSelected } from '../canvas/selection'
+import { heldAt, startGroupDrag, startMove, toggleSelected, useLanding } from '../canvas/selection'
 import { useGuides } from '../canvas/guides'
 import { useMotion } from '../../../state/motion'
 import { ago } from '../../../ui/foundation/ago'
@@ -54,7 +54,7 @@ import { Ink, inkClass } from '../../../ui/primitives/Ink'
 import { useWs } from '../canvas/context'
 import styles from './TextItems.module.css'
 import { usePeersOn } from '../canvas/collab'
-import { Landing, Marks, type Handle } from '../../../ui/primitives/Marks'
+import { carriedStyle, Landing, Marks, type Handle } from '../../../ui/primitives/Marks'
 import { ThreadChip, threadOn } from '../threads/Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 import { headingSize, kickPx, labelBox, STICKY_TEXT_TOP, type HeadingSize } from '../../../model/labelBox'
@@ -62,6 +62,7 @@ import { AUTOSAVE_MS } from '../../../ui/foundation/feel'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Console } from '../../../ui/patterns/Console'
+import { pressDrag } from '../../../ui/foundation/dragPointer'
 export { labelBox } from '../../../model/labelBox'
 
 // Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
@@ -211,23 +212,15 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
       setHeld(to)
     }
     const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
       setSizing(null)
       if (to) void updateLabel(wid, l, to).catch(() => setHeld(null))
     }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    pressDrag(move, up)
   }
 
   const edit = live && editor ? () => useCanvasView.setState({ labelEditing: l.id, labelSelected: l.id }) : undefined
   const color = COLOR_VAR[l.color ?? (kind === 'sticky' ? 'yellow' : 'ink')]
-  const landing = useCanvasView((s) => s.landing[l.id])
-  useEffect(() => {
-    if (landing && landing[0] === l.x && landing[1] === l.y) landed(l.id)
-  }, [landing, l.x, l.y, l.id])
+  const landing = useLanding(l.id, l.x, l.y)
   // Carried (its own drag, or with a selection, D-229): 0.8 round the point held, following the pointer, as cards are; its
   // marks on `<Landing>` where it lands, at its full size (D-265).
   const carried = shift?.shrink && shift.free && shift.at ? { free: shift.free, at: shift.at } : null
@@ -244,12 +237,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const style: CSSProperties = {
     left,
     top,
-    ...(carried &&
-      shift && {
-        translate: `${carried.free[0] - shift.dx}px ${carried.free[1] - shift.dy}px`,
-        scale: '0.8',
-        transformOrigin: `${carried.at[0] - l.x}px ${carried.at[1] - y}px`,
-      }),
+    ...carriedStyle(shift, [l.x, y]),
     ['--tone' as string]: color,
     fontWeight: l.bold ? 'var(--weight-bold)' : undefined,
     fontStyle: l.italic ? 'italic' : undefined,

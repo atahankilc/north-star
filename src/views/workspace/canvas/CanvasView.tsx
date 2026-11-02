@@ -43,7 +43,7 @@ import { deleteHere, heldAt } from './selection'
 import { alikeProps } from './kept'
 import { cardsByPlane, elsewhere } from '../../../data/places'
 import { runCells } from '../../../ui/primitives/Appear'
-import { EVERY_HANDLE, Landing, Marks, ZOOM_SETTLE_MS } from '../../../ui/primitives/Marks'
+import { CARRIED, carriedStyle, EVERY_HANDLE, Landing, Marks, ZOOM_SETTLE_MS } from '../../../ui/primitives/Marks'
 import { DrawSection } from './DrawSection'
 import { labelBox, TextItems } from '../text/TextItems'
 import { spaceBounds } from './spaceBounds'
@@ -80,7 +80,8 @@ import { usePlaneFilter } from './planeFilter'
 import styles from './CanvasView.module.css'
 import { DUR, easeInOut, lerp } from '../../../ui/foundation/motion'
 import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
-import { DRAG_PX, wheelStep } from '../../../ui/foundation/feel'
+import { DRAG_PX, wheelStep, zoomAt } from '../../../ui/foundation/feel'
+import { panPointer, pressDrag } from '../../../ui/foundation/dragPointer'
 import { keysTaken } from '../../../ui/foundation/focus'
 import { stuckChain } from '../../../model/pieceMoves'
 
@@ -825,8 +826,8 @@ export function CanvasView() {
       wheelZoom.set(wid, raw)
       const zoom = Math.abs(raw - 1) < ZOOM_CATCH ? 1 : raw
       if (zoom === c.zoom) return
-      const k = zoom / c.zoom
-      setCam(wid, { zoom, x: px - (px - c.x) * k, y: py - (py - c.y) * k })
+      const [x, y] = zoomAt(c.zoom, zoom, [px, py], [c.x, c.y])
+      setCam(wid, { zoom, x, y })
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
@@ -943,32 +944,7 @@ export function CanvasView() {
     useCanvasView.setState(onCell ? { selected: null, labelSelected: null } : { selected: null, labelSelected: null, cardSelected: null })
     stopFollowing()
     const start = camOf(wid)
-    const [sx, sy] = [e.clientX, e.clientY]
-    const el = e.currentTarget
-    const id = e.pointerId
-    let panning = false
-    const begin = () => {
-      panning = true
-      el.setPointerCapture(id)
-      el.dataset.panning = 'true'
-    }
-    if (!onCell) begin()
-    const move = (ev: PointerEvent) => {
-      if (!panning) {
-        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < DRAG_PX) return
-        begin()
-      }
-      setCam(wid, { ...start, x: start.x + ev.clientX - sx, y: start.y + ev.clientY - sy })
-    }
-    const up = () => {
-      delete el.dataset.panning
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', up)
-      el.removeEventListener('pointercancel', up)
-    }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
+    panPointer(e, { lazy: onCell, move: (dx, dy) => setCam(wid, { ...start, x: start.x + dx, y: start.y + dy }) })
   }
 
   return (
@@ -1651,9 +1627,6 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
       else if (lens && stick) useCanvasView.setState({ following: { [piece.id]: to } })
     }
     const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
       useCanvasView.setState({ stickHint: null })
       setMoving(null)
       setSizing(null)
@@ -1669,9 +1642,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
         done()
       }
     }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    pressDrag(move, up)
   }
 
   // Conversations (D-193, D-195): the one on the plane itself has its own chip under its corner, like any component's;
@@ -1732,10 +1703,8 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
   const left = box.x + (shift?.dx ?? 0)
   const top = box.y + (shift?.dy ?? 0)
   const carried = moving
-    ? { translate: `${moving.free[0] - left}px ${moving.free[1] - top}px`, scale: '0.8', transformOrigin: `${moving.at[0]}px ${moving.at[1]}px` }
-    : shift?.shrink && shift.free && shift.at
-      ? { translate: `${shift.free[0] - shift.dx}px ${shift.free[1] - shift.dy}px`, scale: '0.8', transformOrigin: `${shift.at[0] - box.x}px ${shift.at[1] - box.y}px` }
-      : undefined
+    ? { translate: `${moving.free[0] - left}px ${moving.free[1] - top}px`, scale: `${CARRIED}`, transformOrigin: `${moving.at[0]}px ${moving.at[1]}px` }
+    : carriedStyle(shift, [box.x, box.y])
   const tone = KIND_TONE[kind]
   const numbered = numberOf(name)
   return (

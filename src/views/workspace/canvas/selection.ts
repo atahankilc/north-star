@@ -2,7 +2,8 @@
 // puts one in or out, alt+drag on the plane draws a box; two or more are `cardMulti` (one is `cardSelected` or
 // `labelSelected`). The selection moves together, nudges with the arrows, copies (⌘C, ⌘V, ⌘D: in this tab; ⇧⌘V brings
 // the same cards instead, D-290), deletes with Delete, lets go with Escape.
-import { useCanvasView } from '../../../state/canvasView'
+import { useEffect } from 'react'
+import { planeMiddle, useCanvasView } from '../../../state/canvasView'
 import { addPackage, type Card } from '../../../data/cards'
 import { bringIn, elsewhere, planeOf, removeHere, type Place } from '../../../data/places'
 import { useHistory } from '../../../data/history'
@@ -13,6 +14,7 @@ import { snap } from '../../../data/grid'
 import type { DocumentReference } from 'firebase/firestore'
 import { clearGuides, guide, showGuides, useGuides, type Box } from './guides'
 import { DRAG_PX } from '../../../ui/foundation/feel'
+import { pressDrag } from '../../../ui/foundation/dragPointer'
 
 // What's on the open plane, kept by its view as it draws: which ids are text, and how to move the selection (each
 // with what it carries: a folded card's parts).
@@ -68,6 +70,15 @@ export function landed(id: string) {
     const { [id]: _, ...rest } = s.landing
     return { landing: rest }
   })
+}
+
+// Where a thing let go stays until its data's back (D-229): its landing spot, cleared once its data says the same.
+export function useLanding(id: string, x: number, y: number): [number, number] | undefined {
+  const landing = useCanvasView((s) => s.landing[id])
+  useEffect(() => {
+    if (landing && landing[0] === x && landing[1] === y) landed(id)
+  }, [landing, x, y, id])
+  return landing
 }
 
 // Where a press is in its space's px: the pressed thing (what holds the target, `data-target`) has its top-left at x, y.
@@ -137,9 +148,6 @@ export function startMove(e: { clientX: number; clientY: number; currentTarget: 
     useCanvasView.setState({ dragShift: { ids: items.map((i) => i.id), dx: d[0], dy: d[1], shrink: true, free: [dx / zoom, dy / zoom], at, lead } })
   }
   const up = () => {
-    window.removeEventListener('pointermove', move)
-    window.removeEventListener('pointerup', up)
-    window.removeEventListener('pointercancel', up)
     onEnd?.()
     clearGuides()
     if (!d || (!d[0] && !d[1])) return useCanvasView.setState({ dragShift: null })
@@ -149,9 +157,7 @@ export function startMove(e: { clientX: number; clientY: number; currentTarget: 
       items.forEach((i) => landed(i.id)),
     )
   }
-  window.addEventListener('pointermove', move)
-  window.addEventListener('pointerup', up)
-  window.addEventListener('pointercancel', up)
+  pressDrag(move, up)
 }
 
 // A press on something selected with others: they all move as one (startMove). `ids0`: what moves, when it isn't the
@@ -200,8 +206,7 @@ export function pasteSame(wid: string, plane: string, all: { cards: Card[]; plac
   const say = useHistory.getState().say
   const picked = clipboard.cards.flatMap((c) => all.cards.find((x) => x.id === c.id) ?? [])
   if (!picked.length) return clipboard.labels.length ? say("Text isn't shared between planes: ⌘V copies it") : undefined
-  const { planeCam: c, size } = useCanvasView.getState()
-  const where = at ?? (c ? ([(size.w / 2 - c.ox) / c.zoom, (size.h / 2 - c.oy) / c.zoom] as [number, number]) : null)
+  const where = at ?? planeMiddle()
   if (!where) return
   const { ids } = bringIn(wid, plane, picked, all, where, false, planeOf(clipboard.cards[0]))
   if (!ids.length) return say(picked.length > 1 ? 'Those cards are already on this plane' : 'That card is already on this plane')

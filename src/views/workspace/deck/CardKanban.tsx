@@ -27,16 +27,17 @@ import { Gap, kanbanOf, K, LaneHead, useKanbanSizes } from './Kanban'
 import { CardSheet } from '../cards/CardSheet'
 import { PriorityChip } from '../cards/PriorityChip'
 import { CardRow } from '../cards/CardRow'
+import { holdOnBoard, useBoardDrag, type Held } from './boardDrag'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Rule } from '../../../ui/primitives/Rule'
-import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
+import { CARRIED, Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import { loadFolds, saveFolds } from '../table/rows'
 import styles from './Kanban.module.css'
 import { cardName } from '../../../model/cardName'
 
 
 type Over = { col: string; row: string }
-type Drag = { id: string; from: [number, number]; grab: [number, number]; size: [number, number]; at: [number, number]; moving: boolean; over: Over | null }
+type Drag = Held & { id: string; over: Over | null }
 type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onCard?: (c: Card) => void }
 
 // Without rows: one row with no head.
@@ -73,9 +74,8 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
   const names = useMemo(() => new Map((setup.names ?? []).map((n) => [boxKey(n.col, n.row), n])), [setup.names])
   const selected = useCanvasView((s) => (live ? s.cardSelected : null))
   const board = useRef<HTMLDivElement>(null)
-  const [drag, setDrag] = useState<Drag | null>(null)
-  const dragRef = useRef(drag)
-  dragRef.current = drag
+  const bd = useBoardDrag<Drag>(board)
+  const { drag, setDrag, dragRef } = bd
   const [folds, setFolds] = useState(() => loadFolds(piece.id))
   const fold = (row: string) => {
     const next = folds.includes(row) ? folds.filter((x) => x !== row) : [...folds, row]
@@ -100,15 +100,6 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
     return () => ro.disconnect()
   }, [piece.id])
 
-  const scale = () => {
-    const el = board.current
-    return el ? el.getBoundingClientRect().width / (el.offsetWidth || 1) : 1
-  }
-  const local = (x: number, y: number): [number, number] => {
-    const r = board.current?.getBoundingClientRect()
-    const s = scale()
-    return r ? [(x - r.left) / s, (y - r.top) / s] : [0, 0]
-  }
   // The box under the pointer, or the nearest, of those that take the held card (folded rows have none drawn).
   const landing = (x: number, y: number, card: Card): Over | null => {
     const at = [...(board.current?.querySelectorAll<HTMLElement>('[data-ccol]') ?? [])].filter((c) => {
@@ -149,24 +140,7 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
     if (!live || e.button !== 0) return
     e.stopPropagation()
     if (!editor) return
-    const r = e.currentTarget.getBoundingClientRect()
-    const s = scale()
-    setDrag({ id: card.id, from: [e.clientX, e.clientY], grab: [(e.clientX - r.left) / s, (e.clientY - r.top) / s], size: [r.width / s, r.height / s], at: local(e.clientX, e.clientY), moving: false, over: null })
-    const move = (ev: PointerEvent) => {
-      const d = dragRef.current
-      if (!d) return
-      const moving = d.moving || Math.hypot(ev.clientX - d.from[0], ev.clientY - d.from[1]) > 5
-      if (moving) setDrag({ ...d, at: local(ev.clientX, ev.clientY), moving, over: landing(ev.clientX, ev.clientY, card) ?? d.over })
-    }
-    const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
-      drop(card)
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    holdOnBoard(e, bd, { id: card.id, over: null }, (_d, ev) => ({ over: landing(ev.clientX, ev.clientY, card) ?? _d.over }), () => drop(card))
   }
 
   const lifted = drag?.moving ? held.find((c) => c.id === drag.id) : undefined
@@ -260,7 +234,7 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
       </div>
       {orderOn && <OrderList order={order} unrated={held.length - order.length} live={live} selected={selected} onPick={(c) => live && pick(c)} onPress={own} />}
       {lifted && drag && (
-        <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: '0.8', transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
+        <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: `${CARRIED}`, transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
           {sheet(lifted, cols.find((c) => c.id === drag.over?.col), { lifted: true })}
         </div>
       )}

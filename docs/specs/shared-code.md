@@ -110,3 +110,24 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
   person/people counts on the workspaces page and in a document piece; the invite code in four places; first names in
   people settings, the agent's chats and the coach. Left as written: one-off inline `x === 1 ? '' : 's'` in sentences
   (new code uses `plural`); TextItems' sticky tag (another session's file then). Nothing changes on screen.
+- **Group 4, all four (2026-11-02, north-star-48; on D-358's `startMove`).**
+  - The carried look: `CARRIED` and `carriedStyle(shift, origin)` in ui/primitives/Marks.tsx (cards, a package's
+    frame, text, a piece carried by a section; the decks' and timeline's held copies use `CARRIED`); `useLanding(id, x,
+    y)` in canvas/selection.ts (cards, text). `useCarried`/`useHeld` not made: each caller reads its own `dragShift`
+    already, and a piece's held box is its own (pieces save through their op). The piece's `transition: none` was not
+    on purpose: a section carrying planes eased and its planes snapped; a carried piece now eases its scale as cards
+    and text do (the one change on screen, only while it's picked up).
+  - `pressDrag(move, end)` in ui/foundation/dragPointer.ts (window, no capture, cancel heard): the piece drag, the
+    link drag, the box select, `startMove`, a text's width. DrawSection on `dragPointer` (held, its `pointercancel`
+    now heard: a cancelled draw makes nothing and leaves no listener).
+  - `panPointer` (dragPointer.ts: `lazy` for a press on a cell, `end(moved)`) for the canvas, the focus and beside;
+    `zoomAt` in feel.ts for the three wheels; `toPlane`, `planeMiddle` in state/canvasView.ts (SideNav's two,
+    `pasteSame`, BringCards, the box select).
+  - `useBoardDrag` + `holdOnBoard` in deck/boardDrag.ts: Kanban's and CardKanban's press, the timeline's state and
+    scale (its own day maths and edge scroll stay).
+  - Checked: tsc; vitest (all but evalRunner's two then failing on HEAD, since fixed in 54409bc); every check; build;
+    the same 14 gestures (pan and wheel zoom on the canvas, in focus, beside; a click that lets go; a box select; a
+    link drawn; a deck task, a card deck's card, a timeline bar; a section drawn; a plane moved in edit mode) in old and
+    new in headless Chrome, pixel-identical while held and after (three first differed by the camera's first fit,
+    re-shot settled: 0).
+

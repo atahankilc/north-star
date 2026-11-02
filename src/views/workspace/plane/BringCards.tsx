@@ -6,7 +6,7 @@
 import { useEffect, useMemo } from 'react'
 import { CARD_TYPES, type AnyType, type Card } from '../../../data/cards'
 import { bringIn, cardsOn, planesOf, withParts } from '../../../data/places'
-import { glide, useCanvasView } from '../../../state/canvasView'
+import { glide, planeMiddle, useCanvasView } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { cardEntry, whereList } from './cardEntry'
@@ -72,10 +72,8 @@ export function BringCards({ here, origin }: { here: string; origin: { left: num
 
   function bring(card: Card, how: { shift: boolean; alt: boolean }) {
     const b = useCanvasView.getState().bringing
-    const c = useCanvasView.getState().planeCam
-    const { size } = useCanvasView.getState()
-    if (!b || !c) return
-    const at = b.at ?? ([(size.w / 2 - c.ox) / c.zoom, (size.h / 2 - c.oy) / c.zoom] as [number, number])
+    const at = b?.at ?? planeMiddle()
+    if (!b || !at) return
     const { ids, box } = bringIn(wid, b.plane, [card], { cards, places, edges }, at, how.alt)
     if (!ids.length || !box) return
     show(box)

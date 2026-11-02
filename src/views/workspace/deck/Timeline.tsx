@@ -28,11 +28,12 @@ import { passes, useKanbanFilter } from './kanbanFilter'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { TimelineBar } from '../cards/TimelineBar'
 import { TrayTask } from '../cards/TrayTask'
+import { useBoardDrag } from './boardDrag'
 import { CardPicker } from '../panels/CardPanel'
 import { cardsOn } from '../../../data/places'
 import type { Card } from '../../../data/cards'
 import { taskRows, type Lane } from '../table/rows'
-import { Landing, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
+import { CARRIED, Landing, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import { OPEN_PAD } from '../canvas/shownBox'
 import { useOpenSize } from '../canvas/sizes'
 import { registerStrip } from './stripReveal'
@@ -332,11 +333,6 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
 
   // Its view's px per screen px, read as it's drawn (a drag draws it again).
   const screen = (live ? 1 : camOf(wid).zoom) * zoom
-  const scaleOf = () => {
-    const el = board.current
-    if (!el) return 1
-    return el.getBoundingClientRect().width / (el.offsetWidth || 1)
-  }
   // The day under a point on the screen, and how far down the rows it is (their px).
   const dayAt = (clientX: number) => {
     const el = timeLayer.current
@@ -353,9 +349,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
     return rows.find((r) => y >= r.top && y < r.top + r.h) ?? (y < 0 ? rows[0] : rows.at(-1))
   }
 
-  const [drag, setDrag] = useState<Drag | null>(null)
-  const dragRef = useRef(drag)
-  dragRef.current = drag
+  const { drag, setDrag, dragRef, scale: scaleOf } = useBoardDrag<Drag>(board)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [ghost, setGhost] = useState<Ghost | null>(null)
   const [trayHeld, setTrayHeld] = useState<{ id: string; at: [number, number] } | null>(null)
@@ -683,7 +677,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
     const hatch = it.late && !lifted ? { x: (e + 1) * ppd - inset(ppd) - origin * ppd, w: (todayAt - e) * ppd + inset(ppd) } : null
     // A hatch too short to show past the name beside it: `+Nd late` goes after the name instead.
     const lateBeside = !!hatch && g.out && hatch.w < textW(labelOf(t, it.finished)) + 30
-    const style = { left, top: y, width: g.w, ...(tn ? { ['--tone' as string]: tn } : {}), ...(lifted && { left: held!.at[0] - Math.min(held!.grab[0], g.w - 6), top: held!.at[1] - held!.grab[1], scale: '0.8', transformOrigin: `${Math.min(held!.grab[0], g.w - 6)}px ${held!.grab[1]}px` }) } as CSSProperties
+    const style = { left, top: y, width: g.w, ...(tn ? { ['--tone' as string]: tn } : {}), ...(lifted && { left: held!.at[0] - Math.min(held!.grab[0], g.w - 6), top: held!.at[1] - held!.grab[1], scale: `${CARRIED}`, transformOrigin: `${Math.min(held!.grab[0], g.w - 6)}px ${held!.grab[1]}px` }) } as CSSProperties
     const resizing = drag?.moving && drag.id === t.id && drag.how !== 'move'
     return (
       <>

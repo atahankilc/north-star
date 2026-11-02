@@ -6,6 +6,7 @@ import { addLabel, SECTION_MIN } from '../../../data/labels'
 import { snap } from '../../../data/grid'
 import { useCanvasView } from '../../../state/canvasView'
 import { useWs } from './context'
+import { dragPointer } from '../../../ui/foundation/dragPointer'
 import styles from './DrawSection.module.css'
 
 type Props = { space: string; toSpace: (clientX: number, clientY: number) => [number, number] }
@@ -16,36 +17,33 @@ export function DrawSection({ space, toSpace }: Props) {
   const [rect, setRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
 
   const press = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return
-    e.stopPropagation()
     const el = e.currentTarget
     const box = el.getBoundingClientRect()
     const [sx, sy] = [e.clientX, e.clientY]
     const a = toSpace(sx, sy)
     let b: [number, number] | null = null
-    el.setPointerCapture(e.pointerId)
-    const move = (ev: PointerEvent) => {
-      b = toSpace(ev.clientX, ev.clientY)
-      setRect({ x: Math.min(sx, ev.clientX) - box.left, y: Math.min(sy, ev.clientY) - box.top, w: Math.abs(ev.clientX - sx), h: Math.abs(ev.clientY - sy) })
-      if (ev.altKey) el.dataset.free = 'true'
-      else delete el.dataset.free
-    }
-    const up = async (ev: PointerEvent) => {
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', up)
-      setRect(null)
-      useCanvasView.setState({ drawing: null })
-      if (!b) return
-      const at = (v: number) => (ev.altKey ? Math.round(v) : snap(v))
-      const x = at(Math.min(a[0], b[0]))
-      const y = at(Math.min(a[1], b[1]))
-      const w = Math.max(SECTION_MIN.w, at(Math.max(a[0], b[0])) - x)
-      const h = Math.max(SECTION_MIN.h, at(Math.max(a[1], b[1])) - y)
-      const id = await addLabel(wid, { pieceId: space, text: '', kind: 'section', x, y, w, h })
-      useCanvasView.setState({ labelSelected: id, labelEditing: id, fresh: id })
-    }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
+    // Held by the overlay, so the frame goes on over anything; a cancel (the system took the pointer) draws nothing.
+    dragPointer(
+      e,
+      (ev) => {
+        b = toSpace(ev.clientX, ev.clientY)
+        setRect({ x: Math.min(sx, ev.clientX) - box.left, y: Math.min(sy, ev.clientY) - box.top, w: Math.abs(ev.clientX - sx), h: Math.abs(ev.clientY - sy) })
+        if (ev.altKey) el.dataset.free = 'true'
+        else delete el.dataset.free
+      },
+      async (ev) => {
+        setRect(null)
+        useCanvasView.setState({ drawing: null })
+        if (!b || ev.type === 'pointercancel') return
+        const at = (v: number) => (ev.altKey ? Math.round(v) : snap(v))
+        const x = at(Math.min(a[0], b[0]))
+        const y = at(Math.min(a[1], b[1]))
+        const w = Math.max(SECTION_MIN.w, at(Math.max(a[0], b[0])) - x)
+        const h = Math.max(SECTION_MIN.h, at(Math.max(a[1], b[1])) - y)
+        const id = await addLabel(wid, { pieceId: space, text: '', kind: 'section', x, y, w, h })
+        useCanvasView.setState({ labelSelected: id, labelEditing: id, fresh: id })
+      },
+    )
   }
 
   return (

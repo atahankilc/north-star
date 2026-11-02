@@ -50,12 +50,13 @@ import { DrawerPick } from '../../../ui/patterns/Console'
 import { loadFolds, saveFolds, taskRows, type Lane } from '../table/rows'
 import { setPresenceDrag } from '../../../data/presence'
 import { PeerTaskDrags } from '../canvas/collab'
-import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
+import { CARRIED, Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import { ThreadChip, threadOn } from '../threads/Threads'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { dueText } from '../../../model/tasks'
 import { hasMeta, TaskSheet } from '../cards/TaskSheet'
 import { Assignee } from '../cards/Assignee'
+import { holdOnBoard, useBoardDrag, type Held } from './boardDrag'
 import { learnable } from '../panels/TaskPanel'
 import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
 import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
@@ -189,7 +190,7 @@ export function selectTasks(piece: string, tasks: string[]) {
 // in the task it was taken and its size (its px), where the pointer is now (its px), and where they'd land: a column, a
 // lane ('' without lanes), the place among that cell's tasks.
 type Over = { col: string; lane: string; index: number }
-type Drag = { id: string; ids: string[]; from: [number, number]; grab: [number, number]; size: [number, number]; at: [number, number]; moving: boolean; over: Over | null }
+type Drag = Held & { id: string; ids: string[]; over: Over | null }
 // A box being drawn with alt held (its px), from where it began to the pointer.
 type Box = { from: [number, number]; to: [number, number] }
 
@@ -265,9 +266,8 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
   const adding = useKanbanUi((s) => (live ? s.adding : null))
   const naming = useKanbanUi((s) => (live ? s.naming : null))
   const board = useRef<HTMLDivElement>(null)
-  const [drag, setDrag] = useState<Drag | null>(null)
-  const dragRef = useRef(drag)
-  dragRef.current = drag
+  const bd = useBoardDrag<Drag>(board)
+  const { drag, setDrag, dragRef, local } = bd
   const [box, setBox] = useState<Box | null>(null)
 
   // What you're dragging, for the others (D-260): sent with your cursor, gone once let go.
@@ -340,16 +340,6 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live, picked?.join(','), editor, wid, piece.id])
 
-  // The board's scale on the screen (the canvas's zoom and the view's), and a point on the screen in its px.
-  const scale = () => {
-    const el = board.current
-    return el ? el.getBoundingClientRect().width / (el.offsetWidth || 1) : 1
-  }
-  const local = (x: number, y: number): [number, number] => {
-    const r = board.current?.getBoundingClientRect()
-    const s = scale()
-    return r ? [(x - r.left) / s, (y - r.top) / s] : [0, 0]
-  }
   // Where tasks held under the pointer would land, read off what's drawn: the cell (a column in an open lane that takes
   // them) under the pointer or the nearest, and the place among its other tasks by their middles.
   const landing = (x: number, y: number, ids: string[]): Over | null => {
@@ -408,27 +398,10 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
     }
     if (!editor) return
     e.stopPropagation()
-    const r = e.currentTarget.getBoundingClientRect()
-    const s = scale()
     // The selection in the board's order (column, then place).
     const order = cols.flatMap((c) => byCol.get(c.id) ?? []).map((t) => t.id)
     const ids = many?.includes(task.id) ? order.filter((id) => many.includes(id)) : [task.id]
-    setDrag({ id: task.id, ids, from: [e.clientX, e.clientY], grab: [(e.clientX - r.left) / s, (e.clientY - r.top) / s], size: [r.width / s, r.height / s], at: local(e.clientX, e.clientY), moving: false, over: null })
-    const move = (ev: PointerEvent) => {
-      const d = dragRef.current
-      if (!d) return
-      const moving = d.moving || Math.hypot(ev.clientX - d.from[0], ev.clientY - d.from[1]) > 5
-      if (moving) setDrag({ ...d, at: local(ev.clientX, ev.clientY), moving, over: landing(ev.clientX, ev.clientY, d.ids) ?? d.over })
-    }
-    const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
-      drop(task)
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    holdOnBoard(e, bd, { id: task.id, ids, over: null }, (d, ev) => ({ over: landing(ev.clientX, ev.clientY, d.ids) ?? d.over }), () => drop(task))
   }
   // Alt held, a press on the board's empty space draws a box; let go, what it touches is selected (with shift, added).
   const boxPress = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -607,7 +580,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
         )
       })}
       {held && drag && (
-        <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: '0.8', transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
+        <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: `${CARRIED}`, transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
           <TaskSheet className={styles.task} task={held} card={cardOf(held)} finished={!!cols.find((c) => c.id === (drag.over?.col ?? held.col))?.done} selected={false} live lifted />
           {heldIds.length > 1 && <span className={styles.more}>+{heldIds.length - 1}</span>}
         </div>

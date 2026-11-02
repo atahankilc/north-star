@@ -10,7 +10,7 @@ import { addCard, CARD_TYPES, type CardType } from '../../../data/cards'
 import { cardsOn } from '../../../data/places'
 import { addLabel, CANVAS, PARA_W, STICKY_H, STICKY_W, TITLE_W } from '../../../data/labels'
 import { snap } from '../../../data/grid'
-import { canvasCenter, setEditing, useCanvasView } from '../../../state/canvasView'
+import { canvasCenter, planeMiddle, setEditing, useCanvasView } from '../../../state/canvasView'
 import { Menu } from '../../../ui/patterns/Menu'
 import { learn } from '../../../onboarding/learn'
 import { GuideTool } from '../../../onboarding/GuideTool'
@@ -55,11 +55,7 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
   const me = useAuthor()
   const hasTitle = labels.some((l) => l.kind === 'title')
   // The middle of the screen in the open space's px.
-  const middle = (): [number, number] | null => {
-    const { planeCam: c, size } = useCanvasView.getState()
-    if (!plane) return canvasCenter(wid)
-    return c ? [(size.w / 2 - c.ox) / c.zoom, (size.h / 2 - c.oy) / c.zoom] : null
-  }
+  const middle = (): [number, number] | null => (plane ? planeMiddle() : canvasCenter(wid))
   const addText = async (what: 'heading' | 'paragraph' | 'sticky' | 'title') => {
     const at = middle()
     if (!at) return
@@ -95,9 +91,8 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
     if (plane && r) useCanvasView.setState({ bringing: { plane, at: null, screen: [r.right + 8, r.top] } })
   }
   const addHere = async (type: CardType) => {
-    const { planeCam: c, size } = useCanvasView.getState()
-    if (!plane || !c) return
-    const at: [number, number] = [(size.w / 2 - c.ox) / c.zoom, (size.h / 2 - c.oy) / c.zoom]
+    const at = planeMiddle()
+    if (!plane || !at) return
     const id = await addCard(wid, plane, type, at, cardsOn(cards, places, plane))
     useCanvasView.setState({ cardSelected: id, cardEditing: id, fresh: id })
   }

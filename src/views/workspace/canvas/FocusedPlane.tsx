@@ -20,7 +20,8 @@ import { isOpen } from './shownBox'
 import { CELL_PX, cellHash, cellsPath } from '../../../ui/foundation/cellReveal'
 import styles from './CanvasView.module.css'
 import { DUR, tween } from '../../../ui/foundation/motion'
-import { DRAG_PX, wheelStep } from '../../../ui/foundation/feel'
+import { wheelStep, zoomAt } from '../../../ui/foundation/feel'
+import { panPointer } from '../../../ui/foundation/dragPointer'
 
 const IN_MS = DUR.focusIn
 const OUT_MS = DUR.focusOut
@@ -95,11 +96,9 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
       if (!c || focusLeaving) return
       stopGlide()
       const r = el.getBoundingClientRect()
-      const px = e.clientX - r.left
-      const py = e.clientY - r.top
       const zoom = wheelStep(c.zoom, e)
-      const k = zoom / c.zoom
-      useCanvasView.setState({ planeCam: { zoom, ox: px - (px - c.ox) * k, oy: py - (py - c.oy) * k } })
+      const [ox, oy] = zoomAt(c.zoom, zoom, [e.clientX - r.left, e.clientY - r.top], [c.ox, c.oy])
+      useCanvasView.setState({ planeCam: { zoom, ox, oy } })
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
@@ -110,41 +109,17 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
     e.stopPropagation()
     const { planeCam: start, focusLeaving } = useCanvasView.getState()
     if ((e.button !== 0 && e.button !== 1) || !start || focusLeaving) return
-    // A press on a matrix's cell (D-217) is the cell's until it moves 5 px: a click still selects it, a drag pans.
-    const onCell = !!(e.target as HTMLElement).closest('[data-cell]')
     stopGlide()
     stopFollowing()
-    const el = e.currentTarget
-    const [sx, sy] = [e.clientX, e.clientY]
-    const id = e.pointerId
-    let panning = false
-    let moved = false
-    const begin = () => {
-      panning = true
-      el.setPointerCapture(id)
-      el.dataset.panning = 'true'
-    }
-    if (!onCell) begin()
-    const move = (ev: PointerEvent) => {
-      if (Math.hypot(ev.clientX - sx, ev.clientY - sy) >= DRAG_PX) moved = true
-      if (!panning) {
-        if (!moved) return
-        begin()
-      }
-      useCanvasView.setState({ planeCam: { ...start, ox: start.ox + ev.clientX - sx, oy: start.oy + ev.clientY - sy } })
-    }
-    const up = () => {
+    // A press on a matrix's cell (D-217) is the cell's until it moves 5 px: a click still selects it, a drag pans.
+    const onCell = !!(e.target as HTMLElement).closest('[data-cell]')
+    panPointer(e, {
+      lazy: onCell,
+      move: (dx, dy) => useCanvasView.setState({ planeCam: { ...start, ox: start.ox + dx, oy: start.oy + dy } }),
       // A click on the plane itself lets go of what's selected (D-187); a pan doesn't, so a panel stays open while you
       // look round the plane (D-230).
-      if (!moved && !onCell) useCanvasView.setState({ cardSelected: null, cardMulti: [], labelSelected: null, linkSelected: null })
-      delete el.dataset.panning
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', up)
-      el.removeEventListener('pointercancel', up)
-    }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
+      end: (moved) => void (!moved && !onCell && useCanvasView.setState({ cardSelected: null, cardMulti: [], labelSelected: null, linkSelected: null })),
+    })
   }
 
   // Going in. The canvas behind is hidden once the plane is the view, and shows again as it goes.

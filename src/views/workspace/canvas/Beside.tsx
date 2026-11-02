@@ -24,7 +24,8 @@ import { DockAction, FocusDock } from './FocusDock'
 import { TableSetupPanel } from '../table/TableSetup'
 import styles from './Beside.module.css'
 import { DUR } from '../../../ui/foundation/motion'
-import { DRAG_PX, wheelStep } from '../../../ui/foundation/feel'
+import { wheelStep, zoomAt } from '../../../ui/foundation/feel'
+import { panPointer } from '../../../ui/foundation/dragPointer'
 
 const PAD = 48
 
@@ -114,10 +115,9 @@ export function usePaneView(content: Bounds, box: Bounds, top = false, floor = 0
       e.preventDefault()
       const c = viewRef.current
       const r = node.getBoundingClientRect()
-      const [px, py] = [e.clientX - r.left, e.clientY - r.top]
       const zoom = wheelStep(c.zoom, e)
-      const k = zoom / c.zoom
-      setView({ zoom, ox: px - (px - c.ox) * k, oy: py - (py - c.oy) * k })
+      const [ox, oy] = zoomAt(c.zoom, zoom, [e.clientX - r.left, e.clientY - r.top], [c.ox, c.oy])
+      setView({ zoom, ox, oy })
     }
     node.addEventListener('wheel', onWheel, { passive: false })
     return () => node.removeEventListener('wheel', onWheel)
@@ -131,32 +131,7 @@ export function usePaneView(content: Bounds, box: Bounds, top = false, floor = 0
     const onCell = !!(e.target as HTMLElement).closest('[data-cell]')
     if (!onCell) useCanvasView.setState({ cardSelected: null, labelSelected: null, linkSelected: null })
     const start = viewRef.current
-    const [sx, sy] = [e.clientX, e.clientY]
-    const node = e.currentTarget
-    const id = e.pointerId
-    let panning = false
-    const begin = () => {
-      panning = true
-      node.setPointerCapture(id)
-      node.dataset.panning = 'true'
-    }
-    if (!onCell) begin()
-    const move = (ev: PointerEvent) => {
-      if (!panning) {
-        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < DRAG_PX) return
-        begin()
-      }
-      setView({ ...start, ox: start.ox + ev.clientX - sx, oy: start.oy + ev.clientY - sy })
-    }
-    const up = () => {
-      delete node.dataset.panning
-      node.removeEventListener('pointermove', move)
-      node.removeEventListener('pointerup', up)
-      node.removeEventListener('pointercancel', up)
-    }
-    node.addEventListener('pointermove', move)
-    node.addEventListener('pointerup', up)
-    node.addEventListener('pointercancel', up)
+    panPointer(e, { lazy: onCell, move: (dx, dy) => setView({ ...start, ox: start.ox + dx, oy: start.oy + dy }) })
   }
   return { el, view, setView, pan }
 }

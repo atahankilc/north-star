@@ -15,7 +15,7 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { CARD, copyCards, foldCard, foldPackage, moveCard, moveCards, spotRef, type Card } from '../../../data/cards'
 import { planeOf } from '../../../data/places'
-import { clipboard, deleteHere, heldAt, landed, onPlane, pasteSame, selectedIds, setSelection, startGroupDrag, startMove, toggleSelected } from '../canvas/selection'
+import { clipboard, deleteHere, heldAt, onPlane, pasteSame, selectedIds, setSelection, startGroupDrag, startMove, toggleSelected, useLanding } from '../canvas/selection'
 import { toggleGuides, toggleSnap, useGuides } from '../canvas/guides'
 import { groupOf, keep, useFilter } from '../canvas/planeFilter'
 import { useSearchParams } from 'react-router-dom'
@@ -26,7 +26,7 @@ import { byCategory, foldedHeight, foldsOf, openHeight, packageBox, partRowBox, 
 import type { Label } from '../../../data/labels'
 import { labelBox, TextItems } from '../text/TextItems'
 import { usePeersOn } from '../canvas/collab'
-import { BoxSelect, Landing, Marks, useSettledZoom } from '../../../ui/primitives/Marks'
+import { BoxSelect, carriedStyle, Landing, Marks, useSettledZoom } from '../../../ui/primitives/Marks'
 import { ThreadChip, threadOn } from '../threads/Threads'
 import { PackPick } from './PackPick'
 import { CardPanel } from '../panels/CardPanel'
@@ -35,7 +35,7 @@ import { useRevealed } from '../../../state/curtain'
 import { isReducedMotion } from '../../../state/motion'
 import { runCells } from '../../../ui/primitives/Appear'
 import type { PlaneCam } from '../../../state/canvasView'
-import { useCanvasView } from '../../../state/canvasView'
+import { toPlane, useCanvasView } from '../../../state/canvasView'
 import { useWs, useWsNow } from '../canvas/context'
 import { useStill } from '../canvas/still'
 import { factsOf, useTaskTally, type Facts } from './cardFacts'
@@ -47,6 +47,7 @@ import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { PackageBand, PlaneCard, type Detail } from '../cards/PlaneCard'
 import { keysTaken } from '../../../ui/foundation/focus'
+import { pressDrag } from '../../../ui/foundation/dragPointer'
 export type { Detail }
 
 // How a card is drawn by how big it is on screen (D-111, D-153): everything while its small text (8 px) is 4 px or more;
@@ -62,8 +63,6 @@ function detailAt(scale: number, was: Detail): Detail {
   if (scale >= up(COMPACT_AT, 'compact')) return 'compact'
   return 'far'
 }
-// A dragged card's size (the old board's CARRIED).
-const CARRIED = 0.8
 
 // Type = the left edge and the label in its colour (D-055, D-057).
 type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; editor: boolean }
@@ -92,28 +91,23 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
     if (!live || !(e.altKey || packing) || e.button !== 0) return
     e.stopPropagation()
     const r = e.currentTarget.getBoundingClientRect()
-    const toPlane = (ev: { clientX: number; clientY: number }) => [(ev.clientX - r.left - view.ox) / view.zoom, (ev.clientY - r.top - view.oy) / view.zoom] as const
-    const [x0, y0] = toPlane(e)
+    const at = (ev: { clientX: number; clientY: number }) => toPlane(view, ev.clientX - r.left, ev.clientY - r.top)
+    const [x0, y0] = at(e)
     const keep = e.shiftKey || packing ? selectedIds() : []
     let last = { x0, y0, x1: x0, y1: y0 }
     setBox(last)
     const move = (ev: PointerEvent) => {
-      const [x1, y1] = toPlane(ev)
+      const [x1, y1] = at(ev)
       last = { x0, y0, x1, y1 }
       setBox(last)
     }
     const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
       setBox(null)
       const [l, t, rr, b] = [Math.min(last.x0, last.x1), Math.min(last.y0, last.y1), Math.max(last.x0, last.x1), Math.max(last.y0, last.y1)]
       if (rr - l < 3 && b - t < 3) return
       setSelection([...new Set([...keep, ...onPlane.hit({ l, t, r: rr, b }, packing)])])
     }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    pressDrag(move, up)
   }
   return (
     <div className={styles.layer} data-live={live || undefined} data-packing={packing || undefined} onPointerDown={boxSelect}>
@@ -491,10 +485,7 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
     return d.lead === card.id || whole ? d : null
   })
   const lead = shift?.lead === card.id
-  const carried =
-    shift?.free && shift.at
-      ? { translate: `${shift.free[0] - shift.dx}px ${shift.free[1] - shift.dy}px`, scale: `${CARRIED}`, transformOrigin: `${shift.at[0] - (x - shift.dx)}px ${shift.at[1] - (y - shift.dy)}px` }
-      : undefined
+  const carried = shift ? carriedStyle(shift, [x - shift.dx, y - shift.dy]) : undefined
   const fold = () => void foldPackage(wid, card, [snap(place.x), snap(place.y)])
   return (
     <>
@@ -548,10 +539,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
   // Moved (by itself, with a selection, or carried by what holds it: a section, a package, D-188, D-229): where it lands.
   const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(card.id) ? s.dragShift : null))
   // Let go: held where it was let go until its data's back (D-229).
-  const landing = useCanvasView((s) => s.landing[card.id])
-  useEffect(() => {
-    if (landing && landing[0] === card.x && landing[1] === card.y) landed(card.id)
-  }, [landing, card.x, card.y, card.id])
+  const landing = useLanding(card.id, card.x, card.y)
   const [x, y] = landing ?? [card.x + (shift?.dx ?? 0), card.y + (shift?.dy ?? 0)]
   const hovered = useCanvasView((s) => live && s.cardHovered === card.id)
   const peers = usePeersOn(card.id, planeOf(card))
@@ -601,9 +589,6 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
     useCanvasView.setState({ linking: { from: card.id, to: toPlane(e), over: null }, linkSelected: null })
     const move = (ev: PointerEvent) => useCanvasView.setState({ linking: { from: card.id, to: toPlane(ev), over: overAt(ev) } })
     const up = (ev: PointerEvent) => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
       const over = ev.type === 'pointerup' ? overAt(ev) : null
       useCanvasView.setState({ linking: null })
       const { cards, edges } = now()
@@ -615,23 +600,13 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
       const id = createEdge(wid, card, other, defaultKind(card.type, other.type))
       useCanvasView.setState({ linkSelected: id, linkLabelling: true, cardSelected: null, labelSelected: null })
     }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    pressDrag(move, up)
   }
 
   // The face, small, under the pointer: from where it lands (the box) to where it is, 0.8 round the point held, alone or
   // with a selection; its marks on `<Landing>` meanwhile (D-265). `lifted`: it's the one held (it leads the move).
-  const along = shift?.shrink && shift.free && shift.at ? { free: shift.free, at: shift.at } : null
-  const carried =
-    along && shift
-      ? {
-          translate: `${along.free[0] - shift.dx}px ${along.free[1] - shift.dy}px`,
-          scale: `${CARRIED}`,
-          transformOrigin: `${along.at[0] - card.x}px ${along.at[1] - card.y}px`,
-        }
-      : undefined
-  const moving = !!along
+  const carried = carriedStyle(shift, [card.x, card.y])
+  const moving = !!carried
   const lifted = moving && shift?.lead === card.id
   // A folded part shrinks into its row in the feature that holds it, and grows back out of it.
   const tucked = tuck ? { transform: `translate(${tuck.x - x}px, ${tuck.y - y}px) scale(${tuck.w / CARD.w}, ${tuck.h / CARD.h})` } : undefined

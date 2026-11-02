@@ -82,7 +82,9 @@
    it grows back into them. */
 .piece[data-carried='true'] {
   z-index: var(--z-world-ui);
-  transition: none;
+  /* Picked up it eases to 0.8 as cards and text do, so a section and the planes it holds shrink as one (D-291, D-361);
+     it follows the pointer at once. */
+  transition: scale var(--dur-quick) var(--ease-out);
 }
 
 /* A matrix (D-204, D-208) is a window: a plane's edge, fill, name and console, but no grid marks; its table sits at

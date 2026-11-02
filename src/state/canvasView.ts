@@ -150,6 +150,15 @@ export function setCam(wid: string, cam: Cam) {
 
 // The canvas point under the middle of the screen. The camera's x/y is that point's offset from the screen's middle.
 // The middle of what's seen of the canvas: the left part's with the tasks side view open (D-300).
+// A point in a plane's view (px from the view's top-left: the screen, or the element it's drawn in) in the plane's own
+// px, through its offset and zoom (D-186, D-361).
+export const toPlane = (c: PlaneCam, x: number, y: number): [number, number] => [(x - c.ox) / c.zoom, (y - c.oy) / c.zoom]
+// The middle of the screen in the focused plane's px: where something made or brought in lands. None without a focus.
+export function planeMiddle(): [number, number] | null {
+  const { planeCam: c, size } = useCanvasView.getState()
+  return c ? toPlane(c, size.w / 2, size.h / 2) : null
+}
+
 export function canvasCenter(wid: string): [number, number] {
   const { x, y, zoom } = camOf(wid)
   return [((planeArea().w - useCanvasView.getState().size.w) / 2 - x) / zoom, -y / zoom]
