@@ -6876,3 +6876,49 @@ the gallery (plane, focused plane, card panel parts, find preview, package picki
 plane's states pixel-identical, the rest within old-vs-old noise (re-shot where unsure: 0).
 **Not yet:** steps 4–5 (timeline/matrix/table on the face, CardRow and the check:kit rule); the plane card's drag
 code as a shared hook.
+
+### D-359 · 2026-11-02 · Accepted (the user: "side panel ve modelleri ortak bir component üzerine taşımak... modal ve sidepanellar aynı şeyden türesin demiyorum. Structured bir şekilde organize edelim"; "thread sol altta kalmaya devam etsin ancak onunda boy uzatma yada esc ye basınca çıkma gibi özellikleri var. Bunlar belki generalized edilebilir")
+**Decision:** what opens over or beside the page is two families, each on its own shell, sharing only small parts in
+`src/ui/foundation` (D-326's way: foundation, kit, patterns, then the rooms):
+- **Foundation, both families:** `useEscapeLayer` (one Escape stack: what opened last hears it first, nothing under it;
+  a layer turned on again goes on top; a field keeps its Escape unless the layer takes fields; someone else's menu or
+  dialog keeps its own; the coach's never reaches a layer); `focus.ts` (`useDialogFocus` keeps a child's autoFocus and
+  remembers where focus was as it first draws; `trapTab`); `canvasGuard.ts` (`stopCanvas`, `keepFocus`);
+  `dragPointer`; `Corners.module.css` (the docked marks, faint, cyan when pointed at: `left`, `right`, `top`).
+  Window and useDismiss (menus, Popover, the right-click prompt) and Menu are on the stack.
+- **Edge family:** `ResizeEdge` (a dragged edge: the agent's width, the threads dock's height), `SplitLine` (the line
+  that shares the screen: beside's two, the tasks side view's two, the documents' two), `EdgeColumn` (the docked column:
+  edge, full height, inner line, marks, cells, canvas guard, Escape), `PanelHead` (kind, tools, one ×). SidePanel is
+  EdgeColumn + PanelHead (its API the same, TaskPanel's own Escape gone); the agent's column is EdgeColumn + PanelHead +
+  ResizeEdge (its stepped Escape stays its own). The threads dock keeps its place and shape (bottom left, the user)
+  and takes ResizeEdge, the Escape stack and the marks. The tasks side view is a pane split from the plane, not an edge
+  column: it takes SplitLine. `useBesideW()` reads beside's width once (CardPanel, TaskPanel).
+- **Modal family:** everything on the one `Window` (no native `<dialog>` left): `Dialog` (a small window asking one
+  thing: title, fields, answers at the foot; the workspaces page's naming windows), WizardShell, Settings, HazardConfirm
+  (Window's `role="alertdialog"` and `behind`, the veil and tape on its scrim), `PromptOverlay` (the finder and its twin
+  the `?` guide: scrim, focus on the `>` line, the prompt's frame in the middle, `float` or `menu` layer, their keys
+  their own). Onboarding finds Settings as `[role=dialog][aria-label=Settings]`.
+**Why:** the side panels and modals each did the same things by hand: three column shells, four head rows, Escape in
+six places with six `closest(...)` lists, three resize handles and six split lines with the same pointer boilerplate,
+two modal mechanisms (Window vs native `<dialog>`) and a third (the guide's own portal and scrim). The user asked for
+them organised, not merged: modals and side panels are not one component.
+**Alternatives:** one component both derive from (the user: no); the threads dock as an EdgeColumn at the bottom (the
+user: it stays where it is, its behaviours shared); the tasks side view on EdgeColumn (it sits in the canvas's layer,
+split from the plane; it would move its place and layer); the agent's Escape on the stack (it steps back through list,
+view, preview; its inner lists must close first).
+**Looks that snapped (kit over exact match):** the threads dock's and the agent column's magenta marks are the docked
+marks (faint, cyan when pointed at; 8 → 7 px on the threads); the agent's `chats notes new` and `×` one strip; Settings'
+scrim is the windows' one and it enters like them. Everything else draws the same.
+**Fixed on the way:** the rename window opened with focus on itself (Window took it after the field's autoFocus),
+typing went nowhere; Escape on a button in the task panel now closes it, as the card panel's did.
+**Built and checked (2026-11-02, commits cd68066, 643586f, 0c5d9d2, a7b282e, 6473f7e, b011d8d, 4da2a23):** headless
+Chrome on emulators per step: the threads dock (resize kept, menu then dock), the card and task panels (picker first,
+a field keeps its Escape, then the panel, then focus), the agent's column (beside the card panel, resized, Escape steps
+back), the side view's lines and a double-click on a line, Settings (focus, onboarding's page, no lesson over it),
+rename, the `+` menu (focus back), the hazard (tape, onboarding sees it, Escape keeps, confirm deletes), the finder
+and the guide. tests/unit/escapeLayer.test.ts; vitest 991/0; check:kit/tokens/gallery/lessons 0.
+**Not yet:** beside's two lines and the documents' lines not driven in a browser (same component, moved code); the
+closed agent box keeps its own head; panels' in-place fields (Enter keeps, Escape undoes) repeat in CardPanelKinds,
+TaskPanel and tag/region adds, an `InlineEdit`/`InlineAdd` step of its own; Settings' page may show the backdrop faintly
+through its frame (not compared with before); an onboarding lesson open over the threads list doesn't take Escape
+first (the lesson isn't a layer; as before).

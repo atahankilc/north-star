@@ -86,7 +86,9 @@ for every move (before/after shots per state, as D-325 does).
    Choice + Checkbox + Tabs (Pills, Choices, Toggle, setup tabs), Chip, CountBadge, Spinner, Empty. Each with its
    gallery example.
 4. **Patterns.** Dialog/Window (one close, portal, focus), WizardShell (the three wizards), SetupPanel (tabs),
-   Dock (FocusDock's actions), on top of the kit.
+   Dock (FocusDock's actions), on top of the kit. Windows and docked panels organised in two families by D-359
+   (Window → Dialog, WizardShell, Settings, HazardConfirm, PromptOverlay; EdgeColumn + PanelHead → SidePanel, the
+   agent's column; ResizeEdge, SplitLine; one Escape stack under both).
 5. **Move the rooms onto it,** one area at a time (panels, docks and setups, decks, timeline, onboarding, agent), each
    with before/after gallery shots; delete the local copies.
 6. **A rule that keeps it so.** A `check:kit` like check:tokens: raw `<button>`, `<input>`, `<textarea>`,

@@ -292,6 +292,20 @@ Every framed element (panels, cards, forms, chips, empty states) composes `src/u
 - `fieldLabel`: the same without the glyph, names one field or list (`NOTES`, `LINKS`, Choice), and the label set into a
   Settings section's top edge (the box draws its own corner)
 
+### Windows and docked panels (D-359)
+Two families, each on its own shell; they share only foundation parts (`src/ui/foundation`): one Escape stack
+(`useEscapeLayer`: what opened last closes first; a field keeps its Escape in a panel), focus in and back
+(`focus.ts`), the canvas guard, `dragPointer`, and the docked marks (`Corners.module.css`: faint L's, cyan when pointed at).
+- **Docked to an edge:** `EdgeColumn` (full height, a line on its inner edge, the marks, cell by cell) with `PanelHead`
+  (kind in its tone, tools and one `×` joined): the right panel (`SidePanel`, 400 px) and the agent's column. The
+  threads dock stays bottom left in its own shape with the same parts. A dragged edge is `ResizeEdge` (a cyan line on
+  the edge while pointed at); a line that shares the screen between two parts is `SplitLine` (9 px to grab, 1 px drawn,
+  cyan when pointed at): beside a plane, between stacked panes, the tasks side view and its days, the documents.
+- **Over the page:** the one `Window` (scrim, focus kept inside, Escape, `[×] esc`): `Dialog` (a small window asking
+  one thing: title, fields, answers joined at the foot, the go last), WizardShell, Settings, HazardConfirm (an
+  `alertdialog`, its veil and tape drawn on the scrim), `PromptOverlay` (a `>` prompt in the middle: the finder, the
+  `?` guide). No native `<dialog>`.
+
 ### Pages (D-093, 1.0's views; `Page.module.css` is still used by Settings)
 Every 1.0 workspace view except the board composed `src/ui/foundation/Page.module.css`:
 - `page`: content from `--hud-x`, starting below the filter row, so switching views never moves it. Frames fill the width

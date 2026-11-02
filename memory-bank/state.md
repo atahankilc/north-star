@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-02 (cards on one face D-358, steps 1–3; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-02 (windows and docked panels D-359; cards on one face D-358, steps 1–3; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -67,6 +67,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - D-348 (2026-11-01, pushed): Settings → display: hud size and background strength; the user checked it in the app.
 - D-350 (2026-11-02, pushed): the prompt family on one set of parts, done (state-history); `@` and `/` checked on emulators.
 - Cards on one face (D-358, docs/specs/cards.md): steps 1–3 done 2026-11-02 (helpers; `cards/` CardFace, TaskSheet, CardSheet, PriorityChip, PlaneCard + PackageBand, galleries); next step 4 (timeline bar, matrix/table heads on the face, NameInPlace).
+- Windows and docked panels (D-359, 2026-11-02): all eight steps committed, not pushed (state-history); *Not yet* in the log.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers

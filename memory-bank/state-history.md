@@ -1340,3 +1340,12 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   `model`, the preview (agentStore) `person`, in names only; the skills' checks (skills/checks.ts) return both.
   Checked: `tsc` clean, vitest 64 files / 990 tests pass, a new test in agentPlumbing.test.ts holds the two voices.
   Not seen in a browser. Bug 43 (a non-goal made a task) opened, not fixed.
+
+## Done (2026-11-02): windows and docked panels organised (D-359)
+Eight steps, each committed alone with its galleries and checked headless on emulators (D-359 lists what was driven):
+1–2 the foundation (Escape stack, focus, canvas guard, dragPointer, ResizeEdge, corner marks) and the threads dock on
+it (cd68066); 3 EdgeColumn + PanelHead under SidePanel, useBesideW (643586f); 4 the agent's column (0c5d9d2); 5
+SplitLine for the six lines that share the screen (a7b282e); 6 Dialog, Settings off its native dialog, Menu on the
+stack, useDialogFocus keeps autoFocus (6473f7e); 7 HazardConfirm on the Window, `role`/`behind` (b011d8d); 8
+PromptOverlay for the finder and the guide (4da2a23). Shared tree had other sessions' half-done files at times: step 3
+was driven from a worktree of HEAD + its files.
