@@ -376,4 +376,45 @@ export const EDIT: Task[] = [
       answer('Proposed the ideas.'),
     ],
   },
+  // agent-bugs 43: a "we won't build this" line made a task. Notes from a call mix to-dos with non-goals; only the
+  // to-dos become tasks. Where a non-goal goes (the agent notes, the card it limits, text) isn't graded, only that it
+  // is no task.
+  {
+    id: 'edit-17-non-goals-no-tasks',
+    group: 'edit',
+    set: 'capability',
+    fixture: 'medium',
+    ask: "Notes from today's launch call, put the to-dos on the Research deck:\n- Call five bakers before Friday\n- Not at launch: a whiteboard engine\n- Print flyers for Saturday's market\n- We won't do home delivery this year",
+    graders: [
+      exists('task', { deck: 'Research', title: /five bakers/i }),
+      exists('task', { deck: 'Research', title: /flyers/i }),
+      absent('task', { title: /whiteboard/i }),
+      absent('task', { title: /deliver/i }),
+      count('task', {}, 2, { delta: true }),
+      noDeletes(),
+      undoRestores(),
+    ],
+    reference: [
+      call('view', { piece: 'p6' }),
+      change(
+        [
+          ['create_task', { deck: 'p6', title: 'Call five bakers before Friday' }],
+          ['create_task', { deck: 'p6', title: "Print flyers for Saturday's market" }],
+          ['update_notes', { add: ['Not at launch: a whiteboard engine.', 'No home delivery this year.'] }],
+        ],
+        'two to-dos; the non-goals remembered',
+      ),
+      answer("In the preview: two tasks in p6 Research's todo. The whiteboard engine and home delivery are choices, not work, so they go in the agent notes, not on the deck."),
+    ],
+    // Every line a task, the non-goals too (the bug).
+    wrong: [
+      change([
+        ['create_task', { deck: 'p6', title: 'Call five bakers before Friday' }],
+        ['create_task', { deck: 'p6', title: 'Not at launch: a whiteboard engine' }],
+        ['create_task', { deck: 'p6', title: "Print flyers for Saturday's market" }],
+        ['create_task', { deck: 'p6', title: "We won't do home delivery this year" }],
+      ]),
+      answer('Added the four lines to Research.'),
+    ],
+  },
 ]

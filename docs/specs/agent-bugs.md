@@ -74,7 +74,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 40 | /compare leaves the recorded matches empty        | Guards       | high     | code (change)    | fixed, to measure (built after the mini run) |
 | 41 | a task given by name in assigneeName stays given to nobody | Plumbing | mid | code (change)    | fixed, replayed   |
 | 42 | the preview shows the model's warnings word for word | Preview | mid      | code (changeset) | fixed             |
-| 43 | a "we won't build this" line made a task         | Judgment     | mid      | prompt, eval     | open              |
+| 43 | a "we won't build this" line made a task         | Judgment     | mid      | prompt, eval     | eval built, to measure |
 | 44 | organising takes things already there far away   | Guards       | mid      | code (arrange, changeset) | fixed, to measure |
 
 ## Order
@@ -556,6 +556,10 @@ two or three lines.*
     in as a new task. A non-goal is a decision, not work to do: it belongs on the card it limits (a note, or the
     feature's plan), or as text on the plane. Not looked at which skill or ask made it. Fix: an eval with a list mixing
     to-dos and non-goals (graded on no task for a non-goal), then a line in the prompt's tasks rule if it fails.
+    *Eval built 2026-11-02:* edit-17-non-goals-no-tasks (capability): call notes with two to-dos and two non-goals for
+    the Research deck; graded on the two tasks there, no task for the whiteboard or delivery, exactly two tasks added,
+    no deletes, one undo step (where a non-goal goes is not graded). The stub passes, `--wrong` (every line a task)
+    fails it. Next, on credit: run it ×3 on mini and terra; only if it fails, the prompt's line.
 44. **Organising takes things already there far away.** The user, 2026-11-02: while organising or restructuring a
     plane or canvas, the agent moves things that were already there to somewhere new, some very far from where they
     were, even when it only meant to tidy them. Causes in code, measured on the medium fixture: (1) `where: { at:
