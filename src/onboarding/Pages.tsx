@@ -4,7 +4,8 @@
 // What's new is the same frame: the pages are the changes, `[show me]` where an item has somewhere to go, the last
 // page `+ N more` as a list.
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { stopCanvas, Window } from '../ui/patterns/Window'
+import { Window } from '../ui/patterns/Window'
+import { stopCanvas } from '../ui/foundation/canvasGuard'
 import { DecodeText } from '../ui/primitives/DecodeText'
 import { Demo } from './Demo'
 import { bits, fitTab, plain, two, type PageModel } from './words'
@@ -69,10 +70,6 @@ function setRef<T>(ref: React.Ref<T>, v: T | null) {
   if (typeof ref === 'function') ref(v)
   else if (ref) (ref as React.MutableRefObject<T | null>).current = v
 }
-
-// Focus kept inside and given back, Tab going round, a press on the scrim keeping the focus, the canvas never hearing a
-// press: the Window's (src/ui/patterns/Window.tsx, D-326), here for the coach surfaces that import them from this file.
-export { keepFocus, stopCanvas, trapTab, useDialogFocus } from '../ui/patterns/Window'
 
 type Props = {
   // `lesson`: any other note (D-349: every lesson is this modal), named by `name` (its area).

@@ -1,0 +1,54 @@
+/* The corner marks of what's docked to an edge (D-347, D-359): L's on two of its corners, faint at rest, cyan while the
+   pointer or the keyboard is in it, as on every console. One pair: `data-corners="left"` (a column on the right: its top
+   and bottom left corners) or `"top"` (a dock on the bottom: its top corners). `composes: corners from` it, or add the
+   class; the element must be positioned, its ::before and ::after are the marks. */
+.corners {
+  --mk: var(--fg-faint);
+}
+
+.corners:hover,
+.corners:focus-within {
+  --mk: var(--accent-cyan);
+}
+
+.corners::before,
+.corners::after {
+  content: '';
+  position: absolute;
+  z-index: var(--z-2);
+  width: var(--corner-mark);
+  height: var(--corner-mark);
+  pointer-events: none;
+}
+
+.corners[data-corners='left']::before,
+.corners[data-corners='left']::after {
+  left: calc(-1 * var(--line-w));
+  border-left: var(--line-w) solid var(--mk);
+}
+
+.corners[data-corners='left']::before {
+  top: 0;
+  border-top: var(--line-w) solid var(--mk);
+}
+
+.corners[data-corners='left']::after {
+  bottom: 0;
+  border-bottom: var(--line-w) solid var(--mk);
+}
+
+.corners[data-corners='top']::before,
+.corners[data-corners='top']::after {
+  top: calc(-1 * var(--line-w));
+  border-top: var(--line-w) solid var(--mk);
+}
+
+.corners[data-corners='top']::before {
+  left: calc(-1 * var(--line-w));
+  border-left: var(--line-w) solid var(--mk);
+}
+
+.corners[data-corners='top']::after {
+  right: calc(-1 * var(--line-w));
+  border-right: var(--line-w) solid var(--mk);
+}

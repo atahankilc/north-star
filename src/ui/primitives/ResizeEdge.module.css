@@ -1,0 +1,84 @@
+/* An edge dragged to resize (src/ui/primitives/ResizeEdge.tsx, D-359): a strip over its parent's edge, a cyan line on
+   it while pointed at or held. */
+.edge {
+  position: absolute;
+  z-index: var(--z-1);
+  touch-action: none;
+}
+
+.edge[data-edge='left'],
+.edge[data-edge='right'] {
+  top: 0;
+  bottom: 0;
+  width: var(--space-2);
+  cursor: col-resize;
+}
+
+.edge[data-edge='top'],
+.edge[data-edge='bottom'] {
+  right: 0;
+  left: 0;
+  height: var(--space-2);
+  cursor: row-resize;
+}
+
+.edge[data-edge='left'] {
+  left: calc(-1 * var(--space-1));
+}
+
+.edge[data-edge='right'] {
+  right: calc(-1 * var(--space-1));
+}
+
+.edge[data-edge='top'] {
+  top: calc(-1 * var(--space-1));
+}
+
+.edge[data-edge='bottom'] {
+  bottom: calc(-1 * var(--space-1));
+}
+
+/* The line, on the parent's edge (the strip's middle). */
+.edge::after {
+  content: '';
+  position: absolute;
+  background: var(--accent-cyan);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.edge[data-edge='left']::after,
+.edge[data-edge='right']::after {
+  top: 0;
+  bottom: 0;
+  left: calc(var(--space-1) - var(--line-w));
+  width: var(--line-w);
+}
+
+.edge[data-edge='top']::after,
+.edge[data-edge='bottom']::after {
+  right: 0;
+  left: 0;
+  top: calc(var(--space-1) - var(--line-w));
+  height: var(--line-w);
+}
+
+.edge:hover::after,
+.edge[data-held]::after {
+  opacity: 1;
+}
+
+:global(html[data-motion='reduced']) .edge::after {
+  transition: none;
+}
+
+/* While one is held, the page keeps its cursor and selects nothing. */
+:global(html[data-resizing='x']) {
+  cursor: col-resize;
+  user-select: none;
+}
+
+:global(html[data-resizing='y']) {
+  cursor: row-resize;
+  user-select: none;
+}

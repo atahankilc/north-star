@@ -18,6 +18,8 @@ import { CommentIcon, myUid, ThreadPanel, toggleInbox, useThreadView } from './T
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Tabs } from '../../../ui/primitives/Tabs'
+import { ResizeEdge } from '../../../ui/primitives/ResizeEdge'
+import { useEscapeLayer } from '../../../ui/foundation/useEscapeLayer'
 import styles from './Threads.module.css'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
@@ -135,16 +137,10 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
     }
   })
 
-  // Escape closes it, unless a thread is open (that closes first).
-  useEffect(() => {
-    if (!listOpen) return
-    const onKey = (e: KeyboardEvent) => {
-      const { openId, draft } = useThreadView.getState()
-      if (e.key === 'Escape' && !e.defaultPrevented && !openId && !draft) toggleInbox(false)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [listOpen])
+  // Escape closes it, unless a thread is open (that closes first): the one Escape stack (D-359).
+  useEscapeLayer(() => toggleInbox(false), { on: listOpen && !openId && !draft, root: tab })
+  // Where a drag of the top edge started (below).
+  const drag = useRef({ y: 0, h: 0, room: 0, to: 0 })
 
   const sorted = useMemo(() => [...threads].sort((a, b) => b.lastAt - a.lastAt), [threads])
   const fresh = (t: WithId<Thread>) => isNew(t, seen, t.id, me)
@@ -161,33 +157,29 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
   const markAll = () => sorted.filter(fresh).forEach((t) => void markSeen(wid, t.id, t.lastAt))
 
   if (!shown) return null
-  // Dragging the top edge: taller up, shorter down; between MIN_H and the space under the breadcrumb.
-  const resize = (e: React.PointerEvent<HTMLElement>) => {
-    e.preventDefault()
-    const box = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect()
-    const room = (e.currentTarget.closest('[data-app]') as HTMLElement | null)?.clientHeight ?? window.innerHeight
-    const [sy, h0] = [e.clientY, box.height]
-    let h = h0
-    const move = (ev: PointerEvent) => {
-      h = Math.round(Math.min(room - HEAD_ROOM, Math.max(MIN_H, h0 + sy - ev.clientY)))
-      setHeight(h)
+  // Dragging the top edge: taller up, shorter down; between MIN_H and the space under the breadcrumb (D-197).
+  const startResize = (e: React.PointerEvent<HTMLElement>) => {
+    const box = tab.current?.getBoundingClientRect()
+    const room = (tab.current?.closest('[data-app]') as HTMLElement | null)?.clientHeight ?? window.innerHeight
+    drag.current = { y: e.clientY, h: box?.height ?? MIN_H, room, to: box?.height ?? MIN_H }
+  }
+  const resize = (e: PointerEvent) => {
+    const d = drag.current
+    d.to = Math.round(Math.min(d.room - HEAD_ROOM, Math.max(MIN_H, d.h + d.y - e.clientY)))
+    setHeight(d.to)
+  }
+  const keepHeight = () => {
+    try {
+      localStorage.setItem(HEIGHT_KEY, String(drag.current.to))
+    } catch {
+      // No storage (a private window): it's only for this time.
     }
-    const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      try {
-        localStorage.setItem(HEIGHT_KEY, String(h))
-      } catch {
-        // No storage (a private window): it's only for this time.
-      }
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
   }
   return (
     <section
       ref={tab}
       className={styles.inbox}
+      data-corners="top"
       aria-label="Threads"
       data-learn="threads"
       data-off-space
@@ -201,7 +193,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
       onKeyDown={(e) => e.stopPropagation()}
     >
       {/* Its top edge sets its height (D-197), kept in this browser. */}
-      <span className={styles.grip} onPointerDown={resize} aria-hidden />
+      <ResizeEdge edge="top" label="The threads' height" onStart={startResize} onDrag={resize} onEnd={keepHeight} />
       <div className={styles.listSide} inert={!open || undefined}>
       <div ref={listEl} className={styles.listInner}>
       <header className={styles.head}>

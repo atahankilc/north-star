@@ -2,7 +2,7 @@
 // had to do for itself before, once:
 // - `role="dialog"` with its name (onboarding's lessons treat a dialog as something not to cover, Lesson.tsx);
 // - focus moved inside as it opens and given back where it was when it closes; while modal, Tab goes round inside;
-// - Escape closes (`onClose`), heard first wherever the focus is, never by onboarding's coach (`[data-coach]`);
+// - Escape closes (`onClose`): the top of the one Escape stack (useEscapeLayer, D-359), never onboarding's coach's;
 // - a scrim behind a modal one, a press on it closing it (or kept by the caller: `scrimPress`);
 // - the frame: the wizard window's look (D-316: a line, the page's black), or `look="bare"` for a caller with its own;
 // - the one close, `[×] esc` (D-219), when asked for (`close`);
@@ -10,58 +10,15 @@
 // - into the body (`portal`), or where it's drawn.
 // The scrim's layer and colour can be set from outside through `--window-z` and `--window-scrim` (custom properties,
 // so they never fight the stylesheet order).
-import { useEffect, useLayoutEffect, useRef, type CSSProperties, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject } from 'react'
+import { useRef, type CSSProperties, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { Appear } from '../primitives/Appear'
 import { Button } from '../primitives/Button'
+import { keepFocus } from '../foundation/canvasGuard'
+import { trapTab, useDialogFocus } from '../foundation/focus'
+import { useEscapeLayer } from '../foundation/useEscapeLayer'
 import enter from '../foundation/Enter.module.css'
 import styles from './Window.module.css'
-
-// Focus inside while open, and back where it was on close: `first` (or the window) takes it as it opens.
-export function useDialogFocus(root: RefObject<HTMLElement | null>, first: RefObject<HTMLElement | null> | null, move = true) {
-  useLayoutEffect(() => {
-    const was = document.activeElement as HTMLElement | null
-    if (move) (first?.current ?? root.current)?.focus({ preventScroll: true })
-    return () => {
-      if (was && was !== document.body && document.contains(was)) was.focus({ preventScroll: true })
-    }
-    // Once, on open.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-}
-
-// Tab and shift-Tab go round inside `root`.
-export function trapTab(e: ReactKeyboardEvent | KeyboardEvent, root: HTMLElement | null) {
-  if (e.key !== 'Tab' || !root) return
-  const all = [...root.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
-  if (!all.length) return
-  const i = all.indexOf(document.activeElement as HTMLElement)
-  if (e.shiftKey && i <= 0) {
-    e.preventDefault()
-    all[all.length - 1].focus()
-  } else if (!e.shiftKey && i === all.length - 1) {
-    e.preventDefault()
-    all[0].focus()
-  }
-}
-
-// A press on a scrim (not on what's on it) keeps the focus where it is, in the window (it never drops to <body>).
-export const keepFocus = {
-  onPointerDownCapture: (e: React.PointerEvent) => {
-    if (e.target === e.currentTarget) e.preventDefault()
-  },
-  onMouseDown: (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) e.preventDefault()
-  },
-}
-
-// What the canvas would do with a press, a wheel or a double-click never happens through a window.
-export const stopCanvas = {
-  onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
-  onDoubleClick: (e: React.MouseEvent) => e.stopPropagation(),
-  onWheel: (e: React.WheelEvent) => e.stopPropagation(),
-  onContextMenu: (e: React.MouseEvent) => e.stopPropagation(),
-}
 
 type Props = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
   children: ReactNode
@@ -114,19 +71,8 @@ export function Window({
   const root = elRef ?? own
   useDialogFocus(root, focus || null, focus !== false)
 
-  // Escape, heard first wherever the focus is (a field inside, the page behind); never what onboarding's coach hears.
-  const closeRef = useRef(onClose)
-  closeRef.current = onClose
-  useEffect(() => {
-    if (!escape || !onClose) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || (e.target as Element | null)?.closest?.('[data-coach]')) return
-      e.stopPropagation()
-      closeRef.current?.()
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [escape, onClose])
+  // Escape (D-359's stack): the window on top hears it first, wherever the focus is (a field inside, the page behind).
+  useEscapeLayer(() => onClose?.(), { on: escape && !!onClose, fields: true, root })
 
   const box = {
     ...rest,

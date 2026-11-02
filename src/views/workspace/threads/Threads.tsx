@@ -29,6 +29,7 @@ import {
 import { useHistory } from '../../../data/history'
 import { isOnPlane, type Card } from '../../../data/cards'
 import { ago } from '../../../ui/foundation/ago'
+import { useEscapeLayer } from '../../../ui/foundation/useEscapeLayer'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
@@ -168,17 +169,9 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
   useEffect(() => {
     if (thread && (reads?.seen?.[thread.id] ?? 0) < thread.lastAt) void markSeen(wid, thread.id, thread.lastAt)
   }, [wid, thread, reads])
-  // Escape closes it (or the suggestions first).
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || suggest || e.defaultPrevented) return
-      // Only the thread: the list, if open, stays (D-199).
-      e.preventDefault()
-      closeThread()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [suggest])
+  // Escape closes it (the suggestions first, in the field): the one Escape stack (D-359); the list, if open, stays (D-199).
+  const box = useRef<HTMLDivElement>(null)
+  useEscapeLayer(closeThread, { on: !suggest, root: box })
 
   const names = useMemo(() => members.map((m) => m.name).filter(Boolean), [members])
   const matches = useMemo(() => {
@@ -245,6 +238,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
 
   return (
     <div
+      ref={box}
       className={styles.panel}
       role="dialog" /* kit-ok: the threads panel's half, built and broken cell by cell (D-199), docked, not a Window */
       aria-label={`Thread on ${title}`}
