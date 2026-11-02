@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-02 (onboarding content D-349; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-02 (onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -33,8 +33,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## Next steps (not started; ask the user which first)
 - **The agent, where it stands (2026-11-02; D-327, D-328, D-329 built and pushed; D-341 P1 done):**
-  1. P1 measured and committed (state-history 2026-11-02; the worktree ~/Documents/north-star-lean can go once the
-     runs below no longer need its evals/results).
+  1. P1 measured, committed and pushed (529d57b; state-history 2026-11-02); the runs' records are in evals/results.
      **Waiting for OpenAI credit:** the four runs in agent-pipeline.md §7, then routing and the map's default (D-341).
   2. In the app: a big job (`/restructure Segments`), the two go buttons (not looked at in a browser yet); the preview
      pick saved with the chat (a rules change). Every agent bug: docs/specs/agent-bugs.md (its table).
@@ -62,7 +61,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   loads `.claude/settings.json` after `/hooks` or a new session.
 - Landing (D-340, 2026-11-01, committed): full-screen backdrop, mono name, no HUD, Button; the user is working
   through more landing changes. AsciiButton deleted (e1b86de).
-- D-344 (committed): buttons and controls as cells. Open: filters as always-open toggle strips (asked, not built).
+- D-344 (pushed; + Steps on Tabs, tabs scroll in one row, 2026-11-02). Open: filters as always-open toggle strips.
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Q-033 closed by D-348.
 - D-352–D-356 (2026-11-02, state-history): pushed (756bd67); firestore:rules deployed after (633/0).
 - D-348 (2026-11-01, pushed): Settings → display: hud size and background strength; the user checked it in the app.

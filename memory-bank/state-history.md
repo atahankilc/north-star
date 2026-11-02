@@ -1270,6 +1270,21 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   (`?onboarding=reset`): the workspaces lesson, the welcome's 6 tabs, piece-made after `+ → plane`, focus-plane with its
   demo at full width, the settings lesson after Settings closes (a native dialog: shown over it, it was hidden).
 
+## Done (2026-11-02): Steps built on Tabs, Tabs scroll in one row (D-344)
+- 2a083ab: Tabs took `lead` (a label's `01`), `progress` (the options before the current one `data-done`), `even` (one
+  width each) and `keyboard={false}` (out of Tab, its arrows left to the window); Steps is a thin wrapper drawing Tabs,
+  its own buttons, aria and copied tab CSS deleted. Same look; wizards' steps now move with ← → / Home / End.
+- 0392557: tabs never wrap to a second row; when they don't fit they scroll sideways (no bar), the edge hiding more
+  fades (`data-more`), a vertical wheel scrolls them while they can go that way, the picked one kept in view. Tabs that
+  fit still fill their row; Steps (`even`) still cut with `…`. TasksSide's own `.decks` overflow rule deleted.
+- Looked at and not wanted (the user, 2026-11-02; preview on a local port, not kept): tabs on a rail, a quieter wash
+  for the tabs not picked, a sliding picked line; steps with a progress line under the passed ones, `✓` for passed,
+  quieter steps ahead. Tabs and Steps keep today's look (T0, S0); only the one-row scroll (M1) was built.
+- Verified: check:gallery/kit/tokens/memory, build, eslint on Tabs; headless Chrome on the gallery (old vs new Steps from
+  a HEAD worktree: same look; arrows step, `keyboard={false}` doesn't and 0 tabbables; a 420 px row of 7 decks: one
+  row, wheel 0 → 60, End/Home keep the pick in view, `data-more` end / start end / start; Steps and setup tabs unchanged).
+  Not seen in the real side view with many decks (the demo has one deck).
+
 ## Done (2026-11-02, north-star-48): D-352–D-356
 - D-352 peer cursors: only the arrow, the name on hover (a 24 px hover area). D-354 cursors sent only over the space
   (`data-off-space` on the side view, beside panes, dividers, threads panel), drawn only left of the split.
@@ -1284,20 +1299,6 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Checked: headless Chrome on the gallery (5241): the tip opens with the meaning; cursor names opacity 0 → 1 on hover;
   no sheet label past its sheet at month scale; the foot console's drawer spans 340 px; the side view's tabs at the top.
   Not checked in the live app with two people.
-
-## Done (2026-11-02): the prompt family on one set of parts (D-350)
-- The proposal first on a local port (inventory of 20 places, 15 inconsistencies, looks A/B/C side by side); the user
-  picked B, the first row lit, workspaces' results kept as cards, no foot, tick boxes.
-- 799a067 stage 1: promptModel, usePromptNav (keys stay in the `>` line), useDismiss, placeAt; PromptRow, PromptList,
-  PromptPanel (was MenuPanel); Menu, ContextMenu, InPlaceMenu as hosts; look B; no foot, no key hints; `current`.
-- d6f32a0 stage 2: Select moved to patterns, on a new Popover + PromptPanel; floatFrom's numbers tokens.
-- a9d9fea stage 3: finder, `?` guide, the agent's `/`, Threads' `@`, both matrix lists on PromptList; one frame CSS
-  (PromptFrame.module.css); `cardEntry()` for every card picker; PromptRow's meta, sub, badge, faint.
-- 10e39d1 stage 4: Swatches (the filter's squares) its own primitive. All pushed 2026-11-02.
-- Verified: tsc and vitest (946–950/0) on each committed tree in a clean worktree; check:tokens/kit/gallery/lessons/
-  memory; headless Chrome on the gallery: menus' and Select's keys, the + menu, right-click, canvas switch, kind guide,
-  finder (places, typed, keys), guide (keys, folds), the filter dock; on emulators (Alice + Bob): Threads' `@` lists Bob,
-  ↵ writes `@Bob `; the agent's `/` shows its three heads and 19 skills, ↓ moves. eab367c: `MenuEntry` renamed PromptEntry.
 
 ## Done (2026-11-02): the agent's P1 measured (D-341)
 - **Claude's cache:** breakpoints on tools + system and on a chat's first map, sent before
@@ -1318,3 +1319,17 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   grader change replayed on both runs.
 - **Left** (OpenAI credit, a few days): routed on skills, plan-strong, terra single, the map at 3000 on build +
   skills; commands in agent-pipeline.md §7; then routing and the map's default decided in D-341.
+
+## Done (2026-11-02): the prompt family on one set of parts (D-350)
+- The proposal first on a local port (inventory of 20 places, 15 inconsistencies, looks A/B/C side by side); the user
+  picked B, the first row lit, workspaces' results kept as cards, no foot, tick boxes.
+- 799a067 stage 1: promptModel, usePromptNav (keys stay in the `>` line), useDismiss, placeAt; PromptRow, PromptList,
+  PromptPanel (was MenuPanel); Menu, ContextMenu, InPlaceMenu as hosts; look B; no foot, no key hints; `current`.
+- d6f32a0 stage 2: Select moved to patterns, on a new Popover + PromptPanel; floatFrom's numbers tokens.
+- a9d9fea stage 3: finder, `?` guide, the agent's `/`, Threads' `@`, both matrix lists on PromptList; one frame CSS
+  (PromptFrame.module.css); `cardEntry()` for every card picker; PromptRow's meta, sub, badge, faint.
+- 10e39d1 stage 4: Swatches (the filter's squares) its own primitive. All pushed 2026-11-02.
+- Verified: tsc and vitest (946–950/0) on each committed tree in a clean worktree; check:tokens/kit/gallery/lessons/
+  memory; headless Chrome on the gallery: menus' and Select's keys, the + menu, right-click, canvas switch, kind guide,
+  finder (places, typed, keys), guide (keys, folds), the filter dock; on emulators (Alice + Bob): Threads' `@` lists Bob,
+  ↵ writes `@Bob `; the agent's `/` shows its three heads and 19 skills, ↓ moves. eab367c: `MenuEntry` renamed PromptEntry.
