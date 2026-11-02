@@ -68,7 +68,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - D-350 (2026-11-02, pushed): the prompt family on one set of parts, done (state-history); `@` and `/` checked on emulators.
 - Cards on one face (D-358, docs/specs/cards.md): done 2026-11-02, five steps (state-history); left: the plane card's drag code as a shared hook.
 - Windows and docked panels (D-359, 2026-11-02): all eight steps and the open items done, pushed and live (f2d28ac, deploy ok); left: beside's row line wins a press where it crosses the split line (as before).
-- The agent's web (D-360, docs/specs/agent-web.md, 2026-11-02): step 1 built (both providers' web search on every turn, sources under the answer; not on a real key yet); step 2 `/research` next.
+- The agent's web (D-360, docs/specs/agent-web.md, 2026-11-02): both steps built (web search on every turn, sources under the answer; `/research` with parallel researchers and a cited document); not on a real key yet.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers

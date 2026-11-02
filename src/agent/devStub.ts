@@ -37,6 +37,7 @@ import { viewOf } from './changeset'
 import { parseSkill } from './skills'
 import { skillOfPlan, skillStep } from './devStubSkills'
 import { STEER_HEAD } from './loop'
+import { isResearcher } from './stubModel'
 
 export const DEV_STUB_MARK = 'north-star:agent-dev-stub'
 
@@ -479,6 +480,28 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     signal?.addEventListener('abort', on, { once: true })
   })
 
+// The dev stub's researcher: two searches on its question, then a short linked finding on made-up `.example` pages.
+async function* researcher(req: ModelRequest, thinkMs: number): AsyncGenerator<ModelEvent> {
+  const question = /The question: (.*)$/m.exec(req.messages.map((m) => m.content).join('\n'))?.[1] ?? 'the question'
+  const slug = question.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'page'
+  const queries = [question.slice(0, 60), `${question.split(' ').slice(0, 4).join(' ')} 2026`]
+  for (const q of queries) {
+    await sleep(thinkMs * 1.5, req.signal)
+    yield { type: 'search', query: q }
+  }
+  const sources = [
+    { url: `https://news.example/${slug}`, title: `What we know: ${question.slice(0, 50)}`, cited: true },
+    { url: `https://data.example/${slug}`, title: 'Numbers and sources', cited: true },
+    { url: `https://forum.example/${slug}`, title: 'A thread about it' },
+  ]
+  const text = [
+    `A made-up finding for the dev stub ([${sources[0].title}](${sources[0].url})).`,
+    `A number with its year, also made up: 42 % in 2025 ([${sources[1].title}](${sources[1].url})).`,
+    'The pages do not settle the rest.',
+  ].join('\n')
+  yield { type: 'done', response: { text, toolCalls: [], usage: { ...fakeUsage(req, text, 0), searches: queries.length }, stop: 'end', web: { queries, sources } } }
+}
+
 // Token counts that look like a real model's (the input mostly cached after the first step), for the UI's numbers.
 function fakeUsage(req: ModelRequest, out: string, step: number): Usage {
   const input = estimateTokens(req.messages.map((m) => m.content).join('\n') + JSON.stringify(req.tools))
@@ -491,6 +514,11 @@ export function devStubModel(env: Env, o: DevStubOpts = {}): AgentModel & { stre
   const wordMs = o.wordMs ?? 28
   let n = 0
   async function* stream(req: ModelRequest): AsyncGenerator<ModelEvent> {
+    // A researcher (`research`, D-360 step 2): no tools, the web on; it answers its question with made-up pages.
+    if (isResearcher(req)) {
+      yield* researcher(req, thinkMs)
+      return
+    }
     const { ask, step, results, before } = turnOf(req.messages)
     await sleep(thinkMs + (step === 0 ? 250 : 0), req.signal)
     let s = nextStep(env, ask, step, results, before, req.tools.some((t) => t.name === 'change'))

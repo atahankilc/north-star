@@ -59,7 +59,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 14 | one plane or several, never weighed              | New parts    | mid      | code + prompt    | numbers built (`structure`, D-327) |
 | 28 | a big job stops after one preview                | New parts    | high     | new (workflow)   | built (job, steering, saved with the chat; done checked) |
 | 27 | organising never changes the structure           | New parts    | high     | new (read + skill)| phases 1–2 built; real-model run next |
-| 8  | no web access                                    | New parts    | mid      | new (Phase 9)    | half: live search built (D-360); `/research` next |
+| 8  | no web access                                    | New parts    | mid      | new (Phase 9)    | built (D-360: live search, `/research`); real-key run next |
 | 29 | small jobs split into steps the evals never ran  | Plumbing     | blocker  | code (job, evals)| fixed  |
 | 30 | ids written as Markdown links                    | Plumbing     | mid      | code             | fixed  |
 | 31 | an arrange of new cards is its own preview item  | Guards       | low      | code (changeset) | fixed  |
@@ -710,4 +710,5 @@ phrase after a negation on its line or under a "Do not ask" heading (evals/grade
     a cited document. After the guards and plumbing: a new surface while the base is at 60 % adds noise to every eval.
     *Half done 2026-11-02 (D-360, docs/specs/agent-web.md):* both providers' own web search on every turn (the user:
     always on, the model deciding; no `[web]` switch), sources under the answer, evals `noWebSearch` / `citesWeb` /
-    find-11. Left: `/research`, then a real-key run.
+    find-11. *Step 2 the same day:* `/research` (questions planned, researchers in parallel with the web, a cited
+    document; skill-research-01–04). Left: a real-key run.

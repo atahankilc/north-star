@@ -278,6 +278,49 @@ export const citesWeb = (min = 1): Grader => ({
   },
 })
 
+// `/research` (D-360 step 2): one research call with min–max questions, its context short and holding no ids of
+// the workspace (only the startup in a few lines goes out).
+export const researched = (min = 3, max = 6): Grader => ({
+  name: `researched(${min}–${max})`,
+  grade: (r) => {
+    const rc = r.transcript.turns.flatMap((t) => t.steps.flatMap((s) => s.toolCalls)).filter((c) => c.name === 'research')
+    if (!rc.length) return ok(false, 'no research call')
+    const qs = Array.isArray(rc[0].args.questions) ? rc[0].args.questions.length : 0
+    const ctx = String(rc[0].args.context ?? '')
+    if (qs < min || qs > max) return ok(false, `${qs} questions`)
+    if (ctx.length > 600) return ok(false, `the context runs ${ctx.length} characters`)
+    if (/\b[cptxkevfdmu]\d+\b/.test(ctx)) return ok(false, 'the context holds the workspace\'s ids')
+    return ok(rc.length === 1, rc.length === 1 ? `${qs} questions in one research call` : `${rc.length} research calls`)
+  },
+})
+
+// Turn n neither researched nor searched the web (a plan waits for go).
+export const noWebInTurn = (n: number): Grader => ({
+  name: `noWebInTurn(${n})`,
+  grade: (r) => {
+    const t = r.transcript.turns[n - 1]
+    if (!t) return ok(false, `there is no turn ${n}`)
+    const rc = t.steps.flatMap((s) => s.toolCalls).filter((c) => c.name === 'research').length
+    const n2 = t.usage.searches ?? 0
+    return ok(!rc && !n2, rc ? `research called in turn ${n}` : n2 ? `${n2} searches in turn ${n}` : `no web in turn ${n}`)
+  },
+})
+
+// The document made links at least `min` pages, every one on a site the searches gave (none made up).
+export const docCitesWeb = (min = 1): Grader => ({
+  name: `docCitesWeb(${min})`,
+  grade: (r) => {
+    const made = madeIds(r, 'document').filter((id) => id !== 'agent-notes')
+    if (made.length !== 1) return ok(false, `made ${made.length} documents`)
+    const text = String((r.end as AgentWs & { bodies?: Record<string, { text?: string } | undefined> }).bodies?.[made[0]]?.text ?? '')
+    const sites = new Set(r.transcript.turns.flatMap((t) => t.sources ?? []).map((s) => hostOf(s.url)))
+    const links = [...new Set([...text.matchAll(/https?:\/\/[^\s)\]>"']+/g)].map((m) => m[0].replace(/[.,;:!?]+$/, '')))]
+    const madeUp = links.filter((l) => !sites.has(hostOf(l)))
+    if (madeUp.length) return ok(false, `links no search gave: ${madeUp.slice(0, 3).join(', ')}`)
+    return ok(links.length >= min, `${links.length} link${links.length === 1 ? '' : 's'} to pages found`)
+  },
+})
+
 // Nothing deleted (made or changed is fine).
 export const noDeletes = (): Grader => ({
   name: 'noDeletes',

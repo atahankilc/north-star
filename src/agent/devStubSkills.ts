@@ -73,7 +73,7 @@ export function skillStep(env: Env, ask: string, step: number, results: Result[]
   const rest = go ? was!.rest : parsed && 'skill' in parsed ? parsed.rest : ''
   const k = kit(env)
   const done = (what: string) => (proposed(results) ? { answer: what } : { answer: `It was refused: ${refusedWhy(results)}. Nothing changed.` })
-  if (!canWrite && (go || ['test', 'compare', 'prioritize', 'organize', 'sort-stickies', 'learn', 'dedupe', 'import', 'interview', 'swot', 'one-pager', 'pitch', 'lean-canvas'].includes(name)) && step > 0)
+  if (!canWrite && (go || ['test', 'compare', 'prioritize', 'organize', 'sort-stickies', 'learn', 'dedupe', 'import', 'interview', 'swot', 'one-pager', 'pitch', 'lean-canvas', 'research'].includes(name)) && step > 0)
     return { answer: "You're a viewer here, so I can read and suggest but not change anything; an editor can run this." }
 
   switch (name) {
@@ -315,6 +315,46 @@ export function skillStep(env: Env, ask: string, step: number, results: Result[]
       if (step === 0) return { calls: [{ name: 'search', args: { query: items.slice(0, 3).join(' ') || 'import', limit: 8 } }] }
       if (step === 1) return change(fresh.map((title) => ({ op: 'create_card', args: { type, plane: k.P(plane!), title } })), `import ${plural(fresh.length, type)}`, 'Importing.')
       return done(`In the preview: ${plural(fresh.length, type)} on ${k.P(plane!)} ${q(plane!.name)}.${known.length ? ` Skipped ${known.map((t) => k.cite(k.card(t)!)).join(', ')}: already here.` : ''}`)
+    }
+    case 'research': {
+      // D-360 step 2: questions first; on go one research call (the dev stub's researchers answer with made-up pages,
+      // devStub.ts), then a document of what they found, each fact with its link.
+      const topic = rest.trim() || 'the market'
+      if (!go) {
+        if (step === 0) return { calls: [{ name: 'query', args: { kind: 'card', type: 'competitor', limit: 20 } }] }
+        const rival = k.ws.cards.find((c) => c.type === 'competitor')
+        return plan('research', rest, [
+          rival ? `What does ${rival.title} charge, and where does it sell? (changes ${k.cite(rival)})` : 'Who already sells this, and at what price? (new)',
+          `How big is the market for ${topic}, in numbers? (new)`,
+          'What do customers say in public about it: reviews, forums? (new)',
+        ])
+      }
+      if (step === 0) {
+        const questions = before.split('\n').map((l) => /^\d+\. (.*?)(?: \((?:changes|new)[^)]*\))?$/.exec(l)?.[1]).filter((x): x is string => !!x)
+        const title = k.ws.workspace?.name ?? 'the startup'
+        return { calls: [{ name: 'research', args: { questions, context: `${title}: ${k.ws.workspace?.description ?? 'a startup'}`.slice(0, 300) } }] }
+      }
+      if (step === 1) {
+        const found = results.find((r) => r.name === 'research')?.content ?? ''
+        const sections = found.split(/\n(?=## Q\d+\. )/).filter((x) => x.startsWith('## Q'))
+        const pages = [...new Set(found.match(/^- \[[^\]]+\]\(https?:[^)]+\)/gm) ?? [])]
+        const lines = [
+          `# Research: ${topic}`,
+          '',
+          `What the web says about ${topic}, question by question; every fact links its page.`,
+          ...sections.flatMap((sec) => {
+            const [h, ...body] = sec.split('\n')
+            const end = body.findIndex((l) => l.startsWith('Pages:'))
+            const text = (end < 0 ? body : body.slice(0, end)).filter(Boolean)
+            return ['', `## ${h.replace(/^## Q\d+\. /, '')}`, ...text.map((t) => `- ${t}`)]
+          }),
+          '',
+          '## Sources',
+          ...pages.map((pg, i) => `${i + 1}. ${pg.slice(2)}`),
+        ]
+        return change([{ op: 'create_document', args: { title: `Research: ${topic}`.slice(0, 80), text: lines.join('\n') } }], `research ${topic}`.slice(0, 40), 'Writing it up.')
+      }
+      return done('The research waits in the preview as a document: a section per question, each fact linked to its page, the sources at the end.')
     }
     case 'interview':
     case 'swot':

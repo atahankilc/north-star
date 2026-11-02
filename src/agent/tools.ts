@@ -13,6 +13,7 @@ import { agentArgs, ID_KEYS, runChange } from './change'
 import { jobText, planJob, progressJob, type JobHost } from './job'
 import { previewDiff, viewOf, type Changeset } from './changeset'
 import { entriesOf, readCell, type MatrixSetup } from '../model/matrix'
+import { researchTool } from './research'
 
 export { NO_COORDS, COORDS_FIX, agentArgs, ID_KEYS } from './change'
 
@@ -340,6 +341,6 @@ const progressTool: AgentTool = {
   },
 }
 
-export const AGENT_TOOLS: AgentTool[] = [...read, whereTool, lookTool, changeTool, ...ui, planTool, progressTool]
+export const AGENT_TOOLS: AgentTool[] = [...read, whereTool, lookTool, changeTool, ...ui, planTool, progressTool, researchTool]
 export const WRITE_TOOLS = new Set(AGENT_TOOLS.filter((t) => t.kind === 'write').map((t) => t.def.name))
 export const TOOL_NAMES = AGENT_TOOLS.map((t) => t.def.name)

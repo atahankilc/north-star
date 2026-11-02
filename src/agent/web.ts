@@ -17,3 +17,9 @@ export function siteOf(url: string): string {
     return url
   }
 }
+
+// `/research` (D-360 step 2): at most this many questions a research call takes, and how many researchers run at once.
+// Each researcher is one response of its own with the web on (≤ WEB_SEARCHES searches), so one call costs at most
+// RESEARCH_QUESTIONS × WEB_SEARCHES searches.
+export const RESEARCH_QUESTIONS = 6
+export const RESEARCHERS = 3

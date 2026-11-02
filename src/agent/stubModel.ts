@@ -13,6 +13,10 @@ import { callIds, NO_USAGE, type AgentModel, type ModelRequest, type ModelRespon
 // `web` on an answer: what a real model's web search would have given (D-360), its queries counted as searches.
 export type ScriptStep = { calls: { name: string; args: Record<string, unknown> }[]; text?: string } | { answer: string; stop?: ModelResponse['stop']; web?: WebUse } | { fail: string }
 export type Script = ScriptStep[]
+// What the stub's researchers find (`research`, D-360 step 2), by question: a researcher's request (no tools, the web
+// on) is answered from here and never takes a step of the script. A question not here finds nothing.
+export type ResearchScript = Record<string, { answer: string; web: WebUse }>
+export const isResearcher = (req: ModelRequest) => !req.tools.length && !!req.web
 
 export type StubModel = AgentModel & {
   // Requests it has answered (the messages it was sent, for tests).
@@ -21,7 +25,7 @@ export type StubModel = AgentModel & {
   reset: () => void
 }
 
-export function stubModel(script: Script, o: { name?: string; callId?: () => string } = {}): StubModel {
+export function stubModel(script: Script, o: { name?: string; callId?: () => string; research?: ResearchScript } = {}): StubModel {
   const seen: ModelRequest[] = []
   const id = o.callId ?? callIds()
   let at = 0
@@ -31,6 +35,7 @@ export function stubModel(script: Script, o: { name?: string; callId?: () => str
     reset: () => void (at = 0),
     async respond(req: ModelRequest): Promise<ModelResponse> {
       seen.push(req)
+      if (isResearcher(req)) return researched(req, o.research)
       const step = script[at++]
       if (!step) return { text: '', toolCalls: [], usage: { ...NO_USAGE }, stop: 'end' }
       if ('fail' in step) throw new Error(step.fail)
@@ -39,6 +44,14 @@ export function stubModel(script: Script, o: { name?: string; callId?: () => str
       return { text: step.text ?? '', toolCalls, usage: { ...NO_USAGE }, stop: 'tool_calls' }
     },
   }
+}
+
+// A researcher's answer from the research script: the question found in what it was asked.
+export function researched(req: ModelRequest, research: ResearchScript = {}): ModelResponse {
+  const asked = req.messages.filter((m) => m.role === 'user').map((m) => m.content).join('\n')
+  const hit = Object.entries(research).find(([q]) => asked.includes(q))?.[1]
+  if (!hit) return { text: 'The pages found do not answer this.', toolCalls: [], usage: { ...NO_USAGE }, stop: 'end' }
+  return { text: hit.answer, toolCalls: [], usage: { ...NO_USAGE, ...(hit.web.queries.length ? { searches: hit.web.queries.length } : {}) }, stop: 'end', web: hit.web }
 }
 
 // The names of tools that change data (S13's `change`; any op name called directly as a tool counts too, as a model

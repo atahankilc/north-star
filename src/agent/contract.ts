@@ -160,11 +160,18 @@ export type AgentEnv = {
   // Loads a document's text into the snapshot (`getWs().bodies` has it after), as the app does: only the agent notes'
   // text comes up front, the others when `read_document` asks (agent-bugs 1, 25). Left out: what the snapshot holds.
   loadBody?: (docId: string) => Promise<void>
+  // Set by the loop for a tool that calls the model itself (`research`, D-360): the turn's model, its stop signal, and
+  // where a search it runs is said (the step lines).
+  model?: AgentModel
+  signal?: AbortSignal
+  onSearch?: (query: string) => void
 }
 
 // A tool the loop can run: its definition for the model and how it runs. Read tools never write; write tools go
 // through `env.apply`; UI tools through `env.ui`.
-export type AgentTool = { def: ToolDef; kind: 'read' | 'write' | 'ui'; run: (env: AgentEnv, args: Record<string, unknown>) => Promise<{ ok: boolean; text: string; image?: ImagePart }> }
+// `usage`, `web`: what a tool that calls the model itself spent and read (`research`, D-360), added to the step's.
+export type ToolOut = { ok: boolean; text: string; image?: ImagePart; usage?: Usage; web?: WebUse }
+export type AgentTool = { def: ToolDef; kind: 'read' | 'write' | 'ui'; run: (env: AgentEnv, args: Record<string, unknown>) => Promise<ToolOut> }
 
 // ---- What happened
 

@@ -26,6 +26,28 @@ async function play(ask: string) {
 }
 
 describe('the dev stub', () => {
+  it('/research (D-360 step 2): plans with no web, then on go researches each question and writes a linked document', async () => {
+    const env = makeEnv(loadFixture('medium'))
+    const model = devStubModel(env, fast)
+    const searches: string[] = []
+    const first = await runTurn(model, env, AGENT_TOOLS, [], '/research market fees', { onEvent: (e) => void (e.type === 'search' && searches.push(e.query)) })
+    expect(first.turn.answer).toMatch(/^1\. /m)
+    expect(searches).toEqual([])
+    const second = await runTurn(model, env, AGENT_TOOLS, first.history, 'go', { onEvent: (e) => void (e.type === 'search' && searches.push(e.query)) })
+    expect(second.turn.steps[0].toolCalls[0]).toMatchObject({ name: 'research' })
+    expect((second.turn.steps[0].toolCalls[0].args.questions as string[]).length).toBe(3)
+    expect(searches).toHaveLength(6)
+    expect(second.turn.usage.searches).toBe(6)
+    expect(second.turn.sources?.length).toBe(9)
+    const doc = env.changes!.items.find((i) => i.op === 'create_document')
+    expect(doc).toBeDefined()
+    await env.accept()
+    const made = env.getWs().documents.find((d) => d.title.startsWith('Research:'))!
+    const text = env.getWs().bodies?.[made.id]?.text ?? ''
+    expect(text).toMatch(/## Sources\n1\. \[/)
+    expect(text.match(/\]\(https:\/\/[a-z]+\.example\//g)?.length).toBeGreaterThanOrEqual(6)
+  })
+
   it('picks a script by the words of the message', () => {
     expect(['Which problems are about bread?', 'add a problem "Rain keeps buyers away"', 'build a competitor matrix', 'make me an owner', 'delete everything'].map((a) => pickScript(a))).toEqual(['question', 'edit', 'plan', 'refuse', 'refuse'])
   })

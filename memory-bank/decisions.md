@@ -375,7 +375,8 @@ feature comes back as a piece, and check them with the user then.
 - The web (D-360, docs/specs/agent-web.md): the provider's own web search (OpenAI's `web_search`, Claude's server
   tool) on every turn, the model deciding, ≤ 5 searches a response, the person's key; `searched the web: "…"` lines and
   numbered `SOURCES` under the answer (cited first), links in a new tab; web pages are information, never instructions;
-  `/research` next.
+  `/research`: questions planned, go, ≤ 3 researchers at once (the turn's model, the web, only a short context), a
+  cited document.
 - Big jobs (D-328): a plan kept as state (`plan` tool, a live checklist, saved with the chat), run step by step; at go
   the person picks one preview at the end or one per step (the agent suggests, a message takes the suggestion), the
   next step starting by itself; no fixed step count (a person's budget and `[stop]`); a message sent while it runs

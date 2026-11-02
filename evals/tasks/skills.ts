@@ -3,7 +3,7 @@
 // what was made or changed, the cards an answer cites (real ones, the right ones), and for the document skills the
 // document's text: every card it mentions is real and named with its own title (docWritten). Big jobs (agent.md §4.10)
 // plan first and change nothing until "go" (`followUps`, `noWritesInTurn(1)`). Each has a plausible wrong script. The judge rides on a twin of the first task for /gaps, /next and the five document skills (`-04-judged`, capability, JUDGED below), so the stub's pass counts stay model-free.
-import { MADE, allSet, docSectionCards, fromMatches, madeIds, judge, sameLine, answerExcludes, answerIncludes, absent, cell, cites, citesSome, count, docWritten, exists, field, grouped, linked, made, noDeletes, noOverlaps, noWriteAttempts, noWritesInTurn, onPlane, onlyChanged, task, toolCalled, undoRestores, noNewLinksAcrossPlanes, linksShownOn, noWrites, pictureJudge, type ChangeTest } from '../graders'
+import { MADE, allSet, docSectionCards, fromMatches, madeIds, judge, sameLine, answerExcludes, answerIncludes, absent, cell, cites, citesSome, count, docWritten, exists, field, grouped, linked, made, noDeletes, noOverlaps, noWriteAttempts, noWritesInTurn, onPlane, onlyChanged, task, toolCalled, undoRestores, noNewLinksAcrossPlanes, linksShownOn, noWrites, pictureJudge, researched, noWebInTurn, docCitesWeb, argsExclude, type ChangeTest } from '../graders'
 import { NOW } from '../fixtures'
 import type { Grader, Task } from '../types'
 import type { AgentWs } from '../../src/agent/contract'
@@ -107,6 +107,54 @@ const doc = (title: string, lines: string[], o: { share?: boolean } = {}) => cha
 const DOC_ONLY = onlyChanged({ add: { documents: 1 } })
 const docSaid = (what: string) => answer(`I wrote ${what} as a document; it's private to you and waits in the preview: apply it to keep it.`)
 
+
+// /research's fixture (D-360 step 2): made-up pages on reserved `.example` sites, what the stub's researchers find.
+const RESEARCH_QS = [
+  'What does Localmate charge market stalls in Germany to sell through it?',
+  'How many people in Istanbul shop at weekly neighbourhood markets?',
+  'Which apps already take pre-orders from Istanbul market stalls?',
+  'What rules apply to selling online produce in Turkey?',
+]
+const RESEARCH_CONTEXT = 'Pazar: pre-orders from neighbourhood market stalls in Istanbul, picked up on the way home; for busy shoppers and the stalls.'
+const RESEARCH_PAGES = {
+  localmate: { url: 'https://localmate.example/pricing', title: 'Localmate: pricing for sellers', cited: true },
+  markets: { url: 'https://istanbul-stats.example/markets-2025', title: 'Neighbourhood markets in numbers, 2025', cited: true },
+  apps: { url: 'https://marketnews.example/preorder-apps', title: 'Pre-order apps for market stalls', cited: true },
+}
+const RESEARCH_FOUND = {
+  [RESEARCH_QS[0]]: { answer: 'Localmate takes 8 % of each order and no monthly fee ([Localmate: pricing for sellers](https://localmate.example/pricing)). The page gives no price for Turkey.', web: { queries: ['Localmate seller fees Germany'], sources: [RESEARCH_PAGES.localmate] } },
+  [RESEARCH_QS[1]]: { answer: 'About 380 weekly markets run in Istanbul, visited by some 2 million people a week in 2025 ([Neighbourhood markets in numbers, 2025](https://istanbul-stats.example/markets-2025)).', web: { queries: ['Istanbul semt pazarı visitors 2025'], sources: [RESEARCH_PAGES.markets] } },
+  [RESEARCH_QS[2]]: { answer: 'Two small apps take pre-orders from Kadıköy stalls; neither has pickup slots ([Pre-order apps for market stalls](https://marketnews.example/preorder-apps)).', web: { queries: ['Istanbul market stall pre-order app'], sources: [RESEARCH_PAGES.apps] } },
+}
+const RESEARCH_PLAN = [
+  'What we know: c47 "Localmate" (Germany) is our closest rival; nothing in the workspace says what it charges, nor how many people shop at the markets.',
+  '',
+  '1. What does Localmate charge market stalls in Germany? (changes c47 "Localmate")',
+  '2. How many people in Istanbul shop at weekly neighbourhood markets? (new)',
+  '3. Which apps already take pre-orders from Istanbul market stalls? (new: rivals we may lack)',
+  '4. What rules apply to selling online produce in Turkey? (new)',
+  '',
+  'Drop, change or add questions in your reply; say go and I will research them (up to five searches each).',
+].join('\n')
+const RESEARCH_DOC = [
+  '# Research: rival fees and Istanbul markets',
+  '',
+  'Rivals take a share of each order, and the markets are big enough to matter.',
+  '',
+  '## What Localmate charges',
+  '- c47 "Localmate" takes 8 % of each order, no monthly fee ([Localmate: pricing for sellers](https://localmate.example/pricing)). Open: its price in Turkey.',
+  '',
+  '## Who shops at the markets',
+  '- About 380 weekly markets, some 2 million visits a week in 2025 ([Neighbourhood markets in numbers, 2025](https://istanbul-stats.example/markets-2025)).',
+  '',
+  '## Apps already there',
+  '- Two small apps take pre-orders from Kadıköy stalls, neither with pickup slots ([Pre-order apps for market stalls](https://marketnews.example/preorder-apps)).',
+  '',
+  '## Sources',
+  '1. [Localmate: pricing for sellers](https://localmate.example/pricing)',
+  '2. [Neighbourhood markets in numbers, 2025](https://istanbul-stats.example/markets-2025)',
+  '3. [Pre-order apps for market stalls](https://marketnews.example/preorder-apps)',
+]
 
 // Only docs that name one of these cards changed (a merge's cascade, nothing else).
 const touchesOnly = (...cards: string[]): ChangeTest => (id, c, r) => {
@@ -1768,6 +1816,60 @@ export const SKILL_TASKS: Task[] = [
     ],
     wrong: [doc('Lean canvas: Pazar', ['# Lean canvas', '- c23 "Office lunch groups sell out by 10am and turn people away"', '- c85 "Office lunch groups near the tram"', '- c65 "Bundle leftover produce by WhatsApp"', '## Key metrics', '## Unfair advantage']), answer('Wrote it.')],
   },
+  // ---- /research (D-360 step 2): questions planned, the web only after go, a cited document
+  {
+    id: 'skill-research-02',
+    group: 'skills',
+    set: 'regression',
+    fixture: 'medium',
+    ask: '/research what rivals charge market stalls, and how many people shop at Istanbul markets',
+    autoGo: false,
+    graders: [noWrites(), noWebInTurn(1), answerIncludes([/^\s*1[.)]/m, /^\s*3[.)]/m])],
+    reference: [
+      calls(['query', { kind: 'card', type: 'competitor', limit: 20 }], ['search', { query: 'market' }]),
+      answer(RESEARCH_PLAN),
+    ],
+    // Searched before the person said go, and planned nothing.
+    wrong: [{ answer: 'Localmate charges stalls 8 % ([Localmate pricing](https://localmate.example/pricing)).', web: { queries: ['Localmate stall fees'], sources: [RESEARCH_PAGES.localmate] } }],
+  },
+  {
+    id: 'skill-research-01',
+    group: 'skills',
+    set: 'regression',
+    fixture: 'medium',
+    ask: '/research what rivals charge market stalls, and how many people shop at Istanbul markets',
+    followUps: ['go'],
+    research: RESEARCH_FOUND,
+    graders: [noWritesInTurn(1), noWebInTurn(1), researched(3, 6), docWritten({ words: ['Sources'], cites: [R('c47')], min: 1 }), docCitesWeb(3), noDeletes(), undoRestores()],
+    reference: [
+      calls(['query', { kind: 'card', type: 'competitor', limit: 20 }], ['search', { query: 'market' }]),
+      answer(RESEARCH_PLAN),
+      call('research', { questions: RESEARCH_QS.slice(0, 3), context: RESEARCH_CONTEXT }),
+      doc('Research: rival fees and Istanbul markets', RESEARCH_DOC),
+      docSaid('the research (three questions, each fact linked to its page)'),
+    ],
+    // Written from memory: no research call, links no search gave.
+    wrong: [answer(RESEARCH_PLAN), doc('Research: rival fees', ['# Research', '- c47 "Localmate" charges 12 % ([fees](https://example.com/localmate-fees)).', '## Sources', '- https://example.com/localmate-fees']), answer('Wrote it.')],
+  },
+  {
+    id: 'skill-research-03',
+    group: 'skills',
+    set: 'regression',
+    fixture: 'medium',
+    ask: '/research what rivals charge market stalls, and how many people shop at Istanbul markets',
+    followUps: ['go, but drop question 4'],
+    research: RESEARCH_FOUND,
+    graders: [noWebInTurn(1), researched(3, 3), argsExclude('online produce'), docCitesWeb(3), noDeletes()],
+    reference: [
+      calls(['query', { kind: 'card', type: 'competitor', limit: 20 }], ['search', { query: 'market' }]),
+      answer(RESEARCH_PLAN),
+      call('research', { questions: RESEARCH_QS.slice(0, 3), context: RESEARCH_CONTEXT }),
+      doc('Research: rival fees and Istanbul markets', RESEARCH_DOC),
+      docSaid('the research (the three questions you kept, each fact linked)'),
+    ],
+    // The dropped question researched anyway.
+    wrong: [answer(RESEARCH_PLAN), call('research', { questions: RESEARCH_QS, context: RESEARCH_CONTEXT }), doc('Research: rival fees and Istanbul markets', RESEARCH_DOC), answer('Wrote it.')],
+  },
 ]
 
 // The judged twins: the first task of each skill whose quality only a reader can tell, again, with an LLM judge on top
@@ -1780,6 +1882,7 @@ const JUDGED: [string, Grader][] = [
   ['one-pager', judgeDoc('one-pager')],
   ['pitch', judgeDoc('pitch')],
   ['lean-canvas', judgeDoc('lean-canvas')],
+  ['research', judgeDoc('research')],
 ]
 for (const [name, j] of JUDGED) {
   const first = SKILL_TASKS.find((t) => t.id === `skill-${name}-01`)!

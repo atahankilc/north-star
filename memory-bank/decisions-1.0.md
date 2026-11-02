@@ -143,6 +143,6 @@ feature comes back, its line moves to decisions.md (rewritten for the canvas) an
 - Preview: the app shows the ticked rows as if applied, nothing editable, diff signs/colours, `was` values, stepper (D-087, D-096).
 - Numbered clickable sources (D-076); its `[web]` switch is gone: the agent's web is always on (D-360). Modes `/validate /interview /swot /gaps /next
   /pitch /organize /research /analyze /criteria` (D-085, D-086, D-088, D-099, D-134).
-- Deep research: plan → pick → ≤3 web researchers → `write_report` report on the stage (D-088, D-089). Chat write-ups via
+- Deep research: plan → pick → ≤3 web researchers → `write_report` report on the stage (D-088, D-089); back as the agent's `/research`, a document (D-360). Chat write-ups via
   `make_report`, saved on request (D-090). The chat's report on a `StageBox` with a section stepper (D-101); reports from the
   tab open in the tab, not on the stage (D-100).

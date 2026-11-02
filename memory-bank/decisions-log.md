@@ -6942,7 +6942,7 @@ behind 0.70 → 0.72; nothing to fix.
 **Not yet:** where beside's row line starts it crosses the split line's middle, and the row line wins a press there
 (as before).
 
-### D-360 · 2026-11-02 · Accepted (the agent's web, step 1 of 2; agent.md §4.9 layer 8, Phase 9; spec docs/specs/agent-web.md)
+### D-360 · 2026-11-02 · Accepted (the agent's web, steps 1 and 2; agent.md §4.9 layer 8, Phase 9; spec docs/specs/agent-web.md)
 **The agent searches the web through its provider's own tool, on every turn, the model deciding when; the pages come
 back as sources under the answer.** The user, 2026-11-02: "Web research'ü eklememiz lazım"; asked, they chose both
 parts in order (live search in the chat now, `/research` next), the web always on with the model deciding (not D-076's
@@ -6971,5 +6971,16 @@ capped, searches as events, sources cited first, counted, items replayed, a paus
 the loop on every step and off with `web: false`; a saved chat's sources); vitest 1004/0; evals: regression 56/56,
 `--wrong` 117 fail; headless Chrome on emulators with the dev stub's `web demo` (the step lines while it searches, the
 list after). Not run on a real key yet (no OpenAI credit).
-**Not yet:** `/research` (step 2: questions planned, researchers in parallel, a cited document → cards, D-088 as
-1.0); measuring how often a model searches when it shouldn't (find-01's grader on a real run); a source's page age.
+**Step 2, `/research` (built the same day):** a plan skill: 3–6 numbered questions, no search before go; the person
+changes the list by message (no tick boxes, as every plan skill). On go one `research` tool call (src/agent/research.ts):
+each question its own researcher, one response of the turn's model with the web on, no workspace tools, only the
+startup in ≤ 600 characters and the question; ≤ 3 at once; refused outside `/research`. Their tokens, searches and
+pages join the turn's (`ToolOut.usage`, `ToolOut.web`), their searches step lines. Then a cited document
+(`Research: <topic>`), evidence with links only where a finding plainly bears on a card; the skill's check sends a
+document with no links back once. Checked: tests/unit/agentResearch.test.ts and the dev stub's `/research`
+(devStub.test.ts); evals skill-research-01–04 (references pass, `--wrong` fail: searched before go, made-up links,
+a dropped question researched); headless Chrome on emulators (the plan, `researching 3 questions on the web…` with six
+search lines, the answer's sources, the document in the preview). The prompt stays ≤ 4k: four skill one-liners
+shorter.
+**Not yet:** a real-key run of both steps; measuring how often a model searches when it shouldn't (find-01's grader
+on a real run); a source's page age; replaying a recorded research run (its researchers find nothing on replay).

@@ -78,8 +78,8 @@ export type RunOpts = {
   pick?: () => (role: TurnRole) => AgentModel
 }
 
-export const referenceModel = (task: Task): AgentModel => stubModel(task.reference, { name: 'stub' })
-export const wrongModel = (task: Task): AgentModel => stubModel(task.wrong ?? wrongScript(task.reference), { name: 'stub (wrong)' })
+export const referenceModel = (task: Task): AgentModel => stubModel(task.reference, { name: 'stub', ...(task.research ? { research: task.research } : {}) })
+export const wrongModel = (task: Task): AgentModel => stubModel(task.wrong ?? wrongScript(task.reference), { name: 'stub (wrong)', ...(task.research ? { research: task.research } : {}) })
 
 export const verdictOf = (grades: Grade[]): Verdict => (grades.some((g) => g.pass === false) ? 'fail' : grades.some((g) => g.pass === 'skipped') ? 'unjudged' : 'pass')
 

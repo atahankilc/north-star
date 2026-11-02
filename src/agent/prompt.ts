@@ -57,7 +57,7 @@ export function promptSections(o: { workspaceName?: string } = {}): PromptSectio
     },
     {
       title: 'The web',
-      body: 'Search the web only for facts outside the workspace that may have changed (a rival\'s prices, news). Link each web fact as [title](url); it reaches the board only through `change`, with its link.',
+      body: 'Search the web only for facts outside the workspace that may have changed (a rival\'s prices, news). Link each web fact as [title](url); it reaches the board only through `change`, with its link. `research`: /research only.',
     },
     {
       title: 'Changing things',

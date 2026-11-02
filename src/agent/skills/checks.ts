@@ -141,6 +141,18 @@ const CHECKS: Record<string, Check> = {
     }
     return out
   },
+  // /research (D-360 step 2): the findings written up as a document, its facts linked to the pages.
+  research: (c) => {
+    const made = madeOf(c.cs)
+    const docs = c.after.documents.filter((d) => made.has(d.id))
+    if (!docs.length) return [{ model: 'the research is not written up: create_document "Research: <topic>" with the findings, each fact linked', person: 'the research has no document' }]
+    const out: Warning[] = []
+    for (const d of docs) {
+      const text = c.after.bodies?.[d.id]?.text ?? ''
+      if (!/\[[^\]\n]+\]\(https?:\/\/[^\s)]+\)/.test(text)) out.push({ model: `the document ${q(d.title)} links no web page: put each fact's page after it as [title](url), from the findings`, person: `the document ${q(d.title)} names no sources` })
+    }
+    return out
+  },
 }
 
 export const hasChecks = (name: string) => name in CHECKS

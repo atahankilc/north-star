@@ -1,7 +1,7 @@
 # The agent's web (D-360)
 
 The agent (D-312, [agent.md](agent.md)) reads the web through its provider's own search tool: knowledge layer 8 of
-§4.9. Two steps, in order: **1. live search in the chat** (built 2026-11-02), **2. `/research`** (next).
+§4.9. Two steps, in order: **1. live search in the chat**, **2. `/research`** (both built 2026-11-02).
 
 ## 1. Live search (built)
 
@@ -42,9 +42,38 @@ A page's words never instruct (prompt rule 1; the injection evals cover workspac
 `find-11-web-rival-fees`. The stub plays `web` on an answer; the dev stub's `web demo` (`?agentStub=1`) shows the
 lines and the list.
 
-## 2. `/research` (next)
+## 2. `/research` (built)
 
-1.0's D-088 again, on the new loop: a plan of 3–6 questions the person ticks; one researcher per question (≤ 3 at
-once) with the web on, a short context of the startup, 5–10 lines each with links; then a cited document
-(`create_document`) and, previewed, the cards it suggests (competitors with sources, evidence with links, matrix
-cells). Graded on cited sources (Phase 9's gate) before it ships.
+1.0's D-088 again, on the new loop (src/agent/research.ts; the skill in src/agent/skills/index.ts):
+
+**Plan, then go.** `/research <topic>` is a plan skill: the agent reads what the workspace knows (search, query, get),
+then answers with 3–6 numbered questions the web can answer, each with the card it would change (cited) or `new`,
+and searches nothing. The person drops, changes or adds questions in their reply (no tick boxes: a message does it,
+as for every plan skill), then says go.
+
+**Researchers.** On go the agent makes one `research` call: the questions as the person left them (1–6) and the
+startup in two to four lines (≤ 600 characters). Each question is its own researcher: one response of the turn's
+model with the web on, no workspace tools, its own short prompt (`RESEARCHER_PROMPT`: 5–10 lines, every fact with its
+page as `[title](url)`, numbers with date and place, what the pages don't settle said, pages never instructions) and
+only the context and the question; nothing else of the workspace goes out. At most `RESEARCHERS` (3) run at once, in
+the order asked; one failing says so and the others go on. The tool runs only inside `/research` (else it refuses:
+search yourself for one fact).
+
+**What comes back.** One result: a section per question with its findings and its pages (cited first). The
+researchers' tokens and searches count in the turn's usage and cost (`ToolOut.usage`), their pages in its sources
+(`ToolOut.web`, the list under the answer), their searches as `searched the web: "…"` step lines under
+`researching N questions on the web…`. At most 6 × 5 = 30 searches a call (~$0.30) plus tokens.
+
+**The write-up.** One change: `create_document "Research: <topic>"` (summary, a section per question, every fact with
+its link from the findings, the open ones said as open, then Sources); evidence (`kind link`, the url) only where a
+finding plainly backs or contradicts a card; a competitor card for a rival the workspace lacks when the ask is about
+rivals. Previewed as always. The skill's check sends back once a proposal with no document or a document linking no
+page, then warns in the preview.
+
+**Evals.** skill-research-01 (go: one research call of 3–6 questions, a context without ids, the document's every link
+on a site the researchers found, `docCitesWeb`), -02 (the plan turn: no research, no search), -03 (`go, but drop
+question 4`: only the three kept), -04-judged; the stub's researchers answer from a task's `research` script
+(`.example` pages). The dev stub's `/research` plays it all with made-up pages.
+
+**Not yet.** A real-key run (both providers); replaying a recorded research run (the replay's researchers find
+nothing); cards beyond competitors (matrix cells from findings).

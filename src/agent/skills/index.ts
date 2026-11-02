@@ -4,7 +4,7 @@
 // `/name`, the loop adds that skill's guide as a developer message for that turn only (loop.ts), so the prompt stays
 // ≤ 4k tokens and a guide costs only when it's used. An unknown `/x` goes to the model as an ordinary message, with a
 // one-line note listing the skills.
-// Pure: no React, no Firebase. `/research` needs the web (Phase 9's other half): not here yet.
+// Pure: no React, no Firebase. `/research` (D-360 step 2) runs its questions through the `research` tool (research.ts).
 import { METHODS, type Method } from './methods'
 
 export type SkillGroup = 'analysis' | 'building' | 'documents'
@@ -35,7 +35,7 @@ export const SKILLS: Skill[] = [
   // ---- Analysis
   {
     name: 'ask',
-    summary: 'any question about the workspace, answered with links to the items',
+    summary: 'any question, answered with links to the items',
     usage: '<question>',
     group: 'analysis',
     when: 'The default: the person wants an answer, not a change.',
@@ -102,7 +102,7 @@ export const SKILLS: Skill[] = [
   // ---- Building
   {
     name: 'test',
-    summary: 'an experiment plan for an idea: hypothesis, signal, a deck of dated tasks',
+    summary: 'an experiment for an idea: hypothesis, signal, dated tasks',
     usage: '<idea>',
     group: 'building',
     plan: true,
@@ -146,7 +146,7 @@ export const SKILLS: Skill[] = [
   },
   {
     name: 'organize',
-    summary: 'a plane made readable: parts placed by meaning and links, the app placing',
+    summary: 'a plane made readable: parts placed by meaning and links',
     usage: '<plane>',
     group: 'building',
     plan: true,
@@ -163,7 +163,7 @@ export const SKILLS: Skill[] = [
   },
   {
     name: 'restructure',
-    summary: 'a plane or canvas reshaped: parts onto planes of their own, packages, step by step',
+    summary: 'a plane or canvas reshaped: parts onto planes of their own, packages',
     usage: '<plane or canvas>',
     group: 'building',
     plan: true,
@@ -209,7 +209,7 @@ export const SKILLS: Skill[] = [
   },
   {
     name: 'dedupe',
-    summary: 'near-duplicate cards found and merged, keeping links, evidence and places',
+    summary: 'near-duplicate cards merged, keeping links, evidence and places',
     group: 'building',
     when: 'Finding cards that say the same thing twice.',
     steps: [
@@ -236,7 +236,7 @@ export const SKILLS: Skill[] = [
   // ---- Documents
   {
     name: 'interview',
-    summary: 'a Mom Test interview script for a customer or problem, as a document',
+    summary: 'a Mom Test interview script, as a document',
     usage: '<customer or problem>',
     group: 'documents',
     when: 'Getting ready to talk to customers.',
@@ -278,6 +278,22 @@ export const SKILLS: Skill[] = [
     steps: ['Read as for a one-pager, plus evidence with numbers.', 'Sections in pitch order (the positioning guide below), each two to four lines, the positioning sentence at the top.', DOC],
     methods: ['positioning'],
     tools: ['query', 'get', 'change'],
+  },
+  {
+    name: 'research',
+    summary: 'a topic researched on the web, as a cited document',
+    usage: '<topic>',
+    group: 'documents',
+    plan: true,
+    when: 'What the workspace can\'t say: rivals\' prices, a market, a rule, what customers say in public (D-360). Plan the questions first; the web is searched only after go.',
+    steps: [
+      'Read what the workspace already knows about the topic (search, query, get): the project, its customers, competitors, open questions.',
+      'Plan, then wait for go: 3–6 numbered questions the web can answer, each one thing (a rival\'s price in a country, a market\'s size, a rule), and for each the card it would change (cited) or "new". Say the person can drop, change or add questions in their reply. Never search before go.',
+      'On go: one research call with the questions as the person left them and the startup in two to four lines (what, for whom, where). Nothing else of the workspace goes into it.',
+      'Then one change: create_document "Research: <topic>": a short summary first, a section per question with its findings, every fact with its link as [title](url) from the findings (none from memory), what the pages don\'t settle said as open, then Sources. Only where a finding plainly backs or contradicts a card: create_evidence on it (kind link, stance, the fact, source the site, url the page). A rival the workspace lacks: create_card competitor, if the person asked about rivals.',
+      'Answer in two or three lines: what the document holds and that it waits in the preview.',
+    ],
+    tools: ['search', 'query', 'get', 'research', 'change'],
   },
   {
     name: 'lean-canvas',
@@ -332,6 +348,6 @@ export function unknownSkillReply(name: string): string {
   return [
     `There's no /${name}.${near.length ? ` Did you mean ${near.join(' or ')}?` : ''} The skills are:`,
     ...SKILLS.map((s) => `- /${s.name}${s.usage ? ` ${s.usage}` : ''}: ${s.summary}`),
-    '/research (the web) comes later. Or just ask in your own words.',
+    'Or just ask in your own words.',
   ].join('\n')
 }

@@ -16,8 +16,8 @@ import { loadFixture } from '../../evals/fixtures'
 import { TASKS } from '../../evals/tasks'
 
 describe('skills', () => {
-  it('ships the §4.10 table without /research (the web)', () => {
-    expect(SKILL_NAMES.sort()).toEqual(['ask', 'compare', 'dedupe', 'digest', 'gaps', 'import', 'interview', 'lean-canvas', 'learn', 'next', 'one-pager', 'organize', 'pitch', 'prioritize', 'restructure', 'review-deck', 'sort-stickies', 'swot', 'test'].sort())
+  it('ships the §4.10 table, /research with it (D-360 step 2)', () => {
+    expect(SKILL_NAMES.sort()).toEqual(['ask', 'compare', 'dedupe', 'digest', 'gaps', 'import', 'interview', 'lean-canvas', 'learn', 'next', 'one-pager', 'organize', 'pitch', 'prioritize', 'research', 'restructure', 'review-deck', 'sort-stickies', 'swot', 'test'].sort())
   })
 
   it('every skill has at least three eval tasks (agent.md §6 Phase 9), each starting with its command', () => {

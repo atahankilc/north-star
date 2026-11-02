@@ -27,7 +27,7 @@ describe('the system prompt (§7.3)', () => {
     const snake = [...P.matchAll(/\b[a-z]+_[a-z_]+\b/g)].map((m) => m[0])
     for (const w of snake) expect([...TOOL_NAMES, 'workspace_content'], w).toContain(w)
     // 1.0's tools and other names that don't exist now.
-    for (const gone of ['propose_changes', 'get_items', 'get_report', 'web_search', 'research', 'fetch', 'create_card']) expect(P.includes(`\`${gone}\``), gone).toBe(false)
+    for (const gone of ['propose_changes', 'get_items', 'get_report', 'web_search', 'fetch', 'create_card']) expect(P.includes(`\`${gone}\``), gone).toBe(false)
     expect(AGENT_TOOLS.length).toBe(TOOL_NAMES.length)
   })
 

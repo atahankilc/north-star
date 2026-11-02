@@ -4,7 +4,7 @@ import type { Role } from '../src/data/model'
 import type { WhereView } from '../src/agent/read/tools'
 import type { Ids } from '../src/agent/read'
 import type { AgentWs, Transcript } from '../src/agent/contract'
-import type { Script } from '../src/agent/stubModel'
+import type { ResearchScript, Script } from '../src/agent/stubModel'
 import type { FixtureName } from './fixtures'
 import type { AppliedStep, UiMove } from './env'
 import type { ChangeItem } from '../src/agent/changeset'
@@ -76,4 +76,6 @@ export type Task = {
   reference: Script
   // A script that does the wrong thing, for runner tests (left out: the reference with writes dropped, a vague answer).
   wrong?: Script
+  // What the stub's researchers find (`research`, D-360 step 2), by question; the reference's research call asks these.
+  research?: ResearchScript
 }

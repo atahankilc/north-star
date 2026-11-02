@@ -48,7 +48,7 @@
 // and how long it took, text deltas when the model streams, usage per step. The usage log (usage.ts) keeps only counts.
 import { workspaceMap, whereAmI, resolve, estimateTokens, RESULT_TOKENS, type Ids } from './read'
 import { clean, derive } from './read/derive'
-import { addUsage, joinSources, NO_USAGE, toolsHash, type AgentEnv, type AgentModel, type AgentStep, type AgentTool, type AgentTurn, type AgentWs, type ImagePart, type ModelMessage, type ModelRequest, type ModelResponse, type ToolCall, type ToolResult, type Transcript, type Usage } from './contract'
+import { addUsage, joinSources, NO_USAGE, toolsHash, type AgentEnv, type AgentModel, type AgentStep, type AgentTool, type AgentTurn, type AgentWs, type ImagePart, type ModelMessage, type ModelRequest, type ModelResponse, type ToolCall, type ToolResult, type Transcript, type Usage, type WebUse } from './contract'
 import { systemPrompt } from './prompt'
 import { viewOf, type Warning } from './changeset'
 import { notesOf } from '../model/notes'
@@ -163,6 +163,10 @@ export function stepLabel(call: Pick<ToolCall, 'name' | 'args'>, ws: AgentWs, id
   switch (call.name) {
     case 'search':
       return `searching "${short(String(a.query ?? ''), 30)}"…`
+    case 'research': {
+      const n = Array.isArray(a.questions) ? a.questions.length : 0
+      return `researching ${plural(n, 'question')} on the web…`
+    }
     case 'query': {
       const type = str(a.type)
       return `listing ${type ? `${type}s` : `${str(a.kind) ?? 'card'}s`}…`
@@ -276,6 +280,13 @@ const cut = (text: string) => {
 
 const isAbort = (e: unknown, signal?: AbortSignal) => !!signal?.aborted || (e as Error)?.name === 'AbortError'
 
+// A step's web: the model's own searches and those of the tools it called (research), one list.
+const joinWeb = (uses: (WebUse | undefined)[]): WebUse | undefined => {
+  const all = uses.filter((u): u is WebUse => !!u)
+  if (!all.length) return undefined
+  return { queries: [...new Set(all.flatMap((u) => u.queries))], sources: joinSources(all.map((u) => u.sources)) }
+}
+
 // One step's model call: streamed when the model can (text deltas as events), else one response.
 async function callModel(model: AgentModel, req: ModelRequest, onText: (d: string) => void, onSearch: (q: string) => void = () => undefined): Promise<ModelResponse> {
   if (!model.stream) return model.respond(req)
@@ -305,6 +316,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   // Every write a tool makes goes as the agent, whatever the tool passes. Reads see the pending changes (S13: the
   // agent checks its own result); `change` builds on the workspace without them (liveWs) and keeps them on the env.
   const turnId = `${opts.turnId ?? ++turnCount}`
+  let stepNow = 0
   const agentEnv: AgentEnv = {
     getWs: () => viewOf(env.changes, env.getWs()),
     liveWs: () => env.getWs(),
@@ -320,6 +332,10 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     ...(env.job ? { job: env.job } : {}),
     ...(env.render ? { render: env.render } : {}),
     ...(env.loadBody ? { loadBody: env.loadBody } : {}),
+    // A tool that calls the model itself (`research`, D-360): the turn's model, its stop, its searches said as steps.
+    model,
+    ...(signal ? { signal } : {}),
+    onSearch: (query: string) => emit({ type: 'search', n: stepNow, query }),
     get changes() {
       return env.changes
     },
@@ -435,6 +451,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     const final = n === budget
     // What the person wrote since the last step (D-328): their message, before the model's next step.
     if (n > 1) for (const said of opts.steer?.() ?? []) if (said.trim()) mine.push({ role: 'user', content: STEER(said.trim()) })
+    stepNow = n
     emit({ type: 'step_started', n, final })
     const s0 = performance.now()
     // Old results cleared across the whole chat (history and this turn), in place. Never in an append-only history.
@@ -507,23 +524,28 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
 
     // A tool's picture (D-327, `look`), by call: it goes into the history with the result, never into the transcript.
     const pictures = new Map<string, ImagePart>()
+    // What tools that call the model spent and read (`research`): into the step's usage and web, and the turn's.
+    const spent: Usage[] = []
+    const read: WebUse[] = []
     const runOne = async (c: ToolCall, i: number): Promise<ToolResult> => {
       const c0 = performance.now()
       emit({ type: 'tool_started', n, call: lines[i] })
       const tool = byName.get(c.name)
-      let out: { ok: boolean; text: string }
+      let out: { ok: boolean; text: string; usage?: Usage; web?: WebUse }
       if (c.argsError) out = { ok: false, text: `the arguments for ${c.name} didn't parse: ${c.argsError}. Send them again as a JSON object.` }
       else if (!tool) out = { ok: false, text: `there is no tool ${c.name}; the tools are ${[...byName.keys()].join(', ')}` }
       else {
         try {
           const r = await tool.run(agentEnv, c.args ?? {})
-          out = { ok: !!r?.ok, text: cut(String(r?.text ?? '')) }
+          out = { ok: !!r?.ok, text: cut(String(r?.text ?? '')), ...(r?.usage ? { usage: r.usage } : {}), ...(r?.web ? { web: r.web } : {}) }
           if (r?.image) pictures.set(c.id, r.image)
         } catch (e) {
           out = { ok: false, text: `${c.name} failed: ${(e as Error)?.message ?? String(e)}` }
         }
       }
       const r: ToolResult = { callId: c.id, name: c.name, ok: out.ok, text: out.text, ms: performance.now() - c0 }
+      if (out.usage) spent.push(out.usage)
+      if (out.web) read.push(out.web)
       lines[i] = { ...lines[i], ok: r.ok, ms: r.ms }
       emit({ type: 'tool_finished', n, call: lines[i] })
       return r
@@ -547,12 +569,18 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
       }
     })
     results.push(...(await Promise.all(done)))
+    const stepUsage = spent.reduce(addUsage, res.usage)
+    const stepWeb = joinWeb([res.web, ...read])
+    if (spent.length) {
+      total = spent.reduce(addUsage, total)
+      emit({ type: 'usage', n, step: stepUsage, total })
+    }
     for (const r of results) {
       const image = pictures.get(r.callId)
       mine.push({ role: 'tool', callId: r.callId, name: r.name, content: r.text, ...(image ? { image } : {}) })
     }
-    steps.push({ n, text: res.text, toolCalls: calls, results, usage: res.usage, ms: performance.now() - s0, stop: res.stop, ...(res.cacheMiss ? { cacheMiss: res.cacheMiss } : {}), ...(res.web ? { web: res.web } : {}) })
-    emit({ type: 'step_finished', n, tools: lines, ms: performance.now() - s0, usage: res.usage })
+    steps.push({ n, text: res.text, toolCalls: calls, results, usage: stepUsage, ms: performance.now() - s0, stop: res.stop, ...(res.cacheMiss ? { cacheMiss: res.cacheMiss } : {}), ...(stepWeb ? { web: stepWeb } : {}) })
+    emit({ type: 'step_finished', n, tools: lines, ms: performance.now() - s0, usage: stepUsage })
 
     if (final) {
       // The tools were off: whatever text came is the answer, but the turn ran out of steps.
