@@ -270,10 +270,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   first when typed alone (`+` `p` Enter makes a plane), but isn't shown: no keys anywhere in the app (D-344).
   Nothing under the list. The right-click menu (`ContextMenu.tsx`) is the same panel at the pointer, its `>` line
   saying what it's on (`do with this customer…`); `InPlaceMenu` lays it in a panel.
-- One-of pickers (`src/ui/primitives/Select.tsx`, D-093), never the browser's `<select>`: an inline `value ▾` opens a compact list in
-  the prompt's look, a cyan `•` on the current value, the magenta `›` + wash under the pointer or keys; past 7 options the
-  `>` line, otherwise a first letter jumps; no build-up; opens upward only when it must, stays inside its panel, follows
-  its trigger on scroll; Escape closes only the list. Placement in `src/ui/foundation/floating.ts`.
+- One-of pickers (`src/ui/patterns/Select.tsx`, D-093, D-350), never the browser's `<select>`: an inline `value ▾` opens
+  the prompt (PromptPanel) in a `Popover`: the value now cyan with `✓`, lit first; past 7 options the `>` line,
+  otherwise a first letter jumps; no build-up; opens upward only when it must, stays inside its panel, follows its
+  trigger on scroll; Escape closes only the list. Placement in `src/ui/foundation/floating.ts`.
 - Adding a link from a card's panel: each links section's add (at its rule's right end, D-221) opens the same kind of
   list, narrowed to the cards that fit (a problem for `solves`, a customer for `for`).
 

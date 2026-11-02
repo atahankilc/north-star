@@ -30,10 +30,12 @@ type Props = {
   hitTone?: 'narrow' | 'found'
   // On the `>` line's right (a scope, a switch).
   tools?: ReactNode
+  // No `>` line (a short Select's list): the panel holds the keys, a letter jumps to a row.
+  line?: boolean
   className?: string
 }
 
-export function PromptPanel({ items, ariaLabel, empty, prompt = 'type to find…', onClose, id, more, role, start, hitTone, tools, className }: Props) {
+export function PromptPanel({ items, ariaLabel, empty, prompt = 'type to find…', onClose, id, more, role, start, hitTone, tools, line: wanted = true, className }: Props) {
   const [query, setQuery] = useState('')
   const own = useId()
   const listId = id ?? own
@@ -41,13 +43,13 @@ export function PromptPanel({ items, ariaLabel, empty, prompt = 'type to find…
   const root = useRef<HTMLDivElement>(null)
   const shown = useMemo(() => narrow(items, query, more), [items, query, more])
   // The `>` line stays while what's typed can make something.
-  const line = items.length > 0 || !!more
+  const line = wanted && (items.length > 0 || !!more)
 
   const pick = (item: PromptItem, how: How) => {
     const kept = item.onSelect(how) === 'keep'
     if (item.checked === undefined && !kept) onClose()
   }
-  const nav = usePromptNav(shown, { onPick: pick, onClose, start })
+  const nav = usePromptNav(shown, { onPick: pick, onClose, start, letters: !line })
   const idOf = (key: string) => `${listId}-${key}`
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export function PromptPanel({ items, ariaLabel, empty, prompt = 'type to find…
       ref={root}
       className={[styles.panel, className].filter(Boolean).join(' ')}
       tabIndex={line ? undefined : -1}
+      aria-activedescendant={!line && nav.picked ? idOf(nav.picked) : undefined}
       // Keys stay in it: the canvas's own shortcuts (Delete, 0, ⌘Z) don't fire.
       onKeyDown={(e) => {
         e.stopPropagation()

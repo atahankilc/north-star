@@ -6754,7 +6754,11 @@ The prompt family (D-222) rebuilt from one set of parts; proposal and live compa
 Alternatives offered: A (today's box, every part tidied), C (B + a glued column about the picked row on every prompt);
 ticks: today's ✓ column, a box (picked), no box with a tone band. Workspaces' search results stay cards (only Hit could be
 shared).
-Stages left: 2 Select on PromptPanel (its own list, CSS and raw numbers go; a Popover), 3 Finder, Guide, SkillMenu,
+Stage 2 (same day): Select moved to src/ui/patterns (it draws patterns now) on a new `Popover` (portal, floatFrom,
+placed after it's measured, follows its anchor, a press outside or Escape closes it) and PromptPanel (`role="listbox"`,
+`start` its value; `line={false}` up to SELECT_FIND_PAST = 7 options, in feel.ts, a letter jumping); its own list, keys,
+CSS and the raw ROW/PAD/LINE/MAX numbers went; floatFrom's 8/4/200 px are tokens now. useDismiss tells why it closed.
+Stages left: 3 Finder, Guide, SkillMenu,
 Threads' `@`, Matrix's picks, MatrixSetup's add on PromptList, 4 one `cardEntry()` for CardPanel's picker and BringCards,
 FilterDock's swatch out of Menu.module.css.
 

@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { Choice } from '../../ui/primitives/Choice'
 import { Note, Row, Section } from '../../ui/patterns/Settings'
-import { Select } from '../../ui/primitives/Select'
+import { Select } from '../../ui/patterns/Select'
 import { canChat, claudeId, devStubWanted, FIT_WORDS, KNOWN_MODELS, pickerRows, reasons, type ProviderId } from '../models'
 import { listModels, type Effort } from '../openai'
 import { clearUsage, readUsage, sumUsage } from '../usage'

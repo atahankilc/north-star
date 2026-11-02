@@ -11,7 +11,7 @@ export type Floating = {
 
 export function floatFrom(
   anchor: HTMLElement,
-  { height, width, minWidth = 200 }: { height: number; width?: number; minWidth?: number },
+  { height, width, minWidth = tokenPx('--size-xs') }: { height: number; width?: number; minWidth?: number },
 ): Floating {
   const dialog = anchor.closest('dialog')
   const r = anchor.getBoundingClientRect()
@@ -21,15 +21,17 @@ export function floatFrom(
   const right =
     (anchor.closest('[data-side-panel]') ?? anchor.closest('[data-app]') ?? dialog)?.getBoundingClientRect().right ?? window.innerWidth
   const w = width ?? Math.max(r.width, minWidth)
-  const left = Math.max(8, Math.min(r.left, right - w - 1)) - origin.left
+  const edge = tokenPx('--space-2')
+  const gap = tokenPx('--space-1')
+  const left = Math.max(edge, Math.min(r.left, right - w - tokenPx('--line-w'))) - origin.left
   const below = window.innerHeight - r.bottom
   const size = width === undefined ? { minWidth: w } : { width: w }
   return {
     host: dialog ?? document.body,
     style:
-      below < height + 8 && r.top > below
-        ? { left, top: 'auto', bottom: viewHeight - (r.top - origin.top) + 4, ...size }
-        : { left, top: r.bottom - origin.top + 4, bottom: 'auto', ...size },
+      below < height + edge && r.top > below
+        ? { left, top: 'auto', bottom: viewHeight - (r.top - origin.top) + gap, ...size }
+        : { left, top: r.bottom - origin.top + gap, bottom: 'auto', ...size },
   }
 }
 

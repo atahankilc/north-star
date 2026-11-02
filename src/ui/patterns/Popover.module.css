@@ -1,0 +1,19 @@
+/* What a trigger opens in its own layer (src/ui/patterns/Popover.tsx): fixed where floatFrom puts it. */
+.popover {
+  position: fixed;
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  max-height: min(50vh, var(--list-h));
+}
+
+/* Unseen until it has been measured and placed. */
+.popover:not([data-placed]) {
+  visibility: hidden;
+}
+
+.popover > * {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}

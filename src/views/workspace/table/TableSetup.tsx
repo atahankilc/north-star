@@ -30,7 +30,7 @@ import {
   type TableSetup,
 } from '../../../data/table'
 import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
-import { Select } from '../../../ui/primitives/Select'
+import { Select } from '../../../ui/patterns/Select'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { useWs } from '../canvas/context'
 import { useSetupOnDock } from '../canvas/FocusDock'

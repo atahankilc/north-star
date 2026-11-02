@@ -2,12 +2,14 @@
 // heard on the way down (the canvas and planes stop their presses from bubbling); with `wheel`, the wheel outside it
 // (the right-click menu, whose place would drift as the canvas zooms); with `escape`, Escape anywhere, heard before the
 // canvas (which would leave focus) unless it's the onboarding's (`[data-coach]`). `inside` are other elements that
-// count as part of it (a dropdown's trigger).
+// count as part of it (a dropdown's trigger). `onAway` hears which it was (Escape gives focus back; a press doesn't).
 import { useEffect, useRef, type RefObject } from 'react'
 
 type Options = { wheel?: boolean; escape?: boolean; inside?: RefObject<HTMLElement | null>[]; on?: boolean }
 
-export function useDismiss(root: RefObject<HTMLElement | null>, onAway: () => void, { wheel, escape, inside = [], on = true }: Options = {}) {
+export type Away = 'press' | 'wheel' | 'escape'
+
+export function useDismiss(root: RefObject<HTMLElement | null>, onAway: (why: Away) => void, { wheel, escape, inside = [], on = true }: Options = {}) {
   const away = useRef(onAway)
   away.current = onAway
   const others = useRef(inside)
@@ -17,12 +19,13 @@ export function useDismiss(root: RefObject<HTMLElement | null>, onAway: () => vo
     const outside = (e: Event) => {
       const t = e.target as Node
       if (root.current?.contains(t) || others.current.some((r) => r.current?.contains(t))) return
-      away.current()
+      away.current(e.type === 'wheel' ? 'wheel' : 'press')
     }
     const key = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || (e.target as Element | null)?.closest?.('[data-coach]')) return
+      e.preventDefault()
       e.stopPropagation()
-      away.current()
+      away.current('escape')
     }
     window.addEventListener('pointerdown', outside, true)
     if (wheel) window.addEventListener('wheel', outside, true)

@@ -4,16 +4,18 @@
 // picked is the first row until the keys or the pointer move it (`start`: a Select's current value), so Enter always
 // has something to pick. The pointer and the keys move the same pick: never two rows lit.
 import { useMemo, useState, type KeyboardEvent } from 'react'
-import { pickable, type How, type PromptEntry, type PromptItem } from './promptModel'
+import { labelText, pickable, type How, type PromptEntry, type PromptItem } from './promptModel'
 
 type Options = {
   onPick: (item: PromptItem, how: How) => void
   // `refocus`: give focus back to what opened it (Escape), or let it go on (Tab).
   onClose: (refocus?: boolean) => void
   start?: string | null
+  // With no `>` line (a short Select): a letter jumps to the next row starting with it.
+  letters?: boolean
 }
 
-export function usePromptNav(shown: PromptEntry[], { onPick, onClose, start }: Options) {
+export function usePromptNav(shown: PromptEntry[], { onPick, onClose, start, letters }: Options) {
   const rows = useMemo(() => pickable(shown), [shown])
   const [chosen, setPicked] = useState<string | null>(start ?? null)
   const at = rows.findIndex((r) => r.key === chosen)
@@ -35,6 +37,13 @@ export function usePromptNav(shown: PromptEntry[], { onPick, onClose, start }: O
       now.fold.onToggle()
     } else if (e.key === 'Escape') (e.preventDefault(), onClose(true))
     else if (e.key === 'Tab') onClose(false)
+    else if (letters && e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const k = e.key.toLowerCase()
+      const starts = (r: PromptItem) => labelText(r).toLowerCase().startsWith(k)
+      const next = rows.findIndex((r, n) => n > i && starts(r))
+      const to = next >= 0 ? next : rows.findIndex(starts)
+      if (to >= 0) (e.preventDefault(), setPicked(rows[to].key))
+    }
   }
 
   return { picked: now?.key ?? null, pickedItem: now ?? null, setPicked, onKeyDown }

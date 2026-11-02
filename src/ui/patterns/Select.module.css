@@ -1,0 +1,19 @@
+/* Select (D-093): `value ▾`, the one dropdown trigger (Trigger.module.css, D-344) Menu uses too; its list is the prompt
+   (PromptPanel) in a Popover. */
+.trigger {
+  composes: trigger from '../primitives/Trigger.module.css';
+}
+
+.trigger:disabled {
+  cursor: default;
+  opacity: var(--o-dim);
+}
+
+.value {
+  composes: value from '../primitives/Trigger.module.css';
+  flex: 1;
+}
+
+.caret {
+  composes: caret from '../primitives/Trigger.module.css';
+}
