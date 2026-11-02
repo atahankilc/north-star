@@ -9,10 +9,10 @@ import { bringIn, cardsOn, planesOf, withParts } from '../../../data/places'
 import { glide, useCanvasView } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
 import type { MenuEntry } from '../../../ui/patterns/Menu'
+import { cardEntry, whereList } from './cardEntry'
 import { ContextMenu } from '../../../ui/patterns/ContextMenu'
 import { useWs } from '../canvas/context'
 import { planeTitle } from '../../../data/canvases'
-import { TYPE_ACCENT } from './PlaneCards'
 import { DUR } from '../../../ui/foundation/motion'
 
 const ORDER: AnyType[] = [...CARD_TYPES, 'package']
@@ -56,16 +56,12 @@ export function BringCards({ here, origin }: { here: string; origin: { left: num
       for (const c of list) {
         const on = planesOf(c, places).map(name)
         const along = parents.has(c.id) || c.memberIds?.length ? withParts([c], cards, edges).filter((x) => !here.has(x.id)).length - 1 : 0
-        const where = on.length > 2 ? `${on.slice(0, 2).join(', ')} +${on.length - 2}` : on.join(', ')
-        out.push({
-          key: c.id,
-          label: c.title || `untitled ${type}`,
-          glyph: '▌',
-          tone: TYPE_ACCENT[type],
-          hint: `${along ? `+${along} ${type === 'package' ? 'inside' : along === 1 ? 'part' : 'parts'} · ` : ''}${where.toUpperCase()}`,
-          words: [type, ...(c.tags ?? []), ...on].join(' '),
-          onSelect: (how) => bring(c, how),
-        })
+        out.push(
+          cardEntry(c, (how) => bring(c, how), {
+            hint: `${along ? `+${along} ${type === 'package' ? 'inside' : along === 1 ? 'part' : 'parts'} · ` : ''}${whereList(on).toUpperCase()}`,
+            words: [type, ...(c.tags ?? []), ...on].join(' '),
+          }),
+        )
       }
     }
     return out

@@ -189,46 +189,14 @@
   position: relative;
 }
 
+/* `@` suggests the workspace's people (D-166): the prompt's list (D-350) right above the field. */
 .suggest {
+  composes: frame from '../../../ui/foundation/PromptFrame.module.css';
   position: absolute;
-  right: calc(-1 * var(--line-w));
+  right: 0;
   bottom: 100%;
-  left: calc(-1 * var(--line-w));
-  margin: 0;
-  padding: var(--space-1) 0;
-  border: var(--line-w) solid var(--line-hover);
-  background: var(--bg);
-  list-style: none;
-}
-
-.suggest button {
-  display: flex;
-  gap: 1ch;
-  align-items: baseline;
-  width: 100%;
-  padding: var(--space-half) var(--space-4);
-  border: 0;
-  border-left: var(--line-w-bold) solid transparent;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.suggest button span {
-  overflow: hidden;
-  color: var(--fg-faint);
-  font-size: var(--text-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.suggest button[aria-selected='true'],
-.suggest button:hover {
-  border-left-color: var(--accent-cyan);
-  background: var(--wash-1);
-  color: var(--fg-strong);
+  left: 0;
+  font-size: var(--text-sm);
 }
 
 /* The threads panel (D-166, D-193, D-197, D-199): one wide tab on the bottom edge, right of the corner's buttons (it

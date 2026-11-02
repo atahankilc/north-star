@@ -32,6 +32,7 @@ import { ago } from '../../../ui/foundation/ago'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
+import { PromptList } from '../../../ui/patterns/PromptList'
 import { PromptField } from '../../../ui/primitives/PromptField'
 import styles from './Threads.module.css'
 
@@ -239,8 +240,8 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
   }
 
   const resolved = !!thread?.resolved
-  // Owners, or whoever started it while nobody answered (D-166).
-  const mayDeleteThread = !!thread && (isOwner || (thread.uid === me && thread.count <= 1))
+  // Owners, or whoever wrote the one message left (D-166; firestore.rules says the same).
+  const mayDeleteThread = !!thread && (isOwner || (thread.count <= 1 && (thread.uid === me || thread.lastUid === me)))
 
   return (
     <div
@@ -352,22 +353,18 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
         >
           {/* `@` suggests the workspace's people (D-166). */}
           {suggest && matches.length > 0 && (
-            <ul className={styles.suggest} role="listbox" aria-label="Mention someone">
-              {matches.map((m, i) => (
-                <li key={m.id}>
-                  <button /* kit-ok: a mention's option in the list under the prompt */
-                    type="button"
-                    role="option"
-                    aria-selected={i === hi}
-                    onPointerDown={(e) => e.preventDefault()}
-                    onClick={() => pick(m)}
-                  >
-                    @{m.name}
-                    {m.email && <span>{m.email}</span>}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className={styles.suggest} onPointerDown={(e) => e.preventDefault()}>
+              <PromptList
+                role="listbox"
+                label="Mention someone"
+                entries={matches.map((m) => ({ key: m.id, label: `@${m.name}`, hint: m.email || undefined, onSelect: () => pick(m) }))}
+                picked={matches[hi]?.id ?? null}
+                q=""
+                onPick={(i) => i.onSelect({ shift: false, alt: false })}
+                onPoint={(k) => setHi(Math.max(0, matches.findIndex((m) => m.id === k)))}
+                idOf={(k) => `mention-${k}`}
+              />
+            </div>
           )}
           <PromptField
             ref={field}
@@ -390,7 +387,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
             }}
           />
           <div className={styles.bar}>
-            <Button type="submit" tone="primary" disabled={!text.trim() || busy} title="send (enter; shift+enter a new line)">
+            <Button type="submit" tone="primary" disabled={!text.trim() || busy} title="send">
               send
             </Button>
           </div>

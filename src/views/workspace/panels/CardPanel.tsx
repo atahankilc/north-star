@@ -32,6 +32,7 @@ import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } fr
 import { addEvidence, EVIDENCE_KINDS, mismatch, removeEvidence, tally, updateEvidence, type Evidence, type EvidenceKind, type Stance } from '../../../data/evidence'
 import { glide, useCanvasView } from '../../../state/canvasView'
 import { type MenuEntry } from '../../../ui/patterns/Menu'
+import { cardEntry, whereList } from '../plane/cardEntry'
 import { InPlaceMenu } from '../../../ui/patterns/InPlaceMenu'
 import { PanelAction, PanelSection, SIDE_PANEL_W, SidePanel } from '../../../ui/patterns/SidePanel'
 import { factsOf } from '../plane/cardFacts'
@@ -941,18 +942,13 @@ export function CardPicker({
     const name = (id: string) => planeTitle(id, { pieces, canvases, canvas })
     const row = (c: Card, key: string, hint: string, browse?: boolean): MenuEntry => {
       const on = planesOf(c, places).map(name)
-      const where = on.length > 2 ? `${on.slice(0, 2).join(', ')} +${on.length - 2}` : on.join(', ')
       const held = c.type === 'package' ? packageTree(c, all, edges).length : 0
-      return {
+      return cardEntry(c, () => onPick(c), {
         key,
-        label: c.title || `untitled ${c.type}`,
-        glyph: '▌',
-        tone: TONE[c.type],
-        hint: (hint || [held ? `${held} inside` : '', where].filter(Boolean).join(' · ')).toUpperCase(),
+        hint: (hint || [held ? `${held} inside` : '', whereList(on)].filter(Boolean).join(' · ')).toUpperCase(),
         words: [c.type, ...(c.tags ?? []), ...on].join(' '),
         browse,
-        onSelect: () => onPick(c),
-      }
+      })
     }
     // Given, or the four nearest on this card's plane, where they are there.
     const plane = card.id ? planeOf(card) : ''

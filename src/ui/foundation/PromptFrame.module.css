@@ -1,0 +1,30 @@
+/* The prompt's frame (D-350), a console's look (D-347): no box, the page's black on a hugging shade, faint L's on its
+   four corners, cyan while the keyboard is in it. PromptPanel's, the finder's and the guide's: `composes: frame`. It
+   sets no `position` (a composing class's own may load before it and lose): each sets its own, never static. */
+.frame {
+  --mk: var(--fg-faint);
+
+  background: var(--bg);
+  box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
+}
+
+.frame:focus-within {
+  --mk: var(--accent-cyan);
+}
+
+.frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-1);
+  pointer-events: none;
+  background:
+    linear-gradient(var(--mk), var(--mk)) left top / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) left top / var(--line-w) var(--corner-mark) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right top / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right top / var(--line-w) var(--corner-mark) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) left bottom / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) left bottom / var(--line-w) var(--corner-mark) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right bottom / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right bottom / var(--line-w) var(--corner-mark) no-repeat;
+}

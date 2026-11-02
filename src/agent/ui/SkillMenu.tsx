@@ -1,8 +1,10 @@
 // The `/` menu (S17, D-312; agent.md §4.10): typing `/` at the start of the agent's prompt opens the skills in the prompt
 // look (D-222). The prompt itself is the `>` line: what's typed after the slash narrows the list (names that start with
-// it first: one letter puts its names first, more letters narrow), rows read `› /name  summary`, `# analysis` / `# building` / `# documents` while
-// nothing is typed, a counting foot. ↑↓ move, Enter or Tab picks (the prompt becomes `/name `), Esc closes. A click picks.
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+// it first: one letter puts its names first, more letters narrow), rows read `› /name usage` with the summary under,
+// `# analysis` / `# building` / `# documents` while nothing is typed (the prompt's rows, D-350). ↑↓ move, Enter or Tab picks (the prompt becomes `/name `), Esc closes. A click picks.
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { PromptList } from '../../ui/patterns/PromptList'
+import type { PromptEntry } from '../../ui/foundation/promptModel'
 import { SKILLS, type Skill } from '../skills'
 import styles from './Agent.module.css'
 
@@ -37,11 +39,14 @@ export function useSkillMenu(text: string, setText: (t: string) => void) {
   const list = useMemo(() => (q === null ? [] : matchSkills(q)), [q])
   const open = q !== null && closed !== text && list.length > 0
   useEffect(() => setAt(0), [q])
-  const pick = (s: Skill | undefined) => {
-    if (!s) return
-    setText(`/${s.name} `)
-    setClosed(null)
-  }
+  const pick = useCallback(
+    (s: Skill | undefined) => {
+      if (!s) return
+      setText(`/${s.name} `)
+      setClosed(null)
+    },
+    [setText],
+  )
   // True when the key was the menu's (the prompt should not act on it).
   const onKey = (e: ReactKeyboardEvent<HTMLTextAreaElement>): boolean => {
     if (!open) return false
@@ -56,51 +61,31 @@ export function useSkillMenu(text: string, setText: (t: string) => void) {
   return { open, onKey, menu }
 }
 
-function Lit({ text, q }: { text: string; q: string }) {
-  const i = q ? text.indexOf(q) : -1
-  if (i < 0) return <>{text}</>
-  return (
-    <>
-      {text.slice(0, i)}
-      <mark className={styles.skillMatch}>{text.slice(i, i + q.length)}</mark>
-      {text.slice(i + q.length)}
-    </>
-  )
-}
-
+// The skills as the prompt's entries (D-350): `# analysis` heads while nothing is typed, rows `› / name  usage` with
+// the summary under them; the agent's prompt keeps the keys, so the list only shows and takes clicks.
 function SkillList({ q, list, at, onPick, onHover }: { q: string; list: Skill[]; at: number; onPick: (s: Skill) => void; onHover: (i: number) => void }) {
-  const rows = list.map((s, i) => ({ s, i }))
-  // The picked row kept in view as ↑↓ move it (agent-bugs 9).
-  const box = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    box.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
-  }, [at])
-  let group = ''
+  const entries = useMemo<PromptEntry[]>(() => {
+    const out: PromptEntry[] = []
+    let group = ''
+    for (const s of list) {
+      if (!q && s.group !== group) out.push({ key: `#${(group = s.group)}`, heading: s.group })
+      out.push({ key: s.name, label: s.name, glyph: '/', tone: 'var(--accent-cyan)', meta: s.usage, sub: s.summary, onSelect: () => onPick(s) })
+    }
+    return out
+  }, [list, q, onPick])
+  const index = useMemo(() => new Map(list.map((s, i) => [s.name, i])), [list])
   return (
-    <div className={styles.skillMenu} role="listbox" aria-label="Skills" data-skill-menu onPointerDown={(e) => e.preventDefault()}>
-      <div className={styles.skillList} ref={box}>
-        {rows.map(({ s, i }) => {
-          const head = !q && s.group !== group ? (group = s.group) : null
-          return (
-            <div key={s.name}>
-              {head && <div className={styles.skillHead}>{head}</div>}
-              <button /* kit-ok: an option of the chat prompt's own list (its keys stay in the prompt); PromptPanel brings its own `>` line */ type="button" role="option" aria-selected={i === at} className={styles.skillRow} data-on={i === at || undefined} onMouseEnter={() => onHover(i)} onClick={() => onPick(s)}>
-                <span className={styles.skillCursor} aria-hidden>
-                  ›
-                </span>
-                <span className={styles.skillName}>
-                  /<Lit text={s.name} q={q} />
-                  {s.usage && <span className={styles.skillUsage}> {s.usage}</span>}
-                </span>
-                <span className={styles.skillSummary}>{s.summary}</span>
-              </button>
-            </div>
-          )
-        })}
-      </div>
-      <div className={styles.skillFoot} aria-hidden>
-        {list.length} {list.length === 1 ? 'skill' : 'skills'}{q ? '' : ' · type to narrow'}
-      </div>
+    <div className={styles.skillMenu} data-skill-menu onPointerDown={(e) => e.preventDefault()}>
+      <PromptList
+        role="listbox"
+        label="Skills"
+        entries={entries}
+        picked={list[at]?.name ?? null}
+        q={q}
+        onPick={(i) => i.onSelect({ shift: false, alt: false })}
+        onPoint={(k) => onHover(index.get(k) ?? 0)}
+        idOf={(k) => `skill-${k}`}
+      />
     </div>
   )
 }

@@ -17,6 +17,14 @@ export type PromptItem = {
   current?: boolean
   // Colour of the tick or the glyph (a card's type, a link's kind).
   tone?: string
+  // Dim words right after the label (a note's first line, `3 / 11 seen`).
+  meta?: ReactNode
+  // A second line under the label, wrapping (a skill's summary).
+  sub?: ReactNode
+  // A small magenta tag after it (`NEW`).
+  badge?: string
+  // Quieter than the rest (a folded summary row, something not open to you).
+  faint?: boolean
   // Faint on the right: data about it (`01 LUNCH`, `7 pieces`), never a key (D-344).
   hint?: ReactNode
   // Before the label: what it is (`▦`, a card's `▌`).

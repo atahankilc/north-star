@@ -1,10 +1,11 @@
 // The finder (D-236): ⌘F, or the side nav's compass, anywhere in a workspace. A prompt in the middle of the screen
-// (the menus' look, D-222): `> what's typed`, `[here | this canvas | everywhere]` (those there are, D-302), `Aa W .*`. Opened empty it's only that line,
+// (the menus' look and parts, D-222, D-350: its rows a PromptList, its frame the prompt's): `> what's typed`,
+// `[here | this canvas | everywhere]` (those there are, D-302), `Aa W .*`. Opened empty it's only that line,
 // in the middle; typed into, it opens out to its matches, grouped by where they are, and the preview of the one picked
 // (what the screen shows once you're there), gliding as it grows so it stays in the middle. ↓ with nothing typed lists
 // the places (go to, D-196). ↑ ↓ pick, Enter goes, Tab steps the scopes, alt C W X the switches, Escape closes.
 // Something on another canvas (D-302) goes there first: the canvas builds, then the view goes on as it would.
-import { Fragment, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { canvasPath } from '../../../app/paths'
 import { canvasTextOn, piecesOn } from '../../../data/canvases'
@@ -29,6 +30,10 @@ import { useDocUi } from '../documents/Documents'
 import { TYPE_ACCENT } from '../plane/PlaneCards'
 import styles from './Finder.module.css'
 import { Button } from '../../../ui/primitives/Button'
+import { Hit } from '../../../ui/primitives/PromptRow'
+import { PromptList } from '../../../ui/patterns/PromptList'
+import { usePromptNav } from '../../../ui/foundation/usePromptNav'
+import type { PromptEntry, PromptItem } from '../../../ui/foundation/promptModel'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 import { PromptField } from '../../../ui/primitives/PromptField'
@@ -36,15 +41,14 @@ import { Tabs } from '../../../ui/primitives/Tabs'
 import { Window } from '../../../ui/patterns/Window'
 
 const SWITCHES: { k: keyof FindOpts; label: string; title: string; code: string }[] = [
-  { k: 'caseSensitive', label: 'Aa', title: 'match case (alt C)', code: 'KeyC' },
-  { k: 'words', label: 'W', title: 'whole words (alt W)', code: 'KeyW' },
-  { k: 'regex', label: '.*', title: 'regular expression (alt X)', code: 'KeyX' },
+  { k: 'caseSensitive', label: 'Aa', title: 'match case', code: 'KeyC' },
+  { k: 'words', label: 'W', title: 'whole words', code: 'KeyW' },
+  { k: 'regex', label: '.*', title: 'regular expression', code: 'KeyX' },
 ]
 
-// Its sizes: narrow while empty, wide with matches; the line, the foot; the list's most.
+// Its sizes: narrow while empty, wide with matches; the line; the list's most.
 const W = { empty: 600, full: 1040 }
 const LINE = 47
-const FOOT = 31
 const LIST_MAX = 0.3
 const GO_MAX = 0.6
 const EDGE = 16
@@ -123,7 +127,6 @@ function Panel() {
   // With nothing typed it's go to (D-196): the places, a plane's own folded under it until opened (D-200).
   const unfolded = useGoTo((s) => s.open)
   const going = !query && !looking
-  const [sel, setSel] = useState(0)
   // The preview's zoom, kept for each space while the finder's open: the next match in the same one keeps it.
   const [zooms, setZooms] = useState<Record<string, number>>({})
 
@@ -205,9 +208,35 @@ function Panel() {
     return [out.filter((g) => g.rows.length), all - Math.min(all, ROWS_MAX)]
   }, [groups])
   const rows = useMemo(() => shownGroups.flatMap((g) => g.rows), [shownGroups])
-  const at = Math.min(sel, Math.max(0, rows.length - 1))
-  const picked = rows[at] ?? null
-  useEffect(() => setSel(0), [looking, scope, opts])
+  // The rows as the prompt's entries (D-350): each group a `# head` with its count, its rows under it; drawn again only
+  // when they change, their handlers through a ref.
+  const acts = useRef({ go: (_: Row) => {}, fold: (_: string) => {} })
+  const entries = useMemo<PromptEntry[]>(
+    () =>
+      shownGroups.flatMap((g): PromptEntry[] => [
+        { key: `#${g.space}`, heading: g.title, count: g.count },
+        ...g.rows.map(
+          (r): PromptItem => ({
+            key: r.id,
+            label: r.inside || !(found instanceof RegExp) ? r.text : <Hit text={r.text} ranges={matchesIn(r.text, found, 50)} tone="found" />,
+            glyph: r.glyph,
+            tone: r.tone ? TYPE_ACCENT[r.tone as keyof typeof TYPE_ACCENT] : undefined,
+            hint: r.hint || undefined,
+            indent: r.indent,
+            faint: r.inside,
+            fold: r.fold && { open: r.fold.open, count: r.fold.count, onToggle: () => acts.current.fold(r.fold!.plane) },
+            onSelect: () => acts.current.go(r),
+          }),
+        ),
+      ]),
+    [shownGroups, found],
+  )
+  // The keys (usePromptNav): ↑ ↓ pick, Enter goes, → ← a plane's places, Escape closes; Tab and alt C W X are the
+  // finder's own (below).
+  const nav = usePromptNav(entries, { onPick: (i) => i.onSelect({ shift: false, alt: false }), onClose: closeFinder })
+  const picked = rows.find((r) => r.id === nav.picked) ?? null
+  const setPick = nav.setPicked
+  useEffect(() => setPick(null), [looking, scope, opts, setPick])
   // The preview follows the pick once it rests (arrows held run through without drawing each one).
   const [previewed, setPreviewed] = useState<Row | null>(picked)
   useEffect(() => {
@@ -246,35 +275,17 @@ function Panel() {
   const full = !!query
   const width = Math.min(full ? W.full : W.empty, vw - 2 * EDGE)
   const shownList = rows.length ? Math.min(listH, Math.round(vh * (going ? GO_MAX : LIST_MAX))) : query || going ? 52 : 0
-  const previewH = !going && rows.length ? Math.max(160, Math.min(Math.round((width * size.h) / Math.max(1, size.w)), vh - 2 * EDGE - LINE - FOOT - shownList - 2)) : 0
-  const height = LINE + shownList + (previewH ? previewH + 1 : 0) + FOOT
+  const previewH = !going && rows.length ? Math.max(160, Math.min(Math.round((width * size.h) / Math.max(1, size.w)), vh - 2 * EDGE - LINE - shownList - 2)) : 0
+  const height = LINE + shownList + (previewH ? previewH + 1 : 0)
 
   // The preview's zoom for the previewed match's space.
   const space = previewed ? spaceOf(previewed.dest) : ''
   const zoom = zooms[space] ?? 1
   const setZoom = useCallback((z: number) => setZooms((all) => ({ ...all, [space]: Math.round(Math.min(ZOOM.max, Math.max(ZOOM.min, z)) * 100) / 100 })), [space])
 
-  // The picked row kept in sight in the list.
-  useEffect(() => {
-    list.current?.querySelector('[data-picked]')?.scrollIntoView({ block: 'nearest' })
-  }, [at])
-
   const keys = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation()
-      return closeFinder()
-    }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault()
-      const n = rows.length
-      if (n) setSel((at + (e.key === 'ArrowDown' ? 1 : -1) + n) % n)
-      return
-    }
-    // A plane's own places: → opens them under it, ← folds them.
-    if (going && picked?.fold && (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && picked.fold.open !== (e.key === 'ArrowRight')) {
-      e.preventDefault()
-      return toggleOpen(picked.fold.plane)
-    }
+    // The field passes its keys on (⌘F again reaches the window): Escape stays here.
+    if (e.key === 'Escape') e.stopPropagation()
     if (e.key === 'Tab') {
       e.preventDefault()
       return scopes.length > 1 && toggleScope(scopes, scope)
@@ -282,76 +293,19 @@ function Panel() {
     const sw = e.altKey && SWITCHES.find((s) => s.code === e.code)
     if (sw) {
       e.preventDefault()
-      toggleOpt(sw.k)
+      return toggleOpt(sw.k)
     }
+    nav.onKeyDown(e)
   }
 
-  // The rows, drawn again only when they or the pick change, not on every key typed.
-  const acts = useRef({ go, pick: (_: number) => {}, fold: (_: string) => {} })
   acts.current = {
     go,
-    pick: (n: number) => (setSel(n), field.current?.focus()),
     fold: (plane: string) => (toggleOpen(plane), field.current?.focus()),
   }
-  const listed = useMemo(() => {
-    let i = 0
-    return (
-      <div>
-        {shownGroups.map((g) => (
-          <Fragment key={g.space}>
-            <div className={styles.group}>
-              <span>
-                <span className={styles.hash}>#</span> {g.title}
-              </span>
-              <span className={styles.count}>{g.count}</span>
-            </div>
-            {g.rows.map((r) => {
-              const me = i++
-              return (
-                <div
-                  key={r.id}
-                  className={styles.row}
-                  role="option"
-                  aria-selected={me === at}
-                  data-picked={me === at || undefined}
-                  data-inside={r.inside || undefined}
-                  data-indent={r.indent || undefined}
-                  // Going to a place: a click goes. Finding: a click shows it in the preview, a second goes (the
-                  // pointer passing over shows nothing, so reaching for the preview doesn't run through them all).
-                  onClick={() => (going ? acts.current.go(r) : acts.current.pick(me))}
-                  onDoubleClick={going ? undefined : () => acts.current.go(r)}
-                >
-                  <span className={styles.caret} aria-hidden>
-                    ›
-                  </span>
-                  <span className={styles.glyph} style={r.tone ? { color: TYPE_ACCENT[r.tone as keyof typeof TYPE_ACCENT] } : undefined}>
-                    {r.glyph}
-                  </span>
-                  <span className={styles.text}>{r.inside || !(found instanceof RegExp) ? r.text : marked(r.text, found)}</span>
-                  {r.hint && <span className={styles.hint}>{r.hint}</span>}
-                  {r.fold && (
-                    <Button
-                      className={styles.fold}
-                      pressed={r.fold.open}
-                      aria-expanded={r.fold.open}
-                      title={r.fold.open ? 'fold its places (←)' : 'show its places (→)'}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleOpen(r.fold!.plane)
-                        field.current?.focus()
-                      }}
-                    >
-                      {r.fold.open ? '▾' : '▸'} {r.fold.count} inside
-                    </Button>
-                  )}
-                </div>
-              )
-            })}
-          </Fragment>
-        ))}
-      </div>
-    )
-  }, [shownGroups, at, found, going])
+  // Going to a place: a click goes, the pointer picks. Finding: a click shows it in the preview, a double-click goes
+  // (the pointer passing over shows nothing, so reaching for the preview doesn't run through them all).
+  const onRow = (i: PromptItem) => (going ? i.onSelect({ shift: false, alt: false }) : (setPick(i.key), field.current?.focus()))
+  const idOf = (key: string) => `find-${key}`
 
   return (
     <>
@@ -381,12 +335,14 @@ function Panel() {
           style={{ height: LINE }}
           value={query}
           onChange={setQuery}
-          onSubmit={() => go(picked)}
+          onSubmit={() => {}}
           onKeyDown={keys}
           passKeys
           invalid={re === 'bad'}
           label="Find"
           placeholder="find a place or a word…"
+          controls="find-matches"
+          active={nav.picked ? idOf(nav.picked) : undefined}
         >
           {scopes.length > 1 && (
             <span className={styles.scope}>
@@ -402,9 +358,24 @@ function Panel() {
           </span>
         </PromptField>
 
-        <div ref={list} className={styles.list} style={{ height: shownList }} role="listbox" aria-label="Matches">
+        <div ref={list} className={styles.list} style={{ height: shownList }} data-scrolls>
           {rows.length ? (
-            listed
+            <>
+              <PromptList
+                id="find-matches"
+                className={styles.matches}
+                role="listbox"
+                label="Matches"
+                entries={entries}
+                picked={nav.picked}
+                q=""
+                onPick={onRow}
+                onPoint={going ? setPick : NO_POINT}
+                onConfirm={going ? undefined : (i) => i.onSelect({ shift: false, alt: false })}
+                idOf={idOf}
+              />
+              {more > 0 && <Empty className={styles.more}>{`${rows.length} of ${total} shown: type more to narrow`}</Empty>}
+            </>
           ) : searching ? (
             <Empty className={styles.none}>searching…</Empty>
           ) : going ? (
@@ -421,9 +392,6 @@ function Panel() {
           </div>
         )}
 
-        <div className={styles.foot} style={{ height: FOOT }}>
-          <span>{searching ? 'searching…' : query && found instanceof RegExp ? `${total} ${total === 1 ? 'match' : 'matches'}${more > 0 ? ` (${rows.length} shown: type more)` : ''} · ${SCOPE_NAME[scope]}` : ''}</span>
-        </div>
       </Window>
       {looking && <FindBodies />}
     </>
@@ -455,6 +423,7 @@ const ZOOM = { min: 1, max: 6, step: 1.5 }
 const SETTLE_MS = 160
 const PREVIEW_MS = 90
 const ROWS_MAX = 150
+const NO_POINT = () => {}
 const spaceOf = (d: Dest) => `${d.canvas ?? ''}${d.kind === 'place' ? d.place.space : d.target.space}`
 const SCOPE_NAME: Record<FindScope, string> = { here: 'here', canvas: 'this canvas', everywhere: 'everywhere' }
 
@@ -493,18 +462,6 @@ function PreviewHead({ dest, zoom, onZoom, drawing }: { dest: Dest | null; zoom:
       </ButtonGroup>
     </div>
   )
-}
-
-// The text of a row with its matches marked.
-function marked(text: string, re: RegExp): ReactNode {
-  const out: ReactNode[] = []
-  let last = 0
-  for (const [a, b] of matchesIn(text, re, 50)) {
-    out.push(text.slice(last, a), <mark key={a} className={styles.hit}>{text.slice(a, b)}</mark>)
-    last = b
-  }
-  out.push(text.slice(last))
-  return out
 }
 
 // Every document's text you may read, loaded while something's typed (kept for the tab), so they're found too.

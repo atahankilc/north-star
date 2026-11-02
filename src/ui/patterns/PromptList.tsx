@@ -22,14 +22,18 @@ type Props = {
   onPoint: (key: string) => void
   // Each row's id, for the `>` line's aria-activedescendant.
   idOf: (key: string) => string
+  // A double-click on a row.
+  onConfirm?: (item: PromptItem) => void
   className?: string
 }
 
-export function PromptList({ entries, picked, q, hitTone, role = 'menu', label, id, empty, onPick, onPoint, idOf, className }: Props) {
+export function PromptList({ entries, picked, q, hitTone, role = 'menu', label, id, empty, onPick, onPoint, idOf, onConfirm, className }: Props) {
   const box = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
-    const list = box.current
-    const row = picked ? list?.querySelector<HTMLElement>(`[data-key="${CSS.escape(picked)}"]`) : null
+    // What scrolls: the list, or what holds it (the finder sizes its own box round it).
+    let list: HTMLElement | null = box.current
+    while (list && list.scrollHeight <= list.clientHeight && list.parentElement) list = list.parentElement.closest<HTMLElement>('[data-scrolls]') ?? null
+    const row = picked ? box.current?.querySelector<HTMLElement>(`[data-key="${CSS.escape(picked)}"]`) : null
     if (!list || !row) return
     const top = row.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop
     if (top < list.scrollTop) list.scrollTop = top
@@ -50,7 +54,7 @@ export function PromptList({ entries, picked, q, hitTone, role = 'menu', label, 
         isHeading(e) ? (
           <PromptHead key={e.key} head={e} />
         ) : (
-          <PromptRow key={e.key} id={idOf(e.key)} item={e} picked={e.key === picked} q={q} hitTone={hitTone} role={rowRole} onPick={onPick} onPoint={onPoint} />
+          <PromptRow key={e.key} id={idOf(e.key)} item={e} picked={e.key === picked} q={q} hitTone={hitTone} role={rowRole} onPick={onPick} onPoint={onPoint} onConfirm={onConfirm} />
         ),
       )}
     </div>

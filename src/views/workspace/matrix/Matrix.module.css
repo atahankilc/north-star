@@ -470,49 +470,14 @@
 }
 
 .picks {
+  composes: frame from '../../../ui/foundation/PromptFrame.module.css';
   position: absolute;
   top: calc(100% + var(--space-1));
   left: calc(-1 * var(--line-w));
   display: flex;
   flex-direction: column;
   min-width: var(--size-sm);
-  padding: var(--space-1) 0;
-  border: var(--line-w) solid var(--line-hover);
-  background: var(--bg);
-}
-
-.pick {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-3);
-  border: 0;
-  background: none;
-  box-shadow: inset var(--line-w-bold) 0 0 var(--type);
-  color: var(--fg);
-  font: inherit;
-  font-size: var(--text-xs);
-  text-align: left;
-  cursor: pointer;
-}
-
-.pick:hover,
-.pick:focus-visible {
-  background: var(--wash-2);
-  outline: none;
-}
-
-.pickName {
-  flex: 1;
-  overflow: hidden;
-  font-family: var(--font-display);
   font-size: var(--text-sm);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.pickType {
-  color: var(--fg-faint);
 }
 
 /* Nothing to cross yet: the kit's Empty (dim), centred in the cells' place. */
@@ -759,6 +724,7 @@
 }
 
 .addList {
+  composes: frame from '../../../ui/foundation/PromptFrame.module.css';
   position: absolute;
   bottom: calc(100% + var(--space-1));
   left: calc(-1 * var(--line-w));
@@ -766,38 +732,7 @@
   display: flex;
   flex-direction: column;
   min-width: var(--size-sm);
-  padding: var(--space-1) 0;
-  border: var(--line-w) solid var(--line-hover);
-  background: var(--bg);
-}
-
-.addOpt {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-3);
-  border: 0;
-  background: none;
-  color: var(--fg-muted);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.addOpt[aria-selected='true'] {
-  background: var(--wash-2);
-  color: var(--fg-strong);
-}
-
-.addOptName {
-  flex: 1;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.addOptType {
-  color: var(--fg-faint);
+  font-size: var(--text-sm);
 }
 
 /* A text field shaped like a pill. */

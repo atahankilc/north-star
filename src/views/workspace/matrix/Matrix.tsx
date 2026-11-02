@@ -68,6 +68,8 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Console } from '../../../ui/patterns/Console'
 import { Empty } from '../../../ui/primitives/Empty'
+import { PromptList } from '../../../ui/patterns/PromptList'
+import { cardEntry } from '../plane/cardEntry'
 
 // The matrix's parts in its own px: model/world.ts (D-325).
 export const M = MATRIX_PX
@@ -695,6 +697,7 @@ function AddEntry({ which, label, style, piece, setup, shown, onPress, onAdded }
   const { wid, cards } = useWs()
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
+  const [pointed, setPointed] = useState<string | null>(null)
   const field = useRef<HTMLInputElement>(null)
   const query = q.trim().toLowerCase()
   const type = setup[which].type
@@ -741,13 +744,18 @@ function AddEntry({ which, label, style, piece, setup, shown, onPress, onAdded }
         }}
       />
       {matches.length > 0 && (
-        <div className={styles.picks} role="listbox" aria-label="Cards that match">
-          {matches.map((c) => (
-            <button /* kit-ok: a card offered under the add field, its type's colour */ key={c.id} role="option" aria-selected={false} className={styles.pick} style={{ ['--type' as string]: TYPE_ACCENT[c.type] }} onClick={() => (onAdded?.(which), void addCardEntry(wid, piece.id, setup, which, c).then(done))}>
-              <span className={styles.pickName}>{c.title || `untitled ${c.type}`}</span>
-              <span className={styles.pickType}>{c.type}</span>
-            </button>
-          ))}
+        // The cards that match, as the prompt's rows (cardEntry, D-350); a press on one doesn't blur the field.
+        <div className={styles.picks}>
+          <PromptList
+            role="listbox"
+            label="Cards that match"
+            entries={matches.map((c) => cardEntry(c, () => (onAdded?.(which), void addCardEntry(wid, piece.id, setup, which, c).then(done)), { hint: c.type }))}
+            picked={pointed}
+            q={q.trim()}
+            onPick={(i) => i.onSelect({ shift: false, alt: false })}
+            onPoint={setPointed}
+            idOf={(k) => `pick-${k}`}
+          />
         </div>
       )}
     </div>

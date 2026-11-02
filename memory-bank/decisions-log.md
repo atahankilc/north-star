@@ -6758,9 +6758,17 @@ Stage 2 (same day): Select moved to src/ui/patterns (it draws patterns now) on a
 placed after it's measured, follows its anchor, a press outside or Escape closes it) and PromptPanel (`role="listbox"`,
 `start` its value; `line={false}` up to SELECT_FIND_PAST = 7 options, in feel.ts, a letter jumping); its own list, keys,
 CSS and the raw ROW/PAD/LINE/MAX numbers went; floatFrom's 8/4/200 px are tokens now. useDismiss tells why it closed.
-Stages left: 3 Finder, Guide, SkillMenu,
-Threads' `@`, Matrix's picks, MatrixSetup's add on PromptList, 4 one `cardEntry()` for CardPanel's picker and BringCards,
-FilterDock's swatch out of Menu.module.css.
+Stage 3 (same day): every other list on the parts. The frame is one CSS (`src/ui/foundation/PromptFrame.module.css`,
+composed by PromptPanel, the finder, the guide, the agent's `/` menu, Threads' `@`, the matrix's adds; it sets no
+`position`, each user its own). The finder's rows a PromptList on usePromptNav (Tab and alt C W X still its own; a
+click previews, a double-click goes: `onConfirm`), its matches lit by `Hit` with ranges (every regex match), its foot
+gone (`N of M shown: type more` only when cut), the fold's `(←)`/`(→)` and the switches' `(alt C)` titles gone; the
+guide's rows a PromptList (✓/• seen in cyan, the first line as `meta`, `NEW` a `badge`, folds `▸ 9 inside` / `58 keys`,
+key rows a `<kbd>`; its own keys kept), its `N notes · N seen` foot gone; the agent's `/` menu (the summary a `sub`
+line under the name), Threads' `@` (its send button's key title gone), the matrix's `+ card` and AddPill's list. One
+`cardEntry()` (`src/views/workspace/plane/cardEntry.ts`) draws a card as a row for CardPanel's picker, BringCards and
+both matrix lists. PromptRow gained `meta`, `sub`, `badge`, `faint`, a hover wash where the pointer doesn't pick.
+Stage left: 4 FilterDock's swatch out of Menu.module.css.
 
 
 ### D-351 · 2026-11-02 · Accepted (the user: "ana welcome a bakıyorum da birbiriyle alakası olmayan şeyler bir arada gösterilmiş galiba sınırımız 6 olduğu için … Together ile find bir arada, piece anlatırken consoledan bahsedilmiş … böyle flowun tersi anlatımlar hiç hoş değil")

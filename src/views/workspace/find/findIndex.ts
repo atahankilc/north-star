@@ -191,7 +191,7 @@ export function folded(groups: Group[], here: string): Group[] {
       ? g
       : {
           ...g,
-          rows: [{ id: `in:${g.space}`, glyph: g.glyph, text: g.space === CANVAS ? `${g.count} on the canvas` : `${g.count} inside`, hint: 'enter: go to the first', dest: g.rows[0].dest, inside: true }],
+          rows: [{ id: `in:${g.space}`, glyph: g.glyph, text: g.space === CANVAS ? `${g.count} on the canvas` : `${g.count} inside`, hint: 'goes to the first', dest: g.rows[0].dest, inside: true }],
         },
   )
 }

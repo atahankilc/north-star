@@ -42,6 +42,8 @@ import { useWs } from '../canvas/context'
 import { useSetupOnDock } from '../canvas/FocusDock'
 import { closeMatrixSetup, openMatrixSetup, setupOf, setupTab, SETUP_TABS, StepSquare, useMatrixUi, type SetupTab } from './Matrix'
 import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { PromptList } from '../../../ui/patterns/PromptList'
+import { cardEntry } from '../plane/cardEntry'
 import styles from './Matrix.module.css'
 import { Tabs } from '../../../ui/primitives/Tabs'
 import { Checkbox } from '../../../ui/primitives/Checkbox'
@@ -277,29 +279,18 @@ export function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<stri
         }}
       />
       {open && options.length > 0 && (
-        <span className={styles.addList} role="listbox">
-          {options.map((o, i) => (
-            <button /* kit-ok: a card or a name offered under the field, in its type's colour */
-              key={'card' in o ? o.card.id : 'name'}
-              role="option"
-              aria-selected={i === lit}
-              className={styles.addOpt}
-              style={'card' in o ? { ['--type' as string]: TYPE_ACCENT[o.card.type] } : undefined}
-              data-card={'card' in o || undefined}
-              onPointerEnter={() => setLit(i)}
-              onClick={() => take(o)}
-            >
-              <span className={styles.pillMark} aria-hidden />
-              {'card' in o ? (
-                <>
-                  <span className={styles.addOptName}>{o.card.title || `untitled ${o.card.type}`}</span>
-                  <span className={styles.addOptType}>{o.card.type}</span>
-                </>
-              ) : (
-                <span className={styles.addOptName}>"{o.name}" as a name</span>
-              )}
-            </button>
-          ))}
+        // A card (cardEntry) or the name as typed, as the prompt's rows (D-350); the field keeps the keys.
+        <span className={styles.addList} onMouseDown={(e) => e.preventDefault()}>
+          <PromptList
+            role="listbox"
+            label={onName ? 'Cards or a name' : 'Cards'}
+            entries={options.map((o) => ('card' in o ? cardEntry(o.card, () => take(o), { hint: o.card.type }) : { key: '+name', label: `“${o.name}” as a name`, glyph: '+', onSelect: () => take(o) }))}
+            picked={options[lit] ? ('card' in options[lit] ? options[lit].card.id : '+name') : null}
+            q={query}
+            onPick={(i) => i.onSelect({ shift: false, alt: false })}
+            onPoint={(k) => setLit(Math.max(0, options.findIndex((o) => ('card' in o ? o.card.id : '+name') === k)))}
+            idOf={(k) => `add-${k}`}
+          />
         </span>
       )}
     </span>

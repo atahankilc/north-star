@@ -1,5 +1,5 @@
-// The `?` guide (D-315, onboarding.md §4.6): every note again, in the middle like the finder (its twin: the prompt look,
-// D-222, the scrim, magenta top corners). A `>` line narrows; `# start` replays the welcome and what's new; `# areas`,
+// The `?` guide (D-315, onboarding.md §4.6): every note again, in the middle like the finder (its twin: the prompt's
+// parts and frame, D-222, D-350; the scrim). A `>` line narrows; `# start` replays the welcome and what's new; `# areas`,
 // each with `n / N seen`, `NEW` while one of its notes is armed, folding with `[▸ N inside]` (→ or ↵ opens, ← folds),
 // each note `› ✓ title · its first line` (✓ seen, • not yet), ↵ plays it (`onPlay`, the coach's queue.play); `# keys`
 // folds the same way; `tips on | off` on the `>` line (⇥ switches it). At most the screen less 48 px top and bottom, the
@@ -20,7 +20,8 @@ import { PromptField } from '../ui/primitives/PromptField'
 import { Tabs } from '../ui/primitives/Tabs'
 import { Label } from '../ui/primitives/Label'
 import { Empty } from '../ui/primitives/Empty'
-import { Button } from '../ui/primitives/Button'
+import { PromptList } from '../ui/patterns/PromptList'
+import type { PromptEntry, PromptItem } from '../ui/foundation/promptModel'
 
 type Props = {
   onClose: () => void
@@ -103,7 +104,7 @@ function Line({ field, query, setQuery, onKeyDown }: { field: React.RefObject<HT
       onKeyDown={onKeyDown as (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void}
     >
       <Label tone="faint">tips</Label>
-      <span onMouseDown={(e) => e.preventDefault()}>
+      <span className={styles.tips} onMouseDown={(e) => e.preventDefault()}>
         <Tabs look="segments" label="Tips (⇥ switches)" options={TIPS} value={tipsOff ? 'off' : 'on'} onChange={(v) => set(v === 'off')} />
       </span>
     </PromptField>
@@ -126,16 +127,17 @@ const toggleTips = () => {
 }
 
 // ↓ below the fold: how many areas (and whether the keys) are still under the list's bottom.
-function useBelow(list: React.RefObject<HTMLElement | null>, deps: unknown[]) {
+function useBelow(body: React.RefObject<HTMLElement | null>, rows: Row[]) {
   const [below, setBelow] = useState<{ areas: string[]; keys: boolean } | null>(null)
   useLayoutEffect(() => {
-    const el = list.current
+    const el = body.current?.firstElementChild as HTMLElement | null | undefined
     if (!el) return
+    const folds = rows.flatMap((r) => (r.kind === 'area' ? [{ key: r.key, name: r.area.name }] : r.kind === 'keys' ? [{ key: r.key, name: 'keys' }] : []))
     const measure = () => {
       const bottom = el.scrollTop + el.clientHeight
       if (el.scrollHeight - bottom < 4) return setBelow(null)
-      const under = [...el.querySelectorAll<HTMLElement>('[data-below]')].filter((r) => r.offsetTop >= bottom - 4)
-      setBelow({ areas: under.filter((r) => r.dataset.below !== 'keys').map((r) => r.dataset.below!), keys: under.some((r) => r.dataset.below === 'keys') })
+      const under = folds.filter((f) => (el.querySelector<HTMLElement>(`[data-key="${CSS.escape(f.key)}"]`)?.offsetTop ?? 0) >= bottom - 4)
+      setBelow({ areas: under.filter((f) => f.name !== 'keys').map((f) => f.name), keys: under.some((f) => f.name === 'keys') })
     }
     measure()
     el.addEventListener('scroll', measure, { passive: true })
@@ -145,8 +147,7 @@ function useBelow(list: React.RefObject<HTMLElement | null>, deps: unknown[]) {
       el.removeEventListener('scroll', measure)
       ro.disconnect()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
+  }, [body, rows])
   return below
 }
 
@@ -181,11 +182,8 @@ function ListGuide({ model, onClose, onPlay, reach, resume }: { model: GuideMode
   }, [rows, selKey, query])
   const nowPicked = nowShown && onNow
   const picked = nowPicked ? null : (rows[at] ?? null)
-  const list = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    list.current?.querySelector('[data-picked]')?.scrollIntoView({ block: 'nearest' })
-  }, [at, rows, nowPicked])
-  const below = useBelow(list, [rows])
+  const body = useRef<HTMLDivElement>(null)
+  const below = useBelow(body, rows)
 
   const toggle = (key: string) => setOpen((o) => (o === key ? null : key))
   const foldKey = (r: Row) => (r.kind === 'area' ? r.area.area : r.kind === 'keys' ? 'keys' : null)
@@ -200,6 +198,25 @@ function ListGuide({ model, onClose, onPlay, reach, resume }: { model: GuideMode
       const l = keyLesson(model, r.row)
       if (l) onPlay(l)
     }
+  }
+
+  // The rows as the prompt's entries (D-350): what's showing now first, then the guide's own rows.
+  const entries = useMemo<PromptEntry[]>(
+    () => [
+      ...(nowShown ? [{ key: '#now', heading: 'showing now' }, { key: NOW, label: reach!.title, glyph: '◆', onSelect: NOOP }] : []),
+      ...rows.map((r) => entryOf(r, () => (toggle(foldKey(r)!), setSelKey(r.key), field.current?.focus()))),
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, nowShown, reach?.title],
+  )
+  // A click is ↵ (a fold opens or shuts).
+  const onRow = (i: PromptItem) => {
+    if (i.key === NOW) return reach?.go()
+    const r = rows.find((x) => x.key === i.key)
+    setOnNow(false)
+    setSelKey(i.key)
+    field.current?.focus()
+    act(r ?? null)
   }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -247,159 +264,62 @@ function ListGuide({ model, onClose, onPlay, reach, resume }: { model: GuideMode
       onKeyDown={keepKeys}
     >
       <Line field={field} query={query} setQuery={(q) => (setQuery(q), setSelKey(null))} onKeyDown={onKeyDown} />
-      <div className={styles.body}>
-        <div ref={list} className={styles.list} role="listbox" aria-label="Notes and keys">
-          {nowShown && <NowRow reach={reach!} picked={nowPicked} onClick={() => reach!.go()} />}
-          {rows.length === 0 && <Empty className={styles.none}>nothing matches</Empty>}
-          {rows.map((r, i) => (
-            <RowView
-              key={r.key}
-              row={r}
-             
-              picked={!nowPicked && i === at}
-              typed={!!query.trim()}
-              onClick={() => {
-                setOnNow(false)
-                setSelKey(r.key)
-                field.current?.focus()
-                // A click is ↵ (a fold opens or shuts).
-                act(r)
-              }}
-              onFold={() => (toggle(foldKey(r)!), setSelKey(r.key), field.current?.focus())}
-            />
-          ))}
-        </div>
+      <div ref={body} className={styles.body}>
+        {rows.length === 0 && !nowShown ? (
+          <Empty className={styles.none}>nothing matches</Empty>
+        ) : (
+          <PromptList
+            className={styles.list}
+            role="listbox"
+            label="Notes and keys"
+            entries={entries}
+            picked={nowPicked ? NOW : (rows[at]?.key ?? null)}
+            q={query.trim()}
+            onPick={onRow}
+            onPoint={NO_POINT}
+            idOf={(k) => `guide-${k}`}
+          />
+        )}
       </div>
       {below && <div className={styles.more}>{belowLine(below)}</div>}
-      <div className={styles.foot}>
-        <span>
-          {model.total} notes · {model.seen} seen
-        </span>
-      </div>
     </Appear>
   )
 }
 
 type Reach = { title: string; go: () => void } | null
 
-// The lesson showing right now, first: `↵` goes to it (focus in its card, where its keys work).
-function NowRow({ reach, picked, onClick }: { reach: NonNullable<Reach>; picked: boolean; onClick: () => void }) {
-  return (
-    <>
-      <div className={styles.hd} role="presentation">
-        <span className={styles.hash}>#</span> showing now
-      </div>
-      <div className={styles.it} role="option" aria-selected={picked} data-picked={picked || undefined} data-now onClick={onClick}>
-        <span className={styles.cur} aria-hidden>
-          ›
-        </span>
-        <span className={styles.st} aria-hidden>
-          ◆
-        </span>
-        <span className={styles.title}>{reach.title}</span>
-      </div>
-    </>
-  )
-}
+const NOW = 'now'
+const NOOP = () => {}
+const NO_POINT = () => {}
+const seenMark = (seen: boolean) => ({ glyph: seen ? '✓' : '•', tone: seen ? 'var(--accent-cyan)' : undefined })
 
-function Status({ seen }: { seen: boolean }) {
-  return (
-    <span className={styles.st} data-seen={seen || undefined} aria-label={seen ? 'seen' : 'not seen yet'}>
-      {seen ? '✓' : '•'}
-    </span>
-  )
-}
-
-const New = () => <span className={styles.new}>NEW</span>
-
-function RowView({ row: r, picked, typed, onClick, onFold }: { row: Row; picked: boolean; typed: boolean; onClick: () => void; onFold: () => void }) {
-  if (r.kind === 'head') {
-    return (
-      <div className={styles.hd} role="presentation">
-        <span className={styles.hash}>#</span> {r.title}
-        {r.count && <span className={styles.cnt}>{r.count}</span>}
-      </div>
-    )
-  }
-  const common = {
-    className: styles.it,
-    role: 'option',
-    'aria-selected': picked,
-    'data-picked': picked || undefined,
-    onClick,
-  }
-  const cur = (
-    <span className={styles.cur} aria-hidden>
-      ›
-    </span>
-  )
+// A guide row as a prompt row: ✓ seen (cyan) or • not yet, the title, its first line dim, NEW; an area or the keys fold
+// (`▸ 9 inside`); a note or a key hangs under its area.
+function entryOf(r: Row, onFold: () => void): PromptEntry {
+  if (r.kind === 'head') return { key: r.key, heading: r.title, count: r.count }
   if (r.kind === 'start') {
     const s: StartRow = r.start
-    return (
-      <div {...common} data-off={s.off || undefined}>
-        {cur}
-        <Status seen={s.seen} />
-        <span className={styles.title}>{s.title}</span>
-        <span className={styles.dot}>·</span>
-        <span className={styles.what}>{s.line}</span>
-        {s.isNew && <New />}
-      </div>
-    )
+    return { key: r.key, label: s.title, ...seenMark(s.seen), meta: s.line, badge: s.isNew ? 'NEW' : undefined, faint: s.off, onSelect: NOOP }
   }
-  if (r.kind === 'area' || r.kind === 'keys') {
-    const a: AreaInfo | null = r.kind === 'area' ? r.area : null
-    const count = r.kind === 'keys' ? `${r.shown} keys` : `${a!.notes.length} inside`
-    return (
-      <div {...common} data-fold data-open={r.open || undefined} data-below={a ? a.name : 'keys'} aria-expanded={r.open}>
-        {cur}
-        <span className={styles.st} aria-hidden>
-          {r.open ? '▾' : '▸'}
-        </span>
-        <span className={styles.title}>{a ? a.name : 'every shortcut'}</span>
-        <span className={styles.what}>{a ? `${a.seen} / ${a.notes.length} seen` : ''}</span>
-        {a?.isNew && <New />}
-        {!typed && (
-          <Button
-            icon
-            tabIndex={-1}
-            className={styles.fold}
-            aria-hidden
-            pressed={r.open}
-            title={r.open ? 'fold (←)' : 'open (→)'}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={(e) => (e.stopPropagation(), onFold())}
-          >
-            {r.open ? '▾' : '▸'} {count}
-          </Button>
-        )}
-      </div>
-    )
+  if (r.kind === 'area') {
+    const a: AreaInfo = r.area
+    return { key: r.key, label: a.name, meta: `${a.seen} / ${a.notes.length} seen`, badge: a.isNew ? 'NEW' : undefined, fold: { open: r.open, count: a.notes.length, onToggle: onFold }, onSelect: NOOP }
   }
+  if (r.kind === 'keys') return { key: r.key, label: 'every shortcut', fold: { open: r.open, count: r.shown, noun: 'keys', onToggle: onFold }, onSelect: NOOP }
   if (r.kind === 'note') {
     const n: Note = r.note
-    return (
-      <div {...common} data-ind>
-        {cur}
-        <Status seen={n.seen} />
-        <span className={styles.title}>{n.title}</span>
-        <span className={styles.dot}>·</span>
-        <span className={styles.what}>{n.line.replace(/`/g, '')}</span>
-        {n.isNew && <New />}
-      </div>
-    )
+    return { key: r.key, label: n.title, ...seenMark(n.seen), meta: n.line.replace(/`/g, ''), badge: n.isNew ? 'NEW' : undefined, indent: true, onSelect: NOOP }
   }
   const k: KeyRow = r.row
-  return (
-    <div {...common} data-ind data-key-row>
-      {cur}
-      <kbd className={styles.kbd}>{k.keys}</kbd>
-      <span className={styles.title}>{k.what}</span>
-      {k.where && (
-        <>
-          <span className={styles.dot}>·</span>
-          <span className={styles.what}>{k.where}</span>
-        </>
-      )}
-    </div>
-  )
+  return {
+    key: r.key,
+    label: (
+      <>
+        <kbd className={styles.kbd}>{k.keys}</kbd> {k.what}
+      </>
+    ),
+    meta: k.where,
+    indent: true,
+    onSelect: NOOP,
+  }
 }

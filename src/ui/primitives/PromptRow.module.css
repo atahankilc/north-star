@@ -73,6 +73,50 @@
   text-overflow: ellipsis;
 }
 
+/* Dim words after the label (a note's first line); a magenta tag (`NEW`). */
+.meta {
+  margin-left: var(--space-2);
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+}
+
+.badge {
+  flex: none;
+  padding: 0 var(--space-1);
+  background: var(--accent-magenta);
+  color: var(--on-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+}
+
+/* A second line under the label (a skill's summary): the row grows to hold it, its marks at the first line. */
+.row[data-sub] {
+  align-items: baseline;
+  padding-block: var(--space-1);
+}
+
+.sub {
+  display: block;
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+  line-height: var(--lh-body);
+  white-space: normal;
+}
+
+.row[data-picked] .sub {
+  color: var(--fg);
+}
+
+.row[data-faint] .label {
+  color: var(--fg-muted);
+}
+
+/* Under the pointer where the pointer doesn't pick (the finder while finding): a lighter wash. */
+.row:hover:not([data-picked]) {
+  background: var(--wash-1);
+}
+
 /* The value it has now (a Select's, the canvas you're on): cyan, `✓` at its end. */
 .row[aria-current='true'] .label {
   color: var(--accent-cyan);
