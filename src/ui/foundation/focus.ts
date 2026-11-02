@@ -1,14 +1,18 @@
 // Focus for what opens over or beside the page (D-359; was in Window.tsx): moved inside as it opens and given back where
 // it was when it closes; Tab kept round inside a modal one.
-import { useLayoutEffect, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react'
+import { useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react'
 
-// Focus inside while open, and back where it was on close: `first` (or the root) takes it as it opens.
+// Focus inside while open, and back where it was on close: `first` (or the root) takes it as it opens, unless something
+// inside already took it (a field's autoFocus runs before this). Where it was is read as it first draws, before that.
 export function useDialogFocus(root: RefObject<HTMLElement | null>, first: RefObject<HTMLElement | null> | null, move = true) {
+  const was = useRef<Element | null | undefined>(undefined)
+  if (was.current === undefined) was.current = typeof document === 'undefined' ? null : document.activeElement
   useLayoutEffect(() => {
-    const was = document.activeElement as HTMLElement | null
-    if (move) (first?.current ?? root.current)?.focus({ preventScroll: true })
+    const inside = !!root.current && root.current.contains(document.activeElement)
+    if (move && (first?.current || !inside)) (first?.current ?? root.current)?.focus({ preventScroll: true })
+    const back = was.current as HTMLElement | null
     return () => {
-      if (was && was !== document.body && document.contains(was)) was.focus({ preventScroll: true })
+      if (back && back !== document.body && document.contains(back)) back.focus({ preventScroll: true })
     }
     // Once, on open.
     // eslint-disable-next-line react-hooks/exhaustive-deps

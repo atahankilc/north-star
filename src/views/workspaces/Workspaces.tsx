@@ -44,7 +44,7 @@ import { Hud } from '../../ui/patterns/Hud'
 import { HazardConfirm } from '../../ui/patterns/HazardConfirm'
 import type { PromptEntry } from '../../ui/foundation/promptModel'
 import { ContextMenu } from '../../ui/patterns/ContextMenu'
-import { Window } from '../../ui/patterns/Window'
+import { Dialog } from '../../ui/patterns/Dialog'
 import { learn } from '../../onboarding/learn'
 import { DESCRIPTION_MAX, WORKSPACE_NAME_MAX } from '../../model/limits'
 import { ContinuePiece, NewTasksOf, OtherPiece, People } from './pieces'
@@ -607,18 +607,20 @@ function NameWindow({ title, name, withAbout, onCancel, onDone }: { title: strin
   const [about, setAbout] = useState('')
   const done = () => value.trim() && onDone(value.trim(), about.trim() || undefined)
   return (
-    <Window label={title} onClose={onCancel} close>
-      <div className={styles.window}>
-        <h3 className={styles.windowTitle}>{title}</h3>
-        <Field value={value} onChange={setValue} label="Name" placeholder="e.g. Pet-sitting marketplace" maxLength={NAME_MAX} onEnter={done} autoFocus />
-        {withAbout && <Field value={about} onChange={setAbout} label="What are you building?" placeholder="One line: who it's for and what it does (optional)" maxLength={DESCRIPTION_MAX} multiline />}
-        <ButtonGroup className={styles.windowFoot}>
+    <Dialog
+      title={title}
+      onClose={onCancel}
+      foot={
+        <>
           <Button onClick={onCancel}>cancel</Button>
           <Button tone="primary" disabled={!value.trim()} onClick={done}>
             {withAbout ? 'create' : 'rename'}
           </Button>
-        </ButtonGroup>
-      </div>
-    </Window>
+        </>
+      }
+    >
+      <Field value={value} onChange={setValue} label="Name" placeholder="e.g. Pet-sitting marketplace" maxLength={NAME_MAX} onEnter={done} autoFocus />
+      {withAbout && <Field value={about} onChange={setAbout} label="What are you building?" placeholder="One line: who it's for and what it does (optional)" maxLength={DESCRIPTION_MAX} multiline />}
+    </Dialog>
   )
 }

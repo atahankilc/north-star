@@ -498,7 +498,7 @@ export const LESSONS: readonly Lesson[] = [
   },
   {
     id: 'settings', v: 3, format: 'lesson', roles: ALL, area: 'settings', since: 'D-097, D-348, D-349',
-    // Shown once Settings closes: it's a native dialog, nothing shows over it (D-349).
+    // Shown once Settings closes: a modal Window, nothing shows over it (D-349, D-359).
     trigger: [{ event: 'settings-open' }],
     pages: [
       { title: 'Settings', tab: 'you', body: 'YOU holds your account and the display: theme, motion, the background and its strength, the size of the tools. It is kept in this browser.' },

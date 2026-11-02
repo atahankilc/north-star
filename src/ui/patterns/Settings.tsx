@@ -1,7 +1,7 @@
 // Settings (D-054, D-064, D-097): your square and the gear, bottom left (D-175); either opens a modal with a grouped side
 // menu on the left and the chosen page on the right: you (account, display) and the current workspace (general, people,
 // export, D-246). The agent's page (your own key, the model, usage: S14, D-312) is under you.
-// A native <dialog>: focus stays inside, Escape and the backdrop close it.
+// On the one Window (D-359): focus kept inside and given back, Escape (a menu in it first) and the scrim close it.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { signOut, useAuth } from '../../data/auth'
 import { usePresence } from '../../data/presence'
@@ -13,6 +13,7 @@ import { Button } from '../primitives/Button'
 import { Avatar } from '../primitives/Avatar'
 import { Choice } from '../primitives/Choice'
 import { SettingsTool } from './SettingsTool'
+import { Window } from './Window'
 import styles from './Settings.module.css'
 
 const MOTION: readonly MotionPref[] = ['full', 'reduced', 'system']
@@ -53,21 +54,14 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
   const { user } = useAuth()
   const myColor = usePresence((s) => s.myColor)
   const theme = useTheme((s) => s.theme)
-  const dialog = useRef<HTMLDialogElement>(null)
+  const box = useRef<HTMLElement>(null)
   const [open, setOpen] = useState(false)
   const [page, setPage] = useState<Page>('account')
-
-  useEffect(() => {
-    const d = dialog.current
-    if (!d) return
-    if (open && !d.open) d.showModal()
-    if (!open && d.open) d.close()
-  }, [open])
 
   // Opened (on a page or not): the keyboard on that page's menu item, so only one item reads as current.
   useEffect(() => {
     if (!open) return
-    const r = requestAnimationFrame(() => dialog.current?.querySelector<HTMLElement>('[aria-current="page"]')?.focus())
+    const r = requestAnimationFrame(() => box.current?.querySelector<HTMLElement>('[aria-current="page"]')?.focus())
     return () => cancelAnimationFrame(r)
   }, [open])
 
@@ -100,15 +94,8 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
         <Avatar name={who} color={myColor ? themeAccent(myColor, theme) : 'var(--accent-cyan)'} />
       </button>
       <SettingsTool open={open} waiting={badge} onClick={() => show()} />
-      <dialog
-        ref={dialog}
-        className={styles.dialog}
-        aria-label="Settings"
-        onClose={() => setOpen(false)}
-        // A click on the backdrop lands on the <dialog> itself.
-        onClick={(e) => e.target === e.currentTarget && setOpen(false)}
-      >
-        {open && (
+      {open && (
+        <Window label="Settings" onClose={() => setOpen(false)} look="bare" focus={false} elRef={box} className={styles.dialog}>
           <div className={styles.inner}>
             <nav className={styles.nav} aria-label="Settings" data-learn="settings-menu">
               {(['you', 'workspace'] as const).map((g) => {
@@ -180,8 +167,8 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
               ×
             </Button>
           </div>
-        )}
-      </dialog>
+        </Window>
+      )}
     </>
   )
 }

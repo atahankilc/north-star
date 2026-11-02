@@ -432,27 +432,6 @@
 
 /* ── new workspace / rename ── */
 
-.window {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  width: var(--size-xl);
-  max-width: calc(100vw - var(--space-8));
-  padding: var(--space-6);
-}
-
-.windowTitle {
-  margin: 0;
-  color: var(--fg-strong);
-  font-family: var(--font-display);
-  font-size: var(--text-title);
-  font-weight: var(--weight-medium);
-}
-
-.windowFoot {
-  align-self: flex-end;
-}
-
 @media (max-width: 760px) {
   .hero {
     grid-template-columns: 1fr;

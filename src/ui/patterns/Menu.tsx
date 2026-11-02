@@ -58,7 +58,8 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
     if (refocus) trigger.current?.focus()
   }
 
-  useDismiss(root, () => close(false), { on: open })
+  // Escape on the one stack (D-359): over a window or a panel it closes first, the focus back on the trigger.
+  useDismiss(root, (why) => close(why === 'escape'), { on: open, escape: true })
 
   return (
     <div ref={root} className={styles.root}>

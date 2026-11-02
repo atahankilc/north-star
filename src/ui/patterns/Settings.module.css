@@ -39,10 +39,6 @@
   background: var(--bg-raised);
 }
 
-.dialog::backdrop {
-  background: var(--scrim);
-}
-
 /* Grouped side menu on the left, the chosen page on the right (D-097). */
 .inner {
   position: relative;

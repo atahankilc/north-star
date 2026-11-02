@@ -77,7 +77,7 @@ const editable = (el: Element | null) =>
   !!el && (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !['button', 'checkbox', 'radio', 'range', 'submit'].includes(el.type)) || (el as HTMLElement).isContentEditable)
 
 export const settingsPage = (): string | null => {
-  const d = document.querySelector('dialog[open][aria-label="Settings"]')
+  const d = document.querySelector('[role="dialog"][aria-label="Settings"]')
   if (!d) return null
   return d.querySelector('[aria-current="page"] span')?.textContent?.trim().toLowerCase() || 'account'
 }

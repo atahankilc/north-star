@@ -1,0 +1,22 @@
+/* A small window that asks one thing (src/ui/patterns/Dialog.tsx, D-359): the title in Inter, what it asks, the answers
+   at the foot on the right. */
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: var(--size-xl);
+  max-width: calc(100vw - var(--space-8));
+  padding: var(--space-6);
+}
+
+.title {
+  margin: 0;
+  color: var(--fg-strong);
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: var(--weight-medium);
+}
+
+.foot {
+  align-self: flex-end;
+}
