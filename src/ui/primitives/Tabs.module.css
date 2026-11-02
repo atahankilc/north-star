@@ -15,15 +15,43 @@
   composes: sm from './Button.module.css';
 }
 
-/* Tabs: as wide as their row, each from its words' width sharing what's left; cut with `…` only when the row is too
-   narrow for all their words. */
+/* Tabs: one row, never a second. As wide as their row, each from its words' width sharing what's left; when their
+   words don't fit, the row scrolls sideways (no bar), the edge where more is hidden fading out. */
+.row[data-look='tabs'] {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.row[data-look='tabs']::-webkit-scrollbar {
+  display: none;
+}
+
+.row[data-more='end'] {
+  mask-image: linear-gradient(to right, black calc(100% - var(--space-8)), transparent);
+}
+
+.row[data-more='start'] {
+  mask-image: linear-gradient(to left, black calc(100% - var(--space-8)), transparent);
+}
+
+.row[data-more='start end'] {
+  mask-image: linear-gradient(to right, transparent, black var(--space-8), black calc(100% - var(--space-8)), transparent);
+}
+
 .row[data-look='tabs'] .option {
-  flex: 1 1 auto;
+  flex: 1 0 auto;
   justify-content: flex-start;
   min-width: 0;
   padding: 0 var(--space-3);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
+}
+
+/* Steps: all one width, cut with `…` rather than scrolling. */
+.row[data-even] {
+  overflow-x: visible;
 }
 
 .row[data-even] .option {

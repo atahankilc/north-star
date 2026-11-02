@@ -150,7 +150,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   hairline between their cells instead of a gap: a dock's or console's actions, a panel's or a wizard's foot, a zoom's
   `− 100% +`, a Choice's options. Menu's triggers (`SHOW all ▾`, the side nav's `+`) are the same cell.
 - **Controls are toggle cells** (D-344), one kit component each: Checkbox (the label is the cell, `✓` before it while
-  on; no label, a square box cell; `CheckMark` inside a row), Tabs (cells joined by the seam, filling their row; Choice
+  on; no label, a square box cell; `CheckMark` inside a row), Tabs (cells joined by the seam, filling their row, one row that scrolls sideways when they don't fit; Choice
   is its segments, Steps its tabs with a lead `01`, the passed ones brighter, all one width), one dropdown trigger (`Trigger.module.css`, Menu's and Select's). A menu's ticked
   rows show `✓` on a wash. A person's square is `Avatar` (30 px in the HUD, 24 in rows).
 - Inputs: underscore or caret cursor `▌`, mono text

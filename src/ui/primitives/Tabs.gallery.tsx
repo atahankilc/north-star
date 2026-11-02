@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { example } from '../../gallery/example'
 import { Tabs, type TabOption } from './Tabs'
 
-function Live<T extends string>({ options, start, ...p }: { options: TabOption<T>[]; start: T; label: string; look?: 'tabs' | 'segments'; progress?: boolean; even?: boolean }) {
+function Live<T extends string>({ options, start, width, ...p }: { options: TabOption<T>[]; start: T; label: string; look?: 'tabs' | 'segments'; progress?: boolean; even?: boolean; width?: number }) {
   const [v, setV] = useState<T>(start)
   return (
-    <div style={{ display: 'grid', gap: 'var(--space-3)', width: p.even ? 460 : undefined }}>
+    <div style={{ display: 'grid', gap: 'var(--space-3)', width: width ?? (p.even ? 460 : undefined) }}>
       <Tabs {...p} options={options} value={v} onChange={setV} />
       <span style={{ color: 'var(--fg-faint)', fontSize: 'var(--text-xs)' }}>showing: {v}</span>
     </div>
@@ -38,12 +38,12 @@ export default example({
   place: 'forms/pickers',
   also: ['hud/navigation'],
   file: 'src/ui/primitives/Tabs.tsx',
-  note: 'one row, one current (D-326; cells, D-344): Button cells joined by a seam; tabs fill their row, segments (a switch, every Choice) fit their words; arrows move and pick; lead + progress + even are a wizard’s Steps',
+  note: 'one row, one current (D-326; cells, D-344): Button cells joined by a seam; tabs fill their row, segments (a switch, every Choice) fit their words; arrows move and pick; too many for the row: one row scrolling sideways, its hidden edge fading; lead + progress + even are a wizard’s Steps',
   states: {
     tabs: () => <Live label="setup" options={SETUP} start="rows" />,
     segments: () => <Live label="where" look="segments" options={WHERE} start="here" />,
     'lead, progress, even (Steps)': () => <Live label="steps" options={STEPS} start="2" progress even />,
-    'many tabs': () => <Live label="decks" options={SIDE} start="k1" />,
+    'many tabs: one row, scrolls': () => <Live label="decks" options={SIDE} start="k1" width={420} />,
     'segments with counts': () => <Live label="threads" look="segments" options={[{ value: 'open', label: 'open', count: 4 }, { value: 'resolved', label: 'resolved', count: 11 }, { value: 'mentions', label: '@ me', count: 1 }]} start="open" />,
   },
 })

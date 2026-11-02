@@ -33,10 +33,9 @@
 }
 
 /* The decks (a Tabs row), scrolling sideways when there are many. */
+/* The decks' tabs: one row that scrolls when they don't fit (Tabs does it). */
 .decks {
   min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
 
 /* Across the decks, in the corner: MINE and ALL · DAYS (a Tabs row of their own, D-300). */
