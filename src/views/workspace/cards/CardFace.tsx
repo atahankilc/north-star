@@ -6,7 +6,7 @@
 // `finished`, `lifted`, `pressed`, `dim`), and with `marks` it draws its Marks (D-265) in its tone, with the L's of
 // others who have `peersOf` picked. A shell only: its layout, drag and data are its caller's.
 import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent as ReactPointerEvent, ReactNode, Ref } from 'react'
-import { Marks } from '../../../ui/primitives/Marks'
+import { Marks, type Tier } from '../../../ui/primitives/Marks'
 import { usePeersOn } from '../canvas/collab'
 import styles from './CardFace.module.css'
 
@@ -28,6 +28,8 @@ type Props = {
   marks?: boolean
   // Its Marks' colour when not its tone (a timeline's ◆: no face, but marks in its card's colour).
   markTone?: string
+  // Its Marks' size (D-265's tiers; a small pill takes `s`).
+  markTier?: Tier
   // Whose selection of it others' L's follow (a task's or card's id).
   peersOf?: string
   // A button for the keyboard and screen readers (true: the deck's sheets while live; false: out of the tab order;
@@ -51,7 +53,7 @@ type Props = {
   children: ReactNode
 } & Record<`data-${string}`, string | number | boolean | undefined>
 
-export function CardFace({ tone, tint, flat, edge = 'sheet', selected, finished, lifted, pressed, dim, marks, markTone, peersOf, button, label, title, hidden, className, style, ref, onPointerDown, onPointerEnter, onPointerLeave, onClick, onDoubleClick, onKeyDown, extra, children, ...data }: Props) {
+export function CardFace({ tone, tint, flat, edge = 'sheet', selected, finished, lifted, pressed, dim, marks, markTone, markTier, peersOf, button, label, title, hidden, className, style, ref, onPointerDown, onPointerEnter, onPointerLeave, onClick, onDoubleClick, onKeyDown, extra, children, ...data }: Props) {
   const peers = usePeersOn(peersOf ?? '')
   return (
     <div
@@ -80,7 +82,7 @@ export function CardFace({ tone, tint, flat, edge = 'sheet', selected, finished,
       onKeyDown={onKeyDown}
     >
       {children}
-      {marks && <Marks tone={markTone ?? tone} selected={selected} pressed={pressed} peers={peers} />}
+      {marks && <Marks tier={markTier} tone={markTone ?? tone} selected={selected} pressed={pressed} peers={peers} />}
       {extra}
     </div>
   )

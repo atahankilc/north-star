@@ -1,6 +1,6 @@
 # Cards: one face for every card (D-358)
 
-Status: **agreed 2026-11-02 (D-358); all five steps done 2026-11-02.** Written from a read of every place that draws a card or
+Status: **agreed 2026-11-02 (D-358); all five steps and the two leftovers done 2026-11-02.** Written from a read of every place that draws a card or
 a task. Same way as the kit (D-326) and the gallery (D-324): one thing built once at the bottom, everything else built
 on it, each part with its own `X.gallery.tsx`. Same rule as D-325: **consistency first**. Where the copies drifted
 apart they snap to one look, and every visible change is listed below and shown in the gallery before and after.
@@ -143,9 +143,20 @@ outside `cards/`, and `TYPE_ACCENT` anywhere.
    `cardFace` (`var(--card-tint)`) and `cardEdge` (`inset … 0 0 var(--type|--tone)`) outside `cards/`, and
    `TYPE_ACCENT` anywhere.
 
+## After the five steps (2026-11-02)
+- **One move** (`startMove`, src/views/workspace/canvas/selection.ts): a card by itself, a text or a section with what
+  it holds, a package's band with its members and a selection all move through it: past DRAG_PX, snapped (alt or
+  snapping off: free), lined up (guides; text on the canvas itself has none), 0.8 round the point held, the lead's
+  landing marks, links following (`dragShift`; the card's own `cardsLive` gone), one undo step, held where let go
+  until the data's back. `startGroupDrag` is a thin call to it; a card by itself writes through its own op (`commit`:
+  moveCard, moveCards, the same undo words). Checked: the same drags (one card, two picked, a heading, a section with
+  two notes) in old and new in headless Chrome, pixel-identical while held and after; the onboarding demo's drag
+  scenes (plane-drag, multi-select, section, kind-section) the same, but multi-select's last frame now shows the
+  scene's own landing (the refused write no longer leaves the cards where they were dropped). In the gallery only, a
+  group or text move goes back after the drop (it can't write: no Firestore), as text already did.
+- **The no-day tray's task** (`cards/TrayTask`) on the card face: a small sheet, its card's colour edge (the `kit-ok`
+  gone). Seen: the page's black and grey border became the sheet's paper; a task with no card is faint on a black page
+  in dark, as a no-card task sheet on a deck is.
+
 ## Not yet
-- The plane card's drag and link code as a hook shared with text and packages (worth it, but a separate change: it
-  touches D-229/D-265/D-291's behaviour, not the look).
-- The timeline's no-day tray pill keeps its own edge (`kit-ok`): a task waiting on the page, not a card face.
-- PeopleHere's square tints with `--card-tint` (a person, not a card; in src/ui, not counted).
-- CardPanel keeps `TONE` as a local name for CARD_TONE and its own section rows (the panel's, not a card's line).
+- Nothing left of D-358.

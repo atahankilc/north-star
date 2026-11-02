@@ -66,7 +66,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - D-352–D-356 (2026-11-02, state-history): pushed (756bd67); firestore:rules deployed after (633/0).
 - D-348 (2026-11-01, pushed): Settings → display: hud size and background strength; the user checked it in the app.
 - D-350 (2026-11-02, pushed): the prompt family on one set of parts, done (state-history); `@` and `/` checked on emulators.
-- Cards on one face (D-358, docs/specs/cards.md): done 2026-11-02, five steps (state-history); left: the plane card's drag code as a shared hook.
+- Cards on one face (D-358, docs/specs/cards.md): done 2026-11-02, five steps, one move (`startMove`) and the tray's task after (state-history).
 - Windows and docked panels (D-359, 2026-11-02): all eight steps and the open items done, pushed and live (f2d28ac, deploy ok); left: beside's row line wins a press where it crosses the split line (as before).
 - The agent's web (D-360, docs/specs/agent-web.md, 2026-11-02): both steps built (web search on every turn, sources under the answer; `/research` with parallel researchers and a cited document); checked on the stub and pushed (a6872f8; state-history); not on a real key yet: what to watch then is in D-360's *Not yet*.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).

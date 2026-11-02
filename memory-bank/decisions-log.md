@@ -6887,7 +6887,13 @@ DueMark, Progress (Sure stays in CardSheet, one place); CardPanel's PLACEHOLDER 
 check:kit's `cardFace`, `cardEdge` (outside cards/) and `typeAccent`, at 0 (the no-day tray's pill `kit-ok`). Seen:
 the task panel's card line shows its colour as an edge, not a `▌` before the type, and its `↗` at the row's end;
 the rest pixel-identical once settled (the new server's first load settles later: measured, not guessed).
-**Not yet:** the plane card's drag code as a shared hook; the no-day tray pill on the face.
+**After (2026-11-02, the user: "go ahead and do 2 and 3"):** one move for everything on a plane, `startMove`
+(selection.ts): a card by itself (its own op, `commit`), text and sections with what they hold, a package's band, a
+selection; `startGroupDrag` a thin call; the card's `cardsLive` gone (links read `dragShift`). The no-day tray's task
+on the card face (cards/TrayTask). Checked: drags old vs new in headless Chrome pixel-identical while held and after;
+the demo's drag scenes the same but multi-select's last frame (now the scene's own landing). Gallery only: a group or
+text move goes back after the drop (no Firestore to write), as text did.
+**Not yet:** nothing of D-358.
 
 ### D-359 · 2026-11-02 · Accepted (the user: "side panel ve modelleri ortak bir component üzerine taşımak... modal ve sidepanellar aynı şeyden türesin demiyorum. Structured bir şekilde organize edelim"; "thread sol altta kalmaya devam etsin ancak onunda boy uzatma yada esc ye basınca çıkma gibi özellikleri var. Bunlar belki generalized edilebilir")
 **Decision:** what opens over or beside the page is two families, each on its own shell, sharing only small parts in

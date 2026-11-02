@@ -12,6 +12,7 @@ import { moveMany } from '../../../data/labels'
 import { snap } from '../../../data/grid'
 import type { DocumentReference } from 'firebase/firestore'
 import { clearGuides, guide, showGuides, useGuides, type Box } from './guides'
+import { DRAG_PX } from '../../../ui/foundation/feel'
 
 // What's on the open plane, kept by its view as it draws: which ids are text, and how to move the selection (each
 // with what it carries: a folded card's parts).
@@ -75,36 +76,55 @@ export function heldAt(e: { clientX: number; clientY: number; currentTarget: Eve
   return [x + (e.clientX - r.left) / zoom, y + (e.clientY - r.top) / zoom]
 }
 
-// A press on something selected with others: they all land by the same snapped step (alt: free), each 0.8 round the
-// point held following the pointer, its marks where it lands (D-265); let go, they move in one undo step and stay where
-// they were let go. `ids0`: what moves, when it isn't the selection (an unfolded package's band carries its members,
-// D-239); `at`: the point held, when the pressed thing isn't at `from`; `lead`: what holds them (that package), the
-// one whose marks show where they land (D-291).
-export function startGroupDrag(
-  e: { clientX: number; clientY: number; currentTarget: EventTarget },
-  zoom: number,
-  from: { x: number; y: number },
-  onEnd?: () => void,
-  ids0?: string[],
-  at: [number, number] = heldAt(e, from.x, from.y, zoom),
-  lead?: string,
-) {
-  const items = onPlane.items(ids0 ?? useCanvasView.getState().cardMulti)
+// What a move takes: each thing's place and where it's written (a card's spot on this plane, a text's doc; the ref
+// made only when written, so the onboarding's demo, with no Firestore, drags all the same, D-315).
+export type MoveItem = { id: string; ref: DocumentReference; x: number; y: number }
+
+type MoveOpts = {
+  // Where the pressed thing is: the step is measured from it.
+  from: { x: number; y: number }
+  items: MoveItem[]
+  // The undo step's words.
+  what: string
+  // What lines up with the rest of the plane (D-231): the items' boxes as one unless given (a folded card's parts
+  // are inside it, so only its own box); `guided: false` for text on the canvas itself, which has no guides.
+  box?: Box
+  guided?: boolean
+  // The point held, when the pressed thing isn't at `from`; what holds them (a package, a section, the card itself),
+  // the one whose marks show where they land (D-291).
+  at?: [number, number]
+  lead?: string
+  onEnd?: () => void
+  // How it's written, when not by the items' docs (a card by itself: its op, which needs no doc refs, so the gallery's
+  // and demo's stores, which have no Firestore, move it too). Rejects: each goes back.
+  commit?: (dx: number, dy: number) => Promise<unknown>
+}
+
+// One move for everything on a plane (D-229, D-265, D-358): a card, a text or a section with what it holds, a package
+// with its members, a selection. Past DRAG_PX it lands by the snapped step (alt or snapping off: free), lined up with
+// the rest (the guides' magenta lines), each thing 0.8 round the point held following the pointer, the lead's marks
+// where it lands (`dragShift`, which links and everything else on the plane read); let go, all move in one undo step
+// and stay where they were let go until their data's back (`land`). With nothing to move (a viewer's press) it only
+// waits for the release.
+export function startMove(e: { clientX: number; clientY: number; currentTarget: EventTarget }, zoom: number, o: MoveOpts) {
+  const { from, items, what, guided = true, lead, onEnd, commit } = o
+  const at = o.at ?? heldAt(e, from.x, from.y, zoom)
   const ids = new Set(items.map((i) => i.id))
-  // The selection's box, lined up as one against everything else (D-231).
-  const boxes = onPlane.boxes().filter((b) => ids.has(b.id)).map((b) => b.box)
-  const whole = boxes.length
-    ? (() => {
-        const [l, t] = [Math.min(...boxes.map((b) => b.x)), Math.min(...boxes.map((b) => b.y))]
-        return { x: l, y: t, w: Math.max(...boxes.map((b) => b.x + b.w)) - l, h: Math.max(...boxes.map((b) => b.y + b.h)) - t }
-      })()
-    : null
-  const others = othersThan(ids)
+  const boxes = o.box ? [o.box] : onPlane.boxes().filter((b) => ids.has(b.id)).map((b) => b.box)
+  const whole =
+    guided && boxes.length
+      ? (() => {
+          const [l, t] = [Math.min(...boxes.map((b) => b.x)), Math.min(...boxes.map((b) => b.y))]
+          return { x: l, y: t, w: Math.max(...boxes.map((b) => b.x + b.w)) - l, h: Math.max(...boxes.map((b) => b.y + b.h)) - t }
+        })()
+      : null
+  const others = whole ? othersThan(ids) : []
   const [sx, sy] = [e.clientX, e.clientY]
   let d: [number, number] | null = null
   const move = (ev: PointerEvent) => {
+    if (!items.length) return
     const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
-    if (!d && Math.hypot(dx, dy) < 5) return
+    if (!d && Math.hypot(dx, dy) < DRAG_PX) return
     const free = ev.altKey || !useGuides.getState().snap
     const to = free ? [Math.round(from.x + dx / zoom), Math.round(from.y + dy / zoom)] : [snap(from.x + dx / zoom), snap(from.y + dy / zoom)]
     if (whole) {
@@ -125,14 +145,28 @@ export function startGroupDrag(
     if (!d || (!d[0] && !d[1])) return useCanvasView.setState({ dragShift: null })
     const [dx, dy] = d
     land(items.map((i) => ({ id: i.id, to: [i.x + dx, i.y + dy] })))
-    void moveMany(
-      `move ${items.length} things`,
-      items.map((i) => ({ ref: i.ref, from: { x: i.x, y: i.y }, to: { x: i.x + dx, y: i.y + dy } })),
-    ).catch(() => items.forEach((i) => landed(i.id)))
+    void (commit ? commit(dx, dy) : moveMany(what, items.map((i) => ({ get ref() { return i.ref }, from: { x: i.x, y: i.y }, to: { x: i.x + dx, y: i.y + dy } })))).catch(() =>
+      items.forEach((i) => landed(i.id)),
+    )
   }
   window.addEventListener('pointermove', move)
   window.addEventListener('pointerup', up)
   window.addEventListener('pointercancel', up)
+}
+
+// A press on something selected with others: they all move as one (startMove). `ids0`: what moves, when it isn't the
+// selection (an unfolded package's band carries its members, D-239); `at`, `lead`: as startMove's.
+export function startGroupDrag(
+  e: { clientX: number; clientY: number; currentTarget: EventTarget },
+  zoom: number,
+  from: { x: number; y: number },
+  onEnd?: () => void,
+  ids0?: string[],
+  at?: [number, number],
+  lead?: string,
+) {
+  const items = onPlane.items(ids0 ?? useCanvasView.getState().cardMulti)
+  startMove(e, zoom, { from, items, what: `move ${items.length} things`, at, lead, onEnd })
 }
 
 // The tab's clipboard: what was copied, and how many times it's been pasted (each paste lands a step further).

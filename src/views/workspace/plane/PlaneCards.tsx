@@ -15,8 +15,8 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { CARD, copyCards, foldCard, foldPackage, moveCard, moveCards, spotRef, type Card } from '../../../data/cards'
 import { planeOf } from '../../../data/places'
-import { clipboard, deleteHere, heldAt, landed, onPlane, othersThan, pasteSame, selectedIds, setSelection, startGroupDrag, toggleSelected } from '../canvas/selection'
-import { clearGuides, guide, showGuides, toggleGuides, toggleSnap, useGuides } from '../canvas/guides'
+import { clipboard, deleteHere, heldAt, landed, onPlane, pasteSame, selectedIds, setSelection, startGroupDrag, startMove, toggleSelected } from '../canvas/selection'
+import { toggleGuides, toggleSnap, useGuides } from '../canvas/guides'
 import { groupOf, keep, useFilter } from '../canvas/planeFilter'
 import { useSearchParams } from 'react-router-dom'
 import { useHistory } from '../../../data/history'
@@ -45,7 +45,6 @@ import { learn } from '../../../onboarding/learn'
 import styles from './PlaneCards.module.css'
 import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
-import { DRAG_PX } from '../../../ui/foundation/feel'
 import { PackageBand, PlaneCard, type Detail } from '../cards/PlaneCard'
 export type { Detail }
 
@@ -141,8 +140,7 @@ function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: 
     return m
   }, [places])
   const facts = useMemo(() => factsOf(cards, { evidence, competitorFeatures, edges }, tally, spread), [cards, evidence, competitorFeatures, edges, tally, spread])
-  // Links follow cards being dragged, and carried by a section.
-  const cardsLive = useCanvasView((s) => (live ? s.cardsLive : NO_LIVE))
+  // Links follow what's moving (dragged, with a selection, carried by a section: `dragShift`, D-358's one move).
   const shift = useCanvasView((s) => (live ? s.dragShift : null))
   const folds = useMemo(() => foldsOf(cards, edges), [cards, edges])
   useEffect(() => void (!partsSaid.on && live && cards.some((c) => c.type !== 'package' && folds.rows.has(c.id)) && ((partsSaid.on = true), learn('parts-folded'))), [live, cards, folds])
@@ -161,7 +159,7 @@ function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: 
   // Where each card is drawn, and how tall: a folded feature holds its parts, a hovered competitor its features (only
   // while cards show everything); a folded part is its row in the feature that holds it.
   const landing = useCanvasView((s) => (live ? s.landing : NO_LIVE))
-  const at = (c: Card): [number, number] => cardsLive[c.id] ?? landing[c.id] ?? (shift?.ids.includes(c.id) ? [c.x + shift.dx, c.y + shift.dy] : [c.x, c.y])
+  const at = (c: Card): [number, number] => landing[c.id] ?? (shift?.ids.includes(c.id) ? [c.x + shift.dx, c.y + shift.dy] : [c.x, c.y])
   const heightOf = (c: Card) => {
     if (detail !== 'full') return CARD.h
     const rows = folds.rows.get(c.id)
@@ -411,8 +409,6 @@ function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], labels: Lab
   }, [live, wid])
 }
 
-type Drag = { free: [number, number]; at: [number, number] }
-
 type BoxProps = {
   card: Card
   facts?: Facts
@@ -548,30 +544,15 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealed])
   const [pressed, setPressed] = useState(false)
-  // While dragged: where the card is under the pointer (free) and the point held in it, both in plane px.
-  const [drag, setDrag] = useState<Drag | null>(null)
   const selected = useCanvasView((s) => live && (s.cardSelected === card.id || s.cardMulti.includes(card.id)))
-  const [held, setHeld] = useState<[number, number] | null>(null)
-  useEffect(() => {
-    if (held && held[0] === card.x && held[1] === card.y) setHeld(null)
-  }, [held, card.x, card.y])
-  // Carried by a section being dragged (D-188).
+  // Moved (by itself, with a selection, or carried by what holds it: a section, a package, D-188, D-229): where it lands.
   const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(card.id) ? s.dragShift : null))
-  // Let go with others (or by a section): held where it was let go until its data's back (D-229).
+  // Let go: held where it was let go until its data's back (D-229).
   const landing = useCanvasView((s) => s.landing[card.id])
   useEffect(() => {
     if (landing && landing[0] === card.x && landing[1] === card.y) landed(card.id)
   }, [landing, card.x, card.y, card.id])
-  const [x, y] = held ?? landing ?? [card.x + (shift?.dx ?? 0), card.y + (shift?.dy ?? 0)]
-  useEffect(() => {
-    if (!held) return
-    useCanvasView.setState((s) => ({ cardsLive: { ...s.cardsLive, [card.id]: held } }))
-    return () =>
-      useCanvasView.setState((s) => {
-        const { [card.id]: _, ...rest } = s.cardsLive
-        return { cardsLive: rest }
-      })
-  }, [held, card.id])
+  const [x, y] = landing ?? [card.x + (shift?.dx ?? 0), card.y + (shift?.dy ?? 0)]
   const hovered = useCanvasView((s) => live && s.cardHovered === card.id)
   const peers = usePeersOn(card.id, planeOf(card))
   const target = useCanvasView((s) => live && s.linking?.over === card.id)
@@ -591,41 +572,19 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
     }
     setSelection([card.id])
     setPressed(true)
-    const [sx, sy] = [e.clientX, e.clientY]
-    const rect = e.currentTarget.getBoundingClientRect()
-    const at: [number, number] = [(sx - rect.left) / zoom, (sy - rect.top) / zoom]
-    let to: [number, number] | null = null
-    const move = (ev: PointerEvent) => {
-      if (!editor) return
-      const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
-      if (!to && Math.hypot(dx, dy) < DRAG_PX) return
-      const free: [number, number] = [card.x + dx / zoom, card.y + dy / zoom]
-      const loose = ev.altKey || !useGuides.getState().snap
-      const place = (v: number) => (loose ? Math.round(v) : snap(v))
-      to = [place(free[0]), place(free[1])]
-      // Lined up with the rest of the plane (D-231): pulled onto a line when loose, only shown on the grid.
-      const g = guide({ x: to[0], y: to[1], w: CARD.w, h }, othersThan(new Set([card.id, ...carries.map((c) => c.id)])), zoom, loose)
-      to = [to[0] + g.dx, to[1] + g.dy]
-      showGuides(g.lines)
-      setHeld(to)
-      setDrag({ free, at })
-    }
-    const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
-      setPressed(false)
-      setDrag(null)
-      clearGuides()
-      const [dx, dy] = to ? [to[0] - card.x, to[1] - card.y] : [0, 0]
-      // A folded feature carries its parts (D-164).
-      if (to && (dx || dy))
-        void (carries.length ? moveCards(wid, [{ card, to }, ...carries.map((c) => ({ card: c, to: [c.x + dx, c.y + dy] as [number, number] }))]) : moveCard(wid, card, to)).catch(() => setHeld(null))
-      else setHeld(null)
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    // By itself (D-358's one move): with what's folded into it (D-164), lined up by its own box (its parts are inside
+    // it), its marks where it lands; a viewer's press only selects it.
+    const spot = (c: Card) => ({ id: c.id, get ref() { return spotRef(wid, c) }, x: c.x, y: c.y })
+    startMove(e, zoom, {
+      from: card,
+      items: editor ? [spot(card), ...carries.map(spot)] : [],
+      box: { x: card.x, y: card.y, w: CARD.w, h },
+      lead: card.id,
+      what: 'move a card',
+      // Its own op (moveCard, moveCards: their undo words), as before the one move.
+      commit: (dx, dy) => (carries.length ? moveCards(wid, [card, ...carries].map((c) => ({ card: c, to: [c.x + dx, c.y + dy] as [number, number] }))) : moveCard(wid, card, [card.x + dx, card.y + dy])),
+      onEnd: () => setPressed(false),
+    })
   }
 
   // The `›` (D-152, D-207): pressed and dragged onto another card, a link from this one to it.
@@ -661,19 +620,19 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
     window.addEventListener('pointercancel', up)
   }
 
-  // The face, small, under the pointer: from where it lands (the box) to where it is, shrunk round the point held. Carried
-  // with a selection, the same round the point held in the one pressed; its marks on `<Landing>` meanwhile (D-265).
+  // The face, small, under the pointer: from where it lands (the box) to where it is, 0.8 round the point held, alone or
+  // with a selection; its marks on `<Landing>` meanwhile (D-265). `lifted`: it's the one held (it leads the move).
   const along = shift?.shrink && shift.free && shift.at ? { free: shift.free, at: shift.at } : null
-  const carried = drag
-    ? { translate: `${drag.free[0] - x}px ${drag.free[1] - y}px`, scale: `${CARRIED}`, transformOrigin: `${drag.at[0]}px ${drag.at[1]}px` }
-    : along && shift
+  const carried =
+    along && shift
       ? {
           translate: `${along.free[0] - shift.dx}px ${along.free[1] - shift.dy}px`,
           scale: `${CARRIED}`,
           transformOrigin: `${along.at[0] - card.x}px ${along.at[1] - card.y}px`,
         }
       : undefined
-  const moving = !!drag || !!along
+  const moving = !!along
+  const lifted = moving && shift?.lead === card.id
   // A folded part shrinks into its row in the feature that holds it, and grows back out of it.
   const tucked = tuck ? { transform: `translate(${tuck.x - x}px, ${tuck.y - y}px) scale(${tuck.w / CARD.w}, ${tuck.h / CARD.h})` } : undefined
 
@@ -685,7 +644,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
         style={{ left: x, top: y, width: CARD.w, height: h, ['--type' as string]: CARD_TONE[card.type], ...tucked }}
         data-type={card.type}
         data-tucked={tuck ? true : undefined}
-        data-open={open && !drag ? true : undefined}
+        data-open={open && !lifted ? true : undefined}
         aria-hidden={tuck ? true : undefined}
         data-selected={selected || undefined}
         data-pressed={pressed || moving || undefined}
@@ -710,13 +669,13 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
           inPkg={counts}
           features={features}
           matched={matched}
-          open={open && !drag}
+          open={open && !lifted}
           onFeature={(f) => useCanvasView.setState({ cardSelected: card.id, cfOpen: f.id, labelSelected: null, linkSelected: null })}
           onMember={(c) => useCanvasView.setState({ cardSelected: c.id, labelSelected: null, linkSelected: null })}
           onFold={() => void (card.type === 'package' ? foldPackage(wid, card, null) : foldCard(wid, card, !card.folded))}
         />
         {live && <Marks zoom={zoom} short={Math.min(CARD.w, h)} tone="var(--type)" selected={selected} pressed={pressed} dragging={moving} target={target} peers={peers} />}
-        {live && editor && !drag && (hovered || linkingFrom) && (
+        {live && editor && !lifted && (hovered || linkingFrom) && (
           <span className={styles.handle} data-linking={linkingFrom || undefined} onPointerDown={startLink} aria-label="Drag to another card to link">
             <span aria-hidden>›</span>
           </span>
@@ -724,7 +683,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
         {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
       </div>
       {/* Carried by what holds it (a section, a package), only that one's marks show where they land (D-291). */}
-      {live && moving && (drag || !shift?.lead) && <Landing x={x} y={y} w={CARD.w} h={h} zoom={zoom} tone={CARD_TONE[card.type]} />}
+      {live && moving && (!shift?.lead || lifted) && <Landing x={x} y={y} w={CARD.w} h={h} zoom={zoom} tone={CARD_TONE[card.type]} />}
     </>
   )
 }

@@ -412,35 +412,6 @@
   width: calc(var(--left) - var(--space-4));
 }
 
-.pill {
-  position: relative;
-  max-width: var(--size-sm);
-  padding: var(--space-1) var(--space-2);
-  border: var(--line-w) solid var(--line-hover);
-  background: var(--bg);
-  box-shadow: inset var(--line-w-bold) 0 0 var(--tone, transparent); /* kit-ok: a task waiting in the no-day tray is a pill on the page, not a card face (D-358) */
-  color: var(--fg);
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  cursor: grab;
-}
-
-.pill[data-lifted] {
-  position: absolute;
-  z-index: calc(var(--z-world-ui) + 1);
-  scale: 0.8;
-  transform-origin: 0 0;
-  pointer-events: none;
-}
-
-/* A sheet's or pill's text, cut with `…`; its marks stand outside it. */
-.line {
-  display: block;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
 .trayHint {
   color: var(--fg-faint);
 }

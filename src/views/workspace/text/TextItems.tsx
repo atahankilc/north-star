@@ -30,7 +30,6 @@ import {
   kindOf,
   LABEL_COLORS,
   labelRef,
-  moveMany,
   PARA_PX,
   PARA_W,
   SECTION_MIN,
@@ -46,8 +45,8 @@ import {
 } from '../../../data/labels'
 import { DESCRIPTION_MAX, describeWorkspace, renameWorkspace } from '../../../data/workspaces'
 import { useCanvasView } from '../../../state/canvasView'
-import { heldAt, land, landed, othersThan, startGroupDrag, toggleSelected } from '../canvas/selection'
-import { clearGuides, guide, showGuides, useGuides } from '../canvas/guides'
+import { heldAt, landed, startGroupDrag, startMove, toggleSelected } from '../canvas/selection'
+import { useGuides } from '../canvas/guides'
 import { useMotion } from '../../../state/motion'
 import { ago } from '../../../ui/foundation/ago'
 import { LightMarkdown } from '../../../ui/primitives/LightMarkdown'
@@ -59,7 +58,7 @@ import { Landing, Marks, type Handle } from '../../../ui/primitives/Marks'
 import { ThreadChip, threadOn } from '../threads/Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 import { headingSize, kickPx, labelBox, STICKY_TEXT_TOP, type HeadingSize } from '../../../model/labelBox'
-import { AUTOSAVE_MS, DRAG_PX } from '../../../ui/foundation/feel'
+import { AUTOSAVE_MS } from '../../../ui/foundation/feel'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Console } from '../../../ui/patterns/Console'
@@ -166,7 +165,6 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     select()
     if (!editor || typing) return
     setPressed(true)
-    const [sx, sy] = [e.clientX, e.clientY]
     // Held 0.8 round this point under the pointer, its marks where it lands (D-265); a section with what it holds.
     const at = heldAt(e, l.x, y, zoom)
     const box = { ...labelBox(l), w: w ?? labelBox(l).w, h: h ?? labelBox(l).h }
@@ -177,42 +175,17 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
       for (const o of labels) if (o.id !== l.id && inside(labelBox(o), box)) held.push({ id: o.id, get ref() { return labelRef(wid, o.id) }, x: o.x, y: o.y })
       for (const c of typeof carry === 'function' ? carry() : carry) if (inside(c, box)) held.push({ id: c.id, get ref() { return c.ref }, x: c.x, y: c.y })
     }
-    let d: [number, number] | null = null
-    const move = (ev: PointerEvent) => {
-      const [dx, dy] = [ev.clientX - sx, ev.clientY - sy]
-      if (!d && Math.hypot(dx, dy) < DRAG_PX) return
-      const loose = ev.altKey || !useGuides.getState().snap
-      const to = loose ? [Math.round(l.x + dx / zoom), Math.round(l.y + dy / zoom)] : [snap(l.x + dx / zoom), snap(l.y + dy / zoom)]
-      // In a plane, lined up with the rest of it (D-231).
-      if (l.pieceId !== CANVAS) {
-        const g = guide({ ...box, x: to[0], y: to[1] }, othersThan(new Set(held.map((x) => x.id))), zoom, loose)
-        to[0] += g.dx
-        to[1] += g.dy
-        showGuides(g.lines)
-      }
-      d = [to[0] - l.x, to[1] - l.y]
-      const carry = { shrink: true, free: [dx / zoom, dy / zoom] as [number, number], at, lead: l.id }
-      useCanvasView.setState({ dragShift: { ids: held.map((x) => x.id), dx: d[0], dy: d[1], ...carry } })
-    }
-    const up = async () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
-      setPressed(false)
-      clearGuides()
-      if (d && (d[0] || d[1])) {
-        const [dx, dy] = d
-        // Each stays where it was let go until its data's back (D-229): no jump back for a moment.
-        land(held.map((x) => ({ id: x.id, to: [x.x + dx, x.y + dy] })))
-        await moveMany(
-          kind === 'section' && held.length > 1 ? 'move a section and what is in it' : `move ${kind === 'title' ? 'the title' : `a ${kind}`}`,
-          held.map((x) => ({ get ref() { return x.ref }, from: { x: x.x, y: x.y }, to: { x: x.x + dx, y: x.y + dy } })),
-        ).catch(() => held.forEach((x) => landed(x.id)))
-      } else useCanvasView.setState({ dragShift: null })
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    startMove(e, zoom, {
+      from: { x: l.x, y: l.y },
+      items: held,
+      // In a plane, lined up with the rest of it (D-231); on the canvas itself, no guides.
+      box,
+      guided: l.pieceId !== CANVAS,
+      at,
+      lead: l.id,
+      what: kind === 'section' && held.length > 1 ? 'move a section and what is in it' : `move ${kind === 'title' ? 'the title' : `a ${kind}`}`,
+      onEnd: () => setPressed(false),
+    })
   }
 
   // A width from the right edge (along the text: a turned one's top or bottom), a section's from its right edge, its

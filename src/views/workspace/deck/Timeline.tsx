@@ -27,11 +27,12 @@ import { KanbanFilterDock } from './KanbanFilterDock'
 import { passes, useKanbanFilter } from './kanbanFilter'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { TimelineBar } from '../cards/TimelineBar'
+import { TrayTask } from '../cards/TrayTask'
 import { CardPicker } from '../panels/CardPanel'
 import { cardsOn } from '../../../data/places'
 import type { Card } from '../../../data/cards'
 import { taskRows, type Lane } from '../table/rows'
-import { Landing, Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
+import { Landing, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import { OPEN_PAD } from '../canvas/shownBox'
 import { useOpenSize } from '../canvas/sizes'
 import { registerStrip } from './stripReveal'
@@ -856,10 +857,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
         </Label>
         {layout.tray.map((t) =>
           t.id === trayHeld?.id ? null : (
-            <button /* kit-ok: a task in the no-day tray, dragged onto the strip */ key={t.id} className={styles.pill} data-task={t.id} data-selected={selected === t.id || undefined} style={tone(t) ? ({ ['--tone' as string]: tone(t) } as CSSProperties) : undefined} tabIndex={live ? 0 : -1} onPointerDown={pressTray(t)}>
-              <span className={styles.line}>☐ {t.title}</span>
-              {live && <Marks tier="s" tone={tone(t)} selected={selected === t.id} />}
-            </button>
+            <TrayTask key={t.id} task={t} selected={selected === t.id} live={live} onPointerDown={pressTray(t)} />
           ),
         )}
         {!layout.tray.length && <Empty as="span">every task has a day</Empty>}
@@ -869,9 +867,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
         (() => {
           const t = layout.tray.find((x) => x.id === trayHeld.id)
           return t ? (
-            <span className={styles.pill} data-lifted style={{ left: trayHeld.at[0] - tokenPx('--space-3'), top: trayHeld.at[1] - tokenPx('--space-3'), ...(tone(t) ? { ['--tone' as string]: tone(t) } : {}) } as CSSProperties}>
-              <span className={styles.line}>☐ {t.title}</span>
-            </span>
+            <TrayTask task={t} selected={false} live={live} lifted style={{ left: trayHeld.at[0] - tokenPx('--space-3'), top: trayHeld.at[1] - tokenPx('--space-3') }} />
           ) : null
         })()}
     </div>

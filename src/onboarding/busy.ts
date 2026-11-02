@@ -91,7 +91,7 @@ export function readBusy(extra: Busy = {}): Busy {
   const threads = useThreadView.getState()
   const matrix = useMatrixUi.getState()
   return {
-    // Not `landing` or `cardsLive`: those hold things where they were let go until their data's back, and can stay
+    // Not `landing`: it holds things where they were let go until their data's back, and can stay
     // behind when what they held unmounts first.
     drag: dragging || !!cv.dragShift || !!cv.linking || !!cv.stickHint || Object.keys(cv.following).length > 0,
     focusMoving: (cv.focusSpread && !cv.focusArrived) || cv.focusLeaving,

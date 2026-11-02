@@ -53,8 +53,6 @@ type State = {
   linkHovered: string | null
   linking: { from: string; to: [number, number]; over: string | null } | null
   linkLabelling: boolean
-  // Cards being dragged (or held where dropped until their data's back), so their links follow.
-  cardsLive: Record<string, [number, number]>
   // A competitor's feature to open in its panel (D-221), from its small card inside the competitor (D-225).
   cfOpen: string | null
   // Things selected together on the focused plane (D-227, D-229): cards and text, two or more; `cardSelected` and
@@ -111,7 +109,7 @@ export function planeArea() {
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, deleting: null, bringing: null, toCanvas: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, fresh: null, panelShut: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cardsLive: {}, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, deleting: null, bringing: null, toCanvas: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, fresh: null, panelShut: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
 
 // How wide what's open beside the focused plane is (D-211), 0 with nothing there: a right panel opens left of it.
 export const useBesideW = () => useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
