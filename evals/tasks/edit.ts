@@ -391,6 +391,8 @@ export const EDIT: Task[] = [
       absent('task', { title: /whiteboard/i }),
       absent('task', { title: /deliver/i }),
       count('task', {}, 2, { delta: true }),
+      // Anything but tasks may change (the notes, a card's plan, text); new tasks exactly the two to-dos.
+      onlyChanged({ allow: [(_, c) => c.kind !== 'tasks'], add: { tasks: 2 } }),
       noDeletes(),
       undoRestores(),
     ],
