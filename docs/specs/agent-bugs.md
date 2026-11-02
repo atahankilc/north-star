@@ -53,7 +53,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 19 | "would it work" not dry-run                      | Judgment     | low      | prompt           | prompt done, to measure |
 | 20 | vague verb run without asking                    | Judgment     | mid      | prompt           | prompt done, to measure |
 | 21 | skill guides not followed step by step           | Judgment     | mid      | code + methods   | code part fixed |
-| 23 | "for a plane" leans on other planes              | Judgment     | low      | methods          | prompt done, to measure |
+| 23 | "for a plane" leans on other planes              | Judgment     | low      | code + methods   | code marks, measured (mini: swot-02, one-pager-02 0/3 → 3/3) |
 | 24 | points at an existing piece instead of making it | Judgment     | low      | prompt           | prompt done, to measure |
 | 13 | no coverage map for a big document               | New parts    | mid      | new              | open   |
 | 14 | one plane or several, never weighed              | New parts    | mid      | code + prompt    | numbers built (`structure`, D-327) |
@@ -66,6 +66,13 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 32 | a section round new cards cuts what's beside it  | Layout       | mid      | code (ops)       | fixed  |
 | 33 | the evals' own errors, found by reading every failure | Plumbing | blocker  | evals            | fixed  |
 | 34 | a field of another card type, refused confusingly | Guards     | mid      | code (ops)       | fixed  |
+| 35 | a big change made without a plan                 | Guards       | mid      | code (change)    | fixed, measured (mini: build-04 0/3 → 2/3) |
+| 36 | open tasks miscounted from a list with finished ones | Plumbing  | mid      | code (query)     | fixed; mini passed before and after, terra/sonnet to measure |
+| 37 | the answer after a document runs long            | Judgment     | low      | code (loop)      | fixed; mini passed before and after, terra/sonnet to measure |
+| 38 | /import rewords the pasted lines                 | Guards       | mid      | code (change)    | fixed; mini passed before and after, terra/sonnet to measure |
+| 39 | a job's step stops for a question it could settle | Judgment    | mid      | code (loop)      | fixed; mini passed before and after, terra/sonnet to measure |
+| 40 | /compare leaves the recorded matches empty        | Guards       | high     | code (change)    | fixed, to measure (built after the mini run) |
+| 41 | a task given by name in assigneeName stays given to nobody | Plumbing | mid | code (change)    | fixed, replayed   |
 
 ## Order
 
@@ -215,6 +222,28 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     says it is for an ask about one plane). claude-sonnet-5-5 didn't run: the key wasn't scoped to an Anthropic
     workspace (400, "must include the anthropic-workspace-id header"); a key made inside a Console workspace works.
 
+35. **A big change made without a plan.** build-04 ("Organise the ideas on Bets by status") failed on all three
+    models (mini, terra, sonnet ×1, 2026-11-01): one `arrange` of 22 cards with headings, proposed at once, where the
+    prompt's "Big jobs" asks for a plan first (more than about ten changes, or open-ended). *Fixed 2026-11-01 (code):*
+    a `change` that would leave more than ten things added, changed or moved pending, with no skill running, no job
+    planned or under way and no dry run, is taken back and refused: "a big job. Call plan first …"
+    (src/agent/tools.ts `BIG_CHANGE_AT`, `bigChange`). What a delete takes with it isn't counted (a delete has its own
+    yes, D-333). Replayed on the three runs: it fires on build-04 only, nowhere else in 3 × 116 attempts.
+38. **/import rewords the pasted lines.** import-01 (terra): "Ovens break down on busy Saturdays" became "Bakers'
+    ovens break down on busy Saturdays", "Flour prices doubled this year" "Bakers face doubled flour prices". As 26
+    keeps a note's words, an import keeps the person's. *Fixed 2026-11-01 (code):* during `/import`, a card's or task's
+    title that shares at least half its words with a pasted line but adds words of its own is named in `change`'s result
+    with the line, and the model is told to use the line (src/agent/tools.ts `rewordedLines`; a title taken out of a
+    longer line or a table row is fine). A literal word match, never a reading of meaning (D-333).
+
+40. **/compare leaves the recorded matches empty.** compare-01/02/03 (mini ×3, 2026-11-01) failed 9 of 9: the model
+    filled cells by guessing from names ("cheese map vs cheese ratings", stated documented) and left the matches the
+    workspace records (a competitor feature `≈ our` feature) empty, though `get` shows them. *Fixed 2026-11-01 (code):*
+    after a `change` that leaves a new scale matrix holding recorded matches, its result names each match still empty
+    (our feature × competitor, their feature) and each other cell stated as documented (src/agent/tools.ts
+    `matchNotes`, read from the pending view, so a later call that fills them stops it). A replay can't show it (the
+    model's calls are fixed); the next run does.
+
 ## Plumbing: wiring the app to what was built
 
 25. **The evals and the app build the agent's store in two places, so they drift.** 1 and 5 are two cases: the eval
@@ -321,6 +350,24 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     "would it work" should be a dry run) and refuse-01 (asking and a preview are both defensible).
     Replay after all of it: 249 → 293 of 348 (17 diverged: the dedupe guide and two ops answer differently now).
     What's left is the model's (19, 20, 23's marks, compare's extra cells, restructure's moves) and 31, 32.
+    **Mini ×3, 2026-11-02** (every failure of both runs read): graders still stricter than the answer in learn-01 (cash
+    only on c9 "Organic farmers who pay cash" as on c28; "statuses"), pitch-02 ("For stalls that…", the sentence as the
+    heading), find-06 (all 13 tasks named, no count), dedupe-03 ("I didn't find / don't see any duplicate"), and
+    `noWritesInTurn` counting a call the code refused (35's guard: nothing was added). Code it showed: 40, 41. Model:
+    a task already given picked (review-deck-03), a repeat missed (sort-stickies-02), a global rival left out
+    (find-02), solves links added unasked (edit-13), 19 again on mini (edit-12 3/3 → 0/3 after the lean change: it
+    answers from the query, no dry run). Both runs on today's graders: 302 and 302 of 348.
+
+36. **Open tasks miscounted.** find-08 (sonnet): `query({kind: task, assignee: me})` gave 15 tasks, 5 of them in a
+    finished column; the answer said 11 open (10 are) and named the finished ones. *Fixed 2026-11-01 (code):* `query`
+    takes `finished` (false: open only) and, when it isn't given, says `10 open, 5 finished` above the list
+    (src/agent/read/tools.ts). The naming of what was left out is 37's prompt line.
+
+41. **A task given by name in assigneeName stays given to nobody.** edit-06 (mini ×3) failed 3 of 3: the model wrote
+    `update_task {assigneeName: "Mert Kaya"}` with no `assignee`; the op took it as the name shown and gave the task to
+    no one. *Fixed 2026-11-01 (code):* a name in `assigneeName` with no `assignee` is resolved as an assignee is (by
+    name, email or `me`; nobody by that name is refused with the members), src/agent/change.ts `givenByName`.
+    Replayed: edit-06 0/3 → 3/3, review-deck-03 1/3 → 2/3.
 
 ## Preview: what the person sees before applying
 
@@ -482,6 +529,27 @@ two or three lines.*
 24. **It points at an existing piece instead of making the one asked for, without saying it could.** build-01 (first
     run): asked for a competitor matrix, it found p11 "Feature coverage" and opened it, without offering a new one.
     Fix: when something like it exists, say so and ask (or offer both); never substitute silently.
+
+37. **Answers run past what was asked.** After a document the skills ask for two or three lines (DOC); the judge
+    failed several for longer ones (one-pager, lean-canvas, pitch). find-07 (sonnet) added cards "with thin evidence
+    the map doesn't flag" and find-08 listed the finished tasks it left out. *Fixed 2026-11-01:* code: after a
+    document made in the turn, an answer of more than four lines goes back once with "answer again in two or three
+    lines" (src/agent/loop.ts `ANSWER_AFTER_DOC`, `SHORTER_NOTE`); prompt (How to answer): "Only what was asked: no near
+    misses, no list of what you left out, unless the person asks."
+39. **A job's step stops for a question it could settle.** test-03 (terra): step 2 of 2 ("make the test deck")
+    ended with "Who should own the experiment tasks?" and nothing proposed, so the job stalled. *Fixed 2026-11-01
+    (code):* a turn that ends while a job runs, with a step `doing` and nothing proposed in the turn, gets one note:
+    make the step with the best choice and say it, ask only if a guess would change what the person didn't ask for,
+    or progress a step that needs no change (src/agent/loop.ts `STEP_NUDGE`). The job's state decides, not the words.
+
+*23, the code half (2026-11-01):* the planes a turn is about (the one in focus or beside it, or one the message names
+whole: read/names.ts `aboutPlanes`, a name lookup) mark cards from another plane `(on Rivals)` after their first
+mention, in a document `create_document` writes and in the answer the person reads (the history keeps the model's
+words; `markOtherPlanes`). The prompt's line shrank to "the app marks one from elsewhere". The evals' docWritten
+counts `min` on the plane's own cards, so a document about the whole startup still fails. Replayed: swot-02,
+one-pager-02, next-03, gaps-02 pass on the runs that failed them. **/interview's "would you pay"** was the evals' own
+(33): all three hits in four runs were the script's "Do not ask 'would you pay?'"; docWritten's `excludes` skips a
+phrase after a negation on its line or under a "Do not ask" heading (evals/graders.ts `saysUnwarned`).
 
 ## New parts: not bugs in what was built
 

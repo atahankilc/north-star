@@ -341,14 +341,15 @@ describe('the context and what the UI hears', () => {
 
 describe('the change tool: no coordinates, short signatures', () => {
   it('x, y, by, a text\'s w/h and arrange\'s stick are left out of the op lines and refused with a fix', async () => {
-    const { OPS_LINES, TYPE_LINES, NO_COORDS } = await import('../../src/agent/tools')
-    const line = (op: string) => OPS_LINES.split('\n').find((l) => l.startsWith(`- ${op} `))!
-    expect(line('update_card')).not.toMatch(/\bx\?|\by\?/)
-    expect(line('duplicate')).not.toMatch(/\bby\?/)
+    const { OPS_LINES, TYPE_LINES, NO_COORDS, opArgs } = await import('../../src/agent/tools')
+    const line = (op: string) => OPS_LINES.split('\n').find((l) => l.startsWith(`- ${op} `) || l.startsWith(`- ${op}:`))!
+    // A rare op's args are not in its line but in a refusal (opArgs): the same signature.
+    expect(opArgs('update_card')).not.toMatch(/\bx\?|\by\?/)
+    expect(opArgs('duplicate')).not.toMatch(/\bby\?/)
     expect(line('arrange')).not.toMatch(/\bby\?|\bstick\?/)
     expect(line('create_text')).not.toMatch(/\bw\?|\bh\?/)
     // An order is not a coordinate: these keep `by`.
-    expect(line('move_canvas')).toMatch(/by: 'up'\|'down'/)
+    expect(opArgs('move_canvas')).toMatch(/by: 'up'\|'down'/)
     expect(line('arrange')).toContain("'spread-x'|'spread-y', where")
     expect(line('update_timeline')).toMatch(/by card\. \(A task's days: update_task start\/due\.\)$/)
     for (const l of OPS_LINES.split('\n')) expect((l.match(/\(/g) ?? []).length, l).toBe((l.match(/\)/g) ?? []).length)
@@ -373,5 +374,120 @@ describe('the change tool: no coordinates, short signatures', () => {
     }
     expect(e.steps).toHaveLength(0)
     expect((await say('arrange', { items: ['c58'], layout: 'grid', where: { at: 'clear' } })).ok).toBe(true)
+  })
+})
+
+describe('a leaner context (agent-pipeline.md §6)', () => {
+  it("common ops keep their args in the change tool's description; a rare op's come back in its refusal", async () => {
+    const { OPS_LINES, COMMON_OPS, opArgs } = await import('../../src/agent/tools')
+    const lines = OPS_LINES.split('\n')
+    for (const op of COMMON_OPS) expect(lines.find((l) => l.startsWith(`- ${op} {`)), op).toBeTruthy()
+    expect(lines.find((l) => l.startsWith('- update_matrix'))).toMatch(/^- update_matrix: Change a matrix's setup/)
+    const change = AGENT_TOOLS.find((t) => t.def.name === 'change')!
+    const env = makeEnv(loadFixture('medium'))
+    const r = await change.run(env, { ops: [{ op: 'update_matrix', args: { cell: 'nonsense' } }] })
+    expect(r.ok).toBe(false)
+    expect(r.text).toContain(`Its args: ${opArgs('update_matrix')}`)
+    // A common op's refusal adds nothing: its args are in the description.
+    const r2 = await change.run(env, { ops: [{ op: 'create_card', args: {} }] })
+    expect(r2.ok).toBe(false)
+    expect(r2.text).not.toContain('Its args:')
+  })
+
+  it('the map budget, when given, sums the map up; left out, the map is whole', async () => {
+    const full = stubModel([{ answer: 'ok' }])
+    await runTurn(full, makeEnv(loadFixture('medium')), AGENT_TOOLS, [], 'hi')
+    const small = stubModel([{ answer: 'ok' }])
+    await runTurn(small, makeEnv(loadFixture('medium')), AGENT_TOOLS, [], 'hi', { mapBudget: 3000 })
+    const mapOf = (m: typeof full) => m.seen[0].messages.find((x) => x.role === 'system' && x.content.startsWith('# Workspace map'))!.content
+    expect(mapOf(full)).not.toMatch(/Summed up to fit/)
+    expect(mapOf(small)).toMatch(/Summed up to fit: level 7/)
+    expect(mapOf(small).length).toBeLessThan(mapOf(full).length / 3)
+  })
+})
+
+describe('a big change waits for a plan (agent-bugs 35)', () => {
+  const ideas = Array.from({ length: 22 }, (_, i) => `c${55 + i}`)
+  const arrange = { ops: [{ op: 'arrange', args: { items: ideas, layout: 'cluster', group_by: 'status', headings: true } }] }
+  const fresh = () => {
+    const env = makeEnv(loadFixture('medium'))
+    env.ids.sync(env.getWs())
+    return env
+  }
+  const change = AGENT_TOOLS.find((t) => t.def.name === 'change')!
+
+  it('more than ten things changed with no plan: refused, nothing kept; a small one goes through', async () => {
+    const env = fresh()
+    const r = await change.run(env, arrange)
+    expect(r.ok).toBe(false)
+    expect(r.text).toMatch(/a big job\. Call plan first/)
+    expect(env.changes?.items.length ?? 0).toBe(0)
+    const small = await change.run(env, { ops: [{ op: 'arrange', args: { items: ideas.slice(0, 4), layout: 'row' } }] })
+    expect(small.ok).toBe(true)
+  })
+
+  it('inside a skill, with a job under way, as a dry run, or a delete of a whole plane: not held back', async () => {
+    const inSkill = fresh()
+    inSkill.skill = 'organize'
+    expect((await change.run(inSkill, arrange)).ok).toBe(true)
+    const withJob = fresh()
+    withJob.job!.set({ title: 'Ideas by status', steps: [{ n: 1, title: 'group', state: 'doing' }], status: 'running', tokens: 0, budget: 1e6, settledAt: 0 } as never)
+    expect((await change.run(withJob, arrange)).ok).toBe(true)
+    expect((await change.run(fresh(), { ...arrange, dry_run: true })).ok).toBe(true)
+    const del = await change.run(fresh(), { ops: [{ op: 'delete', args: { ids: ['p3'] }, why: 'asked' }] })
+    expect(del.ok).toBe(true)
+  })
+})
+
+describe('/import keeps the pasted words (agent-bugs 38)', () => {
+  it('a title that rewords a pasted line is named; the line itself, a cell of a row or another title is not', async () => {
+    const { rewordedLines } = await import('../../src/agent/tools')
+    const input = 'problems for "Bakers near the tram":\n- Ovens break down on busy Saturdays\n- Flour prices doubled this year\n- No one covers the stall at noon'
+    const op = (title: string) => ({ op: 'create_card', args: { type: 'problem', title } })
+    expect(rewordedLines({ ops: [op("Bakers' ovens break down on busy Saturdays"), op('Bakers face doubled flour prices'), op('Bakers have no stall cover at noon')] }, input).map(([, l]) => l)).toEqual([
+      'Ovens break down on busy Saturdays',
+      'Flour prices doubled this year',
+      'No one covers the stall at noon',
+    ])
+    expect(rewordedLines({ ops: [op('Ovens break down on busy Saturdays'), op('flour prices doubled this year.')] }, input)).toEqual([])
+    expect(rewordedLines({ ops: [op('Freshgo')] }, '| Freshgo | Germany | €9 |')).toEqual([])
+    expect(rewordedLines({ ops: [op('Bakers near the tram')] }, input)).toEqual([])
+  })
+})
+
+describe('checks at the end of a turn (agent-bugs 37, 39)', () => {
+  const doc = { calls: [{ name: 'change', args: { ops: [{ op: 'create_document', args: { title: 'SWOT', text: '# SWOT\n- one' } }] } }] }
+  const said = (m: ReturnType<typeof stubModel>, note: string) => m.seen.some((r) => r.messages.some((x) => x.role === 'system' && x.content.startsWith(note)))
+
+  it('after writing a document, an answer past four lines goes back once for two or three', async () => {
+    const { SHORTER_NOTE, ANSWER_AFTER_DOC } = await import('../../src/agent/loop')
+    const long = Array.from({ length: ANSWER_AFTER_DOC + 2 }, (_, i) => `line ${i + 1}`).join('\n')
+    const m = stubModel([doc, { answer: long }, { answer: 'The SWOT waits in the preview.' }])
+    const { turn } = await runTurn(m, makeEnv(loadFixture('medium')), AGENT_TOOLS, [], 'write a swot')
+    expect(said(m, SHORTER_NOTE(ANSWER_AFTER_DOC + 2).slice(0, 30))).toBe(true)
+    expect(turn.answer).toBe('The SWOT waits in the preview.')
+    // Short already, or no document: no extra step.
+    const ok = stubModel([doc, { answer: 'line 1\nline 2' }])
+    await runTurn(ok, makeEnv(loadFixture('medium')), AGENT_TOOLS, [], 'write a swot')
+    expect(ok.seen.length).toBe(2)
+    const plain = stubModel([{ answer: long }])
+    await runTurn(plain, makeEnv(loadFixture('medium')), AGENT_TOOLS, [], 'tell me a lot')
+    expect(plain.seen.length).toBe(1)
+  })
+
+  it("a job's step under way that ends with nothing proposed is nudged once; one that proposed is not", async () => {
+    const { STEP_NUDGE } = await import('../../src/agent/loop')
+    const running = () => {
+      const env = makeEnv(loadFixture('medium'))
+      env.job!.set({ title: 'Test it', steps: [{ n: 1, title: 'design', state: 'done' }, { n: 2, title: 'deck', state: 'doing' }], status: 'running', tokens: 0, budget: 1e6, settledAt: 1 } as never)
+      return env
+    }
+    const asks = stubModel([{ answer: 'Who should own the tasks?' }, { answer: 'Made them unassigned.' }])
+    await runTurn(asks, running(), AGENT_TOOLS, [], 'go on with step 2')
+    expect(said(asks, STEP_NUDGE(2).slice(0, 30))).toBe(true)
+    expect(asks.seen.length).toBe(2)
+    const made = stubModel([doc, { answer: 'Step 2 waits in the preview.' }])
+    await runTurn(made, running(), AGENT_TOOLS, [], 'go on with step 2')
+    expect(made.seen.length).toBe(2)
   })
 })

@@ -11,6 +11,8 @@ import { REGISTRY, type ArgSchema } from '../ops/registry'
 import { toolDef, type AgentEnv, type AgentTool } from './contract'
 import { agentArgs, ID_KEYS, runChange } from './change'
 import { jobText, planJob, progressJob, type JobHost } from './job'
+import { previewDiff, viewOf, type Changeset } from './changeset'
+import { entriesOf, readCell, type MatrixSetup } from '../model/matrix'
 
 export { NO_COORDS, COORDS_FIX, agentArgs, ID_KEYS } from './change'
 
@@ -142,11 +144,75 @@ const brief = (summary: string) => {
   return out
 }
 
-// Each op as one line for the tool's description: its name, its args as a short signature, its summary in brief.
-export const OPS_LINES = [...REGISTRY.values()].map((d) => `- ${d.name} ${sig(agentArgs(d))}: ${brief(d.summary)}`).join('\n')
+// The ops models use (97 % of every op in the measured runs, agent-pipeline.md §6 "a leaner change"): their args in
+// the description. The others by name and summary only; their args come back in a refusal (`opArgs`, change.ts), so
+// the description stays short and the cache-shared prefix small.
+export const COMMON_OPS = new Set(['create_card', 'update_cell', 'arrange', 'update_card', 'create_task', 'create_document', 'create_text', 'create_piece', 'create_evidence', 'link', 'place_on', 'delete', 'axis_remove', 'merge_cards', 'create_package', 'move_task'])
+
+// An op's args as a short signature (for a refusal: the op was called without knowing them).
+export const opArgs = (name: string): string => {
+  const d = REGISTRY.get(name)
+  return d ? `${d.name} ${sig(agentArgs(d))}` : name
+}
+
+// More than this many things changed by what's pending, with no plan: a big job (the prompt's "more than about ten
+// changes"), counted as the preview counts them (each card, text, link or piece added, changed or moved).
+export const BIG_CHANGE_AT = 10
+export const BIG_CHANGE = (n: number) =>
+  `change refused, nothing added: this would change ${n} things, a big job. Call plan first with its steps and the preview you suggest, answer with the plan in a few lines, and wait for go. (A skill's own steps and a job under way aren't held back.)`
+const jobOpen = (env: AgentEnv) => {
+  const j = env.job?.get()
+  return !!j && j.status !== 'done'
+}
+// How many things the pending changes add, change or move now, when more than BIG_CHANGE_AT and more than before this
+// call; else 0. What a delete takes with it isn't counted: a delete has its own yes (its why in the preview, D-333).
+function bigChange(env: AgentEnv, before: Changeset | undefined): number {
+  const live = env.liveWs?.() ?? env.getWs()
+  const size = (cs: Changeset | undefined) => (cs ? [...previewDiff(cs, live).values()].filter((c) => c.change !== 'removed').length : 0)
+  const now = size(env.changes)
+  const was = size(before)
+  return now > BIG_CHANGE_AT && now > was ? now : 0
+}
+
+// The pasted lines a title rewords (agent-bugs 38): [title, line] when the title shares at least half its words with a
+// line but adds words the line doesn't have (a title taken out of a longer line, a table row's first cell, is fine).
+const wordsOf = (t: string) => t.toLowerCase().replace(/['’]s\b/g, '').split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+export function rewordedLines(args: Record<string, unknown>, input: string): [string, string][] {
+  const lines = input
+    .split('\n')
+    .map((l) => l.replace(/^\s*([-*•]|\d+[.)])\s+/, '').trim())
+    .filter((l) => l && !/:\s*$/.test(l))
+  const exact = new Set(lines.map((l) => wordsOf(l).join(' ')))
+  const ops = Array.isArray(args.ops) ? (args.ops as { op?: string; args?: { title?: unknown } }[]) : []
+  const out: [string, string][] = []
+  for (const o of ops) {
+    if ((o.op !== 'create_card' && o.op !== 'create_task') || typeof o.args?.title !== 'string') continue
+    const title = o.args.title
+    const tw = wordsOf(title)
+    if (!tw.length || exact.has(tw.join(' '))) continue
+    let best: [string, number] | null = null
+    for (const l of lines) {
+      const lw = new Set(wordsOf(l))
+      const shared = tw.filter((w) => lw.has(w)).length
+      if (shared * 2 >= tw.length && tw.some((w) => !lw.has(w)) && (!best || shared > best[1])) best = [l, shared]
+    }
+    if (best) out.push([title, best[0]])
+  }
+  return out
+}
+
+// A refusal naming an op whose args the description leaves out: those args after it, once per op.
+export function withOpArgs(text: string): string {
+  const rare = [...new Set([...text.matchAll(/ops\[\d+\] ([a-z_]+)[.\s]/g)].map((m) => m[1]))].filter((n) => REGISTRY.has(n) && !COMMON_OPS.has(n))
+  return rare.length ? `${text}\n${rare.map((n) => `Its args: ${opArgs(n)}`).join('\n')}` : text
+}
+
+// Each op as one line for the tool's description: its name, its args as a short signature (common ops only), its
+// summary in brief.
+export const OPS_LINES = [...REGISTRY.values()].map((d) => `- ${d.name}${COMMON_OPS.has(d.name) ? ` ${sig(agentArgs(d))}` : ''}: ${brief(d.summary)}`).join('\n')
 
 const changeTool: AgentTool = {
-  def: toolDef('change', `Propose changes to the workspace: ops: [{ op, args, why? }]. Nothing is written yet: the person sees every pending change as a preview when your turn ends and accepts them as one undo step (or unticks some, or says what to change). Your reads in this turn show them. Ids: short ids (c12, p3) or exact titles. A new thing gets a handle (args.handle: \"$a\") that later ops in the same call use in place of an id (to: \"$a\"); the result gives its short id. Say where by meaning (a plane, where: near / in_section, arrange's layout); coordinates are refused. A delete (delete, unlink, axis_remove) needs why: the reason the person reads; accepting the preview is their yes. drop: [item ids] takes pending items off (and what depends on them) before adding, to revise. dry_run: true checks and describes without adding. str = an id, a name or text; ? = optional. The result names each change with its item id (i3), the new short ids, warnings and a short view; a refusal says how to fix it.\nTypes:\n${TYPE_LINES}\nOps:\n${OPS_LINES}`, {
+  def: toolDef('change', `Propose changes to the workspace: ops: [{ op, args, why? }]. Nothing is written yet: the person sees every pending change as a preview when your turn ends and accepts them as one undo step (or unticks some, or says what to change). Your reads in this turn show them. Ids: short ids (c12, p3) or exact titles. A new thing gets a handle (args.handle: \"$a\") that later ops in the same call use in place of an id (to: \"$a\"); the result gives its short id. Say where by meaning (a plane, where: near / in_section, arrange's layout); coordinates are refused. A delete (delete, unlink, axis_remove) needs why: the reason the person reads; accepting the preview is their yes. drop: [item ids] takes pending items off (and what depends on them) before adding, to revise. dry_run: true checks and describes without adding. str = an id, a name or text; ? = optional. An op listed without its args: call it with dry_run: true and the args you expect, and the refusal lists its args. The result names each change with its item id (i3), the new short ids, warnings and a short view; a refusal says how to fix it.\nTypes:\n${TYPE_LINES}\nOps:\n${OPS_LINES}`, {
     properties: {
       ops: { type: 'array', items: { type: 'object', properties: { op: { type: 'string', enum: [...REGISTRY.keys()] }, args: { type: 'object' }, why: { type: 'string', description: 'why: required for delete, unlink and axis_remove' } }, required: ['op', 'args'] } },
       drop: { type: 'array', items: { type: 'string' }, description: 'pending item ids (i2…) to take off first' },
@@ -156,13 +222,57 @@ const changeTool: AgentTool = {
   }),
   kind: 'write',
   run: async (env, args) => {
+    const before = env.changes
     const r = await runChange(env, args)
+    // A big change with no plan (agent-bugs 35): taken back and refused, so the model plans first (the prompt's "Big
+    // jobs"). Not inside a skill (its guide says how it plans), a job (planned or under way) or a dry run.
+    const big = r.ok && args.dry_run !== true && !env.skill && !jobOpen(env) ? bigChange(env, before) : 0
+    if (big) {
+      env.changes = before
+      return { ok: false, text: BIG_CHANGE(big) }
+    }
     // The step it was for (the one under way, else the next to do) remembers whether its last change was refused.
     const j = env.job?.get()
     const step = j?.steps.find((x) => x.state === 'doing') ?? j?.steps.find((x) => x.state === 'todo')
     if (env.job && step && args.dry_run !== true) lastChangeOf(env.job).set(step.n, r.ok)
-    return r
+    if (!r.ok) return { ...r, text: withOpArgs(r.text) }
+    // /import keeps the pasted lines' words (agent-bugs 38, as a note's words in 26): a title that rewords one is told.
+    const reworded = env.skill === 'import' && env.skillInput ? rewordedLines(args, env.skillInput) : []
+    const notes = [
+      ...reworded.map(([t, l]) => `"${t}" rewords the pasted line "${l}": an import keeps the person's words. Use the line as the title (change with drop and the op again), unless they asked for new wording.`),
+      ...(args.dry_run === true ? [] : matchNotes(env)),
+    ]
+    return notes.length ? { ...r, text: `${r.text}\n${notes.join('\n')}` } : r
   },
+}
+
+// A new matrix of our features × competitors and the matches the workspace records (agent-bugs 40, eval /compare: the
+// model filled cells by guessing from names and left the recorded matches empty): each match still empty, and each
+// other cell stated as documented, is told, in names. Read from the pending view, so a later call that fills them
+// stops the note.
+export function matchNotes(env: AgentEnv): string[] {
+  const live = env.getWs()
+  const ws = viewOf(env.changes, live)
+  const had = new Set(live.pieces.map((p) => p.id))
+  const out: string[] = []
+  const title = (id: string) => ws.cards.find((c) => c.id === id)?.title ?? id
+  for (const p of ws.pieces) {
+    const m = p.matrix as MatrixSetup | undefined
+    if (had.has(p.id) || kindOfPiece(p) !== 'matrix' || !m || m.cell !== 'scale') continue
+    const rows = new Set(entriesOf(m.rows, ws.cards).map((e) => e.key))
+    const cols = new Set(entriesOf(m.cols, ws.cards).map((e) => e.key))
+    const matches = ws.comparisons.filter((x) => x.competitorFeatureId && rows.has(x.featureId) && cols.has(x.competitorId))
+    if (!matches.length) continue
+    const cells = ws.cells.filter((c) => c.matrixId === p.id && c.value !== undefined)
+    const filled = (row: string, col: string) => cells.some((c) => c.row === row && c.col === col && (readCell(m, c).step?.label ?? 'none') !== 'none')
+    const empty = matches.filter((x) => !filled(x.featureId, x.competitorId))
+    const theirs = (id?: string) => ws.competitorFeatures.find((f) => f.id === id)?.name ?? '?'
+    const keys = new Set(matches.map((x) => `${x.featureId}_${x.competitorId}`))
+    const stated = cells.filter((c) => !keys.has(`${c.row}_${c.col}`) && (c.confidence ?? 'documented') === 'documented')
+    if (empty.length) out.push(`"${p.name}" holds ${matches.length} match${matches.length > 1 ? 'es' : ''} the workspace records, ${empty.length} still empty: ${empty.slice(0, 20).map((x) => `"${title(x.featureId)}" × "${title(x.competitorId)}" (their "${theirs(x.competitorFeatureId)}")`).join('; ')}. Fill each from what the two features do (none, partial, full or better), confidence documented.`)
+    if (stated.length) out.push(`"${p.name}": ${stated.length} cell${stated.length > 1 ? 's' : ''} with no recorded match stated as documented (${stated.slice(0, 8).map((c) => `"${title(c.row)}" × "${title(c.col)}"`).join('; ')}): a cell the workspace doesn't record is a guess (confidence guess), or left empty.`)
+  }
+  return out
 }
 
 // Done is checked, not said (agent-bugs 28): whether each step's last `change` this turn was refused, per job host

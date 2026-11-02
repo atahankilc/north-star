@@ -33,7 +33,8 @@
 // APPEND-ONLY (D-329, a model with `appendOnly`: Claude): the history only grows, because Claude binds each thinking
 // block to everything sent before it and refuses an edited history. So: the head is the system prompt alone; the map
 // (when it changed since the last one sent), the notes (likewise), where the person is and a skill's guide are
-// appended AFTER the ask and kept in the history (tagged, `ContextTag`); the last step's note is kept too; old
+// appended AFTER the ask and kept in the history (tagged, `ContextTag`), except a chat's first map and notes, sent
+// before its first ask (so every chat in a workspace starts with the same bytes, which Claude's cache shares); the last step's note is kept too; old
 // results are never cleared; compaction keeps no turn whole (every turn's ask and answer as text, no calls, results
 // or provider items), so nothing left in the history is bound to what was dropped.
 //
@@ -52,6 +53,7 @@ import { systemPrompt } from './prompt'
 import { viewOf } from './changeset'
 import { notesOf } from '../model/notes'
 import { wrap } from './read/text'
+import { aboutPlanes, markOtherPlanes } from './read/names'
 import { parseSkill, skillGuide, unknownSkillNote, type Skill } from './skills'
 import { skillChecks } from './skills/checks'
 import { jobText } from './job'
@@ -90,6 +92,8 @@ export type Compactor = (history: ModelMessage[]) => ModelMessage[] | Promise<Mo
 
 export type TurnOpts = {
   stepBudget?: number
+  // The map's token budget (read/map.ts MAP_BUDGET when left out): the evals try smaller maps (agent-pipeline.md §6).
+  mapBudget?: number
   signal?: AbortSignal
   onEvent?: (e: LoopEvent) => void
   // The system prompt (left out: prompt.ts' for the workspace's name).
@@ -327,7 +331,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   const viewer = env.actor.role === 'viewer'
   if (viewer) tools = tools.filter((t) => t.kind !== 'write')
   const system = opts.system ?? systemPrompt({ workspaceName: ws.workspace?.name, viewer })
-  const map = workspaceMap(ws, env.ids)
+  const map = workspaceMap(ws, env.ids, opts.mapBudget ? { budget: opts.mapBudget } : {})
   // The job (D-328), when there is one, read with where the person is: the model sees its plan every turn.
   const job = env.job?.get()
   const where = `${whereAmI(ws, env.ids, env.ui.currentView()).text}${job ? `\n\n${jobText(job)}` : ''}`
@@ -353,9 +357,18 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   const skill = parseSkill(userMessage)
   const active = skill && 'skill' in skill ? skill : !skill ? planSkillBefore(past) : null
   const guideText = active ? skillGuide(active.skill, active.rest) : skill && 'unknown' in skill ? unknownSkillNote(skill.unknown) : ''
+  if (active) {
+    agentEnv.skill = active.skill.name
+    agentEnv.skillInput = active.rest
+  }
+  agentEnv.about = aboutPlanes(ws, userMessage, env.ui.currentView())
   const guideKept = appendOnly && past.some((m) => m.role === 'system' && m.tag === 'guide' && m.content === guideText)
   const guide: ModelMessage[] = guideText && !guideKept ? [{ role: 'system', tag: 'guide', content: guideText }] : []
   let checked = false
+  // The items pending when the turn began: a document made in this turn is one not among them (the answer's length).
+  const before = new Set((env.changes?.items ?? []).map((i) => i.id))
+  let trimmed = false
+  let nudged = false
   // Append-only: the context after the ask, kept in the history; the map and the notes only when they changed since
   // the copy last sent (a compaction drops them, so they come again after one).
   const lastSent = (tag: 'map' | 'notes') => {
@@ -366,11 +379,18 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     return undefined
   }
   const notesText = notes ? notesBlock(notes) : ''
+  // Append-only, a chat's first turn: the map and the notes BEFORE the ask (the order every other model gets), so
+  // what's before the ask is the same for every chat in the workspace and Claude's cache can share it (anthropic.ts'
+  // breakpoint on the map); later turns append them after their ask when they changed.
+  const fresh = appendOnly && !past.length
+  const lead: ModelMessage[] = !fresh
+    ? []
+    : [{ role: 'system', tag: 'map', content: map }, ...(notesText ? [{ role: 'system' as const, tag: 'notes' as const, content: notesText }] : [])]
   const context: ModelMessage[] = !appendOnly
     ? []
     : [
-        ...(lastSent('map') !== map ? [{ role: 'system' as const, tag: 'map' as const, content: map }] : []),
-        ...(notesText && lastSent('notes') !== notesText ? [{ role: 'system' as const, tag: 'notes' as const, content: notesText }] : []),
+        ...(!fresh && lastSent('map') !== map ? [{ role: 'system' as const, tag: 'map' as const, content: map }] : []),
+        ...(!fresh && notesText && lastSent('notes') !== notesText ? [{ role: 'system' as const, tag: 'notes' as const, content: notesText }] : []),
         { role: 'system', tag: 'where', content: where },
         ...guide,
       ]
@@ -396,7 +416,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     emit({ type: 'turn_finished', turn })
     // `past` (cleared in place with this turn's messages) keeps its order: history, the ask, this turn's (append-only:
     // the context sent after the ask too).
-    return { turn, history: [...past, ask, ...context, ...mine] }
+    return { turn, history: [...past, ...lead, ask, ...context, ...mine] }
   }
 
   for (let n = 1; n <= budget; n++) {
@@ -421,7 +441,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     const own = (list: ModelMessage[]) => list.map((m) => (m.role === 'assistant' && m.providerItems && m.model && m.model !== model.name ? { ...m, providerItems: undefined, model: undefined } : m))
     const messages: ModelMessage[] = own(
       appendOnly
-        ? [...head, ...past, ask, ...context, ...mine]
+        ? [...head, ...past, ...lead, ask, ...context, ...mine]
         : [...head, ...past, { role: 'system', content: where }, ...guide, ask, ...mine, ...(final ? [{ role: 'system' as const, content: FINAL_STEP_NOTE }] : [])],
     )
     let res: ModelResponse
@@ -439,7 +459,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     emit({ type: 'usage', n, step: res.usage, total })
     if (res.stop === 'error') {
       // The provider failed mid-answer: nothing it asked for runs, and the half answer stays out of the history.
-      steps.push({ n, text: res.text, toolCalls: res.toolCalls, results: [], usage: res.usage, ms: performance.now() - s0, stop: res.stop })
+      steps.push({ n, text: res.text, toolCalls: res.toolCalls, results: [], usage: res.usage, ms: performance.now() - s0, stop: res.stop, ...(res.cacheMiss ? { cacheMiss: res.cacheMiss } : {}) })
       emit({ type: 'step_finished', n, tools: [], ms: performance.now() - s0, usage: res.usage })
       end = 'error'
       error = res.error ?? 'the provider said error'
@@ -466,7 +486,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
         results.push({ callId: c.id, name: c.name, ok: false, text: STOPPED, ms: 0 })
         mine.push({ role: 'tool', callId: c.id, name: c.name, content: STOPPED })
       }
-      steps.push({ n, text: res.text, toolCalls: calls, results, usage: res.usage, ms: performance.now() - s0, stop: res.stop })
+      steps.push({ n, text: res.text, toolCalls: calls, results, usage: res.usage, ms: performance.now() - s0, stop: res.stop, ...(res.cacheMiss ? { cacheMiss: res.cacheMiss } : {}) })
       emit({ type: 'step_finished', n, tools: lines, ms: performance.now() - s0, usage: res.usage })
       end = 'stopped'
       break
@@ -518,7 +538,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
       const image = pictures.get(r.callId)
       mine.push({ role: 'tool', callId: r.callId, name: r.name, content: r.text, ...(image ? { image } : {}) })
     }
-    steps.push({ n, text: res.text, toolCalls: calls, results, usage: res.usage, ms: performance.now() - s0, stop: res.stop })
+    steps.push({ n, text: res.text, toolCalls: calls, results, usage: res.usage, ms: performance.now() - s0, stop: res.stop, ...(res.cacheMiss ? { cacheMiss: res.cacheMiss } : {}) })
     emit({ type: 'step_finished', n, tools: lines, ms: performance.now() - s0, usage: res.usage })
 
     if (final) {
@@ -548,13 +568,40 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
         continue
       }
       if (found.length && env.changes) env.changes = { ...env.changes, warnings: [...env.changes.warnings, ...found.map((f) => `/${active!.skill.name}: ${f}`)] }
-      answer = res.text
+      // A job's step under way that ends the turn with nothing proposed (agent-bugs 39: a question about a detail it
+      // could choose, test-03): told once to make the step with its best choice, unless a guess would change data.
+      const doing = env.job?.get()?.steps.find((x) => x.state === 'doing')
+      const proposed = (env.changes?.items ?? []).some((i) => !before.has(i.id))
+      if (!nudged && n < budget && env.job?.get()?.status === 'running' && doing && !proposed) {
+        nudged = true
+        mine.push({ role: 'system', tag: 'checks', content: STEP_NUDGE(doing.n) })
+        continue
+      }
+      // After writing a document, two or three lines (the skills' DOC; agent-bugs 37): a longer answer goes back once.
+      const lines = res.text.split('\n').filter((l) => l.trim()).length
+      if (!trimmed && n < budget && lines > ANSWER_AFTER_DOC && (env.changes?.items ?? []).some((i) => i.op === 'create_document' && !before.has(i.id))) {
+        trimmed = true
+        mine.push({ role: 'system', tag: 'checks', content: SHORTER_NOTE(lines) })
+        continue
+      }
+      // The answer the person reads: its cards from another plane marked `(on Rivals)` (agent-bugs 23); the history
+      // keeps the model's own words.
+      answer = markOtherPlanes(res.text, agentEnv.getWs(), env.ids, agentEnv.about)
       end = 'answered'
     }
     break
   }
   return finish()
 }
+
+// A job's step left under way with nothing proposed.
+export const STEP_NUDGE = (n: number) =>
+  `Step ${n} is under way and nothing is proposed for it yet. If what you would ask can wait (who a task goes to, a day, a name), make the step's changes with your best choice and say it in your answer; the person sees it in the preview. Ask only if a guess would change something they didn't ask for. A step that needs no change: progress it done (or skipped, with why).`
+
+// After a document, the answer says what it holds and that it waits in the preview: at most this many lines.
+export const ANSWER_AFTER_DOC = 4
+export const SHORTER_NOTE = (n: number) =>
+  `Your answer runs ${n} lines. The document holds the detail; answer again in two or three lines: what it holds and that it waits in the preview.`
 
 // What a skill's checks found, told to the model before the preview (agent-bugs 21).
 export const CHECKS_NOTE = (name: string, found: string[]) =>

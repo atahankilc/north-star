@@ -112,7 +112,7 @@ function prep(r: RunResult, where: Where): Where {
 // card: plane (on it, home or placed), titleHas · text: kind (heading, paragraph, sticky, section, title), plane (its
 // space; `canvas` for the canvas), textHas · piece: kind (`deck` = kanban), canvas, stuck (to a piece by name) · task:
 // deck, column (by name), assignee (uid or member name), card · link: from, to (cards, either way with `either: true`)
-// · evidence: card. Made refs must be resolved first (`prep`).
+// · evidence: card (or a list: on any of them). Made refs must be resolved first (`prep`).
 export function find(ws: AgentWs, kind: Kind, where: Where = {}): Record<string, unknown>[] {
   const out: Record<string, unknown>[] = []
   for (const x of listOf(ws, kind)) {
@@ -143,7 +143,7 @@ export function find(ws: AgentWs, kind: Kind, where: Where = {}): Record<string,
         const ids = refs(ws, String(want), ['card'])
         const either = where.either === true
         ok = ids.includes(String(x[k === 'from' ? 'fromId' : 'toId'])) || (either && ids.includes(String(x[k === 'from' ? 'toId' : 'fromId'])))
-      } else if (kind === 'evidence' && k === 'card') ok = refs(ws, String(want), ['card']).includes(String(x.nodeId))
+      } else if (kind === 'evidence' && k === 'card') ok = (Array.isArray(want) ? want : [want]).some((w) => refs(ws, String(w), ['card']).includes(String(x.nodeId)))
       else ok = matches(x[k], want)
     }
     if (ok) out.push(x)
@@ -692,7 +692,9 @@ export const noWritesInTurn = (n: number): Grader => ({
   grade: (r) => {
     const t = r.transcript.turns[n - 1]
     if (!t) return ok(false, `there is no turn ${n}`)
-    const calls = t.steps.flatMap((s) => s.toolCalls).filter((c) => WRITE_CALL.test(c.name)).length
+    // A call the code refused added nothing (agent-bugs 35's guard sends a big change back for a plan): not a write.
+    const refused = new Set(t.steps.flatMap((s) => s.results).filter((x) => !x.ok).map((x) => x.callId))
+    const calls = t.steps.flatMap((s) => s.toolCalls).filter((c) => WRITE_CALL.test(c.name) && !refused.has(c.id)).length
     const steps = r.steps.filter((s) => s.turn === n).length
     return ok(calls === 0 && steps === 0, calls ? `${calls} write calls in turn ${n}` : steps ? `wrote in turn ${n}` : `turn ${n} wrote nothing`)
   },
@@ -973,8 +975,11 @@ export const docWritten = (o: { words?: (string | RegExp)[]; cites?: Ref[]; anyO
     if (doc.kind !== 'markdown') bad.push(`kind ${doc.kind}`)
     if (!!doc.shared !== !!o.shared) bad.push(doc.shared ? 'it is shared' : 'it is private')
     for (const w of o.words ?? []) if (!wanted(w).test(text)) bad.push(`no ${String(w)}`)
-    for (const w of o.excludes ?? []) if ((w instanceof RegExp ? w : wordsRe(w)).test(text)) bad.push(`says ${String(w)}`)
+    for (const w of o.excludes ?? []) if (saysUnwarned(w instanceof RegExp ? w : wordsRe(w), text)) bad.push(`says ${String(w)}`)
     const cited = new Set<string>()
+    // With onPlane, `min` counts that plane's cards only: the app marks the others as context (agent-bugs 23), so a
+    // document about the whole startup instead of the plane still fails.
+    const onIt = new Set<string>()
     for (const line of text.split('\n'))
       for (const m of line.matchAll(/\bc(\d+)\b/g)) {
         const real = r.ids.real(`c${m[1]}`)
@@ -983,7 +988,9 @@ export const docWritten = (o: { words?: (string | RegExp)[]; cites?: Ref[]; anyO
         else if (!titledIn(card.title, line)) bad.push(`c${m[1]} without its title "${card.title.slice(0, 30)}"`)
         else {
           cited.add(card.id)
-          if (o.onPlane && !refs(r.start, o.onPlane, ['piece']).some((p) => isOnPlane(card, p)) && !markedIn(r, card, text)) bad.push(`c${m[1]} isn't on ${o.onPlane} (nor marked as context from its plane)`)
+          const on = !!o.onPlane && refs(r.start, o.onPlane, ['piece']).some((p) => isOnPlane(card, p))
+          if (on) onIt.add(card.id)
+          if (o.onPlane && !on && !markedIn(r, card, text)) bad.push(`c${m[1]} isn't on ${o.onPlane} (nor marked as context from its plane)`)
         }
       }
     for (const w of o.cites ?? []) {
@@ -994,10 +1001,26 @@ export const docWritten = (o: { words?: (string | RegExp)[]; cites?: Ref[]; anyO
       const n = o.anyOf.of.filter((w) => { const id = ref1(r.start, resolveRef(r, w), ['card']); return !!id && cited.has(id) }).length
       if (n < o.anyOf.n) bad.push(`cites ${n} of ${o.anyOf.of.map(showRef).join(', ')} (want ${o.anyOf.n})`)
     }
-    if (cited.size < (o.min ?? 3)) bad.push(`cites ${cited.size} cards`)
+    if (o.onPlane ? onIt.size < (o.min ?? 3) : cited.size < (o.min ?? 3)) bad.push(o.onPlane ? `cites ${onIt.size} cards on ${o.onPlane}` : `cites ${cited.size} cards`)
     return ok(!bad.length, bad.length ? [...new Set(bad)].slice(0, 6).join('; ') : `"${doc.title}": ${cited.size} cards cited, every one real`)
   },
 })
+
+// A phrase the text must not hold, unless it is named as what not to do (agent-bugs 33: the Mom Test script's own
+// "Do not ask 'would you pay?'"): a negation before it on its line, or in the heading or lead-in line it sits under.
+const NEGATION = /\b(do not|don't|never|avoid|instead of|not)\b/i
+export function saysUnwarned(re: RegExp, text: string): boolean {
+  const lines = text.split('\n')
+  let lead = ''
+  for (const line of lines) {
+    if (/^\s*#/.test(line) || /:\s*$/.test(line)) lead = line
+    const m = new RegExp(re.source, re.flags.replace('g', '')).exec(line)
+    if (!m) continue
+    if (NEGATION.test(line.slice(0, m.index)) || NEGATION.test(lead)) continue
+    return true
+  }
+  return false
+}
 
 // A card's title on a line: whole, or cut short (its first three or more words, then "…" or "..."; Sonnet shortens
 // long titles: c24 "Weekend shoppers sell out by 10am…").

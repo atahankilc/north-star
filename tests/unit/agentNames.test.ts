@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { makeEnv } from '../../evals/env'
 import { loadFixture } from '../../evals/fixtures'
 import { AGENT_TOOLS } from '../../src/agent/tools'
-import { namedShort, plainCites, withNames } from '../../src/agent/read/names'
+import { markOtherPlanes, namedShort, plainCites, withNames } from '../../src/agent/read/names'
 
 const ws = loadFixture('medium')
 const env = () => makeEnv(ws)
@@ -83,5 +83,48 @@ describe('create_document writes names, not bare ids (bug 22)', () => {
     const body = String((write as { set?: { text?: string } }).set?.text ?? '')
     expect(body).toContain(`${sa} "`)
     expect(body).toContain(`${sb} "`)
+  })
+})
+
+describe('markOtherPlanes (agent-bugs 23): cards from another plane marked', () => {
+  const sync = () => {
+    const e = env()
+    e.ids.sync(ws)
+    return e
+  }
+  it('the plane most cards are on is the one it is about; another plane\'s card gets `(on <plane>)` once', () => {
+    const e = sync()
+    const text = '- c132 "Students in Neukölln" is validated.\n- c139 "Remind about stall opening hours for pickup" faces c47 "Localmate".\n- c47 "Localmate" again.'
+    const pricing = ws.pieces.find((p) => p.name === 'Pricing')!.id
+    const out = markOtherPlanes(text, ws, e.ids, [pricing])
+    // About no plane (a question about the whole workspace): nothing marked.
+    expect(markOtherPlanes(text, ws, e.ids)).toBe(text)
+    expect(out).toContain('faces c47 "Localmate" (on Rivals).')
+    expect(out.match(/\(on Rivals\)/g)).toHaveLength(1)
+    expect(out).toContain('c132 "Students in Neukölln" is validated.')
+  })
+  it('already named on its line, or all on one plane: left as written', () => {
+    const e = sync()
+    const pricing = ws.pieces.find((p) => p.name === 'Pricing')!.id
+    const said = '- c132 "Students in Neukölln"\n- c139 "Remind about stall opening hours for pickup"\n- c47 "Localmate" (on Rivals) competes.'
+    expect(markOtherPlanes(said, ws, e.ids, [pricing])).toBe(said)
+    const one = '- c132 "Students in Neukölln"\n- c139 "Remind about stall opening hours for pickup"'
+    expect(markOtherPlanes(one, ws, e.ids, [pricing])).toBe(one)
+  })
+  it('the planes a turn is about: in focus, beside, or named whole in the message', async () => {
+    const { aboutPlanes } = await import('../../src/agent/read/names')
+    const id = (n: string) => ws.pieces.find((p) => p.name === n)!.id
+    expect(aboutPlanes(ws, '/swot for Pricing', { focus: null, beside: [] })).toEqual([id('Pricing')])
+    expect(aboutPlanes(ws, 'what is new?', { focus: id('Rivals'), beside: [] })).toEqual([id('Rivals')])
+    expect(aboutPlanes(ws, 'is pricingx done?', { focus: null, beside: [] })).toEqual([])
+  })
+
+  it('create_document marks them, on a turn about the plane', async () => {
+    const e = sync()
+    e.about = [ws.pieces.find((p) => p.name === 'Pricing')!.id]
+    const change = AGENT_TOOLS.find((t) => t.def.name === 'change')!
+    const r = await change.run(e, { ops: [{ op: 'create_document', args: { title: 'SWOT', text: '# SWOT\n- c132 is validated\n- c139 is testing\n- c47 competes' } }] })
+    expect(r.ok).toBe(true)
+    expect(JSON.stringify(e.changes)).toContain('c47 \\"Localmate\\" (on Rivals)')
   })
 })

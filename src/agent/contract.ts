@@ -65,7 +65,9 @@ export type StopReason = 'tool_calls' | 'end' | 'length' | 'content_filter' | 'r
 
 // A whole response: text (possibly empty when it only calls tools) and the calls, in the order given (the loop may run
 // them in parallel: they never depend on each other within one response).
-export type ModelResponse = { text: string; toolCalls: ToolCall[]; usage: Usage; stop: StopReason; error?: string; providerItems?: unknown[]; responseId?: string }
+// `cacheMiss`: why the provider's prompt cache could not reuse the request before (Claude's cache diagnostics, the
+// evals only): `messages_changed ~41850`.
+export type ModelResponse = { text: string; toolCalls: ToolCall[]; usage: Usage; stop: StopReason; error?: string; providerItems?: unknown[]; responseId?: string; cacheMiss?: string }
 
 // A streamed response, piece by piece; `done` carries the whole response, the same as `respond` gives.
 export type ModelEvent = { type: 'text'; delta: string } | { type: 'tool_call'; call: ToolCall } | { type: 'done'; response: ModelResponse }
@@ -137,6 +139,13 @@ export type AgentEnv = {
   chatId?: string
   // The chat's big job (D-328, job.ts): what `plan` and `progress` write. Left out, those tools say there is none.
   job?: JobHost
+  // Set by the loop: the skill this turn runs (`/compare`…), if any. A skill's guide says how it plans; without one, a
+  // big change waits for a plan (tools.ts' BIG_CHANGE, agent-bugs 35).
+  skill?: string
+  // What follows the skill's name in the message (`/import` keeps its pasted lines as written, agent-bugs 38).
+  skillInput?: string
+  // Set by the loop: the planes this turn is about (read/names.ts aboutPlanes), for marking cards from elsewhere.
+  about?: string[]
   // An SVG drawn into a PNG for the model (D-327, `look`): the browser's canvas in the app, resvg in the evals. Left
   // out (or null back): the tool answers in words alone.
   render?: (svg: string, size: { w: number; h: number }) => Promise<ImagePart | null>
@@ -152,7 +161,7 @@ export type AgentTool = { def: ToolDef; kind: 'read' | 'write' | 'ui'; run: (env
 // ---- What happened
 
 // One round trip: what the model said and asked for, what the tools gave back, how long, how many tokens.
-export type AgentStep = { n: number; text: string; toolCalls: ToolCall[]; results: ToolResult[]; usage: Usage; ms: number; stop: StopReason }
+export type AgentStep = { n: number; text: string; toolCalls: ToolCall[]; results: ToolResult[]; usage: Usage; ms: number; stop: StopReason; cacheMiss?: string }
 
 // Why a turn ended: the model answered; the step budget ran out; the model ran out of room before answering; the
 // provider's filter or the model refused; the person stopped it; the provider (or the loop) failed.

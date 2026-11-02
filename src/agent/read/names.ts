@@ -2,6 +2,7 @@
 // with its name, linked where it has a place) and for documents the agent writes (`create_document` turns a bare
 // `c12` into `c12 "title"`). Read from the chat's ids and the workspace as it is now.
 import { kindOf } from '../../model/labels'
+import { kindOfPiece } from '../../model/pieces'
 import { derive, nameOf } from './derive'
 import { oneLine, q } from './text'
 import type { IdKind, Ids } from './ids'
@@ -70,6 +71,20 @@ export function namedShort(ws: ReadWs, ids: Ids, short: string): Named | undefin
   }
 }
 
+// The planes a turn is about (agent-bugs 23): the one in focus or beside it, and any plane the message names (its
+// whole name, as written: a lookup, never a reading of the words).
+export function aboutPlanes(ws: ReadWs, message: string, view: { focus?: string | null; beside?: string[] }): string[] {
+  const d = derive(ws)
+  const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const planes = [...d.pieces.values()].filter((p) => kindOfPiece(p) === 'plane')
+  const named = planes.filter((p) => {
+    const name = d.pieceName(p).trim()
+    return name.length >= 3 && new RegExp(`(^|[^\\p{L}\\p{N}])${esc(name)}($|[^\\p{L}\\p{N}])`, 'iu').test(message)
+  })
+  const seen = [view.focus, ...(view.beside ?? [])].filter((id): id is string => !!id && planes.some((p) => p.id === id))
+  return [...new Set([...seen, ...named.map((p) => p.id)])]
+}
+
 // A real id's name, for a thread's target (a card, text, link or plane).
 function namedReal(ws: ReadWs, id: string): string | undefined {
   const d = derive(ws)
@@ -107,6 +122,48 @@ export function withNames(text: string, ws: ReadWs, ids: Ids): string {
             // Its name already there (`u3 Ayşe Demir`): left as written.
             if (all.slice(at + s.length).trimStart().toLowerCase().startsWith(n.name.replace(/^"|"$/g, '').toLowerCase())) return s
             return `${s} ${n.name}`
+          }),
+    )
+    .join('')
+}
+
+// Cards from another plane, marked (agent-bugs 23), in a document or an answer about one plane: `about` the planes the
+// turn is about (in focus, or named in the message; the loop's aboutPlanes), the one most of the text's cards are on
+// the plane it is about; a card not on it gets `(on <its plane>)` after its first mention, unless that line already
+// names one of its planes. Nothing when the turn is about no plane. Read after withNames (the title after the id).
+export function markOtherPlanes(text: string, ws: ReadWs, ids: Ids, about: string[] = []): string {
+  if (!about.length) return text
+  const d = derive(ws)
+  const parts = text.split(/(```[\s\S]*?```|`[^`\n]*`)/)
+  const cited = new Map<string, string>()
+  parts.forEach((p, i) => {
+    if (i % 2) return
+    for (const m of p.matchAll(/\bc\d+\b/g)) {
+      const r = ids.real(m[0])
+      if (r?.kind === 'card' && d.cards.has(r.id) && !cited.has(m[0])) cited.set(m[0], r.id)
+    }
+  })
+  const count = new Map<string, number>()
+  for (const id of cited.values()) for (const p of d.planesOf.get(id) ?? []) count.set(p, (count.get(p) ?? 0) + 1)
+  const ranked = [...count].filter(([p]) => about.includes(p)).sort((a, b) => b[1] - a[1])
+  if (!ranked.length || count.size < 2) return text
+  const main = ranked[0][0]
+  const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const done = new Set<string>()
+  return parts
+    .map((part, i) =>
+      i % 2
+        ? part
+        : part.replace(/\b(c\d+)\b(\s*"[^"\n]*")?/g, (all: string, short: string, _t: string, at: number, whole: string) => {
+            const id = cited.get(short)
+            if (!id || done.has(short)) return all
+            done.add(short)
+            const planes = d.planesOf.get(id) ?? []
+            if (!planes.length || planes.includes(main)) return all
+            const names = planes.map((p) => d.pieceName(d.pieces.get(p)!)).filter(Boolean)
+            const line = whole.slice(whole.lastIndexOf('\n', at) + 1, (whole.indexOf('\n', at) + 1 || whole.length + 1) - 1)
+            const said = [...names, ...planes.map((p) => ids.has('piece', p)).filter(Boolean)].some((n) => new RegExp(`\\bon\\s+"?${esc(String(n))}\\b`, 'i').test(line))
+            return said || !names.length ? all : `${all} (on ${names[0]})`
           }),
     )
     .join('')

@@ -4,7 +4,7 @@
 // thinking blocks replayed verbatim and only to Claude, the same history rendered to the same bytes, a binding refusal
 // retried once with drop_block, errors in plain words with no key in them, and the loop's append-only mode.
 import { describe, expect, it } from 'vitest'
-import { anthropicModel, listClaudeModels, modern, nativeSystem, requestBody, toClaude, AnthropicError } from '../../src/agent/anthropic'
+import { anthropicModel, cacheMissOf, listClaudeModels, modern, nativeSystem, requestBody, responseOf, toClaude, AnthropicError } from '../../src/agent/anthropic'
 import { makeModel, pickerRows, providerOf, reasons, canChat, claudeId, costOf } from '../../src/agent/models'
 import { plainError } from '../../src/agent/ui/errors'
 import { runTurn, FINAL_STEP_NOTE } from '../../src/agent/loop'
@@ -85,7 +85,8 @@ describe('the request', () => {
     expect(c.headers.get('anthropic-beta')).toContain('server-side-fallback-2026-07-01')
     expect(c.body).toMatchObject({
       model: MODEL,
-      system: 'PROMPT',
+      // A breakpoint on the system prompt (tools + system), automatic caching for the rest.
+      system: [{ type: 'text', text: 'PROMPT', cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }],
       thinking: { type: 'adaptive' },
       output_config: { effort: 'high' },
@@ -148,8 +149,31 @@ describe('the history as Claude reads it (append-only: the same bytes every time
   it('a model without mid-conversation system messages gets the context as text, in place', () => {
     const { messages } = toClaude(callTurn, 'claude-sonnet-5')
     expect(messages.map((m) => m.role)).toEqual(['user', 'assistant', 'user', 'assistant'])
-    expect(messages[0].content).toEqual([{ type: 'text', text: 'list the rivals' }, { type: 'text', text: '# Workspace map\n\n## Where the person is now' }])
+    expect(messages[0].content).toEqual([{ type: 'text', text: 'list the rivals' }, { type: 'text', text: '# Workspace map\n\n## Where the person is now', cache_control: { type: 'ephemeral' } }])
     expect((messages[2].content as { type: string }[]).map((b) => b.type)).toEqual(['tool_result', 'tool_result', 'text'])
+  })
+
+  it("a chat's first map before its ask: one breakpoint on it, in the user message; the same block every request", () => {
+    const first: ModelMessage[] = [{ role: 'system', content: 'PROMPT' }, { role: 'system', tag: 'map', content: '# Map' }, { role: 'user', content: 'hi' }, { role: 'system', tag: 'where', content: '## Where' }]
+    const a = toClaude(first, MODEL)
+    expect(a.messages[0]).toEqual({ role: 'user', content: [{ type: 'text', text: '# Map', cache_control: { type: 'ephemeral' } }, { type: 'text', text: 'hi' }] })
+    expect(a.messages[1]).toEqual({ role: 'system', content: '## Where' })
+    // A later map (it changed) is no breakpoint: three in all with the system's and the automatic one.
+    const b = toClaude([...first, { role: 'assistant', content: 'ok' }, { role: 'user', content: 'again' }, { role: 'system', tag: 'map', content: '# Map 2' }], 'claude-sonnet-5')
+    expect(JSON.stringify(b.messages).match(/cache_control/g)).toHaveLength(1)
+    expect(JSON.stringify(b.messages.slice(0, 1))).toBe(JSON.stringify([{ role: 'user', content: [{ type: 'text', text: '# Map', cache_control: { type: 'ephemeral' } }, { type: 'text', text: 'hi' }, { type: 'text', text: '## Where' }] }]))
+  })
+
+  it('cache diagnostics, only when asked: the previous Claude response named; the verdict in a few words', () => {
+    const hist: ModelMessage[] = [{ role: 'system', content: 'P' }, { role: 'user', content: 'a' }, { role: 'assistant', content: 'b', provider: 'anthropic', responseId: 'msg_A' }, { role: 'user', content: 'c' }]
+    expect(requestBody(ask(hist), { model: MODEL })).not.toHaveProperty('diagnostics')
+    expect(requestBody(ask(hist), { model: MODEL, diagnose: true }).diagnostics).toEqual({ previous_message_id: 'msg_A' })
+    expect(requestBody(ask(hist.slice(0, 2)), { model: MODEL, diagnose: true }).diagnostics).toEqual({ previous_message_id: null })
+    const msg = (diagnostics: unknown) => ({ id: 'm', type: 'message', role: 'assistant', model: MODEL, content: [], stop_reason: 'end_turn', stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 }, diagnostics }) as never
+    expect(cacheMissOf(msg(null))).toBeUndefined()
+    expect(cacheMissOf(msg({ cache_miss_reason: null }))).toBe('pending')
+    expect(cacheMissOf(msg({ cache_miss_reason: { type: 'messages_changed', cache_missed_input_tokens: 41850 } }))).toBe('messages_changed ~41850')
+    expect(responseOf(msg({ cache_miss_reason: { type: 'unavailable' } })).cacheMiss).toBe('unavailable')
   })
 
   it("another provider's items never go to Claude: its text and calls do; a compaction's note leads the next ask", () => {
@@ -264,9 +288,10 @@ describe("the loop's append-only mode", () => {
     const m = claudeLike([...Array.from({ length: 14 }, () => ({ calls: [{ name: 'big', args: {} }] })), { answer: 'done' }])
     const { history } = await runTurn(m, env(), [big], [], 'go')
     for (let i = 1; i < m.seen.length; i++) expect(m.seen[i].messages.slice(0, m.seen[i - 1].messages.length)).toEqual(m.seen[i - 1].messages)
-    // The head is the prompt alone; the ask, then the map and where, kept in the history.
-    expect(m.seen[0].messages.map((x) => x.role)).toEqual(['system', 'user', 'system', 'system'])
-    expect(history.slice(0, 3).map((x) => (x.role === 'system' ? x.tag : x.role))).toEqual(['user', 'map', 'where'])
+    // The head is the prompt alone; a chat's first map before its first ask (the cache shares it across chats), where
+    // after it, both kept in the history.
+    expect(m.seen[0].messages.map((x) => (x.role === 'system' ? (x.tag ?? 'prompt') : x.role))).toEqual(['prompt', 'map', 'user', 'where'])
+    expect(history.slice(0, 3).map((x) => (x.role === 'system' ? x.tag : x.role))).toEqual(['map', 'user', 'where'])
     expect(history.filter((x) => x.role === 'tool').every((x) => x.content.startsWith('R '))).toBe(true)
     // Claude's own items are tagged as Claude's.
     expect(m.seen.length).toBe(15)

@@ -60,6 +60,7 @@ export function writeReport(dir: string, results: TaskResult[], meta: { model: s
     summary,
     '',
     'pass@1 and pass^k count only attempts whose every grader passed; an attempt with a judge skipped (no judge model) is "unjudged", never a pass.',
+    ...cacheLines(results),
     '',
     '## Tasks',
     '',
@@ -89,4 +90,24 @@ export function writeReport(dir: string, results: TaskResult[], meta: { model: s
     ),
   )
   return { summary }
+}
+
+// Claude's cache diagnostics (anthropic.ts `diagnose`): how often each reason came, the tokens it said were lost and
+// the first steps it came on. Nothing when no step carried one (OpenAI, the stub).
+export function cacheLines(results: TaskResult[]): string[] {
+  const by = new Map<string, { n: number; tokens: number; where: string[] }>()
+  for (const t of results)
+    for (const [ai, a] of t.attempts.entries())
+      for (const [ti, turn] of (a.transcript?.turns ?? []).entries())
+        for (const s of turn.steps) {
+          if (!s.cacheMiss) continue
+          const [type, lost] = s.cacheMiss.split(' ~')
+          const e = by.get(type) ?? { n: 0, tokens: 0, where: [] }
+          e.n++
+          e.tokens += Number(lost) || 0
+          if (e.where.length < 6) e.where.push(`${t.id}#${ai + 1} t${ti + 1}s${s.n}`)
+          by.set(type, e)
+        }
+  if (!by.size) return []
+  return ['', '## Cache misses (Claude\'s diagnostics)', '', '| reason | steps | tokens after it (est.) | first seen |', '|---|---|---|---|', ...[...by].sort((a, b) => b[1].tokens - a[1].tokens).map(([type, e]) => `| ${type} | ${e.n} | ${e.tokens} | ${e.where.join(', ')} |`)]
 }

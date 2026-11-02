@@ -25,6 +25,8 @@ export type Manifest = {
   tasks: number
   repeat: number
   pictures: boolean
+  // `--map-budget`: the map's token budget when not the default.
+  mapBudget?: number
 }
 
 type Tally = { attempts: number; passed: number; cost: number; input: number; cached: number; output: number }

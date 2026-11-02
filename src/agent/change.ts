@@ -24,7 +24,7 @@ import { ID_KEYS } from './idKeys'
 import { makeIds, resolve, resolvePerson, unclear, view, type IdKind, type Ids } from './read'
 import { clean, derive } from './read/derive'
 import { norm, q, wrap } from './read/text'
-import { withNames as textWithNames } from './read/names'
+import { markOtherPlanes, withNames as textWithNames } from './read/names'
 import { TITLE_MAX } from '../model/limits'
 import type { AgentEnv, AgentWs } from './contract'
 import type { OpError } from '../ops/types'
@@ -145,6 +145,13 @@ export function resolveIds(ws: AgentWs, ids: Ids, op: string, v: unknown, path =
   return { value: v, errors: [] }
 }
 
+// A name in assigneeName with no assignee is who the task goes to (eval edit-06: the model wrote "Mert Kaya" there and
+// the task stayed given to nobody): it's resolved as an assignee is, by name, email or `me`.
+function givenByName(a: Record<string, unknown>): Record<string, unknown> {
+  if ('assignee' in a || typeof a.assigneeName !== 'string' || !a.assigneeName.trim()) return a
+  return { ...a, assignee: a.assigneeName }
+}
+
 // A task given to someone the op can't name: their name from the people list (S8 reviewer: fill assigneeName).
 function withNames(ws: AgentWs, args: Record<string, unknown>): Record<string, unknown> {
   const uid = args.assignee
@@ -192,7 +199,7 @@ export function foldArranges(ops: ChangeOp[]): { ops: ChangeOp[]; notes: string[
 }
 
 // The call's arguments checked and turned into ops with real ids (nothing built yet).
-export function parseChange(ws: AgentWs, ids: Ids, args: Record<string, unknown>): ParsedChange {
+export function parseChange(ws: AgentWs, ids: Ids, args: Record<string, unknown>, about: string[] = []): ParsedChange {
   const list = Array.isArray(args.ops) ? (args.ops as unknown[]) : []
   const drop = Array.isArray(args.drop) ? args.drop.filter((x): x is string => typeof x === 'string') : []
   if (!list.length && !drop.length) return { ok: false, text: 'change needs ops: [{ op, args, why? }, …] (or drop: [pending item ids])' }
@@ -214,7 +221,7 @@ export function parseChange(ws: AgentWs, ids: Ids, args: Record<string, unknown>
     const why = typeof entry.why === 'string' ? entry.why.trim() : ''
     if (entry.why !== undefined && typeof entry.why !== 'string') return void errors.push(`ops[${i}].why: text, the reason the person reads`)
     if (DELETE_OPS.has(def.name) && !why) return void errors.push(`ops[${i}] ${def.name} needs a why: the reason the person reads beside it in the preview`)
-    const r = resolveIds(ws, ids, def.name, a, `ops[${i}] ${def.name}.args`)
+    const r = resolveIds(ws, ids, def.name, givenByName(a), `ops[${i}] ${def.name}.args`)
     if (r.errors.length) return void errors.push(...r.errors)
     let value = withNames(ws, r.value as Record<string, unknown>)
     let whyNow = why
@@ -233,7 +240,8 @@ export function parseChange(ws: AgentWs, ids: Ids, args: Record<string, unknown>
     }
     // A document is read outside the agent: a bare `c12` in it becomes `c12 "title"` (agent-bugs 22). The title is the
     // one it has now (a renamed card leaves the document on its old name).
-    if (def.name === 'create_document' && typeof value.text === 'string') value = { ...value, text: textWithNames(value.text, ws, ids) }
+    // Its cards from another plane marked `(on Rivals)` (agent-bugs 23).
+    if (def.name === 'create_document' && typeof value.text === 'string') value = { ...value, text: markOtherPlanes(textWithNames(value.text, ws, ids), ws, ids, about) }
     ops.push({ op: def.name, args: value, ...(whyNow ? { why: whyNow } : {}) })
   })
   if (errors.length) return { ok: false, text: `change refused, nothing added:\n${errors.slice(0, 10).join('\n')}` }
@@ -344,7 +352,7 @@ export async function runChange(env: AgentEnv, args: Record<string, unknown>): P
   const cs = env.changes ?? emptyChangeset()
   const seen = env.getWs()
   env.ids.sync(seen)
-  const parsed = parseChange(seen, env.ids, args)
+  const parsed = parseChange(seen, env.ids, args, env.about)
   if (!parsed.ok) return { ok: false, text: parsed.text }
   // A dry run names things with a copy of the short ids: nothing it would make gets a real short id in the chat.
   const ids = parsed.dryRun ? makeIds(env.ids.toJSON()) : env.ids

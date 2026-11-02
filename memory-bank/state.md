@@ -32,15 +32,12 @@ something is finished, add its entry to state-history.md and leave at most one l
   Blaze. P3b, P4–P6 after onboarding; Q-029, Q-030.
 
 ## Next steps (not started; ask the user which first)
-- **The agent, where it stands (2026-11-01; D-327, D-328, D-329 built and pushed):**
-  1. Evals trusted now (agent-bugs 33: every task audited, `--replay`). Single runs 2026-11-01: terra 78 % ($7.73),
-     sonnet 75 % (≈ $11.4), gpt-5.4-mini 73 % ($3.37); prompt fixes 19, 20, 23, 24 + plan-waits guard measured
-     (agent-bugs "Prompt changes"). Pipeline foundation built (D-341, docs/specs/agent-pipeline.md: roles, a model
-     per role, run records, `--compare`); next is its P1: mini ×3 baseline, Claude's cache, then routing measured.
-  2. In the app: a big job (`/restructure Segments`), and the two go buttons (not looked at in a browser yet).
-  3. Left in code: the preview pick saved with the chat (a rules change).
-  4. The local harness stays an idea (Q-031).
-  Order and status of every agent bug: docs/specs/agent-bugs.md (its table).
+- **The agent, where it stands (2026-11-02; D-327, D-328, D-329 built and pushed; D-341 P1 done):**
+  1. P1 measured and committed (state-history 2026-11-02; the worktree ~/Documents/north-star-lean can go once the
+     runs below no longer need its evals/results).
+     **Waiting for OpenAI credit:** the four runs in agent-pipeline.md §7, then routing and the map's default (D-341).
+  2. In the app: a big job (`/restructure Segments`), the two go buttons (not looked at in a browser yet); the preview
+     pick saved with the chat (a rules change). Every agent bug: docs/specs/agent-bugs.md (its table).
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
   which (D-313); pushed;
   rules deployed.
@@ -74,8 +71,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Blaze: the user's payments profile was refused once (OR_BAOOC_15, likely profile country vs German card); retrying.
 
 ## Known issues
-- Agent: bugs 1–28 with their order and status in docs/specs/agent-bugs.md (add new ones there); the first real eval
-  run (gpt-5.6-terra 66/110, 2026-10-31) is not a baseline. Other providers: Q-031.
+- Agent: bugs 1–41, order and status in docs/specs/agent-bugs.md (add new ones there). Other providers: Q-031.
 - Emulators only: after a Storage URL fetch, a tab's next Firestore write can queue ~55 s in Chrome (HTTP/1.1 connection limit).
 - Emulators only: the 6th page load in one Chrome tab stalls ~60 s (connections per host); use a new tab per few loads.
 - Emulators only: a Firestore emulator left running for days can stop sending one workspace's live updates; restart it.

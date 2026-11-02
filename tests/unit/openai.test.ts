@@ -213,6 +213,9 @@ describe('streaming', () => {
     const failed = await model(fakeFetch(sse('failed')).f).respond(req([]))
     expect(failed.stop).toBe('error')
     expect(failed.error).toContain('The server had an error')
+    expect(failed.error).toMatch(/\(server_error\)$/)
+    const nested = await model(fakeFetch(new Response(streamOf('data: {"type":"error","error":{"type":"tokens","code":"rate_limit_exceeded","message":"Rate limit reached"}}\n\n'), { status: 200 })).f).respond(req([]))
+    expect([nested.stop, nested.error]).toEqual(['error', 'Rate limit reached (rate_limit_exceeded)'])
     expect(failed.error).not.toContain('LEAKYLEAKY')
     const cut = fixture('text').split('event: response.completed')[0]
     const short = await model(fakeFetch(new Response(streamOf(cut), { status: 200 })).f).respond(req([]))

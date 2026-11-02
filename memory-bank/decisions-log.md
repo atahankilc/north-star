@@ -6509,7 +6509,12 @@ and better by measurement and later run on a server with a backoffice.** Spec: d
   judge, prompt and tools hashes; `summary`: pass, cost, tokens overall, by group, model and role; a line per run in
   evals/results/index.jsonl); evals/compare.ts (`--compare A B`, old zero-cost Claude attempts priced again from their
   tokens). Checked: tsc, vitest (agentPipeline.test.ts new), stub evals 0 failed, a run recorded and two compared.
-- *Not yet:* P1 the cheap baseline (mini ×3) and Claude's cache at 85 %+; P2 `routed` and `plan-strong` measured on both
+- *P1 done (2026-11-02):* Claude's cache 63.5 → 94.4 % (Sonnet, −63 % an attempt); mini ×3 baseline 265/348 before
+  the fixes, 268/348 ($9.42, −7 %) after (agent-bugs 35–41, a leaner `change`); every failure read, graders fixed and
+  replayed (both runs 302/348 on today's graders). A smaller map (`--map-budget 3000`) held on the 43 ask/edit tasks
+  (123 vs 121 of 129, −20 % input), not yet on build and skills: default unchanged. docs/specs/agent-pipeline.md §6, §7.
+- *Not yet:* P2 `routed` (half run: the OpenAI credit ran out; 65/75 vs 60.7/75 on the clean tasks, +37 % cost) and
+  `plan-strong` measured, terra single, the map at 3000 on build + skills (commands in agent-pipeline.md §7), then both
   providers; P3 routing in the app (a cheap and a strong model in Settings, a job's cost shown, a budget per chat), the
   reviewer if it pays; P4 jobs on the server (Blaze, D-079) writing the same records; P5 the backoffice reading them.
 

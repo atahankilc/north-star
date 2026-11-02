@@ -17,8 +17,13 @@
 // If a binding is refused anyway (a 400 naming the conversation), one retry asks the API to drop the stale blocks
 // (`drop_block`); the answer then lacks that reasoning, but the chat goes on.
 //
+// CACHING (agent-pipeline.md §6): three breakpoints. The system prompt (tools + system: the same for every chat of a
+// workspace); the chat's first map, sent before its first ask (loop.ts), so every new chat in the workspace reads
+// tools + system + map from the cache; and automatic caching for the growing tail. An eval run can ask for Claude's
+// cache diagnostics (`diagnose`): each request names the previous response, and the answer says where they differed.
+//
 // CHOICES: adaptive thinking (Claude's current models can't turn it off; older ones get none), the person's effort
-// always sent (Opus 5.5 and Haiku 5.5 default to medium, Sonnet 5.5 to high), automatic prompt caching, tools strict
+// always sent (Opus 5.5 and Haiku 5.5 default to medium, Sonnet 5.5 to high), prompt caching as above, tools strict
 // where their schema already fits (openai.ts' `fitsStrict`), eager input streaming (we check every input ourselves:
 // a call cut off by max_tokens is an `argsError`), server-side fallbacks on a refusal where the model has them.
 import Anthropic, { APIConnectionError, APIUserAbortError, AuthenticationError, BadRequestError, InternalServerError, NotFoundError, PermissionDeniedError, RateLimitError } from '@anthropic-ai/sdk'
@@ -31,6 +36,8 @@ export type AnthropicOptions = {
   model: string
   effort?: Effort | null
   maxTokens?: number
+  // The evals: Claude's cache diagnostics on every request (why a request missed the cache, in `cacheMiss`).
+  diagnose?: boolean
   // For tests: a fake fetch, the base URL.
   fetch?: typeof fetch
   baseUrl?: string
@@ -76,6 +83,7 @@ export function toClaudeTool(def: ToolDef): BetaTool {
 type Out = BetaMessageParam | { role: 'system'; content: string }
 
 const text = (t: string): BetaContentBlockParam => ({ type: 'text', text: t })
+const CACHE = { type: 'ephemeral' as const }
 const imageBlock = (i: ImagePart) => ({ type: 'image' as const, source: { type: 'base64' as const, media_type: i.mediaType, data: i.data } })
 
 // The contract's messages as Claude's `system` + `messages`, the same bytes for the same history (see the head).
@@ -83,7 +91,9 @@ export function toClaude(messages: ModelMessage[], model: string): { system?: st
   const native = nativeSystem(model)
   let system: string | undefined
   const out: Out[] = []
-  let pending: string[] = []
+  // The context waiting to be sent, with its tags (a map is a cache breakpoint, once: the chat's first, in user text).
+  let pending: { content: string; tag?: string }[] = []
+  let mapMarked = false
   const last = () => out[out.length - 1]
   const userBlocks = (): BetaContentBlockParam[] | null => {
     const m = last()
@@ -100,17 +110,26 @@ export function toClaude(messages: ModelMessage[], model: string): { system?: st
   // The context waiting to be sent, before what comes next (`next`: the role of the message that follows, or null).
   const flush = (next: 'user' | 'assistant' | null) => {
     if (!pending.length) return
-    const joined = pending.join('\n\n')
+    const joined = pending.map((p) => p.content).join('\n\n')
+    const hasMap = pending.some((p) => p.tag === 'map')
     pending = []
     const afterUser = last()?.role === 'user'
-    if (native && afterUser && next !== 'user') out.push({ role: 'system', content: joined })
-    else if (next === 'user' || !afterUser) user().push(text(joined))
-    else userBlocks()!.push(text(joined))
+    if (native && afterUser && next !== 'user') {
+      out.push({ role: 'system', content: joined })
+      return
+    }
+    const block = text(joined)
+    if (hasMap && !mapMarked) {
+      mapMarked = true
+      Object.assign(block, { cache_control: CACHE })
+    }
+    if (next === 'user' || !afterUser) user().push(block)
+    else userBlocks()!.push(block)
   }
   messages.forEach((m, i) => {
     if (m.role === 'system') {
       if (i === 0) system = m.content
-      else pending.push(m.content)
+      else pending.push({ content: m.content, tag: m.tag })
       return
     }
     if (m.role === 'assistant') {
@@ -142,19 +161,30 @@ export function toClaude(messages: ModelMessage[], model: string): { system?: st
   return { ...(system !== undefined ? { system } : {}), messages: out }
 }
 
-export function requestBody(req: ModelRequest, o: Pick<AnthropicOptions, 'model' | 'effort' | 'maxTokens'>, binding?: 'drop_block') {
+// The previous response in this chat (the last assistant message Claude wrote): what the cache diagnostics compare with.
+const previousId = (messages: ModelMessage[]) => {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i]
+    if (m.role === 'assistant') return m.provider === 'anthropic' && m.responseId ? m.responseId : null
+  }
+  return null
+}
+
+export function requestBody(req: ModelRequest, o: Pick<AnthropicOptions, 'model' | 'effort' | 'maxTokens' | 'diagnose'>, binding?: 'drop_block') {
   const { system, messages } = toClaude(req.messages, o.model)
   const now = modern(o.model)
   const betas = [...(fallsBack(o.model) ? [BETA_FALLBACK] : []), ...(binding ? [BETA_BINDING] : [])]
   return {
     model: o.model,
     max_tokens: o.maxTokens ?? MAX_TOKENS,
-    ...(system !== undefined ? { system } : {}),
+    // A breakpoint on the system prompt: tools + system, the same for every chat.
+    ...(system !== undefined ? { system: [{ type: 'text' as const, text: system, cache_control: CACHE }] } : {}),
     messages: messages as BetaMessageParam[],
     ...(req.tools.length ? { tools: req.tools.map(toClaudeTool), tool_choice: { type: req.toolChoice === 'none' ? ('none' as const) : ('auto' as const) } } : {}),
     ...(now ? { thinking: { type: 'adaptive' as const, ...(binding ? { block_binding: { prefix_mismatch_behavior: binding } } : {}) } } : {}),
     ...(now && o.effort ? { output_config: { effort: EFFORTS[o.effort] } } : {}),
-    cache_control: { type: 'ephemeral' as const },
+    cache_control: CACHE,
+    ...(o.diagnose ? { diagnostics: { previous_message_id: previousId(req.messages) } } : {}),
     ...(fallsBack(o.model) ? { fallbacks: 'default' as const } : {}),
     ...(betas.length ? { betas } : {}),
   }
@@ -188,7 +218,17 @@ export function responseOf(msg: BetaMessage): ModelResponse {
     return [{ id: b.id, name: b.name, args, rawArgs, ...(cutOff ? { argsError: 'the arguments were cut off (the answer hit its length limit)' } : !ok ? { argsError: 'the arguments were not a JSON object' } : {}) }]
   })
   const said = content.flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('')
-  return { text: said, toolCalls, usage: usageOf(msg.usage), stop: toolCalls.length && !cutOff ? 'tool_calls' : stop, providerItems: content, responseId: msg.id }
+  const miss = cacheMissOf(msg)
+  return { text: said, toolCalls, usage: usageOf(msg.usage), stop: toolCalls.length && !cutOff ? 'tool_calls' : stop, providerItems: content, responseId: msg.id, ...(miss ? { cacheMiss: miss } : {}) }
+}
+
+// The cache diagnostics' verdict in a few words: its type and, when it has one, the tokens after where they differed.
+export function cacheMissOf(msg: BetaMessage): string | undefined {
+  const d = (msg as { diagnostics?: { cache_miss_reason?: { type?: string; cache_missed_input_tokens?: number } | null } | null }).diagnostics
+  if (!d) return undefined
+  const r = d.cache_miss_reason
+  if (!r) return 'pending'
+  return `${r.type ?? 'unknown'}${typeof r.cache_missed_input_tokens === 'number' ? ` ~${r.cache_missed_input_tokens}` : ''}`
 }
 
 // ---- Errors

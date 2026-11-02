@@ -96,6 +96,9 @@ const WRITE_CALLS = new RegExp(`\\b(${[...WRITE_TOOLS].join('|')})\\b`)
 // The emulator mode's backend (evals/emulator.ts' emulate), handed in by evals/cli.mjs: run.ts never loads Firebase.
 export type Backend = (start: AgentWs, o: { role: Role; tag?: string }) => Promise<{ start: AgentWs; write: Writer; undo: () => Promise<AgentWs>; close: () => void; readBody: (id: string) => Promise<DocBody | null> }>
 
+// `--map-budget` for the run under way (a smaller map, agent-pipeline.md §6); left out, the loop's default.
+let mapBudget: number | undefined
+
 // `pick`: a pipeline's model for a turn's role (docs/specs/agent-pipeline.md); left out, `model` runs every turn.
 export async function attempt(task: Task, model: AgentModel, o: { backend?: Backend; pick?: (role: TurnRole) => AgentModel } = {}): Promise<{ result?: RunResult; attempt: Attempt }> {
   const t0 = performance.now()
@@ -204,7 +207,7 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
       // A message on a planned job takes the preview the model suggested, as the app's send does (D-328).
       const planned = env.job?.get()
       if (planned?.status === 'planned' && !planned.preview) env.job!.set(chooseAt(planned))
-      const r = await runTurn(watched, env, EVAL_TOOLS, history, ask, { transcript, turnId: `${turns.length + 1}` })
+      const r = await runTurn(watched, env, EVAL_TOOLS, history, ask, { transcript, turnId: `${turns.length + 1}`, ...(mapBudget ? { mapBudget } : {}) })
       notesSeen.push(seenThisTurn ?? '')
       history = r.history
       turns.push(o.pick ? Object.assign(r.turn, { model: current.name, role }) : r.turn)
@@ -357,7 +360,7 @@ export function replayLines(r: Replayed[]): string[] {
 
 // ---- The command line
 
-type Args = { set?: string; group?: string; task?: string[]; repeat: number; wrong: boolean; emulator: boolean; writeFixtures: boolean; out?: string; model: string; judge?: string; replay?: string; pipeline?: string; strong?: string; compare?: [string, string] }
+type Args = { set?: string; group?: string; task?: string[]; repeat: number; wrong: boolean; emulator: boolean; writeFixtures: boolean; out?: string; model: string; judge?: string; replay?: string; pipeline?: string; strong?: string; compare?: [string, string]; mapBudget?: number }
 
 export function parseArgs(argv: string[]): Args {
   const a: Args = { repeat: 1, wrong: false, emulator: false, writeFixtures: false, model: 'stub' }
@@ -377,6 +380,11 @@ export function parseArgs(argv: string[]): Args {
     else if (k === '--replay') a.replay = v()
     else if (k === '--pipeline') a.pipeline = v()
     else if (k === '--strong') a.strong = v()
+    else if (k === '--map-budget') {
+      const n = Number(v())
+      if (!Number.isInteger(n) || n < 500) throw new Error('--map-budget <tokens>: a whole number, at least 500')
+      a.mapBudget = n
+    }
     else if (k === '--compare') a.compare = [v(), v()]
     else throw new Error(`unknown option ${k}`)
   }
@@ -396,7 +404,7 @@ function adapterFor(spec: string, env: Record<string, string | undefined>): { na
   const key = env[envName]
   if (!key) throw new Error(`${spec} needs a key in the environment variable ${envName} (read at run time, never written anywhere): ${envName}=… npm run eval -- --model ${spec}`)
   const effort = effortFor(provider === 'anthropic' ? spec : name)
-  const make = provider === 'anthropic' ? () => anthropicModel({ key, model: name, effort }) : () => openaiModel({ key, model: name, reasoning: effort })
+  const make = provider === 'anthropic' ? () => anthropicModel({ key, model: name, effort, diagnose: true }) : () => openaiModel({ key, model: name, reasoning: effort })
   return { name: spec.startsWith('openai:') ? name : spec, make }
 }
 
@@ -434,7 +442,7 @@ export function pipelineFor(name: string, model: string, strong?: string): Pipel
 const ROOT = process.cwd()
 
 export function selectTasks(a: Pick<Args, 'set' | 'group' | 'task'>, all: Task[] = TASKS): Task[] {
-  return all.filter((t) => (!a.set || t.set === a.set) && (!a.group || t.group === a.group) && (!a.task || a.task.includes(t.id)))
+  return all.filter((t) => (!a.set || t.set === a.set) && (!a.group || a.group.split(',').includes(t.group)) && (!a.task || a.task.includes(t.id)))
 }
 
 export async function main(argv: string[], o: { backend?: Backend } = {}): Promise<number> {
@@ -485,11 +493,13 @@ export async function main(argv: string[], o: { backend?: Backend } = {}): Promi
   const tasks = selectTasks(a)
   if (!tasks.length) throw new Error('no task matches')
   if (real) setJudge(real.judge)
+  mapBudget = a.mapBudget
   // Pictures are part of what's measured (`look`, the picture judge, D-327): say loudly when none can be drawn.
   const pictures = !!(await nodeRender('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"/>', { w: 4, h: 4 }))
   if (!pictures) console.warn('WARNING: no picture can be drawn (resvg did not load): look answers in words only and picture judges are skipped.')
   const results = await runTasks(tasks, { repeat: a.repeat, model: real ? () => real.make() : a.wrong ? wrongModel : referenceModel, ...(a.emulator && o.backend ? { backend: o.backend } : {}), ...(pick ? { pick } : {}) })
   if (real) setJudge(null)
+  mapBudget = undefined
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   const dir = a.out ? resolve(a.out) : join(ROOT, 'evals/results', stamp)
   mkdirSync(dir, { recursive: true })
@@ -509,6 +519,7 @@ export async function main(argv: string[], o: { backend?: Backend } = {}): Promi
     tasks: results.length,
     repeat: a.repeat,
     pictures,
+    ...(a.mapBudget ? { mapBudget: a.mapBudget } : {}),
   }, results)
   console.log(summary)
   if (pipeline && pipeline.name !== 'single') console.log(`\nby role: ${Object.entries(rec.roles).map(([r, t]) => `${r} $${t.cost.toFixed(3)}`).join(' · ')}`)

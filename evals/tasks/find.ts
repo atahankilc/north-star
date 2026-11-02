@@ -129,7 +129,8 @@ export const FIND: Task[] = [
     set: 'capability',
     fixture: 'medium',
     ask: "Who is working on what in the Sprint deck's doing column?",
-    graders: [noWrites(), cites(['t38', 't35'].map(R)), answerIncludes(['13'])],
+    // How many (13) or all of them named: either says the whole column (mini ×3 listed all 13 by person, no count).
+    graders: [noWrites(), cites(['t38', 't35'].map(R)), answerIncludes(['13', new RegExp(Array.from({ length: 13 }, (_, i) => `(?=[\\s\\S]*\\bt${31 + i}\\b)`).join(''))], { any: true })],
     reference: [
       call('query', { kind: 'task', deck: 'Sprint', column: 'doing', limit: 50 }),
       answer('13 tasks are in doing on p13 Sprint (over its limit of 5). Ayşe has t38 "Call the landing page", t36, t35 "Write five stall owners", t39 and t43; the rest are spread across Jonas and Mert or given to nobody.'),

@@ -289,6 +289,8 @@ export type QueryArgs = {
   due_before?: string
   due_after?: string
   overdue?: boolean
+  // Tasks: in a finished column (true) or not (false: the open ones).
+  finished?: boolean
   on_canvas?: string
   title?: string
   // Comments: open or resolved, on what kind of thing, started or last written by whom.
@@ -305,7 +307,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/
 // Which filters each kind reads; another one given is refused, never ignored (a silent 0 reads as an answer).
 const FILTERS: Record<(typeof QUERY_KINDS)[number], string[]> = {
   card: ['type', 'status', 'tag', 'region', 'plane', 'priority', 'has_evidence', 'no_evidence', 'contradicting', 'linked_to', 'for', 'on_canvas', 'title'],
-  task: ['type', 'tag', 'plane', 'deck', 'column', 'priority', 'assignee', 'linked_to', 'for', 'due_before', 'due_after', 'overdue', 'on_canvas', 'title'],
+  task: ['type', 'tag', 'plane', 'deck', 'column', 'priority', 'assignee', 'linked_to', 'for', 'due_before', 'due_after', 'overdue', 'finished', 'on_canvas', 'title'],
   text: ['type', 'plane', 'on_canvas', 'title'],
   piece: ['type', 'plane', 'on_canvas', 'title'],
   document: ['type', 'title'],
@@ -317,7 +319,7 @@ export function query(ws: ReadWs, ids: Ids, a: QueryArgs): ToolResult {
   ws = clean(ws)
   ids.sync(ws)
   const d = derive(ws)
-  const kind = a.kind ?? (a.deck || a.column || a.assignee || a.due_before || a.due_after || a.overdue ? 'task' : a.resolved !== undefined || a.on || a.by ? 'comment' : 'card')
+  const kind = a.kind ?? (a.deck || a.column || a.assignee || a.due_before || a.due_after || a.overdue || a.finished !== undefined ? 'task' : a.resolved !== undefined || a.on || a.by ? 'comment' : 'card')
   const fail = (s: string): ToolResult => ({ text: s })
   if (!QUERY_KINDS.includes(kind)) return fail(`query: kind "${oneLine(String(kind), 30)}" isn't one; use ${QUERY_KINDS.join(', ')}.`)
   const given = Object.keys(a).filter((k) => (a as Record<string, unknown>)[k] !== undefined && !PAGING.includes(k))
@@ -428,6 +430,7 @@ export function query(ws: ReadWs, ids: Ids, a: QueryArgs): ToolResult {
       if (prios.length && !prios.includes(t.priority ?? '')) return false
       const finished = !!d.doneCols.get(t.pieceId)?.has(t.col)
       if (a.overdue && !(t.due && !finished && t.due < d.today)) return false
+      if (a.finished !== undefined && finished !== a.finished) return false
       if (a.due_before && !(t.due && t.due < a.due_before)) return false
       if (a.due_after && !(t.due && t.due > a.due_after)) return false
       if (tags.length && !(t.labels ?? []).some((l) => tags.includes(l))) return false
@@ -445,6 +448,9 @@ export function query(ws: ReadWs, ids: Ids, a: QueryArgs): ToolResult {
     tasks.sort((x, y) => (x.due ?? '9999').localeCompare(y.due ?? '9999') || x.createdAt - y.createdAt)
     lines = tasks.map((t) => taskLine(ws, ids, t, { where: true }))
     what = 'tasks'
+    // How many are open, counted here (agent-bugs 36: a list with finished ones in it was miscounted).
+    const done = tasks.filter((t) => d.doneCols.get(t.pieceId)?.has(t.col)).length
+    if (a.finished === undefined && done) notes.push(`${tasks.length - done} open, ${done} finished (finished: false lists only the open ones).`)
   } else if (kind === 'text') {
     const labels = ws.labels.filter((l) => {
       if (types.length && !types.includes(kindOf(l))) return false
@@ -487,7 +493,7 @@ export function query(ws: ReadWs, ids: Ids, a: QueryArgs): ToolResult {
     lines = threads.map((t) => threadLine(ids, d, t))
     what = 'comment threads'
   }
-  const filters = [types.length && `type ${types.join('/')}`, statuses.length && `status ${statuses.join('/')}`, tags.length && `tag ${tags.join('/')}`, prios.length && `priority ${prios.join('/')}`, a.region && `region ${list(a.region).join('/')}`, ...said, a.column && `column ${a.column}`, a.overdue && 'overdue', a.due_before && `due before ${a.due_before}`, a.due_after && `due after ${a.due_after}`, a.has_evidence && 'with evidence', a.no_evidence && 'without evidence', a.contradicting && 'status and evidence disagree', a.resolved !== undefined && (a.resolved ? 'resolved' : 'open'), a.on && `on ${list(a.on).join('/')}`, words && `title has "${oneLine(words, 60)}"`].filter(Boolean)
+  const filters = [types.length && `type ${types.join('/')}`, statuses.length && `status ${statuses.join('/')}`, tags.length && `tag ${tags.join('/')}`, prios.length && `priority ${prios.join('/')}`, a.region && `region ${list(a.region).join('/')}`, ...said, a.column && `column ${a.column}`, a.overdue && 'overdue', a.finished !== undefined && (a.finished ? 'finished' : 'open'), a.due_before && `due before ${a.due_before}`, a.due_after && `due after ${a.due_after}`, a.has_evidence && 'with evidence', a.no_evidence && 'without evidence', a.contradicting && 'status and evidence disagree', a.resolved !== undefined && (a.resolved ? 'resolved' : 'open'), a.on && `on ${list(a.on).join('/')}`, words && `title has "${oneLine(words, 60)}"`].filter(Boolean)
   const pg = pageOf(lines, a.page, a.limit ?? 50)
   const more = pageLine(lines.length, pg, what[0].toUpperCase() + what.slice(1), 'Add a filter to narrow, or get(ids) for detail.')
   return finish({ text: [`query ${what}${filters.length ? ` where ${filters.join(', ')}` : ''}: ${lines.length} (today ${d.today})`, ...notes, wrap('workspace', pg.items.join('\n') || '(none)'), ...(more ? [more] : [])].join('\n'), more })
@@ -1032,7 +1038,7 @@ export const READ_TOOLS: ReadTool[] = [
   },
   {
     name: 'query',
-    summary: `Typed filter, one line each. kind card (default): type, status, tag, region, plane, priority, has_evidence, no_evidence, contradicting, linked_to, for (a customer), on_canvas, title. kind task: deck (what the deck shows), column, assignee, priority, due_before/after, overdue, type (of its card), for/linked_to (its card), tag (labels), plane, on_canvas, title. kind comment: resolved, on, by, plane, for, title. kind text/piece/document: type, plane, on_canvas, title. A filter that doesn't fit the kind, or a value that isn't one, is refused with the allowed list. ${ID_NOTE}`,
+    summary: `Typed filter, one line each. kind card (default): type, status, tag, region, plane, priority, has_evidence, no_evidence, contradicting, linked_to, for (a customer), on_canvas, title. kind task: deck (what the deck shows), column, assignee, priority, due_before/after, overdue, finished (false: open only), type (of its card), for/linked_to (its card), tag (labels), plane, on_canvas, title. kind comment: resolved, on, by, plane, for, title. kind text/piece/document: type, plane, on_canvas, title. A filter that doesn't fit the kind, or a value that isn't one, is refused with the allowed list. ${ID_NOTE}`,
     args: obj({
       kind: { type: 'string', enum: [...QUERY_KINDS] },
       type: strs("a card's type (cards, and tasks by their card), a text's kind, a piece's kind or a document's kind", [...new Set([...CARD_KINDS, ...TEXT_KINDS, ...PIECE_KINDS, ...DOC_KINDS])]),
@@ -1052,6 +1058,7 @@ export const READ_TOOLS: ReadTool[] = [
       due_before: day('due before this day'),
       due_after: day('due after this day'),
       overdue: bool('past due and not finished'),
+      finished: bool('tasks: in a finished column (true) or open (false)'),
       on_canvas: str('a canvas (id or name)'),
       title: str('words the title holds'),
       resolved: bool('comments: resolved (true) or open (false)'),

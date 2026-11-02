@@ -122,7 +122,7 @@ export function promptSections(o: { workspaceName?: string } = {}): PromptSectio
     },
     {
       title: 'How to answer',
-      body: 'Short and plain: the answer first, then the items that back it, each with its short id. Counts come from tool results, not from estimates. Asked about one plane: cite its cards; one from elsewhere only as marked context, as c47 "Localmate" (on Rivals). No preamble, no repeating the question.',
+      body: 'Short and plain: the answer first, then the items that back it, each with its short id. Only what was asked: no near misses, no list of what you left out, unless the person asks. Counts come from tool results, not from estimates. Asked about one plane: cite its cards (the app marks one from elsewhere with its plane). No preamble, no repeating the question.',
     },
   ]
 }

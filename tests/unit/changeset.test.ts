@@ -186,6 +186,16 @@ describe('what the tool refuses, and how it reads ids', () => {
     expect([bad.ok, bad.text.includes('nobody called')]).toEqual([false, true])
   })
 
+  it('a name in assigneeName alone gives the task to them (eval edit-06)', async () => {
+    const e = env()
+    const r = await change.run(e, { ops: [{ op: 'update_task', args: { task: 't54', assigneeName: 'Mert Kaya', due: '2026-11-10' } }] })
+    expect(r.ok, r.text).toBe(true)
+    const t = viewOf(e.changes, e.getWs()).tasks.find((x) => x.id === R('t54'))!
+    expect([t.assignee, t.assigneeName]).toEqual(['u-mert', 'Mert Kaya'])
+    const bad = await change.run(e, { ops: [{ op: 'update_task', args: { task: 't54', assigneeName: 'Nobody Atall' } }] })
+    expect([bad.ok, bad.text.includes('nobody called')]).toEqual([false, true])
+  })
+
   it('validate refusals come back with their fix, nothing added', async () => {
     const e = env()
     const r = await change.run(e, { ops: [{ op: 'create_card', args: { type: 'idea', plane: 'p13', title: 'x' } }] })
@@ -381,5 +391,25 @@ describe('a section round things lands clear', () => {
       const s = ws.labels.find((l) => l.text === sec && l.pieceId === R('p1'))!
       expect(c.x >= s.x && c.y >= s.y && c.x + 200 <= s.x + (s.w ?? 0) && c.y + 100 <= s.y + (s.h ?? 0), `${title} in ${sec}`).toBe(true)
     }
+  })
+})
+
+describe('a new compare matrix names the matches it holds (agent-bugs 40)', () => {
+  const make = { op: 'create_piece', args: { kind: 'matrix', canvas: 'k2', name: 'Pricing vs competitors', matrix: { template: 'compare', rows: { type: 'feature', plane: 'p10' }, cols: { type: 'competitor' } }, handle: '$m' } }
+  it('each recorded match still empty is told, in names', async () => {
+    const e = env()
+    const r = await change.run(e, { ops: [make] })
+    expect(r.ok, r.text).toBe(true)
+    expect(r.text).toMatch(/holds 3 matches the workspace records, 3 still empty/)
+    expect(r.text).toContain('"Seasonal boxes QR codes" × "Sepetbox"')
+  })
+  it('filled matches stop the note; a guessed cell stated as documented is told', async () => {
+    const e = env()
+    const r = await change.run(e, { ops: [make, ...[['c146', 'c42'], ['c146', 'c43'], ['c147', 'c44']].map(([row, col]) => ({ op: 'update_cell', args: { id: '$m', row, col, value: 'full' } })), { op: 'update_cell', args: { id: '$m', row: 'c141', col: 'c35', value: 'partial' } }] })
+    expect(r.ok, r.text).toBe(true)
+    expect(r.text).not.toMatch(/still empty/)
+    expect(r.text).toMatch(/1 cell with no recorded match stated as documented/)
+    const g = await change.run(env(), { ops: [make, ...[['c146', 'c42'], ['c146', 'c43'], ['c147', 'c44']].map(([row, col]) => ({ op: 'update_cell', args: { id: '$m', row, col, value: 'full' } })), { op: 'update_cell', args: { id: '$m', row: 'c141', col: 'c35', value: 'partial', confidence: 'guess' } }] })
+    expect(g.text).not.toMatch(/still empty|stated as documented/)
   })
 })

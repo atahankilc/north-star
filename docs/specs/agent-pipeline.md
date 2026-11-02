@@ -19,7 +19,7 @@ The first measured runs (one run each, 116 tasks, 2026-11-01; per-task numbers f
 
 - Questions, small edits, context, refusals and memory: the cheap model passes as many as the strong ones, at
   $0.008–0.013 a task. The gap is in big jobs (build, skills: 20–29 steps, up to $0.50).
-- Claude reads less from its cache (63 % vs 85–88 %): an engineering cost, not the model's.
+- Claude read less from its cache (63 % vs 85–88 %): an engineering cost, not the model's. Fixed 2026-11-01: 94 % (§6).
 - A heavy user (≈ 20 asks a day, a fifth of them big jobs) costs about $0.5 a day with routing; a hosted plan has to
   route and budget, not run the strongest model on everything.
 
@@ -95,11 +95,12 @@ before money is spent; `fit` in models.ts is written only from ×3 runs.
 
 | lever | where | expected | status |
 |---|---|---|---|
-| Claude's cache at 85 %+ (breakpoints on tools, system, map, the last message) | anthropic.ts | Sonnet ≈ −35 % | next |
-| routing (`routed`) | pipeline + app | small asks at the cheap model's price | evals ready, app not |
+| Claude's cache at 85 %+ (breakpoints on tools + system and on a chat's first map, sent before its first ask; automatic for the tail) | anthropic.ts, loop.ts | Sonnet ≈ −35 % | **measured 2026-11-01**: 63.5 → 94.4 % from the cache, $0.156 → $0.058 an attempt (−63 %; Sonnet, 12 tasks, report 2026-11-01T17-51-08-095Z); every new chat reads tools + system + map (26.6k of 26.7k); the evals record Claude's cache diagnostics (no divergence seen) |
+| a leaner `change` (args only for the 16 ops that make 97 % of all ops; a rare op's come back in its refusal), with the fixes of agent-bugs 35–41 | tools.ts, loop.ts, change.ts | ≈ −0.9k tokens a request | **measured 2026-11-02, kept** (mini ×3, judge terra): 265 → 268 of 348 passed, $10.11 → $9.42 (−7 %); both runs re-graded on today's graders 302 vs 300 (even); build 50 → 67 %, skills 68 → 72 %; edit-12 (a dry run asked for) 3/3 → 0/3, the one real loss (reports 2026-11-01T20-24-14-991Z, 2026-11-01T23-22-53-835Z) |
+| routing (`routed`: mini, terra for planner and executor) | pipeline + app | small asks at the cheap model's price | **half measured 2026-11-02** (×1): the run's OpenAI credit ran out at skill-dedupe, 41 turns errored; on the 75 clean tasks routed 65/75 vs single 60.7/75 (mean of 3), $2.47 vs $1.80 (+37 %). Not enough to choose: the skills left are the hard ones (report 2026-11-02T03-04-23-709Z) |
 | effort per role (low for chat) | pipeline `effort` | the cheap model's output tokens (46 % of its cost) | named |
-| plan-strong / cheap executor | pipeline | big jobs ≈ −60 %, quality to measure | evals ready |
-| a smaller map for small asks | loop / read | input per step | idea |
+| plan-strong / cheap executor | pipeline | big jobs ≈ −60 %, quality to measure | evals ready, not run (credit) |
+| a smaller map (`--map-budget`: 7000 sums up planes over 20 cards, 3000 every plane; today 13.5k) | loop / read | medium map 22k → 10k / 5k chars; more reads per ask | **half measured 2026-11-02** (mini ×3; find, context, edit, refuse, injection, memory: 43 tasks): graders full 121, 7000 121, 3000 123 of 129; with the judge 112 / 115 / 122; input an attempt 48.1k / 42.5k / 38.7k (−20 %), cost $1.06 / $1.00 / $0.94. Default unchanged until build and skills (where the map matters most) run at 3000 |
 | fewer steps in big jobs (tools that do more per call) | ops, tools | the 20–29-step jobs | ongoing |
 | reviewer (one look at a big job's end) | loop + job | catches what checks can't, for one call | later |
 
@@ -108,6 +109,13 @@ before money is spent; `fit` in models.ts is written only from ×3 runs.
 - **P0, foundation (built 2026-11-01):** roles, pipelines and `--pipeline`/`--strong` in the evals, run records and the
   index, `--compare`, `--replay`, per-model and per-role cost.
 - **P1, the cheap baseline:** mini ×3 as the main baseline; Claude's cache; the open model bugs measured on it.
+  *Done 2026-11-02:* baseline 265/348 (76 %, $10.11, before the fixes) and 268/348 (77 %, $9.42, after); every failed
+  attempt read and sorted (model, eval or code): code fixed in agent-bugs 40–41, eval fixes in learn-01, pitch-02,
+  find-06, dedupe-03 (each checked with `--replay` and `--wrong`).
+- **Left for when credit is back (≈ $16):** routed on skills (`--pipeline routed --strong openai:gpt-5.6-terra --group
+  skills`), plan-strong (`--pipeline plan-strong`, whole suite), terra single (whole suite), and build + skills at
+  `--map-budget 3000` (×3); then `--compare` each against 2026-11-01T23-22-53-835Z and decide routing and the map's
+  default here and in D-341. All with `--judge openai:gpt-5.6-terra`.
 - **P2, routing in the evals:** `routed` and `plan-strong` against `single`, both providers; pick by pass and cost.
 - **P3, routing in the app:** the chosen pipeline from the person's models (Settings: a cheap and a strong model), the
   cost of each job shown, a budget per chat; the reviewer if P2 shows it pays.

@@ -330,3 +330,15 @@ describe('judge', () => {
     expect(out[0].why).toContain('x')
   })
 })
+
+describe('saysUnwarned (agent-bugs 33): a phrase named as what not to do is not said', () => {
+  const re = /would you (use|pay|buy)/i
+  it('a real question is said; one after a negation on its line, or under a "do not" heading or lead-in, is not', async () => {
+    const { saysUnwarned } = await import('../../evals/graders')
+    expect(saysUnwarned(re, '## Questions\n1. Would you pay for pre-orders?')).toBe(true)
+    expect(saysUnwarned(re, '- Do not ask "would you use / pay for this?" Ask what they do today.')).toBe(false)
+    expect(saysUnwarned(re, 'Avoid "would you use" or "would you pay".')).toBe(false)
+    expect(saysUnwarned(re, '## Do not ask\n- "Would you pay for this?"\n## Questions\n- What did you pay last week?')).toBe(false)
+    expect(saysUnwarned(re, '## Do not ask\n- "Would you pay?"\n## Questions\n- Would you buy it?')).toBe(true)
+  })
+})

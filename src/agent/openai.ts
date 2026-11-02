@@ -217,10 +217,16 @@ type Ev = {
   delta?: string
   message?: string
   code?: string
+  error?: { message?: string; code?: string; type?: string }
   output_index?: number
   item?: Item & { type?: string; call_id?: string; name?: string; arguments?: string; content?: { type?: string; text?: string; refusal?: string }[] }
   response?: { id?: string; status?: string; usage?: RawUsage; error?: { message?: string; code?: string }; incomplete_details?: { reason?: string } }
 }
+
+// What a failed response says, with its code (rate_limit_exceeded, insufficient_quota, server_error…): a run that
+// stops on every task can be told apart from one bad answer (eval 2026-11-02: 41 turns said only "stopped with an error").
+const failText = (e?: { message?: string; code?: string }) =>
+  `${e?.message || 'OpenAI stopped with an error.'}${e?.code ? ` (${e.code})` : ''}`
 
 // Reads the events of one streamed response, yielding the contract's events; the last is always `done`.
 export async function* readResponse(datas: AsyncIterable<string>, key?: string): AsyncGenerator<ModelEvent> {
@@ -284,11 +290,11 @@ export async function* readResponse(datas: AsyncIterable<string>, key?: string):
       case 'response.failed':
         usage = usageOf(ev.response?.usage)
         stop = 'error'
-        error = redact(ev.response?.error?.message ?? 'OpenAI stopped with an error.', key)
+        error = redact(failText(ev.response?.error), key)
         break
       case 'error':
         stop = 'error'
-        error = redact(ev.message ?? 'OpenAI stopped with an error.', key)
+        error = redact(failText({ message: ev.message ?? ev.error?.message, code: ev.code ?? ev.error?.code ?? ev.error?.type }), key)
         break
     }
     if (stop) break

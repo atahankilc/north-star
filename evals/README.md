@@ -7,7 +7,7 @@ later step (S12's loop and model adapter, S13's `change` tool, prompt changes) i
 npm run eval                      every task (41), the stub model playing each task's reference
 npm run eval:quick                the regression set (must stay at 100 % on every change)
 npm run eval -- --repeat 3        pass^3: every attempt must pass (catches flaky behaviour)
-npm run eval -- --group build --set capability --task find-01-no-evidence,edit-02-validate-with-interview
+npm run eval -- --group build,edit --set capability --task find-01-no-evidence,edit-02-validate-with-interview
 npm run eval -- --wrong           the stub plays each task's plausible wrong script: every task should FAIL
 npm run eval -- --write-fixtures  rewrite evals/fixtures/*.workspace.json (export v2) after the fixtures change
 npm run eval -- --emulator        accepts through the real apply into the running Firestore emulator (below)
@@ -23,6 +23,8 @@ npm run eval -- --model openai:gpt-5.4-mini --pipeline routed --strong openai:gp
                                   a pipeline (docs/specs/agent-pipeline.md): a model per turn role, --model for chat,
                                   --strong for planner/executor (routed) or the planner only (plan-strong); one provider
 npm run eval -- --compare <run A> <run B>   per group pass and $/attempt, and every task that moved
+npm run eval -- … --map-budget 3000          a smaller workspace map (tokens; the loop's default 13.5k), in the manifest
+npm run eval -- … --group find,context       several groups at once
 ```
 
 Every run's report.json carries a `manifest` (git sha, dirty, command, pipeline, model, judge, prompt and tools

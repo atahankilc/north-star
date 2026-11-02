@@ -1298,3 +1298,23 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   memory; headless Chrome on the gallery: menus' and Select's keys, the + menu, right-click, canvas switch, kind guide,
   finder (places, typed, keys), guide (keys, folds), the filter dock. Not seen: Threads' `@` (no other members in the
   gallery) and the agent's `/` (no gallery).
+
+## Done (2026-11-02): the agent's P1 measured (D-341)
+- **Claude's cache:** breakpoints on tools + system and on a chat's first map, sent before
+  its first ask; Claude's cache diagnostics recorded by the evals (`cacheLines` in the report). Sonnet, 12 tasks:
+  63.5 → 94.4 % from the cache, $0.156 → $0.058 an attempt.
+- **Built in the worktree ~/Documents/north-star-lean, merged into the main tree and committed:** a leaner `change` (args only for
+  the 16 common ops; a rare op's in its refusal), agent-bugs 35 (a big change waits for a plan), 36 (`query finished`),
+  37 (a short answer after a document), 38 (/import keeps the pasted words), 39 (a step nudged on), 23's code half (a
+  card from another plane marked `(on X)`), 40 (/compare told the recorded matches still empty), 41 (a name in
+  `assigneeName` gives the task), OpenAI's error code kept in a failed response's message; evals: `--map-budget`,
+  several `--group`s, graders fixed (learn-01, pitch-02, find-06, dedupe-03, `noWritesInTurn` skips refused calls,
+  `saysUnwarned`, docWritten's on-plane count).
+- **Measured** (gpt-5.4-mini ×3, judge terra): 265/348 ($10.11) before, 268/348 ($9.42) after; both 302/348 on today's
+  graders; build 50 → 67 %, skills 68 → 72 %; edit-12 (a dry run, 19) lost on mini. Map budget on 43 ask/edit tasks:
+  full 121, 7000 121, 3000 123 of 129 (graders), −20 % input at 3000. Routed half run (credit ran out): 65/75 vs
+  60.7/75 on the clean tasks, +37 % cost. Reports in each tree's evals/results (index.jsonl).
+- **Verified:** tsc (app, evals), vitest 998/0, stub evals 104/116 (0 failed, 12 unjudged), `--wrong` 0/116; each
+  grader change replayed on both runs.
+- **Left** (OpenAI credit, a few days): routed on skills, plan-strong, terra single, the map at 3000 on build +
+  skills; commands in agent-pipeline.md §7; then routing and the map's default decided in D-341.

@@ -87,8 +87,9 @@ const clashes = (c: Card, r: { start: AgentWs }) => {
 }
 // The Mom Test's past question in any wording: "last time", "when did/was", "the most recent".
 const MOM_PAST = /\blast\b|\bmost recent\b|\bwhen (did|was)\b/i
-// The method's positioning sentence opens the pitch, under a heading or not, in bold or a quote or after "Positioning:".
-const POSITIONING_FIRST = /^(?:\s*#.*\n+)*\s*(?:>\s*)?(?:[*_]{1,2})?(?:positioning(?:\s+\w+)?\s*:?\s*(?:[*_]{1,2})?\s*:?\s*)?for\b[^\n]+?\bwho\b/i
+// The method's positioning sentence opens the pitch, under a heading or as the heading, in bold or a quote or after
+// "Positioning:"; "For stalls that…" says it as "For stalls who…" does (eval pitch-02).
+const POSITIONING_FIRST = /^(?:\s*#.*\n+)*?\s*(?:#+\s*)?(?:>\s*)?(?:[*_]{1,2})?(?:positioning(?:\s+\w+)?\s*:?\s*(?:[*_]{1,2})?\s*:?\s*)?for\b[^\n]+?\b(?:who|that|whose)\b/i
 const withDup = (ws: AgentWs): AgentWs => {
   const bets = R('p3')
   const card = { id: DUP, type: 'problem', pieceId: bets, title: 'Bakers carry heavy bags home on foot.', x: 1500, y: 1200, validation: 'hypothesis', createdAt: NOW - 48 * H, updatedAt: NOW - 48 * H } as unknown as Card
@@ -1165,7 +1166,9 @@ export const SKILL_TASKS: Task[] = [
     set: 'regression',
     fixture: 'medium',
     ask: '/learn Talked to Elif, an organic farmer at the Beşiktaş market, on Saturday: "I throw away a crate of greens every evening." She only takes cash.',
-    graders: [exists('evidence', { card: R('c25'), stance: 'supports', text: /crate/i }), exists('evidence', { card: R('c28'), stance: 'supports' }), onlyChanged({ add: { evidence: 2 } }), answerIncludes([/\b(testing|validated|invalidated|status)\b/i]), undoRestores()],
+    // Cash only backs c28 "can't take card payments" or c9 "Organic farmers who pay cash" alike; evidence that she is
+    // one of c7 "Organic farmers in Beşiktaş" is fair too (2–4 in all). "statuses" says it as "status" does.
+    graders: [exists('evidence', { card: R('c25'), stance: 'supports', text: /crate/i }), exists('evidence', { card: [R('c28'), R('c9')], stance: 'supports' }), onlyChanged({ add: { evidence: { min: 2, max: 4 } } }), answerIncludes([/\b(testing|validated|invalidated|status(es)?)\b/i]), undoRestores()],
     reference: [
       calls(['search', { query: 'organic farmers greens', limit: 8 }], ['search', { query: 'organic farmers card payments', limit: 8 }]),
       change(
@@ -1266,7 +1269,7 @@ export const SKILL_TASKS: Task[] = [
     fixture: 'medium',
     ask: '/dedupe competitors',
     autoGo: false,
-    graders: [noWriteAttempts(), answerIncludes([/\bno\b[^.\n]{0,40}\b(duplicates?|pairs?)\b|\bnot duplicates\b|\bnone\b|\bno merges?\b|nothing to merge/i])],
+    graders: [noWriteAttempts(), answerIncludes([/\bno\b[^.\n]{0,40}\b(duplicates?|pairs?)\b|\b(don['’]t|do not|didn['’]t|did not|couldn['’]t|could not|can['’]t)\s+(see|find)\b[^.\n]{0,40}\bduplicates?\b|\bnot duplicates\b|\bnone\b|\bno merges?\b|nothing to merge/i])],
     reference: [
       call('query', { kind: 'card', type: 'competitor', limit: 20 }),
       answer('No near-duplicates among the 14 competitors: c37 Bazaarcart, c38 Bazaarmate and c44 Bazaarrun share a start but are different companies (other regions, other features). Nothing to merge.'),
