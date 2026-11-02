@@ -22,7 +22,7 @@ import { useKanbanUi } from '../deck/Kanban'
 import { useTableUi } from '../table/Table'
 import { shownPieces } from './shownBox'
 import { useAuthor } from '../text/TextItems'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { TasksTool } from '../deck/TasksTool'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import { useWs } from './context'
@@ -122,9 +122,9 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
           plane
             ? [
                 { key: 'cards', heading: 'card' },
-                ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', letter: CARD_LETTER[t], tone: TYPE_ACCENT[t], onSelect: () => void addHere(t) })),
+                ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', letter: CARD_LETTER[t], tone: CARD_TONE[t], onSelect: () => void addHere(t) })),
                 // A package (D-240): picked from the plane's cards, as a section is drawn.
-                { key: 'package', label: 'package', glyph: '▣', letter: 'k', tone: TYPE_ACCENT.package, hint: 'select', onSelect: () => useCanvasView.setState({ packing: plane, drawing: null }) },
+                { key: 'package', label: 'package', glyph: '▣', letter: 'k', tone: CARD_TONE.package, hint: 'select', onSelect: () => useCanvasView.setState({ packing: plane, drawing: null }) },
                 ...text,
                 // One already on another plane (D-281), last under a rule (D-291): the menu turns into the list of them,
                 // opening where it did.

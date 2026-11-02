@@ -20,6 +20,31 @@ export function today(now = new Date()) {
 // Past its due day and not finished.
 export const overdue = (t: Pick<Task, 'due'>, finished: boolean) => !!t.due && !finished && t.due < today()
 
+// A due day as a task says it: `today`, `tomorrow`, `yesterday`, else `28 oct` (the year only when it isn't this one)
+// (D-358: one home for the task's words, read by the deck, the timeline and the panels).
+export function dueText(due: string, now = today()) {
+  const day = (s: string) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10))
+  const diff = Math.round((day(due) - day(now)) / 86400000)
+  if (diff === 0) return 'today'
+  if (diff === 1) return 'tomorrow'
+  if (diff === -1) return 'yesterday'
+  const d = new Date(day(due))
+  const month = d.toLocaleString('en', { month: 'short', timeZone: 'UTC' }).toLowerCase()
+  return `${d.getUTCDate()} ${month}${due.slice(0, 4) === now.slice(0, 4) ? '' : ` ${due.slice(0, 4)}`}`
+}
+
+// Two letters for a member's square: their initials, or the first two letters of a one-word name.
+export function initials(name?: string) {
+  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return '?'
+  return (parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : parts[0].slice(0, 2)).toUpperCase()
+}
+
+// The most steps a checklist shows as cells; past that, the count alone.
+export const CHECK_CELLS_MAX = 8
+// A checklist as small cells, done ones filled (none past CHECK_CELLS_MAX).
+export const checkCells = (done: number, all: number) => (all > CHECK_CELLS_MAX ? '' : '▮'.repeat(done) + '▯'.repeat(all - done))
+
 // Orders for `n` tasks put between two (either may be missing), spread evenly, in the order given (Kanban.tsx's drop, S8).
 export function ordersBetween(lo: number | undefined, hi: number | undefined, n: number): number[] {
   return Array.from({ length: n }, (_, i) =>

@@ -5,11 +5,12 @@
 import type { Card } from '../../../data/cards'
 import type { PromptItem } from '../../../ui/foundation/promptModel'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
+import { cardName } from '../../../model/cardName'
 
 export function cardEntry(c: Card, onSelect: PromptItem['onSelect'], more: Partial<PromptItem> = {}): PromptItem {
   return {
     key: c.id,
-    label: c.title || `untitled ${c.type}`,
+    label: cardName(c),
     glyph: '▌',
     tone: CARD_TONE[c.type],
     words: [c.type, ...(c.tags ?? [])].join(' '),

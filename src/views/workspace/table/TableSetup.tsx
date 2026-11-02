@@ -37,7 +37,7 @@ import { useWs } from '../canvas/context'
 import { useSetupOnDock } from '../canvas/FocusDock'
 import { AddPill, Choices, Row, Toggle } from '../matrix/MatrixSetup'
 import { followTable, tableOf, useTableUi, TABLE_TABS, type TableTab } from './Table'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import m from '../matrix/Matrix.module.css'
 import styles from './Table.module.css'
 import { Tabs } from '../../../ui/primitives/Tabs'
@@ -46,6 +46,7 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Options } from '../../../ui/patterns/Options'
 import { UNIT_MAX, VALUE_MAX } from '../../../model/limits'
+import { cardName } from '../../../model/cardName'
 
 const TAB_NAME: Record<TableTab, string> = { rows: 'rows', cols: 'columns', view: 'view' }
 
@@ -139,9 +140,9 @@ export function RowsEditor({ setup, onChange, onRemoveItem, cardsOnly }: EditorP
             const c = item.cardId ? byId.get(item.cardId) : undefined
             if (item.cardId && !c) return null
             return (
-              <span key={item.id} className={m.pill} data-card={c ? true : undefined} style={c ? { ['--type' as string]: TYPE_ACCENT[c.type] } : undefined} title={c ? c.type : 'a typed name'}>
+              <span key={item.id} className={m.pill} data-card={c ? true : undefined} style={c ? { ['--type' as string]: CARD_TONE[c.type] } : undefined} title={c ? c.type : 'a typed name'}>
                 <span className={m.pillMark} aria-hidden />
-                {c ? c.title || `untitled ${c.type}` : item.name || 'name'}
+                {c ? cardName(c) : item.name || 'name'}
                 <Button icon tone="danger" aria-label="Take it out" onClick={() => drop(item)}>
                   ×
                 </Button>
@@ -187,7 +188,7 @@ function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: bool
             pick="many"
             label={`${rule.field} values`}
             values={rule.values}
-            options={choices.map((c) => ({ value: c.value, label: c.label, swatch: rule.field === 'type' ? TYPE_ACCENT[c.value as keyof typeof TYPE_ACCENT] : undefined }))}
+            options={choices.map((c) => ({ value: c.value, label: c.label, swatch: rule.field === 'type' ? CARD_TONE[c.value as keyof typeof CARD_TONE] : undefined }))}
             onChange={(values) => onChange({ ...rule, values })}
           />
         ) : (

@@ -52,7 +52,8 @@ import { setPresenceDrag } from '../../../data/presence'
 import { PeerTaskDrags, usePeersOn } from '../canvas/collab'
 import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import { ThreadChip, threadOn } from '../threads/Threads'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
+import { checkCells, CHECK_CELLS_MAX, dueText, initials } from '../../../model/tasks'
 import { learnable } from '../panels/TaskPanel'
 import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
 import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
@@ -66,6 +67,7 @@ import { PromptField } from '../../../ui/primitives/PromptField'
 import { Rule } from '../../../ui/primitives/Rule'
 import styles from './Kanban.module.css'
 import { DECK_PX } from '../../../model/world'
+import { cardName } from '../../../model/cardName'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const K = DECK_PX
@@ -182,28 +184,6 @@ export function selectTasks(piece: string, tasks: string[]) {
   else selectTask(piece, tasks[0] ?? null)
 }
 
-// Two letters for a member's square: their initials, or the first two letters of a one-word name.
-export function initials(name?: string) {
-  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean)
-  if (!parts.length) return '?'
-  return (parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : parts[0].slice(0, 2)).toUpperCase()
-}
-
-// A due day as the card says it: `today`, `tomorrow`, `yesterday`, else `28 oct` (the year only when it isn't this one).
-export function dueText(due: string) {
-  const t = today()
-  const day = (s: string) => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10))
-  const diff = Math.round((day(due) - day(t)) / 86400000)
-  if (diff === 0) return 'today'
-  if (diff === 1) return 'tomorrow'
-  if (diff === -1) return 'yesterday'
-  const d = new Date(day(due))
-  const month = d.toLocaleString('en', { month: 'short', timeZone: 'UTC' }).toLowerCase()
-  return `${d.getUTCDate()} ${month}${due.slice(0, 4) === t.slice(0, 4) ? '' : ` ${due.slice(0, 4)}`}`
-}
-
-// A checklist as small cells, done ones filled (up to 8; past that, the count alone).
-const cells = (done: number, all: number) => (all > 8 ? '' : '▮'.repeat(done) + '▯'.repeat(all - done))
 
 // Tasks held: the one pressed (and the others selected with it, in their order), where the press began (screen), where
 // in the task it was taken and its size (its px), where the pointer is now (its px), and where they'd land: a column, a
@@ -587,7 +567,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
                     >
                       <div className={styles.list}>
                         {list.map((t, k) => (
-                          <Slotted key={t.id} slot={slot === k ? drag!.size[1] : 0} tone={held && cardOf(held) ? TYPE_ACCENT[cardOf(held)!.type] : undefined}>
+                          <Slotted key={t.id} slot={slot === k ? drag!.size[1] : 0} tone={held && cardOf(held) ? CARD_TONE[cardOf(held)!.type] : undefined}>
                             <TaskCard
                               task={t}
                               card={cardOf(t)}
@@ -611,7 +591,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
                             />
                           </Slotted>
                         ))}
-                        {slot >= 0 && slot >= list.length && <Gap h={drag!.size[1]} tone={held && cardOf(held) ? TYPE_ACCENT[cardOf(held)!.type] : undefined} />}
+                        {slot >= 0 && slot >= list.length && <Gap h={drag!.size[1]} tone={held && cardOf(held) ? CARD_TONE[cardOf(held)!.type] : undefined} />}
                         {!list.length && slot < 0 && adding !== cell && !field && <Empty as="span" className={styles.empty}>· nothing yet</Empty>}
                         {live && editor && lane.drop && (
                           <AddTask open={adding === cell} quiet={!!field} onPress={own} onOpen={() => useKanbanUi.setState({ adding: cell })} onClose={() => useKanbanUi.setState({ adding: null })} onAdd={(title) => add(c.id, lane.key, title)} />
@@ -683,7 +663,7 @@ function SoonBand({ piece, tasks, live, picked, onPick, onPress }: { piece: With
             <button /* kit-ok: a task drawn small in the SOON band (its day, title, marks), not a [verb] */ key={t.id} className={styles.soonPill} data-late={late || undefined} data-today={t.due === day || undefined} data-selected={picked(t.id) || undefined} onClick={live ? () => onPick(t) : undefined} tabIndex={live ? 0 : -1} title={t.title}>
               <span className={styles.soonDay}>{late ? `was ${dueText(t.due!)}` : t.due === day ? 'today' : weekday(t.due!)}</span>
               <span className={styles.soonTitle}>{t.title}</span>
-              <Marks tier="s" tone={t.cardType ? TYPE_ACCENT[t.cardType] : undefined} live={live} selected={picked(t.id)} />
+              <Marks tier="s" tone={t.cardType ? CARD_TONE[t.cardType] : undefined} live={live} selected={picked(t.id)} />
             </button>
           )
         })
@@ -913,7 +893,7 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, 
   const checks = task.checks ?? []
   const ticked = checks.filter((c) => c.done).length
   const late = overdue(task, finished)
-  const tone = task.cardType ? TYPE_ACCENT[task.cardType] : undefined
+  const tone = task.cardType ? CARD_TONE[task.cardType] : undefined
   return (
     <div
       className={styles.task}
@@ -948,7 +928,7 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, 
         <span className={styles.meta}>
           {task.cardId && (
             <span className={styles.for} title={card?.title ?? 'its card is gone'}>
-              {card ? card.title || 'untitled' : 'its card is gone'}
+              {card ? cardName(card) : 'its card is gone'}
             </span>
           )}
           <span className={styles.push} />
@@ -959,7 +939,7 @@ function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, 
           )}
           {checks.length > 0 && (
             <span className={styles.checks} data-all={ticked === checks.length || undefined} title={`${ticked} of ${checks.length} steps done`}>
-              {checks.length <= 8 && <span className={styles.cells}>{cells(ticked, checks.length)}</span>} {ticked}/{checks.length}
+              {checks.length <= CHECK_CELLS_MAX && <span className={styles.cells}>{checkCells(ticked, checks.length)}</span>} {ticked}/{checks.length}
             </span>
           )}
           {task.assignee && (

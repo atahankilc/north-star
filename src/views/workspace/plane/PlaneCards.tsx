@@ -14,7 +14,7 @@
 // The selected card's right panel (D-219, D-221) opens at the right of the plane's part of the screen.
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { WORLD } from '../../../model/world'
-import { CARD, copyCards, foldCard, foldPackage, moveCard, moveCards, spotRef, type AnyType, type Card } from '../../../data/cards'
+import { CARD, copyCards, foldCard, foldPackage, moveCard, moveCards, spotRef, type Card } from '../../../data/cards'
 import { planeOf } from '../../../data/places'
 import { clipboard, deleteHere, heldAt, landed, onPlane, othersThan, pasteSame, selectedIds, setSelection, startGroupDrag, toggleSelected } from '../canvas/selection'
 import { clearGuides, guide, showGuides, toggleGuides, toggleSnap, useGuides } from '../canvas/guides'
@@ -48,6 +48,7 @@ import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { DRAG_PX } from '../../../ui/foundation/feel'
 import { Chip } from '../../../ui/primitives/Chip'
+import { cardPlaceholder } from '../../../model/cardName'
 
 // How a card is drawn by how big it is on screen (D-111, D-153): everything while its small text (8 px) is 4 px or more;
 // the title alone (24 px) while that's 5 px or more; then bars. Going back up takes 10 % more, so a view resting on a
@@ -71,18 +72,6 @@ const TITLE_SHOWN = 80
 const CARRIED = 0.8
 
 // Type = the left edge and the label in its colour (D-055, D-057).
-// The card types' colours (src/ui/foundation/cardTone.ts, D-326), under the name the views have used.
-export const TYPE_ACCENT = CARD_TONE
-
-const PLACEHOLDER: Record<AnyType, string> = {
-  package: 'What does this piece deliver?',
-  customer: 'Who are they?',
-  problem: 'What hurts?',
-  competitor: 'Who else does it?',
-  idea: "What's the thought?",
-  feature: 'What does it do?',
-}
-
 type Props = { cards: Card[]; labels: Label[]; view: PlaneCam; live: boolean; editor: boolean }
 
 // A plane's contents: its sections under its cards, its text over them (D-188). Its view moves only the world's
@@ -521,7 +510,7 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
     <>
       <div
         className={styles.pkg}
-        style={{ left: x, top: y, width: place.w, height: place.h, ['--type' as string]: TYPE_ACCENT.package, ...carried }}
+        style={{ left: x, top: y, width: place.w, height: place.h, ['--type' as string]: CARD_TONE.package, ...carried }}
         data-selected={selected || undefined}
         data-pressed={pressed || undefined}
         data-dragging={!!carried || undefined}
@@ -536,12 +525,12 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
         >
           <span className={styles.kind}>package</span>
           <span className={styles.bandName} data-empty={!card.title || undefined}>
-            {card.title || PLACEHOLDER.package}
+            {card.title || cardPlaceholder('package')}
           </span>
           {facts?.head && <span className={styles.bandFacts}>{facts.head}</span>}
           <span className={styles.cells}>
             {members.slice(0, 12).map((m) => (
-              <i key={m.id} data-on style={{ background: TYPE_ACCENT[m.type] }} />
+              <i key={m.id} data-on style={{ background: CARD_TONE[m.type] }} />
             ))}
           </span>
           {editor && (
@@ -554,7 +543,7 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
         {live && <Marks zoom={zoom} tier="l" short={Math.min(place.w, place.h)} hover={hovered} selected={selected} pressed={pressed} dragging={!!carried} peers={peers} />}
         {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
       </div>
-      {carried && lead && <Landing x={x} y={y} w={place.w} h={place.h} zoom={zoom} tier="l" tone={TYPE_ACCENT.package} />}
+      {carried && lead && <Landing x={x} y={y} w={place.w} h={place.h} zoom={zoom} tier="l" tone={CARD_TONE.package} />}
     </>
   )
 }
@@ -710,7 +699,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
       <div
         className={styles.box}
         data-learn="card"
-        style={{ left: x, top: y, width: CARD.w, height: h, ['--type' as string]: TYPE_ACCENT[card.type], ...tucked }}
+        style={{ left: x, top: y, width: CARD.w, height: h, ['--type' as string]: CARD_TONE[card.type], ...tucked }}
         data-type={card.type}
         data-tucked={tuck ? true : undefined}
         data-open={open && !drag ? true : undefined}
@@ -739,7 +728,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
               open={open && !drag}
             />
           ) : (
-            <CompactTitle text={card.title || PLACEHOLDER[card.type]} empty={!card.title} bars={detail === 'far'} />
+            <CompactTitle text={card.title || cardPlaceholder(card.type)} empty={!card.title} bars={detail === 'far'} />
           )}
         </div>
         {live && <Marks zoom={zoom} short={Math.min(CARD.w, h)} tone="var(--type)" selected={selected} pressed={pressed} dragging={moving} target={target} peers={peers} />}
@@ -751,7 +740,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
         {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
       </div>
       {/* Carried by what holds it (a section, a package), only that one's marks show where they land (D-291). */}
-      {live && moving && (drag || !shift?.lead) && <Landing x={x} y={y} w={CARD.w} h={h} zoom={zoom} tone={TYPE_ACCENT[card.type]} />}
+      {live && moving && (drag || !shift?.lead) && <Landing x={x} y={y} w={CARD.w} h={h} zoom={zoom} tone={CARD_TONE[card.type]} />}
     </>
   )
 }
@@ -778,7 +767,7 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
         {facts?.proof && <ProofCells proof={facts.proof} />}
       </span>
       <p className={styles.title} data-empty={!card.title || undefined} data-lines={inside || tags.length ? 2 : 3} data-inside={inside || undefined}>
-        {title || PLACEHOLDER[card.type]}
+        {title || cardPlaceholder(card.type)}
       </p>
       {groups && (
         <div className={styles.inner}>
@@ -814,11 +803,11 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
               <button /* kit-ok: a member's row inside a folded package, at the world's size */
                 key={r.card.id}
                 className={styles.memberRow}
-                style={{ ['--tone' as string]: TYPE_ACCENT[r.card.type], paddingLeft: r.depth * INDENT }}
+                style={{ ['--tone' as string]: CARD_TONE[r.card.type], paddingLeft: r.depth * INDENT }}
                 onClick={() => useCanvasView.setState({ cardSelected: r.card.id, labelSelected: null, linkSelected: null })}
               >
                 <i aria-hidden />
-                <span className={styles.miniName}>{r.card.title || PLACEHOLDER[r.card.type]}</span>
+                <span className={styles.miniName}>{r.card.title || cardPlaceholder(r.card.type)}</span>
                 <span className={styles.miniAv}>{[held ? `${held} inside` : '', r.card.status ?? r.card.validation ?? r.card.priority].filter(Boolean).join(' · ')}</span>
               </button>
             )

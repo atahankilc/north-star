@@ -14,10 +14,11 @@ import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { useWs } from '../canvas/context'
 import { ConsoleFloor, ConsoleTab, FloorTitle, useDrawer } from '../../../ui/patterns/Console'
 import { NO_FILTER, narrowing, setKanbanFilter, useHoldKanbanFilter, useKanbanFilter, type DueKey, type KanbanFilter } from './kanbanFilter'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { learn } from '../../../onboarding/learn'
 import styles from '../canvas/FilterDock.module.css'
 import { Button } from '../../../ui/primitives/Button'
+import { cardName } from '../../../model/cardName'
 
 
 const DUE: { key: DueKey; label: string }[] = [
@@ -78,9 +79,9 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
     { key: 'any', label: 'anything', checked: !f.for.length, onSelect: () => set({ for: [] }) },
     { key: 'none', label: 'no card', checked: f.for.includes('none'), hint: count((t) => !t.cardId), onSelect: () => set({ for: flip(f.for, 'none') }) },
     ...(types.length ? [{ key: 'h-types', heading: 'types' }] : []),
-    ...types.map((ty) => ({ key: `type:${ty}`, label: `${ty}s`, checked: f.for.includes(`type:${ty}`), tone: TYPE_ACCENT[ty], onSelect: () => set({ for: flip(f.for, `type:${ty}`) }) })),
+    ...types.map((ty) => ({ key: `type:${ty}`, label: `${ty}s`, checked: f.for.includes(`type:${ty}`), tone: CARD_TONE[ty], onSelect: () => set({ for: flip(f.for, `type:${ty}`) }) })),
     ...(forCards.length ? [{ key: 'h-cards', heading: 'cards' }] : []),
-    ...forCards.map((c) => ({ key: c.id, label: c.title || 'untitled', checked: f.for.includes(c.id), tone: TYPE_ACCENT[c.type], hint: count((t) => t.cardId === c.id), onSelect: () => set({ for: flip(f.for, c.id) }) })),
+    ...forCards.map((c) => ({ key: c.id, label: cardName(c), checked: f.for.includes(c.id), tone: CARD_TONE[c.type], hint: count((t) => t.cardId === c.id), onSelect: () => set({ for: flip(f.for, c.id) }) })),
   ]
   const forName = (v: string) => (v === 'none' ? 'no card' : v.startsWith('type:') ? `${v.slice(5)}s` : (cards.find((c) => c.id === v)?.title ?? 'a card'))
 

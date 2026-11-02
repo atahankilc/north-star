@@ -36,6 +36,7 @@ import { Field } from '../../../ui/primitives/Field'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Label } from '../../../ui/primitives/Label'
 import { CATEGORY_MAX, FACT_MAX, CRITERION_MAX, LONG_TEXT_MAX, REGION_MAX, TITLE_MAX, URL_MAX } from '../../../model/limits'
+import { cardName } from '../../../model/cardName'
 
 const MAX_CRITERIA = 8
 
@@ -171,7 +172,7 @@ export function CompetitorFeatures({ n, card, cards, editor }: P) {
               <button /* kit-ok: a feature's whole row (name, how it's offered, its match) that opens it */ key={f.id} className={styles.cf} data-match={!!o || undefined} onClick={() => setOpen(f.id)}>
                 <span className={styles.cfName}>{f.name}</span>
                 <span className={styles.cfAv}>{f.availability}</span>
-                {o && <span className={styles.cfMatch}>≈ our {o.title || 'untitled feature'}</span>}
+                {o && <span className={styles.cfMatch}>≈ our {cardName(o)}</span>}
               </button>
             )
           })}
@@ -224,7 +225,7 @@ function NewFeature({ card, cards, categories, onDone }: { card: Card; cards: Ca
         <Select
           value={ours}
           ariaLabel="Our feature it matches"
-          options={[{ value: '', label: 'none' }, ...features.map((c) => ({ value: c.id, label: c.title || 'untitled feature' }))]}
+          options={[{ value: '', label: 'none' }, ...features.map((c) => ({ value: c.id, label: cardName(c) }))]}
           onChange={setOurs}
         />
         <Label>seen at</Label>
@@ -268,7 +269,7 @@ function FeatureDetails({ f, card, cards, ours, editor, categories, onClose }: {
           <Select
             value={ours?.id ?? ''}
             ariaLabel="Our feature it matches"
-            options={[{ value: '', label: 'none' }, ...features.map((c) => ({ value: c.id, label: c.title || 'untitled feature' }))]}
+            options={[{ value: '', label: 'none' }, ...features.map((c) => ({ value: c.id, label: cardName(c) }))]}
             onChange={(v) => void matchOurs(wid, f, v || null, comparisons)}
           />
         ) : (

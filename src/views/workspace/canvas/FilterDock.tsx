@@ -18,6 +18,7 @@ import { LINK_GROUPS, narrowing, setFilter, START, useFilter, useHoldFilter, typ
 import styles from './FilterDock.module.css'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { Button } from '../../../ui/primitives/Button'
+import { cardName } from '../../../model/cardName'
 
 // What's open over the focus dock (D-233, D-235, D-347): one drawer at a time; Escape closes it (once no menu in it is
 // open).
@@ -70,7 +71,7 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   const show: PromptEntry[] = ALL_TYPES.map((t) => ({ key: t, label: `${t}s`, checked: !f.hide.includes(t), tone: TYPE_TONE[t], onSelect: () => set({ hide: flip(f.hide, t) }) }))
   const forItems: PromptEntry[] = [
     { key: 'any', label: 'any customer', checked: f.for.length === 0, onSelect: () => set({ for: [] }) },
-    ...customers.map((c) => ({ key: c.id, label: c.title || 'untitled', checked: f.for.includes(c.id), tone: CARD_TONE.customer, onSelect: () => set({ for: flip(f.for, c.id) }) })),
+    ...customers.map((c) => ({ key: c.id, label: cardName(c), checked: f.for.includes(c.id), tone: CARD_TONE.customer, onSelect: () => set({ for: flip(f.for, c.id) }) })),
   ]
   const tagItems: PromptEntry[] = [
     { key: 'any', label: 'any tag', checked: f.tags.length === 0, onSelect: () => set({ tags: [] }) },

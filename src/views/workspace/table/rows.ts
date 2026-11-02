@@ -4,7 +4,9 @@
 // P2) will add theirs the same way.
 import type { AnyType, Card } from '../../../data/cards'
 import type { KanbanRows, Task, TaskFields } from '../../../data/tasks'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
+import { initials } from '../../../model/tasks'
+import { cardName } from '../../../model/cardName'
 
 export type Lane = {
   key: string
@@ -31,12 +33,6 @@ export const GONE = 'gone'
 
 type People = { me?: { id: string; name: string }; names: Map<string, string> }
 
-const initialsOf = (name?: string) => {
-  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean)
-  if (!parts.length) return '?'
-  return (parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : parts[0].slice(0, 2)).toUpperCase()
-}
-
 // Who it's given to: you first (always there, to give yourself one), the others by name, then nobody.
 export function byAssignee({ me, names }: People): RowField<Task, TaskFields> {
   const nameOf = (uid: string, t?: Task) => names.get(uid) ?? t?.assigneeName ?? 'someone'
@@ -48,8 +44,8 @@ export function byAssignee({ me, names }: People): RowField<Task, TaskFields> {
       for (const t of tasks) if (t.assignee && t.assignee !== me?.id) seen.set(t.assignee, nameOf(t.assignee, t))
       const others = [...seen].sort((a, b) => a[1].localeCompare(b[1]))
       return [
-        ...(me ? [{ key: me.id, label: me.name ? `${me.name} · me` : 'me', initials: me.name ? initialsOf(me.name) : 'ME', drop: true }] : []),
-        ...others.map(([id, name]) => ({ key: id, label: name, initials: initialsOf(name), drop: true })),
+        ...(me ? [{ key: me.id, label: me.name ? `${me.name} · me` : 'me', initials: me.name ? initials(me.name) : 'ME', drop: true }] : []),
+        ...others.map(([id, name]) => ({ key: id, label: name, initials: initials(name), drop: true })),
         { key: NOBODY, label: 'nobody', drop: true },
       ]
     },
@@ -71,7 +67,7 @@ export function byCard(cards: Card[]): RowField<Task, TaskFields> {
       used.sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type) || (a.title || '').localeCompare(b.title || ''))
       const gone = tasks.some((t) => t.cardId && !byId.has(t.cardId))
       return [
-        ...used.map((c) => ({ key: c.id, label: c.title || 'untitled', tone: TYPE_ACCENT[c.type], kind: c.type, drop: true })),
+        ...used.map((c) => ({ key: c.id, label: cardName(c), tone: CARD_TONE[c.type], kind: c.type, drop: true })),
         { key: NO_CARD, label: 'no card', drop: true },
         ...(gone ? [{ key: GONE, label: 'its card is gone', drop: false }] : []),
       ]

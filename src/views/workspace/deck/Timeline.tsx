@@ -25,7 +25,7 @@ import { DockAction } from '../canvas/FocusDock'
 import { kanbanOf, selectTask, useKanbanUi } from './Kanban'
 import { KanbanFilterDock } from './KanbanFilterDock'
 import { passes, useKanbanFilter } from './kanbanFilter'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { CardPicker } from '../panels/CardPanel'
 import { cardsOn } from '../../../data/places'
 import type { Card } from '../../../data/cards'
@@ -42,6 +42,7 @@ import { Label } from '../../../ui/primitives/Label'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
+import { cardName } from '../../../model/cardName'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const T = STRIP_PX
@@ -665,7 +666,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
   const X = (d: number) => (d - origin) * ppd
   const lo = origin - 1
   const hi = origin + 3 * span + 1
-  const tone = (t: Task) => (t.cardType ? TYPE_ACCENT[t.cardType] : undefined)
+  const tone = (t: Task) => (t.cardType ? CARD_TONE[t.cardType] : undefined)
   const held = drag?.moving ? drag : null
   const vars = { ['--left' as string]: `${T.left}px`, ['--bar' as string]: `${T.bar}px`, ['--over' as string]: `${T.over}px`, ['--head' as string]: `${T.head}px` } as CSSProperties
 
@@ -842,7 +843,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
                       <span className={styles.readout} style={{ left: x, top: y }}>
                         {short(draft.s)} → {short(draft.e)} · {draft.e - draft.s + 1} days
                       </span>
-                      {draft.naming && <DraftPick left={x} top={y} width={Math.max(320, dw)} plane={deckFor(draft.row)?.stuckTo ?? piece.stuckTo} onCard={(c) => make(c.title || `untitled ${c.type}`, c)} onText={(t) => make(t)} onCancel={() => make('')} />}
+                      {draft.naming && <DraftPick left={x} top={y} width={Math.max(320, dw)} plane={deckFor(draft.row)?.stuckTo ?? piece.stuckTo} onCard={(c) => make(cardName(c), c)} onText={(t) => make(t)} onCancel={() => make('')} />}
                     </>
                   )
                 })()}

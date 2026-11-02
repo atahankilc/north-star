@@ -17,8 +17,9 @@ import { PanelAction, PanelSection, SidePanel } from '../../../ui/patterns/SideP
 import { Select } from '../../../ui/patterns/Select'
 import { CardPicker, EvidenceForm, PLACEHOLDER, useCommit } from './CardPanel'
 import { useWs } from '../canvas/context'
-import { dueText, kanbanOf, selectTask, useKanbanUi } from '../deck/Kanban'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { kanbanOf, selectTask, useKanbanUi } from '../deck/Kanban'
+import { dueText } from '../../../model/tasks'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { useTasksSide } from '../deck/sideState'
 import styles from './CardPanel.module.css'
 import own from './TaskPanel.module.css'
@@ -501,7 +502,7 @@ function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }
       {task.cardId && (
         <div className={own.row}>
           {card ? (
-            <button /* kit-ok: the card it's for, drawn small (type, title, ↗), that opens its panel */ className={own.card} style={{ ['--tone' as string]: TYPE_ACCENT[card.type] }} onClick={() => open(card)} title="open its panel">
+            <button /* kit-ok: the card it's for, drawn small (type, title, ↗), that opens its panel */ className={own.card} style={{ ['--tone' as string]: CARD_TONE[card.type] }} onClick={() => open(card)} title="open its panel">
               <Label className={own.cardType}>▌{card.type}</Label>
               <span className={own.cardTitle}>{card.title || PLACEHOLDER[card.type]}</span>
               <span className={own.go} aria-hidden>

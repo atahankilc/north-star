@@ -6850,3 +6850,21 @@ tools: the workspace's name lists them, `new canvas` makes one), and piece-made 
 breadcrumb's prompt and the delete question.
 **Why:** `move to…` and `also on…` sit on every editor's piece console from the first piece, even with one canvas, but
 were only named in the `canvases` lesson, which shows only once the person opens the breadcrumb or makes a canvas.
+
+### D-358 · 2026-11-02 · Accepted (the user: "bunun aynısını cardlar için yapman... Spec doc önce yaz, sonra step 1'e geç")
+**Decision:** every card and task drawing (plane card, package band and rows, a competitor's small features, task
+sheet, deck card sheet, suggested-order row, timeline bar, matrix head, table name, a card's task rows, a task's card)
+stands on one card face, built the kit's way (D-326): helpers at the bottom, a `CardFace` shell (tone, tint on/off,
+world or screen size, states, D-295's ink, Marks), small shared parts (priority, due, checklist, proof, tags, sure,
+assignee), then each card on top in `src/views/workspace/cards/`, each with its gallery. Spec: docs/specs/cards.md
+(the inventory, the 10 repeats counted, five steps). Consistency first: drifted copies snap to one look, listed and
+shown before/after. Sticky notes, PieceCard and prompt rows stay as they are.
+**Why:** the face was written 6 times in CSS and had drifted (edge width, `--type` vs `--tone`, base); D-295's ink was
+missing on the matrix heads, table names and timeline bars; `TYPE_ACCENT` made ten files import PlaneCards; task
+helpers lived in Kanban.tsx; the gallery showed cards only inside whole pieces.
+**Step 1 (done 2026-11-02):** `TYPE_ACCENT` deleted (CARD_TONE from ui/foundation/cardTone everywhere);
+`model/cardName.ts` (`cardName`, `cardPlaceholder`); `dueText`, `initials`, `checkCells` in model/tasks.ts
+(table/rows.ts' copy deleted); tests/unit/cardWords.test.ts. Only visible change: a bare `untitled` for a card now
+reads `untitled <type>`. Checked: tsc, vitest 982/0, check:kit/tokens/gallery 0.
+**Not yet:** steps 2–5 (CardFace and the sheets, PlaneCard split, timeline/matrix/table on the face, CardRow and the
+check:kit rule); the plane card's drag code as a shared hook.

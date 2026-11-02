@@ -55,7 +55,7 @@ import { useWs } from '../canvas/context'
 import { alikeProps, useKept } from '../canvas/kept'
 import { useSeen, within } from '../canvas/visible'
 import { useTheme } from '../../../state/theme'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import type { FindItem } from '../find/find'
 import { useStill } from '../canvas/still'
 import { usePeersOn } from '../canvas/collab'
@@ -544,7 +544,7 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
   const sub = !!entry.sub
   const typed = !entry.card || sub
   const open = (editing || naming) && typed && live && editor
-  const tone = entry.card ? TYPE_ACCENT[entry.card.type] : undefined
+  const tone = entry.card ? CARD_TONE[entry.card.type] : undefined
   // Others who have its card selected, wherever (D-265): their L's on its head.
   const peers = usePeersOn(entry.card && !sub ? entry.card.id : '')
   return (

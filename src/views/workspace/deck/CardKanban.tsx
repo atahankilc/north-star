@@ -19,7 +19,7 @@ import type { Piece } from '../../../data/model'
 import { updateCards, type Card } from '../../../data/cards'
 import { useCanvasView, type PlaneCam } from '../../../state/canvasView'
 import { useWs } from '../canvas/context'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { boxKey, boxPatch, byBox, byColumn, columnsOf, FIELD_NAME, heldCards, isPriorities, NO_VALUE, placeOf, rowFieldOf, rowsOfField, scorer, sureOf, takes, type CardCol } from './kanbanCards'
 import { suggestedOrder, type Ranked } from '../plane/cardFacts'
 import { create } from 'zustand'
@@ -31,6 +31,7 @@ import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import { usePeersOn } from '../canvas/collab'
 import { loadFolds, saveFolds } from '../table/rows'
 import styles from './Kanban.module.css'
+import { cardName } from '../../../model/cardName'
 
 // P1 on a card's tinted face: its magenta leaning to the ink, so it reads there (D-295).
 const P1_ON_TINT = 'color-mix(in srgb, var(--accent-magenta) var(--mix-strong), var(--fg))'
@@ -236,12 +237,12 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
                             {/* Over its own box, it lands back in the room it kept: the L's there (D-265). */}
                             {x.id === lifted?.id && over && here && (
                               <span style={{ position: 'absolute', inset: 0, visibility: 'visible' }}>
-                                <Marks tone={TYPE_ACCENT[x.type]} pressed />
+                                <Marks tone={CARD_TONE[x.type]} pressed />
                               </span>
                             )}
                           </div>
                         ))}
-                        {over && !here && <Gap h={drag!.size[1]} tone={TYPE_ACCENT[lifted!.type]} />}
+                        {over && !here && <Gap h={drag!.size[1]} tone={CARD_TONE[lifted!.type]} />}
                         {!list.length && !over && !rowField && <Empty as="span" className={styles.empty}>· none</Empty>}
                       </div>
                     </div>
@@ -303,10 +304,10 @@ function CardSheet({ card, field, rowField, sure, finished, selected, live, lift
       data-selected={selected || undefined}
       data-finished={finished || undefined}
       data-lifted={lifted || undefined}
-      style={{ ['--tone' as string]: TYPE_ACCENT[card.type] } as CSSProperties}
+      style={{ ['--tone' as string]: CARD_TONE[card.type] } as CSSProperties}
       role={live && !lifted ? 'button' : undefined}
       tabIndex={live && !lifted ? 0 : -1}
-      aria-label={`${card.type}: ${card.title || 'untitled'}`}
+      aria-label={`${card.type}: ${cardName(card)}`}
       onPointerDown={onPointerDown}
       onClick={onClick}
       onKeyDown={live && onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
@@ -320,7 +321,7 @@ function CardSheet({ card, field, rowField, sure, finished, selected, live, lift
           </Chip>
         )}
       </span>
-      <span className={styles.title}>{card.title || `untitled ${card.type}`}</span>
+      <span className={styles.title}>{cardName(card)}</span>
       {(sure || rest.length > 0) && (
         <span className={styles.meta}>
           {sure && (
@@ -332,7 +333,7 @@ function CardSheet({ card, field, rowField, sure, finished, selected, live, lift
           {rest.join(' · ')}
         </span>
       )}
-      {live && !lifted && <Marks tone={TYPE_ACCENT[card.type]} selected={selected} peers={peers} />}
+      {live && !lifted && <Marks tone={CARD_TONE[card.type]} selected={selected} peers={peers} />}
     </div>
   )
 }
@@ -382,14 +383,14 @@ function OrderList({ order, unrated, live, selected, onPick, onPress }: OrderPro
             key={r.card.id}
             className={styles.orderRow}
             data-selected={selected === r.card.id || undefined}
-            style={{ ['--tone' as string]: TYPE_ACCENT[r.card.type] } as CSSProperties}
+            style={{ ['--tone' as string]: CARD_TONE[r.card.type] } as CSSProperties}
             tabIndex={live ? 0 : -1}
             title={`confidence ${r.sure.level}: ${r.sure.why}`}
             onClick={() => onPick(r.card)}
           >
             <Marks tier="s" tone="var(--tone)" live={live} selected={selected === r.card.id} />
             <span className={styles.n}>{String(i + 1).padStart(2, '0')}</span>
-            <span className={styles.orderTitle}>{r.card.title || `untitled ${r.card.type}`}</span>
+            <span className={styles.orderTitle}>{cardName(r.card)}</span>
             <span className={styles.orderScore} data-broken={r.sure.level === 'broken' || undefined}>
               {r.sure.level === 'broken' ? '! ' : ''}
               {r.score.toFixed(1)}

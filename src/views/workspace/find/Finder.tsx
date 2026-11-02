@@ -27,7 +27,7 @@ import { placesIn, shownPlaces, toggleOpen, useGoTo } from '../canvas/goTo'
 import { shownPieces } from '../canvas/shownBox'
 import { useFieldText, useTableUi } from '../table/Table'
 import { useDocUi } from '../documents/Documents'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import styles from './Finder.module.css'
 import { Button } from '../../../ui/primitives/Button'
 import { Hit } from '../../../ui/primitives/PromptRow'
@@ -220,7 +220,7 @@ function Panel() {
             key: r.id,
             label: r.inside || !(found instanceof RegExp) ? r.text : <Hit text={r.text} ranges={matchesIn(r.text, found, 50)} tone="found" />,
             glyph: r.glyph,
-            tone: r.tone ? TYPE_ACCENT[r.tone as keyof typeof TYPE_ACCENT] : undefined,
+            tone: r.tone ? CARD_TONE[r.tone as keyof typeof CARD_TONE] : undefined,
             hint: r.hint || undefined,
             indent: r.indent,
             faint: r.inside,

@@ -18,7 +18,7 @@ import { Select } from '../../../ui/patterns/Select'
 import { useWs } from '../canvas/context'
 import { useKept } from '../canvas/kept'
 import { useSeen, within } from '../canvas/visible'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import type { FindItem } from '../find/find'
 import { usePeersOn } from '../canvas/collab'
 import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
@@ -348,7 +348,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
       <>
         {seenRows.map(([r, i]) => (
           <div key={r.key} className={styles.band} data-selected={selected?.r === i || undefined} style={box(0, T.head + i * T.row, width, T.row)}>
-            {r.card && <Marks tier="s" tone={TYPE_ACCENT[r.card.type]} live={false} selected={lit === r.key} />}
+            {r.card && <Marks tier="s" tone={CARD_TONE[r.card.type]} live={false} selected={lit === r.key} />}
           </div>
         ))}
         <div className={styles.headRule} style={box(0, T.head - 1, width, 1)} />
@@ -604,7 +604,7 @@ const RowCells = memo(function RowCells({ pieceId, row: r, ri, cols, geo, cells,
         const isSel = selCol === ci
         if (c.field) {
           const text = fieldText(r, c.field)
-          const tone = c.field === 'type' && r.card ? TYPE_ACCENT[r.card.type] : undefined
+          const tone = c.field === 'type' && r.card ? CARD_TONE[r.card.type] : undefined
           return (
             <button /* kit-ok: a cell of the grid, not a [verb] */ key={key} className={styles.cell} data-field={c.field} data-cell={key} data-find={key} data-find-box data-selected={isSel || undefined} style={{ ...style, ...(tone ? { ['--tone' as string]: tone } : {}) }}
               tabIndex={live ? 0 : -1} onClick={live ? () => acts.current.press(ri, ci) : undefined} aria-label={`${r.name || 'untitled'}, ${colName(c)}: ${text || 'empty'}`}>
@@ -653,7 +653,7 @@ type NameProps = {
 function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemove, onPick }: NameProps) {
   const [editing, setEditing] = useState(false)
   const open = (editing || naming) && live && editor
-  const tone = row.card ? TYPE_ACCENT[row.card.type] : undefined
+  const tone = row.card ? CARD_TONE[row.card.type] : undefined
   // Others who have its card selected, wherever (D-265): their L's on its name.
   const peers = usePeersOn(row.card?.id ?? '')
   return (

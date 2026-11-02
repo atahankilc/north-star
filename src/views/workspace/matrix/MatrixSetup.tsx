@@ -42,7 +42,7 @@ import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { useWs } from '../canvas/context'
 import { useSetupOnDock } from '../canvas/FocusDock'
 import { closeMatrixSetup, openMatrixSetup, setupOf, setupTab, SETUP_TABS, StepSquare, useMatrixUi, type SetupTab } from './Matrix'
-import { TYPE_ACCENT } from '../plane/PlaneCards'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { PromptList } from '../../../ui/patterns/PromptList'
 import { cardEntry } from '../plane/cardEntry'
 import styles from './Matrix.module.css'
@@ -53,6 +53,7 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { Options } from '../../../ui/patterns/Options'
 import { AXIS_NOUN_MAX, UNIT_MAX } from '../../../model/limits'
+import { cardName } from '../../../model/cardName'
 
 const ANY = 'any'
 const TAB_NAME: Record<SetupTab, string> = { rows: 'rows', cols: 'columns', cells: 'cells', options: 'options' }
@@ -140,7 +141,7 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
           clearable
           label={`${which}: every card of a type`}
           value={axis.type}
-          options={CARD_TYPES.map((t) => ({ value: t, label: `${t}s`, swatch: TYPE_ACCENT[t], count: ofType(t), title: axis.type === t ? 'click again for none' : `every ${t}` }))}
+          options={CARD_TYPES.map((t) => ({ value: t, label: `${t}s`, swatch: CARD_TONE[t], count: ofType(t), title: axis.type === t ? 'click again for none' : `every ${t}` }))}
           onChange={(t) => onChange({ ...axis, type: t, hide: undefined })}
         />
       </Row>
@@ -165,9 +166,9 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
             const c = item.cardId ? byId.get(item.cardId) : undefined
             if (item.cardId && !c) return null
             return (
-              <span key={item.id} className={styles.pill} data-card={c ? true : undefined} style={c ? { ['--type' as string]: TYPE_ACCENT[c.type] } : undefined} title={c ? c.type : 'a typed name'}>
+              <span key={item.id} className={styles.pill} data-card={c ? true : undefined} style={c ? { ['--type' as string]: CARD_TONE[c.type] } : undefined} title={c ? c.type : 'a typed name'}>
                 <span className={styles.pillMark} aria-hidden />
-                {c ? c.title || `untitled ${c.type}` : item.name || 'name'}
+                {c ? cardName(c) : item.name || 'name'}
                 <Button icon tone="danger" aria-label="Take it out" onClick={() => drop(item)}>
                   ×
                 </Button>
