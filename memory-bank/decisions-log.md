@@ -6807,8 +6807,8 @@ yeterince arttırdık. Aynı şekilde canvas da da böyle bir yazı var… Buna 
 `empty-timeline` lessons, EmptyHint.tsx and anchor.ts are deleted; `workspaces-empty` (the workspaces page's three
 framed choices) stays, the only `format: 'empty'` lesson. Plain empty states keep their words but lose the how-to:
 a card's tasks `no deck yet`, the side view's `nothing given to you: no deck on this canvas yet`.
-**Not yet:** the finder's empty line still says how to make a place (its file was another session's at the time).
-events.ts still sends `empty` on `canvas-open`/`focus-in`, read by nothing now.
+The finder's empty line too: `nothing to go to yet` (`… here yet` in a plane), no how-to.
+**Not yet:** events.ts still sends `empty` on `canvas-open`/`focus-in`, read by nothing now.
 
 ### D-354 · 2026-11-02 · Cursors only over their space; timeline names inside; the console's drawer fits; the side view at the top
 The user, 2026-11-02, four reports. **Rules:**

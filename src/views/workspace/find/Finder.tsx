@@ -379,7 +379,7 @@ function Panel() {
           ) : searching ? (
             <Empty className={styles.none}>searching…</Empty>
           ) : going ? (
-            <Empty className={styles.none}>{here === CANVAS ? 'Planes, the project title, headings and named sections show here' : 'Write a heading or draw a named section (+) to go to it from here'}</Empty>
+            <Empty className={styles.none}>{here === CANVAS ? 'nothing to go to yet' : 'nothing to go to here yet'}</Empty>
           ) : query ? (
             <Empty className={styles.none}>{re === 'bad' ? 'not a regular expression' : scope === 'here' ? 'nothing matches here' : 'nothing matches'}</Empty>
           ) : null}
