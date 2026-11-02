@@ -1270,6 +1270,21 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   (`?onboarding=reset`): the workspaces lesson, the welcome's 6 tabs, piece-made after `+ → plane`, focus-plane with its
   demo at full width, the settings lesson after Settings closes (a native dialog: shown over it, it was hidden).
 
+## Done (2026-11-02, north-star-48): D-352–D-356
+- D-352 peer cursors: only the arrow, the name on hover (a 24 px hover area). D-354 cursors sent only over the space
+  (`data-off-space` on the side view, beside panes, dividers, threads panel), drawn only left of the split.
+- D-353 the empty canvas/plane/timeline hints, EmptyHint.tsx, anchor.ts deleted (a subagent; onboarding tests moved
+  to `workspaces-empty`).
+- D-354 timeline: a sheet's name never outside it; console: the drawer counted and spanning the edge (it was squeezed
+  to half once the console went full: a CSS order bug); side view's tabs at the top, the HUD's shade stops at the split.
+- D-355 keyGlyphs.ts (`Ctrl+Shift+Z` off a Mac; tests/unit/keyGlyphs.test.ts), glossary.ts + the kit's `Tip`, marked
+  in Pages.tsx's `Words`.
+- D-356 threads: preview always the newest left on delete, changed with an edit; rules: the thread deleted by its
+  starter or `lastUid` (rules tests 633/0, a subagent on private emulators, 8 scenarios with three clients).
+- Checked: headless Chrome on the gallery (5241): the tip opens with the meaning; cursor names opacity 0 → 1 on hover;
+  no sheet label past its sheet at month scale; the foot console's drawer spans 340 px; the side view's tabs at the top.
+  Not checked in the live app with two people.
+
 ## Done (2026-11-02): the prompt family on one set of parts (D-350)
 - The proposal first on a local port (inventory of 20 places, 15 inconsistencies, looks A/B/C side by side); the user
   picked B, the first row lit, workspaces' results kept as cards, no foot, tick boxes.

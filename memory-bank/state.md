@@ -65,7 +65,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   through more landing changes. AsciiButton deleted (e1b86de).
 - D-344 (committed): buttons and controls as cells. Open: filters as always-open toggle strips (asked, not built).
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Q-033 closed by D-348.
-- D-338 workspaces page, D-346 backdrop 70 %, D-347 consoles: pushed and closed by the user 2026-11-01 (state-history).
+- D-352–D-356 (2026-11-02, uncommitted; state-history): **firestore.rules changed (D-356): deploy only when asked.**
 - D-348 (2026-11-01, pushed): Settings → display: hud size and background strength; the user checked it in the app.
 - D-350 (2026-11-02, pushed): the prompt family on one set of parts, done (state-history). Left: look at `@` and `/` in the app.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).

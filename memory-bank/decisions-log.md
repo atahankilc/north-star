@@ -6786,3 +6786,54 @@ holding two things and were split: workspaces (actions / what needs you), packag
 its bar), table (cells / sort, own columns / which rows), documents (files / private until shared), deck (filter /
 lanes), side-view (mine / every deck on days), comment (how / its chip); focus-plane's `+` moved from kinds to make.
 No version bumps (words only, none of it pushed yet).
+
+### D-352 · 2026-11-02 · Others' cursors without their name until pointed at
+The user: "coworkingde isimler direkt gözükmesin mouse işaretlerinin yanında, user hover edince çıksın. Yoksa görmek
+istediğim şeyi göremiyorum bazen isimlerden dolayı" (names beside others' cursors hid what was under them).
+**Rule:** a peer's cursor is only the arrow in their colour; its name tag fades in (`--dur-fast`) while you point at the
+arrow (a 24 px hover area, the only part of the cursor layer that takes the pointer) and out when you leave.
+Selections' name tags (D-191, D-272) and the drag ghost's are unchanged.
+**Where:** `PeerCursors` in src/views/workspace/canvas/collab.tsx, collab.module.css (`.hit`, `.name`).
+
+### D-353 · 2026-11-02 · The empty canvas's, plane's and timeline's hints removed
+The user: "plane boşken 'press + or right click to add a card' diyor ancak buna gerek yok artık… Onboarding ekranlarını
+yeterince arttırdık. Aynı şekilde canvas da da böyle bir yazı var… Buna benzer başka bir şey varsa onu da kaldıralım."
+**Rule:** no faint teaching line on an empty canvas, plane or timeline: the `empty-canvas`, `empty-plane` and
+`empty-timeline` lessons, EmptyHint.tsx and anchor.ts are deleted; `workspaces-empty` (the workspaces page's three
+framed choices) stays, the only `format: 'empty'` lesson. Plain empty states keep their words but lose the how-to:
+a card's tasks `no deck yet`, the side view's `nothing given to you: no deck on this canvas yet`.
+**Not yet:** the finder's empty line still says how to make a place (its file was another session's at the time).
+events.ts still sends `empty` on `canvas-open`/`focus-in`, read by nothing now.
+
+### D-354 · 2026-11-02 · Cursors only over their space; timeline names inside; the console's drawer fits; the side view at the top
+The user, 2026-11-02, four reports. **Rules:**
+- Your cursor is sent only while the pointer is over your space: over what's drawn on it but isn't it
+  (`data-off-space`: the tasks side view, a pane beside a plane, the dividers, the threads panel) it is taken away.
+  Others' cursors are drawn only over the part of the screen left of the split line when the side view or something
+  beside is open. (Before: working on a deck in the side view showed others your cursor wandering their canvas.)
+- A timeline sheet's name always stays inside the sheet, cut with `…` (a sheet too short shows none; its title on
+  hover); never beside it. A ◆ (a due day only, no sheet) keeps its name beside it.
+- The console's open drawer counts when it decides to take the whole edge, and once it has, the drawer spans the
+  edge and its rows wrap. (Before: the drawer of a console that had taken the whole edge was squeezed to half of it.)
+- The tasks side view's tabs sit at its top with a side panel's padding (`--space-4`), not under the HUD's 56 px;
+  the HUD's shade stops at the split line while the side view is open (`--hud-shade-w`).
+
+### D-355 · 2026-11-02 · Keys as this computer writes them; the app's words explained in the onboarding
+The user: "shortcutlar için mac command iconunu kullanıyoruz ama her bilgisayar mac değil… cmd yada ctrl gibi" and
+"onboardingde sürekli kullanılan terimler (cards, plane, component…) renkli olup üstüne gelindiğinde ne anlama
+geldiği yazsın… cards ne anlamayanlar olmuş".
+**Rules:** keys are written the Mac way in the code and data (`⌘F`, `⇧⌘Z`); off a Mac they are shown as `Ctrl+F`,
+`Ctrl+Shift+Z`, `Alt drag`, `Backspace` (src/ui/foundation/keyGlyphs.ts), in the `?` guide's keys and the lessons'
+key chips, the only places keys are shown (D-344). The handlers already take Ctrl for ⌘. The app's own words in a
+lesson (src/onboarding/glossary.ts: workspace, canvas, piece, plane, card, link, deck, task, timeline, matrix,
+package, section, focus, edit mode, console, dock, side view, evidence, thread) are cyan with a dotted line the first
+time each comes up in a page's text, their meaning (one plain line, ≤ 20 words) in a small box on hover or keyboard
+focus: the kit's `Tip` (src/ui/patterns/Tip.tsx). Lesson words stay as written; the marking is automatic.
+
+### D-356 · 2026-11-02 · A deleted or edited message never stays in the threads panel
+The user: a message deleted in a thread stayed in the other person's threads panel. Two causes. **Rules:** deleting
+a message always sets the thread's preview to the newest message left (before: only when the deleted one was the
+newest by its writer's clock); editing the message the preview shows changes the preview in the same write. The
+thread may be deleted by its starter or by the writer of the one message left (`lastUid`), so taking back the last
+answer after the first message went no longer fails (firestore.rules; rules tests 633/0). **Not yet:** the rules
+change is deployed only when the user says so.

@@ -1,51 +1,5 @@
-/* The coach's small things (D-315, onboarding.md §4.7; mock: preview.css §5): the empty hints. */
-
-/* An empty hint: faint words in the display voice, never in the way of a press. */
-.empty {
-  position: fixed;
-  z-index: calc(var(--z-3) + 1);
-  isolation: isolate;
-  transform: translateY(-50%);
-  color: var(--fg-muted);
-  font: var(--weight-regular) var(--text-lg) / var(--lh-snug) var(--font-display);
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-/* On the ink shade, so it reads over the backdrop's stars and tones (light theme's above all). */
-.empty::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: var(--z-under);
-  background: var(--ink-shade);
-  box-shadow: var(--ink-feather) var(--ink-shade);
-}
-
-.plus {
-  color: var(--accent-magenta);
-  font-family: var(--font-mono);
-}
-
-/* The arrow to the `+`: straight, dashed, its head at the `+`. */
-.arrow {
-  position: fixed;
-  z-index: calc(var(--z-3) + 1);
-  height: var(--line-w);
-  background: repeating-linear-gradient(90deg, var(--fg-dim) 0 var(--space-1), transparent var(--space-1) var(--space-2));
-  pointer-events: none;
-}
-
-.arrowHead {
-  position: absolute;
-  left: calc(-1 * var(--line-w));
-  top: calc((var(--line-w) - var(--arrow)) / 2);
-  width: 0;
-  height: 0;
-  border-top: calc(var(--arrow) / 2) solid transparent;
-  border-bottom: calc(var(--arrow) / 2) solid transparent;
-  border-right: calc(var(--arrow) - var(--line-w)) solid var(--fg-dim);
-}
+/* The coach's small things (D-315, onboarding.md §4.7): the workspaces page's empty state. The canvas's, plane's and
+   timeline's faint hints went with D-353. */
 
 /* The workspaces page with none yet (Choices.tsx, D-338): the page's three ways in, drawn as its pieces are (graphite,
    a band on top, the name cut into the edge). */

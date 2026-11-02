@@ -17,7 +17,8 @@
 
 .tabs {
   position: absolute;
-  top: var(--hud-h);
+  /* At the top, a side panel's padding over it (SidePanel .top); the HUD's shade stops at the split (Hud .hud). */
+  top: var(--space-4);
   left: 0;
   right: 0;
   display: flex;

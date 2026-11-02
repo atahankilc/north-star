@@ -18,10 +18,14 @@ where it's first met in code), [onboarding-research.md](onboarding-research.md) 
 - Built overnight by another agent with **checks and agent pipelines**; this file and the run file prepare that.
 
 > **D-349 (2026-11-02), what changed since this plan:** every lesson is the centred modal (§4.1's window), never
-> a card beside its anchor (§4.3's card and the nudges, §4.5, are deleted: Lesson.tsx, Nudge.tsx, place.ts; `findAnchor` lives in anchor.ts for the empty states); one lesson per screen, panel or
+> a card beside its anchor (§4.3's card and the nudges, §4.5, are deleted: Lesson.tsx, Nudge.tsx, place.ts; `findAnchor` and anchor.ts went with the empty hints, D-353); one lesson per screen, panel or
 > piece, step by step, ≤ 6 pages of ≤ 40 words; no lesson over a menu, the finder, a wizard, typing or Settings; the
 > welcome is about the canvas only (6 pages); keys shown nowhere in the app, all of them in `?`. The words and the
 > list: lessons.ts and the table at the top of onboarding-lessons.md. Where this file says otherwise, D-349 wins.
+>
+> **D-353 (2026-11-02):** the empty canvas's, an empty plane's and an empty timeline's faint hints (`empty-canvas`,
+> `empty-plane`, `empty-timeline`, EmptyHint.tsx) are removed. The user: not needed, the onboarding has enough lessons.
+> The only empty state left is the workspaces page's three choices (`workspaces-empty`, Choices.tsx).
 
 ---
 
@@ -80,7 +84,10 @@ lessons is large (~60): a person meets them over days, one at a time, as they di
    A lesson *about* one of those surfaces says so (`within`: `wizard`, `finder`, `menu`, `setup`, `settings`,
    `threads`, `following`, `typing`) and shows on it: that one busy source (and typing inside it) doesn't hold it back.
 3. **Short.** ≤ 8 pages a lesson, ≤ 40 words a page (D-351; was 4 and 25, then 6 by D-349) (the welcome 6, 7 for viewers; the kind guide replayed from `?` pages through its rows, one per kind), a title ≤ 6 words, one demo or none. Keys are
-   written as the app writes them (`⌘F`, `esc`, `0`). Lowercase actions, uppercase labels, the app's two voices.
+   written as the app writes them (`⌘F`, `esc`, `0`) and shown as this computer writes them: off a Mac `Ctrl+F`,
+   `Ctrl+Shift+Z`, `Alt drag` (src/ui/foundation/keyGlyphs.ts, D-355). The app's own words (glossary.ts: card,
+   plane, piece, deck…) are marked by themselves the first time each comes up in a page's text: cyan, dotted, their
+   meaning in a small box on hover or keyboard focus (the kit's `Tip`); lesson text is written plain, no markup. Lowercase actions, uppercase labels, the app's two voices.
 4. **Next to what it explains, never over it.** An anchored lesson sits beside its anchor (`src/ui/foundation/floating.ts`), and
    never covers the anchor, the piece being taught, or the right panel. When there's no room, it goes to the middle
    bottom as a card.
@@ -142,8 +149,8 @@ Variants, picked by what's true when it opens:
 - **Invited into a filled workspace** (the person didn't make it and it has pieces): page 1 says "<owner> started
   this workspace" and suggests `0` to see it all.
 - **Viewer**: page 3 is "Find your way"; the last line says what a viewer can do (read, comment, own documents).
-- **Empty canvas, editor**: after the welcome, an Excalidraw-like **empty-canvas hint** (not a modal: faint text in the
-  middle of the canvas, `press + to add your first piece`, an arrow toward the `+`) that leaves at the first piece.
+- ~~**Empty canvas, editor**: after the welcome, an empty-canvas hint (faint text, an arrow toward the `+`).~~ Removed
+  (D-353): the welcome's pieces page already points at the `+`.
 
 ### 4.2 The kind guide (the `+` menu, explained)
 The first times the `+` opens (until every row has been seen, or `don't show`), a **guide column is glued to the
@@ -207,17 +214,14 @@ matches). `# keys` folds the same way (`[▸ 58 keys]`, a viewer's 31: the ones 
 `tips: on | off` sits on the `>` line. Its height is at most the screen minus 48 px top and bottom; the list scrolls
 inside (on a 768 px laptop it does with one area open). A magenta dot on `?` while something new is unseen.
 
-### 4.7 Teaching empty states (workspaces page, empty canvas, empty pieces)
-Not modals: the empty states themselves teach, then vanish.
+### 4.7 Teaching empty states (the workspaces page only, D-353)
+Not modals: the empty states themselves teach, then vanish. The empty canvas's, plane's and timeline's faint lines
+were removed (D-353, the user: not needed, the onboarding has enough lessons); only the workspaces page's is left.
 - **Workspaces page, no workspaces**: three framed choices `create a workspace` / `join with a code` (a line: "an
   owner lets you in") / `import a .zip`, each one line.
 - **After a join request**: the pending row says "waiting for an owner to let you in" (it may already).
-- **Empty canvas**: §4.1's hint.
-- **An empty plane in focus**: `press + or right-click to add a card` faint in the middle until the first card.
 - Empty states keep `after` like lessons: one waits while a lesson it names is queued or showing (and its break and
   gap), and while the focus ink spreads or the curtain is down; once shown it stays until done.
-- **A deck without tasks, a documents list without documents, a timeline with nothing**: one line each saying how.
-  (Check what exists first; several pieces already have empty lines.)
 
 ---
 
@@ -237,7 +241,6 @@ src/onboarding/
   Coach.tsx                  mounted once in WorkspaceLayout (and Workspaces): renders whatever the queue gives
   Welcome.tsx WhatsNew.tsx   the two modals (one Pages component)
   Pages.tsx                  every lesson, the welcome and what's new: the centred modal (D-349)
-  anchor.ts                  findAnchor: where the empty states point
   KindGuide.tsx              the column beside the `+` menu
   Guide.tsx                  `?`
   Demo.tsx                   the frame in the app that shows a scene (an iframe, §6)
@@ -295,8 +298,8 @@ scripts/check-lessons.mjs    the lint (§8)
   is retired), then this one shows after the calm/cooldown. One that isn't due doesn't hold it (else a lesson with a
   second trigger, e.g. `matrix-keys` from a cell picked unframed, would wait for a focus that never comes). When one
   event triggers two lessons (`focus-in {kind: table}` → `focus-lens` + `table-keys`), lessons.ts gives the specific
-  one an `after` naming the general one, so they come one after the other, never stacked; `empty-canvas` waits for
-  `welcome` on the same `canvas-open` the same way.
+  one an `after` naming the general one, so they come one after the other, never stacked; `workspaces-empty` waits for
+  `workspaces` on the same `workspaces-open` the same way.
   A lesson dropped after the 10 s busy wait stays armed for its next trigger and no longer holds the ones that name
   it in `after`, so they may show first (harmless). `check:lessons` fails on two lessons for a shared role that one
   event can trigger together unless `after` or `unless` orders them (directly or through a chain).
@@ -461,7 +464,7 @@ tasks, a timeline, two documents) and small ones derived from it per scene.
    renders; after one loop the first frame equals the first frame before (pixel diff under a threshold); dark and light;
    reduced motion shows the poster still.
 6. **Flows** (headless on the emulators, puppeteer-core, state.md's notes): a **new** person (fresh auth user) →
-   workspaces empty state → create → welcome 4 pages → empty-canvas hint → `+` with the kind guide → a plane → its
+   workspaces empty state → create → welcome → `+` with the kind guide → a plane → its
    lesson → focus → its lesson → a card → … ; an **invited** person (Bob into Alice's filled workspace); a person **back after a
    release** (a seeded seen-state doc with an older `lastRelease` + the test release) → what's new only, its lessons
    armed; an **old account with no doc** → the full welcome, like a new one; a **viewer** (Carol) → viewer welcome, no editing

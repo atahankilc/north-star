@@ -45,6 +45,23 @@
   position: absolute;
   top: var(--space-4);
   left: var(--space-3);
+  opacity: 0;
+  transition: opacity var(--dur-fast) ease;
+}
+
+/* The arrow's hover area, a little bigger than it: the only part of the layer that takes the pointer, so the name
+   shows on hover and nothing else under the cursors is blocked. */
+.hit {
+  position: absolute;
+  top: calc(-1 * var(--space-1));
+  left: calc(-1 * var(--space-1));
+  width: var(--control-sm);
+  height: var(--control-sm);
+  pointer-events: auto;
+}
+
+.cursor:hover .name {
+  opacity: 1;
 }
 
 /* What someone else has selected (D-067, D-068): a frame in their colour just outside, their name over its corner; a

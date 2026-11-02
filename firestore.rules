@@ -772,8 +772,11 @@ service cloud.firestore {
             || previewBack(request.resource.data))
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['count'])
             || request.resource.data.count == resource.data.count + 1 || request.resource.data.count == resource.data.count - 1);
-        // Owners, or whoever started it while nobody has answered (D-166: editors no longer delete others' words).
-        allow delete: if isOwner(wid) || (isMember(wid) && resource.data.uid == request.auth.uid && resource.data.count <= 1);
+        // Owners, or whoever wrote the one message left (D-166: editors no longer delete others' words): its starter
+        // while nobody answered, or the writer of an answer whose thread's first message was taken back (taking back
+        // your own last message takes the thread with it; the preview, `lastUid`, is always the newest message left).
+        allow delete: if isOwner(wid) || (isMember(wid) && resource.data.count <= 1
+          && (resource.data.uid == request.auth.uid || resource.data.get('lastUid', null) == request.auth.uid));
 
         match /messages/{mid} {
           function validMessage(d) {

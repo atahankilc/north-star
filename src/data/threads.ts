@@ -94,18 +94,30 @@ export async function reply(wid: string, tid: string, text: string, mentions: st
   void markSeen(wid, tid, now)
 }
 
-export function editMessage(wid: string, tid: string, mid: string, text: string, mentions: string[] = []) {
+// Your own message changed; when it's the one the thread's preview shows (its writer and time), the preview's text
+// changes with it, in the same write, so nobody's threads panel keeps the old words.
+export async function editMessage(wid: string, tid: string, mid: string, text: string, mentions: string[] = []) {
   const ids = cap(mentions)
-  return updateDoc(doc(messagesOf(wid, tid), mid), { text: text.slice(0, MESSAGE_MAX), mentions: ids.length ? ids : deleteField(), editedAt: Date.now() })
+  const body = text.slice(0, MESSAGE_MAX)
+  const [t, m] = await Promise.all([getDoc(doc(threadsOf(wid), tid)), getDoc(doc(messagesOf(wid, tid), mid))])
+  const thread = t.data() as Thread | undefined
+  const msg = m.data() as ThreadMessage | undefined
+  const batch = writeBatch(db())
+  batch.update(doc(messagesOf(wid, tid), mid), { text: body, mentions: ids.length ? ids : deleteField(), editedAt: Date.now() })
+  if (thread && msg && (thread.lastMid === mid || (thread.lastUid === msg.uid && thread.lastAt === msg.createdAt)))
+    batch.update(doc(threadsOf(wid), tid), { lastText: body.length <= PREVIEW_MAX ? body : deleteField(), updatedAt: Date.now() })
+  return batch.commit()
 }
 
-// Your own message taken back (D-166: only its writer can); the last one takes its thread with it. When it was the
-// newest, the thread's preview goes back to the one before it (`lastMid` names it, so the rules can check it's really
-// that message; a text too long for the preview is left out rather than cut).
+// Your own message taken back (D-166: only its writer can); the last one takes its thread with it. The thread's preview
+// is always set to the newest message left (`lastMid` names it, so the rules can check it's really that message; a text
+// too long for the preview is left out rather than cut). Not only when the one taken back was the newest by
+// `createdAt`: that's each writer's own clock, and a preview that waited on it kept showing a deleted message to
+// everyone in the threads panel.
 export async function deleteMessage(wid: string, tid: string, mid: string, wasLast: boolean) {
   if (wasLast) return deleteThread(wid, tid)
   const newest = await getDocs(query(messagesOf(wid, tid), orderBy('createdAt', 'desc'), limit(2)))
-  const before = newest.docs[0]?.id === mid ? newest.docs[1] : undefined
+  const before = newest.docs.find((d) => d.id !== mid)
   const prev = before?.data() as ThreadMessage | undefined
   const batch = writeBatch(db())
   batch.delete(doc(messagesOf(wid, tid), mid))
@@ -128,7 +140,8 @@ export function setResolved(wid: string, tid: string, resolved: boolean) {
   return updateDoc(doc(threadsOf(wid), tid), resolved ? { resolved: true, resolvedBy: uid, updatedAt: Date.now() } : { resolved: deleteField(), resolvedBy: deleteField(), updatedAt: Date.now() })
 }
 
-// The thread and every message in it; owners, or whoever started it while nobody answered. An owner may take others'
+// The thread and every message in it; owners, or whoever wrote the one message left (its starter, or an answer
+// whose thread's first message was taken back). An owner may take others'
 // messages only once the thread is gone (in the same batch or after it), so the thread goes in the first batch with as
 // many messages as fit, and the rest follow a batch at a time until none are left.
 const DELETE_BATCH = 450

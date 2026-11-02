@@ -157,7 +157,7 @@ describe('arming', () => {
     expect(hasNew(p, LESSONS, 'viewer')).toBe(false)
     expect(hasNew(p, LESSONS, 'editor')).toBe(true)
     // Armed empty states (never listed in `?`) don't light it either.
-    expect(hasNew({ seen: {}, armed: ['empty-canvas@1'] })).toBe(false)
+    expect(hasNew({ seen: {}, armed: [`workspaces-empty@${v('workspaces-empty')}`] })).toBe(false)
   })
 })
 

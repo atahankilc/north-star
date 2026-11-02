@@ -163,6 +163,19 @@
   display: none;
 }
 
+/* Its drawer, too: the whole edge, its rows wrapping, never past it (D-354); after the floor's own rules, which it overrides. */
+.console[data-full] .floor {
+  left: 0;
+  right: 0;
+  width: auto;
+  min-width: 0;
+  transform: none;
+}
+
+.console[data-full] .frow {
+  flex-wrap: wrap;
+}
+
 .floor::before {
   content: '';
   position: absolute;

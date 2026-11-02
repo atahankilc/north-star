@@ -3,6 +3,7 @@
 // for an open area and what's typed. No React here; Guide.tsx draws it.
 import { fitsRole } from './audience'
 import { KEYS, type KeyRow } from './keys'
+import { keyGlyphs } from '../ui/foundation/keyGlyphs'
 import { AREAS, LESSONS, type Area, type Lesson, type Role } from './lessons'
 import { releases } from './releases'
 import { isArmed } from './seenMerge'
@@ -76,7 +77,9 @@ function noteOf(l: Lesson, role: Role | null, p: ProgressLike): Note | null {
 
 // The keys this person can use here: a viewer's list leaves out what only changes things (the app is locked for them,
 // D-098); no role known yet lists them all, as the notes do.
-export const keysFor = (role: Role | null, keys: readonly KeyRow[] = KEYS): readonly KeyRow[] => (role === 'viewer' ? keys.filter((k) => !k.editors) : keys)
+// Written as this computer writes them: Ctrl/Alt/Shift off a Mac (keyGlyphs, D-355).
+export const keysFor = (role: Role | null, keys: readonly KeyRow[] = KEYS): readonly KeyRow[] =>
+  (role === 'viewer' ? keys.filter((k) => !k.editors) : keys).map((k) => ({ ...k, keys: keyGlyphs(k.keys), what: keyGlyphs(k.what) }))
 
 export function guideModel(p: ProgressLike, role: Role | null, lessons: readonly Lesson[] = LESSONS): GuideModel {
   const notes = lessons.filter((l) => listed(l, role)).map((l) => noteOf(l, role, p)).filter((n): n is Note => !!n)

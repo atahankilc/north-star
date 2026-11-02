@@ -12,6 +12,10 @@
   height: var(--hud-h);
   padding: 0 var(--hud-x);
   background: linear-gradient(to bottom, var(--bg) 20%, transparent);
+  /* Only as wide as the page's left part when a view takes the right of the screen (the tasks side view sets
+     `--hud-shade-w`): nothing of the bar's sits on the right, so its shade never dims that view's top row. */
+  background-size: var(--hud-shade-w, 100%) 100%;
+  background-repeat: no-repeat;
   /* The HUD's size (D-348) sets the breadcrumb's text too. */
   font-size: var(--hud-text);
   /* Only the bar's contents take clicks, so the board under it still pans. */

@@ -7,7 +7,7 @@
 // `under` hanging under what it belongs to (an unframed piece, a selection; the caller places it); `foot` standing on the screen's foot.
 // No edge line: faint L's on every corner that can be seen, cyan while pointed at or in edit mode; on the screen's foot
 // only the top two. Past CONSOLE_FILL of the width it hangs on, it takes the whole edge and wraps upward, go keeping
-// the right end: it never shrinks or hides a tool. Inside the zoomed canvas its sizes follow `--cs` (D-264).
+// the right end: it never shrinks or hides a tool. Its open drawer counts: one too wide takes the whole edge with it. Inside the zoomed canvas its sizes follow `--cs` (D-264).
 import { useEffect, useLayoutEffect, useRef, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { create } from 'zustand'
 import { CONSOLE_FILL } from '../foundation/feel'
@@ -47,7 +47,10 @@ export function Console({ at, children, name, info, editing, floor, room, fill =
     const fit = () => {
       el.removeAttribute('data-full')
       const width = room ?? host?.clientWidth ?? 0
-      if (width > 0 && el.offsetWidth > CONSOLE_FILL * width) el.setAttribute('data-full', '')
+      // Its drawer counts too: one wider than the room would hang past it (D-354).
+      const floor = el.querySelector<HTMLElement>(`.${CSS.escape(styles.floor)}`)
+      const wide = Math.max(el.offsetWidth, floor?.offsetWidth ?? 0)
+      if (width > 0 && wide > CONSOLE_FILL * width) el.setAttribute('data-full', '')
     }
     fit()
     const ro = new ResizeObserver(fit)

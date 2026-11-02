@@ -119,7 +119,7 @@ function textW(s: string) {
 const labelOf = (t: Task, finished: boolean) => `${finished ? '✓ ' : ''}${t.priority ? `${t.priority} ` : ''}${t.title}`
 
 // A task on the strip: its first and last day (a ◆ has one), whether it's late or finished, its lane, and its box in
-// px from day 0 (with what's drawn past it: the hatching, a name outside a short sheet).
+// px from day 0 (with what's drawn past it: the hatching, a ◆'s name).
 type Item = { task: Task; s: number; e: number; point: boolean; late: boolean; finished: boolean; lane: number; x: number; w: number; out: boolean; x0: number; x1: number }
 type Row = Lane & { top: number; h: number; lanes: number; items: Item[] }
 type Layout = { rows: Row[]; tray: Task[]; rowsH: number; lo: number; hi: number }
@@ -137,12 +137,12 @@ function boxOf(t: Task, s: number, e: number, point: boolean, late: boolean, fin
   const i = inset(ppd)
   const x = s * ppd + i
   const w = Math.max(ppd >= 20 ? 10 : 4, (e - s + 1) * ppd - 2 * i)
-  const out = w < lw
-  const x1 = Math.max(x + w + (out ? 8 + lw + (late ? 62 : 0) : 0), hatchEnd)
-  return { x, w, out, x0: x - 4, x1: x1 + 6 }
+  // A sheet's name always stays inside it, cut with `…` (too short: none, its title on hover); never beside it, where it
+  // read as the next day's (D-354).
+  return { x, w, out: false, x0: x - 4, x1: Math.max(x + w, hatchEnd) + 6 }
 }
 
-// Its tasks, where they go: rows, lanes (first fit, in px, so a name outside a short sheet never runs into the next),
+// Its tasks, where they go: rows, lanes (first fit, in px, so a ◆'s name beside it never runs into the next),
 // the tray; the days the overview spans.
 function layoutOf(piece: WithId<Piece>, all: WithId<Piece>[], tasks: Task[], cards: { id: string; type: string; pieceId: string; title?: string }[], filterOk: (t: Task, finished: boolean) => boolean, me: { id: string; name: string } | undefined, ppd: number): Layout {
   const kanbans = timelineKanbans(piece, all)

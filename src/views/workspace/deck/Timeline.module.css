@@ -345,7 +345,7 @@
   outline-offset: var(--space-half);
 }
 
-/* Its name, cut with `…` inside a sheet; beside it when the sheet is too short. */
+/* Its name, cut with `…` inside a sheet, never out of it (D-354); a ◆ (no sheet) has it beside. */
 .label {
   position: absolute;
   top: 0;

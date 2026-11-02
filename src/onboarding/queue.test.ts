@@ -332,17 +332,15 @@ describe('queue', () => {
 })
 
 describe('queue with the real lessons', () => {
-  it('canvas-open: the welcome, then the empty canvas after the cooldown', () => {
+  it('canvas-open on an empty canvas: the welcome alone, no hint after it (D-353)', () => {
     const s = setup(LESSONS as Lesson[])
     s.q.onEvent({ event: 'canvas-open', payload: { first: true, empty: true } })
     s.wait(500)
     expect(s.shown()).toBe('welcome')
-    expect(s.q.queued()).toEqual(['empty-canvas'])
+    expect(s.q.queued()).toEqual([])
     s.q.close('welcome', 'done')
-    s.wait(COOLDOWN_MS - 1000)
+    s.wait(COOLDOWN_MS + 1500)
     expect(s.shown()).toBe(null)
-    s.wait(1500)
-    expect(s.shown()).toBe('empty-canvas')
   })
 
   it('focus-in a table: its one lesson, its viewer pages (D-349)', () => {
@@ -528,17 +526,20 @@ describe('queue, fix round O11', () => {
 })
 
 describe('empty states beside the queue (O16c)', () => {
-  const plane = LESSONS.find((l) => l.id === 'empty-plane')!
-  it('the empty-plane hint waits while focus-plane is queued or showing', () => {
-    expect(plane.after).toContain('focus-plane')
-    expect(hintWaits(plane, { shown: null, queued: ['focus-plane'], busy: {} })).toBe(true)
-    expect(hintWaits(plane, { shown: 'focus-plane', queued: [], busy: {} })).toBe(true)
-    expect(hintWaits(plane, { shown: null, queued: ['card-made'], busy: {} })).toBe(false)
-    expect(hintWaits(plane, { shown: 'piece-made', queued: [], busy: {} })).toBe(false)
+  const page = LESSONS.find((l) => l.id === 'workspaces-empty')!
+  it('the workspaces page choices wait while its `workspaces` lesson is queued or showing', () => {
+    expect(page.after).toContain('workspaces')
+    expect(hintWaits(page, { shown: null, queued: ['workspaces'], busy: {} })).toBe(true)
+    expect(hintWaits(page, { shown: 'workspaces', queued: [], busy: {} })).toBe(true)
+    expect(hintWaits(page, { shown: null, queued: ['card-made'], busy: {} })).toBe(false)
+    expect(hintWaits(page, { shown: 'piece-made', queued: [], busy: {} })).toBe(false)
   })
-  it('no hint while the focus ink spreads or the curtain is down', () => {
-    expect(hintWaits(plane, { shown: null, queued: [], busy: { focusMoving: true } })).toBe(true)
-    expect(hintWaits(plane, { shown: null, queued: [], busy: { curtainHidden: true } })).toBe(true)
+  it('the only empty state left is the workspaces page (D-353)', () => {
+    expect(LESSONS.filter((l) => l.format === 'empty').map((l) => l.id)).toEqual(['workspaces-empty'])
+  })
+  it('no empty state while the focus ink spreads or the curtain is down', () => {
+    expect(hintWaits(page, { shown: null, queued: [], busy: { focusMoving: true } })).toBe(true)
+    expect(hintWaits(page, { shown: null, queued: [], busy: { curtainHidden: true } })).toBe(true)
     expect(hintWaits({}, { shown: null, queued: [], busy: { typing: true } })).toBe(false)
   })
 })

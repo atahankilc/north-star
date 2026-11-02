@@ -2,7 +2,8 @@
 
 > **D-349 (2026-11-02): rewritten.** `src/onboarding/lessons.ts` is the source of every lesson's words. What holds:
 > - **Every lesson is the centred modal** (Pages, the welcome's window), never a card beside an anchor; no nudges.
->   Small helpers kept: the kind guide beside the `+` menu, the empty states.
+>   Small helpers kept: the kind guide beside the `+` menu, the workspaces page's empty state (the canvas's, plane's
+>   and timeline's faint hints removed, D-353, 2026-11-02: not needed, the onboarding has enough lessons).
 > - **One lesson per screen, panel or piece**, step by step, the first time it's opened or made. Limits: a title ≤ 6
 >   words, a body ≤ 40, ≤ 8 pages (D-351); each page may carry a one-word `tab`. The kind guide's rows, empty lines and
 >   release lines stay ≤ 25.
@@ -34,7 +35,7 @@
 > | `canvases` | the breadcrumb's prompt closed, a canvas made or switched, a piece moved | canvases · move · delete |
 > | `settings`, `people-settings` | after Settings (its people page) closes | you · workspace; people · asking |
 > | `viewer` | a viewer's change refused | one page |
-> | empty states | `empty-canvas`, `workspaces-empty`, `empty-plane`, `empty-timeline` | one line or three choices |
+> | empty state | `workspaces-empty` (`empty-canvas`, `empty-plane`, `empty-timeline` removed, D-353) | three choices |
 
 ## Where the rest lives
 

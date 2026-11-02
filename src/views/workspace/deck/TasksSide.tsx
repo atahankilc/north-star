@@ -9,7 +9,7 @@
 // deck, a strip under the tabs saying so (`[all decks]` lets go). Days are the deck's linked timeline's when it has one,
 // else rows by who it's given to. A task picked opens its panel inside the side view (TaskPanel), and in a plane's
 // focus the plane glides to its card; nothing switches view by itself.
-import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { useAuth } from '../../../data/auth'
 import { piecesOn } from '../../../data/canvases'
 import type { WithId } from '../../../data/hooks'
@@ -33,9 +33,12 @@ import { Tabs } from '../../../ui/primitives/Tabs'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Button } from '../../../ui/primitives/Button'
 import { Num, Rule } from '../../../ui/primitives/Rule'
+import { tokenPx } from '../../../styles/cssToken'
 
-// The tabs' row, under the breadcrumb's bar (`--hud-h`, 56) whose shade would cover it; the linked strip under it.
-const TABS_H = 56 + 40
+// The tabs' row at the top, a side panel's padding over it (`--space-4`, SidePanel's `.top`), the HUD's shade stopping
+// at the split line so it never dims it (`--hud-shade-w`, below); the linked strip under it.
+// Read at draw time (tokenPx keeps what it read; at import the stylesheet may not be in yet).
+const tabsH = () => tokenPx('--space-4') + tokenPx('--head-h')
 const STRIP_H = 30
 // Narrower than this, the days slide over the deck instead of standing beside it.
 const WIDE = 1300
@@ -99,7 +102,13 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
 
   const left = Math.round(size.w * split)
   const width = size.w - left
-  const top = TABS_H + (strip ? STRIP_H : 0)
+  // The breadcrumb's bar shades only what's left of the side view: its tabs sit at the very top, under nothing.
+  useLayoutEffect(() => {
+    const root = document.documentElement.style
+    root.setProperty('--hud-shade-w', `${left}px`)
+    return () => void root.removeProperty('--hud-shade-w')
+  }, [left])
+  const top = tabsH() + (strip ? STRIP_H : 0)
   const deckW = twoCols ? Math.round(width * inner) : width
 
   // The line between the left part and the side view drags (the days' share kept apart from beside's).
@@ -138,8 +147,8 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
   const colH = size.h - top
   return (
     <>
-      <div className={pane.divider} style={{ left, zIndex: 'calc(var(--z-world-ui) + 1)' }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="The side view's width" />
-      <aside className={styles.side} data-learn="side-view" style={{ left, width }} aria-label="Decks and days" onPointerDown={(e) => e.stopPropagation()}>
+      <div className={pane.divider} data-off-space style={{ left, zIndex: 'calc(var(--z-world-ui) + 1)' }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="The side view's width" />
+      <aside className={styles.side} data-off-space data-learn="side-view" style={{ left, width }} aria-label="Decks and days" onPointerDown={(e) => e.stopPropagation()}>
         <div className={styles.tabs}>
           {/* The decks and, in the corner, across them (D-300): two rows of tabs sharing one choice (Tabs, D-326). */}
           {decks.length ? (
@@ -181,7 +190,7 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
           />
         </div>
         {strip && (
-          <div className={styles.strip} style={{ top: TABS_H, height: STRIP_H }}>
+          <div className={styles.strip} style={{ top: tabsH(), height: STRIP_H }}>
             <span>
               ⇆ linked to <b>{strip.name || 'a plane'}</b> <span className={styles.dim}>· its cards only</span>
             </span>
@@ -346,7 +355,7 @@ function Mine({ decks, top, children }: { decks: WithId<Piece>[]; top: number; c
       <div className={styles.mine} data-scrolls>
         {!groups.length && (
           <Empty className={styles.none} tone="dim">
-            nothing given to you{decks.length ? '' : ': no deck on this canvas yet, put one on it from its +'}
+            nothing given to you{decks.length ? '' : ': no deck on this canvas yet'}
           </Empty>
         )}
         {groups.map(({ d, list }) => (

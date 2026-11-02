@@ -42,6 +42,11 @@ export function usePresenceReport(space: string) {
   useEffect(() => () => setCursor(null), [])
 }
 
+// What isn't your space though it's drawn over it (`data-off-space`): the tasks side view, what's beside a plane, the
+// threads panel. Over one your pointer isn't on the canvas or the plane, so it isn't sent (others saw it wander the
+// canvas while you worked on a deck).
+const offSpace = (t: EventTarget | null) => t instanceof Element && !!t.closest('[data-off-space]')
+
 // Your pointer, in the space's px; re-sent when the view moves under a still pointer.
 export function useCursorReport(root: RefObject<HTMLDivElement | null>, toSpace: (cx: number, cy: number) => [number, number] | null) {
   const last = useRef<[number, number] | null>(null)
@@ -57,6 +62,13 @@ export function useCursorReport(root: RefObject<HTMLDivElement | null>, toSpace:
       setCursor(at ?? null)
     }
     const move = (e: PointerEvent) => {
+      if (offSpace(e.target)) {
+        if (last.current) {
+          last.current = null
+          setCursor(null)
+        }
+        return
+      }
       last.current = [e.clientX, e.clientY]
       report()
     }
@@ -75,13 +87,18 @@ export function useCursorReport(root: RefObject<HTMLDivElement | null>, toSpace:
   }, [root])
 }
 
-// Everyone else's cursor in your space: an arrow in their colour and their name, moved every frame while they glide.
+// Everyone else's cursor in your space: an arrow in their colour, moved every frame while they glide. Their name
+// shows only while you point at the arrow, so it never hides what's under it.
 export function PeerCursors({ space, toScreen }: { space: string; toScreen: ToScreen }) {
   const peers = usePresence((s) => s.peers)
   // On the canvas, only those on the same one (D-302); a plane's id is one canvas's already.
   const { canvas } = useWs()
   const here = peers.filter((p) => spaceOf(p) === space && (space !== CANVAS || (p.canvas ?? 'main') === canvas) && p.x !== undefined && p.y !== undefined)
   const tone = useThemeAccent()
+  // Only over your space's own part of the screen: with the tasks side view open, or something beside the plane, the
+  // part left of the split line (a cursor there is on the canvas, never over the deck you're looking at).
+  const sideOpen = useTasksSide((s) => s.open)
+  const share = useCanvasView((s) => (sideOpen || s.beside ? s.split : 1))
   const els = useRef(new Map<string, HTMLDivElement>())
   const toScreenRef = useRef(toScreen)
   toScreenRef.current = toScreen
@@ -117,7 +134,7 @@ export function PeerCursors({ space, toScreen }: { space: string; toScreen: ToSc
   }, [here.length])
 
   return (
-    <div className={styles.cursors} aria-hidden>
+    <div className={styles.cursors} style={share < 1 ? { right: `${(1 - share) * 100}%` } : undefined} aria-hidden>
       {here.map((p) => (
         <div
           key={p.uid}
@@ -125,6 +142,7 @@ export function PeerCursors({ space, toScreen }: { space: string; toScreen: ToSc
           className={styles.cursor}
           style={{ ['--peer' as string]: tone(p.color) }}
         >
+          <span className={styles.hit} />
           <svg className={styles.arrow} viewBox="0 0 16 16">
             <path d="M1 1 L1 13 L4.5 9.5 L7.5 15 L9.5 14 L6.6 8.6 L11.5 8.6 Z" />
           </svg>

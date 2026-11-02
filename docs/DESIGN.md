@@ -219,6 +219,12 @@ Values will be tuned against contrast checks (WCAG AA for text).
   duplicate / delete; text's edit / copy / duplicate / delete; a link's label / turn round / kind / remove; several's
   copy / duplicate / delete; the plane's paste and add here; `comment` on any component (D-193). A right drag still pans.
 
+### Words explained on hover (D-355)
+- `Tip` (src/ui/patterns/Tip.tsx): a word in `--accent-cyan` with a dotted underline; on hover or keyboard focus its
+  meaning in a small box under it (above near the foot), the page's black with a `--line-hover` hairline, Inter
+  `--text-xs`, never pressed. Used for the app's own words in the onboarding (glossary.ts), the first use in a text.
+- Keys are written the Mac way in code and shown as the computer writes them (`Ctrl+F` off a Mac, keyGlyphs.ts).
+
 ### Pieces (D-176, D-263–D-276)
 - Surface (D-263, D-274): every piece (plane, matrix, table, kanban, timeline, documents, document) is graphite
   `--piece` (white in light), `--piece-edge`, a deep shadow, a 1 px light on top and a 2 px band along the top in its
@@ -337,5 +343,6 @@ works too. No per-component scroll bar styles; a new scrolling area gets the loo
   (D-206). Framing and unframing turn cell by cell in 320 ms (D-276).
 - Cards build cell by cell when they arrive and break apart when they go (D-203); nothing lifts, tilts or shimmers (D-061).
 - Collaborator cursors are drawn 200 ms behind on a curve through what was sent, so they glide like the sender's
-  (D-169, D-193; no trail: tried and removed, D-067)
+  (D-169, D-193; no trail: tried and removed, D-067); their name shows only while you point at the arrow, so it never
+  hides what's under it (D-352)
 - Marks and drags: see §6 (D-265).

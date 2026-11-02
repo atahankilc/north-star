@@ -1,13 +1,14 @@
 // The coach (D-315, docs/specs/onboarding.md §5.1, §5.6): mounted once inside a workspace (and once on the workspaces
 // page, where there's no workspace), it starts the seen-state, the events and the busy watch, runs the queue, and draws
 // whatever is due: the welcome, a lesson or what's new (one paged modal, z 40; D-349: no card beside an anchor), the
-// teaching empty states, the kind guide beside the `+` menu (O5b's KindGuide) and the `?` guide (O5b's Guide).
-// Everything portals to <body>; every surface stops presses from reaching the canvas.
+// workspaces page's empty state (its framed choices), the kind guide beside the `+` menu (O5b's KindGuide) and the `?`
+// guide (O5b's Guide). Everything portals to <body>; every surface stops presses from reaching the canvas. The empty
+// canvas's, plane's and timeline's faint lines are gone (D-353): the lessons teach enough.
 //
-// What the queue doesn't draw: the kind guide and the empty states. They never block anything else (a hint stays while
-// its piece is empty; the kind guide lives as long as the `+` menu), so the coach keeps them itself, off the queue's one
-// slot: the empty states from their triggers (and `doneWhen`, which marks them seen), the kind guide while its menu is on
-// screen and it isn't hidden for good.
+// What the queue doesn't draw: the kind guide and the empty state. They never block anything else (the choices stay
+// while the page has no workspace; the kind guide lives as long as the `+` menu), so the coach keeps them itself, off
+// the queue's one slot: the empty state from its trigger (and `doneWhen`, which marks it seen), the kind guide while its
+// menu is on screen and it isn't hidden for good.
 import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { AnimatePresence } from 'motion/react'
 import { useAuth } from '../data/auth'
@@ -28,7 +29,6 @@ import type { Audience } from './seenMerge'
 import { newsPages, welcomePages, type Fill } from './words'
 import { Pages, type PagesEnd } from './Pages'
 import { disposeDemoPool, preloadDemo } from './Demo'
-import { EmptyHint } from './EmptyHint'
 import { Choices } from './Choices'
 import { KindGuide } from './KindGuide'
 import { Guide, useGuideRole, useGuideShown } from './Guide'
@@ -77,7 +77,6 @@ function sampleIfAsked(): Promise<void> | null {
 export type CoachDev = {
   force(s: Shown | null): void
   news(pages: Release[] | null): void
-  hint(id: string | null): void
   guide(open: boolean): void
   kind(open: boolean): void
   // The real queue's surfaces hidden (only what's forced shows).
@@ -95,10 +94,6 @@ export function Coach() {
   const uid = user?.id ?? null
   const noop = () => () => {}
   const workspace = useSyncExternalStore(store?.subscribe ?? noop, () => store?.get().workspace ?? null)
-  const piecesHere = useSyncExternalStore(store?.subscribe ?? noop, () => {
-    const w = store?.get()
-    return w ? w.pieces.filter((p) => (p.canvasId ?? 'main') === w.canvas || p.canvases?.includes(w.canvas)).length : 0
-  })
   const peers = usePresence((s) => s.peers)
 
   // Who this person is to the onboarding, as decided at the first canvas-open (else what the seen-state says).
@@ -264,12 +259,6 @@ export function Coach() {
           if (l.trigger.some((t) => matches(t, e)) && !next[l.id] && (p.seen[l.id] ?? 0) < l.v && !p.tipsOff && fitsRole(l.roles, roleRef.current))
             next = { ...next, [l.id]: true }
         }
-        // A plane's or timeline's hint lasts while its focus does.
-        if (e.event === 'focus-out' && (next['empty-plane'] || next['empty-timeline'])) {
-          next = { ...next }
-          delete next['empty-plane']
-          delete next['empty-timeline']
-        }
         return next
       })
       // The kind guide: watched while the `+` menu is up.
@@ -279,16 +268,6 @@ export function Coach() {
     return onLearn(onEvent)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queue, uid, store])
-
-  // The empty canvas's hint goes with the first piece, however it came.
-  useEffect(() => {
-    if (piecesHere > 0 && hints['empty-canvas'])
-      setHints((h) => {
-        const n = { ...h }
-        delete n['empty-canvas']
-        return n
-      })
-  }, [piecesHere, hints])
 
   // What's new waits for a free moment on the canvas: no focus, nothing busy, nothing else of the coach's. A welcome
   // still due (a doc whose `welcome` was never ended, after a release) goes first: queued, it hasn't taken the slot yet
@@ -483,7 +462,6 @@ export function Coach() {
         setNews(r)
         setNewsShowing(!!r)
       },
-      hint: (id) => setHints(id ? { [id]: true } : {}),
       guide: setGuideOpen,
       kind: setKindOpen,
       quiet: setQuiet,
@@ -498,7 +476,7 @@ export function Coach() {
   const [menuUp, setMenuUp] = useState(false)
   // A hint triggered waits before it first shows (hintWaits: its `after` lesson queued or showing, the focus ink
   // spreading, the curtain down; and the break and gap after a lesson goes); once shown it stays (latched here) until
-  // done. So the empty plane's line comes after `focus-plane`, never beside it or under the ink.
+  // done. So the workspaces page's choices come after its `workspaces` lesson, never beside it.
   const [hintsReady, setHintsReady] = useState<ReadonlySet<string>>(() => new Set())
   const hintsRef = useRef(hints)
   hintsRef.current = hints
@@ -535,9 +513,7 @@ export function Coach() {
     const t = setInterval(check, 150)
     return () => clearInterval(t)
   }, [anyHint, queue])
-  const welcomeQueued = cur?.lesson.id === 'welcome' || (!quiet && queue.queued().includes('welcome'))
-  const hintIds =
-    menuUp || menu ? [] : Object.keys(hints).filter((id) => hintsReady.has(id) && !(id === 'empty-canvas' && (welcomeQueued || newsShowing || piecesHere > 0)))
+  const hintIds = menuUp || menu ? [] : Object.keys(hints).filter((id) => hintsReady.has(id))
 
   return (
     <>
@@ -559,12 +535,9 @@ export function Coach() {
         {hintIds.map((id) => {
           const l = HINTS.find((h) => h.id === id)
           // Framed choices go into their anchor on the page (the workspaces page's empty box), in place of its line.
-          if (l?.choices && l.anchor) {
-            const into = document.querySelector(`[data-learn="${l.anchor}"]`)
-            return into ? <Choices key={id} into={into} choices={l.choices} /> : null
-          }
-          if (!l?.line) return null
-          return <EmptyHint key={id} line={l.line} toward={id === 'empty-canvas' ? 'plus' : undefined} anchor={id === 'empty-timeline' ? 'piece' : undefined} />
+          if (!l?.anchor) return null
+          const into = document.querySelector(`[data-learn="${l.anchor}"]`)
+          return into ? <Choices key={id} into={into} choices={l.choices} /> : null
         })}
       </AnimatePresence>
       {guideOpen && <Guide role={role} onClose={closeGuide} onPlay={play} now={now} onReach={reach} resume={guideResume} />}

@@ -88,7 +88,7 @@ vi.mock('firebase/firestore', () => {
   }
 })
 
-import { deleteMessage, deleteThread, markTasksSeen } from '../../src/data/threads'
+import { deleteMessage, deleteThread, editMessage, markTasksSeen } from '../../src/data/threads'
 
 const W = 'workspaces/w1'
 const msg = (tid: string, id: string, uid: string, text: string, createdAt: number) =>
@@ -128,11 +128,20 @@ describe('deleteMessage', () => {
     })
   })
 
-  it('leaves the preview when an older message goes', async () => {
+  it('keeps the preview on the newest when an older message goes', async () => {
     msg('t1', 'm0', 'u-alice', 'older', 5)
     await deleteMessage('w1', 't1', 'm0', false)
-    expect(fake.data.get(`${W}/threads/t1`)).toMatchObject({ count: 1, lastUid: 'u-alice', lastText: 'mine, newest' })
-    expect(fake.data.get(`${W}/threads/t1`)).not.toHaveProperty('lastMid')
+    expect(fake.data.get(`${W}/threads/t1`)).toMatchObject({ count: 1, lastMid: 'm2', lastUid: 'u-alice', lastText: 'mine, newest' })
+  })
+
+  // The bug: the preview showed a message that wasn't the newest by `createdAt` (each writer's own clock); taking it
+  // back left it in everyone's threads panel.
+  it('never leaves the preview on a deleted message', async () => {
+    fake.data.set(`${W}/threads/t1`, { count: 2, lastAt: 9, lastUid: 'u-alice', lastName: 'Alice', lastText: 'mine, clock behind' })
+    fake.data.delete(`${W}/threads/t1/messages/m2`)
+    msg('t1', 'm2', 'u-alice', 'mine, clock behind', 9)
+    await deleteMessage('w1', 't1', 'm2', false)
+    expect(fake.data.get(`${W}/threads/t1`)).toMatchObject({ count: 1, lastMid: 'm1', lastUid: 'u-bob', lastText: 'first, from Bob' })
   })
 
   it('leaves out a text too long for the preview', async () => {
@@ -141,6 +150,26 @@ describe('deleteMessage', () => {
     const t = fake.data.get(`${W}/threads/t1`)!
     expect(t).toMatchObject({ lastMid: 'm1', lastUid: 'u-bob' })
     expect(t).not.toHaveProperty('lastText')
+  })
+})
+
+describe('editMessage', () => {
+  beforeEach(() => {
+    fake.data.set(`${W}/threads/t1`, { count: 2, lastAt: 20, lastUid: 'u-alice', lastName: 'Alice', lastText: 'mine, newest' })
+    msg('t1', 'm1', 'u-bob', 'first, from Bob', 10)
+    msg('t1', 'm2', 'u-alice', 'mine, newest', 20)
+  })
+
+  it('changes the preview with the message it shows', async () => {
+    await editMessage('w1', 't1', 'm2', 'mine, changed')
+    expect(fake.data.get(`${W}/threads/t1/messages/m2`)).toMatchObject({ text: 'mine, changed' })
+    expect(fake.data.get(`${W}/threads/t1`)).toMatchObject({ lastText: 'mine, changed' })
+  })
+
+  it('leaves the preview alone when another message is changed', async () => {
+    fake.data.set(`${W}/threads/t1`, { count: 2, lastAt: 20, lastUid: 'u-alice', lastName: 'Alice', lastText: 'mine, newest' })
+    await editMessage('w1', 't1', 'm1', 'Bob, changed')
+    expect(fake.data.get(`${W}/threads/t1`)).toMatchObject({ lastText: 'mine, newest' })
   })
 })
 

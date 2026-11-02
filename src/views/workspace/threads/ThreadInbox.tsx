@@ -190,6 +190,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
       className={styles.inbox}
       aria-label="Threads"
       data-learn="threads"
+      data-off-space
       data-list={open || undefined}
       data-convo={convo ? true : undefined}
       data-leaving={leaving || undefined}

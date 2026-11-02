@@ -45,7 +45,7 @@ feature comes back as a piece, and check them with the user then.
   state side by side, what it's built from and where it's used by area (D-336). Motion's numbers and the tween in src/ui/foundation/motionTokens.ts and motion.ts (held to tokens.css by a test), card
   colours in `--type-*` and src/ui/foundation/cardTone.ts; one Spinner, the small entrances in src/ui/foundation/Enter.module.css, one
   cell-path builder. The kit in src/ui: Button (`sm`, `md`, `icon`, `link`), ButtonGroup, ToolButton (the HUD's icon tools), Steps (a wizard's tabs), Label, Rule, Empty, Field, PromptField, Checkbox, Tabs, Chip, CountBadge. The gallery's `[tree]` shows what each
-  component draws and where it's used. Two buttons only (D-343): Button and ToolButton, both cells (D-344); a feature wrapping ToolButton is a `*Tool`, its icon from `src/ui/primitives/hudIcons.tsx` (one 18 px set), the gear too. The side nav holds the canvas's tools (decks and days too), the corner people (threads, you, settings). Patterns: Options, Window, WizardShell, InPlaceMenu. Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
+  component draws and where it's used. Two buttons only (D-343): Button and ToolButton, both cells (D-344); a feature wrapping ToolButton is a `*Tool`, its icon from `src/ui/primitives/hudIcons.tsx` (one 18 px set), the gear too. The side nav holds the canvas's tools (decks and days too), the corner people (threads, you, settings). Patterns: Options, Window, WizardShell, InPlaceMenu, Tip (a word with its meaning on hover, D-355). Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
   from coming back. Everything is on it (check:kit 0, 2026-11-01): the agent's column a non-modal Window, a prompt laid in the page an `InPlaceMenu`; folders by layer and area.
 - The UI rules are enforced, not asked for (D-339): a Claude Code hook on every write (`scripts/ui-rules-hook.mjs`) and git
   hooks on commit (`scripts/commit-rules.mjs`; a component without its gallery or lesson needs `Gallery:`/`Lessons:` in the
@@ -117,7 +117,7 @@ feature comes back as a piece, and check them with the user then.
     unframed the page's black (`--bg`), what's held still `--piece-card`.
   - Console (D-264, D-275, D-347): one `Console` for every console, dock and bar; a rail (who · nouns · tools · go
     last), a noun's drawer its upper floor; on the canvas cut into the piece's bottom edge, in focus and panes on the
-    screen's foot; past 70 % of its edge it takes the whole edge and wraps; no size in edit mode; marks (faint L's,
+    screen's foot; past 70 % of its edge (its open drawer counted) it takes the whole edge and wraps, the drawer spanning it too (D-354); no size in edit mode; marks (faint L's,
     cyan when pointed at) on its visible corners, no edge line, the selection bars too. Shown only while pointed at
     (cells in 170 / out 90 ms), in edit mode, with its setup open or the keyboard in it; fresh comments keep a small
     tab; grows as the canvas zooms out (`--cs`, ≤ 1.4 ×); on touch a first tap shows it, a second focuses.
@@ -302,7 +302,7 @@ feature comes back as a piece, and check them with the user then.
 - Decks and days (D-300, D-314): one side view from anywhere (the side nav's columns-over-a-bar icon, shown with a deck
   or timeline on the canvas, or `t`), left to right plane → deck → days (`[days ›]` a third column; under 1300 px over
   the deck); tabs the canvas's decks (cards ones too, board only), `MINE` and `ALL · DAYS` in the corner; a plane's `⇆ deck` opens it there with a
-  `LINKED TO` strip; a task's panel inside it (`[full]`, `‹ back`, `[show on board|days]`); never beside a plane.
+  `LINKED TO` strip; a task's panel inside it (`[full]`, `‹ back`, `[show on board|days]`); never beside a plane; its tabs at its top, the HUD's shade stopping at the split (D-354).
 - A timeline is always the days of something (D-314): its deck; its plane's deck (stuck to a plane, read, not written);
   a plane with no deck, every deck's tasks for its cards; nothing, every deck on its canvas. Drawing days opens the card prompt.
 - Stuck to a plane (D-255, D-303): only that plane's tasks until unlinked (no switch, no note: the link shows it),
@@ -314,7 +314,7 @@ feature comes back as a piece, and check them with the user then.
   `threadReads.tasks`); the finder finds tasks.
 - Timeline (D-262, D-289, D-298, D-304): a piece showing the tasks of the kanban it's linked to (else every kanban) on a
   strip of days without end (yours: moved sideways, a drag, an overview on top; scale day/week/month/quarter or a pinch,
-  text at its own size); tasks from `start` to `due` (only a due day: a `◆`), late hatched to today; rows by kanban,
+  text at its own size); tasks from `start` to `due` (only a due day: a `◆`), a sheet's name always inside it, cut with `…` (D-354), late hatched to today; rows by kanban,
   person or card; drags move a task or (picked) its edges, a drawn `+` makes one, a no-day tray. Stuck to a kanban and
   beside it; a kanban's `SOON` band. A plane carries its kanban and that kanban's timeline; going to a task from a
   timeline's focus that draws it stays there.
@@ -333,7 +333,7 @@ feature comes back as a piece, and check them with the user then.
   followable (a follow already going goes on); no cursor or drag, the selection kept but not shown; hidden after 180 s
   silent (60 s for those here).
 - Cursors (D-065, D-169, D-191): in your space's px (`plane` = the plane in focus); sent 10× a second, drawn 200 ms
-  behind on a curve (D-193). Following (D-067, D-170, D-191) is total: into the plane they focus and out, their cursor
+  behind on a curve (D-193); only the arrow, the name shown while you point at it (D-352); sent and drawn only over your space, never over the side view, a pane beside or the threads panel (D-354). Following (D-067, D-170, D-191) is total: into the plane they focus and out, their cursor
   kept in your middle (gliding only past ±22 %), their selection and panel yours until you click; a frame in their
   colour + `following … · esc to stop`; zooming doesn't stop it.
 - Others' selections as L's in their colour with their name (D-191, D-272). Colours by join order (no clash up to 5),
@@ -344,7 +344,8 @@ feature comes back as a piece, and check them with the user then.
   own chip apart from what's inside it (`[💬 N inside]` on its console). Threads keep their space (`planeId`).
 - Threads panel (D-197, D-199, D-220): one wide tab on the bottom edge, right of the corner's buttons; the list and the
   thread are two halves, each building and breaking cell by cell; a chip opens only the thread, `[all threads]` the
-  list; it says what it shows (`whole workspace` or `inside "<plane>"`); `[on the canvas ↗]` goes there.
+  list; it says what it shows (`whole workspace` or `inside "<plane>"`); `[on the canvas ↗]` goes there. Its preview always
+  the newest message left, an edit changing it too; the thread deleted by its starter or the last message's writer (D-356).
 
 ## Agent (planned, docs/specs/agent.md)
 - The agent (D-312, not started): browser loop as the signed-in person over a shared `src/ops/` layer; map + read
@@ -375,10 +376,11 @@ feature comes back as a piece, and check them with the user then.
   only), the kind guide beside the `+` menu, one lesson per screen, panel or piece the first time it's opened or made
   (~30), step by step (≤ 8 pages, ≤ 40 words; the welcome one thing a page in the order met, D-351), what's new after later releases (at launch everyone, old accounts too,
   starts new), no nudges, `?` replays all and lists every key; seen-state per person in Firestore; demos are the real
-  components on made-up data in a sealed iframe (`demo.html`), looping, paused/still under reduced motion.
+  components on made-up data in a sealed iframe (`demo.html`), looping, paused/still under reduced motion. No faint
+  hints on an empty canvas, plane or timeline (D-353); the app's words in a lesson cyan, their meaning on hover (`Tip`, glossary.ts, D-355).
 - Its look (D-316, D-349): every lesson the welcome's wizard window in the middle (no card beside an anchor), never
   over a menu, the finder, a wizard, typing or Settings; the kind guide the glued column, `?` the finder's twin;
-  keys shown nowhere in the app (D-344), only in `?`.
+  keys shown nowhere in the app (D-344), only in `?` and lessons, as this computer writes them (`Ctrl+F` off a Mac, D-355).
 
 ## Workspaces page
 - The page is for going back to work (D-338, docs/specs/workspaces-page.md): centred; the big title with its count, one

@@ -117,7 +117,7 @@ export function TasksSection({ n, card, editor }: { n: number; card: Card; edito
           </Button>
         </ButtonGroup>
       )}
-      {editor && !kanbans.length && <p className={own.none}>no deck yet: put one on the canvas from its +</p>}
+      {editor && !kanbans.length && <p className={own.none}>no deck yet</p>}
     </PanelSection>
   )
 }

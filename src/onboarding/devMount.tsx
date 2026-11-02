@@ -35,7 +35,7 @@ export function unmount() {
 }
 
 type Opts = { via?: 'event' | 'play'; done?: boolean; role?: Role; audience?: Audience; isNew?: boolean; kind?: string }
-type Kind = 'welcome' | 'news' | 'lesson' | 'empty' | 'guide' | 'kind' | 'clear'
+type Kind = 'welcome' | 'news' | 'lesson' | 'guide' | 'kind' | 'clear'
 
 export function show(kind: Kind, id = '', o: Opts = {}) {
   const dev = coachDev.current
@@ -43,11 +43,9 @@ export function show(kind: Kind, id = '', o: Opts = {}) {
   dev.quiet(true)
   dev.force(null)
   dev.news(null)
-  dev.hint(null)
   dev.guide(false)
   if (kind === 'clear') return
   if (kind === 'news') return dev.news(SAMPLE_RELEASES as never)
-  if (kind === 'empty') return dev.hint(id || 'empty-canvas')
   if (kind === 'guide') return dev.guide(true)
   if (kind === 'kind') return dev.kind(true)
   const l = lessonById(kind === 'welcome' ? 'welcome' : id)

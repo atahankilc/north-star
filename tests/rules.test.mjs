@@ -814,6 +814,26 @@ await allow('owner deletes a thread with its messages', () => {
   b.delete(thr(alice.fs, 't1'))
   return b.commit()
 })
+// Taking back your own last message takes the thread with it, even when someone else started it and took theirs back.
+await allow('the writer of the one message left deletes the thread with it', async () => {
+  await start(dave, 't7')
+  const b = writeBatch(bob.fs)
+  b.set(msg(bob.fs, 't7', 'm2'), { uid: bob.uid, name: 'b', text: 'Only without menus.', createdAt: 2 })
+  b.update(thr(bob.fs, 't7'), { count: 2, lastAt: 2, lastUid: bob.uid, lastName: 'b', lastText: 'Only without menus.', updatedAt: 2 })
+  await b.commit()
+  const d = writeBatch(dave.fs)
+  d.delete(msg(dave.fs, 't7', 'm1'))
+  d.update(thr(dave.fs, 't7'), { count: 1, lastMid: 'm2', lastAt: 2, lastUid: bob.uid, lastName: 'b', lastText: 'Only without menus.', updatedAt: 3 })
+  await d.commit()
+  const e = writeBatch(bob.fs)
+  e.delete(msg(bob.fs, 't7', 'm2'))
+  e.delete(thr(bob.fs, 't7'))
+  await e.commit()
+})
+await deny('someone whose message is not the one left deletes the thread', async () => {
+  await start(dave, 't8')
+  await deleteDoc(thr(bob.fs, 't8'))
+})
 // Mentions, who wrote last (D-166).
 await allow('a reply that mentions someone', async () => {
   await start(bob, 't6')

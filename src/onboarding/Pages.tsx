@@ -13,20 +13,35 @@ import styles from './Pages.module.css'
 import { Button } from '../ui/primitives/Button'
 import { Num } from '../ui/primitives/Rule'
 import { Steps } from '../ui/patterns/Steps'
+import { Tip } from '../ui/patterns/Tip'
+import { keyGlyphs } from '../ui/foundation/keyGlyphs'
+import { terms } from './glossary'
 
 export type PagesEnd = { how: 'done' | 'skipped'; go?: NonNullable<ReleaseItem['go']>['action'] }
 
-// A line with its key chips (backticks), as the app writes keys.
+// A line with its key chips (backticks), written as this computer writes keys (Ctrl off a Mac, D-355), and the app's
+// own words coloured with their meaning on hover, each only the first time it comes up in the line (glossary.ts).
 export function Words({ text }: { text: string }) {
+  const seen = new Set<string>()
   return (
     <>
       {bits(text).map((b, i) =>
         b.key ? (
           <kbd key={i} className={styles.kbd}>
-            {b.text}
+            {keyGlyphs(b.text)}
           </kbd>
         ) : (
-          <span key={i}>{b.text}</span>
+          <span key={i}>
+            {terms(b.text, seen).map((t, j) =>
+              t.term ? (
+                <Tip key={j} tip={t.term.meaning}>
+                  {t.text}
+                </Tip>
+              ) : (
+                t.text
+              ),
+            )}
+          </span>
         ),
       )}
     </>

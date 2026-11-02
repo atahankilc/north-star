@@ -15,7 +15,7 @@ describe('the ? guide model', () => {
     expect(ids).not.toContain('welcome')
     expect(ids).not.toContain('join-pending')
     expect(ids.some((id) => id.startsWith('nudge-'))).toBe(false)
-    expect(ids).not.toContain('empty-canvas')
+    expect(ids).not.toContain('workspaces-empty')
     expect(m.areas.map((a) => a.area)).not.toContain('start')
     expect(m.total).toBe(ids.length)
     expect(m.seen).toBe(0)

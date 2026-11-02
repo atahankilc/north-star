@@ -196,7 +196,9 @@ type Base = {
 }
 export type PagedLesson = Base & { format: 'welcome' | 'lesson'; pages: readonly Page[] }
 export type GuideLesson = Base & { format: 'guide'; rows: readonly GuideRow[] }
-export type LineLesson = Base & { format: 'empty'; line?: string; choices?: readonly Choice[] }
+// An empty state: framed choices laid into its anchor on the page (only the workspaces page's now; the canvas's,
+// plane's and timeline's faint lines were removed, D-353).
+export type LineLesson = Base & { format: 'empty'; choices: readonly Choice[] }
 export type Lesson = PagedLesson | GuideLesson | LineLesson
 
 const ALL: readonly Role[] = ['owner', 'editor', 'viewer']
@@ -234,11 +236,6 @@ export const LESSONS: readonly Lesson[] = [
       { title: 'Each one', tab: 'actions', body: "Open a workspace with a click. Its `⋯`, or a right-click on it, holds the rest: open in a new tab, rename it, copy its invite code, leave it, or delete it." },
       { title: 'What needs you', tab: 'needs', body: "Under the one you left, small pieces show what waits for you: new tasks given to you, people asking to join yours, invites to someone else's, and codes you sent that wait for an owner." },
     ],
-  },
-  {
-    id: 'empty-canvas', v: 1, format: 'empty', roles: EDITORS, area: 'start', since: 'D-176',
-    trigger: [{ event: 'canvas-open', when: { empty: true } }], doneWhen: [{ event: 'piece-made' }], anchor: 'plus', after: ['welcome'],
-    line: 'press + to add your first piece',
   },
   {
     id: 'workspaces-empty', v: 3, format: 'empty', roles: ALL, area: 'start', since: 'D-062, D-338',
@@ -313,11 +310,6 @@ export const LESSONS: readonly Lesson[] = [
       { roles: VIEWERS, title: 'Read a card', tab: 'cards', body: 'Click a card to open its panel on the right: what it is, the evidence for and against it, its links and notes.', scene: 'card-panel' },
       { title: 'Show only some', tab: 'filter', body: "The dock's filter shows only some types, one customer's cards, a tag or a region. It passes: leaving the plane clears it.", scene: 'plane-filter' },
     ],
-  },
-  {
-    id: 'empty-plane', v: 1, format: 'empty', roles: EDITORS, area: 'planes', since: 'D-187',
-    trigger: [{ event: 'focus-in', when: { kind: 'plane', empty: true } }], doneWhen: [{ event: 'card-made' }], after: ['focus-plane'],
-    line: 'press + or right-click to add a card',
   },
   {
     id: 'card-panel', v: 2, format: 'lesson', roles: ALL, area: 'planes', since: 'D-221, D-137, D-044, D-225, D-226, D-254, D-349',
@@ -465,11 +457,6 @@ export const LESSONS: readonly Lesson[] = [
       { title: 'Days without end', tab: 'days', body: "A timeline shows a deck's tasks on a strip of days. Drag sideways through time; pinch, or pick day, week, month or quarter.", scene: 'timeline-scroll' },
       { roles: EDITORS, title: 'Plan by drawing', tab: 'draw', body: 'Draw across days on a row, then pick its card: that makes a task. Drag a task to move it, or its ends to change its days.', scene: 'timeline-draw' },
     ],
-  },
-  {
-    id: 'empty-timeline', v: 1, format: 'empty', roles: EDITORS, area: 'decks', since: 'D-304',
-    trigger: [{ event: 'focus-in', when: { kind: 'timeline', empty: true } }], doneWhen: [{ event: 'task-made' }], anchor: 'piece', after: ['timeline'],
-    line: 'no tasks yet: draw across days to plan one',
   },
   {
     id: 'tasks-given', v: 2, format: 'lesson', roles: ALL, area: 'decks', since: 'D-261, D-349',

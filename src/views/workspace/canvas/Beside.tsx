@@ -97,9 +97,9 @@ export function Beside({ plane, open, editor, matrixSetupPane, onClose }: Props)
       {open.map((p, i) => (
         <Pane key={p.id} piece={p} plane={plane} box={{ x: left, y: tops[i], w: size.w - left, h: tops[i + 1] - tops[i] }} editor={editor} first={i === 0} matrixSetupHere={p.id === matrixSetupPane} onClose={() => onClose(p.id)} />
       ))}
-      <div className={styles.divider} data-learn="split" style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="Plane and what's beside it" />
+      <div className={styles.divider} data-off-space data-learn="split" style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="Plane and what's beside it" />
       {open.slice(0, -1).map((p, i) => (
-        <div key={`row-${p.id}`} className={styles.rowDivider} style={{ left, top: tops[i + 1] }} onPointerDown={dragRow(i)} role="separator" aria-orientation="horizontal" aria-label="Between two panes" />
+        <div key={`row-${p.id}`} className={styles.rowDivider} data-off-space style={{ left, top: tops[i + 1] }} onPointerDown={dragRow(i)} role="separator" aria-orientation="horizontal" aria-label="Between two panes" />
       ))}
     </>
   )
@@ -226,6 +226,7 @@ function Pane({ piece, plane, box, editor, first, matrixSetupHere, onClose }: Pa
     <div
       ref={el}
       className={styles.pane}
+      data-off-space
       data-first={first || undefined}
       style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
       onPointerDown={pan}
