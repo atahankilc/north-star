@@ -46,7 +46,9 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Onboarding (D-315, D-316): **built and live** (O0–O16; state-history.md). D-349 (2026-11-02, committed, not pushed):
   content rewritten, every lesson the centred modal, ~30 lessons by screen/piece, no nudges; checked headless on
   emulators. Then Lesson/Nudge, 10 unused scenes, `idle` and seen-state `nudges` deleted; D-351: ≤ 8 pages, welcome
-  reordered, lessons split; all pushed 2026-11-02, firestore:rules deployed after (631/0, from HEAD's tree). The agent's lessons wait for its redesign.
+  reordered, lessons split; D-357: canvases in the welcome and piece-made; all pushed and live 2026-11-02,
+  firestore:rules deployed (631/0). Not seen in a browser: the comment lesson over the threads panel. The agent's
+  lessons wait for its redesign.
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).

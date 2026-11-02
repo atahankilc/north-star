@@ -13,11 +13,11 @@
 >
 > | id | when | pages (tabs) |
 > |---|---|---|
-> | `welcome` | first canvas | canvas · pieces (+ for editors) · (V: reading) · bar · inside · tools · people (D-351) |
+> | `welcome` | first canvas | canvas · pieces (+ for editors) · (V: reading) · bar · inside · tools · canvases · people (D-351, D-357) |
 > | `workspaces` | the workspaces page | workspaces · start · actions |
 > | `join-pending` | a code sent | waiting for an owner |
 > | `kind-guide` | `+` opened (beside the menu) | a row per kind |
-> | `piece-made` | a piece made | edit · frame (lenses) · stick (sticking kinds) · done · undo |
+> | `piece-made` | a piece made | edit · frame (lenses) · stick (sticking kinds) · canvas (move to, also on; D-357) · done · undo |
 > | `beside` | a piece opened beside a plane | beside · follow |
 > | `focus-plane` | a plane focused | plane · kinds · make · links · many (V: cards) · filter |
 > | `card-panel` | a card selected | panel · evidence · for · features (competitor) · parts (feature) · tasks |
