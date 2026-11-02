@@ -9,7 +9,8 @@ import { useEffect, type ReactNode } from 'react'
 import { create } from 'zustand'
 import { ALL_TYPES, type Card } from '../../../data/cards'
 import { Appear } from '../../../ui/primitives/Appear'
-import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
+import { Menu } from '../../../ui/patterns/Menu'
+import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { Swatches, type Swatch } from '../../../ui/primitives/Swatches'
 import { ConsoleFloor, ConsoleTab, FloorTitle, useEscapeCloses } from '../../../ui/patterns/Console'
 import { linkTone } from '../plane/PlaneLinks'
@@ -66,20 +67,20 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   const regions = [...new Set(cards.filter((c) => c.type === 'competitor').flatMap((c) => c.regions ?? []))].sort()
   const swatches = (list: Swatch[]) => <Swatches list={list} />
   const named = (ids: string[], name: (id: string) => string) => (ids.length === 0 ? 'any' : ids.length === 1 ? name(ids[0]) : `${ids.length}`)
-  const show: MenuEntry[] = ALL_TYPES.map((t) => ({ key: t, label: `${t}s`, checked: !f.hide.includes(t), tone: TYPE_TONE[t], onSelect: () => set({ hide: flip(f.hide, t) }) }))
-  const forItems: MenuEntry[] = [
+  const show: PromptEntry[] = ALL_TYPES.map((t) => ({ key: t, label: `${t}s`, checked: !f.hide.includes(t), tone: TYPE_TONE[t], onSelect: () => set({ hide: flip(f.hide, t) }) }))
+  const forItems: PromptEntry[] = [
     { key: 'any', label: 'any customer', checked: f.for.length === 0, onSelect: () => set({ for: [] }) },
     ...customers.map((c) => ({ key: c.id, label: c.title || 'untitled', checked: f.for.includes(c.id), tone: CARD_TONE.customer, onSelect: () => set({ for: flip(f.for, c.id) }) })),
   ]
-  const tagItems: MenuEntry[] = [
+  const tagItems: PromptEntry[] = [
     { key: 'any', label: 'any tag', checked: f.tags.length === 0, onSelect: () => set({ tags: [] }) },
     ...tags.map((t) => ({ key: t, label: `#${t}`, checked: f.tags.includes(t), hint: `${tagCount.get(t)}`, onSelect: () => set({ tags: flip(f.tags, t) }) })),
   ]
-  const regionItems: MenuEntry[] = [
+  const regionItems: PromptEntry[] = [
     { key: 'any', label: 'anywhere', checked: f.regions.length === 0, onSelect: () => set({ regions: [] }) },
     ...regions.map((r) => ({ key: r, label: r, checked: f.regions.includes(r), onSelect: () => set({ regions: flip(f.regions, r) }) })),
   ]
-  const linkItems: MenuEntry[] = [
+  const linkItems: PromptEntry[] = [
     { key: 'all', label: 'every link', checked: f.links.length === 0, onSelect: () => set({ links: [] }) },
     ...LINK_GROUPS.map((g) => ({ key: g.key, label: g.label, checked: !f.links.includes(g.key), tone: linkTone(g.kind), glyph: '━', hint: START.links.includes(g.key) ? 'starts hidden' : undefined, onSelect: () => set({ links: flip(f.links, g.key) }) })),
   ]

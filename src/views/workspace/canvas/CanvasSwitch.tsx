@@ -10,7 +10,7 @@ import { useAuth } from '../../../data/auth'
 import { addCanvas, canvasGoes, CANVAS_NAME_MAX, deleteCanvas, MAIN, moveCanvas, piecesOn, renameCanvas, type Canvas } from '../../../data/canvases'
 import { canEditIn } from '../../../data/workspaces'
 import { HazardConfirm } from '../../../ui/patterns/HazardConfirm'
-import type { MenuEntry } from '../../../ui/patterns/Menu'
+import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { learn } from '../../../onboarding/learn'
 import { ContextMenu } from '../../../ui/patterns/ContextMenu'
 import { useWs, useWsNow } from './context'
@@ -38,7 +38,7 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
   }
   const taken = (name: string) => canvases.some((c) => c.name.toLowerCase() === name.toLowerCase())
 
-  const list: MenuEntry[] = [
+  const list: PromptEntry[] = [
     { key: 'canvases', heading: 'canvases' },
     ...canvases.map((c, i) => ({
       key: c.id,
@@ -62,9 +62,9 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
       : []),
   ]
   // Typed: a name nobody has is a new canvas.
-  const offerNew = (typed: string): MenuEntry[] =>
+  const offerNew = (typed: string): PromptEntry[] =>
     editor && typed && !taken(typed) ? [{ key: 'make', label: `new canvas "${typed.slice(0, CANVAS_NAME_MAX)}"`, glyph: '+', onSelect: () => void make(typed) }] : []
-  const naming = (typed: string): MenuEntry[] =>
+  const naming = (typed: string): PromptEntry[] =>
     !typed
       ? []
       : open?.mode === 'rename'

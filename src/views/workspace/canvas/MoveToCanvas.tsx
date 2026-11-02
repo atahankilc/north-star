@@ -17,7 +17,7 @@ import { kindOf } from '../../../data/labels'
 import { camOf, setEditing, useCanvasView } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
 import { runCells } from '../../../ui/primitives/Appear'
-import type { MenuEntry } from '../../../ui/patterns/Menu'
+import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { ContextMenu } from '../../../ui/patterns/ContextMenu'
 import { useWs, useWsNow, type WorkspaceCtx } from './context'
 import { shownPieces } from './shownBox'
@@ -113,7 +113,7 @@ function Prompt({ asked, canvas, canvases, onClose }: { asked: { pieces: string[
     return now().canvases.find((c) => c.id === id) ?? { id, name: name.trim().slice(0, CANVAS_NAME_MAX), order: 0, createdAt: Date.now() }
   }
   const others = canvases.filter((c) => c.id !== canvas)
-  const items: MenuEntry[] = [
+  const items: PromptEntry[] = [
     ...(others.length ? [{ key: 'canvases', heading: 'canvases' }] : []),
     ...others.map((c, i) => ({ key: c.id, label: c.name, glyph: '→', letter: i < 9 ? String(i + 1) : undefined, onSelect: () => void go(c) })),
     ...(others.length ? [{ key: 'rule', heading: '' }] : []),
@@ -151,7 +151,7 @@ function WherePrompt({ asked, onClose }: { asked: { pieces: string[]; screen: [n
   const navigate = useNavigate()
   const p = piecesOn(ws.canvas, ws.pieces, ws.spots).find((x) => x.id === asked.pieces[0])
   if (!p?.canvases) return null
-  const items: MenuEntry[] = [
+  const items: PromptEntry[] = [
     { key: 'on', heading: `on ${p.canvases.length} canvases` },
     ...p.canvases.map((id, i) => ({
       key: id,

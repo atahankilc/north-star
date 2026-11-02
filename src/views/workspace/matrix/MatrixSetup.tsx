@@ -35,7 +35,8 @@ import {
   type MatrixSetup,
   type Step,
 } from '../../../data/matrix'
-import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
+import { Menu } from '../../../ui/patterns/Menu'
+import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { Select } from '../../../ui/patterns/Select'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { useWs } from '../canvas/context'
@@ -69,7 +70,7 @@ export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
   // Taking a typed entry out takes its cells too, as its `×` on the table does.
   const removeItem = (which: 'rows' | 'cols', item: AxisItem) =>
     void removeEntry(wid, piece.id, setup, which, { key: item.cardId ?? item.id, name: item.name ?? '', item, auto: false }, cells)
-  const restart: MenuEntry[] = TEMPLATES.map((t) => ({ key: t.key, label: t.name, hint: t.hint, onSelect: () => void setSetup(wid, piece.id, t.setup(), piece.name ? undefined : t.name) }))
+  const restart: PromptEntry[] = TEMPLATES.map((t) => ({ key: t.key, label: t.name, hint: t.hint, onSelect: () => void setSetup(wid, piece.id, t.setup(), piece.name ? undefined : t.name) }))
   return (
     <section className={styles.setup} data-learn="setup" aria-label="Set up the matrix" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), closeMatrixSetup())}>
       <header className={styles.setupHead}>

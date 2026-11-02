@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { example } from '../../gallery/example'
-import { Menu, type MenuEntry } from './Menu'
+import { Menu } from './Menu'
+import type { PromptEntry } from '../foundation/promptModel'
 
 const none = () => {}
-const ADD: MenuEntry[] = [
+const ADD: PromptEntry[] = [
   { key: 'h1', heading: 'pieces' },
   { key: 'plane', label: 'plane', letter: 'p', glyph: '▦', hint: 'cards and links', onSelect: none },
   { key: 'matrix', label: 'matrix…', letter: 'm', glyph: '▤', onSelect: none },
@@ -18,7 +19,7 @@ const ADD: MenuEntry[] = [
 
 function Checks() {
   const [on, setOn] = useState({ for: false, relates: false, competes: true })
-  const items: MenuEntry[] = (Object.keys(on) as (keyof typeof on)[]).map((k) => ({ key: k, label: k, checked: on[k], onSelect: () => setOn({ ...on, [k]: !on[k] }) }))
+  const items: PromptEntry[] = (Object.keys(on) as (keyof typeof on)[]).map((k) => ({ key: k, label: k, checked: on[k], onSelect: () => setOn({ ...on, [k]: !on[k] }) }))
   return <Menu label="links" summary={`${Object.values(on).filter(Boolean).length}/3`} items={items} ariaLabel="links shown" />
 }
 

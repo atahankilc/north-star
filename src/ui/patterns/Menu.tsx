@@ -9,15 +9,12 @@ import type { PromptEntry } from '../foundation/promptModel'
 import { PromptPanel } from './PromptPanel'
 import styles from './Menu.module.css'
 
-// The prompt's entry (src/ui/foundation/promptModel.ts), by the name its callers know.
-export type MenuEntry = PromptEntry
-
 type Props = {
   // What the trigger says, e.g. "show" or "+".
   label: ReactNode
   // Faint text after the label, e.g. "5/5" or "any".
   summary?: ReactNode
-  items: MenuEntry[]
+  items: PromptEntry[]
   // Open above the trigger (for the bottom toolbar).
   up?: boolean
   // Open to the right of the trigger, its top level with it (the side nav, D-176).

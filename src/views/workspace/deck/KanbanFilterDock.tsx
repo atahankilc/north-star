@@ -9,7 +9,8 @@ import { useAuth } from '../../../data/auth'
 import { useMembers } from '../../../data/workspaces'
 import type { Task } from '../../../data/tasks'
 import { Appear } from '../../../ui/primitives/Appear'
-import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
+import { Menu } from '../../../ui/patterns/Menu'
+import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { useWs } from '../canvas/context'
 import { ConsoleFloor, ConsoleTab, FloorTitle, useDrawer } from '../../../ui/patterns/Console'
 import { NO_FILTER, narrowing, setKanbanFilter, useHoldKanbanFilter, useKanbanFilter, type DueKey, type KanbanFilter } from './kanbanFilter'
@@ -57,7 +58,7 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
   const count = (keep: (t: (typeof mine)[number]) => boolean) => `${mine.filter(keep).length}`
   const named = (list: string[], name: (v: string) => string) => (list.length === 0 ? 'any' : list.length === 1 ? name(list[0]) : `${list.length}`)
 
-  const who: MenuEntry[] = [
+  const who: PromptEntry[] = [
     { key: 'any', label: 'anyone', checked: !f.who.length, onSelect: () => set({ who: [] }) },
     { key: 'me', label: 'me', checked: f.who.includes('me'), hint: count((t) => t.assignee === user?.id), onSelect: () => set({ who: flip(f.who, 'me') }) },
     { key: 'nobody', label: 'nobody', checked: f.who.includes('nobody'), hint: count((t) => !t.assignee), onSelect: () => set({ who: flip(f.who, 'nobody') }) },
@@ -65,7 +66,7 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
   ]
   const whoName = (v: string) => (v === 'me' || v === 'nobody' ? v : (members.find((m) => m.id === v)?.name ?? 'someone'))
 
-  const due: MenuEntry[] = [
+  const due: PromptEntry[] = [
     { key: 'any', label: 'any day', checked: !f.due.length, onSelect: () => set({ due: [] }) },
     ...DUE.map((d) => ({ key: d.key, label: d.label, checked: f.due.includes(d.key), tone: d.key === 'past' ? 'var(--accent-magenta)' : undefined, onSelect: () => set({ due: flip(f.due, d.key) as DueKey[] }) })),
   ]
@@ -73,7 +74,7 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
   // The card types and cards its tasks are for.
   const forCards = [...new Set(mine.flatMap((t) => (t.cardId ? [t.cardId] : [])))].flatMap((id) => cards.filter((c) => c.id === id))
   const types = TYPES.filter((ty) => forCards.some((c) => c.type === ty))
-  const forItems: MenuEntry[] = [
+  const forItems: PromptEntry[] = [
     { key: 'any', label: 'anything', checked: !f.for.length, onSelect: () => set({ for: [] }) },
     { key: 'none', label: 'no card', checked: f.for.includes('none'), hint: count((t) => !t.cardId), onSelect: () => set({ for: flip(f.for, 'none') }) },
     ...(types.length ? [{ key: 'h-types', heading: 'types' }] : []),
@@ -86,7 +87,7 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
   const labelCount = new Map<string, number>()
   for (const t of mine) for (const l of t.labels ?? []) labelCount.set(l, (labelCount.get(l) ?? 0) + 1)
   const labels = [...labelCount.keys()].sort()
-  const labelItems: MenuEntry[] = [
+  const labelItems: PromptEntry[] = [
     { key: 'any', label: 'any label', checked: !f.labels.length, onSelect: () => set({ labels: [] }) },
     ...labels.map((l) => ({ key: l, label: `#${l}`, checked: f.labels.includes(l), hint: `${labelCount.get(l)}`, onSelect: () => set({ labels: flip(f.labels, l) }) })),
   ]

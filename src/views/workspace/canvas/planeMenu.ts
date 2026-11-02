@@ -9,7 +9,7 @@ import { deleteEdge, reverseEdge, updateEdge, type Edge } from '../../../data/ed
 import { addLabel, deleteLabel, PARA_W, STICKY_W, type Label } from '../../../data/labels'
 import { snap, GRID } from '../../../data/grid'
 import { useCanvasView } from '../../../state/canvasView'
-import type { MenuEntry } from '../../../ui/patterns/Menu'
+import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { TEXT_GLYPH } from './glyphs'
 import { linkTone } from '../plane/PlaneLinks'
 import { LINK_GROUPS } from './planeFilter'
@@ -45,7 +45,7 @@ type Ctx = {
 const by2 = (): [number, number] => [2 * GRID, 2 * GRID]
 
 // Cards also on other planes, deleted from all of them: through the hazard confirm (D-281).
-const everywhere = (c: Ctx, list: Card[]): MenuEntry => ({
+const everywhere = (c: Ctx, list: Card[]): PromptEntry => ({
   key: 'everywhere',
   label: 'delete everywhere',
   glyph: '×',
@@ -54,7 +54,7 @@ const everywhere = (c: Ctx, list: Card[]): MenuEntry => ({
 })
 
 // What's done to a selection of several when the thing right-clicked is in it.
-function several(c: Ctx, n: number): MenuEntry[] {
+function several(c: Ctx, n: number): PromptEntry[] {
   const ids = selectedIds()
   const picked = c.cards.filter((x) => ids.includes(x.id))
   const texts = c.labels.filter((x) => ids.includes(x.id))
@@ -85,7 +85,7 @@ function several(c: Ctx, n: number): MenuEntry[] {
   ]
 }
 
-export function cardItems(c: Ctx, id: string): MenuEntry[] {
+export function cardItems(c: Ctx, id: string): PromptEntry[] {
   const card = c.cards.find((x) => x.id === id)
   if (!card) return []
   const { cardMulti } = useCanvasView.getState()
@@ -123,7 +123,7 @@ export function cardItems(c: Ctx, id: string): MenuEntry[] {
   ]
 }
 
-export function labelItems(c: Ctx, id: string): MenuEntry[] {
+export function labelItems(c: Ctx, id: string): PromptEntry[] {
   const l = c.labels.find((x) => x.id === id)
   if (!l) return []
   const { cardMulti } = useCanvasView.getState()
@@ -140,7 +140,7 @@ export function labelItems(c: Ctx, id: string): MenuEntry[] {
   ]
 }
 
-export function linkItems(c: Ctx, id: string): MenuEntry[] {
+export function linkItems(c: Ctx, id: string): PromptEntry[] {
   const e = c.edges.find((x) => x.id === id)
   if (!e || !c.editor) return []
   return [
@@ -154,7 +154,7 @@ export function linkItems(c: Ctx, id: string): MenuEntry[] {
 
 // Right-clicked on the plane itself: add something right there (its top-left a step from the pointer, on the grid), or
 // paste what was copied there.
-export function emptyItems(c: Ctx): MenuEntry[] {
+export function emptyItems(c: Ctx): PromptEntry[] {
   if (!c.editor) return []
   const [x, y] = c.at
   const others = c.cards
@@ -194,7 +194,7 @@ export function emptyItems(c: Ctx): MenuEntry[] {
 }
 
 // The items for what's under the pointer in a focused plane; `comment` comes after them (D-193).
-export function planeItems(on: 'card' | 'label' | 'link' | null, id: string | null, c: Ctx): MenuEntry[] {
+export function planeItems(on: 'card' | 'label' | 'link' | null, id: string | null, c: Ctx): PromptEntry[] {
   if (!on || !id) return emptyItems(c)
   return on === 'card' ? cardItems(c, id) : on === 'label' ? labelItems(c, id) : on === 'link' ? linkItems(c, id) : []
 }

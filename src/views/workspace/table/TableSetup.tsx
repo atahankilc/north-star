@@ -29,7 +29,8 @@ import {
   type OwnKind,
   type TableSetup,
 } from '../../../data/table'
-import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
+import { Menu } from '../../../ui/patterns/Menu'
+import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { Select } from '../../../ui/patterns/Select'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { useWs } from '../canvas/context'
@@ -65,7 +66,7 @@ export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
   }
   const close = () => useTableUi.setState({ setup: null })
   const count = { rows: rowsOf(setup.rows, cards, !setup.manual).length, cols: setup.cols.length + 1 }
-  const restart: MenuEntry[] = TEMPLATES.map((t) => ({ key: t.key, label: t.name, hint: t.hint, onSelect: () => void setTable(wid, piece.id, t.setup(), piece.name ? undefined : t.name) }))
+  const restart: PromptEntry[] = TEMPLATES.map((t) => ({ key: t.key, label: t.name, hint: t.hint, onSelect: () => void setTable(wid, piece.id, t.setup(), piece.name ? undefined : t.name) }))
   return (
     <section className={m.setup} data-learn="setup" aria-label="Set up the table" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
       <header className={m.setupHead}>

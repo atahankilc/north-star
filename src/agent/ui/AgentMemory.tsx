@@ -4,7 +4,7 @@
 // editors (one undo step, as the person); and a notes change in the preview as a line diff (+ added, − taken out).
 // DOM text only (never under the ASCII effect); tokens only; the list's build-up is PromptPanel's.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { type MenuEntry } from '../../ui/patterns/Menu'
+import type { PromptEntry } from '../../ui/foundation/promptModel'
 import { InPlaceMenu } from '../../ui/patterns/InPlaceMenu'
 import { Markdown } from '../../ui/primitives/Markdown'
 import { ago } from '../../ui/foundation/ago'
@@ -47,7 +47,7 @@ export function ChatsView() {
   const open = chat.saved && chat.saved.uid === uid ? { ...chat.saved, ...(list?.find((c) => c.id === chat.id) ?? {}), id: chat.id } : null
   const yours = (list ?? []).filter((c) => c.uid === uid)
   const shared = (list ?? []).filter((c) => c.uid !== uid)
-  const row = (c: NonNullable<typeof list>[number]): MenuEntry => ({
+  const row = (c: NonNullable<typeof list>[number]): PromptEntry => ({
     key: c.id,
     label: c.title,
     // Short, so the title keeps the room: when, and whose or shared; the open one says so.
@@ -55,7 +55,7 @@ export function ChatsView() {
     words: `${c.turns} asks`,
     onSelect: () => void agentActions.openChat(c.id),
   })
-  const items: MenuEntry[] = [
+  const items: PromptEntry[] = [
     ...(open
       ? [
           { key: 'h-this', heading: 'this chat' },

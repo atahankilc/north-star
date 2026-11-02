@@ -42,7 +42,7 @@ import { PromptField } from '../../ui/primitives/PromptField'
 import { Num, numText, Rule } from '../../ui/primitives/Rule'
 import { Hud } from '../../ui/patterns/Hud'
 import { HazardConfirm } from '../../ui/patterns/HazardConfirm'
-import { type MenuEntry } from '../../ui/patterns/Menu'
+import type { PromptEntry } from '../../ui/foundation/promptModel'
 import { ContextMenu } from '../../ui/patterns/ContextMenu'
 import { Window } from '../../ui/patterns/Window'
 import { learn } from '../../onboarding/learn'
@@ -190,9 +190,9 @@ export function Workspaces({ user }: { user: AuthUser }) {
     void importFile(e.dataTransfer.files[0])
   }
 
-  const menuItems = (w: WithId<Workspace>): MenuEntry[] => {
+  const menuItems = (w: WithId<Workspace>): PromptEntry[] => {
     const owner = isOwnerOf(w, user.id)
-    const items: MenuEntry[] = [
+    const items: PromptEntry[] = [
       { key: 'open', label: 'open', letter: 'o', onSelect: () => go(w.id) },
       { key: 'tab', label: 'open in a new tab', letter: 't', onSelect: () => goNewTab(w.id) },
     ]

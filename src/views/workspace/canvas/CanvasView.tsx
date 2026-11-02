@@ -13,7 +13,7 @@ import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import { canOpen, deletePiece, followTo, linkLens, openPiece, pieceRef, KIND_NAME, isBare, isHost, hostKinds, kindOfPiece, sticks, placeLens, STICK_GAP, STICK_REACH, stickTarget, touchSide, PIECE_MIN, PIECE_NAME_MAX, placePiece, renamePiece, snap, type Box } from '../../../data/pieces'
 import { HazardConfirm } from '../../../ui/patterns/HazardConfirm'
-import type { MenuEntry } from '../../../ui/patterns/Menu'
+import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { Select } from '../../../ui/patterns/Select'
 import { Button } from '../../../ui/primitives/Button'
 import { Console } from '../../../ui/patterns/Console'
@@ -457,7 +457,7 @@ export function CanvasView() {
     return e ? `link "${name(e.fromId)}" → "${name(e.toId)}"` : 'a deleted link'
   }
   // Right-click (D-193): a menu on a plane, a card, a piece of text or a link (D-207); only `comment` for now. Elsewhere, nothing.
-  const [menu, setMenu] = useState<{ at: [number, number]; what: string; items: MenuEntry[] } | null>(null)
+  const [menu, setMenu] = useState<{ at: [number, number]; what: string; items: PromptEntry[] } | null>(null)
   const closeMenu = useCallback(() => setMenu(null), [])
   useEffect(() => void (menu && learn('context-menu', { kind: menu.what })), [menu])
   const rightClick = (e: React.MouseEvent) => {
@@ -550,7 +550,7 @@ export function CanvasView() {
     })
   }
   // What can be done with a document from its list's right-click (D-232).
-  const docMenu = (d: WithId<Doc>): MenuEntry[] => {
+  const docMenu = (d: WithId<Doc>): PromptEntry[] => {
     const mine = d.uid === user?.id
     return [
       { key: 'open', label: 'open beside', glyph: '›', letter: 'o', onSelect: () => openDoc(d.id, false) },

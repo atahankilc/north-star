@@ -31,7 +31,7 @@ import { CompetitorProfile, CompetitorFeatures, Criteria, hasMatches, InPackages
 import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } from '../../../data/edges'
 import { addEvidence, EVIDENCE_KINDS, mismatch, removeEvidence, tally, updateEvidence, type Evidence, type EvidenceKind, type Stance } from '../../../data/evidence'
 import { glide, useCanvasView } from '../../../state/canvasView'
-import { type MenuEntry } from '../../../ui/patterns/Menu'
+import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { cardEntry, whereList } from '../plane/cardEntry'
 import { InPlaceMenu } from '../../../ui/patterns/InPlaceMenu'
 import { PanelAction, PanelSection, SIDE_PANEL_W, SidePanel } from '../../../ui/patterns/SidePanel'
@@ -913,7 +913,7 @@ export function CardPicker({
   // Shown first, with why (the task picker's: what this kanban's tasks are for…); else the nearest on this card's plane.
   suggest?: { id: string; why: string }[]
   // What's typed can be, last, instead of a card (a timeline's new task with no card, D-300).
-  orTyped?: (typed: string) => MenuEntry
+  orTyped?: (typed: string) => PromptEntry
   // Its prompt's words.
   prompt?: string
 }) {
@@ -935,12 +935,12 @@ export function CardPicker({
     await retitleCard(wid, made, title, true)
     onPick(made)
   }
-  const items = useMemo((): MenuEntry[] => {
+  const items = useMemo((): PromptEntry[] => {
     const open = cards.filter((c) => !exclude.has(c.id) && (!types || types.includes(c.type)))
     const byId = new Map(open.map((c) => [c.id, c]))
     // On another canvas, with its name first (D-302's session 4).
     const name = (id: string) => planeTitle(id, { pieces, canvases, canvas })
-    const row = (c: Card, key: string, hint: string, browse?: boolean): MenuEntry => {
+    const row = (c: Card, key: string, hint: string, browse?: boolean): PromptEntry => {
       const on = planesOf(c, places).map(name)
       const held = c.type === 'package' ? packageTree(c, all, edges).length : 0
       return cardEntry(c, () => onPick(c), {
@@ -954,7 +954,7 @@ export function CardPicker({
     const plane = card.id ? planeOf(card) : ''
     const near = suggest ?? (plane ? cardsOn(all, places, plane).filter((c) => byId.has(c.id)).map((c) => ({ id: c.id, why: 'nearby', d: Math.hypot(c.x - card.x, c.y - card.y) })).sort((x, y) => x.d - y.d).slice(0, 4) : [])
     const firsts = near.filter((x) => byId.has(x.id)).slice(0, 5)
-    const out: MenuEntry[] = []
+    const out: PromptEntry[] = []
     if (firsts.length) {
       out.push({ key: '#suggested', heading: 'suggested' })
       for (const x of firsts) out.push(row(byId.get(x.id)!, `s:${x.id}`, x.why, true))
@@ -969,7 +969,7 @@ export function CardPicker({
     // `onPick` is read when picked.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, all, edges, exclude, types, places, pieces, suggest, card.id, card.x, card.y])
-  const more = makeType ? (typed: string): MenuEntry[] => [{ key: '+new', label: `“${typed}”`, glyph: '+', tone: TONE[makeType], hint: `NEW ${makeType.toUpperCase()}`, onSelect: () => void make(typed) }] : orTyped ? (typed: string) => [orTyped(typed)] : undefined
+  const more = makeType ? (typed: string): PromptEntry[] => [{ key: '+new', label: `“${typed}”`, glyph: '+', tone: TONE[makeType], hint: `NEW ${makeType.toUpperCase()}`, onSelect: () => void make(typed) }] : orTyped ? (typed: string) => [orTyped(typed)] : undefined
   return (
     <InPlaceMenu
       ref={root}

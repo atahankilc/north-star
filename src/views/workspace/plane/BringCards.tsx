@@ -8,7 +8,7 @@ import { CARD_TYPES, type AnyType, type Card } from '../../../data/cards'
 import { bringIn, cardsOn, planesOf, withParts } from '../../../data/places'
 import { glide, useCanvasView } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
-import type { MenuEntry } from '../../../ui/patterns/Menu'
+import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { cardEntry, whereList } from './cardEntry'
 import { ContextMenu } from '../../../ui/patterns/ContextMenu'
 import { useWs } from '../canvas/context'
@@ -41,14 +41,14 @@ export function BringCards({ here, origin }: { here: string; origin: { left: num
   }, [open, here])
   const { wid, cards, places, edges, pieces, canvases, canvas } = useWs()
   const plane = bringing?.plane
-  const items = useMemo((): MenuEntry[] => {
+  const items = useMemo((): PromptEntry[] => {
     if (!plane) return []
     const here = new Set(cardsOn(cards, places, plane).map((c) => c.id))
     // On another canvas, with its name first (D-302's session 4).
     const name = (id: string) => planeTitle(id, { pieces, canvases, canvas })
     // Only cards something comes along with need the walk: a part's parent, a package.
     const parents = new Set(edges.filter((e) => e.kind === 'part-of').map((e) => e.toId))
-    const out: MenuEntry[] = []
+    const out: PromptEntry[] = []
     for (const type of ORDER) {
       const list = cards.filter((c) => c.type === type && !here.has(c.id)).sort((a, b) => (a.title || '~').localeCompare(b.title || '~'))
       if (!list.length) continue
