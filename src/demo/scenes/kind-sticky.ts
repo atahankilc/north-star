@@ -1,4 +1,4 @@
-// The kind guide's `sticky note` row (onboarding-lessons.md §2): a clear stretch of canvas, no HUD. A yellow sticky note
+// The kind guide's `sticky note` row (lessons.ts `kind-guide`): a clear stretch of canvas, no HUD. A yellow sticky note
 // appears, its glue band saying who wrote it and when; its words come in as typed (shown with set()); a second one, in
 // green, from Ayla beside it.
 import { CANVAS, type Label } from '../../data/labels'

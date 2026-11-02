@@ -6,6 +6,9 @@ type Listener = { next: (s: unknown) => void; error: (e: unknown) => void; unsub
 const fsm = vi.hoisted(() => ({
   listeners: [] as Listener[],
   writes: [] as Record<string, unknown>[],
+  // The fields each write deletes (deleteField()), kept out of `writes`.
+  deletes: [] as string[][],
+  DEL: { deleteField: true },
   refuse: false,
 }))
 
@@ -17,8 +20,11 @@ vi.mock('firebase/firestore', () => ({
     fsm.listeners.push(l)
     return l.unsub
   },
+  deleteField: () => fsm.DEL,
   setDoc: (_ref: unknown, data: Record<string, unknown>) => {
-    fsm.writes.push(JSON.parse(JSON.stringify(data)))
+    const kept = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== fsm.DEL))
+    fsm.deletes.push(Object.keys(data).filter((k) => data[k] === fsm.DEL))
+    fsm.writes.push(JSON.parse(JSON.stringify(kept)))
     return fsm.refuse ? Promise.reject(new Error('permission-denied')) : Promise.resolve()
   },
 }))
@@ -61,6 +67,7 @@ beforeEach(async () => {
   await P().stop()
   fsm.listeners.length = 0
   fsm.writes.length = 0
+  fsm.deletes.length = 0
   fsm.refuse = false
   mem.clear()
   docTarget.visibilityState = 'visible'
@@ -83,6 +90,15 @@ describe('seenWriter', () => {
     await vi.advanceTimersByTimeAsync(1)
     expect(fsm.writes).toHaveLength(2)
     expect(fsm.writes[1].seen).toEqual({ c: 1 })
+    await w.stop()
+  })
+
+  it('every write deletes the old nudges field (D-349: the rules no longer take it)', async () => {
+    const w = data.seenWriter('u')
+    w.push(state())
+    await vi.advanceTimersByTimeAsync(0)
+    expect(fsm.deletes).toEqual([['nudges']])
+    expect(fsm.writes[0]).not.toHaveProperty('nudges')
     await w.stop()
   })
 

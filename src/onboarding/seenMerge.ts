@@ -22,7 +22,6 @@ export type SeenState = {
   // The newest release this person was shown or given (§7); '' only before the coach first sets it.
   lastRelease: string
   welcome?: WelcomeEnd
-  nudges?: { last?: number }
   // When each of `Stamped` was last set (ms). Not in the plan's shape: without it a copy changed for any other reason
   // (a lesson seen) would look newer and carry an old `tipsOff` over a newer one set on another device.
   at?: Partial<Record<Stamped, number>>
@@ -110,7 +109,7 @@ function stamp(s: SeenState, f: Stamped): number {
 //   the value: true over false, a welcome over none, then the larger string;
 // - audience, startedAt: the copy started first (they're recorded once and never change); a tie: invited over new
 //   (a state made before begin() is always 'new', so begin()'s own answer must win the tie);
-// - nudges.last: the later; updatedAt: the later.
+// - updatedAt: the later.
 // So an older copy wins nothing it didn't set later, and merge(a, b) deep-equals merge(b, a): two tabs pushing their
 // merges at each other settle after one round.
 export function mergeSeenState(local: SeenState, remote: SeenState): SeenState {
@@ -128,7 +127,6 @@ export function mergeSeenState(local: SeenState, remote: SeenState): SeenState {
   const welc = pick('welcome')
   const rel = pick('lastRelease')
   const seen = mergeSeen(local.seen, remote.seen)
-  const last = Math.max(local.nudges?.last ?? 0, remote.nudges?.last ?? 0)
   const at: Partial<Record<Stamped, number>> = {}
   for (const [f, from] of [['tipsOff', tips], ['welcome', welc], ['lastRelease', rel]] as const) {
     const t = stamp(from, f)
@@ -143,7 +141,6 @@ export function mergeSeenState(local: SeenState, remote: SeenState): SeenState {
     tipsOff: tips.tipsOff,
     lastRelease: rel.lastRelease,
     ...(welc.welcome && { welcome: welc.welcome }),
-    ...(last > 0 && { nudges: { last } }),
     ...(Object.keys(at).length > 0 && { at }),
     updatedAt: Math.max(local.updatedAt, remote.updatedAt),
   }
@@ -170,7 +167,6 @@ export function cleanSeenState(x: unknown): SeenState | null {
       if (typeof t === 'number') at[f] = t
     }
   }
-  const last = (d.nudges as { last?: unknown } | undefined)?.last
   return {
     v: 1,
     audience: d.audience,
@@ -180,7 +176,6 @@ export function cleanSeenState(x: unknown): SeenState | null {
     tipsOff: d.tipsOff === true,
     lastRelease: typeof d.lastRelease === 'string' ? d.lastRelease.slice(0, MAX_RELEASE) : '',
     ...((d.welcome === 'done' || d.welcome === 'skipped') && { welcome: d.welcome }),
-    ...(typeof last === 'number' && { nudges: { last } }),
     ...(Object.keys(at).length > 0 && { at }),
     updatedAt: typeof d.updatedAt === 'number' ? d.updatedAt : d.startedAt,
   }

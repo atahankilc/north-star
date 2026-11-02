@@ -1,9 +1,8 @@
-// The welcome's third page for editors (onboarding-lessons.md §1 `welcome` page 3, "Add anything with +"): the whole
+// `welcome` "Add pieces with +" for editors (lessons.ts, D-349): the whole
 // screen, Pazar's pieces round a clear middle. The cursor goes to the side
 // nav's magenta `+`, a rest, a click: the real menu builds cell by cell; a moment to read it, down to `plane`, a click.
 // The menu closes (its own) and a plane appears in the middle of the screen (what addPiece would have written there,
-// shown with set()), then goes into edit mode (the real setEditing) as `+` leaves a new piece. The side nav's own lesson
-// has sidenav-plus (the same click, a closer look); this one is about the screen as a whole.
+// shown with set()), then goes into edit mode (the real setEditing) as `+` leaves a new piece.
 import { PIECE_SIZE, snap } from '../../data/pieces'
 import { setEditing } from '../../state/canvasView'
 import { aim, camera, cursor, onStage, run, set, wait, type Scene } from '../director'

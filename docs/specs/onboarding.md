@@ -98,8 +98,8 @@ lessons is large (~60): a person meets them over days, one at a time, as they di
     pause on their poster frame with `[▶ play]`; `[❚❚]` always there. Reduced motion: the poster frame, no loop.
     Light theme through tokens and `usePalette()`.
 11. **No theme/motion/background controls in onboarding** (CLAUDE.md hard rule): the welcome may *say* Settings has them.
-12. **Unprompted things are rare.** Only three things open without a direct action: the welcome (once), what's new
-    (once per release), and **nudges** (§4.5; at most one per session). Everything else answers an action.
+12. **Unprompted things are rare.** Only two things open without a direct action: the welcome (once) and what's new
+    (once per release); the nudges (§4.5) were deleted by D-349. Everything else answers an action.
 
 ### 3.2 For the code
 1. All reads/writes of the seen-state go through `src/data/onboarding.ts` (the hard rule: all DB access in `src/data/`).
@@ -191,7 +191,7 @@ older than a release, once per release: a modal like the welcome, one page per c
 if an older version of the lesson was seen), and lessons already seen stay seen.
 It opens only on the canvas, after the curtain, never in a focus or a drag; if the person is busy, it waits.
 
-### 4.5 Nudges (pointing at something not met yet)
+### 4.5 Nudges (pointing at something not met yet; deleted by D-349)
 A single line by the side nav or the corner (`try ⌘F to find anything · ×`), at most **one per session**, only after
 ≥ 3 minutes in the workspace and 10 s without input, only for a short list of high-value things (focus, finder, `?`,
 following, side view), and **retired** as soon as the person does the thing, even if never shown (TipKit's rule).
@@ -264,7 +264,8 @@ scripts/check-lessons.mjs    the lint (§8)
 - **Firestore `users/{uid}/private/onboarding`** (Q-025, answered: yes; a new top-level `users` collection; only `request.auth.uid == uid`
   may read or write; shape checked by the rules; ≤ ~20 KB):
   `{ v: 1, audience: 'new'|'invited', startedAt, seen: { 'focus': 1, … }, armed: ['side-view'],
-  tipsOff: false, lastRelease: '2026-11', welcome: 'done'|'skipped', nudges: { last: <ms> }, updatedAt }`.
+  tipsOff: false, lastRelease: '2026-11', welcome: 'done'|'skipped', at: { … }, updatedAt }`
+  (`nudges` went with D-349: each write deletes it from an older doc, and the rules refuse it).
   Writes are not `tracked()` (not undoable, not content), batched (≤ 1 write / 2 s), merged per field.
 - **localStorage `north-star:onboarding:<uid>`**: the same object, read first so nothing flashes, written at once.
   If Firestore refuses (rules not deployed yet, offline), the app runs on localStorage alone and says nothing.
@@ -316,7 +317,7 @@ scripts/check-lessons.mjs    the lint (§8)
 | `useCanvasView` (more) | `console-shown {kind, editing}` (a piece's console drawn; again when its edit mode ends while shown; `piece-console` only for `editing: false`), `piece-moved {kind, editing}` (a piece's drag ended), `card-moved {focus}` (a card's drag ended), `cell-picked {kind, framed}` (a matrix/table cell picked), `axis-unfold` (a feature axis's `unfold`), `parts-folded` (a folded parts tree first drawn) |
 | Writes (more) | `deleted {confirmed, shared}` (the hazard confirm's delete went through), `status-set` (a card's status changed), `task-for-card` (a task given a card), `task-moved {done}` (a task dragged to another column; `done`: into the finished one), `filter-set {kind}` (a filter value picked, e.g. FOR) |
 | Workspace data and presence | `task-given {byOther}` (a task newly given to you, `givenBy` someone else), `peer-joined` (another person first in `presence/{wid}`), `edit-refused` (the viewer's "You're a viewer" toast) |
-| The coach itself | `sidenav-rest` (the pointer rests ≥ 600 ms on the side nav), `guide-open` (`?` opened), `crumb-open` (the breadcrumb's canvas prompt opened), `idle {pieces, cards, seen, decks, peerFor}` (≥ 3 min here and 10 s without input, §4.5; counts for nudges) |
+| The coach itself | `sidenav-rest` (the pointer rests ≥ 600 ms on the side nav), `guide-open` (`?` opened), `crumb-open` (the breadcrumb's canvas prompt opened) (`idle` went with the nudges, D-349) |
 
 Every event's payload keys are in lessons.ts `PAYLOADS` (the lint checks each `when` against them); "what kind of
 thing" is always `kind` (a piece kind, card type, text kind, link kind or filter).

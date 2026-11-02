@@ -3,7 +3,7 @@
 // localStorage so nothing flashes. Not workspace content: never `tracked()` (not undoable), never exported.
 // If Firestore refuses (rules not deployed, offline, no Firebase as in the demo realm), it runs on localStorage alone
 // and says nothing. Shape and merge: src/onboarding/seenMerge.ts.
-import { doc, onSnapshot, setDoc, type DocumentSnapshot } from 'firebase/firestore'
+import { deleteField, doc, onSnapshot, setDoc, type DocumentSnapshot } from 'firebase/firestore'
 import { firebase } from './firebase'
 import { cleanSeenState, mergeSeenState, type SeenState } from '../onboarding/seenMerge'
 import { SANDBOX_KEY } from '../onboarding/devSandbox'
@@ -153,7 +153,9 @@ export function seenWriter(uid: string): SeenWriter {
     const s = pending
     pending = null
     lastWrite = Date.now()
-    inFlight = setDoc(seenRef(uid), s, { merge: true }).catch(() => {
+    // `nudges` (gone with the nudges, D-349) is deleted from a doc that still has it: the rules no longer take it, and
+    // a merge would leave it there.
+    inFlight = setDoc(seenRef(uid), { ...s, nudges: deleteField() }, { merge: true }).catch(() => {
       off = true
     })
     return inFlight

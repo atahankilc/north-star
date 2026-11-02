@@ -1,4 +1,4 @@
-// `package-made` (onboarding-lessons.md §3), "A package": 02 Product in focus, no HUD, three features selected, the
+// `package-made` "A package" (lessons.ts, D-349): 02 Product in focus, no HUD, three features selected, the
 // `3 selected` panel open. The hand presses `package these 3`: a package forms round them (the blue frame, its band on
 // top; shown with set()), the panel steps aside and the view takes in the package; the hand presses the band's `[−] 3`:
 // it folds into one blue card of rows, a bar in each member's colour. What each would write shown with set().

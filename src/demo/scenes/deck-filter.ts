@@ -1,4 +1,4 @@
-// `deck-filter` (onboarding-lessons.md §7), "Only some tasks": 05 Launch in focus, no HUD, framed on `to do` and
+// `deck` "Only some tasks" (lessons.ts, D-349): 05 Launch in focus, no HUD, framed on `to do` and
 // `doing`. The hand presses the dock's `[filter]`: the strip builds over the dock (GIVEN TO, DUE, FOR, LABEL); it opens
 // GIVEN TO and picks `me`: only the tasks given to you stay: `to do` empties, `doing`
 // keeps yours. All real: a filter writes nothing.

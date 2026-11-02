@@ -1,4 +1,4 @@
-// `unframe` (onboarding-lessons.md §2), "Framed or unframed": a features table on the canvas in edit mode, its console
+// `piece-made` "Framed or unframed" (lessons.ts, D-349): a features table on the canvas in edit mode, its console
 // `EDIT … unframe … done`, no HUD. The hand presses `unframe`: the window breaks cell by cell while the table grows from
 // fitted in it to its own size, lying on the canvas (the `open` it would write shown with set() at the press).
 import { setEditing } from '../../state/canvasView'

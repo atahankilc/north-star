@@ -1,4 +1,4 @@
-// `piece-console` page 2, "Go inside with focus" (onboarding-lessons.md §2): a plane on the canvas, no HUD. The hand
+// `welcome` "Go inside a piece" (lessons.ts, D-349): a plane on the canvas, no HUD. The hand
 // comes onto it, its console builds; to `focus`, a press: the plane spreads like ink, cell by cell, and its view glides
 // to its fit as the page goes black: the plane is the view, its dock at the bottom.
 import { aim, camera, cursor, onStage, wait, type Scene } from '../director'

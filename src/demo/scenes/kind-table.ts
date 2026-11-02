@@ -1,4 +1,4 @@
-// The kind guide's `table…` row (onboarding-lessons.md §2): Pazar's features table, no HUD. It appears (what the wizard
+// The kind guide's `table…` row (lessons.ts `kind-guide`): Pazar's features table, no HUD. It appears (what the wizard
 // makes, shown with set()) with its rows chosen by its rule (every feature) and the cards' own fields; then a column of
 // its own comes, `cost / month`, and its numbers are typed in down the rows (each shown with set()).
 import type { TableSetup } from '../../data/table'

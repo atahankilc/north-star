@@ -1,4 +1,4 @@
-// `threads-panel` page 1 (onboarding-lessons.md §8), "Every conversation": the whole screen, Pazar fitted, four threads
+// `comment` "Every conversation" (lessons.ts, D-349): the whole screen, Pazar fitted, four threads
 // in the workspace (on cards of both planes, one resolved, one mentioning you; the others new to you). The hand clicks
 // the threads button bottom left: the real panel builds cell by cell, every open thread newest first, `@` and `●` on
 // what's new; it presses `mentions`: only the one that names you; it opens it: the thread half builds beside the list

@@ -1,4 +1,4 @@
-// `matrix-keys` (onboarding-lessons.md §5), "Scoring cells": Pazar's matrix in focus (features down, competitors across),
+// `matrix` "Scoring cells" (lessons.ts, D-349): Pazar's matrix in focus (features down, competitors across),
 // no HUD, framed on its top-left corner so the cells and their bar read. The hand clicks the empty cell `Allergen labels
 // × The office canteen`: it's selected, its bar under it. Clicked again it takes the first step (○ none); `3` typed (its
 // key chip) puts it on the third (● full); `↓` moves the selection to the next cell down. Each score the demo can't write is

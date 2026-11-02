@@ -1,4 +1,4 @@
-// `card-deck` page 2 (onboarding-lessons.md §7), "Suggested order": a priorities deck of Pazar's features in focus (effort
+// `package-made` "Packages in a plan", `card-deck` "Suggested order" (lessons.ts, D-349): a priorities deck of Pazar's features in focus (effort
 // across, impact down, the corners named), no HUD, the whole grid in view (S M L across, impact's rows down), its suggested order put away. The hand presses
 // the dock's `[order]`: the order builds beside the grid and the view glides to it, best first, each with its score and the P1–P3 it suggests (`P2 → P1` in yellow where
 // the card's own priority differs). All real: the order is only read, never written.

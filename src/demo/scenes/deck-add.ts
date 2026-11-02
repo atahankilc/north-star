@@ -1,4 +1,4 @@
-// `deck` page "Adding tasks" (onboarding-lessons.md §7): 05 Launch in focus, no HUD, framed on `to do` and `doing`. The
+// `deck` "Adding tasks" (lessons.ts, D-349): 05 Launch in focus, no HUD, framed on `to do` and `doing`. The
 // hand clicks `+ add a task` under `to do`: a sheet to type in takes its place (the cyan `>`); a task is typed, Enter: it
 // joins the column (the write shown with set()) and the field stays for the next; a second is typed, Enter, the same.
 import type { Task } from '../../data/tasks'

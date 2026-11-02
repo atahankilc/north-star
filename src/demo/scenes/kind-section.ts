@@ -1,4 +1,4 @@
-// The kind guide's `section` row (onboarding-lessons.md §2): a clear stretch of canvas with a heading and two sticky
+// The kind guide's `section` row (lessons.ts `kind-guide`): a clear stretch of canvas with a heading and two sticky
 // notes, no HUD. A section appears round them (what the crosshair draws, shown with set()); then the hand takes it by
 // its name and moves it: what's inside goes with it (real pointer events, the section's own carry and landing marks; the
 // move it would write shown with set() at the drop).

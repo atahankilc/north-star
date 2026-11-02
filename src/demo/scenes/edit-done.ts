@@ -1,4 +1,4 @@
-// `piece-made` page 2, "Done when you're done" (onboarding-lessons.md §2): a plane on the canvas in edit mode, its
+// `piece-made` "Done when you're done" (lessons.ts, D-349): a plane on the canvas in edit mode, its
 // console showing `EDIT 500 × 325 … done`, no HUD. The hand goes to `done` and presses it (the real console's press):
 // edit mode ends, the handles and the cyan frame go, the console with them as the hand moves off.
 import { setEditing } from '../../state/canvasView'

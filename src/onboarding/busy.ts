@@ -120,11 +120,6 @@ const every = (ms: number, fn: () => void) => {
 
 // The real stores, for events.ts' startEvents().
 export function realSources(): Sources {
-  const input = (fn: () => void) => {
-    const kinds = ['pointerdown', 'keydown', 'wheel', 'pointermove'] as const
-    for (const k of kinds) window.addEventListener(k, fn, { capture: true, passive: true })
-    return () => kinds.forEach((k) => window.removeEventListener(k, fn, true))
-  }
   const pop = (fn: () => void) => {
     window.addEventListener('popstate', fn)
     return () => window.removeEventListener('popstate', fn)
@@ -149,9 +144,7 @@ export function realSources(): Sources {
     onPopState: pop,
     settingsPage,
     menuOpen,
-    onInput: input,
     uid: () => firebase?.auth.currentUser?.uid ?? '',
-    seenCount: () => Object.keys(useProgress.getState().seen).length,
     progressLoaded: () => useProgress.getState().loaded,
     firstCanvas: () => {
       const p = useProgress.getState()

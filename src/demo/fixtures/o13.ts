@@ -1,4 +1,4 @@
-// What O13's scenes share (D-315, onboarding-lessons.md §8 together, §9 finding and canvases, and the side nav's pages):
+// What O13's scenes share (D-315):
 // made-up teammates in the presence store (their squares are the real PeopleHere, their selection the real L's, a
 // follow the real Follow), their cursors drawn in the look PeerCursors gives them (where a cursor is comes from RTDB
 // in the app, which the demo has none of: src/data/presence.ts keeps its tracks private), each in a space of its own

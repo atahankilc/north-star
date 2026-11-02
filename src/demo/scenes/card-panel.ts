@@ -1,4 +1,4 @@
-// `card-made` page 2 and `card-panel` (onboarding-lessons.md §3), "Its panel": 01 Lunch in focus, no HUD, a problem
+// `focus-plane` "Read a card", `card-panel` "Everything about a card" (lessons.ts, D-349): 01 Lunch in focus, no HUD, a problem
 // with its customer above and the idea that solves it below. The hand clicks the problem: its panel builds on the
 // right (what it is, its status and evidence, its links by meaning, tags, notes); the hand goes over the panel and it
 // scrolls down through the sections, as a wheel would.

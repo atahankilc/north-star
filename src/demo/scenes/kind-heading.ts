@@ -1,4 +1,4 @@
-// The kind guide's `heading` row (onboarding-lessons.md §2): a clear stretch of canvas, no HUD. A heading appears and its
+// The kind guide's `heading` row (lessons.ts `kind-guide`): a clear stretch of canvas, no HUD. A heading appears and its
 // words come in as typed (each shown with set()), its small line over it; H1's rule fading right under it.
 import { CANVAS, type Label } from '../../data/labels'
 import { camera, set, wait, type Scene, type Step } from '../director'

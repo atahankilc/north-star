@@ -1,4 +1,4 @@
-// `people-here` page 1 (onboarding-lessons.md §8), "{peer} is here": the whole screen, Pazar fitted, nobody else here.
+// `people-here` "{peer} is here" (lessons.ts, D-349): the whole screen, Pazar fitted, nobody else here.
 // Ayla arrives: her square comes in bottom left (the real PeopleHere, from the presence store) and her cursor, with her
 // name, over the first plane; then Jonas, his square beside hers, his cursor over the second. The hand goes to Ayla's
 // square and rests on it: its tag says who and where (`Ayla · on the canvas`), a click away from following her.

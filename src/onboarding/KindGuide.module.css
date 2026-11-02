@@ -12,20 +12,33 @@
   pointer-events: auto;
 }
 
-/* ── Glued to the menu's right edge, one panel split by a hairline ── */
+/* ── Glued to the menu's right edge, one prompt split by a hairline: the menu's console look (PromptPanel, D-347), its
+   shade and its right corners' L's carried on round the guide ── */
 .glued {
   position: absolute;
-  top: calc(-1 * var(--line-w));
+  top: 0;
   left: 100%;
   display: flex;
-  min-height: calc(100% + 2 * var(--line-w));
-  border: var(--line-w) solid var(--line-hover);
-  border-left-color: var(--line);
+  min-height: 100%;
+  border-left: var(--line-w) solid var(--line);
   background: var(--bg);
+  box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
   color: var(--fg-dim);
   font-family: var(--font-display);
   font-size: var(--text-xs);
   cursor: default;
+}
+
+.glued::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--fg-faint), var(--fg-faint)) right top / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--fg-faint), var(--fg-faint)) right top / var(--line-w) var(--corner-mark) no-repeat,
+    linear-gradient(var(--fg-faint), var(--fg-faint)) right bottom / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--fg-faint), var(--fg-faint)) right bottom / var(--line-w) var(--corner-mark) no-repeat;
 }
 
 .gluedIn {
@@ -101,7 +114,7 @@
   flex: 1;
 }
 
-/* Level with the menu's own foot (Menu.module.css .foot). */
+/* The guide's foot: the seen count and `hide guide`, at its bottom. */
 .foot {
   display: flex;
   flex: none;

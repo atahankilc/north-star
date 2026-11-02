@@ -1,4 +1,4 @@
-// `text-made` (onboarding-lessons.md §4), "Writing on the canvas": a clear stretch of canvas, no HUD: a heading (`02 ──
+// `text-made` "Writing on the canvas" (lessons.ts, D-349): a clear stretch of canvas, no HUD: a heading (`02 ──
 // WHO WE BEAT`'s small line over `Who we beat`) and a paragraph under it. The hand clicks the heading (selected: its bar
 // under it), double-clicks it: its fields open; ` on price` typed at a person's pace, `↵` keeps it (shown with set()).
 // Then the bar's `H2`: the heading steps down a size (shown with set()), the bar still under it.

@@ -1,4 +1,4 @@
-// The kind guide's `matrix…` row (onboarding-lessons.md §2): a clear look at Pazar's matrix, no HUD. It appears (what the
+// The kind guide's `matrix…` row (lessons.ts `kind-guide`): a clear look at Pazar's matrix, no HUD. It appears (what the
 // wizard makes, shown with set()), built cell by cell: Product's features down, the competitors across, every cell
 // empty; then the scores come in one cell at a time, as a person scoring them would, until the rows read.
 import { camera, set, wait, type Scene } from '../director'

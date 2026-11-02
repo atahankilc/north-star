@@ -6720,3 +6720,10 @@ Later (2026-11-02, the user: "Lesson.tsx ve Nudge.tsx'i de sil"): Lesson.tsx, Nu
 and the queue's nudge format and budget (progress.noteNudge) deleted; `findAnchor`/`isVisible` moved to
 src/onboarding/anchor.ts for EmptyHint. Kept: seen-state's `nudges` field in seenMerge.ts and firestore.rules (old docs
 carry it; dropping it is a rules change) and the `idle` event (nothing listens).
+Later the same day (the user: "1,2,3 ve 5 i yap"): 10 scenes no lesson showed deleted (deck-kinds, finder-go, guides,
+pieces-tour, prompt-type, sidenav-find/-plus/-side, stick-follow, unframed-live; plane-drag kept as Demo.tsx's
+fallback); the `idle` event, its window input listeners and `{ min }` matches deleted; `nudges` dropped from the
+seen-state: every write sends `nudges: deleteField()` (a merge would keep it on an old doc) and firestore.rules refuse
+it (rules tests 631/0). The rules deploy must wait until the app with deleteField is live (pushed), or old tabs' writes
+are refused (they then stop writing for the session, as with any refusal). onboarding-lessons.md cut to the table and
+pointers (the first draft: `git show bddf074:docs/specs/onboarding-lessons.md`); scene headers name their lessons.

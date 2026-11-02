@@ -1,4 +1,4 @@
-// `focus-lens` (onboarding-lessons.md §2), "Working in a window": a plane and a features table on the canvas, no HUD.
+// `welcome` "You're here to read", `matrix` "Working in a window", `table` "Working in a window" (lessons.ts, D-349): a plane and a features table on the canvas, no HUD.
 // The hand comes onto the table, its console builds; `focus`, a press: the table glides to the middle of the screen as
 // the page builds behind it, its dock at the bottom (`setup`, `unfocus esc`).
 import { aim, camera, cursor, onStage, wait, type Scene } from '../director'

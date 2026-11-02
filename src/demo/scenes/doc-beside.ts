@@ -1,4 +1,4 @@
-// `documents` page 2 (onboarding-lessons.md §6), "Read beside": 07 Research in focus, no HUD, its list looked at
+// `documents` "Read beside" (lessons.ts, D-349): 07 Research in focus, no HUD, its list looked at
 // closer. The hand clicks
 // "Interviews: Kreuzberg offices" in the list: the list moves to the left, pinned (at this width only a sketch of it:
 // the document keeps its 420 px), its row lit, and the document opens

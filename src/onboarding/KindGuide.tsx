@@ -225,10 +225,7 @@ function HideButton({ onHide }: { onHide: () => void }) {
 
 // The menu row's own glyph (the documents page is drawn there), else the fallback.
 function glyphOf(host: HTMLElement | null, key: string): ReactNode {
-  const btn = host?.querySelector(`[role^=menuitem][data-key="${CSS.escape(key)}"]`)
-  const spans = btn ? [...btn.children] : []
-  // cursor, letter, glyph, label…: the glyph is the one before the label, when there is one.
-  const g = spans.length >= 4 ? (spans[2] as HTMLElement) : null
+  const g = host?.querySelector<HTMLElement>(`[role^=menuitem][data-key="${CSS.escape(key)}"] [data-part=glyph]`)
   if (g && g.innerHTML) return <span dangerouslySetInnerHTML={{ __html: g.innerHTML }} />
   return LOOK[key]?.glyph ?? ''
 }

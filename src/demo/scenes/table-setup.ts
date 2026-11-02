@@ -1,4 +1,4 @@
-// `table-keys` page 2 for editors (onboarding-lessons.md §5), "Your own columns": Pazar's features table in focus, as table-keys
+// `table` "Your own columns" (lessons.ts, D-349): Pazar's features table in focus, as table-keys
 // shows it, no HUD. The hand presses `setup` in the dock: the setup builds over the table's foot. `columns`, then
 // `+ a mark` (a scale, low → high): a column of its own joins the table (the write shown with set()) and the table's view
 // follows it in. `done`: the setup goes; the view glides on to the new `mark` column, its head readable.

@@ -1,4 +1,4 @@
-// `parts` (onboarding-lessons.md §3), "Parts fold inside": 02 Product in focus, no HUD, a feature with its two parts
+// `card-panel` "Parts fold inside" (lessons.ts, D-349): 02 Product in focus, no HUD, a feature with its two parts
 // laid out under it (`part of` links). The hand presses the feature's `[−] 2 parts`: the parts shrink into it as rows of
 // a small tree, and the view closes in on the folded card. What the fold would write shown with set().
 import type { Edge } from '../../data/edges'

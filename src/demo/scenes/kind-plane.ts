@@ -1,4 +1,4 @@
-// The kind guide's `plane` row (onboarding-lessons.md §2 `kind-guide`): a clear stretch of canvas, no HUD. A plane
+// The kind guide's `plane` row (lessons.ts `kind-guide`): a clear stretch of canvas, no HUD. A plane
 // appears (what `+ → plane` makes, shown with set()), built cell by cell; then the chain lands in it a card at a time,
 // customer, problem, idea, and the idea's `solves` link: a space for cards, linked.
 import { camera, set, wait, type Scene } from '../director'

@@ -1,4 +1,4 @@
-// The kind guide's `existing card…` row, in a plane (onboarding-lessons.md §2): 02 Product in focus, no HUD. A
+// The kind guide's `existing card…` row, in a plane (lessons.ts `kind-guide`): 02 Product in focus, no HUD. A
 // right-click on empty plane, top left: the real menu; `exi` typed narrows it to `existing card…`, a click on it: it
 // turns into the list of cards from other planes; `lun` typed narrows it to Lunch's pre-order idea; a click on it
 // brings it where the right-click was (a place of its own on this plane, shown with set()): the same card, `⧉ 2` on it,

@@ -1,4 +1,4 @@
-// The kind guide's `customer` row, in a plane (onboarding-lessons.md §2): a plane in focus with two problems on it, no
+// The kind guide's `customer` row, in a plane (lessons.ts `kind-guide`): a plane in focus with two problems on it, no
 // HUD. A customer card appears above them (shown with set()); the problems say who they're for (their `for` links,
 // shown with set()), and with the customer selected its `for` lines show (D-128).
 import { camera, set, ui, wait, type Scene } from '../director'

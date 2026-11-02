@@ -1,4 +1,4 @@
-// `headings-places` (onboarding-lessons.md §4), "Headings are places": the whole screen, Pazar's canvas fitted, three
+// `text-made` "Headings are places" (lessons.ts, D-349): the whole screen, Pazar's canvas fitted, three
 // headings: `What we build` over Product, `The launch` over the deck, `Who we beat` on a clear stretch left of it all (so
 // the glide there passes over no piece's name).
 // `⌘F` (its key chip) opens the real finder: empty, it lists the places, the headings among them. `beat` typed at a

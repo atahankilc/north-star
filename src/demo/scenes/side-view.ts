@@ -1,4 +1,4 @@
-// `side-view` page 1 (onboarding-lessons.md §7), "Decks and days, beside you": 01 Lunch in focus, the HUD's side nav on
+// `deck` "Decks beside you", `side-view` "Decks and days, beside you" (lessons.ts, D-349): 01 Lunch in focus, the HUD's side nav on
 // the left. `t` is pressed (its key chip): the side view opens on the right, beside the plane, the launch deck's board in
 // it under its tabs; the hand presses the deck's `[days ›]` in its dock: the deck's days come in (under 1300 px they open
 // over the board, `‹ back to the board`). All real: opening it writes nothing.

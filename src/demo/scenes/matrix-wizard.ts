@@ -1,4 +1,4 @@
-// `matrix-wizard` (onboarding-lessons.md §5), "Four questions": the real matrix wizard, laid out over the small stage.
+// `matrix` "Change it any time" (lessons.ts, D-349): the real matrix wizard, laid out over the small stage.
 // It opens on `start from`, features × competitors chosen, the preview beside it. The hand picks `problems × customers`:
 // the preview turns into Pazar's problems against its customers. Then the third question, `columns`; the hand picks
 // `competitors`: the preview's columns turn into Wolt, Lieferando… The wizard works on a draft, so every click here is

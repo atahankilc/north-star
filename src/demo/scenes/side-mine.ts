@@ -1,4 +1,4 @@
-// `side-view` page 2 (onboarding-lessons.md §7), "Yours": the side view open beside Pazar's first plane on the launch
+// `side-view` "Yours" (lessons.ts, D-349): the side view open beside Pazar's first plane on the launch
 // deck's board. The hand presses `MINE` in its corner: the board gives way to the tasks given to you, across decks, each
 // with its deck and its day; then `ALL · DAYS`: every deck's tasks on days. All real: a tab writes nothing.
 import { useCanvasView } from '../../state/canvasView'

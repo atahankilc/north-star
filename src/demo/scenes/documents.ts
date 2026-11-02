@@ -1,4 +1,4 @@
-// `documents` page 1 (onboarding-lessons.md §6), "Your files": 07 Research in focus, no HUD, its list looked at closer.
+// `documents` "Your files" (lessons.ts, D-349): 07 Research in focus, no HUD, its list looked at closer.
 // The hand presses the dock's `[upload]` (the file chosen is shown, not asked: the demo opens no dialog): `pricing-notes.md`
 // goes up and lands at the top of the list; the view closes in on it, `you ◐`: only you see it; the hand right-clicks its row and picks
 // `share with everyone`: the mark goes, everyone here sees it now (each write shown with set()).

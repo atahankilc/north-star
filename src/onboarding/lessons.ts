@@ -1,4 +1,4 @@
-// Every lesson of the onboarding (D-315), as data: written from docs/specs/onboarding-lessons.md, drawn by one renderer
+// Every lesson of the onboarding (D-315), as data: drawn by one renderer
 // per format (onboarding.md §4), linted by `npm run check:lessons` (scripts/check-lessons.mjs, onboarding.md §8.2).
 // Plain data: no React, no Firebase, only `import type` (erased), so a Node script (type stripping) and vitest load it.
 //
@@ -34,8 +34,6 @@ export const EVENTS = [
   'canvas-switch',
   // One-line hooks.
   'plus-open', 'context-menu', 'menu-open', 'crumb-open', 'sidenav-rest', 'guide-open',
-  // The queue: ≥ 3 min in the workspace and 10 s without input (onboarding.md §4.5); no lesson uses it since nudges went (D-349).
-  'idle',
 ] as const
 export type LessonEvent = (typeof EVENTS)[number]
 
@@ -108,7 +106,6 @@ export const PAYLOADS: Record<LessonEvent, readonly string[]> = {
   'crumb-open': [],
   'sidenav-rest': [],
   'guide-open': [],
-  idle: ['pieces', 'cards', 'seen', 'decks', 'peerFor'],
 }
 
 // What a lesson sits beside: `data-learn="<anchor>"` in the app (O6). None: the middle of the screen.
@@ -136,8 +133,8 @@ export const PLACEHOLDERS = ['owner', 'peer', 'piece'] as const
 // What a page may wait for: the side nav's tasks button (shown while the canvas has a deck or a timeline, TasksTool.tsx).
 export const PAGE_IFS = ['has-tasks-button'] as const
 
-// An event's payload must match: a value, one of a list, or at least a number (counts the queue gives `idle`).
-export type Match = Record<string, string | boolean | readonly string[] | { min: number }>
+// An event's payload must match: a value, or one of a list.
+export type Match = Record<string, string | boolean | readonly string[]>
 export type Trigger = { event: LessonEvent; when?: Match }
 
 export type Page = {

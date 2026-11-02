@@ -1,4 +1,4 @@
-// The welcome's last page (onboarding-lessons.md §1 `welcome` page 4, "Together, live"): a plane in focus with two
+// `welcome` "Find it, together" (lessons.ts, D-349): a plane in focus with two
 // teammates in it. Their squares are bottom left (the real PeopleHere, from the presence store), Ayla has a card
 // selected (the real L's with her name), and both their cursors drift over the plane. Then the person right-clicks a
 // problem card: the real menu builds, `comment` is picked, and the real thread panel opens bottom left with its field,

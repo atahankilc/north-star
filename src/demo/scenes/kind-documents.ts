@@ -1,4 +1,4 @@
-// The kind guide's `documents` row (onboarding-lessons.md §2): Pazar's research list, no HUD. It appears (shown with
+// The kind guide's `documents` row (lessons.ts `kind-guide`): Pazar's research list, no HUD. It appears (shown with
 // set()) with the team's two shared documents; then a third arrives at the top, yours and still private (no one else
 // sees it until you share it).
 import type { Doc } from '../../data/documents'

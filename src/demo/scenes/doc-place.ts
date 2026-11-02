@@ -1,4 +1,4 @@
-// `doc-place` (onboarding-lessons.md §6), "On the canvas": "Interviews: Kreuzberg offices" placed on the canvas, a window
+// `doc-place` "A document on the canvas" (lessons.ts, D-349): "Interviews: Kreuzberg offices" placed on the canvas, a window
 // anyone here can read (its text cut by the window's foot, faded), in edit mode, no HUD. The hand presses `unframe` in
 // its console: the window breaks cell by cell and the whole document lies open on the canvas at its own length (the
 // `open` it would write shown with set() at the press); the canvas glides down along it.

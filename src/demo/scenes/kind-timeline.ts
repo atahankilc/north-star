@@ -1,4 +1,4 @@
-// The kind guide's `timeline` row (onboarding-lessons.md §2): Pazar's launch days appear on a clear stretch of canvas,
+// The kind guide's `timeline` row (lessons.ts `kind-guide`): Pazar's launch days appear on a clear stretch of canvas,
 // laid open (unframed, live), no HUD; then the hand drags one task's bar three days later with real pointer events (the
 // timeline's own lift); the move it would write shown with set() at the drop.
 import { aim, camera, cursor, find, onStage, set, wait, type Ctx, type Scene } from '../director'

@@ -1,4 +1,4 @@
-// The kind guide's `package` row, in a plane (onboarding-lessons.md §2): a plane in focus with three features, no HUD.
+// The kind guide's `package` row, in a plane (lessons.ts `kind-guide`): a plane in focus with three features, no HUD.
 // A package forms round them (shown with set()): the blue frame on the grid's marks, its band on top with its name and
 // rating; then it folds into one blue card of rows, a bar in each member's colour.
 import type { Card } from '../../data/cards'

@@ -1,4 +1,4 @@
-// `piece-console` page 1, "Every piece has a console" (onboarding-lessons.md §2): two planes on the canvas, no HUD. The
+// `welcome` "Every piece has a console" (lessons.ts, D-349): two planes on the canvas, no HUD. The
 // hand comes onto the first: its console builds in its bottom-right corner (`focus`, `edit`, the comments inside); off
 // it, the console goes; onto the second, its own builds there. All the real pointer's doing.
 import { aim, camera, cursor, onStage, wait, type Scene } from '../director'

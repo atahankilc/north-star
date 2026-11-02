@@ -1,4 +1,4 @@
-// `link-made` (onboarding-lessons.md §3), "What does it mean?": 02 Product in focus, no HUD, a feature over a problem
+// `link-made` "What does it mean?" (lessons.ts, D-349): 02 Product in focus, no HUD, a feature over a problem
 // with an `inspired by` link between them. The hand clicks the link's chip: it's selected, its bar under it; it opens
 // the kind (`inspired by ▾`), the real list of kinds builds, `so` typed narrows it to `solves`, a click takes it: the
 // line turns the colour of solving and says so. What the kind would write shown with set().

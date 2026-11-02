@@ -1,4 +1,4 @@
-// `focus-plane` page 1 (onboarding-lessons.md §2), "You're inside the plane": 01 Lunch (its customers and problems) in focus, no HUD, its dock at the
+// `focus-plane` "You're inside a plane" (lessons.ts, D-349): 01 Lunch (its customers and problems) in focus, no HUD, its dock at the
 // bottom. The hand drags across an empty stretch of the plane: the view moves with it, a little; then a right-click on
 // empty plane, up and left, where the real menu has room to build with the card types to add here.
 import { camera, cursor, inFocus, onStage, wait, type Ctx, type Scene } from '../director'

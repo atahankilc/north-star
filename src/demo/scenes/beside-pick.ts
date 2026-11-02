@@ -1,4 +1,4 @@
-// `stuck` page 2 (onboarding-lessons.md §2), "Open it beside": 02 Product in focus with its features table open beside
+// `beside` "They follow each other" (lessons.ts, D-349): 02 Product in focus with its features table open beside
 // it, no HUD. The hand picks a row of the table, `Portion counter…`, by its name: the plane's view glides to that card
 // and it's lit (selected); its panel is shut at once (as Enter leaves a card just named, D-250) so both halves stay in
 // the slot.

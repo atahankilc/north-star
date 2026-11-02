@@ -1,4 +1,4 @@
-// The welcome's first page (onboarding-lessons.md §1 `welcome`): the whole screen, the canvas fitted. The cursor drags
+// `welcome` "This is your canvas" (lessons.ts, D-349): the whole screen, the canvas fitted. The cursor drags
 // the canvas so the first plane comes to the middle, the wheel zooms in on it, a moment to look, then `0` (its key chip
 // shown; the hand gone to empty canvas) goes through the canvas's real key handler and the real fit glides back out until everything fits. The glide
 // is the app's own 420 ms, played in slow motion here so it can be followed. Starts and ends fitted.

@@ -1,4 +1,4 @@
-// `stick-hint` (onboarding-lessons.md §2), "Stick it to a plane": a plane and a features table beside it on the canvas,
+// `piece-made` "Stick it to a plane" (lessons.ts, D-349): a plane and a features table beside it on the canvas,
 // the table in edit mode, no HUD. The hand takes the table and moves it to the plane's right edge: near it the table
 // snaps one step out and shows it'll link (the real stick hint); let go, it's stuck (`⇆ 02 Product` on it), its rows
 // now the plane's (what the drop would write shown with set()).

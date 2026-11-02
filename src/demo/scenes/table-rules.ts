@@ -1,4 +1,4 @@
-// `table-wizard` (onboarding-lessons.md §5), "Rows by rules": the real table wizard, laid out over the small stage. The
+// `table` "A table" (lessons.ts, D-349): the real table wizard, laid out over the small stage. The
 // hand goes to its second question, `rows`: no rules yet, so the preview holds every card (33 rows). `+ type`, then
 // `feature`: the preview is Pazar's eight features, its count says so. The wizard works on a draft, so every click is the app's own (nothing is written until it's made).
 import { cursor, onStage, wait, type Scene } from '../director'

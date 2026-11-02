@@ -1,4 +1,4 @@
-// `deck` page "A task's panel" (onboarding-lessons.md §7): 05 Launch in focus, no HUD, its `doing` column on the left.
+// `deck` "A task's panel" (lessons.ts, D-349): 05 Launch in focus, no HUD, its `doing` column on the left.
 // The hand clicks "Sign up five more cooks": its panel builds on the right (its column, who has it, its days, its card,
 // its checklist); the hand goes over the panel, it scrolls down to the checklist, and the last step is ticked (shown
 // with set(): `3/3` on the task too).

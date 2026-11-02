@@ -1,4 +1,4 @@
-// The workspaces page with no workspaces (D-315, docs/specs/onboarding.md §4.7, onboarding-lessons.md `workspaces-empty`;
+// The workspaces page with no workspaces (D-315, docs/specs/onboarding.md §4.7;
 // D-338): not a modal, the empty state itself teaches. Drawn by the coach into the page's start row (`data-learn=
 // "workspaces-empty"`, Workspaces.tsx), in place of its own three pieces: the same three ways in, each going to what it
 // says (the prompt for a name or a code, the file picker). Gone (and seen) at the first workspace made or the first join

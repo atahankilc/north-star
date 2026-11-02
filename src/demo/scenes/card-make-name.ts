@@ -1,4 +1,4 @@
-// `card-made` page 1, "Name it here" (onboarding-lessons.md §3): 01 Lunch in focus, no HUD, a customer and a problem
+// `focus-plane` "Make a card" (lessons.ts, D-349): 01 Lunch in focus, no HUD, a customer and a problem
 // on it. A right-click on empty plane: the real menu; `r` typed puts `problem` first, a click on it: a problem card appears there
 // (shown with set(), what `addCard` would have made) with its panel open, the title field ready; a title typed at a
 // person's pace, Enter keeps it (the panel shuts, the card stays, named). What the title would write shown with set().

@@ -1,4 +1,4 @@
-// What O11's scenes share (D-315, onboarding-lessons.md §4 text, §5 matrix and table): a wizard opened and laid out to
+// What O11's scenes share (D-315): a wizard opened and laid out to
 // read in the lesson's small slot, Pazar's matrix and table as pieces in focus, and CSS for what a scene draws in the
 // body (a wizard, a menu: portals, outside the stage's `[data-scene]`). Kept apart from kit.ts (O9's) and o10.ts (O10's).
 import type { WithId } from '../../data/hooks'

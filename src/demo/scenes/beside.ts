@@ -1,4 +1,4 @@
-// `beside` (onboarding-lessons.md §2), "Side by side": 02 Product in focus with its features table stuck to it, no HUD,
+// `beside` "Side by side" (lessons.ts, D-349): 02 Product in focus with its features table stuck to it, no HUD,
 // framed tight on the plane and its dock. The hand opens `linked · 1` in the dock, then presses `⇆ table · 04 Features`:
 // the table opens beside the plane, the screen split with the line between, each half with its own dock; the plane's
 // half is then looked at closer, and the wheel over the table zooms that half's own view, so its rows read.

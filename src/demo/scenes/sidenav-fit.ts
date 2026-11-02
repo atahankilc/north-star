@@ -1,4 +1,4 @@
-// `side-nav` page 2 (onboarding-lessons.md §1), "Fit": the side nav at the stage's left edge, the canvas beside it,
+// `welcome` "Tools on the left" (lessons.ts, D-349): the side nav at the stage's left edge, the canvas beside it,
 // zoomed in close on the launch deck's corner. The hand goes to the side nav's fit (under the `+`), rests, clicks: the
 // real fit glides the camera out until everything on the canvas is in view (the app's own 420 ms glide, in slow motion
 // so it can be followed). Starts close, ends fitted.

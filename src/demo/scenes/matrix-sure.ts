@@ -1,4 +1,4 @@
-// `matrix-keys` page 2 for editors (onboarding-lessons.md §5), "How sure?": Pazar's matrix in focus, framed as matrix-keys is. The
+// `matrix` "How sure?" (lessons.ts, D-349): Pazar's matrix in focus, framed as matrix-keys is. The
 // hand clicks `Allergen labels × Lieferando` (full): its bar opens under it. `~ inferred`, a press: the cell's corner
 // says `~`. Then into the note: "Seen in their app" typed at a person's pace; the field is left
 // at once (its save a step of its own), and the cell's other corner folds (it has a note). A click away lets the cell go and the view comes

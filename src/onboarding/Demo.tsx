@@ -22,17 +22,17 @@ const LOOPS = 3
 // The scenes demo.html can play today (src/demo/sceneList.ts). Every other id plays `plane-drag` for now (a
 // placeholder until its scene is written); the strip still names the scene that was asked for. Kept here, not imported
 // from src/demo/, so the app's bundle never pulls the stage in.
-const BUILT = ['plane-drag', 'canvas-fit', 'sidenav-plus', 'deck-drag', 'pieces-tour', 'plus-adds-plane', 'finder-go', 'peers-comment']
-// O9: the kind guide's rows and the `+` and pieces lessons (onboarding-lessons.md §2).
-BUILT.push('kind-plane', 'kind-matrix', 'kind-table', 'kind-documents', 'kind-deck', 'kind-timeline', 'kind-heading', 'kind-paragraph', 'kind-sticky', 'kind-section', 'kind-title', 'card-customer', 'card-problem', 'card-competitor', 'card-idea', 'card-feature', 'kind-package', 'kind-existing', 'edit-move-resize', 'edit-done', 'console-appear', 'focus-ink', 'plane-inside', 'lens-focus', 'unframe', 'unframed-live', 'stick', 'stick-follow', 'beside', 'beside-pick', 'canvases-share')
-// O10: planes and cards (onboarding-lessons.md §3).
-BUILT.push('link-draw', 'card-make-name', 'card-panel', 'evidence', 'link-bar', 'for-filter', 'plane-filter', 'multi-select', 'package', 'shared-card', 'competitor-features', 'parts', 'guides', 'prompt-type')
-// O11: text, matrix and table (onboarding-lessons.md §4, §5).
+const BUILT = ['plane-drag', 'canvas-fit', 'deck-drag', 'plus-adds-plane', 'peers-comment']
+// O9: the kind guide's rows and the `+` and pieces lessons.
+BUILT.push('kind-plane', 'kind-matrix', 'kind-table', 'kind-documents', 'kind-deck', 'kind-timeline', 'kind-heading', 'kind-paragraph', 'kind-sticky', 'kind-section', 'kind-title', 'card-customer', 'card-problem', 'card-competitor', 'card-idea', 'card-feature', 'kind-package', 'kind-existing', 'edit-move-resize', 'edit-done', 'console-appear', 'focus-ink', 'plane-inside', 'lens-focus', 'unframe', 'stick', 'beside', 'beside-pick', 'canvases-share')
+// O10: planes and cards.
+BUILT.push('link-draw', 'card-make-name', 'card-panel', 'evidence', 'link-bar', 'for-filter', 'plane-filter', 'multi-select', 'package', 'shared-card', 'competitor-features', 'parts')
+// O11: text, matrix and table.
 BUILT.push('text-edit', 'sticky', 'section', 'finder-heading', 'matrix-wizard', 'matrix-keys', 'matrix-sure', 'criteria', 'table-rules', 'table-keys', 'table-setup')
-// O12: documents, decks and days (onboarding-lessons.md §6, §7).
-BUILT.push('deck-kinds', 'deck-filter', 'task-panel', 'task-learned', 'card-deck', 'priorities', 'side-view', 'side-mine', 'timeline-scroll', 'timeline-draw', 'doc-beside', 'documents', 'doc-place', 'deck-add')
-// O13: the side nav's pages, together, canvases (onboarding-lessons.md §1, §8, §9).
-BUILT.push('sidenav-fit', 'sidenav-find', 'sidenav-side', 'peers-cursors', 'follow', 'thread', 'threads-panel', 'canvases')
+// O12: documents, decks and days.
+BUILT.push('deck-filter', 'task-panel', 'task-learned', 'card-deck', 'priorities', 'side-view', 'side-mine', 'timeline-scroll', 'timeline-draw', 'doc-beside', 'documents', 'doc-place', 'deck-add')
+// O13: the side nav's pages, together, canvases.
+BUILT.push('sidenav-fit', 'peers-cursors', 'follow', 'thread', 'threads-panel', 'canvases')
 export const playable = (scene: string) => (BUILT.includes(scene) ? scene : 'plane-drag')
 
 type Msg = { ns: typeof DEMO_NS; type: string; [k: string]: unknown }

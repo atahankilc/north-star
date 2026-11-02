@@ -1,4 +1,4 @@
-// `card-made` page 3, "Link it" (onboarding-lessons.md §3): 01 Lunch in focus, no HUD, an idea and a problem. The hand
+// `focus-plane` "Link cards" (lessons.ts, D-349): 01 Lunch in focus, no HUD, an idea and a problem. The hand
 // comes over the idea: its `›` shows at its right edge; it takes the `›` and drags it onto the problem (the line follows
 // the hand, the problem lit as the target), lets go: the link lands as `solves` (the idea → problem default), selected,
 // its bar under it with the label ready; a short label typed, Enter. What the drop and the label would write shown with

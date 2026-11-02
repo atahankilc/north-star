@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { attach, DEDUPE_MS, EMITS, IDLE_AFTER_MS, learn, onLearn, startEvents, stepEvents, stopEvents, withMissing, type Sources, type StepLike, type WsLike } from './events'
+import { attach, DEDUPE_MS, EMITS, learn, onLearn, startEvents, stepEvents, stopEvents, withMissing, type Sources, type StepLike, type WsLike } from './events'
 import { EVENTS } from './lessons'
 import type { LearnEvent } from './queue'
 
@@ -28,7 +28,6 @@ function fakes() {
   const wsSubs = new Set<() => void>()
   const tracked = new Set<(label: string, meta?: { created?: string[]; actor?: 'person' | 'agent' }) => void>()
   const tickers: Array<() => void> = []
-  const inputs = new Set<() => void>()
   const canvasView = store({ editing: [] as string[], confirming: null as string | null, deleting: null, bringing: null, toCanvas: null, cardSelected: null as string | null, fresh: null as string | null, cardMulti: [] as string[], linkSelected: null, linking: null as unknown, drawing: null, packing: null })
   const history = store({ past: [] as StepLike[], future: [] as StepLike[], notice: null as { text: string; at: number } | null })
   const curtain = store({ revealed: false })
@@ -53,9 +52,7 @@ function fakes() {
     onPopState: () => () => {},
     settingsPage: () => null,
     menuOpen: () => false,
-    onInput: (fn) => (inputs.add(fn), () => void inputs.delete(fn)),
     uid: () => 'me',
-    seenCount: () => 0,
     firstCanvas: () => true,
     progressLoaded: () => loaded,
     timelineDecks: () => [],
@@ -88,7 +85,6 @@ function fakes() {
     setLoaded: (v: boolean) => void (loaded = v),
     advance: (ms: number) => void (t += ms),
     tick: () => tickers.forEach((fn) => fn()),
-    input: () => inputs.forEach((fn) => fn()),
   }
 }
 
@@ -223,23 +219,6 @@ describe('events', () => {
     f.setWs(W({ tasks: [{ id: 't0', pieceId: 'k', assignee: 'me', givenAt: 5, givenBy: 'bob' }, { id: 't1', pieceId: 'k', assignee: 'me', givenAt: 2_000_000, givenBy: 'bob' }] }))
     f.setWs(W({ tasks: [{ id: 't0', pieceId: 'k', assignee: 'me', givenAt: 5, givenBy: 'bob' }, { id: 't1', pieceId: 'k', assignee: 'me', givenAt: 2_000_000, givenBy: 'bob' }] }))
     expect(f.log.slice(1)).toEqual([{ event: 'task-given', payload: { byOther: true } }])
-  })
-
-  it('idle once after 3 min and 10 s quiet, again only after input', () => {
-    const f = started()
-    f.curtain.set({ revealed: true })
-    f.setWs(W())
-    f.advance(IDLE_AFTER_MS)
-    f.tick()
-    f.tick()
-    expect(f.names().filter((n) => n === 'idle').length).toBe(1)
-    f.input()
-    f.tick()
-    expect(f.names().filter((n) => n === 'idle').length).toBe(1)
-    f.advance(11_000)
-    f.tick()
-    expect(f.names().filter((n) => n === 'idle').length).toBe(2)
-    expect(f.log.find((e) => e.event === 'idle')?.payload).toEqual({ pieces: 1, cards: 0, seen: 0, decks: 0, peerFor: 0 })
   })
 })
 

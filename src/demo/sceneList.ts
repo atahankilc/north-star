@@ -4,11 +4,8 @@ import type { Scene } from './director'
 import canvasFit from './scenes/canvas-fit'
 import deckDrag from './scenes/deck-drag'
 import planeDrag from './scenes/plane-drag'
-import sidenavPlus from './scenes/sidenav-plus'
 import peersComment from './scenes/peers-comment'
-import piecesTour from './scenes/pieces-tour'
 import plusAddsPlane from './scenes/plus-adds-plane'
-import finderGo from './scenes/finder-go'
 import kindPlane from './scenes/kind-plane'
 import kindMatrix from './scenes/kind-matrix'
 import kindTable from './scenes/kind-table'
@@ -33,14 +30,12 @@ import consoleAppear from './scenes/console-appear'
 import focusInk from './scenes/focus-ink'
 import lensFocus from './scenes/lens-focus'
 import unframe from './scenes/unframe'
-import unframedLive from './scenes/unframed-live'
 import stick from './scenes/stick'
-import stickFollow from './scenes/stick-follow'
 import beside from './scenes/beside'
 import besidePick from './scenes/beside-pick'
 import planeInside from './scenes/plane-inside'
 import canvasesShare from './scenes/canvases-share'
-// O10's (onboarding-lessons.md §3).
+// O10's.
 import linkDraw from './scenes/link-draw'
 import cardMakeName from './scenes/card-make-name'
 import cardPanel from './scenes/card-panel'
@@ -53,10 +48,7 @@ import pkgScene from './scenes/package'
 import sharedCard from './scenes/shared-card'
 import competitorFeatures from './scenes/competitor-features'
 import parts from './scenes/parts'
-import guides from './scenes/guides'
-import promptType from './scenes/prompt-type'
-// O12's (onboarding-lessons.md §6, §7).
-import deckKinds from './scenes/deck-kinds'
+// O12's.
 import deckFilter from './scenes/deck-filter'
 import taskPanel from './scenes/task-panel'
 import taskLearned from './scenes/task-learned'
@@ -70,7 +62,7 @@ import docBeside from './scenes/doc-beside'
 import documents from './scenes/documents'
 import docPlace from './scenes/doc-place'
 import deckAdd from './scenes/deck-add'
-// O11's (onboarding-lessons.md §4 text, §5 matrix and table).
+// O11's.
 import matrixWizard from './scenes/matrix-wizard'
 import tableRules from './scenes/table-rules'
 import matrixKeys from './scenes/matrix-keys'
@@ -82,24 +74,22 @@ import textEdit from './scenes/text-edit'
 import sticky from './scenes/sticky'
 import section from './scenes/section'
 import finderHeading from './scenes/finder-heading'
-// O13's (onboarding-lessons.md §1 side-nav, §8 together, §9 canvases).
+// O13's.
 import sidenavFit from './scenes/sidenav-fit'
-import sidenavFind from './scenes/sidenav-find'
-import sidenavSide from './scenes/sidenav-side'
 import peersCursors from './scenes/peers-cursors'
 import follow from './scenes/follow'
 import thread from './scenes/thread'
 import threadsPanel from './scenes/threads-panel'
 import canvases from './scenes/canvases'
 
-export const SCENES: Record<string, Scene> = Object.fromEntries([planeDrag, canvasFit, sidenavPlus, deckDrag, peersComment, piecesTour, plusAddsPlane, finderGo].map((s) => [s.id, s]))
-// O9: the kind guide's rows and the `+` and pieces lessons (onboarding-lessons.md §2).
-for (const s of [kindPlane, kindMatrix, kindTable, kindDocuments, kindHeading, kindParagraph, kindSticky, kindTitle, cardCustomer, cardProblem, cardCompetitor, cardIdea, cardFeature, kindPackage, kindExisting, kindDeck, kindTimeline, kindSection, editMoveResize, editDone, consoleAppear, focusInk, lensFocus, unframe, unframedLive, stick, stickFollow, beside, besidePick, planeInside, canvasesShare]) SCENES[s.id] = s
-// O10: planes and cards (onboarding-lessons.md §3).
-for (const s of [linkDraw, cardMakeName, cardPanel, evidence, linkBar, forFilter, planeFilter, multiSelect, pkgScene, sharedCard, competitorFeatures, parts, guides, promptType]) SCENES[s.id] = s
-// O11: text, matrix and table (onboarding-lessons.md §4, §5).
+export const SCENES: Record<string, Scene> = Object.fromEntries([planeDrag, canvasFit, deckDrag, peersComment, plusAddsPlane].map((s) => [s.id, s]))
+// O9: the kind guide's rows and the `+` and pieces lessons.
+for (const s of [kindPlane, kindMatrix, kindTable, kindDocuments, kindHeading, kindParagraph, kindSticky, kindTitle, cardCustomer, cardProblem, cardCompetitor, cardIdea, cardFeature, kindPackage, kindExisting, kindDeck, kindTimeline, kindSection, editMoveResize, editDone, consoleAppear, focusInk, lensFocus, unframe, stick, beside, besidePick, planeInside, canvasesShare]) SCENES[s.id] = s
+// O10: planes and cards.
+for (const s of [linkDraw, cardMakeName, cardPanel, evidence, linkBar, forFilter, planeFilter, multiSelect, pkgScene, sharedCard, competitorFeatures, parts]) SCENES[s.id] = s
+// O11: text, matrix and table.
 for (const s of [matrixWizard, tableRules, matrixKeys, matrixSure, criteria, tableKeys, tableSetup, textEdit, sticky, section, finderHeading]) SCENES[s.id] = s
-// O12: documents, decks and days (onboarding-lessons.md §6, §7).
-for (const s of [deckKinds, deckFilter, taskPanel, taskLearned, cardDeck, priorities, sideView, sideMine, timelineScroll, timelineDraw, docBeside, documents, docPlace, deckAdd]) SCENES[s.id] = s
-// O13: the side nav's pages, together, canvases (onboarding-lessons.md §1, §8, §9).
-for (const s of [sidenavFit, sidenavFind, sidenavSide, peersCursors, follow, thread, threadsPanel, canvases]) SCENES[s.id] = s
+// O12: documents, decks and days.
+for (const s of [deckFilter, taskPanel, taskLearned, cardDeck, priorities, sideView, sideMine, timelineScroll, timelineDraw, docBeside, documents, docPlace, deckAdd]) SCENES[s.id] = s
+// O13: the side nav's pages, together, canvases.
+for (const s of [sidenavFit, peersCursors, follow, thread, threadsPanel, canvases]) SCENES[s.id] = s

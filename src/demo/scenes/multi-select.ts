@@ -1,4 +1,4 @@
-// `multi-select` (onboarding-lessons.md §3), "Several at once": 02 Product in focus, no HUD, four features. With `⌥`
+// `focus-plane` "Several at once" (lessons.ts, D-349): 02 Product in focus, no HUD, four features. With `⌥`
 // held the hand drags a box over three of them: the box draws, the three are selected (their L's); `⌥` let go, it
 // takes one of them and drags: all three go together (each at 0.8, landing L's where they'll land), and land. The
 // `N selected` panel is left out here (the lesson sits beside it in the app). What the move would write shown with set().

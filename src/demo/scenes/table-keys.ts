@@ -1,4 +1,4 @@
-// `table-keys` (onboarding-lessons.md §5), "Working in a table": Pazar's features table in focus (status, priority and its
+// `table` "Working in cells" (lessons.ts, D-349): Pazar's features table in focus (status, priority and its
 // own `cost / month`), sorted by priority, no HUD. The hand clicks the empty cost of `Cook profile with a kitchen check`:
 // selected. `↵` (its key chip) opens it for typing; `45` typed, `↵` keeps it. Then the hand presses the `cost / month`
 // head: the rows sort by what they cost, cheapest first, the empty ones last. The writes the demo can't make (the cell,

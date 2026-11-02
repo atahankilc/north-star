@@ -1,4 +1,4 @@
-// The kind guide's `problem` row, in a plane (onboarding-lessons.md §2): a plane in focus, no HUD. A problem card
+// The kind guide's `problem` row, in a plane (lessons.ts `kind-guide`): a plane in focus, no HUD. A problem card
 // appears as a hypothesis (shown with set()); it moves to testing, and evidence comes in, two for it and one against,
 // counted on the card: `testing +2 −1`, the `!` saying they disagree.
 import type { Evidence } from '../../data/evidence'

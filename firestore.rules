@@ -906,7 +906,7 @@ service cloud.firestore {
     // client cleans them (cleanSeenState: short ids, whole versions).
     function validOnboarding(d) {
       return d.keys().hasAll(['v', 'audience', 'startedAt', 'seen', 'armed', 'tipsOff', 'lastRelease', 'updatedAt'])
-        && d.keys().hasOnly(['v', 'audience', 'startedAt', 'seen', 'armed', 'tipsOff', 'lastRelease', 'welcome', 'nudges', 'at', 'updatedAt'])
+        && d.keys().hasOnly(['v', 'audience', 'startedAt', 'seen', 'armed', 'tipsOff', 'lastRelease', 'welcome', 'at', 'updatedAt'])
         && d.v == 1
         && d.audience in ['new', 'invited']
         && d.startedAt is number
@@ -915,8 +915,6 @@ service cloud.firestore {
         && d.tipsOff is bool
         && isText(d.lastRelease, 40)
         && optIn(d, 'welcome', ['done', 'skipped'])
-        && (!('nudges' in d) || (d.nudges is map && d.nudges.keys().hasOnly(['last'])
-          && (!('last' in d.nudges) || d.nudges.last is number)))
         && (!('at' in d) || (d.at is map && d.at.keys().hasOnly(['tipsOff', 'welcome', 'lastRelease'])
           && (!('tipsOff' in d.at) || d.at.tipsOff is number)
           && (!('welcome' in d.at) || d.at.welcome is number)

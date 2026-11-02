@@ -16,7 +16,7 @@
 // - `unless`: one of those seen, this one is retired (marked seen, never shown).
 // - Retire on done: a lesson's `doneWhen` event marks it seen, queued, showing or not yet triggered (not the welcome or
 //   the kind guide, which have no `doneWhen`); one showing closes as done.
-// - Cooldown: after one closes, the next automatic one (from `canvas-open`, `idle`, someone else's doing) waits 20 s;
+// - Cooldown: after one closes, the next automatic one (from `canvas-open`, someone else's doing) waits 20 s;
 //   one that answers an action waits only for calm.
 // - tipsOff: nothing shows by itself; `play()` (the `?` guide) still does.
 // - Roles: the lesson's roles, then each page's (default the lesson's), audience and kinds; nothing left, nothing shown.
@@ -62,8 +62,8 @@ export const PAUSE_CAP_MS = 60_000
 // How long a lesson retired while showing stays as "✓ done" before it goes.
 export const DONE_MS = 1200
 
-// Events nobody did just now (the canvas opening, being idle, someone else's doing): what they trigger is automatic.
-export const AUTOMATIC: ReadonlySet<LessonEvent> = new Set<LessonEvent>(['canvas-open', 'idle', 'peer-joined', 'task-given', 'workspaces-open'])
+// Events nobody did just now (the canvas opening, someone else's doing): what they trigger is automatic.
+export const AUTOMATIC: ReadonlySet<LessonEvent> = new Set<LessonEvent>(['canvas-open', 'peer-joined', 'task-given', 'workspaces-open'])
 
 
 export type Shown = {
@@ -133,8 +133,6 @@ export function whenMatches(when: Match | undefined, payload: Payload): boolean 
     const got = payload[k]
     if (Array.isArray(want)) {
       if (!want.includes(got as string)) return false
-    } else if (typeof want === 'object' && want !== null) {
-      if (typeof got !== 'number' || got < (want as { min: number }).min) return false
     } else if (got !== want) return false
   }
   return true

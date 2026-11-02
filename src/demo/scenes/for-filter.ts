@@ -1,4 +1,4 @@
-// `for-links` (onboarding-lessons.md §3), "Who it's for": 01 Lunch in focus, no HUD, two customers and the problems
+// `card-panel` "Who it's for", `link-made` "Shown when it matters" (lessons.ts, D-349): 01 Lunch in focus, no HUD, two customers and the problems
 // tagged for them. The hand presses the dock's `[filter]`: the strip builds over the dock; it opens FOR, the real list
 // of the plane's customers, and picks Office workers: only their problems stay; FOR reads `Office workers`. All real:
 // a filter writes nothing.

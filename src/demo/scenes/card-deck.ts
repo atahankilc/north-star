@@ -1,4 +1,4 @@
-// `card-deck` page 1 (onboarding-lessons.md §7), "Cards on a deck": a deck of Pazar's features by status in focus, no
+// `card-deck` "Cards on a deck" (lessons.ts, D-349): a deck of Pazar's features by status in focus, no
 // HUD, framed on `planned` and `building`. The hand takes "Pickup shelf opened with a QR code" from `planned` and drops
 // it in `building`, with real pointer events (the deck's own lift and drop box); its status changes with it (the write
 // shown with set()): it's counted in `building` now, its column its status.

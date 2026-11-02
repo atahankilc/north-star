@@ -17,12 +17,9 @@ import type { LearnEvent, Payload } from './queue'
 import { DEDUPE_MS, learn, setLearnClock } from './learn'
 
 export { DEDUPE_MS }
-// Idle (§4.5): this long in the workspace, this long without input.
-export const IDLE_AFTER_MS = 3 * 60_000
-export const IDLE_QUIET_MS = 10_000
 // The ids the hazard confirm asked about are remembered this long after it closed (its delete is written just after).
 const CONFIRM_MS = 10_000
-// How often the address, the DOM (Settings, menus) and idle are looked at.
+// How often the address and the DOM (Settings, menus) are looked at.
 export const POLL_MS = 250
 
 // The events emitted (check:lessons' ratchet reads this list): by this file's watchers, then (the last lines) by the
@@ -34,7 +31,7 @@ export const EMITS = [
   'unframed', 'framed', 'brought', 'canvas-made', 'moved-canvas', 'evidence-added', 'status-set', 'doc-uploaded',
   'undo', 'deleted', 'task-for-card', 'piece-moved', 'card-moved', 'wizard', 'setup-open', 'finder-open',
   'threads-open', 'thread-open', 'side-view', 'following', 'filter-open', 'filter-set', 'doc-reader', 'settings-open',
-  'menu-open', 'task-given', 'peer-joined', 'edit-refused', 'idle',
+  'menu-open', 'task-given', 'peer-joined', 'edit-refused',
   // From views: the `+` menu (WorkspaceLayout), right-click (CanvasView), the crumb (CanvasSwitch), a piece's console
   // (CanvasView), a feature axis unfolded (Matrix), a folded parts tree (PlaneCards); the workspaces page; the coach.
   'plus-open', 'context-menu', 'crumb-open', 'console-shown', 'axis-unfold', 'parts-folded',
@@ -112,11 +109,8 @@ export type Sources = {
   // Read from the page each poll: the Settings dialog's page when open, whether a prompt (a menu) is open.
   settingsPage(): string | null
   menuOpen(): boolean
-  // Pointer or key input (for idle).
-  onInput(fn: () => void): () => void
   uid(): string
-  // How many lessons this person has seen; whether this is their first canvas (no welcome yet).
-  seenCount(): number
+  // Whether this is their first canvas (no welcome yet).
   firstCanvas(): boolean
   // The seen-state has loaded (progress.ts' `loaded`): canvas-open waits for it, as for the curtain.
   progressLoaded(): boolean
@@ -241,7 +235,7 @@ export function stepEvents(base: SnapLike, after: SnapLike, ctx: StepCtx): Learn
   }
   if (deletedAny) add('deleted', { confirmed, shared: confirmed && ctx.hazard.shared })
   // Cards that moved as something was made in the same step (a package laying its members out, a card brought) weren't
-  // dragged: `card-moved` is a person's drag (guides-snap, onboarding-lessons.md §3).
+  // dragged: `card-moved` is a person's drag.
   if (out.some((e) => e.event === 'card-made' || e.event === 'package-made' || e.event === 'brought')) return out.filter((e) => e.event !== 'card-moved')
   return out
 }
@@ -289,15 +283,12 @@ export function attach(s: Sources): () => void {
   const offs: Array<() => void> = []
   const ws = () => s.ws.get()
 
-  // Workspace open (+ the curtain), the canvas switched, idle's clock, tasks given, peers.
+  // Workspace open (+ the curtain), the canvas switched, tasks given, peers.
   let openedWid: string | null = null
   let openedAt = 0
   let shownCanvas: string | null = null
-  let lastInput = s.now()
-  let idleSent = false
   let lastTasks = new Map<string, number>()
   const peersSeen = new Set<string>()
-  const peerSince = new Map<string, number>()
 
   const taskGivens = (w: WsLike) => {
     const me = s.uid()
@@ -318,10 +309,8 @@ export function attach(s: Sources): () => void {
       openedWid = w.wid
       openedAt = s.now()
       shownCanvas = w.canvas
-      idleSent = false
       lastTasks = taskGivens(w)
       peersSeen.clear()
-      peerSince.clear()
       const on = onCanvas(w)
       learn('canvas-open', { first: s.firstCanvas(), empty: on.length === 0 })
       checkUrl()
@@ -449,16 +438,12 @@ export function attach(s: Sources): () => void {
     s.side.subscribe((n, p) => void (n.open && !p.open && learn('side-view'))),
     s.presence.subscribe((n, p) => {
       if (n.following && n.following !== p.following) learn('following')
-      const now = s.now()
-      const here = new Set(n.peers.map((x) => x.uid))
-      for (const uid of here) {
-        if (!peerSince.has(uid)) peerSince.set(uid, now)
+      for (const uid of new Set(n.peers.map((x) => x.uid))) {
         if (!peersSeen.has(uid) && openedWid) {
           peersSeen.add(uid)
           learn('peer-joined')
         }
       }
-      for (const uid of [...peerSince.keys()]) if (!here.has(uid)) peerSince.delete(uid)
     }),
     s.find.subscribe((n, p) => {
       if (!n.open || p.open) return
@@ -498,14 +483,10 @@ export function attach(s: Sources): () => void {
     s.docUi.subscribe((n, p) => void (n.readers.length > p.readers.length && learn('doc-reader'))),
   )
 
-  // Polled: the address (a navigate that no store saw), Settings and menus (local state in their views), idle.
+  // Polled: the address (a navigate that no store saw), Settings and menus (local state in their views).
   let settings: string | null = s.settingsPage()
   let menu = s.menuOpen()
   offs.push(
-    s.onInput(() => {
-      lastInput = s.now()
-      idleSent = false
-    }),
     s.every(POLL_MS, () => {
       checkOpen()
       checkUrl()
@@ -515,19 +496,6 @@ export function attach(s: Sources): () => void {
       const m = s.menuOpen()
       if (m && !menu) learn('menu-open')
       menu = m
-      const w = ws()
-      const now = s.now()
-      if (w && openedWid === w.wid && !idleSent && now - openedAt >= IDLE_AFTER_MS && now - lastInput >= IDLE_QUIET_MS) {
-        idleSent = true
-        const since = [...peerSince.values()]
-        learn('idle', {
-          pieces: onCanvas(w).length,
-          cards: w.cards.length,
-          seen: s.seenCount(),
-          decks: w.pieces.filter((p) => p.kind === 'kanban').length,
-          peerFor: since.length ? now - Math.min(...since) : 0,
-        })
-      }
     }),
   )
 

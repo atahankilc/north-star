@@ -1,4 +1,4 @@
-// `task-card` (onboarding-lessons.md §7), "Tasks test cards": 05 Launch in focus, no HUD, its `done` column on the left.
+// `card-panel` "Tasks test cards" (lessons.ts, D-349): 05 Launch in focus, no HUD, its `done` column on the left.
 // The pilot is finished, and its card (the pre-order idea) is still being tested, so the task offers `+ log what it
 // taught`. The hand presses it: the task's panel opens on its `learned` section, what it found already written from the
 // task's notes; Enter adds it: the panel reads `learned · supports it`, as evidence on the idea (shown with

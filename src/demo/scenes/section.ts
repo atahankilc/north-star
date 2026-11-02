@@ -1,4 +1,4 @@
-// `section-draw` (onboarding-lessons.md §4), "Draw a section": a clear stretch of canvas, no HUD, a heading and two
+// `section-draw` "A section" (lessons.ts, D-349): a clear stretch of canvas, no HUD, a heading and two
 // sticky notes. The crosshair's hint is up (the `+` menu's `section`); the hand drags a frame round the three, the real
 // one drawn as it goes. Let go, the section is there (shown with set(), as the write would land) with its name being
 // typed: `This week`, `↵`. Then the hand takes it by its name and moves it: what's inside goes with it (its own carry

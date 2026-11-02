@@ -1,4 +1,4 @@
-// What O12's scenes share (D-315, onboarding-lessons.md §6 documents, §7 decks and days): a stage looked at closer (a
+// What O12's scenes share (D-315): a stage looked at closer (a
 // part of the screen framed: a wizard's choices, the side view's deck) as a camera on the stage would, the deck's own
 // stores put back as each loop starts, and a document's text drawn where its content would be (the demo has no
 // Firestore to read it from). Kept apart from kit.ts (O9's) and o10.ts (O10's).

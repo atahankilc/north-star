@@ -66,9 +66,8 @@ describe('mergeSeenState', () => {
     expect(m.startedAt).toBe(1500)
   })
 
-  it('nudges: the later', () => {
-    expect(mergeSeenState(base({ nudges: { last: 10 } }), base({ nudges: { last: 20 } })).nudges).toEqual({ last: 20 })
-    expect(mergeSeenState(base(), base()).nudges).toBeUndefined()
+  it('drops the old nudges field (D-349)', () => {
+    expect(cleanSeenState({ ...base(), nudges: { last: 5 } })).not.toHaveProperty('nudges')
   })
 
   it('never writes undefined fields (Firestore refuses them)', () => {
@@ -97,7 +96,7 @@ describe('cleanSeenState', () => {
   })
 
   it('round-trips a real state', () => {
-    const s = base({ seen: { focus: 1 }, armed: ['deck@2'], welcome: 'done', nudges: { last: 5 } })
+    const s = base({ seen: { focus: 1 }, armed: ['deck@2'], welcome: 'done' })
     expect(sameSeenState(cleanSeenState(JSON.parse(JSON.stringify(s)))!, s)).toBe(true)
   })
 })
@@ -129,7 +128,7 @@ describe('symmetry: merge(a, b) deep-equals merge(b, a)', () => {
     ['same stamp, different welcome', base({ welcome: 'done', at: { welcome: 7 } }), base({ welcome: 'skipped', at: { welcome: 7 } })],
     ['same stamp, welcome vs none', base({ welcome: 'done', at: { welcome: 7 } }), base({ at: { welcome: 7 } })],
     ['same startedAt, different audience', base({ audience: 'new' }), base({ audience: 'invited' })],
-    ['different stamps and everything', base({ seen: { a: 1 }, armed: ['x@1'], tipsOff: true, at: { tipsOff: 9 }, nudges: { last: 3 }, updatedAt: 50 }),
+    ['different stamps and everything', base({ seen: { a: 1 }, armed: ['x@1'], tipsOff: true, at: { tipsOff: 9 }, updatedAt: 50 }),
       base({ seen: { a: 2, b: 1 }, armed: ['a@2', 'y@1'], lastRelease: '2026-11', at: { lastRelease: 4 }, startedAt: 900, updatedAt: 40 })],
     ['over the caps', base({ seen: Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`a${i}`, 1])) }),
       base({ seen: Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`b${i}`, 1])) })],

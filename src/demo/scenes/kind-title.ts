@@ -1,4 +1,4 @@
-// The kind guide's `project title` row (onboarding-lessons.md §2): a clear stretch of canvas, no HUD. The project title
+// The kind guide's `project title` row (lessons.ts `kind-guide`): a clear stretch of canvas, no HUD. The project title
 // appears (star and PROJECT, the corner brackets) and the workspace's name comes in big as it's typed, then what you're
 // building under it (each shown with set(): the title reads the workspace's own name and description).
 import { CANVAS } from '../../data/labels'

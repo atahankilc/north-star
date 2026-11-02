@@ -1,4 +1,4 @@
-// `canvases` page 1 (onboarding-lessons.md §9), "More than one canvas": the whole screen, Pazar split in two canvases
+// `canvases` "More than one canvas" (lessons.ts, D-349): the whole screen, Pazar split in two canvases
 // (`Main`: the planes, the matrix and the table; `Launch week`: the deck, its days and the research). The hand clicks
 // the canvas's name in the breadcrumb: the real prompt lists the canvases, each with its pieces and its `⌥` key; it
 // picks `Launch week`: the canvas breaks cell by cell and the other builds (the real one, its own camera, fitted), the

@@ -1,4 +1,4 @@
-// `sticky-made` (onboarding-lessons.md §4), "A sticky note": a clear stretch of canvas, no HUD, two sticky notes: yours,
+// `sticky-made` "A sticky note" (lessons.ts, D-349): a clear stretch of canvas, no HUD, two sticky notes: yours,
 // yellow, long (eight lines of what to ask Jonas), and Ayla's, green, beside it; each band says who wrote it and
 // when. The hand goes to yours, then to the `▾` in its band and presses it: the note folds back to its first lines
 // (shown with set(), as the write would land), the rest a press away.

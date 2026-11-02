@@ -1,4 +1,4 @@
-// `brought` page 1 (onboarding-lessons.md §3), "The same card, twice": 02 Product in focus, no HUD, Lunch's pre-order
+// `brought` "The same card, twice" (lessons.ts, D-349): 02 Product in focus, no HUD, Lunch's pre-order
 // idea brought here beside the feature it inspired, `⧉ 2` on it. The view closes in on the idea and the hand rests on
 // its `⧉ 2`; the view goes back out and the hand clicks the idea: its panel builds, and its PLANES section says where it
 // is: 01 Lunch and 02 Product. All real.

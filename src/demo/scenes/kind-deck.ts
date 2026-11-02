@@ -1,4 +1,4 @@
-// The kind guide's `deck…` row (onboarding-lessons.md §2): Pazar's launch deck (its `doing` and `review` columns) appears on a clear stretch of canvas,
+// The kind guide's `deck…` row (lessons.ts `kind-guide`): Pazar's launch deck (its `doing` and `review` columns) appears on a clear stretch of canvas,
 // laid open there (unframed, live), no HUD; then the hand takes a task from `doing` to `review` with real pointer events,
 // so the deck's own lift and cyan drop line show; the move it would write shown with set() at the drop.
 import { aim, camera, cursor, find, onStage, set, wait, type Scene } from '../director'

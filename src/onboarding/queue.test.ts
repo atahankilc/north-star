@@ -194,11 +194,11 @@ describe('queue', () => {
   })
 
   it('retires on done before it shows, while it waits, and while it shows', () => {
-    const s = setup([L('n', { trigger: [{ event: 'idle' }], doneWhen: [{ event: 'focus-in' }] })])
+    const s = setup([L('n', { trigger: [{ event: 'peer-joined' }], doneWhen: [{ event: 'focus-in' }] })])
     // Never triggered: done retires it anyway (TipKit's rule).
     s.q.onEvent({ event: 'focus-in' })
     expect(s.marked).toEqual(['n'])
-    s.q.onEvent({ event: 'idle' })
+    s.q.onEvent({ event: 'peer-joined' })
     s.wait(COOLDOWN_MS)
     expect(s.shown()).toBe(null)
 

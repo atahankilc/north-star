@@ -1,4 +1,4 @@
-// `timeline` page 2 (onboarding-lessons.md §7), "Plan by drawing": 06 Launch days in focus, by who has them, no HUD and
+// `timeline` "Plan by drawing" (lessons.ts, D-349): 06 Launch days in focus, by who has them, no HUD and
 // no dock (its tools aren't what this is about, and wider than the stage it landed a pixel apart from one start to the
 // next). The hand comes over an empty stretch of Ayla's row, the day's `+` shows; it presses and draws across three days: the new
 // task's days drawn as it goes; let go, the card prompt opens (`a card it's for, or type a task…`); `shelf` typed narrows

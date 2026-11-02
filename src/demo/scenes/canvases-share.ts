@@ -1,4 +1,4 @@
-// `move-canvas` page 1 (onboarding-lessons.md §2), "Move or share a piece": a plane on the canvas in edit mode, a second
+// `canvases` "Move or share a piece" (lessons.ts, D-349): a plane on the canvas in edit mode, a second
 // canvas `Launch week` in the workspace, no HUD. The hand presses `also on…`: the real prompt lists the canvases; it
 // picks `Launch week`: the same plane is now on both; out of edit mode its name and console say `⧉ 2` (what it
 // would write shown with set()).

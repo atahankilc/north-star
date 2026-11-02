@@ -1,4 +1,4 @@
-// `comment` page 1 (onboarding-lessons.md §8), "Comments stay on things": 01 Lunch in focus, one card already talked
+// `comment` "Comments stay on things" (lessons.ts, D-349): 01 Lunch in focus, one card already talked
 // about (its chip under its corner, `3`). The hand right-clicks another problem card: the real menu, `comment`; the real
 // thread opens bottom left, its field taking the keys; `@Jonas test 12 dishes?` is typed, `↵`: the thread is on the
 // card now, its chip under the card's corner (what sending would write, shown with set(); the panel is closed so the

@@ -1,4 +1,4 @@
-// The kind guide's `feature` row, in a plane (onboarding-lessons.md §2): a plane in focus with an idea on it, no HUD. A
+// The kind guide's `feature` row, in a plane (lessons.ts `kind-guide`): a plane in focus with an idea on it, no HUD. A
 // feature appears beside it (shown with set()), its `inspired by` link to the idea; then its parts come (two smaller
 // features, part of it) and it folds them in as a small tree inside it.
 import type { Edge } from '../../data/edges'

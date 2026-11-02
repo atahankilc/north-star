@@ -1,4 +1,4 @@
-// The kind guide's `paragraph` row (onboarding-lessons.md §2): a clear stretch of canvas, no HUD. A paragraph appears
+// The kind guide's `paragraph` row (lessons.ts `kind-guide`): a clear stretch of canvas, no HUD. A paragraph appears
 // and fills a line at a time (shown with set()), light Markdown in it: a bold phrase, a list.
 import { CANVAS, type Label } from '../../data/labels'
 import { camera, set, wait, type Scene } from '../director'

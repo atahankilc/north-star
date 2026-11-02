@@ -1,4 +1,4 @@
-// A deck in focus (onboarding-lessons.md `deck` page 1, "Moving work along"): the cursor takes a task from `doing` and
+// `deck` "A deck of tasks" (lessons.ts, D-349), a deck in focus: the cursor takes a task from `doing` and
 // drags it to `review` with real pointer events, so the deck's own lift and cyan drop line show; the move it would
 // write is shown with set() at the drop, so the task stays where it landed.
 import { K } from '../../views/workspace/deck/Kanban'

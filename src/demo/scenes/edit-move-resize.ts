@@ -1,4 +1,4 @@
-// `piece-made` page 1, "It's in edit mode" (onboarding-lessons.md §2): a new plane on the canvas in edit mode, no HUD.
+// `piece-made` "It's in edit mode" (lessons.ts, D-349): a new plane on the canvas in edit mode, no HUD.
 // The hand takes it by its middle and moves it (the real carry at 0.8, the landing L's where it'll land), lets go;
 // then takes its bottom-right corner handle and pulls it bigger (the edges lit, the size shown). What each would write
 // shown with set() at the drop.

@@ -1,4 +1,4 @@
-// `timeline` page 1 (onboarding-lessons.md §7), "Days without end": 06 Launch days in focus, no HUD, its tasks by who has
+// `timeline` "Days without end" (lessons.ts, D-349): 06 Launch days in focus, no HUD, its tasks by who has
 // them. The hand presses on an empty stretch of the strip and drags it sideways: the days run by under it, on into
 // November; then it presses `[month]` in the dock: the strip eases out to months, the weeks before and after in view.
 // All real: where you are on the strip is yours, never written.

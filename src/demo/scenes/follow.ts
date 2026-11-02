@@ -1,4 +1,4 @@
-// `following` page 1 (onboarding-lessons.md §8), "Following": the whole screen, Pazar fitted, Ayla and Jonas here, Ayla's
+// `people-here` "Follow them" (lessons.ts, D-349): the whole screen, Pazar fitted, Ayla and Jonas here, Ayla's
 // cursor over the first plane. The hand clicks Ayla's square: the page is framed in her colour with `following Ayla`
 // at the top (the real PeopleHere). Ayla goes into the plane (her presence says so): the real Follow takes you in with
 // her, the ink spreading; inside, her cursor goes on to a card. Nothing written.

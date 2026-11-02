@@ -1,4 +1,4 @@
-// What O10's scenes share (D-315, onboarding-lessons.md §3, planes and cards): keys held down while the cursor presses or
+// What O10's scenes share (D-315, planes and cards): keys held down while the cursor presses or
 // drags (shift-click, alt-drag a box), a panel scrolled as a wheel would, a scene's own CSS (a part hidden), the card
 // panel shut for a card, and a link drawn as the `›`'s drop would have made it. Kept apart from kit.ts (O9's).
 import type { Edge } from '../../data/edges'

@@ -1,4 +1,4 @@
-// `status-evidence` (onboarding-lessons.md §3), "Is it true?": 01 Lunch in focus, no HUD, a problem selected, its panel
+// `card-panel` "Is it true?" (lessons.ts, D-349): 01 Lunch in focus, no HUD, a problem selected, its panel
 // open, a hypothesis with one finding for it and one against (`+1 −1` on the card). The hand presses `testing`: the
 // card reads `testing +1 −1`; it presses `evidence`, the form opens, a finding is typed, Enter: one more for it, the card
 // reads `testing +2 −1`. What each would write shown with set().

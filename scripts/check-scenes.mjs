@@ -311,7 +311,7 @@ for (const scene of scenes) {
 // As the coach shows it (src/onboarding/Demo.tsx): inside a parent page's `<iframe inert tabindex=-1>`, the focus on a
 // button of the parent, played in real time. The frame never has the focus there, so what a scene types must still land
 // in its field (not in the canvas's shortcuts), and the parent keeps its focus. What each scene types, and where it lands:
-const TYPED = { 'finder-go': 'permit', 'peers-comment': 'Is €14 still right?' }
+const TYPED = { 'peers-comment': 'Is €14 still right?' }
 const SIDE = '[data-learn="side-view"]'
 for (const scene of scenes) {
   const where = `${scene} (in a frame)`

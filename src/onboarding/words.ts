@@ -45,9 +45,7 @@ export type PageModel = {
 // A page's tab: its own `tab` (one short word, D-349), else by scene (the welcome's first mock), else the title's last word.
 const TABS: Record<string, string> = {
   'canvas-fit': 'canvas',
-  'pieces-tour': 'pieces',
   'plus-adds-plane': 'add',
-  'finder-go': 'find',
   'peers-comment': 'together',
 }
 export const tabFor = (p: Pick<Page, 'scene' | 'title' | 'tab'>) => p.tab || (p.scene && TABS[p.scene]) || plain(p.title).split(/\s+/).pop()!.toLowerCase()

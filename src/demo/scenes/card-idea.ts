@@ -1,4 +1,4 @@
-// The kind guide's `idea` row, in a plane (onboarding-lessons.md §2): a plane in focus with a problem on it, no HUD. An
+// The kind guide's `idea` row, in a plane (lessons.ts `kind-guide`): a plane in focus with a problem on it, no HUD. An
 // idea appears under it (shown with set()) and its `solves` link comes; then it's tested: what was learned comes in
 // (evidence, shown with set()) and it moves from testing to validated.
 import type { Evidence } from '../../data/evidence'

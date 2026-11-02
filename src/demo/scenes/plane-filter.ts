@@ -1,4 +1,4 @@
-// `plane-filter` (onboarding-lessons.md §3), "Filters pass": 01 Lunch in focus, no HUD, its problems and the ideas for
+// `focus-plane` "Show only some" (lessons.ts, D-349): 01 Lunch in focus, no HUD, its problems and the ideas for
 // them. The hand presses the dock's `[filter]`: the strip builds over the dock; it opens SHOW, the real list of card
 // types, and unticks ideas: the ideas go, the problems stay; SHOW's swatch for ideas goes dark. All real: a filter writes
 // nothing.
