@@ -22,9 +22,9 @@ const RULES = {
     ['textarea', /<textarea\b/g],
     ['dialog', /role="dialog"/g],
     ['portal', /createPortal\(/g],
-    // D-338's round: a menu hosted by hand (the kit's ContextMenu or Menu hosts MenuPanel), a `[verb]`'s brackets drawn
+    // D-338's round: a menu hosted by hand (the kit's ContextMenu, Menu or InPlaceMenu hosts PromptPanel), a `[verb]`'s brackets drawn
     // in spans (Button, or Button `look` inside a target), a text cap typed as a number (model/limits.ts).
-    ['menuHost', /<MenuPanel\b/g],
+    ['menuHost', /<(?:MenuPanel|PromptPanel)\b/g],
     ['bracketSpan', /<span[^>]*>\s*[[\]]\s*<\/span>/g],
     ['rawLimit', /maxLength=\{\d+\}/g],
   ],

@@ -1,47 +1,16 @@
-// A dropdown menu (D-053) in the prompt look (D-222): `[ show ▾ ]` opens a list with a `>` line on top. Typing narrows the
-// list (matches in magenta) and Enter picks the first; an item's letter (not shown: onboarding teaches it, D-344) puts it first, so `+` then `p` Enter makes
-// a plane. Checkbox items toggle and keep it open; action items run and close it. Arrow keys move, Home/End jump, Escape
-// closes and returns focus, a click outside closes. `MenuPanel` is the list alone, for the right-click menu too.
+// A dropdown menu (D-053): a trigger, the one dropdown trigger (D-344), opening the prompt (PromptPanel, D-222) under it,
+// above it (`up`) or beside it (`right`). Tick rows keep it open; anything else runs and closes it. Escape closes it
+// and gives focus back to the trigger, a press outside closes it.
 import { AnimatePresence } from 'motion/react'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Appear } from '../primitives/Appear'
+import { useDismiss } from '../foundation/useDismiss'
+import type { PromptEntry } from '../foundation/promptModel'
+import { PromptPanel } from './PromptPanel'
 import styles from './Menu.module.css'
 
-export type MenuEntry =
-  | {
-      key: string
-      label: ReactNode
-      // Picked by a click or Enter, with whether shift or alt was held; `'keep'` keeps the menu open (D-281: ⇧↵ brings a
-      // card and goes on picking).
-      onSelect: (how: { shift: boolean; alt: boolean }) => unknown
-      // A checkbox item: shows [x] / [ ] and keeps the menu open.
-      checked?: boolean
-      // Colour of the check or the glyph.
-      tone?: string
-      // Shown faint on the right (a shortcut, a count).
-      hint?: string
-      // Shown before the label (an action's mark).
-      glyph?: ReactNode
-      // Its key in the prompt: typed alone, it puts the item first (D-222).
-      letter?: string
-      // Shown in red: something that can't be taken lightly.
-      danger?: boolean
-      // Set in under the item before it (go to's places inside a plane, D-196).
-      indent?: boolean
-      // What it holds folded under it: `[▸ N inside]` on its right opens it (so does → on the item, ← shuts it), `[▾ …]`
-      // shuts it (D-201).
-      fold?: { open: boolean; count: number; onToggle: () => void }
-      // Folded away under the item before it: shown only while searching (D-200).
-      folded?: boolean
-      // More words it's found by besides its label (a card's tags, its planes).
-      words?: string
-      // Shown only before anything is typed: a suggestion that's listed again further down.
-      browse?: boolean
-    }
-  // A `# section` line; an empty heading is a plain rule, setting apart what's under it.
-  | { key: string; heading: string }
-
-type Item = Exclude<MenuEntry, { heading: string }>
+// The prompt's entry (src/ui/foundation/promptModel.ts), by the name its callers know.
+export type MenuEntry = PromptEntry
 
 type Props = {
   // What the trigger says, e.g. "show" or "+".
@@ -72,200 +41,13 @@ type Props = {
   empty?: string
   // What the `>` line says before anything is typed.
   prompt?: string
-  // What the foot counts: "8 things", "5 places".
-  noun?: string
   // The onboarding's names (D-315) for the trigger and the open panel, and what hears it open.
   'data-learn'?: string
   panelLearn?: { 'data-learn': string }
   onOpen?: () => void
 }
 
-const text = (n: ReactNode): string => (typeof n === 'string' || typeof n === 'number' ? String(n) : '')
-
-// The typed text lit in magenta inside a label (only a plain-text label).
-function Lit({ label, q }: { label: ReactNode; q: string }) {
-  const s = text(label)
-  const at = q ? s.toLowerCase().indexOf(q) : -1
-  if (at < 0) return <>{label}</>
-  return (
-    <>
-      {s.slice(0, at)}
-      <mark className={styles.match}>{s.slice(at, at + q.length)}</mark>
-      {s.slice(at + q.length)}
-    </>
-  )
-}
-
-// What a query shows: the items whose label holds it, those whose letter it is first; no headings, no suggestions.
-function find(items: MenuEntry[], q: string): Item[] {
-  const all = items.filter((i): i is Item => !('heading' in i) && !i.browse)
-  const keyed = q.length === 1 ? all.filter((i) => i.letter === q) : []
-  return [...keyed, ...all.filter((i) => !keyed.includes(i) && `${text(i.label)} ${i.words ?? ''}`.toLowerCase().includes(q))]
-}
-
-type PanelProps = {
-  items: MenuEntry[]
-  ariaLabel: string
-  empty?: string
-  prompt?: string
-  noun?: string
-  // Closes the menu; `refocus` = give focus back to what opened it.
-  onClose: (refocus?: boolean) => void
-  id?: string
-  // What else it can do, in the foot after the count (`or type a name to make it`); never keys (D-344: onboarding
-  // teaches them).
-  foot?: string
-  // Items made from what's typed, after what it finds (the card picker's `new idea "…"`).
-  more?: (typed: string) => MenuEntry[]
-}
-
-// The list with its `>` line and foot (D-222): a dropdown's panel, or the right-click menu's.
-export function MenuPanel({ items, ariaLabel, empty, prompt = 'type to find…', noun = 'things', onClose, id, foot, more }: PanelProps) {
-  const [query, setQuery] = useState('')
-  const field = useRef<HTMLInputElement>(null)
-  const list = useRef<HTMLDivElement>(null)
-  const q = query.trim().toLowerCase()
-  const shown: MenuEntry[] = q ? [...find(items, q), ...(more?.(query.trim()) ?? [])] : items.filter((i) => !('folded' in i && i.folded))
-  // Suggestions are counted once, where they're listed again.
-  const count = shown.filter((i) => !('heading' in i) && !i.browse).length
-  // The `>` line stays while what's typed can make something.
-  const any = items.length > 0 || !!more
-
-  useEffect(() => {
-    requestAnimationFrame(() => (field.current ?? list.current?.querySelector<HTMLElement>('[role^=menuitem]'))?.focus())
-  }, [])
-
-  const pick = (item: Item | undefined, e: { shiftKey: boolean; altKey: boolean }) => {
-    if (!item) return
-    const kept = item.onSelect({ shift: e.shiftKey, alt: e.altKey }) === 'keep'
-    if (item.checked === undefined && !kept) onClose()
-  }
-  const firstItem = () => shown.find((i): i is Item => !('heading' in i))
-  const itemOf = (el: Element | null) => shown.find((i): i is Item => !('heading' in i) && i.key === (el as HTMLElement | null)?.dataset.key)
-
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    const all = [...(list.current?.querySelectorAll<HTMLElement>('[role^=menuitem]') ?? [])]
-    const at = all.indexOf(document.activeElement as HTMLElement)
-    const go = (i: number) => all[(i + all.length) % all.length]?.focus()
-    const inField = document.activeElement === field.current
-    // Keys stay in the menu: the canvas's own shortcuts (Delete, 0, ⌘Z) don't fire.
-    e.stopPropagation()
-    // Up from the first item goes back to the field.
-    if (e.key === 'ArrowUp' && at === 0 && field.current) (e.preventDefault(), field.current.focus())
-    else if (e.key === 'ArrowDown') (e.preventDefault(), go(inField ? 0 : at + 1))
-    else if (e.key === 'ArrowUp') (e.preventDefault(), go(at - 1))
-    else if (e.key === 'Enter' && inField) (e.preventDefault(), pick(firstItem(), e))
-    // Enter on an item, heard here rather than as its click: the click wouldn't say whether shift or alt was held.
-    else if (e.key === 'Enter' && at >= 0) (e.preventDefault(), pick(itemOf(all[at]), e))
-    else if (e.key === 'Home' && !inField) (e.preventDefault(), go(0))
-    else if (e.key === 'End' && !inField) (e.preventDefault(), go(all.length - 1))
-    else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !inField) {
-      const item = shown.find((x) => x.key === (document.activeElement as HTMLElement | null)?.dataset.key)
-      if (item && 'fold' in item && item.fold && item.fold.open === (e.key === 'ArrowLeft')) (e.preventDefault(), item.fold.onToggle())
-    } else if (e.key === 'Escape') (e.preventDefault(), onClose())
-    else if (e.key === 'Tab') onClose(false)
-    // A letter typed on the list goes to the field.
-    else if (!inField && e.key.length === 1 && !e.metaKey && !e.ctrlKey && field.current) field.current.focus()
-  }
-
-  return (
-    <div className={styles.prompt} onKeyDown={onKeyDown}>
-      {any && (
-        <label className={styles.line}>
-          <span className={styles.caretSign} aria-hidden>
-            &gt;
-          </span>
-          <input
-            ref={field}
-            className={styles.field}
-            type="text"
-            value={query}
-            placeholder={prompt}
-            aria-label={`${ariaLabel}: type to find`}
-            aria-controls={id}
-            autoComplete="off"
-            spellCheck={false}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </label>
-      )}
-      <div ref={list} id={id} className={styles.list} role="menu" aria-label={ariaLabel}>
-        {!any && <p className={styles.empty}>{empty ?? 'Nothing here yet'}</p>}
-        {any && count === 0 && <p className={styles.empty}>{q || items.length ? 'no match' : (empty ?? 'Nothing here yet')}</p>}
-        {shown.map((item, i) =>
-          'heading' in item ? (
-            item.heading ? (
-              <div key={item.key} className={styles.heading} role="presentation">
-                {item.heading}
-              </div>
-            ) : (
-              <div key={item.key} className={styles.rule} role="separator" />
-            )
-          ) : (
-            <button
-              key={item.key}
-              className={styles.item}
-              role={item.checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
-              aria-checked={item.checked}
-              data-indent={item.indent || undefined}
-              data-danger={item.danger || undefined}
-              data-first={(q && i === 0) || undefined}
-              data-key={item.key}
-              data-open={item.fold?.open || undefined}
-              aria-expanded={item.fold?.open}
-              tabIndex={-1}
-              style={item.tone ? { ['--tone' as string]: item.tone } : undefined}
-              onClick={(e) => pick(item, e)}
-            >
-              <span className={styles.cursor} aria-hidden>
-                ›
-              </span>
-              {item.checked !== undefined ? (
-                <span className={styles.check} data-on={item.checked} aria-hidden>
-                  {item.checked ? '✓' : ''}
-                </span>
-              ) : null}
-              {item.glyph && (
-                <span className={styles.glyph} aria-hidden>
-                  {item.glyph}
-                </span>
-              )}
-              <span className={styles.itemLabel}>
-                <Lit label={item.label} q={q} />
-              </span>
-              {item.fold && !q && (
-                // Inside the item's button: its click opens or shuts the fold and doesn't pick the item.
-                <span
-                  className={styles.fold}
-                  aria-hidden
-                  title={item.fold.open ? 'hide what is inside (←)' : 'show what is inside (→)'}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    item.fold!.onToggle()
-                  }}
-                >
-                  <span className={styles.foldCaret}>{item.fold.open ? '▾' : '▸'}</span> {item.fold.count} inside
-                </span>
-              )}
-              {item.hint && <span className={styles.hint}>{item.hint}</span>}
-            </button>
-          ),
-        )}
-      </div>
-      {any && (
-        <div className={styles.foot} aria-hidden>
-          {q
-            ? count
-              ? `${count} found${foot ? ` · ${foot}` : ''}`
-              : ''
-            : `${count} ${count === 1 ? noun.replace(/s$/, '') : noun} · ${foot ?? 'type to find'}`}
-        </div>
-      )}
-    </div>
-  )
-}
-
-export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, hud, plain, active, ariaLabel, empty, prompt, noun, 'data-learn': learnAs, panelLearn, onOpen }: Props) {
+export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, hud, plain, active, ariaLabel, empty, prompt, 'data-learn': learnAs, panelLearn, onOpen }: Props) {
   const [open, setOpen] = useState(false)
   const onOpenRef = useRef(onOpen)
   onOpenRef.current = onOpen
@@ -279,16 +61,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
     if (refocus) trigger.current?.focus()
   }
 
-  // Close on a click outside: heard on the way down, since the canvas and planes stop their presses from bubbling.
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) close(false)
-    }
-    window.addEventListener('pointerdown', onDown, true)
-    return () => window.removeEventListener('pointerdown', onDown, true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
+  useDismiss(root, () => close(false), { on: open })
 
   return (
     <div ref={root} className={styles.root}>
@@ -319,7 +92,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
       <AnimatePresence>
         {open && (
           <Appear key="menu" className={styles.panel} data-up={up} data-right={right} data-end={alignEnd} {...panelLearn}>
-            <MenuPanel id={id} items={items} ariaLabel={ariaLabel} empty={empty} prompt={prompt} noun={noun} onClose={close} />
+            <PromptPanel id={id} items={items} ariaLabel={ariaLabel} empty={empty} prompt={prompt} onClose={close} />
           </Appear>
         )}
       </AnimatePresence>

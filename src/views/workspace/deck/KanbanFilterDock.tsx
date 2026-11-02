@@ -94,10 +94,10 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
   return (
     <Appear className={styles.panel} role="group" aria-label="Filters" data-learn="filter-strip">
       <FloorTitle summary={narrowing(f) ? `${narrowing(f)} narrowing its tasks` : 'every task'}>filter</FloorTitle>
-      <Menu label="given to" up summary={named(f.who, whoName)} active={f.who.length > 0} items={who} ariaLabel="Only tasks given to" noun="people" />
-      <Menu label="due" up summary={named(f.due, (d) => DUE.find((x) => x.key === d)!.label)} active={f.due.length > 0} items={due} ariaLabel="Only tasks due" noun="days" />
-      <Menu label="for" up summary={named(f.for, forName)} active={f.for.length > 0} items={forItems} ariaLabel="Only tasks for" noun="cards" />
-      <Menu label="label" up summary={named(f.labels, (l) => `#${l}`)} active={f.labels.length > 0} items={labels.length ? labelItems : []} ariaLabel="Only tasks with these labels" empty="No labels on its tasks" noun="labels" />
+      <Menu label="given to" up summary={named(f.who, whoName)} active={f.who.length > 0} items={who} ariaLabel="Only tasks given to" />
+      <Menu label="due" up summary={named(f.due, (d) => DUE.find((x) => x.key === d)!.label)} active={f.due.length > 0} items={due} ariaLabel="Only tasks due" />
+      <Menu label="for" up summary={named(f.for, forName)} active={f.for.length > 0} items={forItems} ariaLabel="Only tasks for" />
+      <Menu label="label" up summary={named(f.labels, (l) => `#${l}`)} active={f.labels.length > 0} items={labels.length ? labelItems : []} ariaLabel="Only tasks with these labels" empty="No labels on its tasks" />
       <Button className={styles.reset} onClick={() => setKanbanFilter(piece.id, NO_FILTER)} title="show every task">
         reset
       </Button>

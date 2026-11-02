@@ -28,8 +28,8 @@ export default example({
   file: 'src/ui/patterns/InPlaceMenu.tsx',
   note: 'the prompt (D-222) laid in the page, not floating: a card panel’s picker, the agent’s saved chats',
   states: {
-    'card picker': () => box(<InPlaceMenu items={CARDS} ariaLabel="Pick a card" prompt="find a card…" noun="cards" foot="or type a new name to make it" onClose={() => {}} />),
-    'saved chats (full)': () => box(<InPlaceMenu items={CHATS} ariaLabel="Saved chats" prompt="find a chat…" noun="entries" height="full" onClose={() => {}} />),
+    'card picker': () => box(<InPlaceMenu items={CARDS} ariaLabel="Pick a card" prompt="find a card…" onClose={() => {}} />),
+    'saved chats (full)': () => box(<InPlaceMenu items={CHATS} ariaLabel="Saved chats" prompt="find a chat…" height="full" onClose={() => {}} />),
     empty: () => box(<InPlaceMenu items={[]} ariaLabel="Pick a card" empty="No cards to pick yet" onClose={() => {}} />),
   },
 })

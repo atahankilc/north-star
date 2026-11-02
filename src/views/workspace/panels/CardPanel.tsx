@@ -981,9 +981,7 @@ export function CardPicker({
       items={items}
       ariaLabel={types ? `Pick a ${types.join(' or ')}` : 'Pick a card'}
       prompt={prompt ?? (types && types.length < 3 ? `find ${types.map((t) => PICK_MANY[t]).join(', ')}…` : 'find a card…')}
-      noun="cards"
       empty={types ? `No ${types.map((t) => PICK_MANY[t]).join(' or ')} to pick yet` : 'No cards to pick yet'}
-      foot={makeType ? 'or type a new name to make it' : undefined}
       more={more}
       onClose={onClose}
     />

@@ -207,7 +207,7 @@ function Column({ host, row, seenN, total, onHide }: { host: HTMLElement | null;
       </div>
       <div className={styles.spacer} />
       <div className={styles.foot}>
-        <span>↑ ↓ shows the others</span>
+        <span>point at a kind to see it</span>
         <HideButton onHide={onHide} />
       </div>
     </>

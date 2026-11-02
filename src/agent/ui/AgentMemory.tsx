@@ -2,7 +2,7 @@
 // `>` narrows, `# yours` / `# shared with the workspace`, `•` the open one, a counting foot) with the open chat's own
 // actions on top (`[r] rename`, `[s] share`, `[d] delete`); the agent notes as a page (Markdown), editable by owners and
 // editors (one undo step, as the person); and a notes change in the preview as a line diff (+ added, − taken out).
-// DOM text only (never under the ASCII effect); tokens only; the list's build-up is MenuPanel's.
+// DOM text only (never under the ASCII effect); tokens only; the list's build-up is PromptPanel's.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { type MenuEntry } from '../../ui/patterns/Menu'
 import { InPlaceMenu } from '../../ui/patterns/InPlaceMenu'
@@ -88,7 +88,6 @@ export function ChatsView() {
         items={items}
         ariaLabel="Saved chats"
         prompt={open ? 'find, or type a new name…' : 'find a chat…'}
-        noun="entries"
         empty="No saved chats yet: they're kept after the first answer."
         more={(typed) => (open ? [{ key: 'a-rename', letter: 'r', label: `rename this chat to "${typed.slice(0, 120)}"`, onSelect: () => (void agentActions.renameChat(chat.id, typed), 'keep') }] : [])}
         onClose={() => agentActions.show('chat')}

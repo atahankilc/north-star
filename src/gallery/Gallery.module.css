@@ -20,6 +20,7 @@
   flex: 1;
   max-height: none;
   min-height: 0;
+  box-shadow: none;
 }
 
 .title {
@@ -185,6 +186,20 @@
   align-items: baseline;
   gap: var(--space-3);
   padding: 0 var(--space-3) var(--space-2);
+}
+
+/* The tree's prompt: the `>` line over its scrolling list. */
+.tree {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-sm);
+}
+
+.treeList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-1) 0;
 }
 
 /* The tree: a row's lines, its name, its level when nested, `▸ N` what uses it. */

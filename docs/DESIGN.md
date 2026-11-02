@@ -259,14 +259,17 @@ Values will be tuned against contrast checks (WCAG AA for text).
   the current page with a cyan left bar; on the right a title, a one-line description and framed sections (label in the
   top edge, rows split by hairlines, a note at the foot). Below 640 px the menu becomes tabs. 1.0's `ASSISTANT` (keys,
   usage) comes back with the assistant. Signed out there are no controls (D-069).
-- Dropdowns (`src/ui/patterns/Menu.tsx`) are a **prompt** (D-222): a trigger cell `SHOW all ▾` (D-344) (or a side nav icon), a list on
-  page black with a `--line-hover` edge, built cell by cell. On top a `>` line with focus (a placeholder saying what it
-  does: `add…`, `find a place…`): typing narrows the list, the typed part lit magenta, Enter picks the first. `# text`
-  section lines. A row: a magenta `›` where Enter goes, its glyph, the label, a faint hint; dangerous ones red; ticked rows
-  `✓` on a wash (D-344). An item's letter still puts it first when typed alone (`+` `p` Enter makes a plane), but isn't
-  shown: no keys are shown anywhere in the app (D-344), onboarding teaches them. A foot counts what's shown
-  (`8 things · type to find`). The right-click menu (`ContextMenu.tsx`) is the same panel at the
-  pointer, its `>` line saying what it's on (`do with this customer…`).
+- Dropdowns (`src/ui/patterns/Menu.tsx`) are a **prompt** (D-222, D-350): a trigger cell `SHOW all ▾` (D-344) (or a side
+  nav icon) opening `PromptPanel` (`src/ui/patterns/`), built cell by cell. Its look is a console's (D-347): no box, the
+  page's black on a hugging shade, faint L's on its four corners, cyan while the keyboard is in it. On top a `>` line
+  with focus (a placeholder saying what it does: `add…`, `find a place…`); the keys never leave it. Typing narrows the
+  list, the typed part lit magenta. `# SECTION ──── 4` heads as the kit's Rule (an empty one a plain rule). A row
+  (`PromptRow`): a magenta `›` and a 2 px band in its tone on the picked row (the first until the keys or the pointer
+  move it; Enter picks it), its glyph, the label, a faint hint (data, never a key); dangerous ones red; tick rows a small
+  box, lit in their tone with `✓` while on; the value now cyan with `✓` at its end. An item's letter still puts it
+  first when typed alone (`+` `p` Enter makes a plane), but isn't shown: no keys anywhere in the app (D-344).
+  Nothing under the list. The right-click menu (`ContextMenu.tsx`) is the same panel at the pointer, its `>` line
+  saying what it's on (`do with this customer…`); `InPlaceMenu` lays it in a panel.
 - One-of pickers (`src/ui/primitives/Select.tsx`, D-093), never the browser's `<select>`: an inline `value ▾` opens a compact list in
   the prompt's look, a cyan `•` on the current value, the magenta `›` + wash under the pointer or keys; past 7 options the
   `>` line, otherwise a first letter jumps; no build-up; opens upward only when it must, stays inside its panel, follows

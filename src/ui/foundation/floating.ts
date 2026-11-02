@@ -2,6 +2,8 @@
 // it. Below the anchor unless it only fits above; kept inside its side panel, else the app's box (clear of the assistant's
 // window, D-081). Inside a modal <dialog> it goes in the dialog (the top layer would hide it otherwise), measured from the
 // dialog's padding box, since a filtered dialog is the containing block for fixed children.
+import { tokenPx } from '../../styles/cssToken'
+
 export type Floating = {
   host: HTMLElement
   style: { left: number; top: number | 'auto'; bottom: number | 'auto'; width?: number; minWidth?: number }
@@ -29,4 +31,14 @@ export function floatFrom(
         ? { left, top: 'auto', bottom: viewHeight - (r.top - origin.top) + 4, ...size }
         : { left, top: r.bottom - origin.top + 4, bottom: 'auto', ...size },
   }
+}
+
+// Where something opened at a point (the right-click menu) sits: at the point, moved left or up when it would run past
+// its space's right or bottom edge, a small margin kept from every edge.
+export function placeAt(el: HTMLElement, at: [number, number]) {
+  const box = el.offsetParent?.getBoundingClientRect()
+  if (!box) return
+  const m = tokenPx('--space-2')
+  el.style.left = `${Math.max(m, Math.min(at[0], box.width - el.offsetWidth - m))}px`
+  el.style.top = `${Math.max(m, Math.min(at[1], box.height - el.offsetHeight - m))}px`
 }

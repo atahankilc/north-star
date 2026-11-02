@@ -1,8 +1,4 @@
-/* The prompt in place (D-222): a dropdown's panel laid in the page, the same hairline frame on the page's black. */
-.frame {
-  border: var(--line-w) solid var(--line-hover);
-  background: var(--bg);
-}
+/* The prompt in place (D-222): the prompt laid in the page; how much of it shows before it scrolls. */
 
 /* In a panel: shorter than a dropdown's, the rest scrolls. */
 .frame[data-height='panel'] > * {

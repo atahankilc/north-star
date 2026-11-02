@@ -6727,3 +6727,34 @@ seen-state: every write sends `nudges: deleteField()` (a merge would keep it on 
 it (rules tests 631/0). The rules deploy must wait until the app with deleteField is live (pushed), or old tabs' writes
 are refused (they then stop writing for the session, as with any refusal). onboarding-lessons.md cut to the table and
 pointers (the first draft: `git show bddf074:docs/specs/onboarding-lessons.md`); scene headers name their lessons.
+
+### D-350 · 2026-11-02 · Accepted (the user: "menu, inplace menu, select, right click menu, canvas select, plane filter, side nav, existing card, finder and geriye ne kaldıysa… hepsi aynı paneli kullanıyor … bu componentleri nasıl daha iyi parçalara böleriz, primitivelerden construct ederiz … düzgünce refactor etmek burayı"; picked look B, "ilk satır evet, workspaces kart kalsın"; "aşşağıda gereksiz yazı istemiyorum, 11 things falandır bunlara gerek yok"; "select ve for da solda çok gereksiz boş bir alan var. Acaba tick boxları geri mi getirsek")
+The prompt family (D-222) rebuilt from one set of parts; proposal and live comparison shown on a local port first.
+- **Parts**: `src/ui/foundation/promptModel.ts` (the entry shape: label, glyph, tone, hint, letter, checked, `current`,
+  danger, indent, fold, folded, words, browse; headings with a `count`; `narrow()`), `usePromptNav.ts` (↑ ↓ Home End,
+  Enter with ⇧/⌥, → ← a fold, Escape, Tab; focus never leaves the `>` line, rows aren't focused; aria-activedescendant),
+  `useDismiss.ts` (a press, the wheel, Escape outside), `floating.ts`'s `placeAt` (the right-click's clamp, margins a
+  token); `src/ui/primitives/PromptRow.tsx` (Hit, PromptRow, PromptHead); `src/ui/patterns/PromptList.tsx`,
+  `PromptPanel.tsx` (was Menu.tsx's MenuPanel). Menu, ContextMenu, InPlaceMenu are now only hosts. Each part has its
+  gallery.
+- **Look B, a console's** (D-347): no box; the page's black on a hugging shade; faint L's on the four corners, cyan while
+  the keyboard is in it; heads `# SECTION ──── 4` as the kit's Rule (magenta `#`); the picked row held by a 2 px band in
+  its tone and `--wash-3`; one picked state for the keys and the pointer. The kind guide glued to the `+` menu follows
+  (a hairline, its own right corners).
+- **The first row is lit** with nothing typed (Enter picks it), and stays the pick until the keys or the pointer move it.
+- **No foot**: the `8 things · type to find` count and its `or type a name…` lines are gone (`noun`, `foot` props dropped).
+- **Ticks a small box** (the kit's Checkbox at a row's size), empty while off, lit in the row's tone with `✓` while on:
+  the empty column before unticked rows said nothing. The value now (`current`: a Select's, the canvas you're on) is
+  cyan with `✓` at its end, no column before it; CanvasSwitch's and MoveToCanvas' hand-drawn `•` became `current`.
+- **No keys in menus** (D-344, D-349): planeMenu's `⌘C ⌘D ⌫ ⌘V ⇧⌘V` hints and the fold's `(←) (→)` titles went; the kind guide's foot says `point at a kind to see it`.
+- **Contracts kept**: `[role="menu"] [data-key]`, `[role="listbox"]`, `data-learn="plus-menu"`; `data-first` now marks the
+  row Enter picks at any time (was: only the first match while typing), so the coach, devGuides and the gallery's
+  KindBeside read the row under the keys without focus; KindGuide reads a row's glyph by `[data-part=glyph]`.
+- check:kit's `menuHost` now refuses a hand-hosted `<PromptPanel>` too.
+Alternatives offered: A (today's box, every part tidied), C (B + a glued column about the picked row on every prompt);
+ticks: today's ✓ column, a box (picked), no box with a tone band. Workspaces' search results stay cards (only Hit could be
+shared).
+Stages left: 2 Select on PromptPanel (its own list, CSS and raw numbers go; a Popover), 3 Finder, Guide, SkillMenu,
+Threads' `@`, Matrix's picks, MatrixSetup's add on PromptList, 4 one `cardEntry()` for CardPanel's picker and BringCards,
+FilterDock's swatch out of Menu.module.css.
+

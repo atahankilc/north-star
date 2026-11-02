@@ -1,0 +1,196 @@
+/* The prompt's parts (src/ui/primitives/PromptRow.tsx, D-222). One row grid everywhere:
+   gutter · box or glyph · label · fold · hint · ✓. A row is as tall as a small control; a fold never makes it taller. */
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-sm);
+  padding: 0 var(--space-3) 0 var(--space-2);
+  color: var(--fg);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Picked (by the keys or the pointer: one state, never two rows lit): held as pieces are held, a band in its tone on
+   the left and the wash a step up (D-266). */
+.row[data-picked] {
+  background: var(--wash-3);
+  box-shadow: inset var(--line-w-bold) 0 0 var(--tone, var(--accent-magenta));
+  color: var(--fg-strong);
+}
+
+.row[data-danger][data-picked] {
+  box-shadow: inset var(--line-w-bold) 0 0 var(--diff-deleted);
+}
+
+/* `›` where Enter or a click goes. */
+.gutter {
+  flex: none;
+  width: 1ch;
+  font-family: var(--font-mono);
+  color: var(--accent-magenta);
+}
+
+.row[data-picked] .gutter::before {
+  content: '›';
+}
+
+.glyph {
+  flex: none;
+  width: 1.2em;
+  font-family: var(--font-mono);
+  text-align: center;
+  color: var(--tone, var(--fg-dim));
+}
+
+/* A row you tick: a small box, empty while off (so an unticked row still says it can be ticked), lit in the row's tone
+   with `✓` while on: the kit's Checkbox at a row's size (D-344). */
+.box {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-xs);
+  height: var(--control-xs);
+  background: var(--wash-2);
+  box-shadow: inset 0 0 0 var(--line-w) var(--line);
+  color: var(--tone, var(--accent-cyan));
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.box[data-on] {
+  background: color-mix(in srgb, var(--tone, var(--accent-cyan)) var(--mix-wash), transparent);
+  box-shadow: inset 0 0 0 var(--line-w) var(--tone, var(--accent-cyan));
+}
+
+.label {
+  flex: 1 1 auto;
+  min-width: 6ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The value it has now (a Select's, the canvas you're on): cyan, `✓` at its end. */
+.row[aria-current='true'] .label {
+  color: var(--accent-cyan);
+}
+
+.now {
+  flex: none;
+  font-family: var(--font-mono);
+  color: var(--accent-cyan);
+}
+
+/* Data about it, on the right; it gives way before the label does. */
+.hint {
+  flex: 0 100 auto;
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.row[data-danger] {
+  color: var(--diff-deleted);
+}
+
+.row[data-danger] .glyph {
+  color: inherit;
+}
+
+/* Hanging under the row before it, off a line down from its glyph (D-201). */
+.row[data-indent] {
+  padding-left: calc(var(--space-2) + 1ch + var(--space-2) + 1.2em + var(--space-2));
+}
+
+.row[data-indent]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--space-2) + 1ch + var(--space-2) + 0.6em);
+  width: var(--line-w);
+  background: var(--edge);
+}
+
+.row[data-open] {
+  color: var(--fg-strong);
+}
+
+/* `▸ 3 inside`: a small cell inside the row, never taller than it; cyan while open or pointed at. */
+.fold {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-xs);
+  padding: 0 var(--space-2);
+  background: var(--wash-2);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+.fold:hover,
+.row[data-open] .fold {
+  background: var(--wash-cyan);
+  color: var(--accent-cyan);
+}
+
+.hit {
+  background: none;
+  color: var(--accent-magenta);
+}
+
+/* Found in text (the finder): the yellow its preview lights on the canvas. */
+.hit[data-tone='found'] {
+  background: color-mix(in srgb, var(--accent-yellow) var(--mix-soft), transparent);
+  color: var(--fg-strong);
+}
+
+/* `# SECTION ──── 4`: as the kit's Rule, caps, a line to the edge, the count at its end. */
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-1);
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.hash {
+  color: var(--accent-magenta);
+}
+
+.headName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headLine {
+  flex: 1;
+  min-width: var(--space-4);
+  height: var(--line-w);
+  background: var(--line);
+}
+
+.headCount {
+  color: var(--fg-faint);
+  letter-spacing: normal;
+}
+
+/* What's under it is apart from the rest (the `+`'s `existing card…`). */
+.rule {
+  margin: var(--space-1) var(--space-3);
+  border-top: var(--line-w) solid var(--line);
+}

@@ -71,7 +71,7 @@ export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
       <header className={m.setupHead}>
         <Tabs<TableTab> label="Setup" value={tab} onChange={(t) => useTableUi.setState({ tab: t })} options={TABLE_TABS.map((t) => ({ value: t, label: TAB_NAME[t], count: t !== 'view' ? count[t] : undefined }))} />
         <span className={m.setupEnd}>
-          <Menu label="start over from" up quiet prompt="a template…" noun="templates" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows and columns' }, ...restart]} />
+          <Menu label="start over from" up quiet prompt="a template…" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows and columns' }, ...restart]} />
           <Button title="close (Esc)" onClick={close}>
             done
           </Button>

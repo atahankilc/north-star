@@ -3,7 +3,8 @@
 // seen-state (useProgress) is never started here (no `startFor`), only reset and, for a state that needs it, patched.
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { create } from 'zustand'
-import { MenuPanel, type MenuEntry } from '../ui/patterns/Menu'
+import { PromptPanel } from '../ui/patterns/PromptPanel'
+import type { PromptEntry } from '../ui/foundation/promptModel'
 import { useProgress } from '../onboarding/progress'
 import { useGuideRole } from '../onboarding/Guide'
 import { KindGuide } from '../onboarding/KindGuide'
@@ -60,7 +61,7 @@ export function WhenReady({ children }: { children: ReactNode }) {
 // pointer followed as the coach does.
 export function KindBeside({ where = 'canvas' as 'canvas' | 'plane' }) {
   const rows = (lessonById('kind-guide') as GuideLesson).rows.filter((r) => r.where === where || r.where === 'both')
-  const items: MenuEntry[] = rows.map((r) => ({ key: r.key, label: r.label, onSelect: none }))
+  const items: PromptEntry[] = rows.map((r) => ({ key: r.key, label: r.label, onSelect: none }))
   const box = useRef<HTMLDivElement>(null)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const [row, setRow] = useState<string | null>(null)
@@ -85,8 +86,8 @@ export function KindBeside({ where = 'canvas' as 'canvas' | 'plane' }) {
   }, [])
   return (
     <>
-      <div ref={box} data-learn="plus-menu" style={{ width: 280, border: '1px solid var(--line-hover)', background: 'var(--bg)' }}>
-        <MenuPanel items={items} ariaLabel="add" noun="kinds" onClose={none} />
+      <div ref={box} data-learn="plus-menu" style={{ width: 280 }}>
+        <PromptPanel items={items} ariaLabel="add" onClose={none} />
       </div>
       {rect && <KindGuide menu={rect} row={row} where={where} onHide={none} />}
     </>

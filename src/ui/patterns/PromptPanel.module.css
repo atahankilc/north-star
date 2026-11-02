@@ -1,0 +1,52 @@
+/* The prompt (src/ui/patterns/PromptPanel.tsx, D-222) in a console's look (D-347): no box, the page's black on a
+   hugging shade, faint L's on its four corners, cyan while the keyboard is in it. */
+.panel {
+  --mk: var(--fg-faint);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: min(60vh, var(--menu-h));
+  background: var(--bg);
+  box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  outline: none;
+}
+
+.panel:focus-within {
+  --mk: var(--accent-cyan);
+}
+
+/* With nothing to type into it holds the keys itself: its corners say so, no ring. */
+.panel:focus-visible {
+  outline: none;
+}
+
+.panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--mk), var(--mk)) left top / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) left top / var(--line-w) var(--corner-mark) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right top / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right top / var(--line-w) var(--corner-mark) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) left bottom / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) left bottom / var(--line-w) var(--corner-mark) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right bottom / var(--corner-mark) var(--line-w) no-repeat,
+    linear-gradient(var(--mk), var(--mk)) right bottom / var(--line-w) var(--corner-mark) no-repeat;
+}
+
+.line {
+  flex: none;
+}
+
+/* What sits on the `>` line's right never shrinks (a scope's segments). */
+.tools {
+  flex: none;
+  display: flex;
+  gap: var(--space-2);
+}

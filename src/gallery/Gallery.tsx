@@ -6,7 +6,8 @@
 // itself, what the frames and the shot scripts load). Built from the app's own components and tokens.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { create } from 'zustand'
-import { MenuPanel, type MenuEntry } from '../ui/patterns/Menu'
+import { PromptPanel } from '../ui/patterns/PromptPanel'
+import type { PromptEntry } from '../ui/foundation/promptModel'
 import { Choice } from '../ui/primitives/Choice'
 import { useHistory } from '../data/history'
 import { useTheme } from '../state/theme'
@@ -72,7 +73,7 @@ export function Gallery() {
   // A state picked: open large and live; none: every state side by side. Alone, the first when none is said.
   const picked = names.find((n) => stateSlug(n) === a.s) ?? (a.alone ? names[0] : undefined)
   const [reset, setReset] = useState(0)
-  // The list is the app's MenuPanel, whose `role="menu"` the onboarding reads as an open menu and waits for
+  // The list is the app's PromptPanel, whose `role="menu"` the onboarding reads as an open menu and waits for
   // (busy.ts menuOpen, Coach.tsx MENUS): here it's the page's own navigation, always open, so it says it's a list.
   const side = useRef<HTMLElement>(null)
   useLayoutEffect(() => {
@@ -110,7 +111,7 @@ export function Gallery() {
 
   // The list: an area's name, then its components; a count of states, or `—` with no example. Typing finds by name,
   // file or area.
-  const items = useMemo<MenuEntry[]>(
+  const items = useMemo<PromptEntry[]>(
     () =>
       AREAS.flatMap((area) => {
         const here = PAGES.filter((p) => p.area === area)
@@ -122,7 +123,7 @@ export function Gallery() {
             label: p.name,
             words: `${p.file} ${area.name}${p.entry ? '' : ' no example'}`,
             indent: true,
-            glyph: p.id === page?.id ? '•' : undefined,
+            current: p.id === page?.id,
             hint: p.entry ? String(Object.keys(p.entry.states).length) : '—',
             onSelect: () => go({ c: p.id, s: null }),
           })),
@@ -152,7 +153,7 @@ export function Gallery() {
           <span className={styles.faint}>{a.side === 'map' ? 'by layer and area' : 'by what it’s made of'}</span>
         </div>
         {a.side === 'map' ? (
-          <MenuPanel items={items} ariaLabel="Components" prompt="find a component…" noun="components" onClose={() => {}} />
+          <PromptPanel items={items} ariaLabel="Components" prompt="find a component…" onClose={() => {}} start={page?.id} />
         ) : (
           <UsesTree current={page?.file} onPick={(file) => { const p = pageOfFile(file); if (p) go({ c: p.id, s: null }) }} />
         )}

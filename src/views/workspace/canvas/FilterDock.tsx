@@ -88,10 +88,10 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   return (
     <Appear className={styles.panel} role="group" aria-label="Filters" data-learn="filter-strip">
       <FloorTitle summary={narrowing(f) ? `${narrowing(f)} narrowing what's shown` : "everything's shown"}>filter</FloorTitle>
-      <Menu label="show" up summary={swatches(ALL_TYPES.map((t) => ({ key: t, tone: TYPE_TONE[t], on: !f.hide.includes(t) })))} active={f.hide.length > 0} items={show} ariaLabel="Show card types" noun="types" />
-      <Menu label="for" up summary={named(f.for, (id) => customers.find((c) => c.id === id)?.title || '1')} active={f.for.length > 0} items={customers.length ? forItems : []} ariaLabel="Only cards for these customers" empty="No customers on this plane" noun="customers" />
-      <Menu label="tag" up summary={named(f.tags, (t) => `#${t}`)} active={f.tags.length > 0} items={tags.length ? tagItems : []} ariaLabel="Only cards with these tags" empty="No tags on this plane" noun="tags" />
-      <Menu label="region" up summary={named(f.regions, (r) => r)} active={f.regions.length > 0} items={regions.length ? regionItems : []} ariaLabel="Competitors in these places" empty="No regions set on this plane's competitors" noun="places" />
+      <Menu label="show" up summary={swatches(ALL_TYPES.map((t) => ({ key: t, tone: TYPE_TONE[t], on: !f.hide.includes(t) })))} active={f.hide.length > 0} items={show} ariaLabel="Show card types" />
+      <Menu label="for" up summary={named(f.for, (id) => customers.find((c) => c.id === id)?.title || '1')} active={f.for.length > 0} items={customers.length ? forItems : []} ariaLabel="Only cards for these customers" empty="No customers on this plane" />
+      <Menu label="tag" up summary={named(f.tags, (t) => `#${t}`)} active={f.tags.length > 0} items={tags.length ? tagItems : []} ariaLabel="Only cards with these tags" empty="No tags on this plane" />
+      <Menu label="region" up summary={named(f.regions, (r) => r)} active={f.regions.length > 0} items={regions.length ? regionItems : []} ariaLabel="Competitors in these places" empty="No regions set on this plane's competitors" />
       <Menu
         label="links"
         up
@@ -100,7 +100,6 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
         active={linksNarrow}
         items={linkItems}
         ariaLabel="Show links by kind"
-        noun="kinds"
       />
       <Button className={styles.reset} onClick={() => setFilter(plane, START)} title="back to how it starts">
         reset

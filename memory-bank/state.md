@@ -67,6 +67,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Q-033 closed by D-348.
 - D-338 workspaces page, D-346 backdrop 70 %, D-347 consoles: pushed and closed by the user 2026-11-01 (state-history).
 - D-348 (2026-11-01, pushed): Settings → display: hud size and background strength; the user checked it in the app.
+- D-350 (2026-11-02, committed): the prompt family on one set of parts, stage 1 of 4 (menus, look B, no foot, tick
+  boxes); left: 2 Select, 3 Finder/Guide/SkillMenu/`@`/Matrix lists, 4 `cardEntry()` + FilterDock's swatch.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers

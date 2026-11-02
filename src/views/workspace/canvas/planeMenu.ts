@@ -62,19 +62,18 @@ function several(c: Ctx, n: number): MenuEntry[] {
   const shared = picked.filter((x) => elsewhere(x, c.places, c.plane).length)
   return [
     { key: 'sel', heading: `${n} selected` },
-    { key: 'copy', label: 'copy them', glyph: '⧉', hint: '⌘C', onSelect: () => Object.assign(clipboard, { cards: picked, labels: texts, edges: c.edges, pasted: 0 }) },
+    { key: 'copy', label: 'copy them', glyph: '⧉', onSelect: () => Object.assign(clipboard, { cards: picked, labels: texts, edges: c.edges, pasted: 0 }) },
     ...(c.editor
       ? [
           ...(packable.length
             ? [{ key: 'pkg', label: `package ${packable.length === picked.length ? 'these' : `the ${packable.length} cards`}`, glyph: '▣', letter: 'p', tone: 'var(--accent-blue)', onSelect: () => setSelection([packageThese(c.wid, packable, c.all)]) }]
             : []),
-          { key: 'dup', label: 'duplicate them', glyph: '⊕', letter: 'd', hint: '⌘D', onSelect: () => setSelection(copyCards(c.wid, c.plane, picked, c.edges, by2(), texts)) },
+          { key: 'dup', label: 'duplicate them', glyph: '⊕', letter: 'd', onSelect: () => setSelection(copyCards(c.wid, c.plane, picked, c.edges, by2(), texts)) },
           {
             key: 'del',
             label: shared.length ? (shared.length === n ? `take ${n} off this plane` : `remove ${n}`) : `delete ${n}`,
             glyph: '×',
             danger: !shared.length,
-            hint: '⌫',
             onSelect: () => {
               setSelection([])
               deleteHere(c.wid, c.plane, picked, c, texts)
@@ -109,16 +108,16 @@ export function cardItems(c: Ctx, id: string): MenuEntry[] {
       : c.editor && parts
       ? [{ key: 'fold', label: card.folded ? `unfold ${parts} part${parts > 1 ? 's' : ''}` : `fold ${parts} part${parts > 1 ? 's' : ''}`, glyph: card.folded ? '+' : '−', onSelect: () => void foldCard(c.wid, card, !card.folded) }]
       : []),
-    { key: 'copy', label: 'copy', glyph: '⧉', hint: '⌘C', onSelect: () => Object.assign(clipboard, { cards: [card], labels: [], edges: c.edges, pasted: 0 }) },
+    { key: 'copy', label: 'copy', glyph: '⧉', onSelect: () => Object.assign(clipboard, { cards: [card], labels: [], edges: c.edges, pasted: 0 }) },
     ...(c.editor
       ? [
-          { key: 'dup', label: 'duplicate', glyph: '⊕', letter: 'd', hint: '⌘D', onSelect: () => setSelection(copyCards(c.wid, c.plane, [card], c.edges, by2())) },
+          { key: 'dup', label: 'duplicate', glyph: '⊕', letter: 'd', onSelect: () => setSelection(copyCards(c.wid, c.plane, [card], c.edges, by2())) },
           ...(elsewhere(card, c.places, c.plane).length
             ? [
-                { key: 'off', label: 'take off this plane', glyph: '×', hint: '⌫', onSelect: () => deleteHere(c.wid, c.plane, [card], c) },
+                { key: 'off', label: 'take off this plane', glyph: '×', onSelect: () => deleteHere(c.wid, c.plane, [card], c) },
                 everywhere(c, [card]),
               ]
-            : [{ key: 'del', label: 'delete', glyph: '×', danger: true, hint: '⌫', onSelect: () => deleteHere(c.wid, c.plane, [card], c) }]),
+            : [{ key: 'del', label: 'delete', glyph: '×', danger: true, onSelect: () => deleteHere(c.wid, c.plane, [card], c) }]),
         ]
       : []),
   ]
@@ -131,11 +130,11 @@ export function labelItems(c: Ctx, id: string): MenuEntry[] {
   if (cardMulti.length > 1 && cardMulti.includes(id)) return several(c, cardMulti.length)
   return [
     ...(c.editor ? [{ key: 'edit', label: 'edit', glyph: '✎', letter: 'e', onSelect: () => useCanvasView.setState({ labelSelected: id, labelEditing: id, cardSelected: null, cardMulti: [] }) }] : []),
-    { key: 'copy', label: 'copy', glyph: '⧉', hint: '⌘C', onSelect: () => Object.assign(clipboard, { cards: [], labels: [l], edges: [], pasted: 0 }) },
+    { key: 'copy', label: 'copy', glyph: '⧉', onSelect: () => Object.assign(clipboard, { cards: [], labels: [l], edges: [], pasted: 0 }) },
     ...(c.editor
       ? [
-          { key: 'dup', label: 'duplicate', glyph: '⊕', letter: 'd', hint: '⌘D', onSelect: () => setSelection(copyCards(c.wid, c.plane, [], [], by2(), [l])) },
-          { key: 'del', label: 'delete', glyph: '×', danger: true, hint: '⌫', onSelect: () => void deleteLabel(c.wid, l) },
+          { key: 'dup', label: 'duplicate', glyph: '⊕', letter: 'd', onSelect: () => setSelection(copyCards(c.wid, c.plane, [], [], by2(), [l])) },
+          { key: 'del', label: 'delete', glyph: '×', danger: true, onSelect: () => void deleteLabel(c.wid, l) },
         ]
       : []),
   ]
@@ -149,7 +148,7 @@ export function linkItems(c: Ctx, id: string): MenuEntry[] {
     ...(e.kind === 'for' ? [] : [{ key: 'rev', label: 'turn it round', glyph: '⇄', letter: 'r', onSelect: () => void reverseEdge(c.wid, e) }]),
     { key: 'kind', heading: 'kind' },
     ...LINK_GROUPS.map((g) => ({ key: `k-${g.kind}`, label: g.label, glyph: '━', tone: linkTone(g.kind), checked: e.kind === g.kind, onSelect: () => void updateEdge(c.wid, id, { kind: g.kind }) })),
-    { key: 'del', label: 'remove', glyph: '×', danger: true, hint: '⌫', onSelect: () => void deleteEdge(c.wid, id) },
+    { key: 'del', label: 'remove', glyph: '×', danger: true, onSelect: () => void deleteEdge(c.wid, id) },
   ]
 }
 
@@ -176,10 +175,10 @@ export function emptyItems(c: Ctx): MenuEntry[] {
     setSelection(copyCards(c.wid, c.plane, clipboard.cards, clipboard.edges, [snap(x - l), snap(y - t)], clipboard.labels))
   }
   return [
-    ...(paste ? [{ key: 'paste', label: `paste ${paste > 1 ? `${paste} things` : 'it'} here`, glyph: '⧉', letter: 'v', hint: '⌘V', onSelect: pasteHere }] : []),
+    ...(paste ? [{ key: 'paste', label: `paste ${paste > 1 ? `${paste} things` : 'it'} here`, glyph: '⧉', letter: 'v', onSelect: pasteHere }] : []),
     // The same cards rather than copies (D-290), round the pointer.
     ...(clipboard.cards.length
-      ? [{ key: 'same', label: `the same ${clipboard.cards.length > 1 ? `${clipboard.cards.length} cards` : 'card'} here`, glyph: '⧉', hint: '⇧⌘V', onSelect: () => pasteSame(c.wid, c.plane, { cards: c.all, places: c.places, edges: c.edges }, [x, y]) }]
+      ? [{ key: 'same', label: `the same ${clipboard.cards.length > 1 ? `${clipboard.cards.length} cards` : 'card'} here`, glyph: '⧉', onSelect: () => pasteSame(c.wid, c.plane, { cards: c.all, places: c.places, edges: c.edges }, [x, y]) }]
       : []),
     { key: 'cards', heading: 'add a card here' },
     ...CARD_TYPES.map((t) => ({ key: t, label: t, glyph: '▌', letter: CARD_LETTER[t], tone: TONE[t], onSelect: () => void card(t) })),

@@ -43,7 +43,7 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
     ...canvases.map((c, i) => ({
       key: c.id,
       label: c.name,
-      glyph: c.id === canvas ? '•' : ' ',
+      current: c.id === canvas,
       letter: i < 9 ? String(i + 1) : undefined,
       // ⌥1–⌥9 go there from anywhere (MoveToCanvas' CanvasKeys).
       hint: `${plural(piecesOn(c.id, pieces, spots).length, 'piece')}`,

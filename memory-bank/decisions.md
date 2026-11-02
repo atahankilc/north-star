@@ -105,9 +105,12 @@ feature comes back as a piece, and check them with the user then.
   people here, threads button, a rule, your square, the gear, `--space-3` from the edges, other bottom-left tools
   `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge, cells (D-344); its `+` a drawn
   20 px magenta `+`, its menu opening right (D-178).
-- Menus, pickers and right-click are a **prompt** (D-222; an empty heading is a plain rule, D-291): a `>` line narrowing the list (Enter picks the first), `#
-  section` lines, rows `› ▦ label  hint`, a letter puts its item first (not shown, D-344), a counting foot; Select: `•` current, the
-  `>` line past 7 options.
+- Menus, pickers and right-click are a **prompt** (D-222; an empty heading is a plain rule, D-291), one set of parts
+  (D-350: promptModel, usePromptNav, useDismiss, PromptRow, PromptList, PromptPanel): a `>` line narrowing the list,
+  the keys staying in it, the first row lit and picked by Enter until the keys or the pointer move it; `# SECTION ──`
+  heads; rows `› ▦ label  hint`, picked held by a band in its tone; a letter puts its item first (not shown, D-344);
+  tick rows a small box; the value now cyan with `✓` at its end; no foot, no keys; a console's look (no box, shade,
+  corner L's, D-347); Select: the `>` line past 7 options.
 - One look and behaviour across the canvas (consistency.md; agreed D-263–D-267, built D-270, D-272–D-277):
   - Surface (D-263, D-274, D-289): pieces graphite (`--piece*`, white in light) with a 2 px band in their kind's colour
     on top; inside a framed piece `--bg`/`--bg-raised`/`--grid-mark` map to that surface. In focus, beside it and

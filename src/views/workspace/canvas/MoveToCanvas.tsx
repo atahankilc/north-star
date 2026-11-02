@@ -129,7 +129,6 @@ function Prompt({ asked, canvas, canvases, onClose }: { asked: { pieces: string[
       items={items}
       onClose={onClose}
       prompt={asked.share ? (n > 1 ? `put ${n} things on…` : 'put it on… as well') : n > 1 ? `move ${n} things to…` : 'move to…'}
-      foot="or type a name for a new canvas"
       more={(typed) => (typed && !taken(typed) ? [{ key: 'make', label: `new canvas "${typed.slice(0, CANVAS_NAME_MAX)}"`, glyph: '+', onSelect: () => void go(typed) }] : [])}
     />
   )
@@ -157,9 +156,10 @@ function WherePrompt({ asked, onClose }: { asked: { pieces: string[]; screen: [n
     ...p.canvases.map((id, i) => ({
       key: id,
       label: ws.canvases.find((c) => c.id === id)?.name ?? id,
-      glyph: id === ws.canvas ? '•' : '→',
+      current: id === ws.canvas,
+      glyph: id === ws.canvas ? undefined : '→',
       letter: i < 9 ? String(i + 1) : undefined,
-      hint: id === ws.canvas ? 'here' : id === (p.canvasId || 'main') ? 'go there · made there' : 'go there',
+      hint: id === ws.canvas ? undefined : id === (p.canvasId || 'main') ? 'go there · made there' : 'go there',
       onSelect: () => id !== ws.canvas && navigate(canvasPath(ws.wid, id)),
     })),
     { key: 'rule', heading: '' },

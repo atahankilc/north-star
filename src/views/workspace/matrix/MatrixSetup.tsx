@@ -73,7 +73,7 @@ export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
       <header className={styles.setupHead}>
         <Tabs<SetupTab> label="Setup" value={tab} onChange={openMatrixSetup} options={SETUP_TABS.map((t) => ({ value: t, label: TAB_NAME[t], count: t === 'rows' || t === 'cols' ? count[t] : undefined }))} />
         <span className={styles.setupEnd}>
-          <Menu label="start over from" up quiet prompt="a template…" noun="templates" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows, columns and cells' }, ...restart]} />
+          <Menu label="start over from" up quiet prompt="a template…" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows, columns and cells' }, ...restart]} />
           <Button title="close (Esc)" onClick={closeMatrixSetup}>
             done
           </Button>

@@ -38,13 +38,17 @@ type Props = {
   // Coming into it (the agent's box opens its column), and `data-*` the caller finds the field by.
   onFocus?: (e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   data?: Record<`data-${string}`, string | true | undefined>
+  // A list under it whose rows the keys move through while focus stays here (the prompt's, D-222): its id, and the
+  // picked row's.
+  controls?: string
+  active?: string
 }
 
 export const PromptField = forwardRef<HTMLInputElement | HTMLTextAreaElement | null, Props>(function PromptField(
-  { value, onChange, onSubmit, onEscape, label, placeholder, sign = '>', running, multiline, framed, autoFocus, disabled, maxLength, className, onBlur, onKeyDown, passKeys, invalid, children, style, onFocus, data },
+  { value, onChange, onSubmit, onEscape, label, placeholder, sign = '>', running, multiline, framed, autoFocus, disabled, maxLength, className, onBlur, onKeyDown, passKeys, invalid, children, style, onFocus, data, controls, active },
   ref,
 ) {
-  const shared = { ...data, value, onChange, label, placeholder, onEscape, autoFocus, disabled, maxLength, onBlur, onFocus, passKeys, 'data-invalid': invalid || undefined, className: styles.input }
+  const shared = { ...data, value, onChange, label, placeholder, onEscape, autoFocus, disabled, maxLength, onBlur, onFocus, passKeys, 'data-invalid': invalid || undefined, 'aria-controls': controls, 'aria-activedescendant': active, className: styles.input }
   return (
     <label className={[styles.prompt, className].filter(Boolean).join(' ')} style={style} data-framed={framed || undefined} data-running={running || undefined}>
       <span className={styles.sign} aria-hidden>

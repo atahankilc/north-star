@@ -1,12 +1,13 @@
 // The gallery's tree (the user: "basic olanlar listenin başında durur, sonrasında kullanıldıkları yerleri ağaç üzerinde
 // görürüm… her şeyi göstersin"): every component file, by level (primitives first: they draw no other component), each
-// opening into what uses it, and that into what uses that, up to the screens. In the prompt's look (Menu.module.css,
-// D-222). A row opens its page; its `▸ N` opens what uses it. A file with no example is faint but opens too (its page
+// opening into what uses it, and that into what uses that, up to the screens. In the prompt's look (PromptField,
+// PromptHead, D-222). A row opens its page; its `▸ N` opens what uses it. A file with no example is faint but opens too (its page
 // says what it's built from and where it's used), so the tree still says where a primitive ends up (the agent).
 import { useMemo, useState } from 'react'
 import { NODES, type Node } from './uses'
 import { pageOfFile } from './pages'
-import menu from '../ui/patterns/Menu.module.css'
+import { PromptField } from '../ui/primitives/PromptField'
+import { PromptHead } from '../ui/primitives/PromptRow'
 import styles from './Gallery.module.css'
 
 const LEVEL_NAME = ['primitives', 'built from primitives']
@@ -60,28 +61,17 @@ export function UsesTree({ current, onPick }: { current?: string; onPick: (file:
       return next
     })
 
-  const count = rows.filter((r) => !('heading' in r) && r.depth === 0).length
   return (
-    <div className={menu.prompt} style={{ maxHeight: 'none', flex: 1, minHeight: 0 }}>
-      <label className={menu.line}>
-        <span className={menu.caretSign} aria-hidden>
-          &gt;
-        </span>
-        <input className={menu.field} type="text" value={query} placeholder="find a component…" aria-label="find a component" autoComplete="off" spellCheck={false} onChange={(e) => setQuery(e.target.value)} />
-      </label>
-      <div className={menu.list} role="list" aria-label="Components by what they use">
+    <div className={styles.tree}>
+      <PromptField framed value={query} onChange={setQuery} onSubmit={() => {}} label="find a component" placeholder="find a component…" />
+      <div className={styles.treeList} role="list" aria-label="Components by what they use">
         {rows.map((r) =>
           'heading' in r ? (
-            <div key={r.key} className={menu.heading}>
-              {r.heading}
-            </div>
+            <PromptHead key={r.key} head={r} />
           ) : (
             <TreeRow key={r.key} row={r} example={!!pageOfFile(r.node.file)?.entry} current={current} name={label(r.node)} onPick={onPick} onToggle={() => toggle(r.key)} />
           ),
         )}
-      </div>
-      <div className={menu.foot} aria-hidden>
-        {count} components · ▸ what uses it
       </div>
     </div>
   )
