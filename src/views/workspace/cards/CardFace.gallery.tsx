@@ -46,6 +46,14 @@ export default example({
           </CardFace>
         )),
       ),
+    'flat (a table’s row name)': () =>
+      row(
+        ALL_TYPES.map((t) => (
+          <CardFace key={t} tone={CARD_TONE[t]} tint flat>
+            {inside(t)}
+          </CardFace>
+        )),
+      ),
     marks: () =>
       row(
         <>

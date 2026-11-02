@@ -56,6 +56,8 @@ import { alikeProps, useKept } from '../canvas/kept'
 import { useSeen, within } from '../canvas/visible'
 import { useTheme } from '../../../state/theme'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
+import { CardFace } from '../cards/CardFace'
+import { InlineField } from '../../../ui/primitives/InlineEdit'
 import type { FindItem } from '../find/find'
 import { useStill } from '../canvas/still'
 import { usePeersOn } from '../canvas/collab'
@@ -547,42 +549,33 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
   const tone = entry.card ? CARD_TONE[entry.card.type] : undefined
   // Others who have its card selected, wherever (D-265): their L's on its head.
   const peers = usePeersOn(entry.card && !sub ? entry.card.id : '')
-  return (
-    <div
-      className={which === 'rows' ? styles.rowHead : styles.colHead}
-      style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }}
-      data-card={entry.card && !sub ? true : undefined}
-      data-sub={sub || undefined}
-      data-find-box
-      // A long one set smaller, so more of it fits (D-216).
-      data-long={(entry.name?.length ?? 0) > (which === 'rows' ? 40 : 30) || undefined}
-      data-hot={hot || undefined}
-      title={entry.name || undefined}
-      data-pick={onPick ? true : undefined}
-      onPointerDown={onPress}
-      onClick={onPick && !open ? (e) => !(e.target as HTMLElement).closest('button') && onPick() : undefined}
-      onDoubleClick={live && editor && typed ? () => setEditing(true) : undefined}
-    >
+  // A card's head stands on the card face (D-358: its type's tint and edge, D-295's ink); a typed name's is no paper.
+  const face = !!entry.card && !sub
+  const shell = {
+    className: which === 'rows' ? styles.rowHead : styles.colHead,
+    'data-sub': sub || undefined,
+    'data-find-box': true,
+    // A long one set smaller, so more of it fits (D-216).
+    'data-long': (entry.name?.length ?? 0) > (which === 'rows' ? 40 : 30) || undefined,
+    'data-hot': hot || undefined,
+    'data-pick': onPick ? true : undefined,
+    title: entry.name || undefined,
+    onPointerDown: onPress,
+    onClick: onPick && !open ? (e: React.MouseEvent) => void (!(e.target as HTMLElement).closest('button') && onPick()) : undefined,
+    onDoubleClick: live && editor && typed ? () => setEditing(true) : undefined,
+  }
+  const inside = (
+    <>
       {open ? (
-        <input /* kit-ok: the name typed in place in its world-sized head, the head's own face */
-          className={styles.nameField}
-          autoFocus
-          aria-label={which === 'rows' ? 'Row name' : 'Column name'}
-          defaultValue={entry.name}
+        <InlineField
+          value={entry.name}
+          label={which === 'rows' ? 'Row name' : 'Column name'}
           maxLength={NAME_MAX}
           placeholder={sub ? 'what it is judged on' : 'name'}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            if (e.key === 'Enter') e.currentTarget.blur()
-            if (e.key === 'Escape') {
-              e.currentTarget.value = entry.name
-              e.currentTarget.blur()
-            }
-          }}
-          onBlur={(e) => {
+          onDone={(typed) => {
             setEditing(false)
             useMatrixUi.setState({ naming: null })
-            if (e.currentTarget.value.trim() !== entry.name) onRename(e.currentTarget.value.trim())
+            if (typed !== undefined) onRename(typed)
           }}
         />
       ) : (
@@ -626,6 +619,15 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
           ×
         </Button>
       )}
+    </>
+  )
+  return face ? (
+    <CardFace {...shell} style={{ ...style, ['--type' as string]: tone }} tone={tone} tint edge="card" data-card>
+      {inside}
+    </CardFace>
+  ) : (
+    <div {...shell} style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }}>
+      {inside}
     </div>
   )
 }, alikeProps)

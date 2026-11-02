@@ -1,5 +1,7 @@
-/* One face for every card and task (D-358, docs/specs/cards.md). */
-.face {
+/* One face for every card and task (D-358, docs/specs/cards.md). Its paper in `:where()` (D-334's way): a caller's own
+   class always wins where it places the face (`position: absolute` in a table, a timeline) or goes without paper (a
+   ◆ on a timeline); its edge and tint are its own. */
+:where(.face) {
   --edge-w: var(--line-w-bold);
 
   position: relative;
@@ -28,4 +30,19 @@
   --clash-ink: color-mix(in srgb, var(--accent-magenta) var(--mix-strong), var(--fg));
 
   background: color-mix(in srgb, var(--tone) var(--card-tint), var(--bg-raised));
+}
+
+/* Flat: no paper of its own, the tint over what's under it and its edge only (a table's row name: its row lines show
+   through). */
+.face[data-flat='true'] {
+  background: none;
+  box-shadow: none;
+}
+
+.face[data-flat='true'][data-edge] {
+  box-shadow: inset var(--edge-w) 0 0 var(--tone);
+}
+
+.face[data-flat='true'][data-tint='true'] {
+  background: color-mix(in srgb, var(--tone) var(--card-tint), transparent);
 }

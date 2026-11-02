@@ -26,6 +26,7 @@ import { kanbanOf, selectTask, useKanbanUi } from './Kanban'
 import { KanbanFilterDock } from './KanbanFilterDock'
 import { passes, useKanbanFilter } from './kanbanFilter'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
+import { TimelineBar } from '../cards/TimelineBar'
 import { CardPicker } from '../panels/CardPanel'
 import { cardsOn } from '../../../data/places'
 import type { Card } from '../../../data/cards'
@@ -685,43 +686,28 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
     const resizing = drag?.moving && drag.id === t.id && drag.how !== 'move'
     return (
       <>
-        <div
+        <TimelineBar
           key={t.id}
           className={styles.task}
-          data-bar
-          data-task={lifted ? undefined : t.id}
-          data-point={it.point || undefined}
-          data-late={it.late || undefined}
-          data-finished={it.finished || undefined}
-          data-selected={isSel || undefined}
-          data-lifted={lifted || undefined}
+          task={t}
+          finished={it.finished}
+          late={it.late}
+          point={it.point}
+          out={g.out}
+          selected={isSel}
+          pressed={drag?.id === t.id && !drag.moving}
+          lifted={lifted}
+          live={live}
+          editor={editor}
+          lateBy={lateBeside ? todayAt - e : undefined}
+          checks={checks}
+          sticky={!g.out && !it.point ? { left, w: g.w } : undefined}
           style={style}
           title={`${t.title}${t.due ? ` · ${t.start ? `${short(dayOf(t.start))} → ` : ''}${short(dayOf(t.due))}` : ''}`}
-          tabIndex={live && !lifted ? 0 : -1}
           onPointerDown={lifted ? undefined : press(it, row, 'move')}
+          onGrip={(side) => press(it, row, side === 'due' ? 'due' : 'start')}
           onKeyDown={(ev) => ev.key === 'Enter' && live && pick(t)}
-          aria-hidden={lifted || undefined}
-        >
-          {it.point && <span className={styles.dia} />}
-          <span className={styles.label} data-out={g.out || undefined} {...(!g.out && !it.point && { 'data-sticky': left, 'data-w': g.w })}>
-            {it.finished && <span className={styles.ok}>✓</span>}
-            {t.priority && <span className={styles.p} data-p={t.priority}>{t.priority}</span>}
-            {t.title}
-            {lateBeside && <span className={styles.lateBeside}> +{todayAt - e}d late</span>}
-          </span>
-          {checks !== null && !it.finished && !it.point && (
-            <span className={styles.checks}>
-              <i style={{ width: `${checks * 100}%` }} />
-            </span>
-          )}
-          {live && !lifted && isSel && editor && !it.finished && (
-            <>
-              <span className={styles.grip} data-side={it.point ? 'give' : 'start'} title={it.point ? 'drag left to give it a first day' : 'its first day'} onPointerDown={press(it, row, 'start')} />
-              {!it.point && <span className={styles.grip} data-side="due" title="its due day" onPointerDown={press(it, row, 'due')} />}
-            </>
-          )}
-          {live && !lifted && <Marks tone={tn} selected={isSel} pressed={drag?.id === t.id && !drag.moving} />}
-        </div>
+        />
         {resizing && (
           <span key={`${t.id}-days`} className={styles.readout} style={{ left, top: y }}>
             {short(s)} → {short(e)} · {e - s + 1} days

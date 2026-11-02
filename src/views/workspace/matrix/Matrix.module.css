@@ -86,19 +86,13 @@
   color: var(--fg-faint);
 }
 
-/* The heads (D-212): a card's as a plane draws its cards (raised paper, its type's colour down the left); a typed
+/* The heads (D-212): a card's on the card face as a plane's cards (CardFace: its type's tint and edge, D-358); a typed
    name's in mono over a dashed rule, no paper. Lit while its row or column is under the pointer or selected. */
 .rowHead,
 .colHead {
   display: flex;
   gap: var(--space-2);
   color: var(--fg);
-}
-
-.rowHead[data-card='true'],
-.colHead[data-card='true'] {
-  background: color-mix(in srgb, var(--type) var(--card-tint), var(--bg-raised));
-  box-shadow: inset var(--w-card-edge) 0 0 var(--type), 0 0 0 var(--line-w) var(--piece-card-edge);
 }
 
 .rowHead[data-pick='true'],
@@ -170,16 +164,6 @@
   color: var(--fg-faint);
 }
 
-.nameField {
-  width: 100%;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  outline: none;
-  background: none;
-  color: var(--fg-strong);
-  font: inherit;
-}
 
 /* A head's `×` (a Button icon, tone danger), in its top-right corner, shown while the head is pointed at. */
 .remove {

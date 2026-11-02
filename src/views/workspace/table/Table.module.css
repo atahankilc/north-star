@@ -159,19 +159,13 @@
   opacity: 1;
 }
 
-/* A row's name: Inter, one line; a card's carries its type's colour on its left edge. */
+/* A row's name: Inter, one line; a card's on the card face (CardFace: its type's tint and edge, D-358). */
 .name {
   display: flex;
   align-items: center;
   gap: var(--space-1);
   padding: 0 var(--space-2) 0 var(--space-3);
   color: var(--fg-strong);
-}
-
-/* Its face a dark tone of its type, as a card's on a plane (D-294). */
-.name[data-card='true'] {
-  background: color-mix(in srgb, var(--type) var(--card-tint), transparent);
-  box-shadow: inset var(--line-w-bold) 0 0 var(--type);
 }
 
 .nameText {
@@ -187,16 +181,8 @@
   color: var(--fg-faint);
 }
 
+/* Its name typed in place (the kit's InlineField) in Inter, as it reads. */
 .nameField {
-  width: 100%;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  border-bottom: var(--line-w) solid var(--accent-cyan);
-  outline: none;
-  background: none;
-  color: var(--fg-strong);
-  font: inherit;
   font-family: var(--font-display);
 }
 

@@ -1,0 +1,165 @@
+/* A task on a timeline (D-262, D-304, D-358): its bar on the card face. */
+/* A task: a sheet from its first day to its due day, its face its card's colour (D-291), its left edge that colour. */
+.bar {
+  position: absolute;
+  z-index: var(--z-1);
+  height: var(--bar);
+  color: var(--fg);
+}
+
+/* For no card: a grey tint and edge, so it still shows on the strip (a card's face and edge are CardFace's). */
+.bar:not([data-edge], [data-point='true']) {
+  background: color-mix(in srgb, var(--fg-dim) var(--card-tint), var(--bg-raised));
+  box-shadow: inset var(--line-w-bold) 0 0 var(--line-hover), 0 0 0 var(--line-w) var(--piece-card-edge);
+}
+
+.bar:focus-visible {
+  outline: var(--line-w) solid var(--fg-dim);
+  outline-offset: calc(-1 * var(--line-w));
+}
+
+/* Past its due day, not finished: a magenta edge, hatched on to today. */
+.bar[data-late='true'] {
+  outline: var(--line-w) solid var(--accent-magenta);
+  outline-offset: calc(-1 * var(--line-w));
+}
+
+.bar[data-finished='true'] {
+  opacity: var(--o-dim);
+}
+
+.bar[data-lifted] {
+  z-index: calc(var(--z-3) + 1);
+  pointer-events: none;
+}
+
+/* Only a due day: a ◆ on it, its name beside it. */
+.bar[data-point='true'] {
+  background: none;
+  box-shadow: none;
+  outline: 0;
+}
+
+.dia {
+  position: absolute;
+  top: var(--space-2);
+  left: calc(var(--space-1) + var(--line-w));
+  width: calc(var(--space-3) + var(--space-half));
+  height: calc(var(--space-3) + var(--space-half));
+  background: var(--tone, var(--fg-dim));
+  box-shadow: 0 0 0 var(--line-w-bold) var(--bg);
+  transform: rotate(45deg) scale(0.82);
+}
+
+.bar[data-point='true'][data-late='true'] .dia {
+  outline: var(--line-w) solid var(--accent-magenta);
+  outline-offset: var(--space-half);
+}
+
+/* Its name, cut with `…` inside a sheet, never out of it (D-354); a ◆ (no sheet) has it beside. */
+.label {
+  position: absolute;
+  top: 0;
+  left: var(--space-3);
+  right: var(--space-2);
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  line-height: var(--bar);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.label[data-out='true'] {
+  left: calc(100% + var(--space-2));
+  right: auto;
+  overflow: visible;
+  color: var(--fg-muted);
+}
+
+/* Late, its name stays beside it (D-314), over its hatch: above it, on the page's colour. */
+.bar[data-late='true'] {
+  z-index: var(--z-2);
+}
+
+.bar[data-late='true'] .label[data-out='true'] {
+  padding: 0 var(--space-2) 0 var(--space-1);
+  background: var(--bg);
+}
+
+/* `+Nd late` after the name when the hatch is too short for it (D-314). */
+.lateBeside {
+  color: var(--accent-magenta);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.ok {
+  margin-right: var(--space-1);
+  color: var(--accent-green);
+  font-family: var(--font-mono);
+}
+
+/* Its checklist: a line along its foot, filled as far as it's done. */
+.checks {
+  position: absolute;
+  left: var(--space-half);
+  right: 0;
+  bottom: 0;
+  height: var(--line-w-bold);
+  background: color-mix(in srgb, var(--tone, var(--fg-dim)) 22%, transparent);
+  pointer-events: none;
+}
+
+.checks i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--tone, var(--fg-dim));
+}
+
+/* Picked, its edges move its days (D-273: cyan, only when selected); a ◆'s `⟵` gives it a first day. */
+.grip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: var(--z-2);
+  width: var(--dot-lg);
+  cursor: ew-resize;
+}
+
+.grip::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--space-1) + var(--line-w));
+  bottom: calc(var(--space-1) + var(--line-w));
+  left: var(--space-1);
+  width: var(--line-w-bold);
+  background: var(--accent-cyan);
+}
+
+.grip[data-side='start'] {
+  left: calc(-1 * var(--dot-lg) / 2);
+}
+
+.grip[data-side='due'] {
+  right: calc(-1 * var(--dot-lg) / 2);
+}
+
+.grip[data-side='give'] {
+  left: calc(-1 * (var(--space-6) + var(--space-half)));
+  width: calc(var(--space-6) - var(--space-half));
+}
+
+.grip[data-side='give']::after {
+  content: '⟵';
+  top: calc(var(--space-2) - var(--line-w));
+  bottom: auto;
+  left: var(--space-half);
+  width: auto;
+  background: none;
+  color: var(--accent-cyan);
+  font-size: var(--text-sm);
+  line-height: calc(var(--space-3) + var(--space-half));
+}
+

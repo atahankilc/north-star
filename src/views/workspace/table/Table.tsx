@@ -19,6 +19,8 @@ import { useWs } from '../canvas/context'
 import { useKept } from '../canvas/kept'
 import { useSeen, within } from '../canvas/visible'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
+import { CardFace } from '../cards/CardFace'
+import { InlineField } from '../../../ui/primitives/InlineEdit'
 import type { FindItem } from '../find/find'
 import { usePeersOn } from '../canvas/collab'
 import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
@@ -656,28 +658,28 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
   const tone = row.card ? CARD_TONE[row.card.type] : undefined
   // Others who have its card selected, wherever (D-265): their L's on its name.
   const peers = usePeersOn(row.card?.id ?? '')
-  return (
-    <div className={styles.name} style={{ ...style, ...(tone ? { ['--type' as string]: tone } : {}) }} data-find-box data-card={row.card ? true : undefined} title={row.name || undefined} data-pick={onPick ? true : undefined} onPointerDown={onPress} onClick={live && !open && onPick ? (e) => !(e.target as HTMLElement).closest('button') && onPick() : undefined} onDoubleClick={live && editor ? () => setEditing(true) : undefined}>
+  const shell = {
+    className: styles.name,
+    'data-find-box': true,
+    'data-pick': onPick ? true : undefined,
+    title: row.name || undefined,
+    onPointerDown: onPress,
+    onClick: live && !open && onPick ? (e: React.MouseEvent) => void (!(e.target as HTMLElement).closest('button') && onPick()) : undefined,
+    onDoubleClick: live && editor ? () => setEditing(true) : undefined,
+  }
+  const inside = (
+    <>
       {open ? (
-        <input /* kit-ok: the name typed in place in its world-sized row, the row's own face */
+        <InlineField
           className={styles.nameField}
-          autoFocus
-          aria-label={row.card ? `${row.card.type} title` : 'Row name'}
-          defaultValue={row.name}
+          value={row.name}
+          label={row.card ? `${row.card.type} title` : 'Row name'}
           maxLength={row.card ? TITLE_MAX : 200}
           placeholder={row.card ? `untitled ${row.card.type}` : 'name'}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            if (e.key === 'Enter') e.currentTarget.blur()
-            if (e.key === 'Escape') {
-              e.currentTarget.value = row.name
-              e.currentTarget.blur()
-            }
-          }}
-          onBlur={(e) => {
+          onDone={(typed) => {
             setEditing(false)
             useTableUi.setState({ naming: null })
-            if (e.currentTarget.value.trim() !== row.name) onRename(e.currentTarget.value.trim())
+            if (typed !== undefined) onRename(typed)
           }}
         />
       ) : (
@@ -691,6 +693,16 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
         </Button>
       )}
       <Marks tier="s" tone={tone} live={live && !!onPick} peers={live ? peers : undefined} />
+    </>
+  )
+  // A card's name stands on the card face (D-358: its type's tint and edge, D-295's ink); a typed name's is no paper.
+  return row.card ? (
+    <CardFace {...shell} style={style} tone={tone} tint flat data-card>
+      {inside}
+    </CardFace>
+  ) : (
+    <div {...shell} style={style}>
+      {inside}
     </div>
   )
 }

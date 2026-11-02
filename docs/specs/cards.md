@@ -1,6 +1,6 @@
 # Cards: one face for every card (D-358)
 
-Status: **agreed 2026-11-02 (D-358); steps 1–3 done 2026-11-02.** Written from a read of every place that draws a card or
+Status: **agreed 2026-11-02 (D-358); steps 1–4 done 2026-11-02.** Written from a read of every place that draws a card or
 a task. Same way as the kit (D-326) and the gallery (D-324): one thing built once at the bottom, everything else built
 on it, each part with its own `X.gallery.tsx`. Same rule as D-325: **consistency first**. Where the copies drifted
 apart they snap to one look, and every visible change is listed below and shown in the gallery before and after.
@@ -87,16 +87,18 @@ A new area, `src/views/workspace/cards/` (a covered gallery folder by its parent
   stays in PlaneCards, so its memo work (D-287) and `sameProps` don't change.
 - `TimelineBar`: the face, label, checks bar and grips; the day maths stays in Timeline.
 - `CardRow`: the small row (#3, #2, #6, #10, #11).
-- `NameInPlace`: the world-sized typed name for Matrix and Table.
+- `NameInPlace`: the world-sized typed name for Matrix and Table (built as the kit's `InlineField`, step 4).
 
 ### 5. Kept from coming back
 `check:kit` refuses `--card-tint` and the card edge (`inset … 0 0 var(--type|--tone)` with `--piece-card-edge`)
 outside `cards/`, and `TYPE_ACCENT` anywhere.
 
 ## What will look different (to be shown before/after)
-- One edge width per size: world cards keep `--w-card-edge`; screen sheets keep `--line-w-bold`. The table's name, now
-  edge-only on `transparent`, gets the face's base and outer line like the matrix's heads.
-- Matrix heads, table names and timeline bars get D-295's ink: their dim and faint text a little brighter.
+- Edge widths stay two: `card` (`--w-card-edge`, plane cards and matrix heads) and `sheet` (`--line-w-bold`, deck,
+  timeline, table). The table's names stay as they were (`flat`, step 4): a full face hid the row lines.
+- Matrix heads, table names and timeline bars get D-295's ink: their dim and faint text a little brighter (seen in the
+  matrix heads' unset step squares, dark theme; light below the eye).
+- A typed head or row name in a matrix gets the table's cyan line under it while typed (the kit's `InlineField`).
 - The timeline's `P1` becomes the same pill as a task's.
 - Checklist: the plane card's `☐ 2/5` and the sheet's `▮▮▯ 2/5` stay (size), CardTasks' plain count stays; only the
   part is shared.
@@ -121,6 +123,13 @@ outside `cards/`, and `TYPE_ACCENT` anywhere.
    `.pkg > .band`) and the drag, dim and packing states. CardFace gained `ref` and pointer enter/leave; it sets
    `tabIndex` only when told to be a button or not, so a plane card stays out of the tab order as before.
 4. TimelineBar, matrix and table heads on the face, `NameInPlace`.
+   **Done 2026-11-02:** `cards/TimelineBar` (the bar on the face, tinted; no card: its grey tint and edge kept so it
+   shows on the strip; a ◆ has no face, its tone only for the ◆ and its marks; P1 the `PriorityChip`), the matrix's card
+   heads and the table's card names on `CardFace` (matrix `card` edge; table `sheet` edge and `flat`: no paper, the
+   tint over its row and the edge only, because a full face hid the table's dashed row lines, D-266, and read much
+   brighter), typed names stay without paper. `NameInPlace` became the kit's `InlineField` (src/ui/primitives/InlineEdit.tsx: the field alone, Enter or blur
+   ends, Escape puts the name back, `''` clears), used by both. CardFace's paper is in `:where()` (D-334's way) so a
+   caller's `position: absolute` (the table's and matrix's `> *`, the timeline) always wins.
 5. `CardRow` and the small parts in the 5 rows; the `check:kit` rule.
 
 ## Not yet

@@ -6874,8 +6874,13 @@ on the deck. Checked against old in the gallery (deck, cards deck, side view, be
 PlaneCards keeps place, drag, link, Marks, landing and memo, the insides' acts as callbacks. Checked against HEAD in
 the gallery (plane, focused plane, card panel parts, find preview, package picking, canvas, beside; both themes): the
 plane's states pixel-identical, the rest within old-vs-old noise (re-shot where unsure: 0).
-**Not yet:** steps 4–5 (timeline/matrix/table on the face, CardRow and the check:kit rule); the plane card's drag
-code as a shared hook.
+**Step 4 (done 2026-11-02):** cards/TimelineBar; matrix card heads and table card names on CardFace (the table's
+`flat`: a full face hid its dashed row lines and read much brighter, so it keeps its tint over the row and the edge
+only); the kit's InlineField (InlineEdit.tsx) for a name typed in place in both; CardFace's paper in `:where()`.
+Seen: the table pixel-identical, the matrix heads' faint squares a little brighter (D-295), the timeline's P1 the
+shared pill, a matrix name typed with the cyan line. Checked against HEAD in the gallery (matrix, table, timeline,
+deck, cards deck, plane, side view, beside; both themes), re-shot where unsure.
+**Not yet:** step 5 (CardRow, the small parts, the check:kit rule); the plane card's drag code as a shared hook.
 
 ### D-359 · 2026-11-02 · Accepted (the user: "side panel ve modelleri ortak bir component üzerine taşımak... modal ve sidepanellar aynı şeyden türesin demiyorum. Structured bir şekilde organize edelim"; "thread sol altta kalmaya devam etsin ancak onunda boy uzatma yada esc ye basınca çıkma gibi özellikleri var. Bunlar belki generalized edilebilir")
 **Decision:** what opens over or beside the page is two families, each on its own shell, sharing only small parts in

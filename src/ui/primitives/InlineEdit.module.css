@@ -36,3 +36,16 @@
   outline: none;
   caret-color: var(--accent-magenta);
 }
+
+/* InlineField: in the caller's own font and colour, a cyan line under it (what you can do). */
+.field {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: var(--line-w) solid var(--accent-cyan);
+  outline: none;
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+}
