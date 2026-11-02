@@ -1350,6 +1350,15 @@ stack, useDialogFocus keeps autoFocus (6473f7e); 7 HazardConfirm on the Window, 
 PromptOverlay for the finder and the guide (4da2a23). Shared tree had other sessions' half-done files at times: step 3
 was driven from a worktree of HEAD + its files.
 
+## Done (2026-11-02): the agent's web and /research checked (D-360)
+No key: agent unit tests 264/0, tsc clean; evals find-11-web-rival-fees and skill-research-01–04 on the stub (judged
+ones unjudged), `--wrong` fails all three graded. Headless Chrome on emulators, `?agentStub=1`: `web demo` shows
+`SOURCES` under the answer; `/research rivals` plans three questions and searches nothing; `go` runs the researchers
+and previews "Research: rivals" with every fact linked and Sources at the end; no page or console errors. The
+provider code read against Anthropic's and OpenAI's web search pages (tool versions, `max_uses`, `pause_turn`,
+`server_tool_use` counts, `action.sources`): it matches. Fixed: the agent's empty screen said "no web" (a6872f8).
+Pushed with 12ad8f1 (`/research`), which hadn't been pushed. What to watch on a real key: D-360's *Not yet*.
+
 ## Done (2026-11-02): D-359's open items closed
 Beside's and the documents' lines driven; the agent box's head on PanelHead; CommitField and AddField in the kit
 (useCommit to src/ui/foundation) under the card and task panels' fields and adders; the lesson on the Escape stack

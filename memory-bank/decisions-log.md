@@ -6984,3 +6984,13 @@ search lines, the answer's sources, the document in the preview). The prompt sta
 shorter.
 **Not yet:** a real-key run of both steps; measuring how often a model searches when it shouldn't (find-01's grader
 on a real run); a source's page age; replaying a recorded research run (its researchers find nothing on replay).
+On the first real-key run, watch: Fable/Mythos get `web_search_20260209`, whose dynamic filtering runs from code
+execution; a model without programmatic tool calling answers 400 and asks for `allowed_callers: ["direct"]` (Anthropic's
+web search page, read 2026-11-02; Fable is listed as supported, so likely fine). `web_search_20260318` (drops the raw
+results a filtering run used, fewer tokens) is newer, not used yet. OpenAI's web search refuses `gpt-5` with `minimal`
+reasoning; Settings only offers low/medium/high, so it can't happen. Replaying search items on the next turn
+(`store: false` on OpenAI, encrypted results on Claude) can't be checked with the stub.
+**Checked 2026-11-02 (stub, no key):** agent tests, the web and research evals (stub passes, `--wrong` fails all), and
+in the app on emulators with `?agentStub=1`: `web demo` (sources under the answer), `/research rivals` (a plan, no
+search), `go` (researchers, the cited document in the preview), no page errors. The empty screen still said "no web";
+fixed (a6872f8).

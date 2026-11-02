@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-02 (windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-02 (the agent's web D-360 checked on the stub and pushed; windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -68,7 +68,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - D-350 (2026-11-02, pushed): the prompt family on one set of parts, done (state-history); `@` and `/` checked on emulators.
 - Cards on one face (D-358, docs/specs/cards.md): done 2026-11-02, five steps (state-history); left: the plane card's drag code as a shared hook.
 - Windows and docked panels (D-359, 2026-11-02): all eight steps and the open items done, pushed and live (f2d28ac, deploy ok); left: beside's row line wins a press where it crosses the split line (as before).
-- The agent's web (D-360, docs/specs/agent-web.md, 2026-11-02): both steps built (web search on every turn, sources under the answer; `/research` with parallel researchers and a cited document); not on a real key yet.
+- The agent's web (D-360, docs/specs/agent-web.md, 2026-11-02): both steps built (web search on every turn, sources under the answer; `/research` with parallel researchers and a cited document); checked on the stub and pushed (a6872f8; state-history); not on a real key yet: what to watch then is in D-360's *Not yet*.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers
