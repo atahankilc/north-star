@@ -425,7 +425,10 @@ function Empty({ focus }: { focus: string | null }) {
           <span className={styles.canMark}>+</span>proposes changes: you see them first, then apply as one undo step
         </li>
         <li>
-          <span className={styles.canMark} data-tone="no">−</span>no web, other workspaces, members or settings
+          <span className={styles.canMark}>+</span>searches the web when it needs a fact from outside, with its links
+        </li>
+        <li>
+          <span className={styles.canMark} data-tone="no">−</span>no other workspaces, members or settings
         </li>
       </ul>
       {!canRun() && <KeyNeeded />}
