@@ -92,6 +92,20 @@ Element.prototype.hasPointerCapture = function (this: Element) {
   return capture === this
 }
 
+// A demo never opens the computer's file picker: the hand pressing a real `upload` runs its `input.click()`, and the
+// press that opened the lesson still counts as the person's, so Chrome would open the dialog over the app. A file
+// input's click and showPicker do nothing here; the scene shows the chosen file itself (scenes/documents.ts).
+const realInputClick = HTMLInputElement.prototype.click
+HTMLInputElement.prototype.click = function (this: HTMLInputElement) {
+  if (this.type === 'file') return
+  realInputClick.call(this)
+}
+const realShowPicker = HTMLInputElement.prototype.showPicker
+HTMLInputElement.prototype.showPicker = function (this: HTMLInputElement) {
+  if (this.type === 'file') return
+  realShowPicker.call(this)
+}
+
 // What the last input was (`html[data-demo-input]`): a press or a drag is a pointer's, a key a keyboard's. After a real
 // click Chrome doesn't show the focus ring on what a script focuses next (a menu giving the focus back to its trigger);
 // after made-up events it would. The focus stays where the app puts it (later keys need it there: a confirm's cancel, a
