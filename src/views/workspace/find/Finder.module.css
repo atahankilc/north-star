@@ -1,26 +1,10 @@
 /* The finder (D-236): the menus' prompt (D-222) in the middle of the screen, over a scrim. Its width and height are
    set as numbers and glide (eased both ends, so the change is seen), and it's centred by its middle, so growing keeps
    it in the middle. Framed as every prompt (PromptFrame.module.css, D-350). */
-.shade {
-  composes: enter from '../../../ui/foundation/Enter.module.css';
-  /* The Window's scrim (D-326) at the finder's layer and in the page's scrim. */
-  --window-z: var(--z-float);
-  --window-scrim: var(--scrim);
-}
-
 .finder {
-  composes: frame from '../../../ui/foundation/PromptFrame.module.css';
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  z-index: calc(var(--z-float) + 1);
-  display: flex;
-  flex-direction: column;
+  /* On PromptOverlay (D-359): the frame, the middle, the scrim are its; its size and glide are the finder's. */
   overflow: hidden;
-  color: var(--fg-dim);
-  font-family: var(--font-display);
   font-size: var(--text-xs);
-  transform: translate(-50%, -50%);
   transition:
     width var(--dur-cells) var(--ease-in-out),
     height var(--dur-cells) var(--ease-in-out);

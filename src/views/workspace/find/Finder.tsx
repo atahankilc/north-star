@@ -38,7 +38,7 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 import { PromptField } from '../../../ui/primitives/PromptField'
 import { Tabs } from '../../../ui/primitives/Tabs'
-import { Window } from '../../../ui/patterns/Window'
+import { PromptOverlay } from '../../../ui/patterns/PromptOverlay'
 
 const SWITCHES: { k: keyof FindOpts; label: string; title: string; code: string }[] = [
   { k: 'caseSensitive', label: 'Aa', title: 'match case', code: 'KeyC' },
@@ -309,23 +309,17 @@ function Panel() {
 
   return (
     <>
-      {/* The Window (D-326): its scrim closes it, focus on the field and back on close; the frame, the keys (Escape,
-          Tab steps the scopes) and the fade (the scrim's) are the finder's own. */}
-      <Window
+      {/* The prompt over the page (PromptOverlay, D-359): its scrim closes it, focus on the field and back on close; the
+          keys (Escape, Tab steps the scopes) are the finder's own, its size and glide too. */}
+      <PromptOverlay
         label="Find"
         onClose={closeFinder}
-        escape={false}
-        trap={false}
-        look="bare"
-        entrance="none"
+        field={field as RefObject<HTMLElement | null>}
         portal={false}
-        focus={field as RefObject<HTMLElement | null>}
-        scrimProps={{ className: styles.shade }}
         className={styles.finder}
         data-full={full || undefined}
         data-reduced={isReducedMotion() || undefined}
         style={{ width, height }}
-        onPointerDown={(e) => e.stopPropagation()}
       >
         {/* The `>` line (PromptField, D-326): Enter goes; the arrows, Tab and Escape are the finder's (`keys`); ⌘F again
             reaches the window (passKeys). */}
@@ -392,7 +386,7 @@ function Panel() {
           </div>
         )}
 
-      </Window>
+      </PromptOverlay>
       {looking && <FindBodies />}
     </>
   )

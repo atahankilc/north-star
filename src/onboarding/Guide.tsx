@@ -8,9 +8,7 @@
 //
 // The finder's twin, a list (D-316).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { create } from 'zustand'
-import { Appear } from '../ui/primitives/Appear'
 import { guideModel, guideRows, keyLesson, showDot, parentOf, step, type AreaInfo, type GuideModel, type Note, type Row, type StartRow } from './guideModel'
 import type { KeyRow } from './keys'
 import type { Role } from './lessons'
@@ -19,6 +17,7 @@ import styles from './Guide.module.css'
 import { PromptField } from '../ui/primitives/PromptField'
 import { Tabs } from '../ui/primitives/Tabs'
 import { Label } from '../ui/primitives/Label'
+import { PromptOverlay } from '../ui/patterns/PromptOverlay'
 import { Empty } from '../ui/primitives/Empty'
 import { PromptList } from '../ui/patterns/PromptList'
 import type { PromptEntry, PromptItem } from '../ui/foundation/promptModel'
@@ -68,13 +67,7 @@ function useModel(role: Role | null): GuideModel {
 export function Guide({ onClose, onPlay, role = null, now = null, onReach, resume = false }: Props) {
   const model = useModel(role)
   const reach = now && onReach ? { title: now.title, go: onReach } : null
-  return createPortal( // kit-ok: the guide is the finder's twin (D-316), not the wizard Window
-    <>
-      <div className={styles.scrim} data-coach onPointerDown={onClose} aria-hidden />
-      <ListGuide model={model} onClose={onClose} onPlay={onPlay} reach={reach} resume={resume} />
-    </>,
-    document.body,
-  )
+  return <ListGuide model={model} onClose={onClose} onPlay={onPlay} reach={reach} resume={resume} />
 }
 
 const TIPS = [
@@ -254,13 +247,16 @@ function ListGuide({ model, onClose, onPlay, reach, resume }: { model: GuideMode
   }
 
   return (
-    <Appear
+    // The finder's twin on the same PromptOverlay (D-359): the scrim (a press closes), focus on the field and back, the
+    // coach's mark; its keys are its own (keepKeys, the field's onKeyDown).
+    <PromptOverlay
+      label="Guide: every note again"
+      onClose={onClose}
+      field={field as React.RefObject<HTMLElement | null>}
+      layer="menu"
+      coach
+      entrance="cells"
       className={styles.guide}
-      role="dialog" // kit-ok: the finder's twin (D-316)
-      aria-modal="true"
-      aria-label="Guide: every note again"
-      data-coach
-      onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
       onKeyDown={keepKeys}
     >
       <Line field={field} query={query} setQuery={(q) => (setQuery(q), setSelKey(null))} onKeyDown={onKeyDown} />
@@ -282,7 +278,7 @@ function ListGuide({ model, onClose, onPlay, reach, resume }: { model: GuideMode
         )}
       </div>
       {below && <div className={styles.more}>{belowLine(below)}</div>}
-    </Appear>
+    </PromptOverlay>
   )
 }
 
