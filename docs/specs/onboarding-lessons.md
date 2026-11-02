@@ -4,7 +4,7 @@
 > - **Every lesson is the centred modal** (Pages, the welcome's window), never a card beside an anchor; no nudges.
 >   Small helpers kept: the kind guide beside the `+` menu, the empty states.
 > - **One lesson per screen, panel or piece**, step by step, the first time it's opened or made. Limits: a title ≤ 6
->   words, a body ≤ 40, ≤ 6 pages; each page may carry a one-word `tab`. The kind guide's rows, empty lines and
+>   words, a body ≤ 40, ≤ 8 pages (D-351); each page may carry a one-word `tab`. The kind guide's rows, empty lines and
 >   release lines stay ≤ 25.
 > - **No lesson over a menu, the finder, a wizard, typing, or Settings** (a native dialog): those wait until it closes,
 >   or are taught by the piece's own lesson. Keys are shown nowhere in the app; a lesson may name one, and `?` → keys
@@ -12,7 +12,7 @@
 >
 > | id | when | pages (tabs) |
 > |---|---|---|
-> | `welcome` | first canvas | canvas · tools · add (V: reading) · piece · inside · people |
+> | `welcome` | first canvas | canvas · pieces (+ for editors) · (V: reading) · bar · inside · tools · people (D-351) |
 > | `workspaces` | the workspaces page | workspaces · start · actions |
 > | `join-pending` | a code sent | waiting for an owner |
 > | `kind-guide` | `+` opened (beside the menu) | a row per kind |

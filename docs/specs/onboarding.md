@@ -79,7 +79,7 @@ lessons is large (~60): a person meets them over days, one at a time, as they di
    transition, typing, or following someone is going on. It waits in a queue (§5.4) and shows when the person is free.
    A lesson *about* one of those surfaces says so (`within`: `wizard`, `finder`, `menu`, `setup`, `settings`,
    `threads`, `following`, `typing`) and shows on it: that one busy source (and typing inside it) doesn't hold it back.
-3. **Short.** ≤ 6 pages a lesson, ≤ 40 words a page (D-349; was 4 and 25) (the welcome 6; the kind guide replayed from `?` pages through its rows, one per kind), a title ≤ 6 words, one demo or none. Keys are
+3. **Short.** ≤ 8 pages a lesson, ≤ 40 words a page (D-351; was 4 and 25, then 6 by D-349) (the welcome 6, 7 for viewers; the kind guide replayed from `?` pages through its rows, one per kind), a title ≤ 6 words, one demo or none. Keys are
    written as the app writes them (`⌘F`, `esc`, `0`). Lowercase actions, uppercase labels, the app's two voices.
 4. **Next to what it explains, never over it.** An anchored lesson sits beside its anchor (`src/ui/foundation/floating.ts`), and
    never covers the anchor, the piece being taught, or the right panel. When there's no room, it goes to the middle

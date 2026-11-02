@@ -20,10 +20,14 @@ describe('lessons', () => {
       for (const a of [...(l.after ?? []), ...(l.unless ?? [])]) expect(ids).toContain(a)
     }
   })
-  it('give the welcome six pages to everyone, by role and audience, about the canvas only (D-349)', () => {
-    for (const role of ['owner', 'editor', 'viewer'] as const) for (const a of ['new', 'invited'] as const) expect(pagesFor('welcome', role, a)).toHaveLength(6)
-    expect(pagesFor('welcome', 'viewer', 'new')[2].title).toBe("You're here to read")
-    expect(pagesFor('welcome', 'editor', 'new')[2].title).toBe('Add pieces with +')
+  it('give the welcome one thing a page, in the order things are met: canvas, pieces, console, inside, tools, together (D-351)', () => {
+    for (const a of ['new', 'invited'] as const) {
+      for (const role of ['owner', 'editor'] as const) expect(pagesFor('welcome', role, a).map((p) => p.tab)).toEqual(['canvas', 'pieces', 'bar', 'inside', 'tools', 'people'])
+      expect(pagesFor('welcome', 'viewer', a).map((p) => p.tab)).toEqual(['canvas', 'pieces', 'reading', 'bar', 'inside', 'tools', 'people'])
+    }
+    // What a piece is comes before its console; only editors are told to add one.
+    expect(pagesFor('welcome', 'editor', 'new')[1].body).toMatch(/`\+`/)
+    expect(pagesFor('welcome', 'viewer', 'new')[1].body).not.toMatch(/`\+`/)
     expect(pagesFor('welcome', 'owner', 'invited')[0].title).toContain('{owner}')
     // What's inside a plane is the plane's own lesson, never the canvas's welcome.
     for (const p of pagesFor('welcome', 'editor', 'new')) expect(p.body).not.toMatch(/customers?, problems/i)

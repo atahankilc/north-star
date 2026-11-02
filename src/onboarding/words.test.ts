@@ -26,7 +26,7 @@ describe('words', () => {
   it("names the welcome's tabs", () => {
     const welcome = LESSONS.find((l) => l.id === 'welcome') as PagedLesson
     const pages = welcomePages(welcome.pages.filter((p) => p.audience !== 'invited' && !p.roles?.includes('viewer')), 'editor', {})
-    expect(pages.map((p) => p.tab)).toEqual(['canvas', 'tools', 'add', 'piece', 'inside', 'people'])
+    expect(pages.map((p) => p.tab)).toEqual(['canvas', 'pieces', 'bar', 'inside', 'tools', 'people'])
     expect(pages[5].extra).toBeUndefined()
     expect(tabFor({ title: 'Make your first card' })).toBe('card')
     expect(tabFor({ title: 'Make your first card', tab: 'make' })).toBe('make')

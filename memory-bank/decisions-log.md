@@ -6758,3 +6758,14 @@ Stages left: 2 Select on PromptPanel (its own list, CSS and raw numbers go; a Po
 Threads' `@`, Matrix's picks, MatrixSetup's add on PromptList, 4 one `cardEntry()` for CardPanel's picker and BringCards,
 FilterDock's swatch out of Menu.module.css.
 
+
+### D-351 · 2026-11-02 · Accepted (the user: "ana welcome a bakıyorum da birbiriyle alakası olmayan şeyler bir arada gösterilmiş galiba sınırımız 6 olduğu için … Together ile find bir arada, piece anlatırken consoledan bahsedilmiş … böyle flowun tersi anlatımlar hiç hoş değil")
+**Decision:** a lesson may have up to 8 pages (was 6, D-349), so no page holds two things. The welcome (v3) is one
+thing a page, in the order they're met: canvas → pieces (what a piece is; editors: `+` adds one; viewers: then
+"You're here to read") → bar (each piece's console) → inside (focus) → tools (fit, the compass finds, `?`) → people
+(squares, follow, right-click to comment). Editors get 6 pages, viewers 7. When the tabs' words don't all fit whole,
+the tabs show only their numbers and the page's word moves to the count line (`01 / 07 · welcome · canvas`; Pages.tsx).
+**Why:** at 6 the welcome had merged unrelated things (finding with together) and spoke of the console before saying
+what a piece is.
+**Alternatives:** a wider window or two rows of tabs (a look change, the UI session's); cut words (`CAN…`) unreadable.
+**Not yet:** the other lessons were written to 6 and not re-split.

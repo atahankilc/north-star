@@ -6,7 +6,7 @@
 // - `…` in backticks is a key or an on-screen word as the app writes it (`⌘F`, `esc`, `0`, `done`): drawn as a chip.
 // - `{owner}` (the workspace's maker), `{peer}` (a person here), `{piece}` (the piece the event is about): filled in
 //   when shown.
-// - A title ≤ 6 words, a body ≤ 40 (its `extra` line counted in), ≤ 6 pages for anyone (D-349). Never "board" or "kanban" on
+// - A title ≤ 6 words, a body ≤ 40 (its `extra` line counted in), ≤ 8 pages for anyone (D-349, D-351). Never "board" or "kanban" on
 //   screen: "plane", "deck" (D-180, D-301). Payload values in `when` are the code's names (`kind: 'kanban'`), never shown.
 //
 // A changed feature bumps its lesson's `v` (and a line in releases.ts): it then shows once more, as `NEW`.
@@ -211,17 +211,18 @@ export const LESSONS: readonly Lesson[] = [
   // 1. Start: the canvas's welcome, the workspaces page, asking to join. The welcome is about the canvas only: what's
   // inside a piece is taught when that piece is first opened (D-349).
   {
-    id: 'welcome', v: 2, format: 'welcome', roles: ALL, area: 'start', since: 'D-174, D-349',
+    id: 'welcome', v: 3, format: 'welcome', roles: ALL, area: 'start', since: 'D-174, D-349, D-351',
     trigger: [{ event: 'canvas-open', when: { first: true } }],
     pages: [
       { audience: 'new', title: 'This is your canvas', tab: 'canvas', body: "A canvas is an endless surface for your startup's work. Drag the empty space to move around, scroll to zoom round the pointer, press `0` to see everything at once.", scene: 'canvas-fit' },
       { audience: 'invited', title: '{owner} started this workspace', tab: 'canvas', body: "You're on its canvas: an endless surface for this startup's work. Drag the empty space to move around, scroll to zoom, press `0` to see everything at once.", scene: 'canvas-fit' },
-      { title: 'Tools on the left', tab: 'tools', body: 'The side nav holds the canvas tools: fit shows everything, the compass finds anything, `?` opens this guide again. A decks button joins them once the canvas has a deck.', scene: 'sidenav-fit' },
-      { roles: EDITORS, title: 'Add pieces with +', tab: 'add', body: "Everything on a canvas is a piece: a plane for your cards, a table, a matrix, a deck of tasks, a timeline, documents, or text. Press the magenta `+` and pick one.", scene: 'plus-adds-plane' },
-      { roles: VIEWERS, title: "You're here to read", tab: 'reading', body: 'As a viewer you look around, comment, and keep your own documents. Changing the work stays with owners and editors; ask one if you need to edit.', scene: 'lens-focus' },
-      { title: 'Every piece has a console', tab: 'piece', body: 'Point at a piece and a bar appears on its bottom edge: go inside, edit it, link it, read its comments. Pieces only move in edit mode, so nothing shifts by accident.', scene: 'console-appear' },
+      { roles: EDITORS, title: 'Everything here is a piece', tab: 'pieces', body: "Each box on a canvas is a piece: a plane for your cards, a table, a matrix, a deck of tasks, a timeline, or documents. Text sits between them. Press the magenta `+` to add one.", scene: 'plus-adds-plane' },
+      { roles: VIEWERS, title: 'Everything here is a piece', tab: 'pieces', body: 'Each box on a canvas is a piece: a plane for cards, a table, a matrix, a deck of tasks, a timeline, or documents. Text sits between them.', scene: 'lens-focus' },
+      { roles: VIEWERS, title: "You're here to read", tab: 'reading', body: 'As a viewer you look around, comment, and keep your own documents. Changing the work stays with owners and editors; ask one if you need to edit.', scene: 'thread' },
+      { title: 'Each piece has a console', tab: 'bar', body: "Point at a piece and a bar appears on its bottom edge: everything you can do with that piece. Go inside it, read its comments, edit it, link it to a plane.", scene: 'console-appear' },
       { title: 'Go inside a piece', tab: 'inside', body: 'Double-click a piece, or press `focus` on its console, to work inside it on the whole screen. `esc` brings you back out to the canvas.', scene: 'focus-ink' },
-      { title: 'Find it, together', tab: 'people', body: 'Who is here shows as squares bottom left. Right-click anything to comment on it. `⌘F` finds any card, heading or task. `?` shows every note again and all the shortcuts.', scene: 'peers-comment' },
+      { title: 'Tools on the left', tab: 'tools', body: 'The side nav holds the canvas tools: fit shows everything, the compass finds any card, heading or task, and `?` shows every note again with all the shortcuts.', scene: 'sidenav-fit' },
+      { title: 'Work together, live', tab: 'people', body: "Everyone here is a square bottom left, with their cursor on the canvas; click one to follow them. Right-click anything to comment on it, and they'll see it.", scene: 'peers-comment' },
     ],
   },
   {

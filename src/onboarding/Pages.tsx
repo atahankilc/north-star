@@ -225,21 +225,23 @@ const tabChars = (w: number, n: number) => Math.max(4, Math.floor((w / Math.max(
 
 // The wizard window.
 function PageWindow({ page, pages, i, n, last, go, forward, skip, showMe, name, out, end, next, scene, titleId, demoW }: PageWindowProps) {
-  const max = tabChars(demoW + 2, n)
+  // Every tab's word whole, or numbers only (a long welcome, D-351): then the page's word is in the count line, and
+  // each tab's in its title.
+  const words = pages.every((p) => fitTab(p.tab, tabChars(demoW + 2, n)) === p.tab)
   return (
     <>
       <Steps
         label="pages"
         keyboard={false}
-        steps={pages.map((p) => fitTab(p.tab, max))}
-        titles={pages.map((p) => (fitTab(p.tab, max) === p.tab ? undefined : p.tab))}
+        steps={pages.map((p) => (words ? p.tab : ''))}
+        titles={pages.map((p) => (words ? undefined : p.tab))}
         step={i}
         onStep={go}
       />
       <Stage page={page} scene={scene} width={demoW} />
       <div className={styles.text}>
         <div className={styles.count}>
-          <Num n={i + 1} /> <span>/ {two(n)} · {name}</span>
+          <Num n={i + 1} /> <span>/ {two(n)} · {name}{words ? '' : ` · ${page.tab}`}</span>
         </div>
         {/* Every page's words in one cell, the others unseen: the window is as tall as its tallest page throughout, so
             its top never moves as the pages turn. */}

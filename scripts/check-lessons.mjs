@@ -26,9 +26,9 @@ const { LESSONS, EVENTS, ANCHORS, ROLES, AREAS, FORMATS, PAYLOADS, WITHIN, PLACE
 const { RELEASES } = await import(at('src/onboarding/releases.ts'))
 const { SAMPLE_RELEASES } = await import(at('src/onboarding/releases.sample.ts'))
 
-// D-349: every lesson a centred modal, fuller and step by step (was 25 words, 4 pages; the kind guide's rows and the
+// D-349, D-351: every lesson a centred modal, fuller and step by step (was 25 words, 4 pages; then 6; the kind guide's rows and the
 // empty states' lines stay short, at 25).
-const MAX = { title: 6, body: 40, pages: 6, line: 25 }
+const MAX = { title: 6, body: 40, pages: 8, line: 25 }
 // Piece kinds made elsewhere than the `+` menu: a document comes out of a documents list or a dropped file (D-232).
 const NOT_IN_PLUS = ['document']
 const PENDING_FILE = 'scripts/lessons-pending.json'
