@@ -1269,3 +1269,17 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - Verified: tsc, vitest 992/0, check:lessons/gallery/kit/tokens/memory, build; headless Chrome on emulators
   (`?onboarding=reset`): the workspaces lesson, the welcome's 6 tabs, piece-made after `+ → plane`, focus-plane with its
   demo at full width, the settings lesson after Settings closes (a native dialog: shown over it, it was hidden).
+
+## Done (2026-11-02): the prompt family on one set of parts (D-350)
+- The proposal first on a local port (inventory of 20 places, 15 inconsistencies, looks A/B/C side by side); the user
+  picked B, the first row lit, workspaces' results kept as cards, no foot, tick boxes.
+- 799a067 stage 1: promptModel, usePromptNav (keys stay in the `>` line), useDismiss, placeAt; PromptRow, PromptList,
+  PromptPanel (was MenuPanel); Menu, ContextMenu, InPlaceMenu as hosts; look B; no foot, no key hints; `current`.
+- d6f32a0 stage 2: Select moved to patterns, on a new Popover + PromptPanel; floatFrom's numbers tokens.
+- a9d9fea stage 3: finder, `?` guide, the agent's `/`, Threads' `@`, both matrix lists on PromptList; one frame CSS
+  (PromptFrame.module.css); `cardEntry()` for every card picker; PromptRow's meta, sub, badge, faint.
+- 10e39d1 stage 4: Swatches (the filter's squares) its own primitive. All pushed 2026-11-02.
+- Verified: tsc and vitest (946–950/0) on each committed tree in a clean worktree; check:tokens/kit/gallery/lessons/
+  memory; headless Chrome on the gallery: menus' and Select's keys, the + menu, right-click, canvas switch, kind guide,
+  finder (places, typed, keys), guide (keys, folds), the filter dock. Not seen: Threads' `@` (no other members in the
+  gallery) and the agent's `/` (no gallery).
