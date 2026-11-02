@@ -72,8 +72,8 @@ export function Gallery() {
   // A state picked: open large and live; none: every state side by side. Alone, the first when none is said.
   const picked = names.find((n) => stateSlug(n) === a.s) ?? (a.alone ? names[0] : undefined)
   const [reset, setReset] = useState(0)
-  // The list is the app's MenuPanel, whose `role="menu"` an onboarding lesson reads as an open menu and hides under
-  // (Lesson.tsx MENUS): here it's the page's own navigation, always open, so it says it's a list.
+  // The list is the app's MenuPanel, whose `role="menu"` the onboarding reads as an open menu and waits for
+  // (busy.ts menuOpen, Coach.tsx MENUS): here it's the page's own navigation, always open, so it says it's a list.
   const side = useRef<HTMLElement>(null)
   useLayoutEffect(() => {
     side.current?.querySelector('[role="menu"]')?.setAttribute('role', 'list')

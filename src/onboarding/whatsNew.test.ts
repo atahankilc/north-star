@@ -156,7 +156,7 @@ describe('arming', () => {
     expect(lessonById('piece-made')!.roles).not.toContain('viewer')
     expect(hasNew(p, LESSONS, 'viewer')).toBe(false)
     expect(hasNew(p, LESSONS, 'editor')).toBe(true)
-    // Armed nudges or empty states (never listed in `?`) don't light it either.
+    // Armed empty states (never listed in `?`) don't light it either.
     expect(hasNew({ seen: {}, armed: ['empty-canvas@1'] })).toBe(false)
   })
 })

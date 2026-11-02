@@ -34,7 +34,7 @@ export const EVENTS = [
   'canvas-switch',
   // One-line hooks.
   'plus-open', 'context-menu', 'menu-open', 'crumb-open', 'sidenav-rest', 'guide-open',
-  // The queue: ≥ 3 min in the workspace and 10 s without input (onboarding.md §4.5), for nudges.
+  // The queue: ≥ 3 min in the workspace and 10 s without input (onboarding.md §4.5); no lesson uses it since nudges went (D-349).
   'idle',
 ] as const
 export type LessonEvent = (typeof EVENTS)[number]
@@ -129,7 +129,7 @@ export type Within = (typeof WITHIN)[number]
 export const ROLES = ['owner', 'editor', 'viewer'] as const satisfies readonly Role[]
 export const AREAS = ['start', 'canvas', 'planes', 'links', 'text', 'lenses', 'documents', 'decks', 'together', 'canvases', 'settings'] as const
 export type Area = (typeof AREAS)[number]
-export const FORMATS = ['welcome', 'guide', 'lesson', 'nudge', 'empty'] as const
+export const FORMATS = ['welcome', 'guide', 'lesson', 'empty'] as const
 export type Format = (typeof FORMATS)[number]
 // The names a lesson's words may fill in.
 export const PLACEHOLDERS = ['owner', 'peer', 'piece'] as const
@@ -199,7 +199,7 @@ type Base = {
 }
 export type PagedLesson = Base & { format: 'welcome' | 'lesson'; pages: readonly Page[] }
 export type GuideLesson = Base & { format: 'guide'; rows: readonly GuideRow[] }
-export type LineLesson = Base & { format: 'nudge' | 'empty'; line?: string; choices?: readonly Choice[] }
+export type LineLesson = Base & { format: 'empty'; line?: string; choices?: readonly Choice[] }
 export type Lesson = PagedLesson | GuideLesson | LineLesson
 
 const ALL: readonly Role[] = ['owner', 'editor', 'viewer']

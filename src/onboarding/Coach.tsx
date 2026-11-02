@@ -172,7 +172,6 @@ export function Coach() {
         isLoaded: () => useProgress.getState().loaded,
         pageIf: (c) => (c === 'has-tasks-button' ? !!document.querySelector('[data-learn="tasks"]') || hasDecks(store) : true),
         markSeen: (id, v) => useProgress.getState().markSeen(id, v),
-        noteNudge: (at) => useProgress.getState().noteNudge(at),
       }),
     // One queue per mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps

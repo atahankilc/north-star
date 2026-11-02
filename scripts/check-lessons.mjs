@@ -201,7 +201,7 @@ if (LESSONS.filter((l) => l.format === 'guide').length !== 1) bad('there must be
 }
 
 // Two lessons one event can trigger together (same event, `when` values overlapping or missing) for a shared role are
-// ordered by `after` or `unless`, directly or through a chain (onboarding.md §5.4); nudges have their own budget.
+// ordered by `after` or `unless`, directly or through a chain (onboarding.md §5.4).
 {
   const vals = (v) => (Array.isArray(v) ? v : v !== null && typeof v === 'object' ? null : [v])
   const overlap = (a = {}, b = {}) =>
@@ -217,7 +217,7 @@ if (LESSONS.filter((l) => l.format === 'guide').length !== 1) bad('there must be
     const l = byId.get(from)
     return [...(l?.after ?? []), ...(l?.unless ?? [])].some((n) => reaches(n, to, seen))
   }
-  const paired = LESSONS.filter((l) => l.format !== 'nudge')
+  const paired = LESSONS
   for (let i = 0; i < paired.length; i++) {
     for (let j = i + 1; j < paired.length; j++) {
       const [a, b] = [paired[i], paired[j]]

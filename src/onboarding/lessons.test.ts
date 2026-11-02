@@ -35,8 +35,7 @@ describe('lessons', () => {
     }
     expect(LESSONS.filter((l) => l.roles.length === 1 && l.roles[0] === 'viewer').map((l) => l.id)).toEqual(['viewer'])
   })
-  it('are all paged modals or the few small helpers: no nudges, no lesson inside a menu, the finder, a wizard or typing (D-349)', () => {
-    expect(LESSONS.filter((l) => l.format === 'nudge')).toEqual([])
+  it('are all paged modals or the few small helpers: no lesson inside a menu, the finder, a wizard or typing (D-349)', () => {
     for (const l of LESSONS) if (l.format !== 'guide') expect(['menu', 'finder', 'wizard', 'typing']).not.toContain(l.within)
   })
 })

@@ -35,7 +35,7 @@ export function unmount() {
 }
 
 type Opts = { via?: 'event' | 'play'; done?: boolean; role?: Role; audience?: Audience; isNew?: boolean; kind?: string }
-type Kind = 'welcome' | 'news' | 'lesson' | 'nudge' | 'empty' | 'guide' | 'kind' | 'clear'
+type Kind = 'welcome' | 'news' | 'lesson' | 'empty' | 'guide' | 'kind' | 'clear'
 
 export function show(kind: Kind, id = '', o: Opts = {}) {
   const dev = coachDev.current

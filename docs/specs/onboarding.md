@@ -18,7 +18,7 @@ where it's first met in code), [onboarding-research.md](onboarding-research.md) 
 - Built overnight by another agent with **checks and agent pipelines**; this file and the run file prepare that.
 
 > **D-349 (2026-11-02), what changed since this plan:** every lesson is the centred modal (§4.1's window), never
-> a card beside its anchor (§4.3's card and the nudges, §4.5, are no longer drawn); one lesson per screen, panel or
+> a card beside its anchor (§4.3's card and the nudges, §4.5, are deleted: Lesson.tsx, Nudge.tsx, place.ts; `findAnchor` lives in anchor.ts for the empty states); one lesson per screen, panel or
 > piece, step by step, ≤ 6 pages of ≤ 40 words; no lesson over a menu, the finder, a wizard, typing or Settings; the
 > welcome is about the canvas only (6 pages); keys shown nowhere in the app, all of them in `?`. The words and the
 > list: lessons.ts and the table at the top of onboarding-lessons.md. Where this file says otherwise, D-349 wins.
@@ -232,14 +232,14 @@ src/onboarding/
   releases.ts                releases: id, date, title, items → lesson ids (what's new)
   audience.ts                who is this person: new | invited (no seen-state = new); role; first canvas?
   events.ts                  learn(event), and the watchers: store subscriptions, tracked() labels, URL → events
-  queue.ts                   one at a time: busy detection, cooldown, priorities, nudge budget, retire-on-done
+  queue.ts                   one at a time: busy detection, cooldown, priorities, retire-on-done
   progress.ts                zustand store over data/onboarding.ts: seen, armed, tipsOff, lastRelease
   Coach.tsx                  mounted once in WorkspaceLayout (and Workspaces): renders whatever the queue gives
   Welcome.tsx WhatsNew.tsx   the two modals (one Pages component)
-  Lesson.tsx                 the anchored card
+  Pages.tsx                  every lesson, the welcome and what's new: the centred modal (D-349)
+  anchor.ts                  findAnchor: where the empty states point
   KindGuide.tsx              the column beside the `+` menu
   Guide.tsx                  `?`
-  Nudge.tsx                  the one line
   Demo.tsx                   the frame in the app that shows a scene (an iframe, §6)
 src/demo/                    the demo realm (its own entry, demo.html)
   main.tsx                   boots the stage: no Firebase, fake user, the scene from the URL / postMessage

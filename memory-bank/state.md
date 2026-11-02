@@ -48,7 +48,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - The agent (D-312, docs/specs/agent.md; the overnight build: docs/specs/agent-run.md): see the first item above.
 - Onboarding (D-315, D-316): **built and live** (O0–O16; state-history.md). D-349 (2026-11-02, committed, not pushed):
   content rewritten, every lesson the centred modal, ~30 lessons by screen/piece, no nudges; checked headless on
-  emulators. Left: delete Lesson.tsx/Nudge.tsx (no longer drawn). The agent's lessons wait for its redesign.
+  emulators. Lesson.tsx/Nudge.tsx deleted after it (committed). The agent's lessons wait for its redesign.
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).

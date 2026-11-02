@@ -1,39 +1,4 @@
-/* The coach's small things (D-315, onboarding.md §4.5, §4.7; mock: preview.css §5): the nudge and the empty hints. */
-
-/* A nudge: one line by its tool, z 20 like a lesson. */
-.nudge {
-  position: fixed;
-  z-index: var(--z-coach);
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  color: var(--fg-muted);
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  white-space: nowrap;
-  isolation: isolate;
-}
-
-.nudgeLead {
-  width: var(--space-6);
-  height: var(--line-w);
-  background: var(--accent-magenta);
-}
-
-.nudgeTxt {
-  position: relative;
-  padding: var(--space-1) 0;
-}
-
-/* On the canvas's busy parts it still reads: the ink shade under its words. */
-.nudgeTxt::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: var(--z-under);
-  background: var(--ink-shade);
-  box-shadow: var(--feather) var(--ink-shade);
-}
+/* The coach's small things (D-315, onboarding.md §4.7; mock: preview.css §5): the empty hints. */
 
 /* An empty hint: faint words in the display voice, never in the way of a press. */
 .empty {

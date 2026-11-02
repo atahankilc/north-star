@@ -56,7 +56,7 @@ function setRef<T>(ref: React.Ref<T>, v: T | null) {
 }
 
 // Focus kept inside and given back, Tab going round, a press on the scrim keeping the focus, the canvas never hearing a
-// press: the Window's (src/ui/patterns/Window.tsx, D-326), here for the lessons and nudges that import them from this file.
+// press: the Window's (src/ui/patterns/Window.tsx, D-326), here for the coach surfaces that import them from this file.
 export { keepFocus, stopCanvas, trapTab, useDialogFocus } from '../ui/patterns/Window'
 
 type Props = {

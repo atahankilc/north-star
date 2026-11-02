@@ -58,7 +58,6 @@ type Progress = {
   setTipsOff(off: boolean): void
   setWelcome(end: WelcomeEnd): void
   setLastRelease(id: string): void
-  noteNudge(at?: number): void
   isArmed(id: string): boolean
 }
 
@@ -273,10 +272,6 @@ export const useProgress = create<Progress>((set, get) => {
 
     setLastRelease(id) {
       change((s, now) => (s.lastRelease === id ? null : stamped(s, 'lastRelease', now, { lastRelease: id })))
-    },
-
-    noteNudge(at = Date.now()) {
-      change((s) => ({ ...s, nudges: { last: at } }))
     },
 
     isArmed(id) {

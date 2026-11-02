@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { LESSONS, type Lesson } from './lessons'
-import { CALM_MS, COOLDOWN_MS, GIVE_UP_MS, PAUSE_CAP_MS, countsAsMenu, createQueue, hintWaits, resetNudgeBudget, type Busy, type ProgressView } from './queue'
+import { CALM_MS, COOLDOWN_MS, GIVE_UP_MS, PAUSE_CAP_MS, countsAsMenu, createQueue, hintWaits, type Busy, type ProgressView } from './queue'
 import type { Role } from './lessons'
 
 const ALL: Role[] = ['owner', 'editor', 'viewer']
@@ -13,7 +13,6 @@ function setup(lessons: Lesson[], o: { role?: Role; progress?: Partial<ProgressV
   let busy: Busy = {}
   const progress: ProgressView = { seen: {}, armed: [], tipsOff: false, ...o.progress }
   const marked: string[] = []
-  const nudges: number[] = []
   const gaveUp: string[] = []
   let role: Role | null = o.role ?? 'editor'
   let loaded = true
@@ -28,7 +27,6 @@ function setup(lessons: Lesson[], o: { role?: Role; progress?: Partial<ProgressV
       marked.push(id)
       progress.seen = { ...progress.seen, [id]: v }
     },
-    noteNudge: (at) => nudges.push(at),
     onGiveUp: (id) => gaveUp.push(id),
   })
   // Moves the clock, ticking every 100 ms like the coach.
@@ -42,7 +40,6 @@ function setup(lessons: Lesson[], o: { role?: Role; progress?: Partial<ProgressV
     q,
     wait,
     marked,
-    nudges,
     gaveUp,
     progress,
     setBusy: (b: Busy) => void (busy = b),
@@ -51,8 +48,6 @@ function setup(lessons: Lesson[], o: { role?: Role; progress?: Partial<ProgressV
     shown: () => q.current()?.lesson.id ?? null,
   }
 }
-
-beforeEach(() => resetNudgeBudget())
 
 describe('queue', () => {
   it('shows a triggered lesson after 400 ms of calm', () => {
@@ -261,25 +256,6 @@ describe('queue', () => {
     expect(s.q.current()?.via).toBe('play')
   })
 
-  it('nudges: one a session, only when the counts match', () => {
-    const s = setup([
-      L('n1', { format: 'nudge', trigger: [{ event: 'idle', when: { pieces: { min: 1 } } }] } as never),
-      L('n2', { format: 'nudge', trigger: [{ event: 'idle', when: { cards: { min: 15 } } }] } as never),
-    ])
-    s.q.onEvent({ event: 'idle', payload: { pieces: 0, cards: 3 } })
-    s.wait(1000)
-    expect(s.shown()).toBe(null)
-    s.q.onEvent({ event: 'idle', payload: { pieces: 2, cards: 20 } })
-    expect(s.q.queued()).toEqual(['n1'])
-    s.wait(1000)
-    expect(s.shown()).toBe('n1')
-    expect(s.nudges.length).toBe(1)
-    s.q.close('n1', 'closed')
-    s.q.onEvent({ event: 'idle', payload: { pieces: 2, cards: 20 } })
-    s.wait(COOLDOWN_MS + 1000)
-    expect(s.shown()).toBe(null)
-  })
-
   it("roles: the lesson's, then each page's", () => {
     const owners = L('o', { roles: ['owner'], trigger: [{ event: 'settings-open' }] })
     const paged = L('p', {
@@ -437,19 +413,6 @@ describe('queue, fix round', () => {
     expect(t.q.queued()).toEqual([])
     expect(t.gaveUp).toEqual(['a'])
   })
-
-  it('the nudge budget is per page load, not per queue', () => {
-    const n = () => L('n', { format: 'nudge', trigger: [{ event: 'idle' }] } as never)
-    const s = setup([n()])
-    s.q.onEvent({ event: 'idle' })
-    s.wait(500)
-    expect(s.shown()).toBe('n')
-    // A second queue (another workspace in the same page load) gets none.
-    const t = setup([L('m', { format: 'nudge', trigger: [{ event: 'idle' }] } as never)])
-    t.q.onEvent({ event: 'idle' })
-    t.wait(COOLDOWN_MS + 1000)
-    expect(t.shown()).toBe(null)
-  })
 })
 
 describe('queue, a surface and its own lesson (O11)', () => {
@@ -561,50 +524,6 @@ describe('queue, fix round O11', () => {
     s.setBusy({})
     s.wait(3000)
     expect(s.shown()).toBe(null)
-  })
-
-  it('a nudge that gives way is counted once and ends', () => {
-    const s = setup([L('n', { format: 'nudge', trigger: [{ event: 'idle' }] } as never), L('wiz', { trigger: [{ event: 'wizard' }], within: 'wizard' })])
-    s.q.onEvent({ event: 'idle' })
-    s.wait(500)
-    expect(s.shown()).toBe('n')
-    s.setBusy({ wizard: true })
-    s.q.onEvent({ event: 'wizard' })
-    s.wait(500)
-    expect(s.shown()).toBe('wiz')
-    // The nudge ended for it (never seen, not shown again: the session's one nudge is spent), counted once.
-    s.q.close('wiz', 'closed')
-    s.setBusy({})
-    s.wait(COOLDOWN_MS + 1000)
-    expect(s.shown()).toBe(null)
-    expect(s.marked).toEqual(['wiz'])
-    expect(s.nudges.length).toBe(1)
-  })
-
-  it('a nudge showing never holds the slot: a waiting lesson ends it (not seen) and shows', () => {
-    const s = setup([L('n', { format: 'nudge', trigger: [{ event: 'idle' }] } as never), L('given', { trigger: [{ event: 'task-given' }] })])
-    s.q.onEvent({ event: 'idle' })
-    s.wait(500)
-    expect(s.shown()).toBe('n')
-    s.q.onEvent({ event: 'task-given' })
-    s.wait(100)
-    expect(s.shown()).toBe(null)
-    expect(s.marked).toEqual([])
-    // An automatic one still waits out the cooldown from the last close (none here), then the calm.
-    s.wait(600)
-    expect(s.shown()).toBe('given')
-    expect(s.gaveUp).toEqual([])
-    expect(s.nudges.length).toBe(1)
-  })
-
-  it('a nudge stays while the waiting lesson is still held by something else', () => {
-    const s = setup([L('n', { format: 'nudge', trigger: [{ event: 'idle' }] } as never), L('l', { trigger: [{ event: 'linking' }] })])
-    s.q.onEvent({ event: 'idle' })
-    s.wait(500)
-    s.setBusy({ drag: true })
-    s.q.onEvent({ event: 'linking' })
-    s.wait(1000)
-    expect(s.shown()).toBe('n')
   })
 })
 

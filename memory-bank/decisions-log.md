@@ -6716,5 +6716,7 @@ parts, plane-filter, guides-snap, right-click, headings-places, matrix-wizard, m
 table-wizard, table-keys, setup-open, deck-wizard, task-card, deck-filter, following, threads-panel, finder, the
 nudges. A lesson kept whose words changed got a new `v`, so it shows once more.
 Alternatives offered: modal for big surfaces with a few small cards kept; the old limits; no limit.
-Not yet: Lesson.tsx and Nudge.tsx (with their galleries, place.ts and the queue's nudge budget) are no longer drawn
-but not deleted; EmptyHint and the kind guide still use Lesson.tsx's `findAnchor`/`MENUS`.
+Later (2026-11-02, the user: "Lesson.tsx ve Nudge.tsx'i de sil"): Lesson.tsx, Nudge.tsx, their galleries, place.ts
+and the queue's nudge format and budget (progress.noteNudge) deleted; `findAnchor`/`isVisible` moved to
+src/onboarding/anchor.ts for EmptyHint. Kept: seen-state's `nudges` field in seenMerge.ts and firestore.rules (old docs
+carry it; dropping it is a rules change) and the `idle` event (nothing listens).

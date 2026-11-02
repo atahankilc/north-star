@@ -19,8 +19,6 @@
 // - Cooldown: after one closes, the next automatic one (from `canvas-open`, `idle`, someone else's doing) waits 20 s;
 //   one that answers an action waits only for calm.
 // - tipsOff: nothing shows by itself; `play()` (the `?` guide) still does.
-// - Nudges: at most one a session, only from an `idle` event whose counts match; one showing ends (not seen) when a
-//   lesson is waiting that nothing else holds.
 // - Roles: the lesson's roles, then each page's (default the lesson's), audience and kinds; nothing left, nothing shown.
 // - Never twice: seen at its version (or closed this session) never shows by itself; an armed newer version (`NEW`) does.
 // - A surface's own lesson goes first (O11): a lesson `within` a surface (a wizard, a menu, setup, the finder, Settings,
@@ -67,13 +65,10 @@ export const DONE_MS = 1200
 // Events nobody did just now (the canvas opening, being idle, someone else's doing): what they trigger is automatic.
 export const AUTOMATIC: ReadonlySet<LessonEvent> = new Set<LessonEvent>(['canvas-open', 'idle', 'peer-joined', 'task-given', 'workspaces-open'])
 
-// Nudges: at most one per page load, whichever queue shows it (module-level).
-let nudgedThisLoad = false
-export const resetNudgeBudget = () => void (nudgedThisLoad = false)
 
 export type Shown = {
   lesson: Lesson
-  // The pages this person gets (paged lessons; [] for the guide, nudges and empty states).
+  // The pages this person gets (paged lessons; [] for the guide and empty states).
   pages: Page[]
   payload: Payload
   // What the event was about (LearnEvent's `target`): its anchor is looked for there first.
@@ -103,8 +98,6 @@ export type QueueOptions = {
   pageIf?: (cond: NonNullable<Page['if']>) => boolean
   // Kept: a lesson seen (closed, skipped, done or retired). The coach passes progress.markSeen.
   markSeen?: (id: string, v: number) => void
-  // A nudge shown (progress.noteNudge).
-  noteNudge?: (at: number) => void
   // Dropped after the busy wait (it stays due for its next trigger).
   onGiveUp?: (id: string, v: number) => void
 }
@@ -122,8 +115,6 @@ type Entry = {
   pausedSince: number | null
   // Its `within` surface was seen open while it waited (so its closing drops it).
   surfaceSeen?: boolean
-  // A nudge already shown once (it gave way and came back): counted once.
-  noted?: boolean
 }
 
 // The `within` sources that are a surface one opens and closes (typing isn't).
@@ -266,7 +257,6 @@ export function createQueue(o: QueueOptions): Queue {
       }
       if (tipsOff || (known && !due(l, payload)) || isSeen(l)) continue
       if (shown && shown.lesson.id === l.id) continue
-      if (l.format === 'nudge' && (nudgedThisLoad || queue.some((q) => q.lesson.format === 'nudge'))) continue
       const entry: Entry = { lesson: l, payload, target: e.target, event: e.event, automatic: AUTOMATIC.has(e.event), readyAt: null, calmSince: null, pausedSince: null }
       const at = queue.findIndex((q) => q.lesson.id === l.id)
       // One per lesson: the newer trigger replaces it, in its place.
@@ -289,10 +279,6 @@ export function createQueue(o: QueueOptions): Queue {
       isNew: isArmed(o.getProgress(), e.lesson.id),
       via: 'event',
       since: now,
-    }
-    if (e.lesson.format === 'nudge' && !e.noted) {
-      nudgedThisLoad = true
-      o.noteNudge?.(now)
     }
   }
 
@@ -330,16 +316,6 @@ export function createQueue(o: QueueOptions): Queue {
         changed = true
       }
     }
-    // A nudge never holds the slot against a lesson (O11): one showing while another waits that nothing else holds ends
-    // (not seen; the session's one nudge stays spent), and that one goes on.
-    if (shown && shown.lesson.format === 'nudge' && shown.via === 'event' && !shown.doneAt) {
-      const waiting = queue.some((e) => e.lesson.format !== 'nudge' && !waitingOnAfter(e) && !holds(busy, e.lesson.within))
-      if (waiting) {
-        shown = null
-        shownEntry = null
-        changed = true
-      }
-    }
     // A surface opened while another triggered lesson shows, and that surface's own lesson waits for it (nothing else
     // holding it): the one showing gives way, back to the front of the queue with its wait started again.
     if (shown && shownEntry && shown.via === 'event' && !shown.doneAt && !tipsOff) {
@@ -353,10 +329,10 @@ export function createQueue(o: QueueOptions): Queue {
         shown = null
         shownEntry = null
         // A surface's own lesson whose surface has closed meanwhile is dropped, as one that never showed would be; any
-        // other goes back (a nudge already counted as shown stays counted once).
+        // other goes back.
         if (mine && !busy[mine]) o.onGiveUp?.(gave.lesson.id, gave.lesson.v)
         else {
-          const back: Entry = { ...gave, readyAt: null, calmSince: null, pausedSince: null, surfaceSeen: !!mine, noted: gave.lesson.format === 'nudge' || gave.noted }
+          const back: Entry = { ...gave, readyAt: null, calmSince: null, pausedSince: null, surfaceSeen: !!mine }
           queue = [back, ...queue.filter((q) => q.lesson.id !== back.lesson.id)]
         }
         changed = true

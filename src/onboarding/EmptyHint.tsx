@@ -5,7 +5,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Appear } from '../ui/primitives/Appear'
-import { findAnchor } from './Lesson'
+import { findAnchor } from './anchor'
 import { useCanvasView } from '../state/canvasView'
 import styles from './Coach.module.css'
 
