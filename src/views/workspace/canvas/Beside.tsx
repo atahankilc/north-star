@@ -15,6 +15,7 @@ import { KIND_NAME, kindOfPiece } from '../../../data/pieces'
 import { fitInto, glide, setSplit, stopGlide, useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
 import { SIDE_PANEL_W } from '../../../ui/patterns/SidePanel'
+import { SplitLine } from '../../../ui/primitives/SplitLine'
 import { useWs } from './context'
 import { matrixBounds, MatrixView, toggleMatrixSetup, useMatrixUi } from '../matrix/Matrix'
 import { MatrixSetupPanel } from '../matrix/MatrixSetup'
@@ -48,47 +49,20 @@ export function Beside({ plane, open, editor, matrixSetupPane, onClose }: Props)
   const total = w.reduce((a, b) => a + b, 0) || 1
   const tops = w.reduce<number[]>((acc, x, i) => [...acc, acc[i] + (x / total) * size.h], [0])
 
-  // The line between them drags; the plane's view keeps the point under the line's middle where it was.
-  const drag = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return
-    e.stopPropagation()
-    const el = e.currentTarget
-    el.setPointerCapture(e.pointerId)
-    const move = (ev: PointerEvent) => setSplit(ev.clientX / Math.max(1, size.w))
-    const up = () => {
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', up)
-      el.removeEventListener('pointercancel', up)
-    }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
-  }
+  // The line between them drags (SplitLine, D-359).
+  const drag = (ev: PointerEvent) => setSplit(ev.clientX / Math.max(1, size.w))
 
   // The line under pane `i`: it moves the height between that pane and the next, each kept at least 15 % of the screen.
-  const dragRow = (i: number) => (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return
-    e.stopPropagation()
-    const el = e.currentTarget
-    el.setPointerCapture(e.pointerId)
+  const dragRow = (i: number) => (ev: PointerEvent) => {
     const [y0, y1] = [tops[i], tops[i + 2]]
     const min = size.h * 0.15
-    const move = (ev: PointerEvent) => {
-      const at = Math.min(y1 - min, Math.max(y0 + min, ev.clientY - el.parentElement!.getBoundingClientRect().top))
-      const next = [...w]
-      const pair = w[i] + w[i + 1]
-      next[i] = (pair * (at - y0)) / (y1 - y0)
-      next[i + 1] = pair - next[i]
-      setWeights({ ids, w: next })
-    }
-    const up = () => {
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerup', up)
-      el.removeEventListener('pointercancel', up)
-    }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-    el.addEventListener('pointercancel', up)
+    const top = ((ev.target as HTMLElement).parentElement?.getBoundingClientRect().top ?? 0)
+    const at = Math.min(y1 - min, Math.max(y0 + min, ev.clientY - top))
+    const next = [...w]
+    const pair = w[i] + w[i + 1]
+    next[i] = (pair * (at - y0)) / (y1 - y0)
+    next[i + 1] = pair - next[i]
+    setWeights({ ids, w: next })
   }
 
   if (!open.length) return null
@@ -97,9 +71,9 @@ export function Beside({ plane, open, editor, matrixSetupPane, onClose }: Props)
       {open.map((p, i) => (
         <Pane key={p.id} piece={p} plane={plane} box={{ x: left, y: tops[i], w: size.w - left, h: tops[i + 1] - tops[i] }} editor={editor} first={i === 0} matrixSetupHere={p.id === matrixSetupPane} onClose={() => onClose(p.id)} />
       ))}
-      <div className={styles.divider} data-off-space data-learn="split" style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="Plane and what's beside it" />
+      <SplitLine data-off-space data-learn="split" style={{ left }} onDrag={drag} label="Plane and what's beside it" />
       {open.slice(0, -1).map((p, i) => (
-        <div key={`row-${p.id}`} className={styles.rowDivider} data-off-space style={{ left, top: tops[i + 1] }} onPointerDown={dragRow(i)} role="separator" aria-orientation="horizontal" aria-label="Between two panes" />
+        <SplitLine key={`row-${p.id}`} axis="y" data-off-space style={{ left, top: tops[i + 1] }} onDrag={dragRow(i)} label="Between two panes" />
       ))}
     </>
   )

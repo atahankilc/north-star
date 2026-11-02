@@ -5,7 +5,7 @@
 //
 // Also here: the documents open beside the documents list in its focus (DocReaders), and the question asked before a
 // private document is put on the canvas, where everyone sees it (DocPlace).
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
@@ -27,6 +27,7 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Label } from '../../../ui/primitives/Label'
 import { Window } from '../../../ui/patterns/Window'
+import { SplitLine } from '../../../ui/primitives/SplitLine'
 
 // The margin round its text, in its px.
 const PAD = WORLD.docPad
@@ -169,43 +170,16 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
   const total = wt.reduce((a, b) => a + b, 0)
   const lefts = wt.reduce<number[]>((acc, x, i) => [...acc, acc[i] + (x / total) * room], [left])
 
-  const drag = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return
-    e.stopPropagation()
-    const node = e.currentTarget
-    node.setPointerCapture(e.pointerId)
-    const move = (ev: PointerEvent) => useDocUi.setState({ readerAt: ev.clientX })
-    const up = () => {
-      node.removeEventListener('pointermove', move)
-      node.removeEventListener('pointerup', up)
-      node.removeEventListener('pointercancel', up)
-    }
-    node.addEventListener('pointermove', move)
-    node.addEventListener('pointerup', up)
-    node.addEventListener('pointercancel', up)
-  }
+  // The split lines (SplitLine, D-359): the list's width, and between two documents.
+  const drag = (ev: PointerEvent) => useDocUi.setState({ readerAt: ev.clientX })
 
   // The line after document `i`: moves the width between it and the next, each kept at least PANE_MIN wide.
-  const dragBetween = (i: number) => (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return
-    e.stopPropagation()
-    const node = e.currentTarget
-    node.setPointerCapture(e.pointerId)
+  const dragBetween = (i: number) => (ev: PointerEvent) => {
     const [x0, x1] = [lefts[i], lefts[i + 2]]
     const pair = wt[i] + wt[i + 1]
-    const move = (ev: PointerEvent) => {
-      const at = Math.min(x1 - PANE_MIN, Math.max(x0 + PANE_MIN, ev.clientX))
-      const a = (pair * (at - x0)) / (x1 - x0)
-      useDocUi.setState((s) => ({ readerWeights: { ...s.readerWeights, [open[i]]: a, [open[i + 1]]: pair - a } }))
-    }
-    const up = () => {
-      node.removeEventListener('pointermove', move)
-      node.removeEventListener('pointerup', up)
-      node.removeEventListener('pointercancel', up)
-    }
-    node.addEventListener('pointermove', move)
-    node.addEventListener('pointerup', up)
-    node.addEventListener('pointercancel', up)
+    const at = Math.min(x1 - PANE_MIN, Math.max(x0 + PANE_MIN, ev.clientX))
+    const a = (pair * (at - x0)) / (x1 - x0)
+    useDocUi.setState((s) => ({ readerWeights: { ...s.readerWeights, [open[i]]: a, [open[i + 1]]: pair - a } }))
   }
 
   return (
@@ -213,18 +187,15 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
       {open.map((id, i) => (
         <DocPane key={id} id={id} list={list} box={{ x: Math.round(lefts[i]), y: 0, w: Math.round(lefts[i + 1] - lefts[i]), h: size.h }} first={i === 0} />
       ))}
-      {!hidden && <div className={beside.divider} style={{ left }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="List and documents" />}
+      {!hidden && <SplitLine style={{ left }} onDrag={drag} label="List and documents" />}
       {open.slice(0, -1).map((id, i) => (
-        <div
+        <SplitLine
           key={`between-${id}`}
-          className={beside.divider}
           style={{ left: Math.round(lefts[i + 1]) }}
-          onPointerDown={dragBetween(i)}
+          onDrag={dragBetween(i)}
           // A double-click shares the width evenly again.
           onDoubleClick={() => useDocUi.setState({ readerWeights: {} })}
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Between two documents"
+          label="Between two documents"
         />
       ))}
     </>

@@ -9,7 +9,7 @@
 // deck, a strip under the tabs saying so (`[all decks]` lets go). Days are the deck's linked timeline's when it has one,
 // else rows by who it's given to. A task picked opens its panel inside the side view (TaskPanel), and in a plane's
 // focus the plane glides to its card; nothing switches view by itself.
-import { useEffect, useLayoutEffect, useMemo, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react'
 import { useAuth } from '../../../data/auth'
 import { piecesOn } from '../../../data/canvases'
 import type { WithId } from '../../../data/hooks'
@@ -32,6 +32,7 @@ import { closeTasksSide, useTasksSide } from './sideState'
 import pane from '../canvas/Beside.module.css'
 import styles from './TasksSide.module.css'
 import { Tabs } from '../../../ui/primitives/Tabs'
+import { SplitLine } from '../../../ui/primitives/SplitLine'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Button } from '../../../ui/primitives/Button'
 import { Num, Rule } from '../../../ui/primitives/Rule'
@@ -114,16 +115,15 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
   const deckW = twoCols ? Math.round(width * inner) : width
 
   // The line between the left part and the side view drags (the days' share kept apart from beside's).
-  const drag = (e: ReactPointerEvent<HTMLDivElement>) =>
-    follow(e, (x) => {
-      const at = x / Math.max(1, size.w)
-      if (!twoCols) return setSplit(at)
-      const v = Math.min(0.6, Math.max(0.15, at))
-      useTasksSide.setState({ splitDays: v })
-      useCanvasView.setState({ split: v })
-    })
-  // The line between the deck and its days.
-  const dragInner = (e: ReactPointerEvent<HTMLDivElement>) => follow(e, (x) => useTasksSide.setState({ inner: Math.min(0.7, Math.max(0.3, (x - left) / Math.max(1, width))) }))
+  // The split lines (SplitLine, D-359): the side view's width, the line between the deck and its days.
+  const drag = (ev: PointerEvent) => {
+    const at = ev.clientX / Math.max(1, size.w)
+    if (!twoCols) return setSplit(at)
+    const v = Math.min(0.6, Math.max(0.15, at))
+    useTasksSide.setState({ splitDays: v })
+    useCanvasView.setState({ split: v })
+  }
+  const dragInner = (ev: PointerEvent) => useTasksSide.setState({ inner: Math.min(0.7, Math.max(0.3, (ev.clientX - left) / Math.max(1, width))) })
 
   const count = (d: WithId<Piece>) => (kanbanOf(d).holds === 'cards' ? `${heldCards(d, cards).length} cards` : shownTasks(tasks.filter((t) => t.pieceId === d.id), d, cards).filter((t) => !finished(t, pieces)).length)
   const me = user?.id ?? null
@@ -149,7 +149,7 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
   const colH = size.h - top
   return (
     <>
-      <div className={pane.divider} data-off-space style={{ left, zIndex: 'calc(var(--z-world-ui) + 1)' }} onPointerDown={drag} role="separator" aria-orientation="vertical" aria-label="The side view's width" />
+      <SplitLine data-off-space className={styles.outerLine} style={{ left }} onDrag={drag} label="The side view's width" />
       <aside className={styles.side} data-off-space data-learn="side-view" style={{ left, width }} aria-label="Decks and days" onPointerDown={(e) => e.stopPropagation()}>
         <div className={styles.tabs}>
           {/* The decks and, in the corner, across them (D-300): two rows of tabs sharing one choice (Tabs, D-326). */}
@@ -214,7 +214,7 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
             <Board key={deck.id} box={{ x: 0, y: top, w: deckW, h: colH }} deck={deck} editor={editor} onTask={onTask} onCard={onCard} dock={<>{daysToggle}</>} close={close} />
             {twoCols && (
               <>
-                <div className={`${pane.divider} ${styles.innerLine}`} style={{ left: deckW, top }} onPointerDown={dragInner} role="separator" aria-orientation="vertical" aria-label="The deck and its days" />
+                <SplitLine style={{ left: deckW, top }} onDrag={dragInner} label="The deck and its days" />
                 <Days key={`days:${deck.id}`} box={{ x: deckW, y: top, w: width - deckW, h: colH }} deck={deck} plane={null} editor={editor} onTask={onTask} dock={closeDays} />
               </>
             )}
@@ -225,22 +225,6 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
   )
 }
 
-// A press on a line, then the pointer followed until it lets go.
-function follow(e: ReactPointerEvent<HTMLDivElement>, to: (x: number) => void) {
-  if (e.button !== 0) return
-  e.stopPropagation()
-  const el = e.currentTarget
-  el.setPointerCapture(e.pointerId)
-  const move = (ev: PointerEvent) => to(ev.clientX)
-  const up = () => {
-    el.removeEventListener('pointermove', move)
-    el.removeEventListener('pointerup', up)
-    el.removeEventListener('pointercancel', up)
-  }
-  el.addEventListener('pointermove', move)
-  el.addEventListener('pointerup', up)
-  el.addEventListener('pointercancel', up)
-}
 
 // MINE's `●N`: tasks given to you since you last looked.
 function NewMark() {

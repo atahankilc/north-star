@@ -76,8 +76,9 @@
 
 
 /* The line between the deck and its days (beside's line, from the column's top down). */
-.innerLine {
-  bottom: 0;
+/* The side view's own split line, over it (it sits over a focus, .side's layer). */
+.outerLine {
+  z-index: calc(var(--z-world-ui) + 1);
 }
 
 
