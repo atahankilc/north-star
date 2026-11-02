@@ -12,11 +12,6 @@
   --ai-w: var(--agent-col-w);
 }
 
-:global(html[data-agent-resizing]) {
-  cursor: col-resize;
-  user-select: none;
-}
-
 /* ≤ 760 px the chat covers the screen (1.0's D-114): the app keeps its width under it. */
 @media (max-width: 760px) {
   :global(html[data-agent-open]) {
@@ -84,44 +79,10 @@
 
 /* ---- The column */
 
+/* On EdgeColumn (D-359): the edge, the height, the line, the marks and the cells are its. Over the right panel, which
+   stops at its left (`--ai-w`). */
 .column {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: var(--z-panel);
-  display: flex;
-  flex-direction: column;
-  width: var(--agent-col-w);
-  border-left: var(--line-w) solid var(--line-hover);
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  line-height: var(--space-4);
-  cursor: default;
-}
-
-/* Magenta marks on its left corners, as on the right panel and a plane's console. */
-.column::before,
-.column::after {
-  content: '';
-  position: absolute;
-  left: calc(-1 * var(--line-w));
-  width: var(--corner-mark);
-  height: var(--corner-mark);
-  border-left: var(--line-w) solid var(--accent-magenta);
-  pointer-events: none;
-}
-
-.column::before {
-  top: 0;
-  border-top: var(--line-w) solid var(--accent-magenta);
-}
-
-.column::after {
-  bottom: 0;
-  border-bottom: var(--line-w) solid var(--accent-magenta);
+  --column-z: var(--z-panel);
 }
 
 @media (max-width: 760px) {
@@ -130,51 +91,18 @@
     width: calc(100vw - 2 * var(--space-3) - var(--control-lg) - var(--space-6));
   }
 
-  .column {
-    width: 100%;
+  :global(html) {
+    --agent-col-w: 100%;
+  }
+
+  .column[data-side='right'][data-corners] {
     border-left: 0;
   }
 }
 
-/* Drag the left edge to resize; a cyan line shows where. */
-.edge {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(-1 * var(--space-1));
-  z-index: var(--z-1);
-  width: var(--space-2);
-  cursor: col-resize;
-  touch-action: none;
-}
-
-.edge::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: calc(var(--space-1) - var(--line-w));
-  width: var(--line-w);
-  background: var(--accent-cyan);
-  opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-out);
-}
-
-.edge:hover::after,
-:global(html[data-agent-resizing]) .edge::after {
-  opacity: 1;
-}
-
-:global(html[data-motion='reduced']) .edge::after {
-  transition: none;
-}
-
+/* PanelHead (D-359), here with a rule under it and room above the log. */
 .head {
-  display: flex;
-  flex: none;
-  align-items: baseline;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-6) var(--space-3);
+  padding-bottom: var(--space-3);
   border-bottom: var(--line-w) solid var(--line);
 }
 
@@ -197,25 +125,10 @@
   white-space: nowrap;
 }
 
-/* The model switch: plain text like a console's dropdown (`gpt-5.6-terra ▾`). */
-.headTools {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: var(--space-3);
-  margin-left: auto;
-}
-
 /* The close (×), the kit's Button, pushed to the right of the head. */
 .close {
   margin-left: auto;
 }
-
-.headTools .close {
-  margin-left: 0;
-}
-
-
 
 /* `apply · 2 deletes`: the deletes said strongest (the cell is the go's cyan, D-344). */
 .applyDeletes {

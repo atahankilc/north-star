@@ -6,7 +6,7 @@
 // screen. `[×] esc` folds it back to the box, the chat kept. Chats are saved (S16): `[chats]` lists them (yours and
 // shared ones) to reopen, rename, share or delete; `[notes]` opens the agent notes (AgentMemory.tsx).
 //
-// The column (a Window, D-326) and the open box are dialogs to the onboarding: lessons treat them as obstacles.
+// The column (EdgeColumn, D-359) and the open box are dialogs to the onboarding: lessons treat them as obstacles.
 // Everything it shows is DOM text, never under the ASCII effect; colours are tokens (light under [data-theme='light']);
 // every animation reads useMotion().reduced (Appear and the spinner do).
 import { AnimatePresence } from 'motion/react'
@@ -17,7 +17,9 @@ import { KIND_NAME, kindOfPiece } from '../../model/pieces'
 import { Appear } from '../../ui/primitives/Appear'
 import { Select } from '../../ui/patterns/Select'
 import { openSettingsAt } from '../../ui/patterns/Settings'
-import { Window } from '../../ui/patterns/Window'
+import { EdgeColumn } from '../../ui/patterns/EdgeColumn'
+import { PanelHead } from '../../ui/patterns/PanelHead'
+import { ResizeEdge } from '../../ui/primitives/ResizeEdge'
 import { useWs } from '../../views/workspace/canvas/context'
 import { isTyping } from '../../views/workspace/canvas/useEditKeys'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
@@ -276,48 +278,47 @@ function Column() {
   }
 
   return (
-    // The kit's Window (D-326), not modal: the page beside it stays live, its own Escape (a list, a view, a preview, then
+    // The docked column (EdgeColumn, D-359), not modal: the page beside it stays live, its own Escape (a list, a view, a preview, then
     // closing) and its own first focus (the prompt).
-    <Window
-      look="bare"
-      modal={false}
-      escape={false}
-      focus={false}
-      entrance="cells"
+    <EdgeColumn
       portal={false}
+      escape={false}
+      width="var(--agent-col-w)"
       className={styles.column}
       label="The agent"
       data-agent
       data-side-panel
       data-learn="agent-column"
       onKeyDown={onKey}
-      onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
     >
-      <ResizeEdge />
-      <header className={styles.head}>
-        <span className={styles.kind}>
-          <AgentMark running={running} /> agent
-        </span>
-        <ModelSwitch />
-        <span className={styles.headTools}>
-          <ButtonGroup label="the agent's views">
-          <Button pressed={view === 'chats'} onClick={() => agentActions.show(view === 'chats' ? 'chat' : 'chats')} disabled={running} title="Your saved chats and the shared ones">
-            chats
-          </Button>
-          <Button pressed={view === 'notes'} onClick={() => agentActions.show(view === 'notes' ? 'chat' : 'notes')} title="The agent notes: the workspace's memory">
-            notes
-          </Button>
-          <Button onClick={() => agentActions.newChat()} disabled={running} title="A new chat (this one is saved)">
-            new
-          </Button>
-          </ButtonGroup>
-          <span className={styles.close}>
-            <Button icon onClick={() => closeAgent()} title="Fold it back to the box (Esc); the chat stays" aria-label="fold it back">
-              ×
+      <ResizeEdge edge="left" label="The agent's width" onDrag={resizeTo} onEnd={keepWidth} />
+      <PanelHead
+        className={styles.head}
+        tone="var(--accent-cyan)"
+        kind={
+          <>
+            <AgentMark running={running} /> agent
+          </>
+        }
+        tools={
+          <>
+            <Button pressed={view === 'chats'} onClick={() => agentActions.show(view === 'chats' ? 'chat' : 'chats')} disabled={running} title="Your saved chats and the shared ones">
+              chats
             </Button>
-          </span>
-        </span>
-      </header>
+            <Button pressed={view === 'notes'} onClick={() => agentActions.show(view === 'notes' ? 'chat' : 'notes')} title="The agent notes: the workspace's memory">
+              notes
+            </Button>
+            <Button onClick={() => agentActions.newChat()} disabled={running} title="A new chat (this one is saved)">
+              new
+            </Button>
+          </>
+        }
+        onClose={() => closeAgent()}
+        closeLabel="fold it back"
+        closeTitle="Fold it back to the box (Esc); the chat stays"
+      >
+        <ModelSwitch />
+      </PanelHead>
       <div
         className={styles.log}
         ref={log}
@@ -362,31 +363,23 @@ function Column() {
           <Label tone="faint" className={styles.scopeLabel}>sees</Label> whole workspace{here ? <> · you're in <span className={styles.scopeHere}>"{here}"</span></> : <> · {workspace}</>}
         </p>
       </footer>
-    </Window>
+    </EdgeColumn>
   )
 }
 
-// Drag the column's left edge to resize it; remembered in this browser.
-function ResizeEdge() {
-  const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    const h = document.documentElement
-    h.setAttribute('data-agent-resizing', '')
-    const move = (ev: PointerEvent) => {
-      const w = Math.round(Math.min(W_MAX, Math.max(W_MIN, window.innerWidth - ev.clientX)))
-      h.style.setProperty('--agent-width', `${w}px`)
-    }
-    const up = () => {
-      h.removeAttribute('data-agent-resizing')
-      const w = parseInt(h.style.getPropertyValue('--agent-width'), 10)
-      if (w) localStorage.setItem(WIDTH_STORE, String(w))
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
+// Drag the column's left edge to resize it (ResizeEdge, D-359); remembered in this browser.
+function resizeTo(e: PointerEvent) {
+  const w = Math.round(Math.min(W_MAX, Math.max(W_MIN, window.innerWidth - e.clientX)))
+  document.documentElement.style.setProperty('--agent-width', `${w}px`)
+}
+
+function keepWidth() {
+  const w = parseInt(document.documentElement.style.getPropertyValue('--agent-width'), 10)
+  try {
+    if (w) localStorage.setItem(WIDTH_STORE, String(w))
+  } catch {
+    // No storage (a private window): it's only for this time.
   }
-  return <div className={styles.edge} onPointerDown={onDown} aria-hidden />
 }
 
 // The model for this chat (agent.md §4.2): the person's pick in Settings, switchable here for this chat only.
