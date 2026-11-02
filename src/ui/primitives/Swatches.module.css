@@ -1,0 +1,18 @@
+/* A filter's summary (src/ui/primitives/Swatches.tsx): one square per kind in its colour; hidden ones go dark. */
+.swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.swatch {
+  display: inline-block;
+  width: var(--dot);
+  height: var(--dot);
+  background: var(--tone);
+}
+
+.swatch[data-on='false'] {
+  background: none;
+  box-shadow: inset 0 0 0 var(--line-w) var(--fg-faint);
+}

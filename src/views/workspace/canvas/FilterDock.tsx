@@ -10,7 +10,7 @@ import { create } from 'zustand'
 import { ALL_TYPES, type Card } from '../../../data/cards'
 import { Appear } from '../../../ui/primitives/Appear'
 import { Menu, type MenuEntry } from '../../../ui/patterns/Menu'
-import menuStyles from '../../../ui/patterns/Menu.module.css'
+import { Swatches, type Swatch } from '../../../ui/primitives/Swatches'
 import { ConsoleFloor, ConsoleTab, FloorTitle, useEscapeCloses } from '../../../ui/patterns/Console'
 import { linkTone } from '../plane/PlaneLinks'
 import { LINK_GROUPS, narrowing, setFilter, START, useFilter, useHoldFilter, type Filter } from './planeFilter'
@@ -64,8 +64,7 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   for (const c of cards) for (const t of c.tags ?? []) tagCount.set(t, (tagCount.get(t) ?? 0) + 1)
   const tags = [...tagCount.keys()].sort()
   const regions = [...new Set(cards.filter((c) => c.type === 'competitor').flatMap((c) => c.regions ?? []))].sort()
-  const swatches = (list: { key: string; tone: string; on: boolean }[]) =>
-    list.map((s) => <span key={s.key} className={menuStyles.swatch} data-on={s.on} style={{ ['--tone' as string]: s.tone }} />)
+  const swatches = (list: Swatch[]) => <Swatches list={list} />
   const named = (ids: string[], name: (id: string) => string) => (ids.length === 0 ? 'any' : ids.length === 1 ? name(ids[0]) : `${ids.length}`)
   const show: MenuEntry[] = ALL_TYPES.map((t) => ({ key: t, label: `${t}s`, checked: !f.hide.includes(t), tone: TYPE_TONE[t], onSelect: () => set({ hide: flip(f.hide, t) }) }))
   const forItems: MenuEntry[] = [

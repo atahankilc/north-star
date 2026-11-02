@@ -6768,7 +6768,8 @@ key rows a `<kbd>`; its own keys kept), its `N notes · N seen` foot gone; the a
 line under the name), Threads' `@` (its send button's key title gone), the matrix's `+ card` and AddPill's list. One
 `cardEntry()` (`src/views/workspace/plane/cardEntry.ts`) draws a card as a row for CardPanel's picker, BringCards and
 both matrix lists. PromptRow gained `meta`, `sub`, `badge`, `faint`, a hover wash where the pointer doesn't pick.
-Stage left: 4 FilterDock's swatch out of Menu.module.css.
+Stage 4 (same day): the filter dock's `SHOW ■■□■` squares are their own primitive (`src/ui/primitives/Swatches.tsx`,
+with its gallery), no longer borrowed from Menu.module.css. All four stages done.
 
 
 ### D-351 · 2026-11-02 · Accepted (the user: "ana welcome a bakıyorum da birbiriyle alakası olmayan şeyler bir arada gösterilmiş galiba sınırımız 6 olduğu için … Together ile find bir arada, piece anlatırken consoledan bahsedilmiş … böyle flowun tersi anlatımlar hiç hoş değil")

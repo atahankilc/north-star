@@ -34,25 +34,6 @@
   text-transform: none;
 }
 
-/* SHOW's summary: one square per type, in its colour; hidden types go dark. */
-.swatch {
-  display: inline-block;
-  margin-right: var(--space-1);
-  vertical-align: var(--line-w);
-  width: var(--dot);
-  height: var(--dot);
-  background: var(--tone);
-}
-
-.swatch:last-child {
-  margin-right: 0;
-}
-
-.swatch[data-on='false'] {
-  background: none;
-  box-shadow: inset 0 0 0 var(--line-w) var(--fg-faint);
-}
-
 /* The create button: a solid magenta cell, `+` (D-344's cell, the create's own colour). */
 .primary {
   composes: sm from '../primitives/Button.module.css';
