@@ -1,9 +1,9 @@
 // "Are you sure?" for something that can't be taken lightly (D-182, D-183): hazard tape. The screen darkens, the box
 // comes in a few hard steps, and ASCII tape `╱╱╱` wraps round it from the box outwards, runs once and stops; the text
 // settles out of glyphs (DecodeText). Leaving, the box breaks apart cell by cell (D-034). Reduced motion: the tape is
-// just there, nothing moves. A native <dialog>: focus stays inside (on cancel first), Escape cancels.
+// just there, nothing moves. On the one Window (D-359): focus kept inside (on cancel first, or the gentler answer),
+// Escape cancels, a press on the dark does nothing; the tape is drawn on its scrim (`behind`).
 import { useEffect, useId, useRef } from 'react'
-import { createPortal } from 'react-dom'
 import { isReducedMotion } from '../../state/motion'
 import { runCells } from '../primitives/Appear'
 import { CELL_PX } from '../foundation/cellReveal'
@@ -12,6 +12,8 @@ import { Button } from '../primitives/Button'
 import { ButtonGroup } from '../primitives/ButtonGroup'
 import styles from './HazardConfirm.module.css'
 import { DUR } from '../foundation/motion'
+import { stopCanvas } from '../foundation/canvasGuard'
+import { Window } from './Window'
 
 type Props = {
   title: string
@@ -34,22 +36,13 @@ const BAND = 3
 const ease = (t: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3)
 
 export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel, also }: Props) {
-  const dialog = useRef<HTMLDialogElement>(null)
-  const box = useRef<HTMLDivElement>(null)
+  const box = useRef<HTMLElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const cancelBtn = useRef<HTMLButtonElement>(null)
   const alsoBtn = useRef<HTMLButtonElement>(null)
   const leaving = useRef(false)
   const reduced = isReducedMotion()
   const titleId = useId()
-
-  useEffect(() => {
-    const d = dialog.current
-    if (!d) return
-    d.showModal()
-    ;(alsoBtn.current ?? cancelBtn.current)?.focus()
-    return () => d.close()
-  }, [])
 
   // The tape, on the screen's cell grid round the box.
   useEffect(() => {
@@ -119,52 +112,54 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
     leaving.current = true
     const el = box.current
     if (!el || reduced) return then()
-    dialog.current?.setAttribute('data-leaving', 'true')
+    // The scrim: the dark and the tape go with the box.
+    el.parentElement?.setAttribute('data-leaving', 'true')
     runCells(el, 'exit', 0, DUR.exit, then)
   }
 
-  return createPortal(
-    <dialog
-      ref={dialog}
-      className={styles.dialog}
-      data-reduced={reduced || undefined}
-      aria-labelledby={titleId}
-      // React passes events up through the portal: whatever's under it (the canvas) mustn't get the press.
-      onPointerDown={(e) => e.stopPropagation()}
-      onCancel={(e) => {
-        e.preventDefault()
-        leave(onCancel)
-      }}
+  return (
+    <Window
+      role="alertdialog"
+      labelledBy={titleId}
+      onClose={() => leave(onCancel)}
+      scrimPress="keep"
+      scrimProps={{ className: styles.scrim, 'data-reduced': reduced || undefined, ...stopCanvas }}
+      look="bare"
+      entrance="none"
+      focus={also ? alsoBtn : cancelBtn}
+      elRef={box}
+      className={styles.box}
+      behind={
+        <>
+          <div className={styles.veil} aria-hidden />
+          <canvas ref={canvas} className={styles.tape} aria-hidden />
+        </>
+      }
     >
-      <div className={styles.veil} aria-hidden />
-      <canvas ref={canvas} className={styles.tape} aria-hidden />
-      <div ref={box} className={styles.box} role="alertdialog" aria-labelledby={titleId}>
-        <h2 id={titleId} className={styles.title}>
-          <DecodeText text={title} duration={500} delay={100} />
-        </h2>
-        {lines.map((line, i) => (
-          <p key={i} className={styles.line}>
-            <DecodeText text={line} duration={500} delay={160 + i * 60} />
-          </p>
-        ))}
-        {/* Cancel the strong one (focused), deleting the solid magenta one: here deleting is the point (D-344). */}
-        <div className={styles.actions}>
-          <ButtonGroup>
-            <Button ref={cancelBtn} tone="main" onClick={() => leave(onCancel)}>
-              cancel
+      <h2 id={titleId} className={styles.title}>
+        <DecodeText text={title} duration={500} delay={100} />
+      </h2>
+      {lines.map((line, i) => (
+        <p key={i} className={styles.line}>
+          <DecodeText text={line} duration={500} delay={160 + i * 60} />
+        </p>
+      ))}
+      {/* Cancel the strong one (focused), deleting the solid magenta one: here deleting is the point (D-344). */}
+      <div className={styles.actions}>
+        <ButtonGroup>
+          <Button ref={cancelBtn} tone="main" onClick={() => leave(onCancel)}>
+            cancel
+          </Button>
+          {also && (
+            <Button ref={alsoBtn} onClick={() => leave(also.onSelect)}>
+              {also.label}
             </Button>
-            {also && (
-              <Button ref={alsoBtn} onClick={() => leave(also.onSelect)}>
-                {also.label}
-              </Button>
-            )}
-            <Button tone="hazard" onClick={() => leave(onConfirm)}>
-              {confirm}
-            </Button>
-          </ButtonGroup>
-        </div>
+          )}
+          <Button tone="hazard" onClick={() => leave(onConfirm)}>
+            {confirm}
+          </Button>
+        </ButtonGroup>
       </div>
-    </dialog>,
-    document.body,
+    </Window>
   )
 }

@@ -1,21 +1,9 @@
-/* The hazard confirm (D-183). The dialog fills the screen; the veil darkens it, the canvas draws the tape round the box. */
-.dialog {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  max-width: none;
-  height: 100vh;
-  max-height: none;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: none;
+/* The hazard confirm (D-183), on the one Window (D-359). Its scrim clear: on it the veil darkens the screen (fading in
+   on its own while the box steps in) and the canvas draws the tape round the box. */
+.scrim {
+  --window-scrim: transparent;
   color: var(--fg);
   overflow: hidden;
-}
-
-.dialog::backdrop {
-  background: none;
 }
 
 .veil {
@@ -35,8 +23,8 @@
   pointer-events: none;
 }
 
-.dialog[data-leaving='true'] .veil,
-.dialog[data-leaving='true'] .tape {
+.scrim[data-leaving='true'] .veil,
+.scrim[data-leaving='true'] .tape {
   opacity: 0;
   transition: opacity var(--dur-fast) linear;
 }
@@ -46,21 +34,18 @@
   composes: rise from '../foundation/Enter.module.css';
   --enter-ms: var(--dur-decode);
   --enter-timing: steps(4);
-  --rise-from: translate(-50%, -50%) scale(0.96);
-  position: absolute;
-  top: 50%;
-  left: 50%;
+  --rise-from: scale(0.96);
+  position: relative;
   width: min(var(--confirm-w), calc(100vw - 2 * var(--space-12)));
   padding: var(--space-6);
   border: var(--line-w) solid var(--accent-magenta);
   border-top-width: var(--line-w-bold);
   background: var(--bg);
   font-family: var(--font-mono);
-  transform: translate(-50%, -50%);
 }
 
-.dialog[data-reduced='true'] .veil,
-.dialog[data-reduced='true'] .box {
+.scrim[data-reduced='true'] .veil,
+.scrim[data-reduced='true'] .box {
   animation: none;
 }
 

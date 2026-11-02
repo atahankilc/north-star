@@ -13,7 +13,7 @@ const stack: Layer[] = []
 
 const FIELD = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
 // What hears Escape itself: a menu or list with the focus, another dialog (a native <dialog> too).
-const OWN = '[role=menu], [role=listbox], [role=dialog], dialog'
+const OWN = '[role=menu], [role=listbox], [role=dialog], [role=alertdialog], dialog'
 
 function onKey(e: KeyboardEvent) {
   if (e.key !== 'Escape' || e.defaultPrevented || e.isComposing) return

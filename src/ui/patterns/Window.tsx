@@ -7,7 +7,8 @@
 // - the frame: the wizard window's look (D-316: a line, the page's black), or `look="bare"` for a caller with its own;
 // - the one close, `[×] esc` (D-219), when asked for (`close`);
 // - an entrance: the small one (`enter`, Enter.module.css), the cell-by-cell build (`cells`, Appear) or none;
-// - into the body (`portal`), or where it's drawn.
+// - into the body (`portal`), or where it's drawn;
+// - `role="alertdialog"` for a hazard's question, and what's drawn on the scrim under it (`behind`).
 // The scrim's layer and colour can be set from outside through `--window-z` and `--window-scrim` (custom properties,
 // so they never fight the stylesheet order).
 import { useRef, type CSSProperties, type HTMLAttributes, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type RefObject } from 'react'
@@ -44,6 +45,10 @@ type Props = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
   portal?: boolean
   // The window element, for a caller that measures it or runs its own rebuild on it.
   elRef?: RefObject<HTMLElement | null>
+  // `alertdialog`: it asks before something that can't be taken lightly (the hazard confirm; onboarding reads it).
+  role?: 'dialog' | 'alertdialog'
+  // Drawn on the scrim, under the window (the hazard confirm's tape).
+  behind?: ReactNode
   style?: CSSProperties
 }
 
@@ -63,6 +68,8 @@ export function Window({
   entrance = 'enter',
   portal = true,
   elRef,
+  role = 'dialog',
+  behind,
   className,
   onKeyDown,
   ...rest
@@ -76,7 +83,7 @@ export function Window({
 
   const box = {
     ...rest,
-    role: 'dialog',
+    role,
     'aria-modal': modal || undefined,
     'aria-label': label,
     'aria-labelledby': labelledBy,
@@ -119,6 +126,7 @@ export function Window({
         if (e.target === e.currentTarget && scrimPress === 'close') onClose?.()
       }}
     >
+      {behind}
       {win}
     </div>
   ) : (

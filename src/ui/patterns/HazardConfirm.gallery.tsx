@@ -1,8 +1,9 @@
 import { useState, type ComponentProps } from 'react'
 import { example } from '../../gallery/example'
+import { Button } from '../primitives/Button'
 import { HazardConfirm } from './HazardConfirm'
 
-// A modal <dialog> over the whole page (the gallery too): cancel, Escape or an answer closes it, `[show again]` brings it
+// A modal over the whole page, on the one Window (the gallery too): cancel, Escape or an answer closes it, `[show again]` brings it
 // back, as the app's caller would.
 function Confirm(p: Omit<ComponentProps<typeof HazardConfirm>, 'onConfirm' | 'onCancel'>) {
   const [open, setOpen] = useState(true)
@@ -12,9 +13,9 @@ function Confirm(p: Omit<ComponentProps<typeof HazardConfirm>, 'onConfirm' | 'on
     return (
       <p style={{ color: 'var(--fg-dim)' }}>
         {said} ·{' '}
-        <button style={{ background: 'none', border: 0, color: 'var(--accent-cyan)', font: 'inherit', cursor: 'pointer' }} onClick={() => setOpen(true)}>
-          [show again]
-        </button>
+        <Button link onClick={() => setOpen(true)}>
+          show again
+        </Button>
       </p>
     )
   return <HazardConfirm {...p} also={p.also && { ...p.also, onSelect: close(p.also.label) }} onConfirm={close(p.confirm)} onCancel={close('cancelled')} />
