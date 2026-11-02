@@ -66,7 +66,7 @@ export function pickScript(ask: string, before = ''): Script {
   const a = ask.toLowerCase()
   if (/^\s*preview demo\b/.test(a)) return 'demo'
   if (/^\s*web demo\b/.test(a)) return 'web'
-  if (/^\s*job demo\b/.test(a) || /^(the changes were applied \(\d+\)\. )?go on with step \d+/.test(a)) return 'job'
+  if (/^\s*job demo\b/.test(a) || /^(the changes were applied \(\d+\)\. |the preview holds the steps so far and waits until every step is done\. )?go on with step \d+/.test(a)) return 'job'
   if (before.includes(JOB_MARK) && /^\s*(go|yes|ok|okay|do it|go ahead|sure)\b/.test(a)) return 'job'
   // S17: a `/` command, or "go"/"yes" after a skill's plan (devStubSkills.ts).
   const sk = parseSkill(ask)
@@ -178,7 +178,8 @@ export function nextStep(env: Env, ask: string, step: number, results: { name: s
     if (step === 1) return { calls: [{ name: 'change', args: { ops: [{ op: 'create_card', args: { type: 'idea', plane, title: `Idea ${n} from the job` } }], summary: `job step ${n}` } }] }
     if (step === 2) return { calls: [{ name: 'progress', args: { step: n, state: 'done' } }] }
     const made = /\$\w+ → (c\d+)/.exec(results.map((r) => r.content).join('\n'))?.[1]
-    return { answer: `Step ${n} of ${JOB_STEPS.length} is in the preview${made ? `: ${made} ${titleOf(env, made)}` : ''}. Apply it and I go on with the next step.` }
+    const oneAtEnd = /the preview holds the steps so far/i.test(ask) || (n === 1 && /one preview at the end/i.test(ask))
+    return { answer: `Step ${n} of ${JOB_STEPS.length} is in the preview${made ? `: ${made} ${titleOf(env, made)}` : ''}. ${oneAtEnd ? (n < JOB_STEPS.length ? 'I go on with the next step; the preview waits till every step is in.' : 'Every step is in: apply it as one undo step.') : 'Apply it and I go on with the next step.'}` }
   }
   if (kind === 'skill') {
     const p = parseSkill(ask)

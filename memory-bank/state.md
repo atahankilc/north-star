@@ -35,8 +35,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - **The agent, where it stands (2026-11-02; D-327, D-328, D-329 built and pushed; D-341 P1 done):**
   1. P1 measured, committed and pushed (529d57b; state-history 2026-11-02); the runs' records are in evals/results.
      **Waiting for OpenAI credit:** the four runs in agent-pipeline.md §7, then routing and the map's default (D-341).
-  2. In the app: a big job (`/restructure Segments`), the two go buttons (not looked at in a browser yet); the preview
-     pick saved with the chat (a rules change). Every agent bug: docs/specs/agent-bugs.md (its table).
+  2. In the app: both go buttons checked headless on the stub 2026-11-02 (`job demo`); `/restructure` on a real model
+     still to see; the preview pick saved with the chat (a rules change). Every agent bug: docs/specs/agent-bugs.md (its table).
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
   which (D-313); pushed;
   rules deployed.
