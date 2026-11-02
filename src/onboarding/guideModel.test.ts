@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { firstLine, guideModel, guideRows, hasNew, keyLesson, keysFor, parentOf, showDot, step, type Row } from './guideModel'
 import { KEYS } from './keys'
+import { keyGlyphs } from '../ui/foundation/keyGlyphs'
 import { LESSONS, lessonById } from './lessons'
 
 const none = { seen: {}, armed: [] }
@@ -113,8 +114,10 @@ describe('the ? guide model', () => {
     const viewer = guideModel(none, 'viewer').keys
     expect(viewer.length).toBeLessThan(KEYS.length)
     expect(viewer.some((k) => k.editors)).toBe(false)
-    for (const k of ['+ p ↵', '⌘D', '⇧⌘V', 'g', 'a', '1–9', '⌘Z']) expect(viewer.some((r) => r.keys === k), k).toBe(false)
-    for (const k of ['⌘F', '?', '0', 't', 'esc']) expect(viewer.some((r) => r.keys === k), k).toBe(true)
+    // The rows are written as this computer writes keys (D-355: `Ctrl+F` off a Mac, as on CI's Linux), so look them up so.
+    const has = (k: string) => viewer.some((r) => r.keys === keyGlyphs(k))
+    for (const k of ['+ p ↵', '⌘D', '⇧⌘V', 'g', 'a', '1–9', '⌘Z']) expect(has(k), k).toBe(false)
+    for (const k of ['⌘F', '?', '0', 't', 'esc']) expect(has(k), k).toBe(true)
     expect(guideModel(none, 'editor').keys).toHaveLength(KEYS.length)
     expect(keysFor(null)).toHaveLength(KEYS.length)
     // Typed, a viewer finds none of them either.
