@@ -10,6 +10,7 @@ import { canvasOf } from '../model/canvases'
 import { viewOf } from './changeset'
 import { parseSkill } from './skills'
 import type { Card } from '../model/cards'
+import { plural } from '../model/words'
 
 type Env = Pick<AgentEnv, 'getWs' | 'ids'> & { changes?: AgentEnv['changes'] }
 type Call = { name: string; args: Record<string, unknown> }
@@ -48,7 +49,6 @@ function kit(env: Env) {
   return { ws, d, C, P, T, cite, planes, decks, backed, named, onPlane, card, linksOf, canvasShort }
 }
 
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 const change = (ops: Op[], summary: string, text: string): SkillStep => ({ calls: [{ name: 'change', args: { ops, summary } }], text })
 const proposed = (results: Result[]) => results.length > 0 && results[results.length - 1].name === 'change' && /^Proposed/.test(results[results.length - 1].content)
 const refusedWhy = (results: Result[]) => (results[results.length - 1]?.content ?? '').split('\n')[0].replace(/[.\s]+$/, '')

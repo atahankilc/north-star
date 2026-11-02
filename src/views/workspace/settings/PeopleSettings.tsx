@@ -30,6 +30,7 @@ import { Note, Row, Section } from '../../../ui/patterns/Settings'
 import type { WorkspaceCtx } from '../canvas/context'
 import { Field } from '../../../ui/primitives/Field'
 import styles from './PeopleSettings.module.css'
+import { codeText, firstName } from '../../../model/words'
 
 const ROLE_HINT: Record<Role, string> = {
   owner: 'manages people and the invite code; can delete it',
@@ -137,7 +138,7 @@ function Members({ wid, workspace, run }: { wid: string; workspace: WorkspaceCtx
                     run(removeMember(wid, uid))
                   }}
                 >
-                  remove {name.split(' ')[0]}?
+                  remove {firstName(name)}?
                 </Button>
                 <Button onClick={() => setConfirm(null)}>
                   keep
@@ -209,7 +210,7 @@ function InviteCode({ wid, workspace, isOwner, run }: { wid: string; workspace: 
       }
     >
       <Row label="code" hint="Share it with the people you want in.">
-        <span className={styles.code}>{`${code.slice(0, 4)}-${code.slice(4)}`}</span>
+        <span className={styles.code}>{codeText(code)}</span>
         <Button size="md" accent="cyan" onClick={copy}>
           {copied ? 'copied' : 'copy'}
         </Button>

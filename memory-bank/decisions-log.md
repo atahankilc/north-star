@@ -7015,4 +7015,5 @@ and not another, two document excerpts, the agent reading decks by older rules, 
 **Kept apart:** the spec's list (text vs piece resize, the filters and rules on different data, clear-spot finders…).
 **Group 1 (2026-11-02):** 1.1–1.8 and 1.10 done (shared-code.md's Done); group 4 taken by another session (the
 drag work's own).
-**Not yet:** 1.9 (small words); groups 2–3.
+1.9 (small words, model/words.ts) done the same day.
+**Not yet:** groups 2–3.

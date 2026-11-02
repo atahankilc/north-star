@@ -63,6 +63,7 @@ import { Label as UiLabel } from '../../../ui/primitives/Label'
 import { EVIDENCE_TEXT_MAX, LONG_TEXT_MAX, SOURCE_MAX, TAG_MAX, URL_MAX } from '../../../model/limits'
 import { CARD_PLACEHOLDER } from '../../../model/cardName'
 import { ALIGNS, alignTo, spreadTo } from '../../../model/layout'
+import { plural } from '../../../model/words'
 
 // Type = the panel's colour, as the card's edge (D-055).
 const TONE: Record<AnyType, string> = CARD_TONE
@@ -240,7 +241,7 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
     ...[...textKinds].map(([k, n]) => [k, n] as const),
   ]
     .filter(([, n]) => n)
-    .map(([t, n]) => `${n} ${t}${n > 1 ? 's' : ''}`)
+    .map(([t, n]) => plural(n, t))
     .join(' · ')
   // Everything selected with its box: cards their size, text as it's laid out (D-229). Each one's document only when
   // it's moved (drawn in the onboarding's demo, which has no Firestore, D-315).

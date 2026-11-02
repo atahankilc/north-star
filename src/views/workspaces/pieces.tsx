@@ -14,6 +14,7 @@ import { sinceLines, useHereNow, useNames, useNewTasks, useSince, useSummary, ty
 import type { ChangeKind } from '../../model/changeLog'
 import { WorkspacePicture } from './WorkspacePicture'
 import styles from './Workspaces.module.css'
+import { people, plural } from '../../model/words'
 
 // The workspace's menu (open, rename, invite code, leave, delete), under its `⋯`: right-click opens the same.
 export function More({ name, onMenu }: { name: string; onMenu: (at: [number, number]) => void }) {
@@ -27,7 +28,7 @@ export function More({ name, onMenu }: { name: string; onMenu: (at: [number, num
 // How many people are in it.
 export function People({ w }: { w: WithId<Workspace> }) {
   const n = w.memberIds.length
-  return <span className={styles.people}>{n} {n === 1 ? 'person' : 'people'}</span>
+  return <span className={styles.people}>{people(n)}</span>
 }
 
 export function HereNow({ names }: { names: string[] }) {
@@ -57,7 +58,7 @@ const KIND_WORD: Partial<Record<ChangeKind, [string, string]>> = {
 const CARD_KINDS = new Set(['customers', 'problems', 'competitors', 'ideas', 'features', 'packages', 'places'])
 export function kindsText(kinds: Record<string, number>): string {
   const cards = Object.entries(kinds).filter(([k]) => CARD_KINDS.has(k)).reduce((n, [, v]) => n + v, 0)
-  const parts: string[] = cards ? [`${cards} ${cards === 1 ? 'card' : 'cards'}`] : []
+  const parts: string[] = cards ? [plural(cards, 'card')] : []
   for (const [k, n] of Object.entries(kinds).sort((a, b) => b[1] - a[1])) {
     if (CARD_KINDS.has(k)) continue
     const word = KIND_WORD[k as ChangeKind]

@@ -15,6 +15,7 @@ import { previewDiff, viewOf, type Changeset } from './changeset'
 import { entriesOf, readCell, type MatrixSetup } from '../model/matrix'
 import { researchTool } from './research'
 import { comparisonId } from '../model/shapes'
+import { plural } from '../model/words'
 
 export { NO_COORDS, COORDS_FIX, agentArgs, ID_KEYS } from './change'
 
@@ -272,7 +273,7 @@ export function matchNotes(env: AgentEnv): string[] {
     const keys = new Set(matches.map((x) => comparisonId(x.featureId, x.competitorId)))
     const stated = cells.filter((c) => !keys.has(comparisonId(c.row, c.col)) && (c.confidence ?? 'documented') === 'documented')
     if (empty.length) out.push(`"${p.name}" holds ${matches.length} match${matches.length > 1 ? 'es' : ''} the workspace records, ${empty.length} still empty: ${empty.slice(0, 20).map((x) => `"${title(x.featureId)}" × "${title(x.competitorId)}" (their "${theirs(x.competitorFeatureId)}")`).join('; ')}. Fill each from what the two features do (none, partial, full or better), confidence documented.`)
-    if (stated.length) out.push(`"${p.name}": ${stated.length} cell${stated.length > 1 ? 's' : ''} with no recorded match stated as documented (${stated.slice(0, 8).map((c) => `"${title(c.row)}" × "${title(c.col)}"`).join('; ')}): a cell the workspace doesn't record is a guess (confidence guess), or left empty.`)
+    if (stated.length) out.push(`"${p.name}": ${plural(stated.length, 'cell')} with no recorded match stated as documented (${stated.slice(0, 8).map((c) => `"${title(c.row)}" × "${title(c.col)}"`).join('; ')}): a cell the workspace doesn't record is a guess (confidence guess), or left empty.`)
   }
   return out
 }

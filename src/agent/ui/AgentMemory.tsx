@@ -17,6 +17,7 @@ import styles from './AgentMemory.module.css'
 import { Button } from '../../ui/primitives/Button'
 import { ButtonGroup } from '../../ui/primitives/ButtonGroup'
 import { Rule as KitRule } from '../../ui/primitives/Rule'
+import { firstName } from '../../model/words'
 
 // `01 ── CHATS` as the column's other views start.
 // A section's head: the kit's Rule (D-326), its words faint after the line.
@@ -51,7 +52,7 @@ export function ChatsView() {
     key: c.id,
     label: c.title,
     // Short, so the title keeps the room: when, and whose or shared; the open one says so.
-    hint: [...(c.id === chat.id ? ['open'] : []), ago(c.updatedAt), ...(c.uid !== uid ? [names.get(c.uid)?.split(/[ @]/)[0] || 'a teammate'] : c.shared ? ['shared'] : [])].join(' · '),
+    hint: [...(c.id === chat.id ? ['open'] : []), ago(c.updatedAt), ...(c.uid !== uid ? [firstName(names.get(c.uid) ?? '') || 'a teammate'] : c.shared ? ['shared'] : [])].join(' · '),
     words: `${c.turns} asks`,
     onSelect: () => void agentActions.openChat(c.id),
   })

@@ -28,6 +28,7 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Label } from '../../../ui/primitives/Label'
 import { Window } from '../../../ui/patterns/Window'
 import { SplitLine } from '../../../ui/primitives/SplitLine'
+import { people as peopleWord } from '../../../model/words'
 
 // The margin round its text, in its px.
 const PAD = WORLD.docPad
@@ -381,7 +382,7 @@ export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlacePro
   const h = 500 * zoom
   const spot = placing.at && toScreen ? toScreen(placing.at[0] - 325, placing.at[1] - 250) : null
   const rect: ScreenRect | null = spot ? { x: spot[0], y: spot[1], w, h, zoom } : null
-  const people = `${members.total} ${members.total === 1 ? 'person' : 'people'}${members.editors || members.viewers ? ` (${[members.editors && `${members.editors} editor${members.editors === 1 ? '' : 's'}`, members.viewers && `${members.viewers} viewer${members.viewers === 1 ? '' : 's'}`].filter(Boolean).join(', ')})` : ''}`
+  const people = `${peopleWord(members.total)}${members.editors || members.viewers ? ` (${[members.editors && `${members.editors} editor${members.editors === 1 ? '' : 's'}`, members.viewers && `${members.viewers} viewer${members.viewers === 1 ? '' : 's'}`].filter(Boolean).join(', ')})` : ''}`
   return (
     <div className={styles.placeLayer} onPointerDown={(e) => e.stopPropagation()}>
       {rect && (

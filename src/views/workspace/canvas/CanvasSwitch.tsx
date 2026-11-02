@@ -15,8 +15,8 @@ import { learn } from '../../../onboarding/learn'
 import { ContextMenu } from '../../../ui/patterns/ContextMenu'
 import { useWs, useWsNow } from './context'
 import styles from './CanvasSwitch.module.css'
+import { plural } from '../../../model/words'
 
-const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`
 
 type Mode = 'list' | 'new' | 'rename'
 

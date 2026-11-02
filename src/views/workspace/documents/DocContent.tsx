@@ -9,6 +9,7 @@ import { ago } from '../../../ui/foundation/ago'
 import { Markdown } from '../../../ui/primitives/Markdown'
 import styles from './DocContent.module.css'
 import { numText } from '../../../ui/primitives/Rule'
+import { plural } from '../../../model/words'
 
 // Each kind's mark (D-232): a square in its colour and a short name.
 export const KIND_SHORT: Record<DocKind, string> = { markdown: 'md', image: 'img', pdf: 'pdf', report: 'rep' }
@@ -21,7 +22,6 @@ export function KindMark({ kind }: { kind: DocKind }) {
   )
 }
 
-const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
 
 export function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`

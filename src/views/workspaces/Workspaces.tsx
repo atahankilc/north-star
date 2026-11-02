@@ -52,6 +52,7 @@ import { PieceCard } from '../../ui/patterns/PieceCard'
 import { WorkspacePicture } from './WorkspacePicture'
 import styles from './Workspaces.module.css'
 import { keysTaken } from '../../ui/foundation/focus'
+import { codeText, people } from '../../model/words'
 
 // The onboarding's coach (D-315), loaded apart from this page (it's shared with the workspace's chunk).
 const Coach = lazy(() => import('../../onboarding/Coach').then((m) => ({ default: m.Coach })))
@@ -203,9 +204,9 @@ export function Workspaces({ user }: { user: AuthUser }) {
         key: 'code',
         label: 'copy invite code',
         letter: 'c',
-        hint: `${w.inviteCode.slice(0, 4)}-${w.inviteCode.slice(4)}`,
+        hint: codeText(w.inviteCode),
         onSelect: () => {
-          void navigator.clipboard?.writeText(`${w.inviteCode.slice(0, 4)}-${w.inviteCode.slice(4)}`)
+          void navigator.clipboard?.writeText(codeText(w.inviteCode))
           setNote({ text: `${w.name}'s invite code copied.`, tone: 'ok' })
         },
       })
@@ -475,7 +476,7 @@ function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen }: {
               <PieceCard band="var(--accent-cyan)" name="invited" className={styles.info}>
                 <span className={styles.needT}>{i.name}</span>
                 <span className={styles.needS}>
-                  invited you · {i.memberCount} {i.memberCount === 1 ? 'person' : 'people'}
+                  invited you · {people(i.memberCount)}
                 </span>
                 <ButtonGroup className={styles.acts}>
                   <Button tone="primary" disabled={busy !== null} onClick={() => runBusy(i.id, async () => (await acceptInvite(i.workspaceId, user), onOpen(i.workspaceId)))}>
@@ -492,7 +493,7 @@ function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen }: {
             <Appear key={r.id} data-learn="pending-row">
               <PieceCard band="var(--line-hover)" name="waiting" className={styles.info}>
                 <span className={styles.needT}>
-                  {r.code.slice(0, 4)}-{r.code.slice(4)}
+                  {codeText(r.code)}
                 </span>
                 <span className={styles.needS}>you asked to join · an owner lets you in</span>
                 <span className={styles.acts}>

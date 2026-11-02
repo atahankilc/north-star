@@ -6,6 +6,7 @@ import type { Card } from './cards'
 import type { WorkspaceData } from '../data/workspaceData'
 import { FOR, type Edge } from './edges'
 import { packageTree } from './cardInside'
+import { plural } from './words'
 
 export type Proof = { supports: number; contradicts: number; clash: boolean }
 // `clash`: the status and the evidence disagree (also with no evidence at all), the head in magenta.
@@ -37,7 +38,7 @@ export function factsOf(cards: Card[], data: Pick<WorkspaceData, 'evidence' | 'c
   }
   const featureCount = new Map<string, number>()
   for (const f of data.competitorFeatures) featureCount.set(f.competitorId, (featureCount.get(f.competitorId) ?? 0) + 1)
-  const n = (k: number, one: string) => `${k} ${one}${k === 1 ? '' : 's'}`
+  const n = plural
 
   const out = new Map<string, Facts>()
   for (const c of cards) {

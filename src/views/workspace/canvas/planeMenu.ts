@@ -16,6 +16,7 @@ import { LINK_GROUPS } from './planeFilter'
 import { clipboard, deleteHere, onPlane, packageThese, pasteSame, selectedIds, setSelection } from './selection'
 import { foldsOf } from '../plane/cardInside'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
+import { plural } from '../../../model/words'
 
 const CARD_LETTER: Record<CardType, string> = { customer: 'c', problem: 'r', competitor: 'o', idea: 'i', feature: 'f' }
 const TONE: Record<CardType, string> = CARD_TONE
@@ -106,7 +107,7 @@ export function cardItems(c: Ctx, id: string): PromptEntry[] {
           },
         ]
       : c.editor && parts
-      ? [{ key: 'fold', label: card.folded ? `unfold ${parts} part${parts > 1 ? 's' : ''}` : `fold ${parts} part${parts > 1 ? 's' : ''}`, glyph: card.folded ? '+' : '−', onSelect: () => void foldCard(c.wid, card, !card.folded) }]
+      ? [{ key: 'fold', label: `${card.folded ? 'unfold' : 'fold'} ${plural(parts, 'part')}`, glyph: card.folded ? '+' : '−', onSelect: () => void foldCard(c.wid, card, !card.folded) }]
       : []),
     { key: 'copy', label: 'copy', glyph: '⧉', onSelect: () => Object.assign(clipboard, { cards: [card], labels: [], edges: c.edges, pasted: 0 }) },
     ...(c.editor

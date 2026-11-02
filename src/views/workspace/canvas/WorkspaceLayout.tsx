@@ -49,6 +49,7 @@ import { Coach } from '../../../onboarding/Coach'
 import { Agent } from '../../../agent/ui/Agent'
 import styles from './WorkspaceLayout.module.css'
 import { DUR } from '../../../ui/foundation/motion'
+import { plural } from '../../../model/words'
 
 const VIEWER = "You're a viewer in this workspace: an owner can make you an editor."
 
@@ -232,7 +233,7 @@ function ExportSection({ wid, workspace }: { wid: string; workspace: WorkspaceCt
       const { bundle, leftOut } = await exportWorkspace(wid, user.id, workspace)
       download(zipBundle(bundle), `${fileSlug(workspace.name)}-${new Date().toISOString().slice(0, 10)}.zip`)
       const cards = bundle.customers.length + bundle.problems.length + bundle.competitors.length + bundle.ideas.length + bundle.features.length + bundle.packages.length
-      const n = (count: number, one: string) => `${count} ${one}${count === 1 ? '' : 's'}`
+      const n = plural
       setPacked(
         `Packed ${n(bundle.pieces.length, 'piece')}, ${n(cards, 'card')}, ${n(bundle.edges.length, 'link')}, ${n(bundle.labels.length, 'text item')}, ` +
           `${n(bundle.cells.length, 'cell')} and ${n(bundle.documents.length, 'document')}.` +

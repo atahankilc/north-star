@@ -23,6 +23,7 @@ import { rulesFrom, type RuleSpec } from './table'
 import { shortId } from './matrix'
 import { colsOf, columnIn, deckIn, tasksOf } from './tasks'
 import { KANBAN_COLS_MAX, COL_NAME_MAX, LIMIT_MAX, BOX_NAMES_MAX, BOX_NAME_MAX } from '../model/limits'
+import { plural } from '../model/words'
 export { KANBAN_COLS_MAX, COL_NAME_MAX, LIMIT_MAX, BOX_NAMES_MAX, BOX_NAME_MAX }
 
 type P = Piece & { id: string }
@@ -246,7 +247,7 @@ export function updateDeck(ctx: OpCtx, args: UpdateDeckArgs): Plan {
   return { op, label: args.label ?? (said.length ? said.join(', ') : 'change a deck'), writes, ids, meta: { kind: 'kanban' } }
 }
 
-const tasksWord = (n: number) => `${n} task${n === 1 ? '' : 's'}`
+const tasksWord = (n: number) => plural(n, 'task')
 
 // Each into `to`'s column of the same name, else its first; after what's already in it, in the order they had
 // (KanbanSetup.tsx' moveTo).

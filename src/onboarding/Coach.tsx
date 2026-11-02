@@ -34,6 +34,7 @@ import { KindGuide } from './KindGuide'
 import { Guide, useGuideRole, useGuideShown } from './Guide'
 import { AREA_NAME } from './guideModel'
 import { isTyping } from '../ui/foundation/focus'
+import { firstName } from '../model/words'
 
 // Off the queue (see above).
 const OFF_QUEUE = (l: LessonData) => l.format === 'guide' || l.format === 'empty'
@@ -385,7 +386,7 @@ export function Coach() {
     const owner = ownerDoc?.name || peers.find((p) => p.uid === ownerId)?.name || (ownerId && ownerId === uid ? (user?.name ?? undefined) : undefined)
     const peer = peers.find((p) => p.uid !== uid)?.name
     const kind = cur?.payload.kind as string | undefined
-    return { owner: owner?.split(' ')[0], peer: peer?.split(' ')[0], piece: kind ? (KIND_WORDS[kind] ?? kind) : undefined }
+    return { owner: owner && firstName(owner), peer: peer && firstName(peer), piece: kind ? (KIND_WORDS[kind] ?? kind) : undefined }
   }, [ownerId, ownerDoc, peers, uid, user, cur])
 
   const close = (how: CloseHow, toGuide = false) => {

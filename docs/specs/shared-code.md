@@ -104,4 +104,9 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
   - 1.10: `freeSpot` deleted. DrawSection's `pointercancel` went with group 4 (the drag plumbing).
   - Nothing else changes on screen. Checked: tsc, vitest (all but evalRunner's two, from another session's eval
     task in progress), evals regression on the stub (all pass), check:kit/tokens/gallery 0.
-- Left in group 1: 1.9 (small words).
+- **1.9 (2026-11-02):** model/words.ts: `plural(n, one, many?)`, `people(n)`, `firstName`, `codeText` (the invite
+  code's `ABCD-EFGH`). The five local plural helpers (agent loop and stub, DocContent, CanvasSwitch, WorkspaceLayout,
+  cardFacts, ops/deck) and the `> 1` ones (card panel's kinds, the fold menu, the agent's cells check) use it; the
+  person/people counts on the workspaces page and in a document piece; the invite code in four places; first names in
+  people settings, the agent's chats and the coach. Left as written: one-off inline `x === 1 ? '' : 's'` in sentences
+  (new code uses `plural`); TextItems' sticky tag (another session's file then). Nothing changes on screen.
