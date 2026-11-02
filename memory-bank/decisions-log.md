@@ -6870,5 +6870,9 @@ reads `untitled <type>`. Checked: tsc, vitest 982/0, check:kit/tokens/gallery 0.
 tint carries D-295's ink), Sheet.module.css, TaskSheet (was Kanban's TaskCard), CardSheet (was CardKanban's),
 PriorityChip (one P1, `var(--clash-ink, magenta)`), each with its gallery; Kanban.module.css keeps only how a sheet sits
 on the deck. Checked against old in the gallery (deck, cards deck, side view, beside; both themes).
-**Not yet:** steps 3–5 (PlaneCard split, timeline/matrix/table on the face, CardRow and the check:kit rule); the
-plane card's drag code as a shared hook.
+**Step 3 (done 2026-11-02):** cards/PlaneCard (the face and all inside it, PackageBand), its CSS on `--tone`;
+PlaneCards keeps place, drag, link, Marks, landing and memo, the insides' acts as callbacks. Checked against HEAD in
+the gallery (plane, focused plane, card panel parts, find preview, package picking, canvas, beside; both themes): the
+plane's states pixel-identical, the rest within old-vs-old noise (re-shot where unsure: 0).
+**Not yet:** steps 4–5 (timeline/matrix/table on the face, CardRow and the check:kit rule); the plane card's drag
+code as a shared hook.

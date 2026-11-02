@@ -5,7 +5,7 @@
 // `--placeholder`, `--type-ink`, `--clash-ink`). Its states are data attributes for its contents to read (`selected`,
 // `finished`, `lifted`, `pressed`, `dim`), and with `marks` it draws its Marks (D-265) in its tone, with the L's of
 // others who have `peersOf` picked. A shell only: its layout, drag and data are its caller's.
-import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
+import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent as ReactPointerEvent, ReactNode, Ref } from 'react'
 import { Marks } from '../../../ui/primitives/Marks'
 import { usePeersOn } from '../canvas/collab'
 import styles from './CardFace.module.css'
@@ -25,12 +25,16 @@ type Props = {
   marks?: boolean
   // Whose selection of it others' L's follow (a task's or card's id).
   peersOf?: string
-  // A button for the keyboard and screen readers (the deck's sheets while live).
+  // A button for the keyboard and screen readers (true: the deck's sheets while live; false: out of the tab order;
+  // left out: neither, as a plane card's face, which the plane handles).
   button?: boolean
   label?: string
   className?: string
   style?: CSSProperties
-  onPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
+  ref?: Ref<HTMLDivElement>
+  onPointerDown?: (e: ReactPointerEvent<HTMLDivElement>) => void
+  onPointerEnter?: () => void
+  onPointerLeave?: () => void
   onClick?: (e: MouseEvent) => void
   onKeyDown?: (e: KeyboardEvent) => void
   // Over its contents, after its Marks (a comments chip).
@@ -38,11 +42,12 @@ type Props = {
   children: ReactNode
 } & Record<`data-${string}`, string | number | boolean | undefined>
 
-export function CardFace({ tone, tint, edge = 'sheet', selected, finished, lifted, pressed, dim, marks, peersOf, button, label, className, style, onPointerDown, onClick, onKeyDown, extra, children, ...data }: Props) {
+export function CardFace({ tone, tint, edge = 'sheet', selected, finished, lifted, pressed, dim, marks, peersOf, button, label, className, style, ref, onPointerDown, onPointerEnter, onPointerLeave, onClick, onKeyDown, extra, children, ...data }: Props) {
   const peers = usePeersOn(peersOf ?? '')
   return (
     <div
       {...data}
+      ref={ref}
       className={[styles.face, className].filter(Boolean).join(' ')}
       style={tone ? ({ ['--tone' as string]: tone, ...style } as CSSProperties) : style}
       data-edge={tone ? edge : undefined}
@@ -53,9 +58,11 @@ export function CardFace({ tone, tint, edge = 'sheet', selected, finished, lifte
       data-pressed={pressed || undefined}
       data-dim={dim || undefined}
       role={button ? 'button' : undefined}
-      tabIndex={button ? 0 : -1}
+      tabIndex={button === undefined ? undefined : button ? 0 : -1}
       aria-label={label}
       onPointerDown={onPointerDown}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
       onClick={onClick}
       onKeyDown={onKeyDown}
     >

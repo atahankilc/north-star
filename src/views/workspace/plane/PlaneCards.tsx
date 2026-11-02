@@ -13,7 +13,6 @@
 // (`[−] 3 parts`), their cards shrinking into its rows, and grows back out on `[+]`.
 // The selected card's right panel (D-219, D-221) opens at the right of the plane's part of the screen.
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { WORLD } from '../../../model/world'
 import { CARD, copyCards, foldCard, foldPackage, moveCard, moveCards, spotRef, type Card } from '../../../data/cards'
 import { planeOf } from '../../../data/places'
 import { clipboard, deleteHere, heldAt, landed, onPlane, othersThan, pasteSame, selectedIds, setSelection, startGroupDrag, toggleSelected } from '../canvas/selection'
@@ -23,7 +22,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useHistory } from '../../../data/history'
 import { labelRef, moveMany } from '../../../data/labels'
 import type { CompetitorFeature } from '../../../data/competitorFeatures'
-import { byCategory, foldedHeight, foldsOf, INDENT, openHeight, packageBox, partRowBox, type Box } from './cardInside'
+import { byCategory, foldedHeight, foldsOf, openHeight, packageBox, partRowBox, type Box } from './cardInside'
 import type { Label } from '../../../data/labels'
 import { labelBox, TextItems } from '../text/TextItems'
 import { usePeersOn } from '../canvas/collab'
@@ -39,7 +38,7 @@ import type { PlaneCam } from '../../../state/canvasView'
 import { useCanvasView } from '../../../state/canvasView'
 import { useWs, useWsNow } from '../canvas/context'
 import { useStill } from '../canvas/still'
-import { factsOf, useTaskTally, type Facts, type Proof } from './cardFacts'
+import { factsOf, useTaskTally, type Facts } from './cardFacts'
 import { createEdge, defaultKind } from '../../../data/edges'
 import { drawLinks, ghostOf, LinkChips, LinkLines } from './PlaneLinks'
 import { learn } from '../../../onboarding/learn'
@@ -47,13 +46,12 @@ import styles from './PlaneCards.module.css'
 import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { DRAG_PX } from '../../../ui/foundation/feel'
-import { Chip } from '../../../ui/primitives/Chip'
-import { cardPlaceholder } from '../../../model/cardName'
+import { PackageBand, PlaneCard, type Detail } from '../cards/PlaneCard'
+export type { Detail }
 
 // How a card is drawn by how big it is on screen (D-111, D-153): everything while its small text (8 px) is 4 px or more;
 // the title alone (24 px) while that's 5 px or more; then bars. Going back up takes 10 % more, so a view resting on a
 // line doesn't flip them.
-export type Detail = 'full' | 'compact' | 'far'
 const FULL_AT = 4 / 8
 const COMPACT_AT = 5 / 24
 const HYSTERESIS = 1.1
@@ -64,10 +62,6 @@ function detailAt(scale: number, was: Detail): Detail {
   if (scale >= up(COMPACT_AT, 'compact')) return 'compact'
   return 'far'
 }
-// Evidence cells, up to this many each way (D-152).
-const MOST = 5
-// The full title: up to 80 characters, three lines (two with tags under it).
-const TITLE_SHOWN = 80
 // A dragged card's size (the old board's CARRIED).
 const CARRIED = 0.8
 
@@ -516,29 +510,18 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
         data-dragging={!!carried || undefined}
         data-target={`card:${card.id}`}
       >
-        <div
+        <PackageBand
           className={styles.band}
           data-learn="package-band"
+          card={card}
+          facts={facts}
+          members={members}
+          editor={editor}
+          onFold={fold}
           onPointerDown={press}
           onPointerEnter={live ? () => useCanvasView.setState({ cardHovered: card.id }) : undefined}
           onPointerLeave={live ? () => useCanvasView.getState().cardHovered === card.id && useCanvasView.setState({ cardHovered: null }) : undefined}
-        >
-          <span className={styles.kind}>package</span>
-          <span className={styles.bandName} data-empty={!card.title || undefined}>
-            {card.title || cardPlaceholder('package')}
-          </span>
-          {facts?.head && <span className={styles.bandFacts}>{facts.head}</span>}
-          <span className={styles.cells}>
-            {members.slice(0, 12).map((m) => (
-              <i key={m.id} data-on style={{ background: CARD_TONE[m.type] }} />
-            ))}
-          </span>
-          {editor && (
-            <button /* kit-ok: on the package's band at the world's size: the Button's cell drawn in world units (D-344) */ className={styles.fold} onPointerDown={(e) => e.stopPropagation()} onClick={fold} title="Fold its members into it">
-              − {members.length}
-            </button>
-          )}
-        </div>
+        />
         <div className={styles.frame} />
         {live && <Marks zoom={zoom} tier="l" short={Math.min(place.w, place.h)} hover={hovered} selected={selected} pressed={pressed} dragging={!!carried} peers={peers} />}
         {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
@@ -714,23 +697,24 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
         onPointerEnter={live ? () => useCanvasView.setState({ cardHovered: card.id }) : undefined}
         onPointerLeave={live ? () => useCanvasView.getState().cardHovered === card.id && useCanvasView.setState({ cardHovered: null }) : undefined}
       >
-        <div ref={face} className={styles.card} style={carried} data-detail={detail}>
-          {detail === 'full' ? (
-            <FullCard
-              card={card}
-              facts={facts}
-              editor={live && editor}
-              parts={parts}
-              rows={rows}
-              inPkg={counts}
-              features={features}
-              matched={matched}
-              open={open && !drag}
-            />
-          ) : (
-            <CompactTitle text={card.title || cardPlaceholder(card.type)} empty={!card.title} bars={detail === 'far'} />
-          )}
-        </div>
+        <PlaneCard
+          ref={face}
+          className={styles.card}
+          style={carried}
+          card={card}
+          facts={facts}
+          detail={detail}
+          editor={live && editor}
+          parts={parts}
+          rows={rows}
+          inPkg={counts}
+          features={features}
+          matched={matched}
+          open={open && !drag}
+          onFeature={(f) => useCanvasView.setState({ cardSelected: card.id, cfOpen: f.id, labelSelected: null, linkSelected: null })}
+          onMember={(c) => useCanvasView.setState({ cardSelected: c.id, labelSelected: null, linkSelected: null })}
+          onFold={() => void (card.type === 'package' ? foldPackage(wid, card, null) : foldCard(wid, card, !card.folded))}
+        />
         {live && <Marks zoom={zoom} short={Math.min(CARD.w, h)} tone="var(--type)" selected={selected} pressed={pressed} dragging={moving} target={target} peers={peers} />}
         {live && editor && !drag && (hovered || linkingFrom) && (
           <span className={styles.handle} data-linking={linkingFrom || undefined} onPointerDown={startLink} aria-label="Drag to another card to link">
@@ -742,206 +726,5 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
       {/* Carried by what holds it (a section, a package), only that one's marks show where they land (D-291). */}
       {live && moving && (drag || !shift?.lead) && <Landing x={x} y={y} w={CARD.w} h={h} zoom={zoom} tone={CARD_TONE[card.type]} />}
     </>
-  )
-}
-
-type FullProps = { card: Card; facts?: Facts; editor: boolean; parts: number; rows?: { card: Card; depth: number }[]; inPkg?: Map<string, number>; features?: CompetitorFeature[]; matched: Set<string>; open: boolean }
-
-function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, open }: FullProps) {
-  const { wid } = useWs()
-  const tags = card.tags ?? []
-  const inside = !!rows || open
-  const groups = open && features?.length ? byCategory(features) : null
-  const ours = features?.filter((f) => matched.has(f.id)).length ?? 0
-  const title = card.title.length > TITLE_SHOWN ? `${card.title.slice(0, TITLE_SHOWN - 1).trimEnd()}…` : card.title
-  const head = facts?.head && facts.head.length > 24 ? `${facts.head.slice(0, 23)}…` : facts?.head
-  return (
-    <>
-      <span className={styles.head}>
-        <span className={styles.kind}>{card.type}</span>
-        {head && (
-          <span className={styles.status} data-clash={facts?.clash || undefined}>
-            {head}
-          </span>
-        )}
-        {facts?.proof && <ProofCells proof={facts.proof} />}
-      </span>
-      <p className={styles.title} data-empty={!card.title || undefined} data-lines={inside || tags.length ? 2 : 3} data-inside={inside || undefined}>
-        {title || cardPlaceholder(card.type)}
-      </p>
-      {groups && (
-        <div className={styles.inner}>
-          {groups.map((g) => (
-            <div key={g.cat || '-'}>
-              {g.cat && (
-                <p className={styles.innerCat}>
-                  {g.cat} <span>{g.items.length}</span>
-                </p>
-              )}
-              {g.items.map((f) => (
-                <button /* kit-ok: a competitor's feature drawn small inside its card, at the world's size */
-                  key={f.id}
-                  className={styles.mini}
-                  data-match={matched.has(f.id) || undefined}
-                  onClick={() => useCanvasView.setState({ cardSelected: card.id, cfOpen: f.id, labelSelected: null, linkSelected: null })}
-                >
-                  <span className={styles.miniName}>{f.name}</span>
-                  <span className={styles.miniAv}>{f.availability}</span>
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-      {rows && (
-        <div className={styles.inner}>
-          {rows.map((r) => {
-            // What a folded card holds (D-245): each row a bar in its own card's colour, a step further in for each level
-            // down, so what's under what shows; its status or priority; a package's row, how much it holds.
-            const held = r.card.type === 'package' ? (inPkg?.get(r.card.id) ?? 0) : 0
-            return (
-              <button /* kit-ok: a member's row inside a folded package, at the world's size */
-                key={r.card.id}
-                className={styles.memberRow}
-                style={{ ['--tone' as string]: CARD_TONE[r.card.type], paddingLeft: r.depth * INDENT }}
-                onClick={() => useCanvasView.setState({ cardSelected: r.card.id, labelSelected: null, linkSelected: null })}
-              >
-                <i aria-hidden />
-                <span className={styles.miniName}>{r.card.title || cardPlaceholder(r.card.type)}</span>
-                <span className={styles.miniAv}>{[held ? `${held} inside` : '', r.card.status ?? r.card.validation ?? r.card.priority].filter(Boolean).join(' · ')}</span>
-              </button>
-            )
-          })}
-        </div>
-      )}
-      {!open && features && features.length > 0 && (
-        <span className={styles.strip} aria-label={`${features.length} features, ${ours} match ours`}>
-          <span className={styles.cells}>
-            {byCategory(features)
-              .flatMap((g) => g.items)
-              .slice(0, 12)
-              .map((f) => (
-                <i key={f.id} data-match={matched.has(f.id) || undefined} />
-              ))}
-          </span>
-          {features.length} features{ours ? ` · ${ours} ≈ ours` : ''}
-        </span>
-      )}
-      <span className={styles.foot}>
-        {facts?.meta && <span className={styles.facts}>{facts.meta}</span>}
-        {facts?.tasks && (
-          <span className={styles.tasks} data-all={facts.tasks.done === facts.tasks.all || undefined} title={`${facts.tasks.done} of ${facts.tasks.all} tasks finished`}>
-            {facts.tasks.done === facts.tasks.all ? '☑' : '☐'} {facts.tasks.done}/{facts.tasks.all}
-          </span>
-        )}
-        {/* On other planes too (D-281): what's changed here changes there. */}
-        {facts?.planes && (
-          <span className={styles.planes} title={`On ${facts.planes} planes: the same card on each`}>
-            ⧉ <b>{facts.planes}</b>
-          </span>
-        )}
-        {parts > 0 && (
-          <button /* kit-ok: a card face's `+ N parts`, at the world's size: the Button's cell drawn in world units (D-344) */
-            className={styles.fold}
-            disabled={!editor}
-            title={card.type === 'package' ? 'Lay what it holds out on the plane' : card.folded ? 'Unfold its parts onto the plane' : 'Fold its parts into it'}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() =>
-              void (card.type === 'package' ? foldPackage(wid, card, null) : foldCard(wid, card, !card.folded))
-            }
-          >
-            {card.type === 'package' ? `+ ${parts} inside` : `${card.folded ? '+' : '−'} ${parts} part${parts === 1 ? '' : 's'}`}
-          </button>
-        )}
-      </span>
-      {tags.length > 0 && !inside && <TagChips tags={tags} />}
-    </>
-  )
-}
-
-// Evidence as cells: filled for each piece that supports it, outlined for each against; magenta when the evidence and
-// the status disagree.
-function ProofCells({ proof }: { proof: Proof }) {
-  const cells = [...Array<boolean>(Math.min(MOST, proof.supports)).fill(true), ...Array<boolean>(Math.min(MOST, proof.contradicts)).fill(false)]
-  return (
-    <span className={styles.proof} data-clash={proof.clash || undefined} aria-label={`${proof.supports} for, ${proof.contradicts} against`}>
-      {cells.map((filled, i) => (
-        <i key={i} data-filled={filled || undefined} />
-      ))}
-    </span>
-  )
-}
-
-// Tags as framed chips in a row (the kit's Chip at the world's size, D-326); what doesn't fit becomes `+N`. Mono is
-// 0.6 em a character. The same sizes as the CSS (D-325): --w-text-3xs, --space-1, and the world's chip gap and card
-// padding (model/world.ts).
-const CHIP_TEXT = 7
-const CHIP_PAD = 4
-const CHIP_GAP = WORLD.chipGap
-const CHIP_ROOM = CARD.w - 2 * WORLD.cardPad - WORLD.cardEdge
-const chipWidth = (text: string) => text.length * CHIP_TEXT * 0.6 + CHIP_PAD * 2
-function TagChips({ tags }: { tags: string[] }) {
-  const shown: string[] = []
-  let x = 0
-  for (let i = 0; i < tags.length; i++) {
-    const text = `#${tags[i]}`
-    // Room for the `+N` chip unless this is the last tag.
-    const need = chipWidth(text) + (i < tags.length - 1 ? CHIP_GAP + chipWidth(`+${tags.length - i - 1}`) : 0)
-    if (x + need > CHIP_ROOM) {
-      shown.push(`+${tags.length - i}`)
-      break
-    }
-    shown.push(text)
-    x += chipWidth(text) + CHIP_GAP
-  }
-  return (
-    <span className={styles.tags}>
-      {shown.map((t) => (
-        <Chip key={t} scale="world">
-          {t}
-        </Chip>
-      ))}
-    </span>
-  )
-}
-
-// Zoomed out (D-153): the title alone at one size, at most three lines, ending at the last whole word that fits with
-// `…`; far out, each line a bar as long as the line.
-function CompactTitle({ text, empty, bars }: { text: string; empty: boolean; bars: boolean }) {
-  const el = useRef<HTMLParagraphElement>(null)
-  const [cut, setCut] = useState<{ of: string; text: string } | null>(null)
-  useLayoutEffect(() => {
-    const p = el.current
-    if (!p) return
-    const fits = () => p.scrollHeight <= p.clientHeight + 1
-    const words = text.split(/\s+/)
-    const span = p.firstElementChild as HTMLElement
-    span.textContent = text
-    if (fits()) return setCut(null)
-    // The most whole words that fit with the `…`; a single long word is cut short instead.
-    let lo = 0
-    let hi = words.length - 1
-    while (lo < hi) {
-      const mid = Math.ceil((lo + hi) / 2)
-      span.textContent = `${words.slice(0, mid).join(' ')}…`
-      if (fits()) lo = mid
-      else hi = mid - 1
-    }
-    let shown = lo > 0 ? `${words.slice(0, lo).join(' ')}…` : text
-    if (lo === 0)
-      for (let n = text.length - 1; n > 0; n--) {
-        span.textContent = `${text.slice(0, n)}…`
-        if (fits()) {
-          shown = span.textContent
-          break
-        }
-      }
-    span.textContent = shown
-    setCut({ of: text, text: shown })
-  }, [text])
-  return (
-    <p ref={el} className={styles.compact} data-empty={empty || undefined} data-bars={bars || undefined}>
-      <span>{cut?.of === text ? cut.text : text}</span>
-    </p>
   )
 }

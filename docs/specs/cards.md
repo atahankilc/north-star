@@ -1,6 +1,6 @@
 # Cards: one face for every card (D-358)
 
-Status: **agreed 2026-11-02 (D-358); steps 1–2 done 2026-11-02.** Written from a read of every place that draws a card or
+Status: **agreed 2026-11-02 (D-358); steps 1–3 done 2026-11-02.** Written from a read of every place that draws a card or
 a task. Same way as the kit (D-326) and the gallery (D-324): one thing built once at the bottom, everything else built
 on it, each part with its own `X.gallery.tsx`. Same rule as D-325: **consistency first**. Where the copies drifted
 apart they snap to one look, and every visible change is listed below and shown in the gallery before and after.
@@ -113,6 +113,13 @@ outside `cards/`, and `TYPE_ACCENT` anywhere.
    own copy in Kanban.module.css until `Assignee` (step 5).
 3. `PlaneCard` out of PlaneCards: every type, full / compact / far, empty, with tasks, tags, proof, open competitor,
    folded feature, folded package.
+   **Done 2026-11-02:** `cards/PlaneCard.tsx` holds the face and all inside it (FullCard, CompactTitle, ProofCells,
+   TagChips, the competitor's small features, member rows) and `PackageBand`; its insides' CSS in PlaneCard.module.css,
+   on `--tone` (set by the face) instead of the box's `--type`, so it also draws alone in the gallery. The plane's own
+   code stays in PlaneCards.tsx (place, drag, link handle, Marks, landing, memo); what the insides do comes in as
+   callbacks (`onFeature`, `onMember`, `onFold`). PlaneCards.module.css keeps only where a face sits (`.box > .card`,
+   `.pkg > .band`) and the drag, dim and packing states. CardFace gained `ref` and pointer enter/leave; it sets
+   `tabIndex` only when told to be a button or not, so a plane card stays out of the tab order as before.
 4. TimelineBar, matrix and table heads on the face, `NameInPlace`.
 5. `CardRow` and the small parts in the 5 rows; the `check:kit` rule.
 
