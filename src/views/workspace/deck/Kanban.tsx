@@ -35,7 +35,7 @@ import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import { passes, useKanbanFilter } from './kanbanFilter'
-import { addTask, CARD_FIELDS, setKanbanSetup, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTasks, emptyKanban, KANBAN_COLS_MAX, moveTasks, orderBetween, setKanbanRows, KANBAN_ROWS, type KanbanRows, type TaskMove, overdue, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../../data/tasks'
+import { addTask, CARD_FIELDS, setKanbanSetup, COL_NAME_MAX, LIMIT_MAX, deleteColumn, deleteTasks, emptyKanban, KANBAN_COLS_MAX, moveTasks, orderBetween, setKanbanRows, KANBAN_ROWS, type KanbanRows, type TaskMove, setKanbanCols, shownTasks, TASK_TITLE_MAX, tasksIn, today, type KanbanCol, type KanbanSetup, type Task } from '../../../data/tasks'
 import { newId } from '../../../data/matrix'
 import { useAuth } from '../../../data/auth'
 import { useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
@@ -49,25 +49,24 @@ import { DockAction } from '../canvas/FocusDock'
 import { DrawerPick } from '../../../ui/patterns/Console'
 import { loadFolds, saveFolds, taskRows, type Lane } from '../table/rows'
 import { setPresenceDrag } from '../../../data/presence'
-import { PeerTaskDrags, usePeersOn } from '../canvas/collab'
+import { PeerTaskDrags } from '../canvas/collab'
 import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import { ThreadChip, threadOn } from '../threads/Threads'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
-import { checkCells, CHECK_CELLS_MAX, dueText, initials } from '../../../model/tasks'
+import { dueText } from '../../../model/tasks'
+import { hasMeta, TaskSheet } from '../cards/TaskSheet'
 import { learnable } from '../panels/TaskPanel'
 import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
 import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
 import { useKanbanSizes } from '../canvas/sizes'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
-import { Chip } from '../../../ui/primitives/Chip'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Field } from '../../../ui/primitives/Field'
 import { PromptField } from '../../../ui/primitives/PromptField'
 import { Rule } from '../../../ui/primitives/Rule'
 import styles from './Kanban.module.css'
 import { DECK_PX } from '../../../model/world'
-import { cardName } from '../../../model/cardName'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const K = DECK_PX
@@ -101,7 +100,6 @@ export const kanbanOf = (p: Pick<Piece, 'kanban'>): KanbanSetup => p.kanban ?? N
 export { useKanbanSizes }
 const useSizes = useKanbanSizes
 
-const hasMeta = (t: Task) => !!(t.cardId || t.due || t.checks?.length || t.assignee)
 // About how tall a task is before it's drawn: its title's lines (about 30 letters each, at most 3) and its meta line.
 const guess = (t: Task) => K.pad + Math.min(3, Math.max(1, Math.ceil(t.title.length / 30))) * K.line + (hasMeta(t) ? K.meta : 0) + (t.labels?.length ? K.line : 0)
 
@@ -568,7 +566,8 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
                       <div className={styles.list}>
                         {list.map((t, k) => (
                           <Slotted key={t.id} slot={slot === k ? drag!.size[1] : 0} tone={held && cardOf(held) ? CARD_TONE[cardOf(held)!.type] : undefined}>
-                            <TaskCard
+                            <TaskSheet
+                              className={styles.task}
                               task={t}
                               card={cardOf(t)}
                               finished={!!c.done}
@@ -607,7 +606,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
       })}
       {held && drag && (
         <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: '0.8', transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
-          <TaskCard task={held} card={cardOf(held)} finished={!!cols.find((c) => c.id === (drag.over?.col ?? held.col))?.done} selected={false} live lifted />
+          <TaskSheet className={styles.task} task={held} card={cardOf(held)} finished={!!cols.find((c) => c.id === (drag.over?.col ?? held.col))?.done} selected={false} live lifted />
           {heldIds.length > 1 && <span className={styles.more}>+{heldIds.length - 1}</span>}
         </div>
       )}
@@ -615,7 +614,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
         taskIds={taskIds}
         render={(id) => {
           const t = tasks.find((x) => x.id === id)!
-          return <TaskCard task={t} card={cardOf(t)} finished={!!cols.find((c) => c.id === t.col)?.done} selected={false} live={false} />
+          return <TaskSheet className={styles.task} task={t} card={cardOf(t)} finished={!!cols.find((c) => c.id === t.col)?.done} selected={false} live={false} />
         }}
       />
       {box && (
@@ -769,8 +768,6 @@ type HeadProps = {
   onLimit: (limit: number | undefined) => void
 }
 
-// How urgent (D-256), as the kit's pill (D-326): P1 magenta, P2 as the text, P3 faint (no tone).
-export const PRIORITY_TONE: Record<string, string | undefined> = { P1: 'var(--accent-magenta)', P2: 'var(--fg)' }
 
 // A column's head, as the right panel's sections: its number faint, its name in caps, a rule, its count; the finished
 // one's name green. Live, a double-click renames it, and on hover its tools come in after the count. With a limit
@@ -863,105 +860,6 @@ function ColumnHead({ col, n, count, holds, live, editor, naming, first, last, a
     <div className={styles.head} data-over={over || undefined} onPointerDown={naming || tools || limiting !== null ? onPress : undefined}>
       <Rule as="div" className={styles.headRule} n={n} name={name} count={countEl} countAt="end" />
       {toolRow}
-    </div>
-  )
-}
-
-type CardProps = {
-  task: Task
-  card: Card | null
-  finished: boolean
-  selected: boolean
-  live: boolean
-  lifted?: boolean
-  // Finished, for a card still being tested (D-254): its line asking what it taught.
-  learn?: () => void
-  // Drawn over it (D-260): others' frames, its comments' chip; `talk`: it has one, so its title leaves room.
-  extra?: ReactNode
-  talk?: boolean
-  onPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
-  onClick?: (e: React.MouseEvent) => void
-}
-
-// A task: raised paper as tall as its title (Inter, up to three lines), its left edge in the colour of the card it's for.
-// Under the title, only when there's something: the card's name, then on the right its due day (magenta once past,
-// unless finished), its checklist as cells, who it's given to (a square with their initials). Finished: a green `✓`
-// before the title, the title grey. Hover and selection are its marks (D-265), in its card's colour (cyan with none);
-// others who have it picked, theirs in their colours.
-function TaskCard({ task, card, finished, selected, live, lifted, learn, extra, talk, onPointerDown, onClick }: CardProps) {
-  const peers = usePeersOn(task.id)
-  const checks = task.checks ?? []
-  const ticked = checks.filter((c) => c.done).length
-  const late = overdue(task, finished)
-  const tone = task.cardType ? CARD_TONE[task.cardType] : undefined
-  return (
-    <div
-      className={styles.task}
-      data-task={task.id}
-      data-target={`task:${task.id}`}
-      data-find={`task:${task.id}`}
-      data-talk={talk || undefined}
-      data-selected={selected || undefined}
-      data-finished={finished || undefined}
-      data-lifted={lifted || undefined}
-      data-card={tone ? true : undefined}
-      style={tone ? ({ ['--tone' as string]: tone } as CSSProperties) : undefined}
-      role={live && !lifted ? 'button' : undefined}
-      tabIndex={live && !lifted ? 0 : -1}
-      aria-label={task.title}
-      onPointerDown={onPointerDown}
-      onClick={onClick}
-    >
-      <span className={styles.title}>
-        {finished && <span className={styles.tick}>✓ </span>}
-        {task.priority && (
-          <>
-            <Chip variant="pill" tone={PRIORITY_TONE[task.priority]}>
-              {task.priority}
-            </Chip>{' '}
-          </>
-        )}
-        {task.title}
-      </span>
-      {!!task.labels?.length && <span className={styles.labels}>{task.labels.map((l) => `#${l}`).join(' ')}</span>}
-      {hasMeta(task) && (
-        <span className={styles.meta}>
-          {task.cardId && (
-            <span className={styles.for} title={card?.title ?? 'its card is gone'}>
-              {card ? cardName(card) : 'its card is gone'}
-            </span>
-          )}
-          <span className={styles.push} />
-          {task.due && (
-            <span className={styles.due} data-late={late || undefined} title={late ? `was due ${task.due}` : `due ${task.due}`}>
-              ◷ {dueText(task.due)}
-            </span>
-          )}
-          {checks.length > 0 && (
-            <span className={styles.checks} data-all={ticked === checks.length || undefined} title={`${ticked} of ${checks.length} steps done`}>
-              {checks.length <= CHECK_CELLS_MAX && <span className={styles.cells}>{checkCells(ticked, checks.length)}</span>} {ticked}/{checks.length}
-            </span>
-          )}
-          {task.assignee && (
-            <span className={styles.who} title={task.assigneeName}>
-              {initials(task.assigneeName)}
-            </span>
-          )}
-        </span>
-      )}
-      {learn && (
-        <Button
-          tone="primary"
-          className={styles.learn}
-          title="log what it taught on its card, as evidence"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => (e.stopPropagation(), learn())}
-        >
-          + log what it taught
-        </Button>
-      )}
-      {live && !lifted && <Marks tone={tone} selected={selected} peers={peers} />}
-      {extra}
     </div>
   )
 }

@@ -244,122 +244,13 @@
   margin-top: calc(var(--space-2) + var(--space-half));
 }
 
-/* A task: raised paper as tall as its text, no border; its left edge in the colour of the card it's for. */
-.task {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: calc(var(--space-2) + var(--space-half)) var(--space-3) calc(var(--space-2) + var(--space-half)) var(--space-4);
-  background: var(--bg-raised);
-  box-shadow: 0 0 0 var(--line-w) var(--piece-card-edge);
-  user-select: none;
-  outline: none;
-}
-
-.task[data-card='true'] {
-  box-shadow: inset var(--line-w-bold) 0 0 var(--tone), 0 0 0 var(--line-w) var(--piece-card-edge);
-}
-
-/* A card on a kanban (D-268): its face a dark tone of its type, as on a plane (D-294); a task keeps the plain sheet. */
-.task[data-ccard] {
-  background: color-mix(in srgb, var(--tone) var(--card-tint), var(--bg-raised));
-}
-
-/* On that tinted face its greys lean to the ink and its type's colour a quarter to it, as on a plane (D-295). */
-.task[data-ccard] {
-  --fg-dim: color-mix(in srgb, var(--fg) var(--mix-strong), transparent);
-  --fg-faint: color-mix(in srgb, var(--fg) var(--mix-strong), transparent);
-}
-
-.task[data-ccard] .sheetType {
-  color: color-mix(in srgb, var(--tone) var(--mix-strong), var(--fg));
-}
-
+/* A task's or card's sheet (cards/TaskSheet, cards/CardSheet on the card face, D-358): here only how it sits on the deck
+   (the hand while live, its shade when unframed, its marks while another is held). */
 .layer[data-live='true'] .task {
   cursor: grab;
 }
 
-.title {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--fg);
-  font-family: var(--font-display);
-  font-size: var(--w-text-lg);
-  line-height: var(--lh-snug);
-  letter-spacing: var(--track-title);
-  overflow-wrap: anywhere;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-}
-
-.task[data-finished='true'] .title {
-  color: var(--fg-dim);
-}
-
-.tick {
-  color: var(--accent-green);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-}
-
-/* What it has, one line: the card's name left, then its day, checklist and person right. */
-.meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: calc(var(--space-4) + var(--space-half));
-  overflow: hidden;
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  white-space: nowrap;
-}
-
-/* Its #labels, a line under the title. */
-.labels {
-  overflow: hidden;
-  color: var(--fg-dim);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Finished, for a card still being tested (D-254): a cyan line asking what it taught (the kit's Button, primary). */
-.task .learn {
-  align-self: flex-start;
-}
-
-.for {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--fg-muted);
-  text-overflow: ellipsis;
-}
-
-.push {
-  flex: 1;
-}
-
-.due,
-.checks,
-.who {
-  flex: none;
-}
-
-.due[data-late='true'] {
-  color: var(--accent-magenta);
-}
-
-.checks[data-all='true'] {
-  color: var(--accent-green);
-}
-
-.cells {
-  letter-spacing: var(--track-cells);
-}
-
-/* Who it's given to: a square with their initials (D-169's squares). */
+/* A lane's person (D-258): a square with their initials, as on a task. */
 .who {
   display: inline-flex;
   align-items: center;
@@ -461,10 +352,6 @@
   height: 0;
 }
 
-.task[data-talk='true'] .title {
-  padding-right: var(--control-lg);
-}
-
 /* Soon (D-262): over the columns, what's due by Sunday. */
 .soon {
   display: flex;
@@ -541,36 +428,6 @@
 }
 
 /* ---- Holding cards (D-268, CardKanban.tsx). ---- */
-
-/* A card: a task's sheet, always edged in its type's colour; its type on top in that colour, its priority on the right. */
-.sheetHead {
-  composes: label from '../../../ui/primitives/Label.module.css';
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: calc(-1 * var(--space-1));
-}
-
-.sheetType {
-  color: var(--tone);
-}
-
-/* How sure we are: `◆ high` as the text, medium dim, low faint, broken magenta. */
-.sure {
-  color: var(--fg);
-}
-
-.sure[data-level='medium'] {
-  color: var(--fg-dim);
-}
-
-.sure[data-level='low'] {
-  color: var(--fg-faint);
-}
-
-.sure[data-level='broken'] {
-  color: var(--accent-magenta);
-}
 
 /* `no value`: its name faint; ruled out (invalidated): magenta. */
 .colHead[data-none='true'] .name {

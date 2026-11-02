@@ -1,0 +1,31 @@
+/* One face for every card and task (D-358, docs/specs/cards.md). */
+.face {
+  --edge-w: var(--line-w-bold);
+
+  position: relative;
+  background: var(--bg-raised);
+  box-shadow: 0 0 0 var(--line-w) var(--piece-card-edge);
+  user-select: none;
+  outline: none;
+}
+
+.face[data-edge='card'] {
+  --edge-w: var(--w-card-edge);
+}
+
+/* Its card's colour on its left edge. */
+.face[data-edge] {
+  box-shadow: inset var(--edge-w) 0 0 var(--tone), 0 0 0 var(--line-w) var(--piece-card-edge);
+}
+
+/* A card's face: a dark tone of its type (D-294). On it the greys lean to the ink, and its type's colour and magenta a
+   quarter to it, so every line reads, small ones too (D-295). */
+.face[data-tint='true'] {
+  --fg-dim: color-mix(in srgb, var(--fg) var(--mix-strong), transparent);
+  --fg-faint: color-mix(in srgb, var(--fg) var(--mix-strong), transparent);
+  --placeholder: color-mix(in srgb, var(--fg) var(--mix-soft), transparent);
+  --type-ink: color-mix(in srgb, var(--tone) var(--mix-strong), var(--fg));
+  --clash-ink: color-mix(in srgb, var(--accent-magenta) var(--mix-strong), var(--fg));
+
+  background: color-mix(in srgb, var(--tone) var(--card-tint), var(--bg-raised));
+}

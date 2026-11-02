@@ -1,0 +1,135 @@
+/* A sheet on a deck (D-251, D-252, D-358): a task's or a card's, on the one card face. As tall as its title (Inter, up
+   to three lines), then one line of what it has. */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: calc(var(--space-2) + var(--space-half)) var(--space-3) calc(var(--space-2) + var(--space-half)) var(--space-4);
+}
+
+.title {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--w-text-lg);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--track-title);
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.sheet[data-finished='true'] .title {
+  color: var(--fg-dim);
+}
+
+/* Its comments' chip sits in its top-right corner (D-260): the title keeps clear of it. */
+.sheet[data-talk='true'] .title {
+  padding-right: var(--control-lg);
+}
+
+.tick {
+  color: var(--accent-green);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* What it has, one line: the card's name left, then its day, checklist and person right. */
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: calc(var(--space-4) + var(--space-half));
+  overflow: hidden;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* Its #labels, a line under the title. */
+.labels {
+  overflow: hidden;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Finished, for a card still being tested (D-254): a cyan line asking what it taught (the kit's Button, primary). */
+.learn {
+  align-self: flex-start;
+}
+
+.for {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-muted);
+  text-overflow: ellipsis;
+}
+
+.push {
+  flex: 1;
+}
+
+.due,
+.checks,
+.who {
+  flex: none;
+}
+
+.due[data-late='true'] {
+  color: var(--accent-magenta);
+}
+
+.checks[data-all='true'] {
+  color: var(--accent-green);
+}
+
+.cells {
+  letter-spacing: var(--track-cells);
+}
+
+/* Who it's given to: a square with their initials (D-169's squares). */
+.who {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-xs);
+  height: var(--control-xs);
+  background: var(--wash-3);
+  color: var(--fg);
+  font-size: var(--w-text-xs);
+  letter-spacing: 0;
+}
+
+/* A card's sheet: its type in its colour (leaning to the ink on its tint) and its priority on top. */
+.head {
+  composes: label from '../../../ui/primitives/Label.module.css';
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: calc(-1 * var(--space-1));
+}
+
+.type {
+  color: var(--type-ink, var(--tone));
+}
+
+/* How sure we are: `◆ high` as the text, medium dim, low faint, broken magenta. */
+.sure {
+  color: var(--fg);
+}
+
+.sure[data-level='medium'] {
+  color: var(--fg-dim);
+}
+
+.sure[data-level='low'] {
+  color: var(--fg-faint);
+}
+
+.sure[data-level='broken'] {
+  color: var(--accent-magenta);
+}

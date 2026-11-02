@@ -23,18 +23,16 @@ import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { boxKey, boxPatch, byBox, byColumn, columnsOf, FIELD_NAME, heldCards, isPriorities, NO_VALUE, placeOf, rowFieldOf, rowsOfField, scorer, sureOf, takes, type CardCol } from './kanbanCards'
 import { suggestedOrder, type Ranked } from '../plane/cardFacts'
 import { create } from 'zustand'
-import { Gap, kanbanOf, K, LaneHead, PRIORITY_TONE, useKanbanSizes } from './Kanban'
-import { Chip } from '../../../ui/primitives/Chip'
+import { Gap, kanbanOf, K, LaneHead, useKanbanSizes } from './Kanban'
+import { CardSheet } from '../cards/CardSheet'
+import { PriorityChip } from '../cards/PriorityChip'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Rule } from '../../../ui/primitives/Rule'
 import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
-import { usePeersOn } from '../canvas/collab'
 import { loadFolds, saveFolds } from '../table/rows'
 import styles from './Kanban.module.css'
 import { cardName } from '../../../model/cardName'
 
-// P1 on a card's tinted face: its magenta leaning to the ink, so it reads there (D-295).
-const P1_ON_TINT = 'color-mix(in srgb, var(--accent-magenta) var(--mix-strong), var(--fg))'
 
 type Over = { col: string; row: string }
 type Drag = { id: string; from: [number, number]; grab: [number, number]; size: [number, number]; at: [number, number]; moving: boolean; over: Over | null }
@@ -174,7 +172,7 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
   const own = live ? (e: ReactPointerEvent) => e.stopPropagation() : undefined
   const vars = { ['--col' as string]: `${K.col}px`, ['--gap' as string]: `${K.gap}px`, ['--head' as string]: `${K.head}px`, ['--card-gap' as string]: `${K.cardGap}px` } as CSSProperties
   const sheet = (c: Card, col: CardCol | undefined, extra: { lifted?: boolean } = {}) => (
-    <CardSheet card={c} field={field} rowField={rowField} sure={sureOf(c, cards, edges)} finished={!!col?.done} selected={!extra.lifted && selected === c.id} live={live} lifted={extra.lifted} onPointerDown={extra.lifted ? undefined : press(c)} onClick={live && !editor ? () => pick(c) : undefined} />
+    <CardSheet className={styles.task} card={c} field={field} rowField={rowField} sure={sureOf(c, cards, edges)} finished={!!col?.done} selected={!extra.lifted && selected === c.id} live={live} lifted={extra.lifted} onPointerDown={extra.lifted ? undefined : press(c)} onClick={live && !editor ? () => pick(c) : undefined} />
   )
 
   return (
@@ -269,75 +267,6 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
   )
 })
 
-type SheetProps = {
-  card: Card
-  field: string
-  // Its row's field (D-269): left off the sheet too, as the column's.
-  rowField?: string
-  sure?: 'high' | 'medium' | 'low' | 'broken'
-  finished: boolean
-  selected: boolean
-  live: boolean
-  lifted?: boolean
-  onPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void
-  onClick?: () => void
-}
-
-// A card on a kanban: a sheet as a task's (D-252), edged in its type's colour. Its type in that colour and its priority
-// (P1 magenta) on top, its title (Inter, up to three lines), then how sure we are (`◆ high`, `! broken` magenta) and the
-// values it has other than the columns' own.
-function CardSheet({ card, field, rowField, sure, finished, selected, live, lifted, onPointerDown, onClick }: SheetProps) {
-  const peers = usePeersOn(card.id)
-  const shown = (f: string) => f !== field && f !== rowField
-  const rest = [
-    shown('status') && card.type === 'feature' ? card.status : undefined,
-    shown('status') && card.type !== 'feature' ? card.validation : undefined,
-    shown('impact') && card.impact ? `impact ${card.impact}` : undefined,
-    shown('effort') && card.effort ? `effort ${card.effort}` : undefined,
-  ].filter(Boolean)
-  return (
-    <div
-      className={styles.task}
-      data-sheet
-      data-card
-      data-ccard={card.id}
-      data-selected={selected || undefined}
-      data-finished={finished || undefined}
-      data-lifted={lifted || undefined}
-      style={{ ['--tone' as string]: CARD_TONE[card.type] } as CSSProperties}
-      role={live && !lifted ? 'button' : undefined}
-      tabIndex={live && !lifted ? 0 : -1}
-      aria-label={`${card.type}: ${cardName(card)}`}
-      onPointerDown={onPointerDown}
-      onClick={onClick}
-      onKeyDown={live && onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
-    >
-      <span className={styles.sheetHead}>
-        <span className={styles.sheetType}>{card.type}</span>
-        <span className={styles.push} />
-        {shown('priority') && card.priority && (
-          <Chip variant="pill" tone={card.priority === 'P1' ? P1_ON_TINT : PRIORITY_TONE[card.priority]}>
-            {card.priority}
-          </Chip>
-        )}
-      </span>
-      <span className={styles.title}>{cardName(card)}</span>
-      {(sure || rest.length > 0) && (
-        <span className={styles.meta}>
-          {sure && (
-            <span className={styles.sure} data-level={sure} title={sure === 'broken' ? 'something it rests on is invalidated' : `confidence ${sure}, from the status of what it rests on`}>
-              {sure === 'broken' ? '! broken' : `◆ ${sure}`}
-            </span>
-          )}
-          <span className={styles.push} />
-          {rest.join(' · ')}
-        </span>
-      )}
-      {live && !lifted && <Marks tone={CARD_TONE[card.type]} selected={selected} peers={peers} />}
-    </div>
-  )
-}
-
 // Whether the suggested order shows beside a priorities kanban (D-271): yours, per kanban, in this browser; on to start.
 const ORDER_KEY = (id: string) => `north-star:kanban-order:${id}`
 function orderSaved(id: string) {
@@ -395,9 +324,9 @@ function OrderList({ order, unrated, live, selected, onPick, onPress }: OrderPro
               {r.sure.level === 'broken' ? '! ' : ''}
               {r.score.toFixed(1)}
             </span>
-            <Chip variant="pill" tone={differs ? 'var(--accent-yellow)' : PRIORITY_TONE[r.suggested]}>
+            <PriorityChip priority={r.suggested} tone={differs ? 'var(--accent-yellow)' : undefined}>
               {differs ? `${own} → ${r.suggested}` : r.suggested}
-            </Chip>
+            </PriorityChip>
           </button>
         )
       })}

@@ -1,6 +1,6 @@
 # Cards: one face for every card (D-358)
 
-Status: **agreed 2026-11-02 (D-358); step 1 done 2026-11-02.** Written from a read of every place that draws a card or
+Status: **agreed 2026-11-02 (D-358); steps 1–2 done 2026-11-02.** Written from a read of every place that draws a card or
 a task. Same way as the kit (D-326) and the gallery (D-324): one thing built once at the bottom, everything else built
 on it, each part with its own `X.gallery.tsx`. Same rule as D-325: **consistency first**. Where the copies drifted
 apart they snap to one look, and every visible change is listed below and shown in the gallery before and after.
@@ -81,7 +81,7 @@ A new area, `src/views/workspace/cards/` (a covered gallery folder by its parent
 `count`), `ProofCells`, `TagChips`, `Sure` (`◆ high`, `! broken`), `Assignee` (the two-letter square).
 
 ### 4. Built on top
-- `TaskSheet` (was TaskCard) and `CardSheet`, both on `CardFace`; Kanban and CardKanban keep their boards, drag and
+- `TaskSheet` (was TaskCard) and `CardSheet`, both on `CardFace` (step 2, done); Kanban and CardKanban keep their boards, drag and
   lanes.
 - `PlaneCard`: `FullCard`, `CompactTitle` and the package band's face out of PlaneCards. The drag, link and landing code
   stays in PlaneCards, so its memo work (D-287) and `sameProps` don't change.
@@ -105,6 +105,12 @@ outside `cards/`, and `TYPE_ACCENT` anywhere.
 1. Bottom moves (section 1). No visible change but the `untitled` word. Typecheck, unit tests. **Done 2026-11-02.**
 2. `CardFace` + its gallery; TaskSheet and CardSheet on it, galleries for every state (plain, tinted per type, selected,
    lifted, finished, late, long title, peers).
+   **Done 2026-11-02:** `cards/CardFace` (`edge`: `sheet` 2 px or `card`, the plane card's world edge, kept as two widths
+   rather than one: a 4 px edge on a deck's narrow sheet is too heavy), `cards/Sheet.module.css` (the sheet's layout,
+   moved out of Kanban.module.css, which keeps only how a sheet sits on the deck: `styles.task`), `cards/TaskSheet`
+   (was TaskCard), `cards/CardSheet`, `cards/PriorityChip` (one P1: `var(--clash-ink, magenta)`, so on a tinted face it
+   is the old `P1_ON_TINT` and elsewhere magenta; the suggested order uses it too). A lane's person square is still its
+   own copy in Kanban.module.css until `Assignee` (step 5).
 3. `PlaneCard` out of PlaneCards: every type, full / compact / far, empty, with tasks, tags, proof, open competitor,
    folded feature, folded package.
 4. TimelineBar, matrix and table heads on the face, `NameInPlace`.
