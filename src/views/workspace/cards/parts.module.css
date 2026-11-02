@@ -1,0 +1,41 @@
+/* A card's or task's small parts (D-358): who it's given to, its due day, how far along it is. Each takes its line's
+   font and size; only its own colour and shape are here. */
+
+/* Who it's given to: a square with their initials (D-169's squares). */
+.who {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-xs);
+  height: var(--control-xs);
+  background: var(--wash-3);
+  color: var(--fg);
+  font-size: var(--w-text-xs);
+  letter-spacing: 0;
+}
+
+/* Its due day: dim, magenta once past (unless finished). */
+.due {
+  flex: none;
+  color: var(--fg-dim);
+  white-space: nowrap;
+}
+
+.due[data-late='true'] {
+  color: var(--accent-magenta);
+}
+
+/* How far along: `▮▮▯ 2/3` or `☐ 2/5`, never cut; all done, green. */
+.progress {
+  flex: none;
+  white-space: nowrap;
+}
+
+.progress[data-all='true'] {
+  color: var(--accent-green);
+}
+
+.cells {
+  letter-spacing: var(--track-cells);
+}

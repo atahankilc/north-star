@@ -1,6 +1,6 @@
 # Cards: one face for every card (D-358)
 
-Status: **agreed 2026-11-02 (D-358); steps 1–4 done 2026-11-02.** Written from a read of every place that draws a card or
+Status: **agreed 2026-11-02 (D-358); all five steps done 2026-11-02.** Written from a read of every place that draws a card or
 a task. Same way as the kit (D-326) and the gallery (D-324): one thing built once at the bottom, everything else built
 on it, each part with its own `X.gallery.tsx`. Same rule as D-325: **consistency first**. Where the copies drifted
 apart they snap to one look, and every visible change is listed below and shown in the gallery before and after.
@@ -100,6 +100,8 @@ outside `cards/`, and `TYPE_ACCENT` anywhere.
   matrix heads' unset step squares, dark theme; light below the eye).
 - A typed head or row name in a matrix gets the table's cyan line under it while typed (the kit's `InlineField`).
 - The timeline's `P1` becomes the same pill as a task's.
+- The task panel's "card it's for" line: its colour as the row's edge instead of a `▌` before the type, its `↗` at the
+  row's end (step 5).
 - Checklist: the plane card's `☐ 2/5` and the sheet's `▮▮▯ 2/5` stay (size), CardTasks' plain count stays; only the
   part is shared.
 
@@ -131,7 +133,19 @@ outside `cards/`, and `TYPE_ACCENT` anywhere.
    ends, Escape puts the name back, `''` clears), used by both. CardFace's paper is in `:where()` (D-334's way) so a
    caller's `position: absolute` (the table's and matrix's `> *`, the timeline) always wins.
 5. `CardRow` and the small parts in the 5 rows; the `check:kit` rule.
+   **Done 2026-11-02:** `cards/CardRow` (a whole-row button: its card's colour as a 2 px edge, a lead, the title cut
+   with `…`, faint when a placeholder, hints never cut; its base in `:where()` so a caller sets its geometry; `world`
+   size, `wash`) in the five places: a card's tasks (CardTasks), the card a task is for (TaskPanel), the suggested
+   order (CardKanban), a competitor's features and a folded card's members (PlaneCard). Parts made only where two
+   places share one: `Assignee` (task sheet, a deck's lane by person; the copied CSS gone), `DueMark` (task sheet, a
+   card's tasks), `Progress` (a checklist's `▮▮▯ 2/3`, a card's tasks `☐ 2/5`). `Sure` stays in CardSheet (one
+   place). CardPanel's own `PLACEHOLDER` map now is model/cardName's `CARD_PLACEHOLDER`. `check:kit` refuses
+   `cardFace` (`var(--card-tint)`) and `cardEdge` (`inset … 0 0 var(--type|--tone)`) outside `cards/`, and
+   `TYPE_ACCENT` anywhere.
 
 ## Not yet
 - The plane card's drag and link code as a hook shared with text and packages (worth it, but a separate change: it
   touches D-229/D-265/D-291's behaviour, not the look).
+- The timeline's no-day tray pill keeps its own edge (`kit-ok`): a task waiting on the page, not a card face.
+- PeopleHere's square tints with `--card-tint` (a person, not a card; in src/ui, not counted).
+- CardPanel keeps `TONE` as a local name for CARD_TONE and its own section rows (the panel's, not a card's line).

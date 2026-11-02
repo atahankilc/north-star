@@ -73,37 +73,6 @@
   flex: 1;
 }
 
-.due,
-.checks,
-.who {
-  flex: none;
-}
-
-.due[data-late='true'] {
-  color: var(--accent-magenta);
-}
-
-.checks[data-all='true'] {
-  color: var(--accent-green);
-}
-
-.cells {
-  letter-spacing: var(--track-cells);
-}
-
-/* Who it's given to: a square with their initials (D-169's squares). */
-.who {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--control-xs);
-  height: var(--control-xs);
-  background: var(--wash-3);
-  color: var(--fg);
-  font-size: var(--w-text-xs);
-  letter-spacing: 0;
-}
-
 /* A card's sheet: its type in its colour (leaning to the ink on its tint) and its priority on top. */
 .head {
   composes: label from '../../../ui/primitives/Label.module.css';

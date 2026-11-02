@@ -61,18 +61,13 @@ import { CommitField } from '../../../ui/primitives/CommitField'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Label as UiLabel } from '../../../ui/primitives/Label'
 import { EVIDENCE_TEXT_MAX, LONG_TEXT_MAX, SOURCE_MAX, TAG_MAX, URL_MAX } from '../../../model/limits'
+import { CARD_PLACEHOLDER } from '../../../model/cardName'
 
 // Type = the panel's colour, as the card's edge (D-055).
 const TONE: Record<AnyType, string> = CARD_TONE
 
-export const PLACEHOLDER: Record<AnyType, string> = {
-  package: 'What does this piece deliver?',
-  customer: 'Who are they?',
-  problem: 'What hurts?',
-  competitor: 'Who else does it?',
-  idea: "What's the thought?",
-  feature: 'What does it do?',
-}
+// The faint question an empty card asks (one map, model/cardName.ts, D-358).
+export const PLACEHOLDER = CARD_PLACEHOLDER
 
 const NOTES_HINT: Record<AnyType, string> = {
   package: 'What it delivers, and what it bets on.',

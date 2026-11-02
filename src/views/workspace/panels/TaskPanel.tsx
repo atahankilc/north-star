@@ -32,6 +32,7 @@ import { Field } from '../../../ui/primitives/Field'
 import { AddField } from '../../../ui/primitives/AddField'
 import { CommitField } from '../../../ui/primitives/CommitField'
 import { Label } from '../../../ui/primitives/Label'
+import { CardRow } from '../cards/CardRow'
 import { TASK_NOTES_MAX } from '../../../model/limits'
 
 const TONE = 'var(--accent-cyan)'
@@ -476,13 +477,20 @@ function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }
       {task.cardId && (
         <div className={own.row}>
           {card ? (
-            <button /* kit-ok: the card it's for, drawn small (type, title, ↗), that opens its panel */ className={own.card} style={{ ['--tone' as string]: CARD_TONE[card.type] }} onClick={() => open(card)} title="open its panel">
-              <Label className={own.cardType}>▌{card.type}</Label>
-              <span className={own.cardTitle}>{card.title || PLACEHOLDER[card.type]}</span>
-              <span className={own.go} aria-hidden>
-                ↗
-              </span>
-            </button>
+            <CardRow
+              className={own.card}
+              tone={CARD_TONE[card.type]}
+              hint="open its panel"
+              onClick={() => open(card)}
+              lead={<Label className={own.cardType}>{card.type}</Label>}
+              title={card.title || PLACEHOLDER[card.type]}
+              empty={!card.title}
+              end={
+                <span className={own.go} aria-hidden>
+                  ↗
+                </span>
+              }
+            />
           ) : (
             <span className={own.gone}>its card is gone</span>
           )}

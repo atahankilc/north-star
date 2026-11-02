@@ -418,7 +418,7 @@
   padding: var(--space-1) var(--space-2);
   border: var(--line-w) solid var(--line-hover);
   background: var(--bg);
-  box-shadow: inset var(--line-w-bold) 0 0 var(--tone, transparent);
+  box-shadow: inset var(--line-w-bold) 0 0 var(--tone, transparent); /* kit-ok: a task waiting in the no-day tray is a pill on the page, not a card face (D-358) */
   color: var(--fg);
   font-family: var(--font-display);
   font-size: var(--text-sm);

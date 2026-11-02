@@ -165,37 +165,10 @@
 
 /* A competitor's feature: a small card, its accent strip cyan when it matches ours. */
 .mini {
-  display: flex;
-  width: 100%;
   align-items: center;
-  gap: var(--space-2);
   height: calc(var(--w-row-feature) - calc(var(--space-1) - var(--line-w)));
   margin-bottom: calc(var(--space-1) - var(--line-w));
   padding: 0 var(--space-2);
-  border: 0;
-  background: color-mix(in srgb, var(--fg) var(--mix-wash), transparent);
-  box-shadow: inset var(--line-w-bold) 0 0 var(--tone);
-  color: var(--fg);
-  font-family: var(--font-display);
-  font-size: var(--w-text-xs);
-  text-align: left;
-  cursor: pointer;
-}
-
-.mini[data-match='true'] {
-  box-shadow: inset var(--line-w-bold) 0 0 var(--accent-cyan);
-}
-
-.mini:hover {
-  background: color-mix(in srgb, var(--fg) var(--mix-wash), transparent);
-}
-
-.miniName {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .miniAv {
@@ -276,10 +249,6 @@
   font-weight: inherit;
 }
 
-.tasks[data-all='true'] {
-  color: var(--accent-green);
-}
-
 /* `+ 3 parts`, `− 4` on a package's band: the Button's cell (D-344) in world units, so it zooms with the card. */
 .fold {
   flex: none;
@@ -357,19 +326,9 @@
 
 /* A row in a folded card (D-245): a bar in its own card's colour, its name, its status (cardInside's PART_ROW). */
 .memberRow {
-  display: flex;
-  width: 100%;
   align-items: center;
-  gap: var(--space-2);
   height: var(--w-row-part);
   padding: 0;
-  border: 0;
-  background: none;
-  color: var(--fg);
-  font-family: var(--font-display);
-  font-size: var(--w-text-xs);
-  text-align: left;
-  cursor: pointer;
 }
 
 .memberRow > i {

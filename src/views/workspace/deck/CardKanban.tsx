@@ -26,6 +26,7 @@ import { create } from 'zustand'
 import { Gap, kanbanOf, K, LaneHead, useKanbanSizes } from './Kanban'
 import { CardSheet } from '../cards/CardSheet'
 import { PriorityChip } from '../cards/PriorityChip'
+import { CardRow } from '../cards/CardRow'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Rule } from '../../../ui/primitives/Rule'
 import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
@@ -308,26 +309,30 @@ function OrderList({ order, unrated, live, selected, onPick, onPress }: OrderPro
         const own = r.card.priority
         const differs = !!own && own !== r.suggested
         return (
-          <button /* kit-ok: a whole row of the suggested order (number, title, priorities) that picks its card */
+          <CardRow
             key={r.card.id}
             className={styles.orderRow}
-            data-selected={selected === r.card.id || undefined}
-            style={{ ['--tone' as string]: CARD_TONE[r.card.type] } as CSSProperties}
+            titleClass={styles.orderTitle}
+            tone={CARD_TONE[r.card.type]}
+            selected={selected === r.card.id}
             tabIndex={live ? 0 : -1}
-            title={`confidence ${r.sure.level}: ${r.sure.why}`}
+            hint={`confidence ${r.sure.level}: ${r.sure.why}`}
             onClick={() => onPick(r.card)}
-          >
-            <Marks tier="s" tone="var(--tone)" live={live} selected={selected === r.card.id} />
-            <span className={styles.n}>{String(i + 1).padStart(2, '0')}</span>
-            <span className={styles.orderTitle}>{cardName(r.card)}</span>
-            <span className={styles.orderScore} data-broken={r.sure.level === 'broken' || undefined}>
-              {r.sure.level === 'broken' ? '! ' : ''}
-              {r.score.toFixed(1)}
-            </span>
-            <PriorityChip priority={r.suggested} tone={differs ? 'var(--accent-yellow)' : undefined}>
-              {differs ? `${own} → ${r.suggested}` : r.suggested}
-            </PriorityChip>
-          </button>
+            lead={<span className={styles.n}>{String(i + 1).padStart(2, '0')}</span>}
+            title={cardName(r.card)}
+            end={
+              <>
+                <span className={styles.orderScore} data-broken={r.sure.level === 'broken' || undefined}>
+                  {r.sure.level === 'broken' ? '! ' : ''}
+                  {r.score.toFixed(1)}
+                </span>
+                <PriorityChip priority={r.suggested} tone={differs ? 'var(--accent-yellow)' : undefined}>
+                  {differs ? `${own} → ${r.suggested}` : r.suggested}
+                </PriorityChip>
+              </>
+            }
+            extra={<Marks tier="s" tone="var(--tone)" live={live} selected={selected === r.card.id} />}
+          />
         )
       })}
       {!order.length && <Empty className={styles.empty}>· nothing rated yet</Empty>}

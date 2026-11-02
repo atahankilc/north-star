@@ -55,6 +55,7 @@ import { ThreadChip, threadOn } from '../threads/Threads'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { dueText } from '../../../model/tasks'
 import { hasMeta, TaskSheet } from '../cards/TaskSheet'
+import { Assignee } from '../cards/Assignee'
 import { learnable } from '../panels/TaskPanel'
 import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
 import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
@@ -681,7 +682,7 @@ export function LaneHead({ lane, count, folded, onFold, onPress }: { lane: Lane;
       <span className={styles.laneFold} aria-hidden>
         {folded ? '▸' : '▾'}
       </span>
-      {lane.initials && <span className={styles.who}>{lane.initials}</span>}
+      {lane.initials && <Assignee initials={lane.initials} name={lane.label} />}
       {lane.kind && <span className={styles.laneKind}>▌{lane.kind}</span>}
       <span className={styles.laneName} data-none={!lane.initials && !lane.kind ? true : undefined}>
         {lane.label}

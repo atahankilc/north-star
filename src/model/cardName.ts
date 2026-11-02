@@ -4,7 +4,7 @@ import type { AnyType, Card } from './cards'
 
 export const cardName = (c: Pick<Card, 'title' | 'type'>) => c.title || `untitled ${c.type}`
 
-const PLACEHOLDER: Record<AnyType, string> = {
+export const CARD_PLACEHOLDER: Record<AnyType, string> = {
   package: 'What does this piece deliver?',
   customer: 'Who are they?',
   problem: 'What hurts?',
@@ -12,4 +12,4 @@ const PLACEHOLDER: Record<AnyType, string> = {
   idea: "What's the thought?",
   feature: 'What does it do?',
 }
-export const cardPlaceholder = (type: AnyType) => PLACEHOLDER[type]
+export const cardPlaceholder = (type: AnyType) => CARD_PLACEHOLDER[type]

@@ -1,0 +1,61 @@
+/* A card or task as one line (D-358). Its base in `:where()`: a caller's class sets where and how big it is. */
+:where(.row) {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-half) 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* What's before and after the title is never cut. */
+.row > :not(.title) {
+  flex: none;
+}
+
+/* Its card's colour on its left edge. */
+:where(.row[data-tone='true']) {
+  padding-left: var(--space-2);
+  box-shadow: inset var(--line-w-bold) 0 0 var(--tone);
+}
+
+:where(.row[data-size='world']) {
+  font-size: var(--w-text-xs);
+}
+
+/* A competitor's feature: a small card of its own. */
+:where(.row[data-wash='true']) {
+  background: color-mix(in srgb, var(--fg) var(--mix-wash), transparent);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-display);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title[data-empty='true'] {
+  color: var(--placeholder);
+}
+
+.row[data-done='true'] .title {
+  color: var(--fg-dim);
+}
+
+.row[data-size='screen']:is(:hover, :focus-visible) .title {
+  color: var(--fg-strong);
+}
+
+.row:focus-visible {
+  outline: none;
+}

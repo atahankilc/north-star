@@ -9,9 +9,11 @@ import type { Task } from '../../../data/tasks'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { Button } from '../../../ui/primitives/Button'
 import { cardName } from '../../../model/cardName'
-import { checkCells, CHECK_CELLS_MAX, dueText, initials, overdue } from '../../../model/tasks'
 import { CardFace } from './CardFace'
 import { PriorityChip } from './PriorityChip'
+import { Assignee } from './Assignee'
+import { DueMark } from './DueMark'
+import { Progress } from './Progress'
 import styles from './Sheet.module.css'
 
 // What a task shows under its title (a deck guesses its height from it before it's measured).
@@ -38,7 +40,6 @@ type Props = {
 export function TaskSheet({ task, card, finished, selected, live, lifted, learn, extra, talk, className, onPointerDown, onClick }: Props) {
   const checks = task.checks ?? []
   const ticked = checks.filter((c) => c.done).length
-  const late = overdue(task, finished)
   return (
     <CardFace
       className={[styles.sheet, className].filter(Boolean).join(' ')}
@@ -77,21 +78,9 @@ export function TaskSheet({ task, card, finished, selected, live, lifted, learn,
             </span>
           )}
           <span className={styles.push} />
-          {task.due && (
-            <span className={styles.due} data-late={late || undefined} title={late ? `was due ${task.due}` : `due ${task.due}`}>
-              ◷ {dueText(task.due)}
-            </span>
-          )}
-          {checks.length > 0 && (
-            <span className={styles.checks} data-all={ticked === checks.length || undefined} title={`${ticked} of ${checks.length} steps done`}>
-              {checks.length <= CHECK_CELLS_MAX && <span className={styles.cells}>{checkCells(ticked, checks.length)}</span>} {ticked}/{checks.length}
-            </span>
-          )}
-          {task.assignee && (
-            <span className={styles.who} title={task.assigneeName}>
-              {initials(task.assigneeName)}
-            </span>
-          )}
+          {task.due && <DueMark due={task.due} finished={finished} />}
+          {checks.length > 0 && <Progress look="cells" done={ticked} all={checks.length} title={`${ticked} of ${checks.length} steps done`} />}
+          {task.assignee && <Assignee name={task.assigneeName} />}
         </span>
       )}
       {learn && (

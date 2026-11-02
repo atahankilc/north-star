@@ -6881,7 +6881,13 @@ only); the kit's InlineField (InlineEdit.tsx) for a name typed in place in both;
 Seen: the table pixel-identical, the matrix heads' faint squares a little brighter (D-295), the timeline's P1 the
 shared pill, a matrix name typed with the cyan line. Checked against HEAD in the gallery (matrix, table, timeline,
 deck, cards deck, plane, side view, beside; both themes), re-shot where unsure.
-**Not yet:** step 5 (CardRow, the small parts, the check:kit rule); the plane card's drag code as a shared hook.
+**Step 5 (done 2026-11-02):** cards/CardRow in the five hand-made rows (a card's tasks, the card a task is for, the
+suggested order, a competitor's features, a folded card's members); parts only where two places share one: Assignee,
+DueMark, Progress (Sure stays in CardSheet, one place); CardPanel's PLACEHOLDER is CARD_PLACEHOLDER (model/cardName);
+check:kit's `cardFace`, `cardEdge` (outside cards/) and `typeAccent`, at 0 (the no-day tray's pill `kit-ok`). Seen:
+the task panel's card line shows its colour as an edge, not a `▌` before the type, and its `↗` at the row's end;
+the rest pixel-identical once settled (the new server's first load settles later: measured, not guessed).
+**Not yet:** the plane card's drag code as a shared hook; the no-day tray pill on the face.
 
 ### D-359 · 2026-11-02 · Accepted (the user: "side panel ve modelleri ortak bir component üzerine taşımak... modal ve sidepanellar aynı şeyden türesin demiyorum. Structured bir şekilde organize edelim"; "thread sol altta kalmaya devam etsin ancak onunda boy uzatma yada esc ye basınca çıkma gibi özellikleri var. Bunlar belki generalized edilebilir")
 **Decision:** what opens over or beside the page is two families, each on its own shell, sharing only small parts in

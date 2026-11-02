@@ -15,6 +15,8 @@ import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { Chip } from '../../../ui/primitives/Chip'
 import { cardPlaceholder } from '../../../model/cardName'
 import { CardFace } from './CardFace'
+import { Progress } from './Progress'
+import { CardRow } from './CardRow'
 import styles from './PlaneCard.module.css'
 
 // How much of it shows, by its size on screen (PlaneCards.tsx picks it, D-111, D-153).
@@ -139,15 +141,18 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
                 </p>
               )}
               {g.items.map((f) => (
-                <button /* kit-ok: a competitor's feature drawn small inside its card, at the world's size */
+                <CardRow
                   key={f.id}
                   className={styles.mini}
+                  size="world"
+                  wash
+                  // Cyan when it matches one of ours.
+                  tone={matched.has(f.id) ? 'var(--accent-cyan)' : CARD_TONE[card.type]}
                   data-match={matched.has(f.id) || undefined}
                   onClick={() => onFeature?.(f)}
-                >
-                  <span className={styles.miniName}>{f.name}</span>
-                  <span className={styles.miniAv}>{f.availability}</span>
-                </button>
+                  title={f.name}
+                  end={<span className={styles.miniAv}>{f.availability}</span>}
+                />
               ))}
             </div>
           ))}
@@ -160,16 +165,18 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
             // down, so what's under what shows; its status or priority; a package's row, how much it holds.
             const held = r.card.type === 'package' ? (inPkg?.get(r.card.id) ?? 0) : 0
             return (
-              <button /* kit-ok: a member's row inside a folded package, at the world's size */
+              <CardRow
                 key={r.card.id}
                 className={styles.memberRow}
+                titleClass={styles.miniName}
+                size="world"
                 style={{ ['--tone' as string]: CARD_TONE[r.card.type], paddingLeft: r.depth * INDENT }}
                 onClick={() => onMember?.(r.card)}
-              >
-                <i aria-hidden />
-                <span className={styles.miniName}>{r.card.title || cardPlaceholder(r.card.type)}</span>
-                <span className={styles.miniAv}>{[held ? `${held} inside` : '', r.card.status ?? r.card.validation ?? r.card.priority].filter(Boolean).join(' · ')}</span>
-              </button>
+                lead={<i aria-hidden />}
+                title={r.card.title || cardPlaceholder(r.card.type)}
+                empty={!r.card.title}
+                end={<span className={styles.miniAv}>{[held ? `${held} inside` : '', r.card.status ?? r.card.validation ?? r.card.priority].filter(Boolean).join(' · ')}</span>}
+              />
             )
           })}
         </div>
@@ -189,11 +196,7 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
       )}
       <span className={styles.foot}>
         {facts?.meta && <span className={styles.facts}>{facts.meta}</span>}
-        {facts?.tasks && (
-          <span className={styles.tasks} data-all={facts.tasks.done === facts.tasks.all || undefined} title={`${facts.tasks.done} of ${facts.tasks.all} tasks finished`}>
-            {facts.tasks.done === facts.tasks.all ? '☑' : '☐'} {facts.tasks.done}/{facts.tasks.all}
-          </span>
-        )}
+        {facts?.tasks && <Progress className={styles.tasks} look="box" done={facts.tasks.done} all={facts.tasks.all} title={`${facts.tasks.done} of ${facts.tasks.all} tasks finished`} />}
         {/* On other planes too (D-281): what's changed here changes there. */}
         {facts?.planes && (
           <span className={styles.planes} title={`On ${facts.planes} planes: the same card on each`}>

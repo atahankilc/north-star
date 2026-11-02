@@ -23,18 +23,8 @@
 
 /* The card it's for: its type in its colour, its title, `↗` to its panel. */
 .card {
-  display: flex;
   flex: 1;
-  align-items: baseline;
-  gap: var(--space-2);
-  min-width: 0;
-  padding: var(--space-1) 0;
-  border: 0;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
+  padding: var(--space-1) 0 var(--space-1) var(--space-2);
 }
 
 /* A Label in its card type's colour (`.card` outweighs the label's own colour). */
@@ -44,14 +34,6 @@
 
 .card .cardType {
   color: var(--tone);
-}
-
-.cardTitle {
-  min-width: 0;
-  overflow: hidden;
-  font-family: var(--font-display);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .go {

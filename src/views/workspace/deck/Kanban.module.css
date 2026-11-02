@@ -250,19 +250,6 @@
   cursor: grab;
 }
 
-/* A lane's person (D-258): a square with their initials, as on a task. */
-.who {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--control-xs);
-  height: var(--control-xs);
-  background: var(--wash-3);
-  color: var(--fg);
-  font-size: var(--w-text-xs);
-  letter-spacing: 0;
-}
-
 /* Hover and selection are its marks (D-265). While one is held, the others show nothing on hover. */
 .board[data-dragging='true'] .task:hover > [data-state='none'] i {
   opacity: 0;
@@ -587,20 +574,10 @@
 
 /* A row: its place, its type's bar, its title, its score, the suggested priority. */
 .orderRow {
-  position: relative;
   display: grid;
   grid-template-columns: 2.5ch 1fr auto auto;
-  align-items: baseline;
-  gap: var(--space-2);
   padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
-  border: 0;
-  background: transparent;
-  box-shadow: inset var(--line-w-bold) 0 0 var(--tone);
-  color: var(--fg);
-  font: inherit;
   font-size: var(--text-xs);
-  text-align: left;
-  cursor: pointer;
 }
 
 .orderRow + .orderRow {

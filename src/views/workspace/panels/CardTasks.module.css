@@ -1,48 +1,14 @@
 /* A card's tasks in its right panel (D-254), with CardPanel.module.css's parts. */
+/* A task's row (cards/CardRow): its padding in the panel. */
 .row {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  width: 100%;
   padding: var(--space-half) 0;
-  border: 0;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  font-family: var(--font-display);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.row[data-done='true'] .title {
-  color: var(--fg-dim);
-}
-
-.row:hover .title,
-.row:focus-visible .title {
-  color: var(--fg-strong);
 }
 
 .due {
-  flex: none;
-  color: var(--fg-dim);
   font-size: var(--text-xs);
 }
 
-.due[data-late='true'] {
-  color: var(--accent-magenta);
-}
-
 .where {
-  flex: none;
   max-width: 14ch;
   overflow: hidden;
   color: var(--fg-faint);

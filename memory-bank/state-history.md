@@ -1355,3 +1355,12 @@ Beside's and the documents' lines driven; the agent box's head on PanelHead; Com
 (useCommit to src/ui/foundation) under the card and task panels' fields and adders; the lesson on the Escape stack
 (Escape from the page skips it, the threads list stays); Settings' look measured against 085c4bf (unchanged). Checked
 headless on emulators, details in D-359.
+
+## Done (cards on one face, D-358, 2026-11-02)
+- Spec: docs/specs/cards.md (every card and task drawing, ten repeats counted, five steps). All in `src/views/workspace/cards/`, each with its gallery page.
+- Step 1 (2791d75): `TYPE_ACCENT` gone (CARD_TONE), `model/cardName.ts`, task words in model/tasks.ts.
+- Step 2 (84e401f): CardFace, TaskSheet, CardSheet, PriorityChip; Sheet.module.css out of Kanban's.
+- Step 3 (f7ccf97): PlaneCard and PackageBand out of PlaneCards (its drag, link, Marks and memo stay there).
+- Step 4 (f1ee558): TimelineBar; matrix heads and table names on the face (the table's `flat`); the kit's InlineField.
+- Step 5: CardRow in the five rows; Assignee, DueMark, Progress; check:kit's cardFace, cardEdge, typeAccent.
+- Checked each step against the commit before in the gallery (headless Chrome, old/old/new worktrees, both themes, re-shot where unsure): only the listed changes (matrix heads' faint squares a little brighter, the timeline's P1 pill, a matrix name typed with the cyan line, the task panel's card line edged, its `↗` at the row's end).

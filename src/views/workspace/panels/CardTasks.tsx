@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import type { Card } from '../../../data/cards'
 import { useAuth } from '../../../data/auth'
-import { addTask, orderBetween, overdue, tasksIn, TASK_TITLE_MAX, untested, type Task } from '../../../data/tasks'
+import { addTask, orderBetween, tasksIn, TASK_TITLE_MAX, untested, type Task } from '../../../data/tasks'
 import { useCanvasView } from '../../../state/canvasView'
 import { PanelSection } from '../../../ui/patterns/SidePanel'
 import { Button } from '../../../ui/primitives/Button'
@@ -15,7 +15,8 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { PromptField } from '../../../ui/primitives/PromptField'
 import { useWs } from '../canvas/context'
 import { kanbanOf, selectTask } from '../deck/Kanban'
-import { dueText } from '../../../model/tasks'
+import { DueMark } from '../cards/DueMark'
+import { CardRow } from '../cards/CardRow'
 import { kindOfPiece } from '../../../data/pieces'
 import own from './CardTasks.module.css'
 import { CheckMark } from '../../../ui/primitives/Checkbox'
@@ -71,21 +72,23 @@ export function TasksSection({ n, card, editor }: { n: number; card: Card; edito
       add={editor && kanbans.length && draft === null ? { label: 'task', onClick: () => setDraft('') } : undefined}
       empty={!mine.length && draft === null && !testable && !(editor && !kanbans.length)}
     >
-      {mine.map(({ t, col, on }) => {
-        const late = overdue(t, !!col?.done)
-        return (
-          <button /* kit-ok: a task's whole row (its column, title, where) that opens it */ key={t.id} className={own.row} data-done={col?.done || undefined} onClick={() => openTask(t)} title="open the task">
-            <CheckMark checked={!!col?.done} tone="var(--accent-green)" />
-            <span className={own.title}>{t.title}</span>
-            {t.due && !col?.done && (
-              <span className={own.due} data-late={late || undefined}>
-                ◷ {dueText(t.due)}
-              </span>
-            )}
-            <span className={own.where}>{[kanbans.length > 1 ? on?.name || 'deck' : '', col?.name].filter(Boolean).join(' · ')}</span>
-          </button>
-        )
-      })}
+      {mine.map(({ t, col, on }) => (
+        <CardRow
+          key={t.id}
+          className={own.row}
+          done={!!col?.done}
+          hint="open the task"
+          onClick={() => openTask(t)}
+          lead={<CheckMark checked={!!col?.done} tone="var(--accent-green)" />}
+          title={t.title}
+          end={
+            <>
+              {t.due && !col?.done && <DueMark className={own.due} due={t.due} finished={false} />}
+              <span className={own.where}>{[kanbans.length > 1 ? on?.name || 'deck' : '', col?.name].filter(Boolean).join(' · ')}</span>
+            </>
+          }
+        />
+      ))}
       {draft !== null && (
         <div className={own.add}>
           {kanbans.length > 1 && (

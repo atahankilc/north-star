@@ -27,6 +27,8 @@ const RULES = {
     ['menuHost', /<(?:MenuPanel|PromptPanel)\b/g],
     ['bracketSpan', /<span[^>]*>\s*[[\]]\s*<\/span>/g],
     ['rawLimit', /maxLength=\{\d+\}/g],
+    // D-358: a card's colour under its old second name (CARD_TONE, ui/foundation/cardTone.ts).
+    ['typeAccent', /\bTYPE_ACCENT\b/g],
   ],
   css: [
     ['bracket', /content:\s*['"][[\]]['"]/g],
@@ -35,6 +37,10 @@ const RULES = {
     // D-338's round: numbers made by a CSS counter (the kit's Num), a piece's graphite drawn by hand (PieceCard).
     ['counter', /counter-increment\s*:/g],
     ['pieceSurface', /background:\s*var\(--piece\)\s*;/g],
+    // D-358: a card's face or edge drawn by hand (its type's tint, its colour down the left): CardFace, CardRow in
+    // src/views/workspace/cards/, where they're allowed.
+    ['cardFace', /var\(--card-tint\)/g, /^src\/views\/workspace\/cards\//],
+    ['cardEdge', /inset var\(--(?:w-card-edge|line-w-bold)\) 0 0 var\(--(?:type|tone)\b/g, /^src\/views\/workspace\/cards\//],
   ],
 }
 
@@ -53,7 +59,7 @@ function count(file) {
   const hits = []
   lines.forEach((line, i) => {
     if (/kit-ok/.test(line)) return
-    for (const [name, re] of RULES[kind]) for (const _ of line.matchAll(re)) hits.push({ name, line: i + 1, text: line.trim() })
+    for (const [name, re, home] of RULES[kind]) if (!home?.test(file)) for (const _ of line.matchAll(re)) hits.push({ name, line: i + 1, text: line.trim() })
   })
   return hits
 }
