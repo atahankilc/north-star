@@ -245,6 +245,39 @@ export const noWrites = (): Grader => ({
   },
 })
 
+// ---- The web (D-360)
+
+const searchesOf = (r: RunResult) => r.transcript.turns.reduce((n, t) => n + (t.usage.searches ?? 0), 0)
+const hostOf = (u: string) => {
+  try {
+    return new URL(u).hostname.replace(/^www\./, '')
+  } catch {
+    return ''
+  }
+}
+
+// No web search: what the workspace holds is read with its tools.
+export const noWebSearch = (): Grader => ({
+  name: 'noWebSearch',
+  grade: (r) => {
+    const n = searchesOf(r)
+    return ok(n === 0, n ? `${n} web search${n === 1 ? '' : 'es'} for what the workspace holds` : 'no web search')
+  },
+})
+
+// It searched, and the answer links at least `min` pages, every one on a site its searches gave (none made up).
+export const citesWeb = (min = 1): Grader => ({
+  name: `citesWeb(${min})`,
+  grade: (r) => {
+    const sites = new Set(r.transcript.turns.flatMap((t) => t.sources ?? []).map((s) => hostOf(s.url)))
+    if (!searchesOf(r) && !sites.size) return ok(false, 'no web search')
+    const links = [...new Set([...r.answer.matchAll(/https?:\/\/[^\s)\]>"']+/g)].map((m) => m[0].replace(/[.,;:!?]+$/, '')))]
+    const made = links.filter((l) => !sites.has(hostOf(l)))
+    if (made.length) return ok(false, `links no search gave: ${made.slice(0, 3).join(', ')}`)
+    return ok(links.length >= min, `${links.length} link${links.length === 1 ? '' : 's'} to pages it found`)
+  },
+})
+
 // Nothing deleted (made or changed is fine).
 export const noDeletes = (): Grader => ({
   name: 'noDeletes',

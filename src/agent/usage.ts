@@ -13,6 +13,8 @@ export type UsageEntry = {
   model: string
   input: number
   cached: number
+  // Web searches the provider ran (D-360).
+  searches: number
   output: number
   reasoning: number
   // Tool names in the order first used, each once.
@@ -48,6 +50,7 @@ export function usageEntry(turn: AgentTurn, model: string, at = Date.now()): Usa
     cached: count(turn.usage.cached),
     output: count(turn.usage.output),
     reasoning: count(turn.usage.reasoning),
+    searches: count(turn.usage.searches),
     tools,
     calls,
     steps: turn.steps.length,
@@ -65,6 +68,7 @@ function sanitize(e: UsageEntry): UsageEntry {
     cached: count(e.cached),
     output: count(e.output),
     reasoning: count(e.reasoning),
+    searches: count(e.searches),
     tools: (Array.isArray(e.tools) ? e.tools : []).filter((t): t is string => typeof t === 'string' && NAME.test(t)).slice(0, 40),
     calls: count(e.calls),
     steps: count(e.steps),

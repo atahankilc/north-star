@@ -56,6 +56,8 @@ import { Button } from '../../../ui/primitives/Button'
 import { Choice } from '../../../ui/primitives/Choice'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
+import { AddField } from '../../../ui/primitives/AddField'
+import { CommitField } from '../../../ui/primitives/CommitField'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Label as UiLabel } from '../../../ui/primitives/Label'
 import { EVIDENCE_TEXT_MAX, LONG_TEXT_MAX, SOURCE_MAX, TAG_MAX, URL_MAX } from '../../../model/limits'
@@ -90,34 +92,6 @@ export const KIND_LABEL: Record<string, string> = {
   'inspired-by': 'inspired',
   'depends-on': 'depends on',
   [FOR]: 'for',
-}
-
-// A field's text kept apart from what's stored until it's committed (Enter or leaving it, D-221): a change from
-// elsewhere shows unless it's being typed in; leaving the panel with something typed keeps it.
-export function useCommit(value: string, save: (v: string) => void) {
-  const [draft, setDraft] = useState(value)
-  const dirty = useRef(false)
-  const latest = useRef({ draft, save, value })
-  latest.current = { draft, save, value }
-  useEffect(() => {
-    if (!dirty.current) setDraft(value)
-  }, [value])
-  useEffect(
-    () => () => {
-      const { draft: d, save: s, value: v } = latest.current
-      if (dirty.current && d !== v) s(d)
-    },
-    [],
-  )
-  return {
-    draft,
-    setDraft: (v: string) => ((dirty.current = true), setDraft(v)),
-    commit: () => {
-      if (dirty.current && draft !== value) save(draft)
-      dirty.current = false
-    },
-    revert: () => ((dirty.current = false), setDraft(value)),
-  }
 }
 
 // `selected`: this card's rather than the selection's (a matrix's or a table's cell, LensCardPanel), `onClose` then
@@ -347,21 +321,17 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
             </Chip>
           ))}
           {adding !== null && (
-            <Field
-              size="sm"
+            <AddField
               className={styles.tagInput}
               label="Tag"
-              autoFocus
               placeholder="tag"
               value={adding}
               maxLength={TAG_MAX}
               onChange={setAdding}
-              onBlur={() => setAdding(null)}
-              onKeyDown={(e) => {
-                e.stopPropagation()
-                const tag = adding.trim().replace(/^#/, '')
-                if (e.key === 'Enter' && tag) (retag(tag, true), setAdding(''))
-                if (e.key === 'Escape') setAdding(null)
+              onClose={() => setAdding(null)}
+              onAdd={(t) => {
+                const tag = t.replace(/^#/, '')
+                if (tag) (retag(tag, true), setAdding(''))
               }}
             />
           )}
@@ -1115,24 +1085,19 @@ function TagsSection({ n, card, editor }: P) {
 // Notes: Inter, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
 function NotesSection({ n, card, editor }: P) {
   const { wid } = useWs()
-  const { draft, setDraft, commit } = useCommit(card.notes ?? '', (v) => void updateCard(wid, card, { notes: v.trim() ? v : undefined }, 'notes of'))
   return (
     <PanelSection n={n} name="notes">
-      <Field
-        multiline
+      <CommitField
+        enter="newline"
+        escape="keep"
         className={styles.notes}
         rows={2}
-        value={draft}
+        value={card.notes ?? ''}
         readOnly={!editor}
         placeholder={NOTES_HINT[card.type]}
         maxLength={LONG_TEXT_MAX}
         label="Notes"
-        onChange={setDraft}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          e.stopPropagation()
-          if (e.key === 'Escape') e.currentTarget.blur()
-        }}
+        onSave={(v) => void updateCard(wid, card, { notes: v.trim() ? v : undefined }, 'notes of')}
       />
     </PanelSection>
   )

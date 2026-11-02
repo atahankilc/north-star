@@ -156,7 +156,7 @@ Write (one tool, a batch):
 
 UI (never write data): `go_to(id)`, `focus(plane)`, `select(ids)`, `open_panel(id)`, `show_beside(piece)`.
 
-Later: `web_search` / `research` (when on), `write_document`, `comment(on, text)` (questions to people as threads).
+The web: the provider's own `web_search`, offered on every turn (D-360, [agent-web.md](agent-web.md)). Later: `/research`, `write_document`, `comment(on, text)` (questions to people as threads).
 
 Ids: short, typed, stable per chat (`c12` card, `p3` piece, `t40` task, `d2` document), mapped in the browser;
 a title is accepted too, and an unclear one returns the candidates.
@@ -245,7 +245,7 @@ map, each is visible to people too. Built in this order:
 | 5 | Past chats | the person's own saved chats | `search_chats`, a chat's summary | Phase 7 |
 | 6 | What changed | who changed what, when (a short change log written with each tracked write: kind, id, by, when; no text) | `whats_new(since)`, "what happened while I was away" | Phase 7 (needs a new collection + rules) |
 | 7 | Method knowledge | how to do startup work well: customer interviews (Mom Test), jobs to be done, lean canvas, SWOT, positioning, pricing, prioritising (RICE), experiment design | short guides written by us, loaded only when a skill needs them | Phase 9 |
-| 8 | The web | live search when the person turns `[web]` on; deep research writes a cited document, which joins layer 3 | `web_search`, `research` | Phase 9 |
+| 8 | The web | the provider's web search on every turn, the model deciding (D-360, [agent-web.md](agent-web.md)); deep research writes a cited document, which joins layer 3 | provider's `web_search`; `/research` | live search built; `/research` next |
 | 9 | Files: PDFs, images | uploaded reports, screenshots, photos of whiteboards (read by the model's vision) | `read_document` (text pages), image input | after Blaze (Storage) |
 
 Built in S16: layer 4 (the notes, in every prompt), layer 5's saving and reopening (`search_chats` not yet), layer 6
@@ -429,7 +429,7 @@ Gate: rules tests pass; owner, editor and viewer tried; nobody reads another's c
 The workspace key (D-079) is **not** part of this plan (D-312); it stays parked.
 
 ### Phase 9: research and skills — 2–3 sessions
-Web search (off by default, D-076), deep research as 1.0 (D-088) writing a document, the skills of §4.10 with their
+Web search (D-360: always on, the model deciding; built), deep research as 1.0 (D-088) writing a document, the skills of §4.10 with their
 method guides (§4.9 layer 7) as short instructions loaded when used, not one giant prompt.
 Gate: research set graded for cited sources; each skill has ≥ 3 eval tasks passing.
 
@@ -460,7 +460,7 @@ if people want them.
 3. Tool definitions and the prompt live in files with tests; changing either runs `npm run eval:quick`.
 4. Tool results ≤ ~8k tokens each, paged, with a hint how to narrow.
 5. Keys: the CLAUDE.md hard rule, unchanged. Usage log: tokens, tools, steps, ms, model; never text.
-6. No outbound channel from the agent except the provider (and web search when the user turned it on): no fetching
+6. No outbound channel from the agent except the provider (whose own web search it may use, D-360): no fetching
    URLs found in content, no images loaded from model output.
 7. The agent runs as the signed-in person: viewers get a read-only agent (D-098's lock).
 

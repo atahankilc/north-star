@@ -15,6 +15,7 @@
 // (tests/unit/devStub.test.ts builds this file for production and checks).
 import type { AgentEnv, AgentModel, Usage } from './contract'
 import { openaiModel, type Effort } from './openai'
+import { SEARCH_PRICE } from './web'
 
 // `well`: passes the eval suite; `struggles`: answers well, may struggle with big changes; `unknown`: not measured.
 export type Fit = 'well' | 'struggles' | 'unknown'
@@ -123,7 +124,10 @@ export function costOf(model: string, u: Usage): number {
   const p = priceOf(model)
   if (!p) return 0
   const cached = u.cached ?? 0
-  return ((u.input - cached) * p.input + cached * p.cachedInput + u.output * p.output) / 1_000_000
+  // Web searches (D-360) cost the same on either provider, apart from tokens; a model that costs nothing (the stubs)
+  // searched nothing real.
+  const searches = p.input || p.output ? (u.searches ?? 0) * SEARCH_PRICE : 0
+  return ((u.input - cached) * p.input + cached * p.cachedInput + u.output * p.output) / 1_000_000 + searches
 }
 
 // ---- Building the model

@@ -62,10 +62,9 @@
   border-bottom: var(--line-w) solid var(--line);
 }
 
+/* PanelHead (D-359), at the box's own padding. */
 .boxHead {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
+  padding: 0;
 }
 
 .boxModel {
@@ -106,16 +105,6 @@
   border-bottom: var(--line-w) solid var(--line);
 }
 
-.kind {
-  composes: label from '../../ui/primitives/Label.module.css';
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--accent-cyan);
-  font-size: inherit;
-}
-
 .model {
   font-family: var(--font-mono);
   min-width: 0;
@@ -125,10 +114,6 @@
   white-space: nowrap;
 }
 
-/* The close (×), the kit's Button, pushed to the right of the head. */
-.close {
-  margin-left: auto;
-}
 
 /* `apply · 2 deletes`: the deletes said strongest (the cell is the go's cyan, D-344). */
 .applyDeletes {

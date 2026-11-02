@@ -141,7 +141,7 @@ feature comes back, its line moves to decisions.md (rewritten for the canvas) an
 - `set_criteria`: one row per feature, its criteria and every competitor's scores; a criterion kept word for word keeps its
   scores, dropped ones leave the cells; mode `/criteria` scores the matrix from what the workspace shows (D-134).
 - Preview: the app shows the ticked rows as if applied, nothing editable, diff signs/colours, `was` values, stepper (D-087, D-096).
-- `[web]` switch (off by default) with numbered clickable sources (D-076). Modes `/validate /interview /swot /gaps /next
+- Numbered clickable sources (D-076); its `[web]` switch is gone: the agent's web is always on (D-360). Modes `/validate /interview /swot /gaps /next
   /pitch /organize /research /analyze /criteria` (D-085, D-086, D-088, D-099, D-134).
 - Deep research: plan → pick → ≤3 web researchers → `write_report` report on the stage (D-088, D-089). Chat write-ups via
   `make_report`, saved on request (D-090). The chat's report on a `StageBox` with a section stepper (D-101); reports from the

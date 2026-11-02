@@ -1,8 +1,8 @@
-// Find & answer (agent.md §8, 10 tasks): questions about the workspace. Graded on the items cited (they exist and are
+// Find & answer (agent.md §8, 11 tasks): questions about the workspace. Graded on the items cited (they exist and are
 // the right set: `only` on every closed set) and words in the answer; the judge reads the answer once a model is
 // configured. Each has a plausible wrong script (a partial set, a wrong item, a wrong count) so `--wrong` tests
 // precision, not only that something was said.
-import { answerIncludes, cites, judge, noWrites, toolSaid } from '../graders'
+import { answerIncludes, cites, citesWeb, judge, noWebSearch, noWrites, toolSaid } from '../graders'
 import type { Task } from '../types'
 import { answer, call, realOf } from './util'
 
@@ -51,7 +51,7 @@ export const FIND: Task[] = [
     set: 'regression',
     fixture: 'medium',
     ask: 'Which problems have no evidence yet?',
-    graders: [noWrites(), cites(NO_EVIDENCE.map((s) => T[s]), { only: true }), answerIncludes(['26'])],
+    graders: [noWrites(), noWebSearch(), cites(NO_EVIDENCE.map((s) => T[s]), { only: true }), answerIncludes(['26'])],
     reference: [
       call('query', { kind: 'card', type: 'problem', no_evidence: true, limit: 100 }),
       answer(`26 problems have no evidence yet: ${NO_EVIDENCE.join(', ')}. Most are still hypotheses; c26, c87, c90 and c93 carry a status that nothing backs.`),
@@ -186,5 +186,23 @@ export const FIND: Task[] = [
     reference: [call('neighbours', { id: 'c105', kinds: ['depends-on'] }), answer('Two features depend on c105 Bread chat: c109 "Cheese map" and c100 "Stall opening hours price list".')],
     // The link read the wrong way round: what Bread chat depends on counted as depending on it.
     wrong: [call('neighbours', { id: 'c105', kinds: ['depends-on'] }), answer('Two features depend on c105 Bread chat: c109 "Cheese map" and c117 "Leftover produce map".')],
+  },
+  {
+    // The web (D-360): a fact outside the workspace that may have changed is searched, and the answer links the pages
+    // it came from, none made up.
+    id: 'find-11-web-rival-fees',
+    group: 'find',
+    set: 'capability',
+    fixture: 'medium',
+    ask: 'What does Too Good To Go charge a shop in Germany to sell through it today?',
+    graders: [noWrites(), citesWeb(1), judge('Gives the fee Too Good To Go charges shops in Germany with at least one linked source, keeps what the pages say apart from its own guesses, and says plainly if the pages do not settle it.')],
+    reference: [
+      {
+        answer: 'Too Good To Go charges a shop a yearly fee and a commission on each bag sold ([Too Good To Go for business](https://www.toogoodtogo.com/de/business)); the exact amounts depend on the contract, so the page does not settle the number.',
+        web: { queries: ['Too Good To Go Gebühren Händler Deutschland'], sources: [{ url: 'https://www.toogoodtogo.com/de/business', title: 'Too Good To Go for business', cited: true }] },
+      },
+    ],
+    // From memory, with a link no search gave.
+    wrong: [answer('Too Good To Go charges €39 a year and 25 % a bag ([fees](https://example.com/tgtg-fees)).')],
   },
 ]

@@ -48,7 +48,7 @@
 // and how long it took, text deltas when the model streams, usage per step. The usage log (usage.ts) keeps only counts.
 import { workspaceMap, whereAmI, resolve, estimateTokens, RESULT_TOKENS, type Ids } from './read'
 import { clean, derive } from './read/derive'
-import { addUsage, NO_USAGE, toolsHash, type AgentEnv, type AgentModel, type AgentStep, type AgentTool, type AgentTurn, type AgentWs, type ImagePart, type ModelMessage, type ModelRequest, type ModelResponse, type ToolCall, type ToolResult, type Transcript, type Usage } from './contract'
+import { addUsage, joinSources, NO_USAGE, toolsHash, type AgentEnv, type AgentModel, type AgentStep, type AgentTool, type AgentTurn, type AgentWs, type ImagePart, type ModelMessage, type ModelRequest, type ModelResponse, type ToolCall, type ToolResult, type Transcript, type Usage } from './contract'
 import { systemPrompt } from './prompt'
 import { viewOf, type Warning } from './changeset'
 import { notesOf } from '../model/notes'
@@ -82,6 +82,8 @@ export type LoopEvent =
   | { type: 'turn_started' }
   | { type: 'step_started'; n: number; final: boolean }
   | { type: 'text'; n: number; delta: string }
+  // A web search the model asked for (D-360), as the provider runs it.
+  | { type: 'search'; n: number; query: string }
   | { type: 'tool_started'; n: number; call: ToolLine }
   | { type: 'tool_finished'; n: number; call: ToolLine }
   | { type: 'step_finished'; n: number; tools: ToolLine[]; ms: number; usage: Usage }
@@ -111,6 +113,8 @@ export type TurnOpts = {
   // Steering (D-328): what the person wrote while the turn ran, taken at each step after the first and handed to the
   // model as their message between its steps (kept in the history).
   steer?: () => string[]
+  // The provider's web search offered (D-360): on unless false.
+  web?: boolean
 }
 
 // A message the person sent while the agent worked, as the model reads it between its steps.
@@ -273,10 +277,11 @@ const cut = (text: string) => {
 const isAbort = (e: unknown, signal?: AbortSignal) => !!signal?.aborted || (e as Error)?.name === 'AbortError'
 
 // One step's model call: streamed when the model can (text deltas as events), else one response.
-async function callModel(model: AgentModel, req: ModelRequest, onText: (d: string) => void): Promise<ModelResponse> {
+async function callModel(model: AgentModel, req: ModelRequest, onText: (d: string) => void, onSearch: (q: string) => void = () => undefined): Promise<ModelResponse> {
   if (!model.stream) return model.respond(req)
   for await (const ev of model.stream(req)) {
     if (ev.type === 'text') onText(ev.delta)
+    else if (ev.type === 'search') onSearch(ev.query)
     else if (ev.type === 'done') return ev.response
   }
   throw new Error('the answer stopped before it finished')
@@ -411,7 +416,10 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   let error: string | undefined
 
   const finish = (): TurnResult => {
-    const turn: AgentTurn = { ask: userMessage, steps, answer, end, usage: total, ms: performance.now() - t0, ...(error ? { error } : {}) }
+    // The pages the turn's searches read or cited (D-360), and what it searched.
+    const sources = joinSources(steps.map((x) => x.web?.sources))
+    const searches = [...new Set(steps.flatMap((x) => x.web?.queries ?? []))]
+    const turn: AgentTurn = { ask: userMessage, steps, answer, end, usage: total, ms: performance.now() - t0, ...(error ? { error } : {}), ...(sources.length ? { sources } : {}), ...(searches.length ? { searches } : {}) }
     opts.transcript?.turns.push(turn)
     emit({ type: 'turn_finished', turn })
     // `past` (cleared in place with this turn's messages) keeps its order: history, the ask, this turn's (append-only:
@@ -446,7 +454,12 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     )
     let res: ModelResponse
     try {
-      res = await callModel(model, { messages, tools: defs, signal, ...(final ? { toolChoice: 'none' as const } : {}) }, (delta) => emit({ type: 'text', n, delta }))
+      res = await callModel(
+        model,
+        { messages, tools: defs, signal, ...(opts.web !== false ? { web: true } : {}), ...(final ? { toolChoice: 'none' as const } : {}) },
+        (delta) => emit({ type: 'text', n, delta }),
+        (query) => emit({ type: 'search', n, query }),
+      )
     } catch (e) {
       if (isAbort(e, signal)) end = 'stopped'
       else {
@@ -459,7 +472,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     emit({ type: 'usage', n, step: res.usage, total })
     if (res.stop === 'error') {
       // The provider failed mid-answer: nothing it asked for runs, and the half answer stays out of the history.
-      steps.push({ n, text: res.text, toolCalls: res.toolCalls, results: [], usage: res.usage, ms: performance.now() - s0, stop: res.stop, ...(res.cacheMiss ? { cacheMiss: res.cacheMiss } : {}) })
+      steps.push({ n, text: res.text, toolCalls: res.toolCalls, results: [], usage: res.usage, ms: performance.now() - s0, stop: res.stop, ...(res.cacheMiss ? { cacheMiss: res.cacheMiss } : {}), ...(res.web ? { web: res.web } : {}) })
       emit({ type: 'step_finished', n, tools: [], ms: performance.now() - s0, usage: res.usage })
       end = 'error'
       error = res.error ?? 'the provider said error'
@@ -486,7 +499,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
         results.push({ callId: c.id, name: c.name, ok: false, text: STOPPED, ms: 0 })
         mine.push({ role: 'tool', callId: c.id, name: c.name, content: STOPPED })
       }
-      steps.push({ n, text: res.text, toolCalls: calls, results, usage: res.usage, ms: performance.now() - s0, stop: res.stop, ...(res.cacheMiss ? { cacheMiss: res.cacheMiss } : {}) })
+      steps.push({ n, text: res.text, toolCalls: calls, results, usage: res.usage, ms: performance.now() - s0, stop: res.stop, ...(res.cacheMiss ? { cacheMiss: res.cacheMiss } : {}), ...(res.web ? { web: res.web } : {}) })
       emit({ type: 'step_finished', n, tools: lines, ms: performance.now() - s0, usage: res.usage })
       end = 'stopped'
       break
@@ -538,7 +551,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
       const image = pictures.get(r.callId)
       mine.push({ role: 'tool', callId: r.callId, name: r.name, content: r.text, ...(image ? { image } : {}) })
     }
-    steps.push({ n, text: res.text, toolCalls: calls, results, usage: res.usage, ms: performance.now() - s0, stop: res.stop, ...(res.cacheMiss ? { cacheMiss: res.cacheMiss } : {}) })
+    steps.push({ n, text: res.text, toolCalls: calls, results, usage: res.usage, ms: performance.now() - s0, stop: res.stop, ...(res.cacheMiss ? { cacheMiss: res.cacheMiss } : {}), ...(res.web ? { web: res.web } : {}) })
     emit({ type: 'step_finished', n, tools: lines, ms: performance.now() - s0, usage: res.usage })
 
     if (final) {

@@ -118,13 +118,13 @@ export function Pages({ kind, pages, onEnd, name: called }: Props) {
   const common = { page, pages, i, n, last, go, forward, skip, showMe, name, out, end, next, scene, titleId, demoW: fitW - 2 }
 
   // The Window (D-326): the scrim (`data-coach`: the canvas and the app's keys never hear what's pressed here), focus on
-  // `[next ›]` and back where it was, Tab round inside, the cell-by-cell build; its frame is the welcome's own (`.wa`)
-  // and Escape is `skip`, heard by `onKey` (the Window's own Escape steps aside for the coach).
+  // `[next ›]` and back where it was, Tab round inside, the cell-by-cell build; its frame is the welcome's own (`.wa`).
+  // Escape is `skip`: inside it `onKey` hears it (the Escape stack steps aside for `[data-coach]`); with the focus on the
+  // page behind, the stack does (D-359): the lesson is on top, so what's under it (the threads list) stays.
   return (
     <Window
       labelledBy={titleId}
       onClose={skip}
-      escape={false}
       scrimPress="keep"
       scrimProps={{ 'data-coach': true, ...stopCanvas }}
       look="bare"

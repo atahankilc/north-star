@@ -5,12 +5,13 @@
 // Used by the eval runner (evals/run.ts: each task's `reference` is a script, proving graders and the runner) and later
 // by S12's dev stub (`?agentStub=1`) so the UI can be driven without a key. `wrong` turns a right script into one that
 // does the wrong thing (for grader and runner tests): writes dropped and a vague answer, unless a task gives its own.
-import { callIds, NO_USAGE, type AgentModel, type ModelRequest, type ModelResponse, type ToolCall } from './contract'
+import { callIds, NO_USAGE, type AgentModel, type ModelRequest, type ModelResponse, type ToolCall, type WebUse } from './contract'
 
 // One step of a script: the calls of one response (several = parallel calls), or the final answer. A step may carry
 // text with its calls (a model "thinking aloud" before calling).
 // For loop tests: `stop` overrides how an answer ends (length, refusal…), `fail` makes the call throw (a provider error).
-export type ScriptStep = { calls: { name: string; args: Record<string, unknown> }[]; text?: string } | { answer: string; stop?: ModelResponse['stop'] } | { fail: string }
+// `web` on an answer: what a real model's web search would have given (D-360), its queries counted as searches.
+export type ScriptStep = { calls: { name: string; args: Record<string, unknown> }[]; text?: string } | { answer: string; stop?: ModelResponse['stop']; web?: WebUse } | { fail: string }
 export type Script = ScriptStep[]
 
 export type StubModel = AgentModel & {
@@ -33,7 +34,7 @@ export function stubModel(script: Script, o: { name?: string; callId?: () => str
       const step = script[at++]
       if (!step) return { text: '', toolCalls: [], usage: { ...NO_USAGE }, stop: 'end' }
       if ('fail' in step) throw new Error(step.fail)
-      if ('answer' in step) return { text: step.answer, toolCalls: [], usage: { ...NO_USAGE }, stop: step.stop ?? 'end' }
+      if ('answer' in step) return { text: step.answer, toolCalls: [], usage: { ...NO_USAGE, ...(step.web?.queries.length ? { searches: step.web.queries.length } : {}) }, stop: step.stop ?? 'end', ...(step.web ? { web: step.web } : {}) }
       const toolCalls: ToolCall[] = step.calls.map((c) => ({ id: id(), name: c.name, args: structuredClone(c.args) }))
       return { text: step.text ?? '', toolCalls, usage: { ...NO_USAGE }, stop: 'tool_calls' }
     },

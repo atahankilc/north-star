@@ -28,7 +28,11 @@
 //   credit), then a message; 5xx one retry; a network failure a message; an abort throws an `AbortError`.
 //   A failure inside the stream (`response.failed`, `error`) is a response with `stop: 'error'`, not a throw.
 // - Malformed tool-call JSON is `ToolCall.argsError` (the loop tells the model), never a throw.
-import type { AgentModel, ImagePart, ModelEvent, ModelMessage, ModelRequest, ModelResponse, StopReason, ToolCall, ToolDef, Usage } from './contract'
+// - The web (D-360): with `req.web`, OpenAI's hosted `web_search` tool beside ours, at most WEB_SEARCHES built-in calls
+//   a response (`max_tool_calls` counts only built-in tools); its `web_search_call` items go back with the rest, the
+//   pages it read come with `web_search_call.action.sources`, the cited ones as the text's `url_citation`s.
+import { joinSources, type AgentModel, type ImagePart, type ModelEvent, type ModelMessage, type ModelRequest, type ModelResponse, type Source, type StopReason, type ToolCall, type ToolDef, type Usage } from './contract'
+import { WEB_SEARCHES } from './web'
 
 export const OPENAI_API = 'https://api.openai.com/v1'
 
@@ -134,15 +138,19 @@ export function toInput(messages: ModelMessage[]): { instructions?: string; inpu
 
 export function requestBody(req: ModelRequest, o: Pick<OpenAIOptions, 'model' | 'reasoning' | 'maxOutputTokens' | 'cacheKey'>): Record<string, unknown> {
   const { instructions, input } = toInput(req.messages)
+  const tools: Record<string, unknown>[] = [...req.tools.map(toOpenAITool), ...(req.web ? [{ type: 'web_search' }] : [])]
+  const include = [...(req.web ? ['web_search_call.action.sources'] : []), ...(o.reasoning ? ['reasoning.encrypted_content'] : [])]
   return {
     model: o.model,
     ...(instructions !== undefined ? { instructions } : {}),
     input,
-    ...(req.tools.length ? { tools: req.tools.map(toOpenAITool), tool_choice: req.toolChoice ?? 'auto', parallel_tool_calls: true } : {}),
+    ...(tools.length ? { tools, tool_choice: req.toolChoice ?? 'auto', parallel_tool_calls: true } : {}),
+    ...(req.web ? { max_tool_calls: WEB_SEARCHES } : {}),
     // TODO(S12 review): OpenAI may take `reasoning.context` (e.g. 'current_turn', to drop reasoning items of earlier
     // turns server-side); not confirmed in docs we could check offline, so not sent. The loop's compaction already
     // drops old turns' provider items.
-    ...(o.reasoning ? { reasoning: { effort: o.reasoning }, include: ['reasoning.encrypted_content'] } : {}),
+    ...(o.reasoning ? { reasoning: { effort: o.reasoning } } : {}),
+    ...(include.length ? { include } : {}),
     ...(o.maxOutputTokens ? { max_output_tokens: o.maxOutputTokens } : {}),
     ...(o.cacheKey ? { prompt_cache_key: o.cacheKey } : {}),
     store: false,
@@ -219,7 +227,14 @@ type Ev = {
   code?: string
   error?: { message?: string; code?: string; type?: string }
   output_index?: number
-  item?: Item & { type?: string; call_id?: string; name?: string; arguments?: string; content?: { type?: string; text?: string; refusal?: string }[] }
+  item?: Item & {
+    type?: string
+    call_id?: string
+    name?: string
+    arguments?: string
+    content?: { type?: string; text?: string; refusal?: string; annotations?: { type?: string; url?: string; title?: string }[] }[]
+    action?: { type?: string; query?: string; queries?: string[]; sources?: { type?: string; url?: string; title?: string }[] }
+  }
   response?: { id?: string; status?: string; usage?: RawUsage; error?: { message?: string; code?: string }; incomplete_details?: { reason?: string } }
 }
 
@@ -239,6 +254,10 @@ export async function* readResponse(datas: AsyncIterable<string>, key?: string):
   let responseId: string | undefined
   let stop: StopReason | null = null
   let error: string | undefined
+  // The web (D-360): what it searched, the pages it read, the ones the text cites.
+  const queries: string[] = []
+  const read: Source[] = []
+  const cited: Source[] = []
   for await (const data of datas) {
     if (data === '[DONE]') break
     let ev: Ev
@@ -266,6 +285,15 @@ export async function* readResponse(datas: AsyncIterable<string>, key?: string):
           const call = toolCallOf(it)
           calls.push(call)
           yield { type: 'tool_call', call }
+        } else if (it.type === 'web_search_call') {
+          const a = it.action
+          const qs = [...(a?.query ? [a.query] : []), ...(a?.queries ?? [])].filter((q) => typeof q === 'string' && q.trim())
+          for (const q of qs) {
+            if (queries.includes(q)) continue
+            queries.push(q)
+            yield { type: 'search', query: q }
+          }
+          for (const src of a?.sources ?? []) if (src.url) read.push({ url: src.url, ...(src.title ? { title: src.title } : {}) })
         } else if (it.type === 'message' && Array.isArray(it.content)) {
           // The whole text, when no delta came (or a refusal part).
           const whole = it.content.filter((c) => c.type === 'output_text').map((c) => c.text ?? '').join('')
@@ -274,6 +302,7 @@ export async function* readResponse(datas: AsyncIterable<string>, key?: string):
             yield { type: 'text', delta: whole }
           }
           for (const c of it.content) if (c.type === 'refusal' && c.refusal && !refusal) refusal = c.refusal
+          for (const c of it.content) for (const an of c.annotations ?? []) if (an.type === 'url_citation' && an.url) cited.push({ url: an.url, ...(an.title ? { title: an.title } : {}), cited: true })
         }
         break
       }
@@ -305,7 +334,11 @@ export async function* readResponse(datas: AsyncIterable<string>, key?: string):
   }
   // A cut-short response that still asked for calls: the calls are whole (each came with its done event), so they run.
   if (stop === 'length' && calls.length) stop = 'tool_calls'
-  const response: ModelResponse = { text: text || (stop === 'refusal' ? refusal : ''), toolCalls: calls, usage, stop, ...(error ? { error } : {}), ...(items.length ? { providerItems: items.sort((a, b) => a.at - b.at || a.seq - b.seq).map((x) => x.item) } : {}), ...(responseId ? { responseId } : {}) }
+  const searched = items.filter((x) => x.item.type === 'web_search_call' && (x.item as { action?: { type?: string } }).action?.type !== 'open_page' && (x.item as { action?: { type?: string } }).action?.type !== 'find_in_page').length
+  if (searched) usage = { ...usage, searches: searched }
+  const web = queries.length || read.length || cited.length ? { web: { queries, sources: joinSources([cited, read]) } } : {}
+  const response: ModelResponse = {
+    ...web, text: text || (stop === 'refusal' ? refusal : ''), toolCalls: calls, usage, stop, ...(error ? { error } : {}), ...(items.length ? { providerItems: items.sort((a, b) => a.at - b.at || a.seq - b.seq).map((x) => x.item) } : {}), ...(responseId ? { responseId } : {}) }
   yield { type: 'done', response }
 }
 

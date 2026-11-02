@@ -17,6 +17,10 @@ export const CHAT_TITLE_MAX = 120
 export const CHAT_TEXT_MAX = 20_000
 export const CHAT_STEPS_MAX = 40
 export const CHAT_SUMMARY_MAX = 2000
+// An answer's sources as kept (D-360): how many, a url's and a title's length.
+export const CHAT_SOURCES_MAX = 20
+export const CHAT_URL_MAX = 2000
+export const CHAT_SOURCE_TITLE_MAX = 200
 
 // One kept entry of the chat, as the column shows it: the person's message, the agent's answer (its steps as labels),
 // a preview's change list (its lines, and what became of it), the status line after it, a note.
@@ -33,6 +37,8 @@ export type SavedTurn = {
   model?: string
   // A change list: what became of it (applied, discarded…) and how many changes; a status line: its words.
   applied?: { state: string; count?: number }
+  // The pages its web searches read or cited (D-360), as the answer showed them.
+  sources?: { url: string; title?: string; cited?: boolean }[]
 }
 
 export type ChatSummary = {
@@ -83,6 +89,9 @@ export function keptTurn(t: SavedTurn): SavedTurn {
     ...(t.end ? { end: t.end } : {}),
     ...(t.model ? { model: cut(t.model, 100) } : {}),
     ...(t.applied ? { applied: { state: t.applied.state, ...(t.applied.count !== undefined ? { count: t.applied.count } : {}) } } : {}),
+    ...(t.sources?.length
+      ? { sources: t.sources.filter((x) => /^https?:\/\//i.test(x.url) && x.url.length <= CHAT_URL_MAX).slice(0, CHAT_SOURCES_MAX).map((x) => ({ url: x.url, ...(x.title ? { title: cut(x.title, CHAT_SOURCE_TITLE_MAX) } : {}), ...(x.cited ? { cited: true } : {}) })) }
+      : {}),
   }
 }
 

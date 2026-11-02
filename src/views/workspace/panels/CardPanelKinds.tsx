@@ -1,7 +1,7 @@
 // The card panel's sections that belong to one type (D-221): a competitor's profile and its features (the basic cards
 // inside it, by category, a row opening in place), a feature's parent, parts (a tree of `part of`), what it's judged on, what it
 // rests on (and how sure that makes it) and the features of theirs that match it.
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { cardRef, isOnPlane, updateCard, type Card } from '../../../data/cards'
 import { planeOf } from '../../../data/places'
 import {
@@ -21,7 +21,7 @@ import { deleteEdge, FOR } from '../../../data/edges'
 import { mismatch } from '../../../data/evidence'
 import { PanelSection } from '../../../ui/patterns/SidePanel'
 import { Select } from '../../../ui/patterns/Select'
-import { CardPicker, goToCard, KIND_LABEL, PLACEHOLDER, useCommit, type P } from './CardPanel'
+import { CardPicker, goToCard, KIND_LABEL, PLACEHOLDER, type P } from './CardPanel'
 import { createEdge } from '../../../data/edges'
 import { useWs } from '../canvas/context'
 import { useCanvasView } from '../../../state/canvasView'
@@ -33,6 +33,8 @@ import { Button } from '../../../ui/primitives/Button'
 import { Choice } from '../../../ui/primitives/Choice'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
+import { AddField } from '../../../ui/primitives/AddField'
+import { CommitField } from '../../../ui/primitives/CommitField'
 import { Chip } from '../../../ui/primitives/Chip'
 import { Label } from '../../../ui/primitives/Label'
 import { CATEGORY_MAX, FACT_MAX, CRITERION_MAX, LONG_TEXT_MAX, REGION_MAX, TITLE_MAX, URL_MAX } from '../../../model/limits'
@@ -43,8 +45,6 @@ const MAX_CRITERIA = 8
 // A text field shown as its value. What's typed is kept only on Enter or on leaving the field (the user: not while
 // still typing); Escape puts it back; shift+Enter is a new line where it may have several. Leaving the panel keeps it.
 function ValueField({ value, placeholder, editor, multiline, onSave, link, max }: { value?: string; placeholder: string; editor: boolean; multiline?: boolean; onSave: (v: string) => void; link?: boolean; max: number }) {
-  const ref = useRef<HTMLTextAreaElement>(null)
-  const { draft, setDraft, commit, revert } = useCommit(value ?? '', (v) => onSave(v.trim()))
   if (!editor)
     return link && value ? (
       <a className={styles.url} href={/^https?:/.test(value) ? value : `https://${value}`} target="_blank" rel="noreferrer">
@@ -56,25 +56,17 @@ function ValueField({ value, placeholder, editor, multiline, onSave, link, max }
       </span>
     )
   return (
-    <Field
-      ref={ref}
-      multiline
+    <CommitField
+      enter={multiline ? 'shift' : 'ends'}
       quiet
       size="sm"
       label={placeholder}
       className={styles.field}
       data-link={link || undefined}
-      rows={1}
-      value={draft}
+      value={value ?? ''}
       placeholder={placeholder}
       maxLength={max}
-      onChange={(v) => setDraft(multiline ? v : v.replace(/\n/g, ''))}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Enter' && !(multiline && e.shiftKey)) (e.preventDefault(), e.currentTarget.blur())
-        if (e.key === 'Escape') (e.preventDefault(), revert(), requestAnimationFrame(() => ref.current?.blur()))
-      }}
+      onSave={(v) => onSave(v.trim())}
     />
   )
 }
@@ -103,22 +95,15 @@ export function CompetitorProfile({ n, card, editor }: P) {
             </Chip>
           ))}
           {region !== null ? (
-            <Field
-              size="sm"
+            <AddField
               className={styles.tagInput}
               label="Region"
-              autoFocus
               placeholder="US, Germany…"
               value={region}
               maxLength={REGION_MAX}
               onChange={setRegion}
-              onBlur={() => setRegion(null)}
-              onKeyDown={(e) => {
-                e.stopPropagation()
-                const r = region.trim()
-                if (e.key === 'Enter' && r) (regions.includes(r) || setRegions([...regions, r]), setRegion(''))
-                if (e.key === 'Escape') setRegion(null)
-              }}
+              onClose={() => setRegion(null)}
+              onAdd={(r) => (regions.includes(r) || setRegions([...regions, r]), setRegion(''))}
             />
           ) : (
             editor && (
@@ -451,23 +436,16 @@ export function Criteria({ n, card, editor }: P) {
       })}
       {list.length > 0 && !unfolding && <p className={styles.quiet}>scored in a matrix whose features unfold (its setup → rows)</p>}
       {adding !== null && (
-        <Field
-          size="sm"
+        <AddField
           label="A criterion"
-          autoFocus
           placeholder="what users judge it on"
           value={adding}
           maxLength={CRITERION_MAX}
           onChange={setAdding}
-          onBlur={() => setAdding(null)}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            const t = adding.trim()
-            if (e.key === 'Escape') setAdding(null)
-            if (e.key === 'Enter' && t) {
-              set([...list, { id: Math.random().toString(36).slice(2, 10), text: t }])
-              setAdding(list.length + 1 < MAX_CRITERIA ? '' : null)
-            }
+          onClose={() => setAdding(null)}
+          onAdd={(t) => {
+            set([...list, { id: Math.random().toString(36).slice(2, 10), text: t }])
+            setAdding(list.length + 1 < MAX_CRITERIA ? '' : null)
           }}
         />
       )}

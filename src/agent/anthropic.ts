@@ -26,10 +26,18 @@
 // always sent (Opus 5.5 and Haiku 5.5 default to medium, Sonnet 5.5 to high), prompt caching as above, tools strict
 // where their schema already fits (openai.ts' `fitsStrict`), eager input streaming (we check every input ourselves:
 // a call cut off by max_tokens is an `argsError`), server-side fallbacks on a refusal where the model has them.
+//
+// THE WEB (D-360): with `req.web`, Claude's `web_search` server tool beside ours (dynamic filtering where the model has
+// it, `web_search_20260209`; else the basic one), at most WEB_SEARCHES a response. The searches run on Anthropic's side
+// within the response; their blocks (encrypted results and citations) go back unchanged with the rest of the content.
+// A long search turn can pause (`pause_turn`): the paused content is sent back as it came and the answer goes on, at
+// most PAUSES times, the parts joined into one response.
 import Anthropic, { APIConnectionError, APIUserAbortError, AuthenticationError, BadRequestError, InternalServerError, NotFoundError, PermissionDeniedError, RateLimitError } from '@anthropic-ai/sdk'
 import type { BetaContentBlock, BetaContentBlockParam, BetaMessage, BetaMessageParam, BetaTool } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import type { AgentModel, ImagePart, ModelEvent, ModelMessage, ModelRequest, ModelResponse, StopReason, ToolCall, ToolDef, Usage } from './contract'
+import { joinSources, type Source, type WebUse } from './contract'
 import { fitsStrict, redact, type Effort } from './openai'
+import { WEB_SEARCHES } from './web'
 
 export type AnthropicOptions = {
   key: string
@@ -69,6 +77,13 @@ export const modern = (model: string) => /^claude-(opus|sonnet|haiku|fable|mytho
 export const nativeSystem = (model: string) => /^claude-(opus-5|opus-4-8|fable-5|mythos-5|sonnet-5-5|haiku-5-5)/.test(model)
 // Server-side fallbacks on a refusal, the `default` form: the models Anthropic offers it for.
 export const fallsBack = (model: string) => /^claude-(opus-5|fable-5|sonnet-5-5)/.test(model)
+
+// Dynamic filtering (the search's results filtered by code before they reach the context): Opus, Sonnet, Fable and
+// Mythos from 4.6 on; Haiku and older models get the basic tool, which needs no code execution.
+export const filtersWeb = (model: string) => /^claude-(opus|sonnet|fable|mythos)-(4-[6-9]|[5-9])/.test(model)
+export const webTool = (model: string) => ({ type: filtersWeb(model) ? ('web_search_20260209' as const) : ('web_search_20250305' as const), name: 'web_search' as const, max_uses: WEB_SEARCHES })
+// How many times a paused search turn is taken up again before its answer stands as it is.
+export const PAUSES = 3
 
 const EFFORTS = { none: 'low', minimal: 'low', low: 'low', medium: 'medium', high: 'high', xhigh: 'xhigh' } as const
 
@@ -180,7 +195,7 @@ export function requestBody(req: ModelRequest, o: Pick<AnthropicOptions, 'model'
     // A breakpoint on the system prompt: tools + system, the same for every chat.
     ...(system !== undefined ? { system: [{ type: 'text' as const, text: system, cache_control: CACHE }] } : {}),
     messages: messages as BetaMessageParam[],
-    ...(req.tools.length ? { tools: req.tools.map(toClaudeTool), tool_choice: { type: req.toolChoice === 'none' ? ('none' as const) : ('auto' as const) } } : {}),
+    ...(req.tools.length || req.web ? { tools: [...req.tools.map(toClaudeTool), ...(req.web ? [webTool(o.model)] : [])], tool_choice: { type: req.toolChoice === 'none' ? ('none' as const) : ('auto' as const) } } : {}),
     ...(now ? { thinking: { type: 'adaptive' as const, ...(binding ? { block_binding: { prefix_mismatch_behavior: binding } } : {}) } } : {}),
     ...(now && o.effort ? { output_config: { effort: EFFORTS[o.effort] } } : {}),
     cache_control: CACHE,
@@ -197,7 +212,26 @@ const STOPS: Record<string, StopReason> = { end_turn: 'end', stop_sequence: 'end
 export function usageOf(u: BetaMessage['usage'] | undefined): Usage {
   if (!u) return { input: 0, output: 0 }
   const read = u.cache_read_input_tokens ?? 0
-  return { input: (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + read, output: u.output_tokens ?? 0, cached: read }
+  const searches = u.server_tool_use?.web_search_requests ?? 0
+  return { input: (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + read, output: u.output_tokens ?? 0, cached: read, ...(searches ? { searches } : {}) }
+}
+
+// What the content searched and read (the results), and the pages its text cites.
+export function webOf(content: BetaContentBlock[]): WebUse | undefined {
+  const queries: string[] = []
+  const read: Source[] = []
+  const cited: Source[] = []
+  for (const b of content) {
+    if (b.type === 'server_tool_use' && b.name === 'web_search') {
+      const q = (b.input as { query?: unknown } | null)?.query
+      if (typeof q === 'string' && q.trim() && !queries.includes(q)) queries.push(q)
+    } else if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) {
+      for (const r of b.content) if (r.type === 'web_search_result' && r.url) read.push({ url: r.url, ...(r.title ? { title: r.title } : {}) })
+    } else if (b.type === 'text') {
+      for (const c of b.citations ?? []) if (c.type === 'web_search_result_location' && c.url) cited.push({ url: c.url, ...(c.title ? { title: c.title } : {}), cited: true })
+    }
+  }
+  return queries.length || read.length || cited.length ? { queries, sources: joinSources([cited, read]) } : undefined
 }
 
 export function responseOf(msg: BetaMessage): ModelResponse {
@@ -219,7 +253,8 @@ export function responseOf(msg: BetaMessage): ModelResponse {
   })
   const said = content.flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('')
   const miss = cacheMissOf(msg)
-  return { text: said, toolCalls, usage: usageOf(msg.usage), stop: toolCalls.length && !cutOff ? 'tool_calls' : stop, providerItems: content, responseId: msg.id, ...(miss ? { cacheMiss: miss } : {}) }
+  const web = webOf(content)
+  return { text: said, toolCalls, usage: usageOf(msg.usage), stop: toolCalls.length && !cutOff ? 'tool_calls' : stop, providerItems: content, responseId: msg.id, ...(miss ? { cacheMiss: miss } : {}), ...(web ? { web } : {}) }
 }
 
 // The cache diagnostics' verdict in a few words: its type and, when it has one, the tokens after where they differed.
@@ -269,10 +304,42 @@ export function anthropicModel(o: AnthropicOptions): AnthropicModel {
   if (!key) throw new AnthropicError(NEED_KEY, 'auth')
   const client = clientOf(key, o)
 
+  // One answer: streamed, a search said as it is asked, a paused search turn taken up again (the parts joined).
   async function* once(req: ModelRequest, binding?: 'drop_block'): AsyncGenerator<ModelEvent> {
-    const s = client.beta.messages.stream(requestBody(req, o, binding) as Parameters<typeof client.beta.messages.stream>[0], { signal: req.signal })
-    for await (const ev of s) if (ev.type === 'content_block_delta' && ev.delta.type === 'text_delta') yield { type: 'text', delta: ev.delta.text }
-    yield { type: 'done', response: responseOf(await s.finalMessage()) }
+    let before: BetaContentBlock[] = []
+    let usage: Usage = { input: 0, output: 0 }
+    for (let k = 0; ; k++) {
+      const body = requestBody(req, o, binding)
+      if (before.length) body.messages.push({ role: 'assistant', content: before as BetaContentBlockParam[] })
+      const s = client.beta.messages.stream(body as Parameters<typeof client.beta.messages.stream>[0], { signal: req.signal })
+      // A web search's query, gathered from its streamed input, said when its block ends.
+      const asking = new Map<number, string>()
+      for await (const ev of s) {
+        if (ev.type === 'content_block_delta' && ev.delta.type === 'text_delta') yield { type: 'text', delta: ev.delta.text }
+        else if (ev.type === 'content_block_start' && ev.content_block.type === 'server_tool_use' && ev.content_block.name === 'web_search') asking.set(ev.index, '')
+        else if (ev.type === 'content_block_delta' && ev.delta.type === 'input_json_delta' && asking.has(ev.index)) asking.set(ev.index, asking.get(ev.index)! + ev.delta.partial_json)
+        else if (ev.type === 'content_block_stop' && asking.has(ev.index)) {
+          let q: unknown
+          try {
+            q = (JSON.parse(asking.get(ev.index) || '{}') as { query?: unknown }).query
+          } catch {
+            q = undefined
+          }
+          asking.delete(ev.index)
+          if (typeof q === 'string' && q.trim()) yield { type: 'search', query: q }
+        }
+      }
+      const msg = await s.finalMessage()
+      const u = usageOf(msg.usage)
+      usage = { input: usage.input + u.input, output: usage.output + u.output, cached: (usage.cached ?? 0) + (u.cached ?? 0), ...((usage.searches ?? 0) + (u.searches ?? 0) ? { searches: (usage.searches ?? 0) + (u.searches ?? 0) } : {}) }
+      const content = [...before, ...(msg.content as BetaContentBlock[])]
+      if (msg.stop_reason === 'pause_turn' && k < PAUSES) {
+        before = content
+        continue
+      }
+      yield { type: 'done', response: { ...responseOf({ ...msg, content } as BetaMessage), usage } }
+      return
+    }
   }
 
   async function* stream(req: ModelRequest): AsyncGenerator<ModelEvent> {

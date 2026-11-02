@@ -185,17 +185,18 @@ function Box() {
     >
       {open && (
         <div className={styles.boxTop}>
-          <div className={styles.boxHead}>
-            <span className={styles.kind}>
-              <AgentMark /> agent
-            </span>
+          <PanelHead
+            className={styles.boxHead}
+            tone="var(--accent-cyan)"
+            kind={
+              <>
+                <AgentMark /> agent
+              </>
+            }
+            onClose={() => closeAgent()}
+          >
             <span className={styles.boxModel}>{chatModel()}</span>
-            <span className={styles.close}>
-              <Button icon onClick={() => closeAgent()} title="Close (Esc)" aria-label="close">
-                ×
-              </Button>
-            </span>
-          </div>
+          </PanelHead>
           <FirstAsks focus={focus} onAsk={(t) => agentActions.send(t)} compact />
           <p className={styles.note}>changes are shown first · one undo step</p>
           {viewer && <p className={styles.viewer}>you're a viewer here: the agent reads and answers, it changes nothing</p>}

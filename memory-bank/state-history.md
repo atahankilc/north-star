@@ -1349,3 +1349,9 @@ SplitLine for the six lines that share the screen (a7b282e); 6 Dialog, Settings 
 stack, useDialogFocus keeps autoFocus (6473f7e); 7 HazardConfirm on the Window, `role`/`behind` (b011d8d); 8
 PromptOverlay for the finder and the guide (4da2a23). Shared tree had other sessions' half-done files at times: step 3
 was driven from a worktree of HEAD + its files.
+
+## Done (2026-11-02): D-359's open items closed
+Beside's and the documents' lines driven; the agent box's head on PanelHead; CommitField and AddField in the kit
+(useCommit to src/ui/foundation) under the card and task panels' fields and adders; the lesson on the Escape stack
+(Escape from the page skips it, the threads list stays); Settings' look measured against 085c4bf (unchanged). Checked
+headless on emulators, details in D-359.

@@ -23,10 +23,12 @@
 //   job       "job demo" (D-328) → `plan` with three steps, answers the plan; on "go" (or the app's "Go on with step N")
 //             → `progress` doing, one `change` (an idea on the first plane), `progress` done, says it's in the preview;
 //             after the apply the app goes on with the next step by itself.
+//   web       "web demo" (D-360) → searches the web twice (made-up pages) and answers with linked sources, so the
+//             search lines and the sources list can be seen without a key.
 //   demo      "preview demo: <kind>" (S15's screenshots) → one `change` with a batch that touches that kind on the
 //             "Pazar" fixture (cards, links, text, matrix, table, deck, timeline, pieces, canvases, places, or flow:
 //             a bit of everything), then says what's in the preview.
-import type { AgentEnv, AgentModel, ModelEvent, ModelMessage, ModelRequest, ModelResponse, ToolCall, Usage } from './contract'
+import type { AgentEnv, AgentModel, ModelEvent, ModelMessage, ModelRequest, ModelResponse, ToolCall, Usage, WebUse } from './contract'
 import { estimateTokens } from './read/text'
 import { clean, derive } from './read/derive'
 import { kindOfPiece } from '../model/pieces'
@@ -46,13 +48,13 @@ export type DevStubOpts = {
 
 type Env = Pick<AgentEnv, 'getWs' | 'ids'> & { changes?: AgentEnv['changes'] }
 type Call = { name: string; args: Record<string, unknown> }
-type Step = { calls: Call[]; text?: string } | { answer: string }
+type Step = { calls: Call[]; text?: string } | { answer: string; web?: WebUse }
 
 const TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
 
 const STOP = new Set('a an the and or of to in on for with is are was were be do does did what which who whom how many much our we us my me i you it its this that these those there any all have has had about from by as at show tell list give find please can could would should will'.split(' '))
 
-export type Script = 'refuse' | 'plan' | 'go' | 'edit' | 'question' | 'demo' | 'remember' | 'skill' | 'job'
+export type Script = 'refuse' | 'plan' | 'go' | 'edit' | 'question' | 'demo' | 'remember' | 'skill' | 'job' | 'web'
 
 const PLAN_MARK = 'Say go, or tell me what to change in the plan.'
 const JOB_MARK = 'Say go and I will do it step by step: each step waits in the preview for you.'
@@ -62,6 +64,7 @@ const JOB_STEPS = ['Add the first idea', 'Add the second idea', 'Add the third i
 export function pickScript(ask: string, before = ''): Script {
   const a = ask.toLowerCase()
   if (/^\s*preview demo\b/.test(a)) return 'demo'
+  if (/^\s*web demo\b/.test(a)) return 'web'
   if (/^\s*job demo\b/.test(a) || /^(the changes were applied \(\d+\)\. )?go on with step \d+/.test(a)) return 'job'
   if (before.includes(JOB_MARK) && /^\s*(go|yes|ok|okay|do it|go ahead|sure)\b/.test(a)) return 'job'
   // S17: a `/` command, or "go"/"yes" after a skill's plan (devStubSkills.ts).
@@ -147,6 +150,21 @@ export function nextStep(env: Env, ask: string, step: number, results: { name: s
   const last = results[results.length - 1]?.content ?? ''
   const kind = pickScript(ask, before)
   const why = (t: string) => t.split('\n')[0].replace(/[.\s]+$/, '')
+  if (kind === 'web')
+    return {
+      answer: [
+        'Too Good To Go charges a shop a yearly fee plus a commission on each bag ([Too Good To Go for business](https://www.toogoodtogo.com/de/business)); the amounts depend on the contract.',
+        'A trade article puts the commission near a quarter of the bag price (https://news.example.com/tgtg-fees), but that is one report, not the company.',
+      ].join('\n\n'),
+      web: {
+        queries: ['Too Good To Go Gebühren Händler', 'Too Good To Go commission per bag Germany'],
+        sources: [
+          { url: 'https://www.toogoodtogo.com/de/business', title: 'Too Good To Go for business', cited: true },
+          { url: 'https://news.example.com/tgtg-fees', title: 'What food-rescue apps charge shops', cited: true },
+          { url: 'https://www.example.org/food-waste-apps', title: 'Food waste apps compared' },
+        ],
+      },
+    }
   if (kind === 'job') {
     if (/^\s*job demo\b/i.test(ask)) {
       if (step === 0) return { calls: [{ name: 'plan', args: { title: 'Three ideas, one per step', steps: JOB_STEPS.map((title, i) => ({ title, check: `idea ${i + 1} on the first plane` })) } }] }
@@ -479,13 +497,18 @@ export function devStubModel(env: Env, o: DevStubOpts = {}): AgentModel & { stre
     // The loop's last step has the tools off: answer instead of calling.
     if (req.toolChoice === 'none' && 'calls' in s) s = { answer: "I ran out of steps for this turn before finishing. Here's where I got to; ask me to go on." }
     const text = 'answer' in s ? s.answer : (s.text ?? '')
+    const web = 'answer' in s ? s.web : undefined
+    for (const q of web?.queries ?? []) {
+      await sleep(thinkMs, req.signal)
+      yield { type: 'search', query: q }
+    }
     for (const w of text.match(/\S+\s*/g) ?? []) {
       await sleep(wordMs, req.signal)
       yield { type: 'text', delta: w }
     }
     const toolCalls: ToolCall[] = 'calls' in s ? s.calls.map((c) => ({ id: `stub_${++n}`, name: c.name, args: structuredClone(c.args), rawArgs: JSON.stringify(c.args) })) : []
     for (const call of toolCalls) yield { type: 'tool_call', call }
-    const response: ModelResponse = { text, toolCalls, usage: fakeUsage(req, text, step), stop: toolCalls.length ? 'tool_calls' : 'end' }
+    const response: ModelResponse = { text, toolCalls, usage: { ...fakeUsage(req, text, step), ...(web ? { searches: web.queries.length } : {}) }, stop: toolCalls.length ? 'tool_calls' : 'end', ...(web ? { web } : {}) }
     yield { type: 'done', response }
   }
   return {

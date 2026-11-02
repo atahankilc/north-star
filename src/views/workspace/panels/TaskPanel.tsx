@@ -15,7 +15,7 @@ import { useMembers } from '../../../data/workspaces'
 import { useBesideW, useCanvasView } from '../../../state/canvasView'
 import { PanelAction, PanelSection, SidePanel } from '../../../ui/patterns/SidePanel'
 import { Select } from '../../../ui/patterns/Select'
-import { CardPicker, EvidenceForm, PLACEHOLDER, useCommit } from './CardPanel'
+import { CardPicker, EvidenceForm, PLACEHOLDER } from './CardPanel'
 import { useWs } from '../canvas/context'
 import { kanbanOf, selectTask, useKanbanUi } from '../deck/Kanban'
 import { dueText } from '../../../model/tasks'
@@ -29,6 +29,8 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Choice } from '../../../ui/primitives/Choice'
 import { Field } from '../../../ui/primitives/Field'
+import { AddField } from '../../../ui/primitives/AddField'
+import { CommitField } from '../../../ui/primitives/CommitField'
 import { Label } from '../../../ui/primitives/Label'
 import { TASK_NOTES_MAX } from '../../../model/limits'
 
@@ -141,27 +143,18 @@ export function TaskPanel({ editor }: { editor: boolean }) {
 // Its title: Inter, typed in place; Enter keeps it, Escape puts it back. A task always has one.
 function Title({ task, editor }: { task: Task; editor: boolean }) {
   const { wid } = useWs()
-  const field = useRef<HTMLTextAreaElement>(null)
-  const { draft, setDraft, commit, revert } = useCommit(task.title, (v) => {
-    const t = v.trim().slice(0, TASK_TITLE_MAX)
-    if (t) void updateTask(wid, task, { title: t }, 'rename a task')
-  })
   if (!editor) return <span className={styles.title}>{task.title}</span>
   return (
-    <Field
-      ref={field}
-      multiline
+    <CommitField
+      enter="shift"
+      empty="undo"
       className={`${styles.title} ${styles.titleField}`}
-      value={draft}
-      rows={1}
+      value={task.title}
       maxLength={TASK_TITLE_MAX}
       label="Title"
-      onChange={setDraft}
-      onBlur={() => (draft.trim() ? commit() : revert())}
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Enter' && !e.shiftKey) (e.preventDefault(), e.currentTarget.blur())
-        if (e.key === 'Escape') (revert(), requestAnimationFrame(() => field.current?.blur()))
+      onSave={(v) => {
+        const t = v.trim().slice(0, TASK_TITLE_MAX)
+        if (t) void updateTask(wid, task, { title: t }, 'rename a task')
       }}
     />
   )
@@ -427,21 +420,15 @@ function Labels({ task, editor, n }: { task: Task; editor: boolean; n: number })
           </Chip>
         ))}
         {draft !== null && (
-          <Field
-            size="sm"
+          <AddField
             className={styles.tagInput}
             label="Label"
-            autoFocus
             placeholder="label"
             value={draft}
             maxLength={LABEL_MAX}
             onChange={setDraft}
-            onBlur={() => setDraft(null)}
-            onKeyDown={(e) => {
-              e.stopPropagation()
-              if (e.key === 'Enter' && typed) add(draft)
-              if (e.key === 'Escape') setDraft(null)
-            }}
+            onClose={() => setDraft(null)}
+            onAdd={add}
           />
         )}
       </div>
@@ -622,24 +609,19 @@ function CheckField({ value, onDone }: { value: string; onDone: (text: string | 
 // Notes: Inter, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
 function Notes({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
   const { wid } = useWs()
-  const { draft, setDraft, commit } = useCommit(task.notes ?? '', (v) => void updateTask(wid, task, { notes: v.trim() ? v : undefined }, 'edit a task’s notes'))
   return (
     <PanelSection n={n} name="notes">
-      <Field
-        multiline
+      <CommitField
+        enter="newline"
+        escape="keep"
         className={styles.notes}
         rows={2}
-        value={draft}
+        value={task.notes ?? ''}
         readOnly={!editor}
         placeholder="What it takes, what done looks like."
         maxLength={TASK_NOTES_MAX}
         label="Notes"
-        onChange={setDraft}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          e.stopPropagation()
-          if (e.key === 'Escape') e.currentTarget.blur()
-        }}
+        onSave={(v) => void updateTask(wid, task, { notes: v.trim() ? v : undefined }, 'edit a task’s notes')}
       />
     </PanelSection>
   )

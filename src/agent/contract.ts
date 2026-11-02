@@ -31,8 +31,14 @@ export type ToolResult = { callId: string; name: string; ok: boolean; text: stri
 
 // Tokens as the provider counts them (the stub reports zeros). `cached`: input read from the provider's prompt cache
 // (part of `input`); `reasoning`: hidden reasoning tokens (part of `output`).
-export type Usage = { input: number; output: number; cached?: number; reasoning?: number }
+// `searches`: web searches the provider ran (D-360; billed apart from tokens).
+export type Usage = { input: number; output: number; cached?: number; reasoning?: number; searches?: number }
 export const NO_USAGE: Usage = Object.freeze({ input: 0, output: 0, cached: 0, reasoning: 0 })
+
+// The web (D-360): a page the model read or cited, and what one response searched. The provider runs the searches
+// (OpenAI's `web_search`, Claude's `web_search` server tool); nothing here fetches a page.
+export type Source = { url: string; title?: string; cited?: boolean }
+export type WebUse = { queries: string[]; sources: Source[] }
 
 // The providers an adapter can be (D-329): what tags `providerItems`, so one provider never replays another's.
 export type Provider = 'openai' | 'anthropic' | 'stub'
@@ -57,7 +63,8 @@ export type ModelMessage =
 
 // `toolChoice: 'none'`: the tools stay listed (the prompt cache's prefix stays the same) but the model must answer in
 // text: the loop's last allowed step (S12, src/agent/loop.ts). Left out: the model may call tools ('auto').
-export type ModelRequest = { messages: ModelMessage[]; tools: ToolDef[]; signal?: AbortSignal; toolChoice?: 'auto' | 'none' }
+// `web`: the provider's own web search is offered too (D-360: always, the model decides when; left out: none).
+export type ModelRequest = { messages: ModelMessage[]; tools: ToolDef[]; signal?: AbortSignal; toolChoice?: 'auto' | 'none'; web?: boolean }
 
 // Why the model stopped: it wants tools run, it answered, it ran out of room, the provider's filter stopped it, the
 // model refused, or the provider failed.
@@ -67,10 +74,11 @@ export type StopReason = 'tool_calls' | 'end' | 'length' | 'content_filter' | 'r
 // them in parallel: they never depend on each other within one response).
 // `cacheMiss`: why the provider's prompt cache could not reuse the request before (Claude's cache diagnostics, the
 // evals only): `messages_changed ~41850`.
-export type ModelResponse = { text: string; toolCalls: ToolCall[]; usage: Usage; stop: StopReason; error?: string; providerItems?: unknown[]; responseId?: string; cacheMiss?: string }
+// `web`: what it searched and the pages it read or cited (cited first), when it searched.
+export type ModelResponse = { text: string; toolCalls: ToolCall[]; usage: Usage; stop: StopReason; error?: string; providerItems?: unknown[]; responseId?: string; cacheMiss?: string; web?: WebUse }
 
 // A streamed response, piece by piece; `done` carries the whole response, the same as `respond` gives.
-export type ModelEvent = { type: 'text'; delta: string } | { type: 'tool_call'; call: ToolCall } | { type: 'done'; response: ModelResponse }
+export type ModelEvent = { type: 'text'; delta: string } | { type: 'tool_call'; call: ToolCall } | { type: 'search'; query: string } | { type: 'done'; response: ModelResponse }
 
 // A model adapter. `respond` is required; `stream` is optional (the loop falls back to `respond`).
 export interface AgentModel {
@@ -161,14 +169,15 @@ export type AgentTool = { def: ToolDef; kind: 'read' | 'write' | 'ui'; run: (env
 // ---- What happened
 
 // One round trip: what the model said and asked for, what the tools gave back, how long, how many tokens.
-export type AgentStep = { n: number; text: string; toolCalls: ToolCall[]; results: ToolResult[]; usage: Usage; ms: number; stop: StopReason; cacheMiss?: string }
+export type AgentStep = { n: number; text: string; toolCalls: ToolCall[]; results: ToolResult[]; usage: Usage; ms: number; stop: StopReason; cacheMiss?: string; web?: WebUse }
 
 // Why a turn ended: the model answered; the step budget ran out; the model ran out of room before answering; the
 // provider's filter or the model refused; the person stopped it; the provider (or the loop) failed.
 export type TurnEnd = 'answered' | 'budget' | 'length' | 'refused' | 'stopped' | 'error'
 
 // `model`, `role`: which model ran the turn and in what role, when a pipeline chose it (docs/specs/agent-pipeline.md).
-export type AgentTurn = { ask: string; steps: AgentStep[]; answer: string; end: TurnEnd; usage: Usage; ms: number; error?: string; model?: string; role?: string }
+// `sources`: every page the turn's searches read or cited (cited first, one per url); `searches`: what it searched.
+export type AgentTurn = { ask: string; steps: AgentStep[]; answer: string; end: TurnEnd; usage: Usage; ms: number; error?: string; model?: string; role?: string; sources?: Source[]; searches?: string[] }
 
 // `system`: the prompt the turns ran with; `toolsHash`: a hash of the tool definitions (a changed tool shows in the
 // report even when its name didn't change).
@@ -177,7 +186,20 @@ export type Transcript = { model: string; startedAt: number; turns: AgentTurn[];
 // ---- Helpers
 
 export function addUsage(a: Usage, b: Usage): Usage {
-  return { input: a.input + b.input, output: a.output + b.output, cached: (a.cached ?? 0) + (b.cached ?? 0), reasoning: (a.reasoning ?? 0) + (b.reasoning ?? 0) }
+  return { input: a.input + b.input, output: a.output + b.output, cached: (a.cached ?? 0) + (b.cached ?? 0), reasoning: (a.reasoning ?? 0) + (b.reasoning ?? 0), ...((a.searches ?? 0) + (b.searches ?? 0) ? { searches: (a.searches ?? 0) + (b.searches ?? 0) } : {}) }
+}
+
+// Sources joined, one per url (its title kept, cited if any copy was), cited first, in the order met.
+export function joinSources(lists: (Source[] | undefined)[]): Source[] {
+  const by = new Map<string, Source>()
+  for (const l of lists)
+    for (const s of l ?? []) {
+      if (!/^https?:\/\//i.test(s.url)) continue
+      const was = by.get(s.url)
+      by.set(s.url, { url: s.url, ...((s.title ?? was?.title) ? { title: s.title || was?.title } : {}), ...(s.cited || was?.cited ? { cited: true } : {}) })
+    }
+  const all = [...by.values()]
+  return [...all.filter((s) => s.cited), ...all.filter((s) => !s.cited)]
 }
 
 export const turnUsage = (steps: AgentStep[]): Usage => steps.reduce((u, s) => addUsage(u, s.usage), { ...NO_USAGE })

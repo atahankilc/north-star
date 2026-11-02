@@ -32,7 +32,7 @@ import { agentUi, leaveGoneCanvas } from '../ui'
 import { recordTurn } from '../usage'
 import { freshWs } from '../../ops'
 import type { OpActor } from '../../ops'
-import type { AgentEnv, AgentTool, AgentWs, ModelMessage, TurnEnd, Usage } from '../contract'
+import type { AgentEnv, AgentTool, AgentWs, ModelMessage, Source, TurnEnd, Usage } from '../contract'
 import { NO_USAGE } from '../contract'
 import { readKey, suggested, useAgentSettings } from './settings'
 import { svgToPng } from './render'
@@ -64,7 +64,8 @@ export type Entry =
   // `steer`: sent while the agent worked (D-328), handed to it between its steps; `auto`: the app's own go-on to the
   // next step of a job, not the person's words.
   | { id: string; kind: 'user'; text: string; steer?: boolean; auto?: boolean }
-  | { id: string; kind: 'agent'; text: string; live: string; steps: StepLine[]; usage: Usage; running: boolean; ms?: number; end?: TurnEnd; error?: string; errorSettings?: boolean; model: string }
+  // `sources`: the pages its web searches read or cited (D-360), shown under the answer.
+  | { id: string; kind: 'agent'; text: string; live: string; steps: StepLine[]; usage: Usage; running: boolean; ms?: number; end?: TurnEnd; error?: string; errorSettings?: boolean; model: string; sources?: Source[] }
   // The pending changes (S14's simple list; S15's preview replaces it): `pending` until applied or discarded.
   // The preview (S15): every item proposed, ticked or not, until applied or discarded.
   | { id: string; kind: 'changes'; items: ChangeLine[]; warnings: string[]; state: 'pending' | 'applying' | 'applied' | 'undone' | 'discarded' | 'revising' | 'unapplied'; said?: string; note?: string }
@@ -541,6 +542,11 @@ async function turn(chat: Chat, text: string, n: number) {
           const said: StepLine[] = x.live.trim() ? [{ id: `${e.call.id}-say`, label: '', running: false, say: x.live.trim() }] : []
           return { ...x, live: '', steps: [...x.steps, ...said, { id: e.call.id, label: e.call.label, running: true }] }
         }
+        case 'search': {
+          // A web search (D-360): a step line of its own, what the model said before it kept above it.
+          const said: StepLine[] = x.live.trim() ? [{ id: `${id}-${x.steps.length}-say`, label: '', running: false, say: x.live.trim() }] : []
+          return { ...x, live: '', steps: [...x.steps, ...said, { id: `${id}-web-${x.steps.length}`, label: `searched the web: "${e.query}"`, running: false }] }
+        }
         case 'tool_finished':
           return { ...x, steps: x.steps.map((s) => (s.id === e.call.id ? { ...s, running: false, ok: e.call.ok, ms: e.call.ms } : s)) }
         case 'step_started':
@@ -570,7 +576,7 @@ async function turn(chat: Chat, text: string, n: number) {
     const counted = r.turn.usage.input > 0 || r.turn.usage.output > 0 || r.turn.end !== 'error'
     if (!stub && counted) recordTurn(r.turn, m.name)
     const err = r.turn.error ? plainError(r.turn.error) : null
-    patchEntry(id, (x) => (x.kind === 'agent' ? { ...x, text: r.turn.answer || (r.turn.end === 'stopped' ? '' : x.live), live: '', running: false, ms: r.turn.ms, end: r.turn.end, usage: r.turn.usage, ...(err ? { error: err.text, ...(err.settings ? { errorSettings: true } : {}) } : {}) } : x))
+    patchEntry(id, (x) => (x.kind === 'agent' ? { ...x, text: r.turn.answer || (r.turn.end === 'stopped' ? '' : x.live), live: '', running: false, ms: r.turn.ms, end: r.turn.end, usage: r.turn.usage, ...(r.turn.sources?.length ? { sources: r.turn.sources } : {}), ...(err ? { error: err.text, ...(err.settings ? { errorSettings: true } : {}) } : {}) } : x))
     if (mine()) {
       dispatch({ type: 'turn_end', answer: r.turn.answer, pending: pendingCount(rt.changes), end: r.turn.end })
       afterTurn(chat, r.turn.end)

@@ -23,7 +23,7 @@ export function turnsOf(entries: Entry[]): SavedTurn[] {
         return [{ role: 'user', text: e.text, at }]
       case 'agent':
         if (e.running) return []
-        return [{ role: 'agent', text: e.text, at, steps: e.steps.filter((x) => !x.say).map((x) => ({ label: x.label, ...(x.ms !== undefined ? { ms: x.ms } : {}), ...(x.ok === false ? { ok: false } : {}) })), usage: { input: e.usage.input, output: e.usage.output }, ...(e.ms !== undefined ? { ms: e.ms } : {}), ...(e.end ? { end: e.end } : {}), model: e.model, ...(e.error ? { text: e.text || `! ${e.error}` } : {}) }]
+        return [{ role: 'agent', text: e.text, at, steps: e.steps.filter((x) => !x.say).map((x) => ({ label: x.label, ...(x.ms !== undefined ? { ms: x.ms } : {}), ...(x.ok === false ? { ok: false } : {}) })), usage: { input: e.usage.input, output: e.usage.output }, ...(e.ms !== undefined ? { ms: e.ms } : {}), ...(e.end ? { end: e.end } : {}), model: e.model, ...(e.sources?.length ? { sources: e.sources } : {}), ...(e.error ? { text: e.text || `! ${e.error}` } : {}) }]
       case 'changes': {
         const on = e.items.filter((i) => i.on)
         return [{ role: 'changes', text: on.map((i) => `${i.sign} ${i.where}\t${i.line}`).join('\n'), at, applied: { state: e.state === 'pending' || e.state === 'applying' || e.state === 'revising' || e.state === 'unapplied' ? 'not applied' : e.state, count: on.length } }]
@@ -49,7 +49,7 @@ export function entriesOf(turns: SavedTurn[]): Entry[] {
       case 'user':
         return { id, kind: 'user', text: t.text }
       case 'agent':
-        return { id, kind: 'agent', text: t.text, live: '', steps: (t.steps ?? []).map((x, j) => ({ id: `${id}-${j}`, label: x.label, running: false, ...(x.ok === false ? { ok: false } : { ok: true }), ...(x.ms !== undefined ? { ms: x.ms } : {}) })), usage: { ...NO_USAGE, ...(t.usage ?? {}) }, running: false, ...(t.ms !== undefined ? { ms: t.ms } : {}), ...(t.end ? { end: t.end as TurnEnd } : {}), model: t.model ?? '' }
+        return { id, kind: 'agent', text: t.text, live: '', steps: (t.steps ?? []).map((x, j) => ({ id: `${id}-${j}`, label: x.label, running: false, ...(x.ok === false ? { ok: false } : { ok: true }), ...(x.ms !== undefined ? { ms: x.ms } : {}) })), usage: { ...NO_USAGE, ...(t.usage ?? {}) }, running: false, ...(t.ms !== undefined ? { ms: t.ms } : {}), ...(t.end ? { end: t.end as TurnEnd } : {}), model: t.model ?? '', ...(t.sources?.length ? { sources: t.sources } : {}) }
       case 'changes': {
         const items: ChangeLine[] = t.text
           .split('\n')
