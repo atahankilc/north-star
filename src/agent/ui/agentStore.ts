@@ -471,7 +471,7 @@ function run(chatId: string, e: Effect) {
       rt.off = new Set()
       openPreview(rt.changes)
       const was = lastChanges(chat)
-      const entry: Entry = { id: uid('chg'), kind: 'changes', items: previewLines(rt), warnings: rt.changes.warnings.slice(0, 3), state: 'pending' }
+      const entry: Entry = { id: uid('chg'), kind: 'changes', items: previewLines(rt), warnings: rt.changes.warnings.slice(0, 3).map((w) => w.person), state: 'pending' }
       setChat((c) => ({ ...c, entries: [...c.entries.filter((x) => x !== was), entry] }))
       return
     }
@@ -762,7 +762,7 @@ export const agentActions = {
     const off1 = base.items.find((i) => i.id === item)!
     const was = lastChanges(get().chat)
     const note = also.length ? `${also.map((i) => wordsOfItem(i)).join('; ')} ${also.length === 1 ? 'came off too: it needs' : 'came off too: they need'} ${wordsOfItem(off1)}` : undefined
-    if (was) patchEntry(was.id, (x) => ({ ...x, items: lines, warnings: cs.warnings.slice(0, 3), note }) as Entry)
+    if (was) patchEntry(was.id, (x) => ({ ...x, items: lines, warnings: cs.warnings.slice(0, 3).map((w) => w.person), note }) as Entry)
     dispatch({ type: 'untick', pending: pendingCount(cs) })
   },
   // The stepper: glides to an item's change (into a focus or another canvas), its marks lit.

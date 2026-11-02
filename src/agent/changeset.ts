@@ -85,6 +85,10 @@ export type ChangeItem = {
   strike?: string
 }
 
+// A warning in two voices (agent-bugs 42): `model` for the agent, with short ids and the op that fixes it; `person`
+// for the preview, in names only (no ids, no op or argument names).
+export type Warning = { model: string; person: string }
+
 export type Changeset = {
   groups: Group[]
   // One plan per remaining step, in order: what accept writes.
@@ -92,7 +96,7 @@ export type Changeset = {
   items: ChangeItem[]
   // Handle → real id, the latest call's handles winning (each call's own handles are in its result).
   ids: Record<string, string>
-  warnings: string[]
+  warnings: Warning[]
   // Items taken off (unticked, dropped, or no longer buildable): the report's "not done".
   off: ChangeItem[]
   // Counters (ids never reused) and a version that changes with every change (memoised views key on it).
@@ -491,20 +495,23 @@ function itemIn(ws: WorkspaceCtx, kind: Change['kind'], id: string): object | un
 
 // ---- Warnings: a card titled like one already there, an empty new section.
 
-function warningsOf(cs: Pick<Changeset, 'items'>, live: WorkspaceCtx, after: WorkspaceCtx, ids: Ids | undefined): string[] {
-  const out: string[] = []
+function warningsOf(cs: Pick<Changeset, 'items'>, live: WorkspaceCtx, after: WorkspaceCtx, ids: Ids | undefined): Warning[] {
+  const out: Warning[] = []
+  const warn = (model: string, person: string) => out.push({ model, person })
   const made = new Set(cs.items.flatMap((i) => i.made))
   const n = namedOf(after)
   for (const c of after.cards) {
     if (!made.has(c.id) || !c.title.trim()) continue
     const twin = live.cards.find((x) => x.id !== c.id && norm(x.title) === norm(c.title)) ?? after.cards.find((x) => x.id !== c.id && made.has(x.id) && x.id < c.id && norm(x.title) === norm(c.title))
-    if (twin) out.push(`≈ ${ids ? `${ids.short('card', twin.id)} ` : ''}${q(namedOf(live.cards.includes(twin) ? live : after).d.cards.get(twin.id)?.title ?? twin.title, 50)} already exists (${twin.type}): link to it instead of a second card? (change with drop: [the item] to take the new one off)`)
+    if (!twin) continue
+    const twinTitle = q(namedOf(live.cards.includes(twin) ? live : after).d.cards.get(twin.id)?.title ?? twin.title, 50)
+    warn(`≈ ${ids ? `${ids.short('card', twin.id)} ` : ''}${twinTitle} already exists (${twin.type}): link to it instead of a second card? (change with drop: [the item] to take the new one off)`, `the ${twin.type} ${twinTitle} is already there: the new one may be a second copy`)
   }
   for (const l of after.labels) {
     if (!made.has(l.id) || kindOf(l) !== 'section') continue
     const labels = after.labels.filter((x) => x.pieceId === l.pieceId)
     const others = l.pieceId === 'canvas' ? piecesShown(canvasOf(l), after.pieces, after.spots) : cardBoxes(n.d.onPlane.get(l.pieceId) ?? [])
-    if (!sectionHolds(l, labels, others, labelBox(l)).length) out.push(`the new section ${ids ? `${ids.short('text', l.id)} ` : ''}${q(l.text, 40)} is empty: put things in it (arrange with where: {in_section: …}) or give it around: [ids] when making it`)
+    if (!sectionHolds(l, labels, others, labelBox(l)).length) warn(`the new section ${ids ? `${ids.short('text', l.id)} ` : ''}${q(l.text, 40)} is empty: put things in it (arrange with where: {in_section: …}) or give it around: [ids] when making it`, `the new section ${q(l.text, 40)} holds nothing`)
   }
   // What the changes leave that no one would want (agent-bugs 11, 12): told to the model with each change result and
   // shown in the preview, so what the model leaves is seen by the person too. Only what these changes did.
@@ -518,11 +525,12 @@ function warningsOf(cs: Pick<Changeset, 'items'>, live: WorkspaceCtx, after: Wor
   }
   const undrawn = after.edges.filter((e) => !drawn(n.d, e) && (!live.edges.some((x) => x.id === e.id) ? true : drawn(nb.d, e)))
   for (const e of undrawn.slice(0, 5))
-    out.push(`the link ${sid('link', e.id)}${title(e.fromId)} → ${title(e.toId)} is drawn on no plane: no plane shows both cards. Place one card on the other's plane too (place_on), or keep both on one plane`)
-  if (undrawn.length > 5) out.push(`… and ${undrawn.length - 5} more links drawn on no plane`)
+    warn(`the link ${sid('link', e.id)}${title(e.fromId)} → ${title(e.toId)} is drawn on no plane: no plane shows both cards. Place one card on the other's plane too (place_on), or keep both on one plane`, `the link ${title(e.fromId)} → ${title(e.toId)} shows on no plane: no plane holds both cards`)
+  if (undrawn.length > 5) warn(`… and ${undrawn.length - 5} more links drawn on no plane`, `… and ${undrawn.length - 5} more links that show on no plane`)
   // A new task for no card.
   const loose = after.tasks.filter((t) => made.has(t.id) && !(t as { cardId?: string }).cardId)
-  if (loose.length) out.push(`${loose.length === 1 ? `the new task ${sid('task', loose[0].id)}${q(loose[0].title, 40)} is` : `${loose.length} new tasks are`} tied to no card: give each the card it's for (card), unless it stands alone`)
+  if (loose.length === 1) warn(`the new task ${sid('task', loose[0].id)}${q(loose[0].title, 40)} is tied to no card: give it the card it's for (card), unless it stands alone`, `the new task ${q(loose[0].title, 40)} is tied to no card`)
+  else if (loose.length) warn(`${loose.length} new tasks are tied to no card: give each the card it's for (card), unless it stands alone`, `${loose.length} new tasks are tied to no card`)
   // New or moved things landing on others, plane by plane.
   const planes = new Set<string>()
   for (const i of cs.items) for (const id of i.ids) {
@@ -534,9 +542,10 @@ function warningsOf(cs: Pick<Changeset, 'items'>, live: WorkspaceCtx, after: Wor
     if (!n.d.pieces.get(p)) continue
     const { found } = overlaps(planeBoxes(nb.ws, p), planeBoxes(n.ws, p))
     if (!found.length) continue
-    const name = (id: string) => (n.d.cards.get(id) ? `${sid('card', id)}${title(id)}` : `${sid('text', id)}${q(n.d.labels.get(id)?.text.split('\n')[0], 30)}`)
-    const list = found.slice(0, 3).map((o) => `${name(o.a)} ${o.cuts ? 'cuts through' : 'on'} ${name(o.b)}`).join('; ')
-    out.push(`on ${q(n.d.pieceName(n.d.pieces.get(p)!), 40)} things land on each other: ${list}${found.length > 3 ? `; … ${found.length - 3} more` : ''}. Place them by meaning again (arrange with a where or a layout)`)
+    const name = (id: string, withId: boolean) => (n.d.cards.get(id) ? `${withId ? sid('card', id) : ''}${title(id)}` : `${withId ? sid('text', id) : ''}${q(n.d.labels.get(id)?.text.split('\n')[0], 30)}`)
+    const list = (withId: boolean) => found.slice(0, 3).map((o) => `${name(o.a, withId)} ${o.cuts ? 'cuts through' : 'on'} ${name(o.b, withId)}`).join('; ') + (found.length > 3 ? `; … ${found.length - 3} more` : '')
+    const plane = q(n.d.pieceName(n.d.pieces.get(p)!), 40)
+    warn(`on ${plane} things land on each other: ${list(true)}. Place them by meaning again (arrange with a where or a layout)`, `on ${plane} things land on each other: ${list(false)}`)
   }
   return out
 }
@@ -622,7 +631,13 @@ function settle(cs: Changeset, r: Rebuilt, c: BuildCtx & { ids?: Ids }, removed:
   const items = itemsOf(r.groups, r.built, c.live, c.ids, keep)
   const after = plans.length ? project(c.live, plans) : c.live
   const lost = [...removed, ...r.dropped.map((d) => d.step.item)].flatMap((id) => (keep.has(id) ? [keep.get(id)!] : []))
-  const warnings = [...warningsOf({ items }, c.live, after, c.ids), ...r.dropped.map((d) => `${d.step.item} "${keep.get(d.step.item)?.line ?? d.step.op}" came off: it no longer works on the workspace as it is now (${inNames(d.error, c.live)})`)]
+  const warnings: Warning[] = [
+    ...warningsOf({ items }, c.live, after, c.ids),
+    ...r.dropped.map((d) => {
+      const what = `"${keep.get(d.step.item)?.line ?? d.step.op}" came off: it no longer works on the workspace as it is now (${inNames(d.error, c.live)})`
+      return { model: `${d.step.item} ${what}`, person: what }
+    }),
+  ]
   return { ...cs, groups: r.groups, plans, items, warnings, off: [...cs.off, ...lost], version: cs.version + 1 }
 }
 
@@ -731,7 +746,7 @@ export async function accept(cs: Changeset, apply: (plans: Plan[], as: ApplyAs) 
     if (came.length) {
       const why = r.dropped.map((d) => inNames(d.error, o.rebuild!.live))
       const said = `Not applied: the workspace changed since the preview, so ${came.length === 1 ? 'one change' : `${came.length} changes`} no longer work${came.length === 1 ? 's' : ''} and came off: ${came.map((i) => i.line).join('; ')}${why.length ? ` (${why.slice(0, 3).join('; ')})` : ''}. Look at what's left in the preview and apply again.`
-      return { ok: false, stale: true, said, cs: { ...cur, warnings: [said, ...cur.warnings.filter((w) => !/came off: it no longer works/.test(w))] }, errors: came.map((i) => ({ op: i.op, message: `${i.line}: no longer works on the workspace as it is now`, fix: 'look at the preview again and apply what is left, or ask the agent to redo it' })) }
+      return { ok: false, stale: true, said, cs: { ...cur, warnings: [{ model: said, person: said }, ...cur.warnings.filter((w) => !/came off: it no longer works/.test(w.model))] }, errors: came.map((i) => ({ op: i.op, message: `${i.line}: no longer works on the workspace as it is now`, fix: 'look at the preview again and apply what is left, or ask the agent to redo it' })) }
     }
   }
   const label = agentLabel(cur)

@@ -361,7 +361,7 @@ describe('an arrange of the cards just made rides with them', () => {
     const olive = e.changes!.items.find((i) => i.line.includes('Olive club'))!
     e.untick(olive.id)
     expect(e.changes!.items.map((i) => i.line.match(/"(\w+ club)"/)?.[1])).toEqual(['Bread club', 'Cheese club'])
-    expect(e.changes!.warnings.filter((w) => /came off/.test(w))).toEqual([])
+    expect(e.changes!.warnings.filter((w) => /came off/.test(w.model))).toEqual([])
     const ws = viewOf(e.changes, e.getWs())
     expect(ws.cards.some((c) => c.title === 'Olive club')).toBe(false)
     const two = ws.cards.filter((c) => c.title === 'Bread club' || c.title === 'Cheese club')
@@ -384,7 +384,7 @@ describe('a section round things lands clear', () => {
     const e = env()
     const r = await change.run(e, { ops: OPS })
     expect(r.ok, r.text).toBe(true)
-    expect(e.changes!.warnings.filter((w) => /land on each other/.test(w))).toEqual([])
+    expect(e.changes!.warnings.filter((w) => /land on each other/.test(w.model))).toEqual([])
     const ws = viewOf(e.changes, e.getWs())
     for (const [title, sec] of [['Maybe start with bread', 'Ideas'], ['Cash only is a big deal', 'Problems']]) {
       const c = ws.cards.find((x) => x.title === title)!

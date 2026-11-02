@@ -221,7 +221,7 @@ describe('what the changes leave, told to the model and shown in the preview (bu
     const env = makeEnv(loadFixture('medium'))
     const r = await change().run(env, { ops: [{ op: 'link', args: { from: 'c58', to: 'c16', kind: 'solves' } }] })
     expect(r.ok, r.text).toBe(true)
-    expect(env.changes!.warnings.join('\n')).toMatch(/drawn on no plane.*place_on/)
+    expect(env.changes!.warnings.map((w) => w.model).join('\n')).toMatch(/drawn on no plane.*place_on/)
   })
   it('a link between two cards on one plane: no warning', async () => {
     const ws = loadFixture('medium')
@@ -231,7 +231,7 @@ describe('what the changes leave, told to the model and shown in the preview (bu
     if (!a || !b) return
     const r = await change().run(env, { ops: [{ op: 'link', args: { from: env.ids.short('card', a.id), to: env.ids.short('card', b.id) } }] })
     expect(r.ok, r.text).toBe(true)
-    expect(env.changes!.warnings.join('\n')).not.toMatch(/drawn on no plane/)
+    expect(env.changes!.warnings.map((w) => w.model).join('\n')).not.toMatch(/drawn on no plane/)
   })
   it('a new task for no card is warned about', async () => {
     const ws = loadFixture('medium')
@@ -239,7 +239,17 @@ describe('what the changes leave, told to the model and shown in the preview (bu
     const deck = ws.pieces.find((p) => p.kind === 'kanban')!
     const r = await change().run(env, { ops: [{ op: 'create_task', args: { deck: env.ids.short('piece', deck.id), title: 'Call the bakery' } }] })
     expect(r.ok, r.text).toBe(true)
-    expect(env.changes!.warnings.join('\n')).toMatch(/tied to no card/)
+    expect(env.changes!.warnings.map((w) => w.model).join('\n')).toMatch(/tied to no card/)
+  })
+  it('a warning reads two ways: ids and the fix for the model, names only for the person (agent-bugs 42)', async () => {
+    const ws = loadFixture('medium')
+    const env = makeEnv(ws)
+    const deck = ws.pieces.find((p) => p.kind === 'kanban')!
+    await change().run(env, { ops: [{ op: 'create_task', args: { deck: env.ids.short('piece', deck.id), title: 'Call the bakery' } }] })
+    const w = env.changes!.warnings.find((x) => /tied to no card/.test(x.model))!
+    expect(w.model).toMatch(/the new task t\d+ "Call the bakery" is tied to no card: give it the card/)
+    expect(w.person).toBe('the new task "Call the bakery" is tied to no card')
+    for (const x of env.changes!.warnings) expect(x.person).not.toMatch(/\b[a-z]\d+\b|\(card\)|place_on|drop:|where:/)
   })
   it('overlaps: only what was made or moved counts, a frame only when cut through', async () => {
     const { overlaps } = await import('../../src/model/overlaps')

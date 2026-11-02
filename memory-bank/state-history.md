@@ -1333,3 +1333,10 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
   memory; headless Chrome on the gallery: menus' and Select's keys, the + menu, right-click, canvas switch, kind guide,
   finder (places, typed, keys), guide (keys, folds), the filter dock; on emulators (Alice + Bob): Threads' `@` lists Bob,
   ↵ writes `@Bob `; the agent's `/` shows its three heads and 19 skills, ↓ moves. eab367c: `MenuEntry` renamed PromptEntry.
+
+## Done (2026-11-02): warnings in two voices (agent-bugs 42)
+- The preview showed the model's warnings word for word (short ids, `(card)`, "give each" for one task). Now every
+  warning is `{ model, person }` (src/agent/changeset.ts `Warning`): `change`'s result and the skills' CHECKS_NOTE read
+  `model`, the preview (agentStore) `person`, in names only; the skills' checks (skills/checks.ts) return both.
+  Checked: `tsc` clean, vitest 64 files / 990 tests pass, a new test in agentPlumbing.test.ts holds the two voices.
+  Not seen in a browser. Bug 43 (a non-goal made a task) opened, not fixed.

@@ -50,7 +50,7 @@ import { workspaceMap, whereAmI, resolve, estimateTokens, RESULT_TOKENS, type Id
 import { clean, derive } from './read/derive'
 import { addUsage, NO_USAGE, toolsHash, type AgentEnv, type AgentModel, type AgentStep, type AgentTool, type AgentTurn, type AgentWs, type ImagePart, type ModelMessage, type ModelRequest, type ModelResponse, type ToolCall, type ToolResult, type Transcript, type Usage } from './contract'
 import { systemPrompt } from './prompt'
-import { viewOf } from './changeset'
+import { viewOf, type Warning } from './changeset'
 import { notesOf } from '../model/notes'
 import { wrap } from './read/text'
 import { aboutPlanes, markOtherPlanes } from './read/names'
@@ -567,7 +567,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
         mine.push({ role: 'system', tag: 'checks', content: CHECKS_NOTE(active!.skill.name, found) })
         continue
       }
-      if (found.length && env.changes) env.changes = { ...env.changes, warnings: [...env.changes.warnings, ...found.map((f) => `/${active!.skill.name}: ${f}`)] }
+      if (found.length && env.changes) env.changes = { ...env.changes, warnings: [...env.changes.warnings, ...found.map((f) => ({ model: `/${active!.skill.name}: ${f.model}`, person: `/${active!.skill.name}: ${f.person}` }))] }
       // A job's step under way that ends the turn with nothing proposed (agent-bugs 39: a question about a detail it
       // could choose, test-03): told once to make the step with its best choice, unless a guess would change data.
       const doing = env.job?.get()?.steps.find((x) => x.state === 'doing')
@@ -604,8 +604,8 @@ export const SHORTER_NOTE = (n: number) =>
   `Your answer runs ${n} lines. The document holds the detail; answer again in two or three lines: what it holds and that it waits in the preview.`
 
 // What a skill's checks found, told to the model before the preview (agent-bugs 21).
-export const CHECKS_NOTE = (name: string, found: string[]) =>
-  `Before the person sees the preview, the /${name} guide's checks found:\n${found.map((f) => `- ${f}`).join('\n')}\nFix them with change now, or, if one is right as it is, say why in your answer. Then answer again.`
+export const CHECKS_NOTE = (name: string, found: Warning[]) =>
+  `Before the person sees the preview, the /${name} guide's checks found:\n${found.map((f) => `- ${f.model}`).join('\n')}\nFix them with change now, or, if one is right as it is, say why in your answer. Then answer again.`
 
 // The plan skill the person's last message started, when this message isn't a skill of its own: its `go` (or a note
 // on its plan) is the turn its "on go" steps are for.

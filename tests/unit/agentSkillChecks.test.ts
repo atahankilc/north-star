@@ -36,7 +36,7 @@ describe('a skill\'s checks (agent-bugs 21)', () => {
     expect(checks).toHaveLength(1)
     expect(checks[0]).toMatch(/the \/test guide's checks found:\n- the idea c58 "Pre-order bread for pickup" gets test tasks but is still hypothesis/)
     expect(turn.answer).toBe('Left it: the person decides.')
-    expect(e.changes!.warnings.some((w) => w.startsWith('/test: the idea c58'))).toBe(true)
+    expect(e.changes!.warnings.some((w) => w.model.startsWith('/test: the idea c58'))).toBe(true)
     // One more step only: the checks never loop.
     expect(m.seen.filter((r) => r.messages.at(-1)?.role === 'system' && (r.messages.at(-1) as { tag?: string }).tag === 'checks')).toHaveLength(1)
   })

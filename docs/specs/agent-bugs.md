@@ -73,6 +73,8 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 39 | a job's step stops for a question it could settle | Judgment    | mid      | code (loop)      | fixed; mini passed before and after, terra/sonnet to measure |
 | 40 | /compare leaves the recorded matches empty        | Guards       | high     | code (change)    | fixed, to measure (built after the mini run) |
 | 41 | a task given by name in assigneeName stays given to nobody | Plumbing | mid | code (change)    | fixed, replayed   |
+| 42 | the preview shows the model's warnings word for word | Preview | mid      | code (changeset) | fixed             |
+| 43 | a "we won't build this" line made a task         | Judgment     | mid      | prompt, eval     | open              |
 
 ## Order
 
@@ -400,6 +402,14 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     the canvas world is marked. The first half: while the stepper is on an item with a mark, every other mark, chip,
     line and ghost goes faint (`--o-faint`); an item with no mark of its own (evidence) leaves them all as they are.
     previewFold.test.ts holds `stepperMarks`.
+42. **The preview shows the model's warnings word for word.** The user, 2026-11-02, under a proposal: `the new task
+    t34 "Do not build at launch: whiteboard engi…" is tied to no card: give each the card it's for (card), unless it
+    stands alone`. The warnings (`warningsOf` in changeset.ts, the skills' checks) are written for the model: short
+    ids, an op's argument (`(card)`, `place_on`, `drop:`, `where:`), "each" for one task; the preview showed the first
+    three as they are. *Fixed 2026-11-02:* every warning is `{ model, person }` (changeset.ts `Warning`): the model's
+    keeps its ids and fix (the one-task line now says "give it"), the person's names things by title only and says
+    what is wrong, not which op fixes it (`the new task "…" is tied to no card`). `change`'s result and CHECKS_NOTE
+    take `model`, the preview (agentStore) `person`; the skills' checks return both. agentPlumbing.test.ts holds it.
 ## Layout: where things go
 
 4.  **It can't lay out a plane in a way that makes sense** (said twice, the second time about arranging an existing
@@ -541,6 +551,10 @@ two or three lines.*
     (code):* a turn that ends while a job runs, with a step `doing` and nothing proposed in the turn, gets one note:
     make the step with the best choice and say it, ask only if a guess would change what the person didn't ask for,
     or progress a step that needs no change (src/agent/loop.ts `STEP_NUDGE`). The job's state decides, not the words.
+43. **A "we won't build this" line made a task.** Same proposal as 42: `Do not build at launch: whiteboard engine…` came
+    in as a new task. A non-goal is a decision, not work to do: it belongs on the card it limits (a note, or the
+    feature's plan), or as text on the plane. Not looked at which skill or ask made it. Fix: an eval with a list mixing
+    to-dos and non-goals (graded on no task for a non-goal), then a line in the prompt's tasks rule if it fails.
 
 *23, the code half (2026-11-01):* the planes a turn is about (the one in focus or beside it, or one the message names
 whole: read/names.ts `aboutPlanes`, a name lookup) mark cards from another plane `(on Rivals)` after their first

@@ -334,7 +334,7 @@ export function describeResult(o: { cs: Changeset; added: ChangeItem[]; handles:
   })
   if (made.length) lines.push(`New: ${made.join(', ')}.`)
   lines.push(...broughtAlong(cs, added, ws, ids))
-  if (cs.warnings.length) lines.push('Warnings:', ...cs.warnings.map((w) => `- ${w}`))
+  if (cs.warnings.length) lines.push('Warnings:', ...cs.warnings.map((w) => `- ${w.model}`))
   const v = shortView(ws, ids, added)
   if (v) lines.push('After the change:', v)
   return lines.join('\n')
