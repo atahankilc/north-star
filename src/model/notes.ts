@@ -6,7 +6,7 @@
 // 'agent-notes'`, always shared, always `kind: 'markdown'`. firestore.rules lets every member read it and owners and
 // editors write it (any other document stays its author's). Its text is capped (it goes into every prompt).
 import { DOC_LIMITS } from './shapes'
-import { AGENT_NOTES_MAX as NOTES_MAX } from './limits'
+import { AGENT_NOTES_MAX as NOTES_MAX, AUTHOR_NAME_MAX } from './limits'
 export { NOTES_MAX }
 
 export const NOTES_ID = 'agent-notes'
@@ -14,21 +14,7 @@ export const NOTES_ROLE = 'agent-notes'
 export const NOTES_TITLE = 'Agent notes'
 
 // The summary fields the notes doc may hold (a subset of a document's, plus the marker).
-export type NotesDoc = {
-  kind: 'markdown'
-  role: typeof NOTES_ROLE
-  title: string
-  excerpt?: string
-  origin: 'assistant' | 'upload'
-  uid: string
-  name: string
-  shared: true
-  contentType: 'text/markdown'
-  size: number
-  words: number
-  createdAt: number
-  updatedAt: number
-}
+export type NotesDoc = MarkdownSummary & { role: typeof NOTES_ROLE; shared: true }
 
 type DocLike = { id: string; role?: unknown; kind?: unknown }
 type WsLike = { documents?: DocLike[]; bodies?: Record<string, { text?: string } | undefined> }
@@ -56,13 +42,14 @@ export function bytesOf(s: string): number {
 
 export const wordsOf = (text: string) => (text.match(/\S+/g) ?? []).length
 
-// The first words without Markdown marks (documents.ts' mdExcerpt, kept pure here).
+// The first words without Markdown marks: headings, code, images, list marks, emphasis, links to their text.
 export function excerptOf(text: string): string {
   return text
     .replace(/```[\s\S]*?```/g, ' ')
     .split('\n')
     .filter((l) => !/^\s{0,3}#{1,6}\s/.test(l))
     .join(' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
     .replace(/^\s*([-*+>]|\d+[.)])\s+/gm, '')
     .replace(/[*_`~#>|]/g, '')
@@ -71,24 +58,55 @@ export function excerptOf(text: string): string {
     .slice(0, DOC_LIMITS.excerpt)
 }
 
-// The summary for a text: the old one's who/when kept (an update never changes its author or creation), the counts
-// worked out again.
-export function notesSummary(text: string, was: Partial<NotesDoc> | null | undefined, who: { uid: string; name?: string; agent?: boolean }, now: number): NotesDoc {
+// A markdown document's summary (D-232): who wrote it, when, and what's worked out from its text. One shape for an
+// uploaded .md, a document the agent writes and the notes (D-361: it had been written three times).
+export type MarkdownSummary = {
+  kind: 'markdown'
+  title: string
+  excerpt?: string
+  origin: 'upload' | 'assistant'
+  uid: string
+  name: string
+  shared: boolean
+  contentType: 'text/markdown'
+  size: number
+  words: number
+  createdAt: number
+  updatedAt: number
+}
+export function markdownSummary(text: string, o: { title: string; uid: string; name?: string; origin: 'upload' | 'assistant'; shared: boolean; createdAt: number; now: number }): MarkdownSummary {
   const excerpt = excerptOf(text)
   return {
     kind: 'markdown',
-    role: NOTES_ROLE,
-    title: (typeof was?.title === 'string' && was.title.trim()) || NOTES_TITLE,
+    title: o.title.slice(0, DOC_LIMITS.title),
     ...(excerpt ? { excerpt } : {}),
-    origin: was?.origin === 'upload' ? 'upload' : was?.origin ?? (who.agent ? 'assistant' : 'upload'),
-    uid: typeof was?.uid === 'string' ? was.uid : who.uid,
-    name: (typeof was?.name === 'string' ? was.name : who.name || 'someone').slice(0, 200),
-    shared: true,
+    origin: o.origin,
+    uid: o.uid,
+    name: (o.name || 'someone').slice(0, AUTHOR_NAME_MAX),
+    shared: o.shared,
     contentType: 'text/markdown',
     size: bytesOf(text),
     words: wordsOf(text),
-    createdAt: typeof was?.createdAt === 'number' ? was.createdAt : now,
-    updatedAt: now,
+    createdAt: o.createdAt,
+    updatedAt: o.now,
+  }
+}
+
+// The notes' summary: the old one's who/when kept (an update never changes its author or creation), the counts
+// worked out again.
+export function notesSummary(text: string, was: Partial<NotesDoc> | null | undefined, who: { uid: string; name?: string; agent?: boolean }, now: number): NotesDoc {
+  return {
+    ...markdownSummary(text, {
+      title: (typeof was?.title === 'string' && was.title.trim()) || NOTES_TITLE,
+      origin: was?.origin === 'upload' ? 'upload' : was?.origin ?? (who.agent ? 'assistant' : 'upload'),
+      uid: typeof was?.uid === 'string' ? was.uid : who.uid,
+      name: typeof was?.name === 'string' ? was.name : who.name,
+      shared: true,
+      createdAt: typeof was?.createdAt === 'number' ? was.createdAt : now,
+      now,
+    }),
+    role: NOTES_ROLE,
+    shared: true,
   }
 }
 

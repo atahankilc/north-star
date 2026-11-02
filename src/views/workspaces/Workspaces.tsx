@@ -51,6 +51,7 @@ import { ContinuePiece, NewTasksOf, OtherPiece, People } from './pieces'
 import { PieceCard } from '../../ui/patterns/PieceCard'
 import { WorkspacePicture } from './WorkspacePicture'
 import styles from './Workspaces.module.css'
+import { keysTaken } from '../../ui/foundation/focus'
 
 // The onboarding's coach (D-315), loaded apart from this page (it's shared with the workspace's chunk).
 const Coach = lazy(() => import('../../onboarding/Coach').then((m) => ({ default: m.Coach })))
@@ -171,7 +172,7 @@ export function Workspaces({ user }: { user: AuthUser }) {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (e.metaKey || e.ctrlKey || e.altKey || e.key.length !== 1) return
-      if (t?.closest('input, textarea, [contenteditable], [role="dialog"], [data-coach], dialog') || ask || menu) return // kit-ok: reads where the key went, makes no dialog
+      if (keysTaken(t, { docked: true }) || ask || menu) return
       prompt.current?.focus()
     }
     window.addEventListener('keydown', onKey)

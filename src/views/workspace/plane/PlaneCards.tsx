@@ -46,6 +46,7 @@ import styles from './PlaneCards.module.css'
 import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { PackageBand, PlaneCard, type Detail } from '../cards/PlaneCard'
+import { keysTaken } from '../../../ui/foundation/focus'
 export type { Detail }
 
 // How a card is drawn by how big it is on screen (D-111, D-153): everything while its small text (8 px) is 4 px or more;
@@ -349,8 +350,7 @@ function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], labels: Lab
   useEffect(() => {
     if (!live) return
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null
-      if (t?.closest('input, textarea, [contenteditable], [role=dialog], [role=menu], [role=listbox]')) return
+      if (keysTaken(e.target, { docked: true })) return
       const { cards, labels, edges, editor, places, pieces } = now.current
       const { cardMulti } = useCanvasView.getState()
       const ids = selectedIds()

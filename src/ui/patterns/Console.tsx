@@ -17,6 +17,7 @@ import { Choice } from '../primitives/Choice'
 import { Appear } from '../primitives/Appear'
 import { AnimatePresence } from 'motion/react'
 import styles from './Console.module.css'
+import { keysTaken } from '../foundation/focus'
 
 type Props = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
   at: 'edge' | 'under' | 'foot'
@@ -134,7 +135,7 @@ export function useEscapeCloses(open: boolean, close: () => void) {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
-      if ((e.target as HTMLElement | null)?.closest('input, textarea, [role=menu], [role=listbox], [aria-modal=true], [data-coach]')) return
+      if (keysTaken(e.target)) return
       e.stopImmediatePropagation()
       shut.current()
     }

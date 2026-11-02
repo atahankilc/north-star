@@ -180,6 +180,8 @@ export const nounOf = (a: Axis) => a.noun || (a.type ? `${a.type}s` : 'names')
 export const oneOf = (a: Axis, which: 'rows' | 'cols') => a.type ?? (which === 'rows' ? 'row' : 'column')
 
 export const cellKey = (matrixId: string, row: string, col: string) => `${matrixId}_${row}_${col}`
+// A cell's id: its own, else the one its place gives it.
+export const cellIdOf = (c: { id?: string; matrixId: string; row: string; col: string }) => c.id ?? cellKey(c.matrixId, c.row, c.col)
 
 // What a cell shows, as its matrix's cells say: a step, a number, a text, or nothing.
 export function readCell(setup: MatrixSetup, cell: Cell | undefined): { step?: Step; number?: number; text?: string } {

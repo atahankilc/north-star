@@ -26,9 +26,13 @@ import { SUB, subKey } from './matrix'
 import { db } from './firebase'
 import type { Workspace } from './model'
 import { createWorkspace, deleteWorkspace } from './workspaces'
+import { WRITE_BATCH_MAX as BATCH_WRITES } from '../model/limits'
+import { spotId } from '../model/canvases'
+import { placeId } from '../model/placement'
+import { comparisonId } from '../model/shapes'
+import { cellKey } from '../model/matrix'
 
 // A batch takes 500 writes and about 10 MB; cards and notes can be long, so batches are cut by size too.
-const BATCH_WRITES = 450
 const BATCH_BYTES = 4_000_000
 // A document's content rule reads its summary (getAfter), and a batch's rules may read at most 20 documents.
 const DOCUMENTS_PER_BATCH = 6
@@ -96,7 +100,7 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
     const homeCanvas = (home && typeof home.canvasId === 'string' && canvasIds.get(home.canvasId)) || MAIN
     const x = typeof d.x === 'number' && Number.isFinite(d.x) ? d.x : undefined
     const y = typeof d.y === 'number' && Number.isFinite(d.y) ? d.y : undefined
-    const id = `${canvas}_${piece}`
+    const id = spotId(canvas ?? '', piece ?? '')
     if (!piece || !canvas || !cleanPieces.get(d.pieceId as string) || canvas === homeCanvas || x === undefined || y === undefined || spotted.has(id)) {
       skipped++
       continue
@@ -129,7 +133,7 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
     const card = ids.card(d.cardId)
     const plane = ids.piece(d.planeId)
     const fields = cleanPlace(d, now)
-    const id = `${plane}_${card?.id}`
+    const id = placeId(plane ?? '', card?.id ?? '')
     const ok = card && card.type !== 'competitorFeature' && plane && homes.has(card.id) && homes.get(card.id) !== plane
     if (!ok || !fields || cleanPieces.get(d.planeId as string)?.kind !== 'plane' || placed.has(id)) {
       skipped++
@@ -149,7 +153,7 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
   for (const d of bundle.comparisons) {
     const feature = ids.card(d.featureId)
     const competitor = ids.card(d.competitorId)
-    const id = `${feature?.id}_${competitor?.id}`
+    const id = comparisonId(feature?.id ?? '', competitor?.id ?? '')
     if (feature?.type !== 'feature' || competitor?.type !== 'competitor' || compared.has(id)) {
       skipped++
       continue
@@ -206,7 +210,7 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
     const at = (v: unknown) => (typeof v === 'string' && v && v.length <= 128 && !v.includes('/') ? one(v) : undefined)
     const row = at(d.row)
     const column = at(d.col)
-    const id = `${matrix}_${row}_${column}`
+    const id = cellKey(matrix ?? '', row ?? '', column ?? '')
     if (!matrix || !row || !column || celled.has(id)) {
       skipped++
       continue

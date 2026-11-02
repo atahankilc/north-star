@@ -2,7 +2,7 @@
 // hand (a card, or just a typed name). No rule is required: no rules at all is every card on every plane. A rule is a
 // field, `is` or `is not`, and the values it takes (any of them): a plane, a card type, a status, a tag; or a few words
 // the title holds. Generic on purpose, so a table (and later a matrix's axes) can show any slice of the workspace.
-import { isOnPlane, type Card } from './cards'
+import { isOnPlane, type Card, ALL_STATUSES } from './cards'
 import { VALUE_MAX } from './limits'
 export { VALUE_MAX }
 
@@ -37,7 +37,7 @@ export const MAX_ITEMS = 200
 // A card's status: a customer's, problem's or idea's validation (D-137), a feature's own (D-138).
 export const statusOf = (c: Card) => c.validation ?? c.status
 
-export const STATUSES = ['hypothesis', 'testing', 'validated', 'invalidated', 'idea', 'planned', 'building', 'shipped']
+export const STATUSES = ALL_STATUSES
 
 function meets(c: Card, r: Rule) {
   const v = r.values

@@ -33,6 +33,7 @@ import { Choices } from './Choices'
 import { KindGuide } from './KindGuide'
 import { Guide, useGuideRole, useGuideShown } from './Guide'
 import { AREA_NAME } from './guideModel'
+import { isTyping } from '../ui/foundation/focus'
 
 // Off the queue (see above).
 const OFF_QUEUE = (l: LessonData) => l.format === 'guide' || l.format === 'empty'
@@ -48,8 +49,7 @@ const MENUS = '[data-learn="plus-menu"], [role="menu"], [role="listbox"]'
 // The pointer resting on the side nav this long is `sidenav-rest`.
 const REST_MS = 600
 
-const editable = (el: Element | null) =>
-  !!el && (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement || el instanceof HTMLSelectElement || (el as HTMLElement).isContentEditable)
+const editable = (el: Element | null) => isTyping(el)
 const inFocus = () => new URLSearchParams(location.search).has('focus')
 
 // What a piece kind is called on screen (never "kanban", D-301).

@@ -7000,3 +7000,19 @@ reasoning; Settings only offers low/medium/high, so it can't happen. Replaying s
 in the app on emulators with `?agentStub=1`: `web demo` (sources under the answer), `/research rivals` (a plan, no
 search), `go` (researchers, the cited document in the preview), no page errors. The empty screen still said "no web";
 fixed (a6872f8).
+
+### D-361 · 2026-11-02 · Accepted (the user: "uygulamada ortaklaştırılcak component yada yapı kaldı mı? Yada tekrar eden kod yapıları?"; then "D-361 ve plan dosyasını yaz, sonra 1. gruptan başla")
+**Decision:** the repeats left above the kit are made one, in four groups (docs/specs/shared-code.md): group 1 small
+pure helpers and checks whose copies had already drifted (typing check, document summary, the agent's copy of the
+deck/timeline logic, finished columns, paging, model functions re-written in views, lists and limits, id builders,
+small words, a dead function and a missing `pointercancel`); group 2 many lines each closing on its own (grid cells,
+panel sections, pick menus, paging's look, filter stores, unframed CSS, ops' wrappers, bounding boxes); group 3 a
+record per piece kind, wizards, setup shell, the cascades; group 4 the drag/pan/zoom maths after the drag work another
+session has under way. One home per thing; where copies drifted the right behaviour is picked and written in the spec.
+**Why:** found by reading four areas on 2026-11-02: the copies had started to disagree (a key swallowed in one place
+and not another, two document excerpts, the agent reading decks by older rules, two delete paths).
+**Alternatives:** one big pass (too many files other sessions touch); leaving the pure copies (they already drifted).
+**Kept apart:** the spec's list (text vs piece resize, the filters and rules on different data, clear-spot finders…).
+**Group 1 (2026-11-02):** 1.1–1.8 and 1.10 done (shared-code.md's Done); group 4 taken by another session (the
+drag work's own).
+**Not yet:** 1.9 (small words); groups 2–3.

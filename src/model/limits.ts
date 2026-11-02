@@ -21,6 +21,9 @@ export const SOURCE_MAX = 200
 // A link's own label (D-207).
 export const LINK_LABEL_MAX = 200
 
+// The author's name a document (D-232) or a sticky note (D-257) keeps.
+export const AUTHOR_NAME_MAX = 200
+
 // A workspace's name as typed on the workspaces page and in settings (D-338).
 export const WORKSPACE_NAME_MAX = 80
 

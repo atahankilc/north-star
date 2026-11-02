@@ -94,7 +94,7 @@ export function followTo(box: Box, side: Side, from: Box, to: Box): Box {
 type Shown = Box & { id: string; kind: Piece['kind']; stuckTo?: string }
 
 // What follows a host (a plane, or a deck with its timeline): what's stuck to it, all the way down (D-298: a plane's
-// deck's timeline), among the pieces shown on one canvas. CanvasView.tsx' stuckChain does the same for its drag.
+// deck's timeline), among the pieces shown on one canvas; CanvasView.tsx' drag uses it too.
 export function stuckChain<P extends Shown>(shown: P[], id: string): P[] {
   const out: P[] = []
   const hosts = [id]

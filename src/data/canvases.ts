@@ -16,7 +16,7 @@ import { deleteAny } from '../ops/delete'
 // What a canvas holds, what goes with it and with a move (S6) too.
 export { MAIN, CANVAS_NAME_MAX, MAIN_NAME, canvasOf, canvasList, onCanvas, canvasTextOn, canvasesOf, withStuck, canvasGoes } from '../model/canvases'
 export type { Canvas, Spot, CanvasContent } from '../model/canvases'
-import { MAIN, canvasOf, canvasesOf, onCanvas, type Canvas, type CanvasContent, type Spot } from '../model/canvases'
+import { MAIN, canvasOf, canvasesOf, onCanvas, spotId, type Canvas, type CanvasContent, type Spot } from '../model/canvases'
 
 const col = (wid: string) => collection(db(), 'workspaces', wid, 'canvases')
 export const canvasRef = (wid: string, id: string) => doc(col(wid), id)
@@ -24,7 +24,7 @@ export const canvasRef = (wid: string, id: string) => doc(col(wid), id)
 
 // ---- One piece on several canvases (D-302's session 3): its home is its own `canvasId` and x/y; every other canvas it's
 // on is a `pieceSpots/{canvasId}_{pieceId}` doc with its spot there. Size, frame, name and contents stay the piece's.
-export const spotRef = (wid: string, canvas: string, piece: string) => doc(db(), 'workspaces', wid, 'pieceSpots', `${canvas}_${piece}`)
+export const spotRef = (wid: string, canvas: string, piece: string) => doc(db(), 'workspaces', wid, 'pieceSpots', spotId(canvas, piece))
 
 // The pieces on `canvas`, each with its spot there (`spot` set for those not at home). One shown through a spot is the
 // same object while neither it nor its spot changed, so what's drawn from it stays memoised (D-279).

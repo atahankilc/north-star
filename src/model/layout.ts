@@ -34,8 +34,8 @@ const ASPECT = 1.6
 const up = (v: number) => Math.ceil(v / GRID - 1e-6) * GRID
 const down = (v: number) => Math.floor(v / GRID + 1e-6) * GRID
 
-// ---- The panel's line up and space out (CardPanel.tsx' ManyInside `moveTo`/`spread`, the same maths; the panel keeps
-// its own copy until it calls the ops). Each box's top-left goes to the spot given, snapped.
+// ---- Line up and space out, for the ops and the panel's (CardPanel.tsx' ManyInside). Each box's top-left goes to the
+// spot given, snapped.
 
 export function alignTo(items: Boxed[], how: Align): Map<string, { x: number; y: number }> {
   const [l, t] = [Math.min(...items.map((c) => c.x)), Math.min(...items.map((c) => c.y))]

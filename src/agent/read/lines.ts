@@ -15,6 +15,7 @@ import { derive, nameOf, shownTasks, timelineDecks, type Derived, type P } from 
 import type { Ids } from './ids'
 import { count, q, oneLine } from './text'
 import type { ReadWs } from './types'
+import { isFinished } from '../../model/tasks'
 
 // Link kinds in the chain's order, then the rest; to it after from it.
 const LINK_ORDER = ['solves', 'competes-with', 'inspired-by', 'part-of', 'depends-on', 'contradicts', 'relates', 'for']
@@ -80,7 +81,7 @@ export function cardLine(ws: ReadWs, ids: Ids, c: Card, o: CardLineOpts = {}): s
 // `card`: the card it's for with its title (default), only its id, or left out (listed under that card).
 export function taskLine(ws: ReadWs, ids: Ids, t: Task, o: { where?: boolean; card?: 'title' | 'id' | 'none'; days?: boolean } = {}): string {
   const d = derive(ws)
-  const finished = !!d.doneCols.get(t.pieceId)?.has(t.col)
+  const finished = isFinished(t, d.doneCols)
   const parts = [ids.short('task', t.id), q(t.title)]
   if (o.where) {
     const deck = d.pieces.get(t.pieceId)
@@ -191,7 +192,7 @@ export function pieceSays(ws: ReadWs, ids: Ids, p: P): string {
         return `holds cards: ${count(cards.length, 'card')} by ${k.colField ?? 'status'}${k.rowField ? ` × ${k.rowField}` : ''}${k.source?.rules.length ? ` (${k.source.rules.map((r) => ruleWords(ids, d, r)).join(' and ')})` : ''}`
       }
       const { line, tasks } = deckCounts(ws, p)
-      const late = tasks.filter((t) => t.due && t.due < d.today && !d.doneCols.get(p.id)?.has(t.col)).length
+      const late = tasks.filter((t) => t.due && t.due < d.today && !isFinished(t, d.doneCols)).length
       return `${count(tasks.length, 'task')}: ${line}${late ? ` · ${late} overdue` : ''}`
     }
     case 'timeline': {

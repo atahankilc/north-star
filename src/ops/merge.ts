@@ -19,6 +19,8 @@ import { placeId } from '../model/placement'
 import { kindOfPiece } from '../model/pieces'
 import type { OpCtx, Plan, Write } from './types'
 import { cardColl, cardData, cardIn, once, refuse } from './util'
+import { comparisonId } from '../model/shapes'
+import { cellIdOf, cellKey } from '../model/matrix'
 
 export type MergeCardsArgs = {
   // The card that stays.
@@ -143,7 +145,7 @@ export function mergeCards(ctx: OpCtx, args: MergeCardsArgs): Plan {
     if (f === r || matched.has(key)) continue
     matched.add(key)
     const { id: _, ...rest } = c as typeof c & { id: string }
-    writes.push({ coll: 'comparisons', id: `${f}_${r}`, set: { ...rest, featureId: f, competitorId: r, updatedAt: now } })
+    writes.push({ coll: 'comparisons', id: comparisonId(f, r), set: { ...rest, featureId: f, competitorId: r, updatedAt: now } })
   }
 
   // Planes: the kept card shown wherever a merged one was.
@@ -173,7 +175,7 @@ export function mergeCards(ctx: OpCtx, args: MergeCardsArgs): Plan {
     for (const key of ['matrix', 'table', 'kanban'] as const) if (raw[key] && mentions(raw[key], ids)) patch[key] = swapped(unhidden(raw[key], ids), ids, keep.id)
     if (Object.keys(patch).length) writes.push({ coll: 'pieces', id: p.id, patch: { ...patch, updatedAt: now } })
   }
-  const cellIds = new Set(ws.cells.map((c) => (c as { id?: string }).id ?? `${c.matrixId}_${c.row}_${c.col}`))
+  const cellIds = new Set(ws.cells.map(cellIdOf))
   const swapKey = (key: string) => {
     const [card, ...rest] = key.split('~')
     return ids.has(card) ? [keep.id, ...rest].join('~') : key
@@ -182,10 +184,10 @@ export function mergeCards(ctx: OpCtx, args: MergeCardsArgs): Plan {
     const row = swapKey(c.row)
     const col = swapKey(c.col)
     if (row === c.row && col === c.col) continue
-    const id = `${c.matrixId}_${row}_${col}`
+    const id = cellKey(c.matrixId, row, col)
     if (cellIds.has(id)) continue
     cellIds.add(id)
-    const old = (c as { id?: string }).id ?? `${c.matrixId}_${c.row}_${c.col}`
+    const old = cellIdOf(c)
     const { id: _, ...rest } = c as typeof c & { id?: string }
     writes.push({ coll: 'cells', id: old, del: true }, { coll: 'cells', id, set: { ...rest, row, col, updatedAt: now } })
   }

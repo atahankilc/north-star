@@ -11,6 +11,7 @@ import styles from './PackPick.module.css'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Label } from '../../../ui/primitives/Label'
+import { keysTaken } from '../../../ui/foundation/focus'
 
 export function PackPick({ cards }: { cards: Card[] }) {
   const { wid, cards: every } = useWs()
@@ -26,7 +27,7 @@ export function PackPick({ cards }: { cards: Card[] }) {
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement | null)?.closest('input, textarea, [contenteditable=true], [data-coach]')) return
+      if (keysTaken(e.target)) return
       if (e.key !== 'Escape' && e.key !== 'Enter') return
       e.preventDefault()
       e.stopImmediatePropagation()

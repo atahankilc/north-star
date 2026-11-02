@@ -14,6 +14,7 @@ import { jobText, planJob, progressJob, type JobHost } from './job'
 import { previewDiff, viewOf, type Changeset } from './changeset'
 import { entriesOf, readCell, type MatrixSetup } from '../model/matrix'
 import { researchTool } from './research'
+import { comparisonId } from '../model/shapes'
 
 export { NO_COORDS, COORDS_FIX, agentArgs, ID_KEYS } from './change'
 
@@ -268,8 +269,8 @@ export function matchNotes(env: AgentEnv): string[] {
     const filled = (row: string, col: string) => cells.some((c) => c.row === row && c.col === col && (readCell(m, c).step?.label ?? 'none') !== 'none')
     const empty = matches.filter((x) => !filled(x.featureId, x.competitorId))
     const theirs = (id?: string) => ws.competitorFeatures.find((f) => f.id === id)?.name ?? '?'
-    const keys = new Set(matches.map((x) => `${x.featureId}_${x.competitorId}`))
-    const stated = cells.filter((c) => !keys.has(`${c.row}_${c.col}`) && (c.confidence ?? 'documented') === 'documented')
+    const keys = new Set(matches.map((x) => comparisonId(x.featureId, x.competitorId)))
+    const stated = cells.filter((c) => !keys.has(comparisonId(c.row, c.col)) && (c.confidence ?? 'documented') === 'documented')
     if (empty.length) out.push(`"${p.name}" holds ${matches.length} match${matches.length > 1 ? 'es' : ''} the workspace records, ${empty.length} still empty: ${empty.slice(0, 20).map((x) => `"${title(x.featureId)}" × "${title(x.competitorId)}" (their "${theirs(x.competitorFeatureId)}")`).join('; ')}. Fill each from what the two features do (none, partial, full or better), confidence documented.`)
     if (stated.length) out.push(`"${p.name}": ${stated.length} cell${stated.length > 1 ? 's' : ''} with no recorded match stated as documented (${stated.slice(0, 8).map((c) => `"${title(c.row)}" × "${title(c.col)}"`).join('; ')}): a cell the workspace doesn't record is a guess (confidence guess), or left empty.`)
   }

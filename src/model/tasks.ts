@@ -1,5 +1,7 @@
 // Tasks' order and days, without Firebase (S3, D-312); data/tasks.ts re-exports them.
-import type { Task } from '../data/tasks'
+import type { KanbanSetup, Task } from '../data/tasks'
+import { isOnPlane, type Card } from './cards'
+import { canvasOf } from './canvases'
 
 // A column's tasks, in order.
 export const tasksIn = (tasks: Task[], column: string) => tasks.filter((t) => t.col === column).sort((a, b) => a.order - b.order || a.createdAt - b.createdAt)
@@ -58,3 +60,77 @@ export function isDay(v: unknown): v is string {
   const d = new Date(`${v}T00:00:00Z`)
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v
 }
+
+// Decks, timelines and what they show, pure (D-361: the agent's read layer had its own copy, drifted); data/tasks.ts
+// re-exports them.
+// Which decks a timeline shows (D-289, D-300): always the days of something. Linked to a deck, that deck. Linked to a
+// plane, the deck linked to that plane when it has one (the first in reading order; one linked later too: read here,
+// nothing written), else every deck, only the tasks for that plane's cards (each deck given the plane, `cardsOnly`: no
+// task for no card). Linked to nothing, every deck on its own canvas (D-314; canvasOf).
+// `only`: the side view's ALL · DAYS, never stored, keeps to the decks on the canvas shown (D-314).
+export function timelineKanbans<P extends { id: string; kind: string; stuckTo?: string; x?: number; y?: number; kanban?: { holds?: string }; only?: string[]; canvasId?: string }>(t: P, pieces: P[]): P[] {
+  // A deck holding cards has no tasks, so no days (D-314).
+  const kanbans = pieces.filter((p) => p.kind === 'kanban' && p.kanban?.holds !== 'cards')
+  const host = pieces.find((p) => p.id === t.stuckTo)
+  if (!host) return t.only ? kanbans.filter((k) => t.only!.includes(k.id)) : kanbans.filter((k) => canvasOf(k) === canvasOf(t))
+  if (host.kind === 'kanban') return [host]
+  if (host.kind !== 'plane') return kanbans
+  const deck = kanbans.filter((k) => k.stuckTo === host.id).sort((a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0))[0]
+  return deck ? [deck] : kanbans.map((k) => ({ ...k, stuckTo: host.id, cardsOnly: true }))
+}
+
+// A deck's timeline (D-300): the one whose days are this deck's, linked to it or to its plane.
+export function timelineOf<P extends { id: string; kind: string; stuckTo?: string; x?: number; y?: number; kanban?: { holds?: string } }>(deck: string, pieces: P[]): P | undefined {
+  const it = pieces.find((p) => p.id === deck)
+  // The deck itself back, not every deck given a plane (a plane with no deck's).
+  return it && pieces.find((p) => {
+    if (p.kind !== 'timeline' || !p.stuckTo) return false
+    const shows = timelineKanbans(p, pieces)
+    return shows.length === 1 && shows[0] === it
+  })
+}
+
+// What a kanban shows (D-255): stuck to a plane, the tasks for that plane's cards and those for no card (or for one
+// that's gone), until it's unlinked (D-303); otherwise all of them.
+// A card brought to that plane from another counts as its (D-281).
+export function shownTasks(tasks: Task[], piece: { stuckTo?: string; kanban?: KanbanSetup | unknown; cardsOnly?: boolean }, cards: Pick<Card, 'id' | 'pieceId' | 'planes'>[]) {
+  const plane = piece.stuckTo
+  if (!plane) return tasks
+  const byId = new Map(cards.map((c) => [c.id, c]))
+  return tasks.filter((t) => {
+    const c = t.cardId ? byId.get(t.cardId) : undefined
+    return c ? isOnPlane(c, plane) : !piece.cardsOnly
+  })
+}
+
+// The finished columns of every deck, as `deck|column` (D-361: it had been built five ways).
+type DeckLike = { id: string; kanban?: KanbanSetup | unknown }
+export const doneCols = (pieces: DeckLike[]) =>
+  new Set(pieces.flatMap((p) => ((p.kanban as KanbanSetup | undefined)?.cols ?? []).filter((c) => c.done).map((c) => `${p.id}|${c.id}`)))
+export const isFinished = (t: Pick<Task, 'pieceId' | 'col'>, done: Set<string>) => done.has(`${t.pieceId}|${t.col}`)
+
+// Whether a task is in its kanban's finished column.
+export function finished(t: Pick<Task, 'pieceId' | 'col'>, pieces: DeckLike[]) {
+  const p = pieces.find((x) => x.id === t.pieceId)
+  return !!(p?.kanban as KanbanSetup | undefined)?.cols.find((c) => c.id === t.col)?.done
+}
+
+// Each card's tasks (D-254): how many, how many finished; the card's facts line says `☐ 2/5`.
+export function taskTally(tasks: Task[], pieces: DeckLike[]) {
+  const done = doneCols(pieces)
+  const out = new Map<string, { done: number; all: number }>()
+  for (const t of tasks) {
+    if (!t.cardId) continue
+    const n = out.get(t.cardId) ?? { done: 0, all: 0 }
+    n.all++
+    if (isFinished(t, done)) n.done++
+    out.set(t.cardId, n)
+  }
+  return out
+}
+
+// A card still being tested (D-254): a customer, problem or idea with no status yet, `hypothesis` or `testing`. Its
+// panel offers `+ test it`; a finished task for it offers to log what it taught.
+export const untested = (c: Pick<Card, 'type' | 'validation'> | undefined) =>
+  !!c && (c.type === 'customer' || c.type === 'problem' || c.type === 'idea') && (!c.validation || c.validation === 'hypothesis' || c.validation === 'testing')
+

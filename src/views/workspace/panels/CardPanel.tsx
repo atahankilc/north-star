@@ -44,7 +44,7 @@ import { bringIn, cardsOn, elsewhere, onPlane as isOn, planeOf, planesOf, takeOf
 import { planeTitle } from '../../../data/canvases'
 import { useGoTo } from '../canvas/goTo'
 import { useHistory } from '../../../data/history'
-import { GRID, snap } from '../../../data/grid'
+import { GRID } from '../../../data/grid'
 import { useWs } from '../canvas/context'
 import { linkTone } from '../plane/PlaneLinks'
 import { TasksSection } from './CardTasks'
@@ -62,6 +62,7 @@ import { Chip } from '../../../ui/primitives/Chip'
 import { Label as UiLabel } from '../../../ui/primitives/Label'
 import { EVIDENCE_TEXT_MAX, LONG_TEXT_MAX, SOURCE_MAX, TAG_MAX, URL_MAX } from '../../../model/limits'
 import { CARD_PLACEHOLDER } from '../../../model/cardName'
+import { ALIGNS, alignTo, spreadTo } from '../../../model/layout'
 
 // Type = the panel's colour, as the card's edge (D-055).
 const TONE: Record<AnyType, string> = CARD_TONE
@@ -247,27 +248,10 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
     ...cards.map((c) => ({ id: c.id, get ref() { return spotRef(wid, c) }, x: c.x, y: c.y, w: CARD.w, h: CARD.h })),
     ...texts.map((x) => ({ id: x.id, get ref() { return labelRef(wid, x.id) }, ...labelBox(x) })),
   ]
-  type Item = (typeof items)[number]
-  const moveTo = (to: (c: Item) => [number, number]) => {
-    const moves = items.map((c) => ({ c, to: to(c).map(snap) as [number, number] })).filter((m) => m.to[0] !== m.c.x || m.to[1] !== m.c.y)
-    if (moves.length) void moveMany(`line up ${items.length} things`, moves.map((m) => ({ ref: m.c.ref, from: { x: m.c.x, y: m.c.y }, to: { x: m.to[0], y: m.to[1] } })))
-  }
-  const [l, t] = [Math.min(...items.map((c) => c.x)), Math.min(...items.map((c) => c.y))]
-  const [r, b] = [Math.max(...items.map((c) => c.x + c.w)), Math.max(...items.map((c) => c.y + c.h))]
-  const ALIGN: [string, (c: Item) => [number, number]][] = [
-    ['left', (c) => [l, c.y]],
-    ['centre', (c) => [(l + r) / 2 - c.w / 2, c.y]],
-    ['right', (c) => [r - c.w, c.y]],
-    ['top', (c) => [c.x, t]],
-    ['middle', (c) => [c.x, (t + b) / 2 - c.h / 2]],
-    ['bottom', (c) => [c.x, b - c.h]],
-  ]
-  // Evenly from the first to the last, in their order along that way.
-  const spread = (axis: 0 | 1) => {
-    const sorted = [...items].sort((p, q) => (axis ? p.y - q.y : p.x - q.x))
-    const [a, z] = axis ? [sorted[0].y, sorted[sorted.length - 1].y] : [sorted[0].x, sorted[sorted.length - 1].x]
-    const at = new Map(sorted.map((c, i) => [c.id, a + ((z - a) * i) / (sorted.length - 1)]))
-    moveTo((c) => (axis ? [c.x, at.get(c.id)!] : [at.get(c.id)!, c.y]))
+  // Line up and space out: model/layout.ts' maths, the same the agent's ops use (D-361).
+  const moveTo = (to: Map<string, { x: number; y: number }>) => {
+    const moves = items.map((c) => ({ c, to: to.get(c.id)! })).filter((m) => m.to.x !== m.c.x || m.to.y !== m.c.y)
+    if (moves.length) void moveMany(`line up ${items.length} things`, moves.map((m) => ({ ref: m.c.ref, from: { x: m.c.x, y: m.c.y }, to: m.to })))
   }
   const all = cards[0]?.tags?.filter((tag) => cards.every((c) => c.tags?.includes(tag))) ?? []
   const [adding, setAdding] = useState<string | null>(null)
@@ -285,19 +269,19 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
       <div className={styles.under}>{kinds}</div>
       <PanelSection n={1} name="line up">
         <ButtonGroup>
-          {ALIGN.map(([name, to]) => (
-            <Button key={name} disabled={!editor} onClick={() => moveTo(to)}>
-              {name}
+          {ALIGNS.map((how) => (
+            <Button key={how} disabled={!editor} onClick={() => moveTo(alignTo(items, how))}>
+              {how.slice('align-'.length)}
             </Button>
           ))}
         </ButtonGroup>
       </PanelSection>
       <PanelSection n={2} name="space out">
         <ButtonGroup>
-          <Button disabled={!editor || items.length < 3} onClick={() => spread(0)}>
+          <Button disabled={!editor || items.length < 3} onClick={() => moveTo(spreadTo(items, 'x'))}>
             ↔ across
           </Button>
-          <Button disabled={!editor || items.length < 3} onClick={() => spread(1)}>
+          <Button disabled={!editor || items.length < 3} onClick={() => moveTo(spreadTo(items, 'y'))}>
             ↕ down
           </Button>
         </ButtonGroup>

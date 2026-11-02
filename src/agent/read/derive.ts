@@ -1,16 +1,15 @@
 // What the read layer works out once per snapshot (kept while the snapshot object is the same): lookups by id, each
 // plane's cards at their spots there, facts, folds, links and tasks by card, people's names, today.
 import type { Card } from '../../model/cards'
-import { isOnPlane } from '../../model/cards'
 import { factsOf, type Facts } from '../../model/cardFacts'
 import { foldsOf, type Folds } from '../../model/cardInside'
 import { cardsByPlane, planesOf } from '../../model/placement'
 import { canvasOf, MAIN } from '../../model/canvases'
 import { CANVAS, type Label } from '../../model/labels'
 import { kindOfPiece, KIND_NAME } from '../../model/pieces'
-import { today } from '../../model/tasks'
+import { doneCols as doneColsOf, isFinished, shownTasks as modelShownTasks, timelineKanbans, today } from '../../model/tasks'
 import type { Edge } from '../../model/edges'
-import type { Task, KanbanSetup } from '../../data/tasks'
+import type { Task } from '../../data/tasks'
 import type { Piece, Thread } from '../../data/model'
 import type { WithId } from '../../data/hooks'
 import type { Evidence } from '../../data/evidence'
@@ -53,7 +52,8 @@ export type Derived = {
   // A piece's name by id; one that's gone says so.
   nameById: (id: string) => string
   // The finished columns of each deck.
-  doneCols: Map<string, Set<string>>
+  // Every deck's finished columns, `deck|column` (model/tasks.ts' doneCols; `isFinished`).
+  doneCols: Set<string>
 }
 
 // The snapshot with every string defanged (text.ts): a name that would close the content wrapper can't, wherever the
@@ -103,10 +103,9 @@ export function derive(ws: ReadWs): Derived {
   const planes = new Map(ws.cards.map((c) => [c.id, planesOf(c, ws.places).filter((p) => pieces.has(p))]))
   const tasksOf = new Map<string, Task[]>()
   for (const t of ws.tasks) if (t.cardId) tasksOf.set(t.cardId, [...(tasksOf.get(t.cardId) ?? []), t])
-  const doneCols = new Map<string, Set<string>>()
-  for (const p of ws.pieces) if (p.kind === 'kanban') doneCols.set(p.id, new Set(((p.kanban as KanbanSetup | undefined)?.cols ?? []).filter((c) => c.done).map((c) => c.id)))
+  const doneCols = doneColsOf(ws.pieces.filter((p) => p.kind === 'kanban'))
   const taskCounts = new Map<string, { done: number; all: number }>()
-  for (const [id, list] of tasksOf) taskCounts.set(id, { all: list.length, done: list.filter((t) => doneCols.get(t.pieceId)?.has(t.col)).length })
+  for (const [id, list] of tasksOf) taskCounts.set(id, { all: list.length, done: list.filter((t) => isFinished(t, doneCols)).length })
   const planeCounts = new Map([...planes].map(([id, l]) => [id, l.length]))
   const facts = factsOf(ws.cards, ws, taskCounts, planeCounts)
   const linksOf = new Map<string, Edge[]>()
@@ -173,28 +172,14 @@ export function derive(ws: ReadWs): Derived {
 // A person's name, or their uid when the snapshot doesn't know it.
 export const nameOf = (d: Derived, uid: string | undefined) => (uid ? (d.names.get(uid) ?? uid) : 'nobody')
 
-// What a deck shows (data/tasks.ts' shownTasks, D-255/D-303; copied here because data/ isn't pure): stuck to a plane,
-// the tasks for that plane's cards and those for no card (or one that's gone); otherwise all of them.
+// What a deck shows and which decks a timeline shows: model/tasks.ts' (D-361: this had its own copy). Only a plane
+// still there narrows a deck.
 export function shownTasks(ws: ReadWs, d: Derived, deck: P & { cardsOnly?: boolean }): Task[] {
   const tasks = ws.tasks.filter((t) => t.pieceId === deck.id)
   const plane = deck.stuckTo && d.pieces.get(deck.stuckTo)?.kind === 'plane' ? deck.stuckTo : undefined
-  if (!plane) return tasks
-  return tasks.filter((t) => {
-    const c = t.cardId ? d.cards.get(t.cardId) : undefined
-    return c ? isOnPlane(c, plane) : !deck.cardsOnly
-  })
+  return modelShownTasks(tasks, { ...deck, stuckTo: plane }, ws.cards)
 }
-
-// Which decks a timeline shows (data/tasks.ts' timelineKanbans, D-289/D-300/D-314; copied for the same reason).
-export function timelineDecks(ws: ReadWs, t: P): (P & { cardsOnly?: boolean })[] {
-  const decks = ws.pieces.filter((p) => p.kind === 'kanban' && (p.kanban as KanbanSetup | undefined)?.holds !== 'cards')
-  const host = ws.pieces.find((p) => p.id === t.stuckTo)
-  if (!host) return decks.filter((k) => canvasOf(k) === canvasOf(t))
-  if (host.kind === 'kanban') return [host]
-  if (host.kind !== 'plane') return decks
-  const deck = decks.filter((k) => k.stuckTo === host.id).sort((a, b) => a.y - b.y || a.x - b.x)[0]
-  return deck ? [deck] : decks.map((k) => ({ ...k, stuckTo: host.id, cardsOnly: true }))
-}
+export const timelineDecks = (ws: ReadWs, t: P): (P & { cardsOnly?: boolean })[] => timelineKanbans(t, ws.pieces)
 
 // The canvas a space is on: a plane's own canvas; the canvas's text its `canvasId`.
 export const canvasOfLabel = (d: Derived, l: Label) => (l.pieceId === CANVAS ? canvasOf(l) : (d.pieces.get(l.pieceId) && canvasOf(d.pieces.get(l.pieceId)!)) || MAIN)

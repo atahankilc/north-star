@@ -24,6 +24,7 @@ import { shownPieces } from './shownBox'
 import { labelBox } from '../text/TextItems'
 import styles from './CanvasSwitch.module.css'
 import { DUR } from '../../../ui/foundation/motion'
+import { keysTaken } from '../../../ui/foundation/focus'
 
 type Box = { x: number; y: number; w: number; h: number }
 
@@ -180,7 +181,7 @@ function CanvasKeys() {
     const onKey = (e: KeyboardEvent) => {
       const n = /^Digit([1-9])$/.exec(e.code)?.[1]
       if (!n || !e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return
-      if ((e.target as HTMLElement | null)?.closest('input, textarea, [contenteditable=true]')) return
+      if (keysTaken(e.target)) return
       const to = canvases[Number(n) - 1]
       if (!to) return
       e.preventDefault()

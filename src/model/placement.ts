@@ -20,19 +20,6 @@ export function clearSpot(at: [number, number], others: { x: number; y: number }
   return spot
 }
 
-// Where a card goes when nobody says (the agent's create_card without `where`): the first clear spot, row by row, from
-// the plane's top-left (two grid steps in), each row a card's height and a step lower; past the plane's width, the next
-// row. The same rule as the UI's (clearSpot) within each row.
-export function freeSpot(others: { x: number; y: number }[], planeW = 960): { x: number; y: number } {
-  const margin = 2 * GRID
-  for (let row = 0; row < 200; row++) {
-    const y = margin + row * (CARD.h + 2 * GRID)
-    const s = clearSpot([margin + CARD.w / 2, y + CARD.h / 2], others)
-    if (s.x + CARD.w <= Math.max(planeW - margin, margin + CARD.w)) return s
-  }
-  return clearSpot([margin + CARD.w / 2, margin + CARD.h / 2], others)
-}
-
 // The cards on a plane, each with its spot there (`on` set for those not at home). A card shown through a place is kept
 // as the same object while neither it nor its place changed, so what's drawn from it stays memoised (D-279).
 const shown = new Map<string, { base: Card; place: Place; card: Card }>()

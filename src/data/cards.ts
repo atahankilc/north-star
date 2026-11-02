@@ -12,12 +12,13 @@ import { createCard, createPackage, deleteThings, duplicatePlan, updateCard as u
 export { CARD_TYPES, ALL_TYPES, CARD_COLLECTION, CARD, TITLE_MAX, VALIDATIONS, FEATURE_PRIORITIES, FEATURE_STATUSES, FEATURE_IMPACTS, FEATURE_EFFORTS, isOnPlane, toCards, cardDoc } from '../model/cards'
 export type { CardType, AnyType, Validation, CardFields, Card } from '../model/cards'
 import { CARD, CARD_COLLECTION, type AnyType, type Card, type CardFields, type CardType } from '../model/cards'
+import { placeId } from '../model/placement'
 
 const ref = (wid: string, type: AnyType, id?: string) =>
   id ? doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]), id) : doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]))
 
 // A card on a plane besides its home (D-281): fixed by the two, so a card is on a plane once.
-export const placeRef = (wid: string, plane: string, cardId: string) => doc(collection(db(), 'workspaces', wid, 'places'), `${plane}_${cardId}`)
+export const placeRef = (wid: string, plane: string, cardId: string) => doc(collection(db(), 'workspaces', wid, 'places'), placeId(plane, cardId))
 
 // Where a card's spot on the plane it's shown on is stored: the card itself on its home, its place elsewhere.
 export const spotRef = (wid: string, card: Card) => (card.on ? placeRef(wid, card.on, card.id) : ref(wid, card.type, card.id))

@@ -4,6 +4,7 @@
 import type { Availability } from '../model/shapes'
 import { DELETE, type OpCtx, type Plan, type Write } from './types'
 import { a, cardIn, find, handleOf, refuse } from './util'
+import { comparisonId } from '../model/shapes'
 
 export type FeatureFields = { name: string; description?: string; category?: string; availability?: Availability; url?: string }
 
@@ -14,7 +15,7 @@ function oursOk(ctx: OpCtx, op: string, ours: string | null | undefined) {
   if (c.type !== 'feature') refuse(op, `ours ${c.id} is ${a(c.type)}, not a feature`, 'match it to one of our features (a feature card), or pass null')
 }
 
-const cmpId = (featureId: string, competitorId: string) => `${featureId}_${competitorId}`
+const cmpId = comparisonId
 
 export type CreateFeatureArgs = FeatureFields & { competitor: string; ours?: string | null; handle?: string }
 

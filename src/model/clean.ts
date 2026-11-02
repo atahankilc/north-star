@@ -1,7 +1,9 @@
 // Cleaning a workspace's docs into the shapes firestore.rules accepts (D-246), without Firebase (S3, D-312): moved out of
 // io/bundle.ts (which re-exports all of it) so the ops' validate can use it in node.
-import { CARD_TYPES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, VALIDATIONS, type AnyType } from './cards'
+import { CARD_TYPES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, PRIORITIES, VALIDATIONS, type AnyType } from './cards'
 import { AVAILABILITIES, CARD_FIELDS, CELL_KINDS, COL_W, CONFIDENCES, CRITERION_SCORES, DOC_COLS, DOC_KINDS, DOC_LIMITS, EVIDENCE_KINDS, FIELDS, OWN_KINDS, TONES, TOTALS_AS, TOTALS_AT, UNFOLDS } from './shapes'
+import { bytesOf as bytes } from './notes'
+import { AUTHOR_NAME_MAX, AXIS_NOUN_MAX, BOX_NAMES_MAX, BOX_NAME_MAX, CATEGORY_MAX, CELL_NOTES_MAX, CELL_TEXT_MAX, CHECKS_MAX, CHECK_MAX, COL_NAME_MAX, CRITERION_MAX, EVIDENCE_TEXT_MAX, FACT_MAX, GLYPH_MAX, KANBAN_COLS_MAX, KICKER_MAX, LABELS_MAX, LABEL_MAX, LINK_LABEL_MAX, LONG_TEXT_MAX, MATRIX_NAME_MAX, PIECE_NAME_MAX, SOURCE_MAX, STEP_LABEL_MAX, TABLE_COL_NAME_MAX, TASK_NOTES_MAX, TASK_TITLE_MAX, TITLE_MAX, UNIT_MAX, URL_MAX } from './limits'
 import { newId } from './scales'
 import { RULE_FIELDS } from './source'
 import type { DocBody } from '../data/documents'
@@ -62,7 +64,7 @@ export function cleanCard(type: AnyType, d: Raw, now: number) {
   const y = num(d.y)
   if (x === undefined || y === undefined) return null
   return compact({
-    ...(competitor ? { name: str(d.name, 200) ?? '' } : { title: str(d.title, 200) ?? '' }),
+    ...(competitor ? { name: str(d.name, TITLE_MAX) ?? '' } : { title: str(d.title, TITLE_MAX) ?? '' }),
     x,
     y,
     tags: tags(d.tags),
@@ -70,14 +72,14 @@ export function cleanCard(type: AnyType, d: Raw, now: number) {
     // Notes: a competitor's `notes`, every other card's `body`.
     ...(competitor
       ? {
-          notes: str(d.notes, 20000),
-          url: str(d.url, 2000),
-          description: str(d.description, 20000),
-          pricing: str(d.pricing, 2000),
-          audience: str(d.audience, 2000),
+          notes: str(d.notes, LONG_TEXT_MAX),
+          url: str(d.url, URL_MAX),
+          description: str(d.description, LONG_TEXT_MAX),
+          pricing: str(d.pricing, FACT_MAX),
+          audience: str(d.audience, FACT_MAX),
           regions: tags(d.regions, 20),
         }
-      : { body: str(d.body, 20000), validation: oneOf(d.validation, VALIDATIONS) }),
+      : { body: str(d.body, LONG_TEXT_MAX), validation: oneOf(d.validation, VALIDATIONS) }),
     ...(type === 'feature' && {
       priority: oneOf(d.priority, FEATURE_PRIORITIES),
       status: oneOf(d.status, FEATURE_STATUSES),
@@ -97,7 +99,7 @@ function criteria(v: unknown) {
   const out = list(v, 8)
     .map(obj)
     .filter((c): c is Record<string, unknown> => !!c && typeof c.id === 'string' && CRITERION_ID.test(c.id))
-    .map((c) => ({ id: c.id as string, text: str(c.text, 200) ?? '' }))
+    .map((c) => ({ id: c.id as string, text: str(c.text, CRITERION_MAX) ?? '' }))
   return out.length ? out : undefined
 }
 
@@ -112,11 +114,11 @@ function scores(v: unknown) {
 
 export function cleanCompetitorFeature(d: Raw, now: number) {
   return compact({
-    name: str(d.name, 200) ?? '',
-    description: str(d.description, 20000),
-    category: str(d.category, 100),
+    name: str(d.name, TITLE_MAX) ?? '',
+    description: str(d.description, LONG_TEXT_MAX),
+    category: str(d.category, CATEGORY_MAX),
     availability: oneOf(d.availability, AVAILABILITIES),
-    url: str(d.url, 2000),
+    url: str(d.url, URL_MAX),
     ...times(d, now),
   })
 }
@@ -127,19 +129,19 @@ export function cleanComparison(d: Raw, now: number) {
 
 // One piece of evidence (D-137), without its card.
 export function cleanEvidence(d: Raw, now: number) {
-  const text = str(d.text, 2000)?.trim()
+  const text = str(d.text, EVIDENCE_TEXT_MAX)?.trim()
   const kind = oneOf(d.kind, EVIDENCE_KINDS)
   const stance = oneOf(d.stance, ['supports', 'contradicts'] as const)
   if (!text || !kind || !stance) return null
   const date = typeof d.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.date) ? d.date : undefined
-  return compact({ text, kind, stance, source: str(d.source, 200), url: str(d.url, 2000), date, ...times(d, now) })
+  return compact({ text, kind, stance, source: str(d.source, SOURCE_MAX), url: str(d.url, URL_MAX), date, ...times(d, now) })
 }
 
 // A link, without its ends; bend points in an older file are left out (D-292).
 export function cleanEdge(d: Raw) {
   const kind = str(d.kind, 40)
   if (!kind) return null
-  return compact({ kind, label: str(d.label, 200) })
+  return compact({ kind, label: str(d.label, LINK_LABEL_MAX) })
 }
 
 // ---- Text (labels.ts), without its space
@@ -166,11 +168,11 @@ export function cleanLabel(d: Raw, now: number) {
     italic: yes(d.italic),
     caps: yes(d.caps),
     rotate: oneOf(d.rotate, [90, -90] as const),
-    kicker: str(d.kicker, 60),
+    kicker: str(d.kicker, KICKER_MAX),
     side: kind === 'section' && d.side === 'left' ? ('left' as const) : undefined,
     scale: oneOf(d.scale, ['small', 'medium', 'large'] as const),
     uid: kind === 'sticky' ? str(d.uid, 128) : undefined,
-    author: kind === 'sticky' ? str(d.author, 200) : undefined,
+    author: kind === 'sticky' ? str(d.author, AUTHOR_NAME_MAX) : undefined,
     folded: kind === 'sticky' ? yes(d.folded) : undefined,
     w,
     h: kind === 'section' ? h : undefined,
@@ -201,7 +203,7 @@ export function cleanPiece(d: Raw, now: number, ids: Ids) {
     y,
     w,
     h,
-    name: str(d.name, 80)?.trim() || undefined,
+    name: str(d.name, PIECE_NAME_MAX)?.trim() || undefined,
     matrix,
     table,
     documents: kind === 'documents' ? cleanDocumentsSetup(d.documents) : undefined,
@@ -225,7 +227,7 @@ function items(v: unknown, ids: Ids): Item[] {
       const card = ids.card(i.cardId)
       return card && card.type !== 'competitorFeature' ? [{ id: ownId(i.id), cardType: card.type, cardId: card.id }] : []
     }
-    return [compact({ id: ownId(i.id), name: str(i.name, 200) ?? '' }) as Item]
+    return [compact({ id: ownId(i.id), name: str(i.name, MATRIX_NAME_MAX) ?? '' }) as Item]
   })
 }
 
@@ -239,7 +241,7 @@ function steps(v: unknown) {
   return list(v, 9).flatMap((raw) => {
     const s = obj(raw)
     if (!s) return []
-    return [{ id: str(s.id, 40) || newId(), glyph: str(s.glyph, 4) ?? '', label: str(s.label, 40) ?? '', tone: oneOf(s.tone, TONES) ?? 'fg' }]
+    return [{ id: str(s.id, 40) || newId(), glyph: str(s.glyph, GLYPH_MAX) ?? '', label: str(s.label, STEP_LABEL_MAX) ?? '', tone: oneOf(s.tone, TONES) ?? 'fg' }]
   })
 }
 
@@ -251,7 +253,7 @@ function cleanAxis(v: unknown, ids: Ids) {
     plane,
     hide: hidden(a.hide, ids),
     items: items(a.items, ids),
-    noun: str(a.noun, 40),
+    noun: str(a.noun, AXIS_NOUN_MAX),
     // Unfolded into what they're judged on (D-249); the cards shown open, those that came over.
     unfold: oneOf(a.unfold, UNFOLDS),
     open: hidden(a.open, ids),
@@ -266,7 +268,7 @@ function cleanMatrix(v: unknown, ids: Ids) {
     cols: cleanAxis(m.cols, ids),
     cell: oneOf(m.cell, CELL_KINDS) ?? 'scale',
     steps: steps(m.steps),
-    unit: str(m.unit, 20),
+    unit: str(m.unit, UNIT_MAX),
     notRelevant: bool(m.notRelevant),
     confidence: bool(m.confidence),
     reading: bool(m.reading),
@@ -304,10 +306,10 @@ function cleanTable(v: unknown, ids: Ids) {
       compact({
         id: ownId(c.id),
         field: oneOf(c.field, FIELDS),
-        name: str(c.name, 40),
+        name: str(c.name, TABLE_COL_NAME_MAX),
         kind,
         steps: c.steps === undefined ? undefined : steps(c.steps),
-        unit: str(c.unit, 20),
+        unit: str(c.unit, UNIT_MAX),
         width: width === undefined ? undefined : Math.round(Math.min(COL_W.max, Math.max(COL_W.min, width))),
       }),
     ]
@@ -346,9 +348,9 @@ export function cleanTimeline(v: unknown) {
 // Holding cards (D-268): which (its source) and the field its columns come from.
 export function cleanKanban(v: unknown, ids: Ids) {
   const seen = new Set<string>()
-  const cols = list(obj(v)?.cols, 12).flatMap((raw) => {
+  const cols = list(obj(v)?.cols, KANBAN_COLS_MAX).flatMap((raw) => {
     const c = obj(raw)
-    const name = str(c?.name, 40)?.trim()
+    const name = str(c?.name, COL_NAME_MAX)?.trim()
     const id = ownId(c?.id)
     if (!c || !name || seen.has(id)) return []
     seen.add(id)
@@ -370,11 +372,11 @@ export function cleanKanban(v: unknown, ids: Ids) {
 
 // A kanban's box names (D-269): a column, a row, a name (≤ 40) and a tone; none left, none.
 function boxNames(v: unknown) {
-  const out = list(v, 40).flatMap((raw) => {
+  const out = list(v, BOX_NAMES_MAX).flatMap((raw) => {
     const n = obj(raw)
     const col = str(n?.col, 40)
     const row = str(n?.row, 40)
-    const name = str(n?.name, 40) ?? ''
+    const name = str(n?.name, BOX_NAME_MAX) ?? ''
     const tone = oneOf(n?.tone, ['good', 'bad'] as const)
     return n && col !== undefined && row !== undefined && (name.trim() || tone) ? [compact({ col, row, name, tone })] : []
   })
@@ -392,29 +394,29 @@ export function cleanPlace(d: Raw, now: number) {
 // One of a kanban's tasks (D-251), without its kanban, its card or who made it; who it was given to stays behind (the
 // people don't travel).
 export function cleanTask(d: Raw, now: number) {
-  const title = str(d.title, 200)?.trim()
+  const title = str(d.title, TASK_TITLE_MAX)?.trim()
   const order = num(d.order)
   if (!title || order === undefined) return null
-  const checks = list(d.checks, 50).flatMap((raw) => {
+  const checks = list(d.checks, CHECKS_MAX).flatMap((raw) => {
     const c = obj(raw)
-    const text = str(c?.text, 200)
+    const text = str(c?.text, CHECK_MAX)
     return c && text ? [compact({ id: ownId(c.id), text, done: yes(c.done) })] : []
   })
   const day = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined)
   const due = day(d.due)
   // Its first day (D-304) travels too; `learned` only as `skip` (an evidence id would point into the old workspace).
   const start = day(d.start)
-  const labels = [...new Set(list(d.labels, 20).flatMap((l) => str(l, 40)?.trim() || []))]
-  const priority = oneOf(d.priority, ['P1', 'P2', 'P3'] as const)
-  return compact({ order, title, notes: str(d.notes, 20000), start, due, checks: checks.length ? checks : undefined, labels: labels.length ? labels : undefined, priority, learned: d.learned === 'skip' ? ('skip' as const) : undefined, ...times(d, now) })
+  const labels = [...new Set(list(d.labels, LABELS_MAX).flatMap((l) => str(l, LABEL_MAX)?.trim() || []))]
+  const priority = oneOf(d.priority, PRIORITIES)
+  return compact({ order, title, notes: str(d.notes, TASK_NOTES_MAX), start, due, checks: checks.length ? checks : undefined, labels: labels.length ? labels : undefined, priority, learned: d.learned === 'skip' ? ('skip' as const) : undefined, ...times(d, now) })
 }
 
 // One of a matrix's or a table's cells, without its matrix, row and column.
 export function cleanCell(d: Raw, now: number) {
-  const value = num(d.value) ?? str(d.value, 200)
+  const value = num(d.value) ?? str(d.value, CELL_TEXT_MAX)
   return compact({
     value,
-    notes: str(d.notes, 20000),
+    notes: str(d.notes, CELL_NOTES_MAX),
     notRelevant: bool(d.notRelevant),
     confidence: oneOf(d.confidence, CONFIDENCES),
     updatedAt: num(d.updatedAt) ?? now,
@@ -436,7 +438,7 @@ export function cleanDocument(d: BundleDocument, now: number, ids: Ids) {
     excerpt: str(d.excerpt, DOC_LIMITS.excerpt),
     origin: oneOf(d.origin, ['upload', 'assistant'] as const) ?? 'upload',
     // Whoever added it, by name (the importer's when the file has none).
-    name: str(d.name, 200) || undefined,
+    name: str(d.name, AUTHOR_NAME_MAX) || undefined,
     shared: d.shared === true,
     contentType: kind === 'markdown' ? ('text/markdown' as const) : undefined,
     size: bytes(kind === 'markdown' ? (body.text ?? '') : JSON.stringify(body)),
@@ -451,12 +453,10 @@ export function cleanDocument(d: BundleDocument, now: number, ids: Ids) {
   return { summary, body }
 }
 
-const bytes = (s: string) => new TextEncoder().encode(s).length
-
 // A report's content within the rules' limits; the cards its implications name follow them.
 function reportBody(b: Record<string, unknown>, ids: Ids): DocBody {
   const sources = list(b.sources, 200)
-    .map((s) => ({ title: str(obj(s)?.title, 500) ?? '', url: str(obj(s)?.url, 2000) ?? '' }))
+    .map((s) => ({ title: str(obj(s)?.title, 500) ?? '', url: str(obj(s)?.url, URL_MAX) ?? '' }))
     .filter((s) => /^https?:\/\//.test(s.url))
   const nums = (v: unknown) => list(v, 20).filter((n): n is number => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= sources.length)
   return {

@@ -19,6 +19,7 @@ import { cardLine, pieceSays, pieceTitle, taskLine, textLine } from './lines'
 import { canvasNodes, planeNodes, flatten } from './space'
 import { estimateTokens, fit, oneLine, pageLine, pageOf, q, wrap } from './text'
 import type { ReadWs, ToolResult } from './types'
+import { isFinished } from '../../model/tasks'
 
 export type ViewArgs = { piece: string; page?: number; col_page?: number }
 
@@ -343,7 +344,7 @@ function timelineView(ws: ReadWs, ids: Ids, d: Derived, p: P, page = 1): ToolRes
     rowsBy === 'assignee' ? (t.assignee ? `${ids.short('person', t.assignee)} ${nameOf(d, t.assignee)}` : 'given to nobody') : rowsBy === 'card' ? (t.cardId && d.cards.get(t.cardId) ? `${ids.short('card', t.cardId)} ${q(d.cards.get(t.cardId)!.title, 40)}` : 'no card') : `${ids.short('piece', t.pieceId)} ${q(d.nameById(t.pieceId), 40)}`
   const groups = new Map<string, string[]>()
   for (const t of dated) {
-    const finished = d.doneCols.get(t.pieceId)?.has(t.col)
+    const finished = isFinished(t, d.doneCols)
     const late = !finished && t.due && t.due < d.today
     const span = t.start ? `${t.start} → ${t.due ?? '…'}` : `◆ ${t.due}`
     const line = `- ${span}${late ? ' (late)' : ''}${finished ? ' ✓' : ''} · ${taskLine(ws, ids, t, { days: false })}`

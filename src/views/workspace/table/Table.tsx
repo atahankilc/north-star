@@ -30,6 +30,8 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Label } from '../../../ui/primitives/Label'
+import { keysTaken } from '../../../ui/foundation/focus'
+import { pagesOf } from '../../../model/paging'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
 export const T = { head: 40, row: 32, name: 260, add: 40 }
@@ -79,14 +81,6 @@ const HEAD_IN = 64
 // The setup's tabs (D-218), as the matrix's (D-212); the wizard makes a new table.
 export const TABLE_TABS = ['rows', 'cols', 'view'] as const
 export type TableTab = (typeof TABLE_TABS)[number]
-
-// Its pages (D-213): how many, and the one this table is on, kept in range.
-export function pagesOf(setup: TableSetup, count: number, page: number | undefined) {
-  const size = setup.pageSize
-  const pages = size ? Math.max(1, Math.ceil(count / size)) : 1
-  const at = Math.min(pages - 1, Math.max(0, page ?? 0))
-  return { size, pages, at, from: size ? at * size : 0, to: size ? Math.min(count, (at + 1) * size) : count }
-}
 
 // The selected cell rides on the canvas's card selection (D-187), so Escape and leaving focus let go of it as of a card.
 // The table's id in it: more than one can be live at once (open on the canvas, D-228; stacked beside a plane, D-211).
@@ -287,7 +281,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   keysRef.current = (e: KeyboardEvent) => {
     if (!selected) return
     const t = e.target as HTMLElement | null
-    if (t?.closest('input, textarea, [contenteditable], [role=menu], [role=dialog], [role=listbox]')) return
+    if (keysTaken(t, { docked: true })) return
     if (e.metaKey || e.ctrlKey || e.altKey) return
     const row = rows[selected.r].key
     const col = cols[selected.c]

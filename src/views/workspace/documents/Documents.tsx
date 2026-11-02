@@ -27,6 +27,7 @@ import { Choice } from '../../../ui/primitives/Choice'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { Empty } from '../../../ui/primitives/Empty'
+import { pagesOf } from '../../../model/paging'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const D = DOCS_PX
@@ -122,13 +123,6 @@ export function listed(docs: WithId<Doc>[], setup: DocumentsSetup, me?: string) 
     return s.desc ? -c : c
   })
   return out
-}
-
-export function pagesOf(setup: DocumentsSetup, count: number, page: number | undefined) {
-  const size = setup.pageSize
-  const pages = size ? Math.max(1, Math.ceil(count / size)) : 1
-  const at = Math.min(pages - 1, Math.max(0, page ?? 0))
-  return { size, pages, at, from: size ? at * size : 0, to: size ? Math.min(count, (at + 1) * size) : count }
 }
 
 // The box round what a list shows on its page, in its px: what fit frames.

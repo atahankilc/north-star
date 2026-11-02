@@ -5,7 +5,7 @@
 // origin 'assistant' when the agent writes it. firestore.rules already let any member create their own document and its
 // body (validDoc, mayCreate); validate checks the same shape (validate.ts, documents). Pure.
 import { DOC_LIMITS } from '../model/shapes'
-import { bytesOf, excerptOf, wordsOf } from '../model/notes'
+import { bytesOf, markdownSummary } from '../model/notes'
 import type { OpCtx, Plan } from './types'
 import { handleOf, refuse } from './util'
 
@@ -34,21 +34,7 @@ export function createDocument(ctx: OpCtx, args: CreateDocumentArgs): Plan {
   if (bytesOf(text) > DOC_LIMITS.text) refuse(OP, `the text is over ${DOC_LIMITS.text / 1000} KB`, 'make it shorter, or split it into two documents')
   const id = ctx.newId()
   const now = ctx.now
-  const excerpt = excerptOf(text)
-  const summary: Record<string, unknown> = {
-    kind: 'markdown',
-    title: title.slice(0, DOC_LIMITS.title),
-    ...(excerpt ? { excerpt } : {}),
-    origin: ctx.actor.agent ? 'assistant' : 'upload',
-    uid: ctx.actor.uid,
-    name: (ctx.actor.name || 'someone').slice(0, 200),
-    shared: !!args.share,
-    contentType: 'text/markdown',
-    size: bytesOf(text),
-    words: wordsOf(text),
-    createdAt: now,
-    updatedAt: now,
-  }
+  const summary = markdownSummary(text, { title, uid: ctx.actor.uid, name: ctx.actor.name, origin: ctx.actor.agent ? 'assistant' : 'upload', shared: !!args.share, createdAt: now, now })
   return {
     op: OP,
     label: `write the document "${cut(title)}"`,

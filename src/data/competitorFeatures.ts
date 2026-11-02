@@ -9,6 +9,7 @@ import { deleteThings, updateCard as updateCardOp } from '../ops/cards'
 export { AVAILABILITIES, CRITERION_SCORES } from '../model/shapes'
 export type { Availability, CriterionScore } from '../model/shapes'
 import type { Availability, CriterionScore } from '../model/shapes'
+import { comparisonId } from '../model/shapes'
 
 export type CompetitorFeature = {
   id: string
@@ -72,4 +73,4 @@ export function dropCriterionScores(wid: string, featureId: string, criterionId:
   )
 }
 
-export const removeComparison = (wid: string, c: Comparison) => runUi(wid, (ctx) => [deleteThings(ctx, { ids: present(ctx, [`${c.featureId}_${c.competitorId}`]) })], { label: 'unmatch' })
+export const removeComparison = (wid: string, c: Comparison) => runUi(wid, (ctx) => [deleteThings(ctx, { ids: present(ctx, [comparisonId(c.featureId, c.competitorId)]) })], { label: 'unmatch' })

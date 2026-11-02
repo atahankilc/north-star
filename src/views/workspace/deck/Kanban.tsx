@@ -68,6 +68,7 @@ import { PromptField } from '../../../ui/primitives/PromptField'
 import { Rule } from '../../../ui/primitives/Rule'
 import styles from './Kanban.module.css'
 import { DECK_PX } from '../../../model/world'
+import { keysTaken } from '../../../ui/foundation/focus'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const K = DECK_PX
@@ -323,7 +324,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
     if (!live || !picked) return
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
-      if (t?.closest('input, textarea, [contenteditable], [role=menu], [role=dialog] input, [role=listbox], [aria-modal=true], [data-coach]')) return
+      if (keysTaken(t)) return
       if (e.key === 'Escape') {
         e.stopImmediatePropagation()
         selectTask(piece.id, null)

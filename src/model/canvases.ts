@@ -19,6 +19,8 @@ export type Canvas = { id: string; name: string; order: number; createdAt: numbe
 
 // Which canvas a piece or the canvas's text is on.
 export const canvasOf = (x: { canvasId?: string }) => x.canvasId || MAIN
+// A piece's spot on a canvas besides its own (D-307): one per canvas and piece.
+export const spotId = (canvas: string, piece: string) => `${canvas}_${piece}`
 export type Spot = { id: string; canvasId: string; pieceId: string; x: number; y: number; createdAt: number }
 
 // The canvases in order, `main` first even without its doc.

@@ -5,9 +5,9 @@
 //
 // The model sees `deck`; the data keeps `kanban` (D-301): create_piece takes either and stores `kanban`.
 import { KIND_NAME, PIECE_MIN, PIECE_NAME_MAX, PIECE_SIZE, canOpen, hostKinds, kindOfPiece, sticks } from '../model/pieces'
-import { CANVAS_NAME_MAX, MAIN, MAIN_NAME, canvasGoes, canvasOf, canvasTextOn, canvasesOf, withStuck } from '../model/canvases'
+import { CANVAS_NAME_MAX, MAIN, MAIN_NAME, canvasGoes, canvasOf, canvasTextOn, canvasesOf, withStuck, spotId } from '../model/canvases'
 import { GRID, snap } from '../model/grid'
-import { TEMPLATES as MATRIX_TEMPLATES_ALL } from '../model/matrix'
+import { TEMPLATES as MATRIX_TEMPLATES_ALL, cellIdOf } from '../model/matrix'
 import { TEMPLATES as TABLE_TEMPLATES_ALL } from '../model/table'
 import { matrixSetupFrom, type MatrixSpec } from './matrix'
 import { tableSetupFrom, type TableSpec } from './table'
@@ -347,7 +347,7 @@ function takeOffWrites(ctx: OpCtx, op: string, p: P, canvas: string): Write[] {
   if (!on.includes(canvas)) refuse(op, `${aPiece(p)} ${p.id} isn't on canvas ${canvas}`, 'give a canvas it is on')
   const still = on.filter((c) => c !== canvas)
   if (!still.length) refuse(op, `${aPiece(p)} ${p.id} is on no other canvas`, 'delete it instead')
-  if (canvasOf(p) !== canvas) return [{ coll: 'pieceSpots', id: `${canvas}_${p.id}`, del: true }]
+  if (canvasOf(p) !== canvas) return [{ coll: 'pieceSpots', id: spotId(canvas, p.id), del: true }]
   const s = ctx.ws.spots.find((x) => x.pieceId === p.id && x.canvasId === still[0])!
   return [
     { coll: 'pieces', id: p.id, patch: { canvasId: s.canvasId === MAIN ? DELETE : s.canvasId, x: s.x, y: s.y, updatedAt: ctx.now } },
@@ -379,7 +379,7 @@ export function pieceCascade(ctx: OpCtx, list: P[]): Write[] {
   writes.push(...cardCascade(ctx, gone))
   for (const p of ws.places) if (going.has(p.planeId)) writes.push({ coll: 'places', id: p.id, del: true })
   for (const l of ws.labels) if (going.has(l.pieceId)) writes.push({ coll: 'labels', id: l.id, del: true })
-  for (const c of ws.cells) if (going.has(c.matrixId)) writes.push({ coll: 'cells', id: (c as { id?: string }).id ?? `${c.matrixId}_${c.row}_${c.col}`, del: true })
+  for (const c of ws.cells) if (going.has(c.matrixId)) writes.push({ coll: 'cells', id: cellIdOf(c), del: true })
   for (const t of ws.tasks) if (going.has(t.pieceId)) writes.push({ coll: 'tasks', id: t.id, del: true })
   for (const s of ws.spots) if (going.has(s.pieceId)) writes.push({ coll: 'pieceSpots', id: s.id, del: true })
   return once(writes)
@@ -562,7 +562,7 @@ export function piecesOnPlan(ctx: OpCtx, args: PiecesOnArgs): { plan: Plan; land
   const ids: Record<string, string> = {}
   const h = handleOf(args)
   const writes: Write[] = list.map((p, i) => {
-    const id = `${to}_${p.id}`
+    const id = spotId(to, p.id)
     ids[i === 0 ? h : `${h}.${i + 1}`] = id
     return { coll: 'pieceSpots', id, set: { canvasId: to, pieceId: p.id, x: p.x + at.x - bounds.x, y: p.y + at.y - bounds.y, createdAt: ctx.now } }
   })

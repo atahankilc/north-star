@@ -2,6 +2,8 @@
 // validate need. The data/ files that owned them re-export them under the same names.
 
 // competitorFeatures.ts
+// A feature matched to a competitor (D-164): one per pair.
+export const comparisonId = (featureId: string, competitorId: string) => `${featureId}_${competitorId}`
 export const AVAILABILITIES = ['free', 'paid', 'enterprise', 'beta'] as const
 export type Availability = (typeof AVAILABILITIES)[number]
 export type CriterionScore = 'met' | 'part' | 'no'

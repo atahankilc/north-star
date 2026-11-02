@@ -72,6 +72,7 @@ import { Console } from '../../../ui/patterns/Console'
 import { Empty } from '../../../ui/primitives/Empty'
 import { PromptList } from '../../../ui/patterns/PromptList'
 import { cardEntry } from '../plane/cardEntry'
+import { keysTaken } from '../../../ui/foundation/focus'
 
 // The matrix's parts in its own px: model/world.ts (D-325).
 export const M = MATRIX_PX
@@ -242,7 +243,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   keysRef.current = (e: KeyboardEvent) => {
     if (!selected) return
     const t = e.target as HTMLElement | null
-    if (t?.closest('input, textarea, [contenteditable], [role=menu], [role=dialog]')) return
+    if (keysTaken(t, { docked: true })) return
     if (e.metaKey || e.ctrlKey || e.altKey) return
     const row = rows[selected.r].key
     const col = cols[selected.c].key

@@ -16,7 +16,7 @@ import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import { useAuth } from '../../../data/auth'
-import { addTask, orderBetween, setTimeline, shownTasks, tasksIn, timelineKanbans, today, TIMELINE_ROWS, updateTask, type Task, type TaskFields, type TimelineRows } from '../../../data/tasks'
+import { addTask, doneCols, isFinished, orderBetween, setTimeline, shownTasks, tasksIn, timelineKanbans, today, TIMELINE_ROWS, updateTask, type Task, type TaskFields, type TimelineRows } from '../../../data/tasks'
 import { camOf, type Bounds, type PlaneCam } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
 import { DrawerPick } from '../../../ui/patterns/Console'
@@ -149,8 +149,8 @@ function boxOf(t: Task, s: number, e: number, point: boolean, late: boolean, fin
 // the tray; the days the overview spans.
 function layoutOf(piece: WithId<Piece>, all: WithId<Piece>[], tasks: Task[], cards: { id: string; type: string; pieceId: string; title?: string }[], filterOk: (t: Task, finished: boolean) => boolean, me: { id: string; name: string } | undefined, ppd: number): Layout {
   const kanbans = timelineKanbans(piece, all)
-  const done = new Set(kanbans.flatMap((k) => kanbanOf(k).cols.filter((c) => c.done).map((c) => `${k.id}|${c.id}`)))
-  const pool = kanbans.flatMap((k) => shownTasks(tasks.filter((t) => t.pieceId === k.id), k, cards as never)).filter((t) => filterOk(t, done.has(`${t.pieceId}|${t.col}`)))
+  const done = doneCols(kanbans)
+  const pool = kanbans.flatMap((k) => shownTasks(tasks.filter((t) => t.pieceId === k.id), k, cards as never)).filter((t) => filterOk(t, isFinished(t, done)))
   const mode: TimelineRows = piece.timeline?.rows ?? 'kanban'
   const names = new Map(pool.flatMap((t) => (t.assignee && t.assigneeName ? [[t.assignee, t.assigneeName] as const] : [])))
   const field = mode === 'kanban' ? null : taskRows(mode, cards as never, { me, names })

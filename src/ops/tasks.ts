@@ -11,11 +11,12 @@ import type { Check, KanbanCol, KanbanSetup, Task, TaskPriority } from '../data/
 import { DELETE, type OpCtx, type Plan, type Write } from './types'
 import { cardIn, find, handleOf, refuse } from './util'
 import { TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, TASK_NOTES_MAX as NOTES_MAX } from '../model/limits'
+import { PRIORITIES } from '../model/cards'
 export { TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, NOTES_MAX }
 
 type P = Piece & { id: string }
 
-export const PRIORITIES = ['P1', 'P2', 'P3'] as const
+export { PRIORITIES } from '../model/cards'
 
 // ---- Finding decks, columns and tasks (refusing with the candidates)
 

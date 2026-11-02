@@ -51,8 +51,12 @@ export type CardFields = {
 }
 
 export const VALIDATIONS: Validation[] = ['hypothesis', 'testing', 'validated', 'invalidated']
-export const FEATURE_PRIORITIES = ['P1', 'P2', 'P3']
+// One priority scale for features and tasks (D-361: written five times).
+export const PRIORITIES = ['P1', 'P2', 'P3'] as const
+export const FEATURE_PRIORITIES: string[] = [...PRIORITIES]
 export const FEATURE_STATUSES = ['idea', 'planned', 'building', 'shipped']
+// Every card status: customers', problems' and ideas', then features'.
+export const ALL_STATUSES = [...VALIDATIONS, ...FEATURE_STATUSES]
 export const FEATURE_IMPACTS = ['low', 'medium', 'high']
 export const FEATURE_EFFORTS = ['S', 'M', 'L']
 

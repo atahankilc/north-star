@@ -53,6 +53,9 @@ feature comes back as a piece, and check them with the user then.
   agent's column), the threads dock its own shape bottom left; `ResizeEdge` for a dragged edge, `SplitLine` for a line
   that shares the screen; a panel's in-place fields `CommitField` and `AddField`. Both on foundation parts: one Escape stack (`useEscapeLayer`, what opened last first), focus,
   the canvas guard, `dragPointer`, the docked marks.
+- Shared code above the kit (D-361, docs/specs/shared-code.md): behaviour and logic written twice get one home (pure
+  helpers in model/, checks in ui/foundation, panel sections in panels/); drifted copies settle on one behaviour; four
+  groups, small pure ones first, the drag/pan maths after the drag work.
 - The UI rules are enforced, not asked for (D-339): a Claude Code hook on every write (`scripts/ui-rules-hook.mjs`) and git
   hooks on commit (`scripts/commit-rules.mjs`; a component without its gallery or lesson needs `Gallery:`/`Lessons:` in the
   message); check:kit also refuses `menuHost`, `bracketSpan`, `rawLimit`, CSS `counter`, `pieceSurface`.

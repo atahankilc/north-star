@@ -21,7 +21,7 @@ import { EdgeColumn } from '../../ui/patterns/EdgeColumn'
 import { PanelHead } from '../../ui/patterns/PanelHead'
 import { ResizeEdge } from '../../ui/primitives/ResizeEdge'
 import { useWs } from '../../views/workspace/canvas/context'
-import { isTyping } from '../../views/workspace/canvas/useEditKeys'
+import { isTyping, keysTaken } from '../../ui/foundation/focus'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
 import { pickerRows } from '../models'
 import { previewOf, type Job, type JobStep } from '../job'
@@ -83,7 +83,7 @@ export function Agent() {
       }
       // Not while a list, menu or right-click menu is open (it may take `/` itself), nor when someone handled it.
       const listOpen = !!document.querySelector('[role="listbox"], [role="menu"]')
-      if (e.key === '/' && !mod && !e.altKey && !e.defaultPrevented && !listOpen && !isTyping(e.target) && useAgent.getState().mode === 'closed') {
+      if (e.key === '/' && !mod && !e.altKey && !e.defaultPrevented && !listOpen && !keysTaken(e.target) && useAgent.getState().mode === 'closed') {
         e.preventDefault()
         openAndFocus()
       }

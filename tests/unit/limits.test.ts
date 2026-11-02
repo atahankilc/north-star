@@ -36,6 +36,7 @@ const CASES: [keyof typeof L, () => number][] = [
   ['AXIS_NOUN_MAX', () => num(body('validAxis'), opt('a', 'noun'))],
   ['UNIT_MAX', () => num(body('validMatrix'), opt('m', 'unit'))],
   ['PIECE_NAME_MAX', () => num(body('validPiece'), opt('d', 'name'))],
+  ['AUTHOR_NAME_MAX', () => num(body('validDoc'), text('name'))],
   ['CANVAS_NAME_MAX', () => num(body('validCanvas'), text('name'))],
   ['KICKER_MAX', () => num(body('validLabel'), opt('d', 'kicker'))],
   ['DESCRIPTION_MAX', () => num(rules, /optText\(request\.resource\.data, 'description', (\d+)\)/)],

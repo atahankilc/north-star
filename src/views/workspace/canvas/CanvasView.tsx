@@ -81,6 +81,8 @@ import styles from './CanvasView.module.css'
 import { DUR, easeInOut, lerp } from '../../../ui/foundation/motion'
 import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
 import { DRAG_PX, wheelStep } from '../../../ui/foundation/feel'
+import { keysTaken } from '../../../ui/foundation/focus'
+import { stuckChain } from '../../../model/pieceMoves'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
 export const SCROLLS_ITSELF = 'section[aria-label=Threads], [role=dialog], [role=menu], [data-scrolls]'
@@ -833,8 +835,7 @@ export function CanvasView() {
   // Delete (in edit mode) and Escape for the selected plane, unless typing somewhere.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null
-      if (t?.closest('input, textarea, [contenteditable], dialog')) return
+      if (keysTaken(e.target)) return
       // An open thread or the threads panel hears Escape first (D-192); `c` shows or hides the pins.
       const tv = useThreadView.getState()
       if (e.key === 'Escape' && (tv.openId || tv.draft || tv.inbox)) return
@@ -2175,16 +2176,6 @@ const OPEN_VIEW: PlaneCam = { ox: OPEN_PAD, oy: OPEN_PAD, zoom: 1 }
 // Framing and unframing (D-267): as long as the cells' build-up (D-034's components'), eased both ends.
 const MORPH_MS = DUR.cells
 const between = (a: PlaneCam, b: PlaneCam, t: number): PlaneCam => ({ ox: lerp(a.ox, b.ox, t), oy: lerp(a.oy, b.oy, t), zoom: lerp(a.zoom, b.zoom, t) })
-
-// What's stuck to a piece, and what's stuck to those, all the way down (D-298), each after the one it's stuck to.
-function stuckChain(shown: WithId<Piece>[], id: string): WithId<Piece>[] {
-  const out: WithId<Piece>[] = []
-  const hosts = [id]
-  for (let i = 0; i < hosts.length; i++)
-    for (const f of shown)
-      if (f.stuckTo === hosts[i] && sticks(f) && !hosts.includes(f.id)) (out.push(f), hosts.push(f.id))
-  return out
-}
 
 // Each list from before that holds the same things in the same order, in place of the new one.
 function keepLists<T>(was: Map<string, T[]>, now: Map<string, T[]>) {

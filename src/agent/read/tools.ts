@@ -3,7 +3,7 @@
 // (§7.2 point 4), paged, saying how to narrow. Workspace text is inside <workspace_content> wrappers.
 import { FOR } from '../../model/edges'
 import { linkGraph } from '../../model/graph'
-import { isOnPlane, type Card } from '../../model/cards'
+import { isOnPlane, type Card, ALL_TYPES, ALL_STATUSES, PRIORITIES } from '../../model/cards'
 import { kindOf } from '../../model/labels'
 import { kindOfPiece, KIND_NAME } from '../../model/pieces'
 import { canvasOf } from '../../model/canvases'
@@ -24,6 +24,10 @@ import { cardLine, pieceLine, pieceSays, ruleWords, taskLine, textLine } from '.
 import { finish, readDocument, view, type ReadDocArgs, type ViewArgs } from './view'
 import { count, dayOf, oneLine, pageLine, pageOf, q, timeOf, wrap } from './text'
 import type { ReadWs, ToolResult } from './types'
+import { isFinished } from '../../model/tasks'
+import { DOC_KINDS } from '../../model/shapes'
+import { TEXT_KINDS } from '../../ops/text'
+import { PIECE_KINDS } from '../../ops/pieces'
 
 export { view, readDocument }
 
@@ -262,12 +266,9 @@ export function search(ws: ReadWs, ids: Ids, a: SearchArgs): ToolResult {
 // ---- query
 
 export const QUERY_KINDS = ['card', 'task', 'text', 'piece', 'document', 'comment'] as const
-export const CARD_KINDS = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package'] as const
-export const TEXT_KINDS = ['heading', 'paragraph', 'sticky', 'section', 'title'] as const
-export const PIECE_KINDS = ['plane', 'matrix', 'table', 'deck', 'timeline', 'documents', 'document'] as const
-export const DOC_KINDS = ['markdown', 'image', 'pdf', 'report'] as const
-export const ALL_STATUSES = ['hypothesis', 'testing', 'validated', 'invalidated', 'idea', 'planned', 'building', 'shipped'] as const
-export const PRIORITIES = ['P1', 'P2', 'P3'] as const
+// The model's and ops' own lists (D-361: they had been written again here).
+export const CARD_KINDS = ALL_TYPES
+export { TEXT_KINDS, PIECE_KINDS, DOC_KINDS, ALL_STATUSES, PRIORITIES }
 export const THREAD_ON = ['card', 'label', 'link', 'plane', 'task'] as const
 
 export type QueryArgs = {
@@ -428,7 +429,7 @@ export function query(ws: ReadWs, ids: Ids, a: QueryArgs): ToolResult {
       }
       if (who !== undefined && (t.assignee ?? '') !== who) return false
       if (prios.length && !prios.includes(t.priority ?? '')) return false
-      const finished = !!d.doneCols.get(t.pieceId)?.has(t.col)
+      const finished = isFinished(t, d.doneCols)
       if (a.overdue && !(t.due && !finished && t.due < d.today)) return false
       if (a.finished !== undefined && finished !== a.finished) return false
       if (a.due_before && !(t.due && t.due < a.due_before)) return false
@@ -449,7 +450,7 @@ export function query(ws: ReadWs, ids: Ids, a: QueryArgs): ToolResult {
     lines = tasks.map((t) => taskLine(ws, ids, t, { where: true }))
     what = 'tasks'
     // How many are open, counted here (agent-bugs 36: a list with finished ones in it was miscounted).
-    const done = tasks.filter((t) => d.doneCols.get(t.pieceId)?.has(t.col)).length
+    const done = tasks.filter((t) => isFinished(t, d.doneCols)).length
     if (a.finished === undefined && done) notes.push(`${tasks.length - done} open, ${done} finished (finished: false lists only the open ones).`)
   } else if (kind === 'text') {
     const labels = ws.labels.filter((l) => {
@@ -583,7 +584,7 @@ export function describe(ws: ReadWs, ids: Ids, kind: IdKind, id: string, full: b
     case 'person': {
       const m = ws.members?.find((x) => x.uid === id)
       const given = ws.tasks.filter((t) => t.assignee === id)
-      const open = given.filter((t) => !d.doneCols.get(t.pieceId)?.has(t.col))
+      const open = given.filter((t) => !isFinished(t, d.doneCols))
       return { author: 'workspace', text: [`## ${ids.short('person', id)} ${nameOf(d, id)}${m?.email ? ` <${m.email}>` : ''}`, `role ${ws.workspace?.roles?.[id] ?? 'not a member now'} · ${count(given.length, 'task')} given to them, ${open.length} open`, ...(full ? open.slice(0, 20).map((t) => `- ${taskLine(ws, ids, t, { where: true })}`) : [])].join('\n') }
     }
     case 'link': {

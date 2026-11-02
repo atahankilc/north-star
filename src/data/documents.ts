@@ -18,6 +18,7 @@ import { useDoc, useQuery, type WithId } from './hooks'
 export { DOC_KINDS, DOC_COLS, DOC_LIMITS } from '../model/shapes'
 export type { DocKind, DocCol } from '../model/shapes'
 import { DOC_LIMITS, type DocCol, type DocKind } from '../model/shapes'
+import { bytesOf, markdownSummary } from '../model/notes'
 
 // Where it came from: uploaded by someone, or written by the assistant.
 export type DocOrigin = 'upload' | 'assistant'
@@ -159,8 +160,6 @@ export function refusal(file: File): string | null {
   return null
 }
 
-const words = (text: string) => (text.match(/\S+/g) ?? []).length
-
 // A .md's title: its first heading, else the file's name without the extension.
 export function mdTitle(text: string, fileName: string) {
   const h = /^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/m.exec(text)
@@ -168,47 +167,14 @@ export function mdTitle(text: string, fileName: string) {
   return (h?.[1] ?? base ?? 'untitled').slice(0, DOC_LIMITS.title) || 'untitled'
 }
 
-// Its first words, Markdown marks taken out: headings, list marks, emphasis, links to their text.
-export function mdExcerpt(text: string) {
-  const plain = text
-    .replace(/```[\s\S]*?```/g, ' ')
-    .split('\n')
-    .filter((l) => !/^\s{0,3}#{1,6}\s/.test(l))
-    .join(' ')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-    .replace(/^\s*([-*+>]|\d+[.)])\s+/gm, '')
-    .replace(/[*_`~#>|]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return plain.slice(0, DOC_LIMITS.excerpt)
-}
-
-// Text in UTF-8 bytes: what Firestore counts.
-const bytes = (s: string) => new TextEncoder().encode(s).length
-
 // A .md file as a document of yours (private until shared): its summary and its text in one batch, one undo step.
 export async function uploadMarkdown(wid: string, who: { uid: string; name: string }, file: File): Promise<string> {
   const text = await file.text()
-  if (bytes(text) > DOC_LIMITS.text) throw new DocumentError('over 900 KB of text')
+  if (bytesOf(text) > DOC_LIMITS.text) throw new DocumentError('over 900 KB of text')
   const ref = doc(docsOf(wid))
   const body = bodyRef(wid, ref.id)
   const now = Date.now()
-  const excerpt = mdExcerpt(text)
-  const summary: Doc = {
-    kind: 'markdown',
-    title: mdTitle(text, file.name),
-    ...(excerpt ? { excerpt } : {}),
-    origin: 'upload',
-    uid: who.uid,
-    name: who.name.slice(0, 200),
-    shared: false,
-    contentType: 'text/markdown',
-    size: bytes(text),
-    words: words(text),
-    createdAt: now,
-    updatedAt: now,
-  }
+  const summary: Doc = markdownSummary(text, { title: mdTitle(text, file.name), uid: who.uid, name: who.name, origin: 'upload', shared: false, createdAt: now, now })
   await tracked('upload a document', [ref, body], () => {
     const batch = writeBatch(db())
     batch.set(ref, summary)
