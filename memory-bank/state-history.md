@@ -1354,7 +1354,10 @@ was driven from a worktree of HEAD + its files.
 Beside's and the documents' lines driven; the agent box's head on PanelHead; CommitField and AddField in the kit
 (useCommit to src/ui/foundation) under the card and task panels' fields and adders; the lesson on the Escape stack
 (Escape from the page skips it, the threads list stays); Settings' look measured against 085c4bf (unchanged). Checked
-headless on emulators, details in D-359.
+headless on emulators, details in D-359. Pushed 2026-11-02 with the other sessions' commits (D-358 steps 1–4,
+agent-bugs 44, D-360's web); 019f3f2's tree checked alone in a clean worktree first (tsc, vitest 1004/0, build, every
+check); the Pages deploy of f2d28ac succeeded. Two sessions staged into the shared index at once: 019f3f2 took D-360's
+staged files and lost this session's log text, committed apart as f2d28ac (see the concurrent-sessions memory).
 
 ## Done (cards on one face, D-358, 2026-11-02)
 - Spec: docs/specs/cards.md (every card and task drawing, ten repeats counted, five steps). All in `src/views/workspace/cards/`, each with its gallery page.
