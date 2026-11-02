@@ -6923,11 +6923,18 @@ a field keeps its Escape, then the panel, then focus), the agent's column (besid
 back), the side view's lines and a double-click on a line, Settings (focus, onboarding's page, no lesson over it),
 rename, the `+` menu (focus back), the hazard (tape, onboarding sees it, Escape keeps, confirm deletes), the finder
 and the guide. tests/unit/escapeLayer.test.ts; vitest 991/0; check:kit/tokens/gallery/lessons 0.
-**Not yet:** beside's two lines and the documents' lines not driven in a browser (same component, moved code); the
-closed agent box keeps its own head; panels' in-place fields (Enter keeps, Escape undoes) repeat in CardPanelKinds,
-TaskPanel and tag/region adds, an `InlineEdit`/`InlineAdd` step of its own; Settings' page may show the backdrop faintly
-through its frame (not compared with before); an onboarding lesson open over the threads list doesn't take Escape
-first (the lesson isn't a layer; as before).
+**Closed the same day (2026-11-02):** beside's two lines and the documents' two driven in a browser (the split 0.5 →
+0.43; the row line; the list line up to its limit, `screenW - READER_MIN`; a double-click shares the documents' widths
+again); the closed agent box's head on PanelHead; the panels' in-place fields on the kit: `CommitField` (Enter or
+leaving keeps, Escape undoes; `enter` ends/shift/newline, `escape` undo/keep, `empty` save/undo; `useCommit` moved to
+src/ui/foundation) for the card panel's value fields, a task's title and both notes, and `AddField` for `+ tag`,
+`+ region`, `+ criterion`, `+ label` (driven: regions added and the field open for the next, Escape closes; the site's
+Escape undoes, Enter saves; notes keep on Escape); a lesson is on the Escape stack (its Window's Escape on: inside it
+the coach hears it, from the page the stack skips the lesson and the threads list under it stays); Settings' faint
+backdrop measured against 085c4bf: the same frame before (`rgba(11,11,11,0.86)`, blur 10 px, D-024's surface), the dark
+behind 0.70 → 0.72; nothing to fix.
+**Not yet:** where beside's row line starts it crosses the split line's middle, and the row line wins a press there
+(as before).
 
 ### D-360 · 2026-11-02 · Accepted (the agent's web, step 1 of 2; agent.md §4.9 layer 8, Phase 9; spec docs/specs/agent-web.md)
 **The agent searches the web through its provider's own tool, on every turn, the model deciding when; the pages come
