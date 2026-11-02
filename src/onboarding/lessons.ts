@@ -231,7 +231,8 @@ export const LESSONS: readonly Lesson[] = [
     pages: [
       { title: 'Your workspaces', tab: 'workspaces', body: "A workspace is one startup: its canvases, cards, tasks and people. The one you worked in last sits on top, with what changed since you left and who's in it now." },
       { title: 'Start, join or bring one', tab: 'start', body: "Type a name in the line at the top to start one. Paste a teammate's code there to ask to join theirs. Drop an exported .zip anywhere on the page to bring one in." },
-      { title: 'Each one', tab: 'actions', body: "Open a workspace with a click. Its `⋯`, or a right-click on it, holds the rest: rename it, copy its invite code, leave or delete it. What needs you shows on this page too." },
+      { title: 'Each one', tab: 'actions', body: "Open a workspace with a click. Its `⋯`, or a right-click on it, holds the rest: open in a new tab, rename it, copy its invite code, leave it, or delete it." },
+      { title: 'What needs you', tab: 'needs', body: "Under the one you left, small pieces show what waits for you: new tasks given to you, people asking to join yours, invites to someone else's, and codes you sent that wait for an owner." },
     ],
   },
   {
@@ -305,8 +306,8 @@ export const LESSONS: readonly Lesson[] = [
     trigger: [{ event: 'focus-in', when: { kind: 'plane' } }],
     pages: [
       { title: "You're inside a plane", tab: 'plane', body: 'A plane is a space for cards. Drag to look around, scroll to zoom, `0` fits it all. The dock at the bottom holds its tools; `esc` goes back to the canvas.', scene: 'plane-inside' },
-      { roles: EDITORS, title: 'Five kinds of card', tab: 'kinds', body: 'Customers have problems. Competitors solve them today; your ideas solve them better; features build the ideas. Add a card with `+`, or right-click the plane.', scene: 'kind-plane' },
-      { roles: EDITORS, title: 'Make a card', tab: 'make', body: 'Pick a type: the card appears with its panel open. Type its name; Enter keeps it, Tab keeps it and starts the next of its type, `esc` takes it away.', scene: 'card-make-name' },
+      { roles: EDITORS, title: 'Five kinds of card', tab: 'kinds', body: 'Customers have problems. Competitors solve them today; your ideas solve them better; features build the ideas. Each kind has its own colour, on the card and on its edge.', scene: 'kind-plane' },
+      { roles: EDITORS, title: 'Make a card', tab: 'make', body: 'Press `+`, or right-click the plane, and pick a type: the card appears with its panel open. Type its name; Enter keeps it, Tab starts the next of its type, `esc` takes it away.', scene: 'card-make-name' },
       { roles: EDITORS, title: 'Link cards', tab: 'links', body: "Point at a card and drag its `›` onto another. The link's kind says what it means: solves, for, competes, depends on. Links make the chain from customer to feature.", scene: 'link-draw' },
       { roles: EDITORS, title: 'Several at once', tab: 'many', body: 'Shift-click cards, or hold `alt` and drag a box round them. Move them together, copy, duplicate, line them up, tag them, or bundle them into a package.', scene: 'multi-select' },
       { roles: VIEWERS, title: 'Read a card', tab: 'cards', body: 'Click a card to open its panel on the right: what it is, the evidence for and against it, its links and notes.', scene: 'card-panel' },
@@ -343,7 +344,8 @@ export const LESSONS: readonly Lesson[] = [
     trigger: [{ event: 'package-made' }],
     pages: [
       { title: 'A package', tab: 'package', body: 'A package bundles cards under one name and a rating. Drag its band to move them all; `−` folds it into one card listing what it holds, `+` opens it again.', scene: 'package' },
-      { title: 'Packages in a plan', tab: 'plan', body: 'Packages nest, and their confidence comes from what they hold. A priorities deck ranks features and packages side by side.', scene: 'priorities' },
+      { title: 'Packages nest', tab: 'nest', body: 'A package can hold other packages. Its confidence comes from what it holds, so it rises as its cards are tested and validated.', scene: 'package' },
+      { title: 'Ranked with features', tab: 'rank', body: 'A priorities deck ranks features and packages side by side, by impact, effort and confidence, and suggests which come first.', scene: 'priorities' },
     ],
   },
   {
@@ -360,7 +362,8 @@ export const LESSONS: readonly Lesson[] = [
     id: 'text-made', v: 3, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-188, D-190, D-330, D-050, D-196, D-349',
     trigger: [{ event: 'text-made', when: { kind: ['heading', 'paragraph'] } }],
     pages: [
-      { title: 'Writing on the canvas', tab: 'writing', body: 'Double-click text to type in it. It saves as you type; `esc` or a click away ends it. The bar under selected text sets its size, style and colour.', scene: 'text-edit' },
+      { title: 'Type in it', tab: 'type', body: 'Double-click text to type in it. It saves as you type; `esc` or a click away ends it, and one go is one undo step.', scene: 'text-edit' },
+      { title: 'Its bar', tab: 'bar', body: "Select text and a bar appears under it: size, bold, italic, capitals, colour, delete. A paragraph's right edge sets how wide it is.", scene: 'text-edit' },
       { kinds: ['heading'], title: 'Headings are places', tab: 'places', body: 'Every heading shows in the finder as a place to go: pick it and the canvas glides there. Use them to name the areas of your canvas.', scene: 'finder-heading' },
     ],
   },
@@ -395,9 +398,11 @@ export const LESSONS: readonly Lesson[] = [
     pages: [
       { title: 'A table', tab: 'table', body: 'A table lists cards as rows, picked by rules: a plane, a type, a status, a tag. New cards that match join it by themselves.', scene: 'table-rules' },
       { title: 'Working in a window', tab: 'window', body: '`focus` opens it in the middle with its dock below; `esc` goes back. Unframed, it lies on the canvas and you work on it right there.', scene: 'lens-focus' },
-      { roles: EDITORS, title: 'Working in cells', tab: 'cells', body: "Click a cell; Enter or a double-click types in it. Arrows move, `space` ticks a check. A head's click sorts; drag its edge to widen the column.", scene: 'table-keys' },
+      { roles: EDITORS, title: 'Working in cells', tab: 'cells', body: 'Click a cell; Enter or a double-click types in it. Arrows move between cells, `space` ticks a check, Backspace clears a cell.', scene: 'table-keys' },
+      { roles: EDITORS, title: 'Sort and size', tab: 'sort', body: "Click a column's head to sort the rows by it. Drag a head's edge to widen its column; everyone here sees the same widths.", scene: 'table-keys' },
       { roles: VIEWERS, title: 'Reading a table', tab: 'reading', body: "Each row is a card. Click a head to sort by it; click a card's name to open its panel.", scene: 'table-keys' },
-      { roles: EDITORS, title: 'Your own columns', tab: 'columns', body: "`setup` in the dock adds columns of your own beside the cards' fields: a scale, a number, a few words, a check. It changes the rules too.", scene: 'table-setup' },
+      { roles: EDITORS, title: 'Your own columns', tab: 'yours', body: "`setup` in the dock adds columns of your own beside the cards' fields: a scale, a number, a few words, or a check.", scene: 'table-setup' },
+      { roles: EDITORS, title: 'Which rows', tab: 'rows', body: '`setup` also holds the rules that pick the rows: a plane, a type, a status, a tag or a title, each one is or is not. Cards and names can be added by hand too.', scene: 'table-rules' },
     ],
   },
 
@@ -406,7 +411,8 @@ export const LESSONS: readonly Lesson[] = [
     id: 'documents', v: 2, format: 'lesson', roles: ALL, area: 'documents', since: 'D-232, D-349',
     trigger: [{ event: 'focus-in', when: { kind: 'documents' } }, { event: 'piece-made', when: { kind: 'documents' } }], after: ['piece-made'],
     pages: [
-      { title: 'Your files', tab: 'files', body: "A documents list holds notes, research and reports. Upload `.md` files or drop them on it. Each one is private until you share it.", scene: 'documents' },
+      { title: 'Your files', tab: 'files', body: 'A documents list holds notes, research and reports. Upload `.md` files, or drop them on the list.', scene: 'documents' },
+      { title: 'Private until shared', tab: 'private', body: 'A new document is yours alone. Only you, its author, can share it with everyone here or take it back: right-click its row.', scene: 'documents' },
       { title: 'Read beside', tab: 'beside', body: 'In focus, a click opens a document next to the list, to read as a page, with its headings to jump between. Open several side by side.', scene: 'doc-beside' },
     ],
   },
@@ -430,8 +436,9 @@ export const LESSONS: readonly Lesson[] = [
       { title: 'A deck of tasks', tab: 'deck', body: 'Columns are steps, and each task sits in one. Drag a task to another column to move it along; a cyan line shows where it lands.', scene: 'deck-drag' },
       { roles: EDITORS, title: 'Adding tasks', tab: 'add', body: '`+ task` under a column types one. Enter adds it and keeps the field open for the next.', scene: 'deck-add' },
       { title: "A task's panel", tab: 'task', body: 'Click a task to open it: who it is given to, its due day, its card, a checklist and notes. Overdue days turn magenta.', scene: 'task-panel' },
-      { title: 'Only some tasks', tab: 'filter', body: "The dock's filter shows tasks given to someone, due soon, for a card, or with a label. `lanes` splits the deck by person or by card.", scene: 'deck-filter' },
-      { title: 'Decks beside you', tab: 'beside', body: "The side nav's decks button opens your decks beside whatever you are on, from anywhere. A deck's `days ›` puts its tasks on days.", scene: 'side-view' },
+      { title: 'Only some tasks', tab: 'filter', body: "The dock's filter shows only tasks given to someone, due soon, for a card, or with a label. It passes: closing the deck clears it.", scene: 'deck-filter' },
+      { title: 'Lanes', tab: 'lanes', body: '`lanes` in the dock splits the deck into rows by person or by card. Dropping a task in a lane gives it to that person or card; a lane folds away.', scene: 'deck-filter' },
+      { title: 'Decks beside you', tab: 'beside', body: "The side nav's decks button opens your decks beside whatever you are on, from anywhere, so you can move tasks while you work.", scene: 'side-view' },
     ],
   },
   {
@@ -447,7 +454,8 @@ export const LESSONS: readonly Lesson[] = [
     trigger: [{ event: 'side-view' }],
     pages: [
       { title: 'Decks and days, beside you', tab: 'side view', body: "This opens from anywhere, beside what you are on: the plane, its deck, then the deck's days with `days ›`. The tabs are the canvas's decks.", scene: 'side-view' },
-      { title: 'Yours', tab: 'mine', body: '`MINE` lists the tasks given to you, from every deck. `ALL · DAYS` puts every deck on days.', scene: 'side-mine' },
+      { title: 'Yours', tab: 'mine', body: '`MINE` in the corner lists the tasks given to you, from every deck.', scene: 'side-mine' },
+      { title: 'Every deck on days', tab: 'days', body: '`ALL · DAYS` in the corner puts the tasks of every deck on one strip of days.', scene: 'side-mine' },
     ],
   },
   {
@@ -482,7 +490,8 @@ export const LESSONS: readonly Lesson[] = [
     id: 'comment', v: 2, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349',
     trigger: [{ event: 'thread-open' }, { event: 'threads-open' }], within: 'threads',
     pages: [
-      { title: 'Comments stay on things', tab: 'comments', body: 'Right-click a plane, card, text, link or task and pick `comment`. A chip under it counts the messages; magenta means new, `@` means you were mentioned.', scene: 'thread' },
+      { title: 'Comments stay on things', tab: 'comments', body: 'Right-click a plane, card, text, link or task and pick `comment`. The conversation stays on that thing.', scene: 'thread' },
+      { title: 'Its chip', tab: 'chip', body: 'A chip under its corner counts the messages. Magenta means something new for you; `@` means you were mentioned. Click the chip to open it.', scene: 'thread' },
       { title: 'Every conversation', tab: 'threads', body: "The threads tab at the bottom lists them all: new, mentions, resolved. In a thread, `on the canvas ↗` takes you to what it's about.", scene: 'threads-panel' },
     ],
   },

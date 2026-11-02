@@ -6772,4 +6772,8 @@ the tabs show only their numbers and the page's word moves to the count line (`0
 **Why:** at 6 the welcome had merged unrelated things (finding with together) and spoke of the console before saying
 what a piece is.
 **Alternatives:** a wider window or two rows of tabs (a look change, the UI session's); cut words (`CAN…`) unreadable.
-**Not yet:** the other lessons were written to 6 and not re-split.
+**Later (the same day, the user: "diğer derslere de bak, gerekirse böl"):** every lesson read again; nine had a page
+holding two things and were split: workspaces (actions / what needs you), package-made (nest / rank), text-made (type /
+its bar), table (cells / sort, own columns / which rows), documents (files / private until shared), deck (filter /
+lanes), side-view (mine / every deck on days), comment (how / its chip); focus-plane's `+` moved from kinds to make.
+No version bumps (words only, none of it pushed yet).
