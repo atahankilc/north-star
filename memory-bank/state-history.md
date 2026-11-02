@@ -1296,8 +1296,8 @@ merged to main and pushed by 2026-10-27; the 1.0 items (board ideas, the assista
 - 10e39d1 stage 4: Swatches (the filter's squares) its own primitive. All pushed 2026-11-02.
 - Verified: tsc and vitest (946–950/0) on each committed tree in a clean worktree; check:tokens/kit/gallery/lessons/
   memory; headless Chrome on the gallery: menus' and Select's keys, the + menu, right-click, canvas switch, kind guide,
-  finder (places, typed, keys), guide (keys, folds), the filter dock. Not seen: Threads' `@` (no other members in the
-  gallery) and the agent's `/` (no gallery).
+  finder (places, typed, keys), guide (keys, folds), the filter dock; on emulators (Alice + Bob): Threads' `@` lists Bob,
+  ↵ writes `@Bob `; the agent's `/` shows its three heads and 19 skills, ↓ moves. eab367c: `MenuEntry` renamed PromptEntry.
 
 ## Done (2026-11-02): the agent's P1 measured (D-341)
 - **Claude's cache:** breakpoints on tools + system and on a chat's first map, sent before
