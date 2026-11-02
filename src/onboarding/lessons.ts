@@ -213,7 +213,7 @@ export const LESSONS: readonly Lesson[] = [
   // 1. Start: the canvas's welcome, the workspaces page, asking to join. The welcome is about the canvas only: what's
   // inside a piece is taught when that piece is first opened (D-349).
   {
-    id: 'welcome', v: 3, format: 'welcome', roles: ALL, area: 'start', since: 'D-174, D-349, D-351',
+    id: 'welcome', v: 3, format: 'welcome', roles: ALL, area: 'start', since: 'D-174, D-349, D-351, D-357',
     trigger: [{ event: 'canvas-open', when: { first: true } }],
     pages: [
       { audience: 'new', title: 'This is your canvas', tab: 'canvas', body: "A canvas is an endless surface for your startup's work. Drag the empty space to move around, scroll to zoom round the pointer, press `0` to see everything at once.", scene: 'canvas-fit' },
@@ -224,6 +224,7 @@ export const LESSONS: readonly Lesson[] = [
       { title: 'Each piece has a console', tab: 'bar', body: "Point at a piece and a bar appears on its bottom edge: everything you can do with that piece. Go inside it, read its comments, edit it, link it to a plane.", scene: 'console-appear' },
       { title: 'Go inside a piece', tab: 'inside', body: 'Double-click a piece, or press `focus` on its console, to work inside it on the whole screen. `esc` brings you back out to the canvas.', scene: 'focus-ink' },
       { title: 'Tools on the left', tab: 'tools', body: 'The side nav holds the canvas tools: fit shows everything, the compass finds any card, heading or task, and `?` shows every note again with all the shortcuts.', scene: 'sidenav-fit' },
+      { title: 'More than one canvas', tab: 'canvases', body: "Big work can split into several canvases. The workspace's name at the top left lists them: pick one to go there, or, if you edit, make a new one with `new canvas`.", scene: 'canvases' },
       { title: 'Work together, live', tab: 'people', body: "Everyone here is a square bottom left, with their cursor on the canvas; click one to follow them. Right-click anything to comment on it, and they'll see it.", scene: 'peers-comment' },
     ],
   },
@@ -278,12 +279,13 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'piece-made', v: 2, format: 'lesson', roles: EDITORS, area: 'canvas', since: 'D-180, D-182, D-210, D-228, D-289, D-349',
+    id: 'piece-made', v: 2, format: 'lesson', roles: EDITORS, area: 'canvas', since: 'D-180, D-182, D-210, D-228, D-289, D-306, D-307, D-349, D-357',
     trigger: [{ event: 'piece-made' }],
     pages: [
       { title: "It's in edit mode", tab: 'edit', body: 'A new piece starts in edit mode. Drag it to move it, pull an edge or a corner to resize it, and type its name in its top edge. Hold `alt` to move off the grid.', scene: 'edit-move-resize' },
       { kinds: [...LENSES, 'document'], title: 'Framed or unframed', tab: 'frame', body: "Framed, it's a window you open to work in. `unframe` on its console lays it on the canvas at its own size, live: click and type in it right there. `frame` puts it back.", scene: 'unframe' },
       { kinds: STICKING, title: 'Stick it to a plane', tab: 'stick', body: "Drop it near a plane's edge and it sticks: it reads only that plane's cards and moves with it. The `⇆` on its console unsticks it; hold `alt` while dropping to stay free.", scene: 'stick' },
+      { title: 'Other canvases', tab: 'canvas', body: '`move to…` on its console takes the piece to another canvas, or to a new one you name right there. `also on…` puts the same piece on one more canvas; `⧉ 2` then says it is on two.', scene: 'canvases-share' },
       { title: "Done when you're done", tab: 'done', body: 'Press `done` on its console to leave edit mode. Pieces only move in edit mode, so nothing shifts by accident; `edit` on the console brings it back.', scene: 'edit-done' },
       { title: 'Nothing is lost', tab: 'undo', body: 'Deleting a piece asks first, and takes what it holds with it. Every change, a delete too, can be undone with `⌘Z` and done again with `⇧⌘Z`.' },
     ],

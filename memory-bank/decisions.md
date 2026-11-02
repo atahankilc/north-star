@@ -374,7 +374,7 @@ feature comes back as a piece, and check them with the user then.
 ## Onboarding (built, docs/specs/onboarding.md)
 - Onboarding (D-315, D-349): taught at the moment of use, one at a time: a welcome on the first canvas (the canvas
   only), the kind guide beside the `+` menu, one lesson per screen, panel or piece the first time it's opened or made
-  (~30), step by step (≤ 8 pages, ≤ 40 words; the welcome one thing a page in the order met, D-351), what's new after later releases (at launch everyone, old accounts too,
+  (~30), step by step (≤ 8 pages, ≤ 40 words; the welcome one thing a page in the order met, D-351; canvases taught in the welcome and `move to…`/`also on…` in piece-made, D-357), what's new after later releases (at launch everyone, old accounts too,
   starts new), no nudges, `?` replays all and lists every key; seen-state per person in Firestore; demos are the real
   components on made-up data in a sealed iframe (`demo.html`), looping, paused/still under reduced motion. No faint
   hints on an empty canvas, plane or timeline (D-353); the app's words in a lesson cyan, their meaning on hover (`Tip`, glossary.ts, D-355).

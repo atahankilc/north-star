@@ -6837,3 +6837,11 @@ newest by its writer's clock); editing the message the preview shows changes the
 thread may be deleted by its starter or by the writer of the one message left (`lastUid`), so taking back the last
 answer after the first message went no longer fails (firestore.rules; rules tests 633/0). **Not yet:** the rules
 change is deployed only when the user says so.
+
+### D-357 · 2026-11-02 · Accepted (the user: "also on ve move to dan bahsedilmiyor hiç? yada new canvastan falan")
+**Decision:** canvases are taught before someone finds them: the welcome gets a page "More than one canvas" (after
+tools: the workspace's name lists them, `new canvas` makes one), and piece-made a page "Other canvases" (`move to…` and
+`also on…` on every new piece's console, a new canvas named right there, `⧉ 2`). The `canvases` lesson stays for the
+breadcrumb's prompt and the delete question.
+**Why:** `move to…` and `also on…` sit on every editor's piece console from the first piece, even with one canvas, but
+were only named in the `canvases` lesson, which shows only once the person opens the breadcrumb or makes a canvas.

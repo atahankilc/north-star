@@ -20,10 +20,10 @@ describe('lessons', () => {
       for (const a of [...(l.after ?? []), ...(l.unless ?? [])]) expect(ids).toContain(a)
     }
   })
-  it('give the welcome one thing a page, in the order things are met: canvas, pieces, console, inside, tools, together (D-351)', () => {
+  it('give the welcome one thing a page, in the order things are met: canvas, pieces, console, inside, tools, canvases, together (D-351, D-357)', () => {
     for (const a of ['new', 'invited'] as const) {
-      for (const role of ['owner', 'editor'] as const) expect(pagesFor('welcome', role, a).map((p) => p.tab)).toEqual(['canvas', 'pieces', 'bar', 'inside', 'tools', 'people'])
-      expect(pagesFor('welcome', 'viewer', a).map((p) => p.tab)).toEqual(['canvas', 'pieces', 'reading', 'bar', 'inside', 'tools', 'people'])
+      for (const role of ['owner', 'editor'] as const) expect(pagesFor('welcome', role, a).map((p) => p.tab)).toEqual(['canvas', 'pieces', 'bar', 'inside', 'tools', 'canvases', 'people'])
+      expect(pagesFor('welcome', 'viewer', a).map((p) => p.tab)).toEqual(['canvas', 'pieces', 'reading', 'bar', 'inside', 'tools', 'canvases', 'people'])
     }
     // What a piece is comes before its console; only editors are told to add one.
     expect(pagesFor('welcome', 'editor', 'new')[1].body).toMatch(/`\+`/)

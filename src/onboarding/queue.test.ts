@@ -355,7 +355,7 @@ describe('queue with the real lessons', () => {
     s.q.onEvent({ event: 'piece-made', payload: { kind: 'matrix' } })
     s.wait(500)
     expect(s.shown()).toBe('piece-made')
-    expect(s.q.current()?.pages.map((p) => p.tab)).toEqual(['edit', 'frame', 'stick', 'done', 'undo'])
+    expect(s.q.current()?.pages.map((p) => p.tab)).toEqual(['edit', 'frame', 'stick', 'canvas', 'done', 'undo'])
     s.q.close('piece-made', 'done')
     s.wait(60_000)
     expect(s.shown()).toBe('matrix')
