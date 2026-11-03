@@ -33,12 +33,10 @@ type Props = {
   plane: WithId<Piece>
   open: WithId<Piece>[]
   editor: boolean
-  // The matrix pane its setup opens in, when it's open.
-  matrixSetupPane: string | null
   onClose: (id: string) => void
 }
 
-export function Beside({ plane, open, editor, matrixSetupPane, onClose }: Props) {
+export function Beside({ plane, open, editor, onClose }: Props) {
   const size = useCanvasView((s) => s.size)
   const split = useCanvasView((s) => s.split)
   const left = Math.round(size.w * split)
@@ -70,7 +68,7 @@ export function Beside({ plane, open, editor, matrixSetupPane, onClose }: Props)
   return (
     <>
       {open.map((p, i) => (
-        <Pane key={p.id} piece={p} plane={plane} box={{ x: left, y: tops[i], w: size.w - left, h: tops[i + 1] - tops[i] }} editor={editor} first={i === 0} matrixSetupHere={p.id === matrixSetupPane} onClose={() => onClose(p.id)} />
+        <Pane key={p.id} piece={p} plane={plane} box={{ x: left, y: tops[i], w: size.w - left, h: tops[i + 1] - tops[i] }} editor={editor} first={i === 0} onClose={() => onClose(p.id)} />
       ))}
       <SplitLine data-off-space data-learn="split" style={{ left }} onDrag={drag} label="Plane and what's beside it" />
       {open.slice(0, -1).map((p, i) => (
@@ -80,7 +78,7 @@ export function Beside({ plane, open, editor, matrixSetupPane, onClose }: Props)
   )
 }
 
-type PaneProps = { piece: WithId<Piece>; plane: WithId<Piece>; box: Bounds; editor: boolean; first: boolean; matrixSetupHere: boolean; onClose: () => void }
+type PaneProps = { piece: WithId<Piece>; plane: WithId<Piece>; box: Bounds; editor: boolean; first: boolean; onClose: () => void }
 
 // A pane's own view (D-211): fitted to its box (again when the box changes), the wheel zooming round the pointer, a drag on
 // its empty space panning (a press on a cell is the cell's until it moves 5 px, D-217). Beside a plane and in the tasks
@@ -152,7 +150,7 @@ export function glidePlaneTo(picked: Pick<Card, 'id'>, plane: string, cards: Car
   else glide(c, to, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
 }
 
-function Pane({ piece, plane, box, editor, first, matrixSetupHere, onClose }: PaneProps) {
+function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
   const { cards, places } = useWs()
   const kind = kindOfPiece(piece)
   const content = kind === 'matrix' ? matrixBounds(piece, cards) : tableBounds(piece, cards)
@@ -165,11 +163,9 @@ function Pane({ piece, plane, box, editor, first, matrixSetupHere, onClose }: Pa
   }
 
   const tableSetup = useTableUi((s) => s.setup === piece.id)
-  // Read as on / off, so a wider setup state (a tab open) still reads right. A matrix's setup is one switch for all (its
-  // own store): it shows in one matrix pane only, the one CanvasView names.
-  const matrixSetup = useMatrixUi((s) => !!s.setup) && matrixSetupHere
+  const matrixSetup = useMatrixUi((s) => s.setup === piece.id)
   const setupOpen = kind === 'table' ? tableSetup : matrixSetup
-  const toggleSetup = () => (kind === 'table' ? useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id })) : toggleMatrixSetup())
+  const toggleSetup = () => (kind === 'table' ? useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id })) : toggleMatrixSetup(piece.id))
 
   return (
     <div

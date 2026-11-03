@@ -139,11 +139,13 @@ export function matrixFindItems(piece: WithId<Piece>, cards: Card[], cells: Cell
 // it's opened from one open on the canvas (D-228), not in focus. The wizard makes a new matrix.
 export const SETUP_TABS = ['rows', 'cols', 'cells', 'options'] as const
 export type SetupTab = (typeof SETUP_TABS)[number]
-export const useMatrixUi = create<{ setup: boolean | SetupTab; canvas: string | null; naming: string | null; wizard: boolean }>(() => ({ setup: false, canvas: null, naming: null, wizard: false }))
-export const setupTab = (s: boolean | SetupTab): SetupTab | null => (s === true ? 'rows' : s || null)
-export const openMatrixSetup = (tab: SetupTab = 'rows') => useMatrixUi.setState({ setup: tab })
-export const closeMatrixSetup = () => useMatrixUi.setState({ setup: false, canvas: null })
-export const toggleMatrixSetup = (tab?: SetupTab) => useMatrixUi.setState((s) => ({ setup: s.setup ? false : (tab ?? 'rows') }))
+// Whose setup is open (a matrix's id, in focus, beside a plane or open on the canvas) and on which tab: the table's and
+// the deck's shape (D-361).
+export const useMatrixUi = create<{ setup: string | null; tab: SetupTab; naming: string | null; wizard: boolean }>(() => ({ setup: null, tab: 'rows', naming: null, wizard: false }))
+export const setMatrixTab = (tab: SetupTab) => useMatrixUi.setState({ tab })
+export const closeMatrixSetup = () => useMatrixUi.setState({ setup: null })
+// Opened on its first tab (or `tab`), closed when it's this one's.
+export const toggleMatrixSetup = (id: string, tab: SetupTab = 'rows') => useMatrixUi.setState((s) => (s.setup === id ? { setup: null } : { setup: id, tab }))
 
 // The selected cell (canvas/gridCursor.ts): `cell|<matrix>|<row>|<col>`.
 const SEL = cellSel('cell')
@@ -227,7 +229,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   // Leaving focus closes the setup.
   useEffect(() => {
     if (!live) return
-    return () => useMatrixUi.setState({ setup: false, canvas: null, naming: null })
+    return () => useMatrixUi.setState({ setup: null, naming: null })
   }, [live])
 
   // The selected cell and the arrows (gridCursor); the other keys on it are the matrix's.

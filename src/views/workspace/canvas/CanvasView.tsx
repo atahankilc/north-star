@@ -57,7 +57,7 @@ import { deleteCards, isOnPlane, type Card } from '../../../data/cards'
 import { deleteEdge } from '../../../data/edges'
 import { GRID } from '../../../data/grid'
 import { goToPlace, useGoTo, type Place } from './goTo'
-import { matrixBounds, MatrixView, useMatrixUi } from '../matrix/Matrix'
+import { matrixBounds, MatrixView, toggleMatrixSetup, useMatrixUi } from '../matrix/Matrix'
 import { MatrixSetupPanel } from '../matrix/MatrixSetup'
 import { tableBounds, TablePager, TableView, useTableUi } from '../table/Table'
 import { TableSetupPanel } from '../table/TableSetup'
@@ -199,11 +199,9 @@ export function CanvasView() {
   const tableSetup = useTableUi((s) => s.setup)
   // A kanban's setup (D-268).
   const kanbanSetup = useKanbanUi((s) => s.setup)
-  const matrixOnCanvas = useMatrixUi((s) => s.canvas)
-  const canvasSetup = pieces.find((p) => isOpen(p) && (kindOfPiece(p) === 'matrix' ? matrixSetup && p.id === matrixOnCanvas : p.id === tableSetup || p.id === kanbanSetup)) ?? null
+  const canvasSetup = pieces.find((p) => isOpen(p) && (p.id === matrixSetup || p.id === tableSetup || p.id === kanbanSetup)) ?? null
   // What Escape closes next, after a selection (D-211): a setup, then what's beside (the last opened), then focus (the
   // key handler below; no key is shown on the docks, D-344).
-  const matrixPane = besideOpen.find((p) => kindOfPiece(p) === 'matrix')?.id ?? null
   // Documents beside their list (D-232): Escape closes the last one; with the list put away, a framed list comes back,
   // an unframed one (opened from the canvas) goes straight back to the canvas.
   const focusedUnframed = !!focused && isOpen(focused)
@@ -687,7 +685,7 @@ export function CanvasView() {
     useCanvasView.setState({ focusSpread: true, focusArrived: false, focusLeaving: false, selected: null, cardSelected: null })
     // A task picked (D-251, D-254) stays in the space it was picked in; a thread's go there picks after (`pending`).
     selectTask('', null)
-    useMatrixUi.setState({ setup: false, canvas: null })
+    useMatrixUi.setState({ setup: null })
     useTableUi.setState({ setup: null })
     useKanbanUi.setState({ setup: null })
     closeDocs()
@@ -879,7 +877,7 @@ export function CanvasView() {
           // A card, or a matrix's cell (D-204), lets go first; then the setup
           // closes, then what's beside, then focus goes.
           if (cardSelected) useCanvasView.setState({ cardSelected: null })
-          else if (useMatrixUi.getState().setup) useMatrixUi.setState({ setup: false })
+          else if (useMatrixUi.getState().setup) useMatrixUi.setState({ setup: null })
           else if (useTableUi.getState().setup) useTableUi.setState({ setup: null })
           else if (useKanbanUi.getState().setup) useKanbanUi.setState({ setup: null })
           // Documents open beside their list (D-232): with the list there, the last opened closes; with it put away, a
@@ -900,7 +898,7 @@ export function CanvasView() {
       }
       // Something open on the canvas (D-228): Escape closes its setup, then lets go of its cell.
       if (e.key === 'Escape') {
-        if (useMatrixUi.getState().canvas) return useMatrixUi.setState({ setup: false, canvas: null })
+        if (useMatrixUi.getState().setup) return useMatrixUi.setState({ setup: null })
         if (useTableUi.getState().setup) return useTableUi.setState({ setup: null })
         if (useKanbanUi.getState().setup) return useKanbanUi.setState({ setup: null })
         if (useCanvasView.getState().cardSelected) return useCanvasView.setState({ cardSelected: null })
@@ -1038,9 +1036,9 @@ export function CanvasView() {
           )}
           {drawing === focused.id && <DrawSection space={focused.id} toSpace={planeToSpace} />}
           {focusArrived && !focusLeaving && (
-            <Beside plane={focused} open={besideOpen} editor={editor} matrixSetupPane={matrixPane} onClose={(id) => setBeside(besideIds.filter((x) => x !== id))} />
+            <Beside plane={focused} open={besideOpen} editor={editor} onClose={(id) => setBeside(besideIds.filter((x) => x !== id))} />
           )}
-          {focusedMatrix && editor && matrixSetup && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
+          {focusedMatrix && editor && matrixSetup === focused.id && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
           {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
           {focusedKanban && editor && kanbanSetup === focused.id && focusArrived && !focusLeaving && <KanbanSetupPanel piece={focused} />}
           {/* A card picked from a matrix's or a table's head, in its focus or beside the plane: its panel. */}
@@ -1054,7 +1052,7 @@ export function CanvasView() {
           {focusArrived && !focusLeaving && !listHidden && !focusedDocument && (
             <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length || sideOpen ? (size.w * split) / 2 : undefined}>
               {focusedMatrix && editor && (
-                <DockAction label="setup" pressed={!!matrixSetup} title="its rows, columns and cells" onClick={() => useMatrixUi.setState((s) => ({ setup: !s.setup }))} />
+                <DockAction label="setup" pressed={matrixSetup === focused.id} title="its rows, columns and cells" onClick={() => toggleMatrixSetup(focused.id)} />
               )}
               {focusedTable && <TablePager piece={focused} editor={editor} />}
               {focusedTable && editor && (
@@ -1558,7 +1556,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
     window.addEventListener('pointerdown', away, true)
     return () => window.removeEventListener('pointerdown', away, true)
   }, [tapped])
-  const matrixSetupOn = useMatrixUi((s) => !!s.setup && s.canvas === piece.id)
+  const matrixSetupOn = useMatrixUi((s) => s.setup === piece.id)
   const tableSetupOn = useTableUi((s) => s.setup === piece.id)
   const kanbanSetupOn = useKanbanUi((s) => s.setup === piece.id)
   const setupOn = matrixSetupOn || tableSetupOn || kanbanSetupOn
@@ -2104,13 +2102,13 @@ function PlaneConsole({ comments, editing = false, unframed = false, noun = 'pla
 function OpenTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const kind = kindOfPiece(piece)
   const matrix = kind === 'matrix'
-  const matrixOn = useMatrixUi((s) => !!s.setup && s.canvas === piece.id)
+  const matrixOn = useMatrixUi((s) => s.setup === piece.id)
   const tableOn = useTableUi((s) => s.setup === piece.id)
   const kanbanOn = useKanbanUi((s) => s.setup === piece.id)
   const on = matrix ? matrixOn : kind === 'kanban' ? kanbanOn : tableOn
   const toggle = () =>
     matrix
-      ? useMatrixUi.setState((s) => (s.setup && s.canvas === piece.id ? { setup: false, canvas: null } : { setup: 'rows', canvas: piece.id }))
+      ? toggleMatrixSetup(piece.id)
       : kind === 'kanban'
         ? useKanbanUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))
         : useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))

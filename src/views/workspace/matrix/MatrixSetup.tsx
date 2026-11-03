@@ -41,7 +41,7 @@ import { Select } from '../../../ui/patterns/Select'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { useWs } from '../canvas/context'
 import { useSetupOnDock } from '../canvas/FocusDock'
-import { closeMatrixSetup, openMatrixSetup, setupOf, setupTab, SETUP_TABS, StepSquare, useMatrixUi, type SetupTab } from './Matrix'
+import { closeMatrixSetup, setMatrixTab, setupOf, SETUP_TABS, StepSquare, useMatrixUi, type SetupTab } from './Matrix'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { PromptList } from '../../../ui/patterns/PromptList'
 import { cardEntry } from '../plane/cardEntry'
@@ -65,7 +65,7 @@ export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
   useSetupOnDock()
   const { wid, cards, cells } = useWs()
   const setup = setupOf(piece)
-  const tab = setupTab(useMatrixUi((s) => s.setup)) ?? 'rows'
+  const tab = useMatrixUi((s) => s.tab)
   const part: SetPart = (k, v, key) => void setPart(wid, piece.id, k, v, key)
   const count = { rows: tops(entriesOf(setup.rows, cards)).length, cols: tops(entriesOf(setup.cols, cards)).length }
   // Taking a typed entry out takes its cells too, as its `×` on the table does.
@@ -75,7 +75,7 @@ export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
   return (
     <section className={styles.setup} data-learn="setup" aria-label="Set up the matrix" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), closeMatrixSetup())}>
       <header className={styles.setupHead}>
-        <Tabs<SetupTab> label="Setup" value={tab} onChange={openMatrixSetup} options={SETUP_TABS.map((t) => ({ value: t, label: TAB_NAME[t], count: t === 'rows' || t === 'cols' ? count[t] : undefined }))} />
+        <Tabs<SetupTab> label="Setup" value={tab} onChange={setMatrixTab} options={SETUP_TABS.map((t) => ({ value: t, label: TAB_NAME[t], count: t === 'rows' || t === 'cols' ? count[t] : undefined }))} />
         <span className={styles.setupEnd}>
           <Menu label="start over from" up quiet prompt="a template…" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows, columns and cells' }, ...restart]} />
           <Button title="close (Esc)" onClick={closeMatrixSetup}>

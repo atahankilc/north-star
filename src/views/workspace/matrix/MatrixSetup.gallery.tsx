@@ -9,6 +9,6 @@ export default example({
   file: 'src/views/workspace/matrix/MatrixSetup.tsx',
   note: 'a matrix’s `[setup]` in focus: rows, columns, cells, options',
   states: Object.fromEntries(
-    SETUP_TABS.map((tab) => [tab, onCanvas({ only: [P.matrix], focus: P.matrix, then: () => useMatrixUi.setState({ setup: tab }) })]),
+    SETUP_TABS.map((tab) => [tab, onCanvas({ only: [P.matrix], focus: P.matrix, then: () => useMatrixUi.setState({ setup: P.matrix, tab }) })]),
   ),
 })
