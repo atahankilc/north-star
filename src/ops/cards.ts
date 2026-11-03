@@ -233,9 +233,11 @@ export type DeleteArgs = {
 }
 
 // Moving a card's home to another plane it's on (the earliest it came to): its spot and fold there become the card's,
-// that place goes. Null when it's on no other plane (`except` left out too).
-export function rehome(ctx: OpCtx, card: Card, except: string): Write[] | null {
-  const p = ctx.ws.places.filter((x) => x.cardId === card.id && x.planeId !== card.pieceId && x.planeId !== except).sort((a, b) => a.createdAt - b.createdAt)[0]
+// that place goes. Null when it's on no other plane (`except`, one plane or the planes going, left out too). The one
+// rule for taking a card off a plane and for deleting planes (pieces.ts' pieceCascade, D-361).
+export function rehome(ctx: OpCtx, card: Card, except: string | Set<string>): Write[] | null {
+  const out = typeof except === 'string' ? (id: string) => id === except : (id: string) => except.has(id)
+  const p = ctx.ws.places.filter((x) => x.cardId === card.id && x.planeId !== card.pieceId && !out(x.planeId)).sort((a, b) => a.createdAt - b.createdAt)[0]
   if (!p) return null
   return [
     { coll: cardColl(card.type), id: card.id, patch: { pieceId: p.planeId, x: p.x, y: p.y, folded: p.folded ? true : DELETE, updatedAt: ctx.now } },

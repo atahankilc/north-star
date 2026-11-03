@@ -3,20 +3,15 @@
 // it shows the first rows and columns as they'll come, and how many. `make the table` puts it at the middle of the
 // canvas, selected. Escape or a click outside leaves it; Enter goes to the next step, ⌘Enter makes it (D-250). It
 // works on a draft: nothing is written until it's made.
-import { useState } from 'react'
 import { rowsOf } from '../../../data/source'
 import { colName, TEMPLATES, type TableSetup } from '../../../data/table'
-import { addPiece } from '../../../data/pieces'
-import { canvasCenter, setEditing } from '../../../state/canvasView'
 import { useWs } from '../canvas/context'
 import { WizardShell } from '../../../ui/patterns/WizardShell'
 import { useFieldText, useTableUi } from './Table'
 import { ColumnsEditor, RowsEditor, type SetTable } from './TableSetup'
 import m from '../matrix/Matrix.module.css'
-import { Options } from '../../../ui/patterns/Options'
-
-// The `my own` option of the start (its own setup, the next steps).
-const OWN = '__own'
+import { firstFew, makeFromWizard, useDraftWizard } from '../canvas/useDraftWizard'
+import { StartFrom } from '../canvas/StartFrom'
 
 const STEPS = ['start from', 'rows', 'columns'] as const
 const QUESTION = ['Start from', 'Which rows?', 'Which columns?']
@@ -31,28 +26,12 @@ const close = () => useTableUi.setState({ wizard: false })
 function Wizard() {
   const { wid, pieces, cards } = useWs()
   const fieldText = useFieldText()
-  const [step, setStep] = useState(0)
-  const [template, setTemplate] = useState<string | null>(TEMPLATES[0].key)
-  const [draft, setDraft] = useState<TableSetup>(() => TEMPLATES[0].setup())
-  const change: SetTable = (k, v) => {
-    setDraft((d) => {
-      const next = { ...d }
-      if (v === undefined) delete next[k]
-      else next[k] = v
-      return next
-    })
-    setTemplate(null)
-  }
+  const { step, setStep, template, draft, patch, start, templateName } = useDraftWizard<TableSetup>(TEMPLATES, (s) => s)
+  const change: SetTable = (k, v) => patch({ [k]: v } as Partial<TableSetup>)
   const rows = rowsOf(draft.rows, cards, !draft.manual)
   const cols = draft.cols.slice(0, 3)
 
-  const make = async () => {
-    close()
-    const name = TEMPLATES.find((t) => t.key === template)?.name ?? 'table'
-    const id = await addPiece(wid, 'table', canvasCenter(wid), pieces, draft, name)
-    // Where you're looking, in edit mode, to be moved where you want it.
-    setEditing(id, true)
-  }
+  const make = () => makeFromWizard(close, wid, 'table', pieces, draft, templateName ?? 'table')
 
   return (
     <WizardShell
@@ -90,26 +69,12 @@ function Wizard() {
           </table>
           <p className={m.checkHint}>
             {rows.length} rows × {draft.cols.length + 1} columns
-            {rows.length > 5 || draft.cols.length > 3 ? ' · the first few shown' : ''}
+            {firstFew(rows.length > 5 || draft.cols.length > 3)}
           </p>
         </>
       }
     >
-      {step === 0 && (
-        <Options
-          pick="one"
-          cards
-          label="Start from"
-          value={template ?? OWN}
-          options={[...TEMPLATES.map((t) => ({ value: t.key, label: t.name, line: t.hint })), { value: OWN, label: 'my own', line: 'answer the next two' }]}
-          onChange={(key) => {
-            const t = TEMPLATES.find((x) => x.key === key)
-            if (!t) return setStep(1)
-            setDraft(t.setup())
-            setTemplate(t.key)
-          }}
-        />
-      )}
+      {step === 0 && <StartFrom templates={TEMPLATES} value={template} onPick={start} own="answer the next two" />}
       {step === 1 && <RowsEditor setup={draft} onChange={change} />}
       {step === 2 && <ColumnsEditor setup={draft} onChange={change} />}
     </WizardShell>

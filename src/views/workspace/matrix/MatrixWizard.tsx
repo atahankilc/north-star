@@ -4,19 +4,14 @@
 // `make the matrix` puts it at the middle of the canvas, named after what it crosses, selected. Escape or a click
 // outside leaves it; Enter goes to the next step, ⌘Enter makes it (D-250). It works on a draft: nothing is written
 // until it's made.
-import { useState } from 'react'
 import { entriesOf, nounOf, TEMPLATES, TONE_VAR, type MatrixSetup } from '../../../data/matrix'
-import { addPiece } from '../../../data/pieces'
-import { canvasCenter, setEditing } from '../../../state/canvasView'
 import { useWs } from '../canvas/context'
 import { WizardShell } from '../../../ui/patterns/WizardShell'
 import { StepSquare, useMatrixUi } from './Matrix'
 import { AxisEditor, CellsEditor, type SetPart } from './MatrixSetup'
 import styles from './Matrix.module.css'
-import { Options } from '../../../ui/patterns/Options'
-
-// The `my own` option of the start (its own setup, the next steps).
-const OWN = '__own'
+import { firstFew, makeFromWizard, useDraftWizard } from '../canvas/useDraftWizard'
+import { StartFrom } from '../canvas/StartFrom'
 
 const STEPS = ['start from', 'rows', 'columns', 'cells'] as const
 const QUESTION = ['Start from', 'What goes down the side?', 'What goes across the top?', 'What goes in a cell?']
@@ -30,23 +25,12 @@ const close = () => useMatrixUi.setState({ wizard: false })
 
 function Wizard() {
   const { wid, pieces, cards } = useWs()
-  const [step, setStep] = useState(0)
-  const [template, setTemplate] = useState<string | null>(TEMPLATES[0].key)
-  const [draft, setDraft] = useState<MatrixSetup>(() => TEMPLATES[0].setup())
-  const change: SetPart = (k, v) => setDraft((d) => ({ ...d, [k]: v }))
-  const edit = (d: MatrixSetup) => {
-    setDraft(d)
-    setTemplate(null)
-  }
+  const { step, setStep, template, draft, edit, start } = useDraftWizard<MatrixSetup>(TEMPLATES, (s) => s)
+  const change: SetPart = (k, v) => edit((d) => ({ ...d, [k]: v }))
   const rows = entriesOf(draft.rows, cards)
   const cols = entriesOf(draft.cols, cards)
 
-  const make = async () => {
-    close()
-    const id = await addPiece(wid, 'matrix', canvasCenter(wid), pieces, draft, `${nounOf(draft.rows)} × ${nounOf(draft.cols)}`)
-    // Where you're looking, in edit mode, to be moved where you want it.
-    setEditing(id, true)
-  }
+  const make = () => makeFromWizard(close, wid, 'matrix', pieces, draft, `${nounOf(draft.rows)} × ${nounOf(draft.cols)}`)
 
   // The preview's cells: the scale's steps in turn, a number, or a word.
   const sample = (i: number, j: number) => {
@@ -92,35 +76,18 @@ function Wizard() {
           </table>
           <p className={styles.checkHint}>
             {rows.length} {nounOf(draft.rows)} × {cols.length} {nounOf(draft.cols)}
-            {rows.length > 5 || cols.length > 4 ? ' · the first few shown' : ''}
+            {firstFew(rows.length > 5 || cols.length > 4)}
           </p>
         </>
       }
     >
-      {step === 0 && (
-        <Options
-          pick="one"
-          cards
-          label="Start from"
-          value={template ?? OWN}
-          options={[...TEMPLATES.map((t) => ({ value: t.key, label: t.name, line: t.hint })), { value: OWN, label: 'my own', line: 'answer the next three' }]}
-          onChange={(key) => {
-            const t = TEMPLATES.find((x) => x.key === key)
-            if (!t) return setStep(1)
-            setDraft(t.setup())
-            setTemplate(t.key)
-          }}
-        />
-      )}
+      {step === 0 && <StartFrom templates={TEMPLATES} value={template} onPick={start} own="answer the next three" />}
       {step === 1 && <AxisEditor which="rows" axis={draft.rows} onChange={(a) => edit({ ...draft, rows: a })} />}
       {step === 2 && <AxisEditor which="cols" axis={draft.cols} onChange={(a) => edit({ ...draft, cols: a })} />}
       {step === 3 && (
         <CellsEditor
           setup={draft}
-          onChange={(k, v, key) => {
-            change(k, v, key)
-            setTemplate(null)
-          }}
+          onChange={change}
         />
       )}
     </WizardShell>

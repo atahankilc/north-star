@@ -7021,4 +7021,5 @@ drag work's own).
 **Group 2, paging's look (2026-11-03):** model/paging.ts' sizes, canvas/Pager.tsx (shared-code.md's Done).
 **Group 2, unframed CSS (2026-11-03):** canvas/PieceLayer.module.css (shared-code.md's Done).
 **Group 2, filter stores (2026-11-03):** canvas/heldStore.ts, canvas/filterPick.ts (shared-code.md's Done).
-**Not yet:** the rest of group 2; group 3.
+**Group 3, wizards and cascades (2026-11-03):** useDraftWizard + StartFrom; one `rehome` for cards and one for pieces; `refsTo` kept apart (shared-code.md's Done). A record per piece kind and the setup shell: another session's.
+**Not yet:** group 3's record per piece kind and setup shell (another session).

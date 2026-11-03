@@ -201,4 +201,14 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
   docks; the deck's dock reads the model's `ALL_TYPES`. Kept apart: the drawers' open state (the plane's dock holds
   three drawers, one at a time, on one shelf; a deck's one per piece). Checked: both filter docks' gallery states in
   both themes pixel-identical to before (but the field's blinking caret).
+- **Group 3, wizards' skeleton (2026-11-03).** canvas/useDraftWizard.ts: `useDraftWizard(templates, base)` (the step,
+  the template picked, none once anything's changed by hand, the draft; `edit`, `patch` dropping fields set to
+  undefined, `start` for the first step), `makeFromWizard` (close, put it at the canvas's middle, edit mode) and
+  `firstFew`; canvas/StartFrom.tsx (with its gallery): the first step's templates and `my own`. The matrix's, table's and
+  deck's wizards keep only their steps' editors and their previews.
+- **Group 3, cascades (2026-11-03).** ops/cards.ts' `rehome(ctx, card, except)` takes one plane or the planes going,
+  and pieceCascade uses it (it had the same writes inline); ops/pieces.ts' `pieceRehome` for a piece taken off its home
+  canvas and for a canvas deleted. Kept apart: a shared `refsTo` for merge and cascade (each does something else with
+  each kind of reference: merge points it at the kept card, the cascade deletes it or leaves it unread, D-141; a list
+  would save little and hide that).
 

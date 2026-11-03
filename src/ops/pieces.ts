@@ -20,8 +20,8 @@ import type { Card } from '../model/cards'
 import type { Piece, PieceKind } from '../data/model'
 import type { DocumentsSetup } from '../data/documents'
 import { DELETE, type OpCtx, type Plan, type Write } from './types'
-import { a, cardColl, find, handleOf, once, refuse } from './util'
-import { cardCascade } from './cards'
+import { a, find, handleOf, once, refuse } from './util'
+import { cardCascade, rehome } from './cards'
 import { TEXT_NAMES, updateText } from './text'
 import { boundTo, withPatch } from './stick'
 import { boundsOf } from '../model/layout'
@@ -349,9 +349,14 @@ function takeOffWrites(ctx: OpCtx, op: string, p: P, canvas: string): Write[] {
   const still = on.filter((c) => c !== canvas)
   if (!still.length) refuse(op, `${aPiece(p)} ${p.id} is on no other canvas`, 'delete it instead')
   if (canvasOf(p) !== canvas) return [{ coll: 'pieceSpots', id: spotId(canvas, p.id), del: true }]
-  const s = ctx.ws.spots.find((x) => x.pieceId === p.id && x.canvasId === still[0])!
+  return pieceRehome(ctx, p.id, ctx.ws.spots.find((x) => x.pieceId === p.id && x.canvasId === still[0])!)
+}
+
+// A piece's home moved to one of its other spots (D-307): that spot's canvas and place become the piece's, the spot
+// goes. The one rule for taking a piece off its home canvas and for deleting that canvas (D-361).
+function pieceRehome(ctx: OpCtx, piece: string, s: { id: string; canvasId: string; x: number; y: number }): Write[] {
   return [
-    { coll: 'pieces', id: p.id, patch: { canvasId: s.canvasId === MAIN ? DELETE : s.canvasId, x: s.x, y: s.y, updatedAt: ctx.now } },
+    { coll: 'pieces', id: piece, patch: { canvasId: s.canvasId === MAIN ? DELETE : s.canvasId, x: s.x, y: s.y, updatedAt: ctx.now } },
     { coll: 'pieceSpots', id: s.id, del: true },
   ]
 }
@@ -367,15 +372,9 @@ export function pieceCascade(ctx: OpCtx, list: P[]): Write[] {
   const gone: Card[] = []
   for (const c of ws.cards) {
     if (!going.has(c.pieceId)) continue
-    const away = ws.places.filter((p) => p.cardId === c.id && !going.has(p.planeId) && p.planeId !== c.pieceId).sort((x, y) => x.createdAt - y.createdAt)[0]
-    if (!away) {
-      gone.push(c)
-      continue
-    }
-    writes.push(
-      { coll: cardColl(c.type), id: c.id, patch: { pieceId: away.planeId, x: away.x, y: away.y, folded: away.folded ? true : DELETE, updatedAt: ctx.now } },
-      { coll: 'places', id: away.id, del: true },
-    )
+    const moved = rehome(ctx, c, going)
+    if (moved) writes.push(...moved)
+    else gone.push(c)
   }
   writes.push(...cardCascade(ctx, gone))
   for (const p of ws.places) if (going.has(p.planeId)) writes.push({ coll: 'places', id: p.id, del: true })
@@ -418,8 +417,7 @@ export function deleteCanvasWrites(ctx: OpCtx, op: string, canvas: string): Writ
   const { pieces, going, kept } = canvasGoes(canvas, ws)
   const writes: Write[] = [{ coll: 'canvases', id: canvas, del: true }, ...pieceCascade(ctx, pieces as P[])]
   // A piece also elsewhere: its home moves to its first other canvas, that spot goes.
-  for (const { piece, to } of kept)
-    writes.push({ coll: 'pieces', id: piece.id, patch: { canvasId: to.canvasId === MAIN ? DELETE : to.canvasId, x: to.x, y: to.y, updatedAt: ctx.now } }, { coll: 'pieceSpots', id: to.id, del: true })
+  for (const { piece, to } of kept) writes.push(...pieceRehome(ctx, piece.id, to))
   for (const l of ws.labels) if (canvasTextOn(canvas)(l)) writes.push({ coll: 'labels', id: l.id, del: true })
   for (const s of ws.spots) if (s.canvasId === canvas || going.has(s.pieceId)) writes.push({ coll: 'pieceSpots', id: s.id, del: true })
   return once(writes)
