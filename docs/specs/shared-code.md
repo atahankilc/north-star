@@ -194,3 +194,11 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
     Kanban.tsx's `SOON` fold, the agent's settings, onboarding (its own merge).
   - Not done: `useBusy` (each copy handles its error its own way; a hook would save three lines and hide that) and
     `useStickToBottom` (Agent.tsx was being edited; next).
+- **Group 2, filter stores (2026-11-03).** canvas/heldStore.ts: `makeHeldStore(key, fallback, oldPrefix)` (each piece's
+  passing look in this tab, `use`/`get`/`set`, held while a dock is open and let go a moment after none is, the old
+  browser copies taken away once); planeFilter.ts and kanbanFilter.ts are thin names on it (their exports and store
+  shapes as before). canvas/filterPick.ts: `flip`, `named`, `pickRows` (an `any` row, then tick rows) for both filter
+  docks; the deck's dock reads the model's `ALL_TYPES`. Kept apart: the drawers' open state (the plane's dock holds
+  three drawers, one at a time, on one shelf; a deck's one per piece). Checked: both filter docks' gallery states in
+  both themes pixel-identical to before (but the field's blinking caret).
+

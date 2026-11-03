@@ -19,6 +19,7 @@ import styles from './FilterDock.module.css'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { Button } from '../../../ui/primitives/Button'
 import { cardName } from '../../../model/cardName'
+import { flip, named, pickRows } from './filterPick'
 
 // What's open over the focus dock (D-233, D-235, D-347): one drawer at a time; Escape closes it (once no menu in it is
 // open).
@@ -60,27 +61,16 @@ export function PlaneDockExtras({ plane, cards, stuck }: { plane: string; cards:
 // lit while it narrows what's shown.
 function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter }) {
   const set = (patch: Partial<Filter>) => setFilter(plane, { ...f, ...patch })
-  const flip = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v])
   const customers = cards.filter((c) => c.type === 'customer')
   const tagCount = new Map<string, number>()
   for (const c of cards) for (const t of c.tags ?? []) tagCount.set(t, (tagCount.get(t) ?? 0) + 1)
   const tags = [...tagCount.keys()].sort()
   const regions = [...new Set(cards.filter((c) => c.type === 'competitor').flatMap((c) => c.regions ?? []))].sort()
   const swatches = (list: Swatch[]) => <Swatches list={list} />
-  const named = (ids: string[], name: (id: string) => string) => (ids.length === 0 ? 'any' : ids.length === 1 ? name(ids[0]) : `${ids.length}`)
   const show: PromptEntry[] = ALL_TYPES.map((t) => ({ key: t, label: `${t}s`, checked: !f.hide.includes(t), tone: TYPE_TONE[t], onSelect: () => set({ hide: flip(f.hide, t) }) }))
-  const forItems: PromptEntry[] = [
-    { key: 'any', label: 'any customer', checked: f.for.length === 0, onSelect: () => set({ for: [] }) },
-    ...customers.map((c) => ({ key: c.id, label: cardName(c), checked: f.for.includes(c.id), tone: CARD_TONE.customer, onSelect: () => set({ for: flip(f.for, c.id) }) })),
-  ]
-  const tagItems: PromptEntry[] = [
-    { key: 'any', label: 'any tag', checked: f.tags.length === 0, onSelect: () => set({ tags: [] }) },
-    ...tags.map((t) => ({ key: t, label: `#${t}`, checked: f.tags.includes(t), hint: `${tagCount.get(t)}`, onSelect: () => set({ tags: flip(f.tags, t) }) })),
-  ]
-  const regionItems: PromptEntry[] = [
-    { key: 'any', label: 'anywhere', checked: f.regions.length === 0, onSelect: () => set({ regions: [] }) },
-    ...regions.map((r) => ({ key: r, label: r, checked: f.regions.includes(r), onSelect: () => set({ regions: flip(f.regions, r) }) })),
-  ]
+  const forItems = pickRows(f.for, 'any customer', customers.map((c) => ({ key: c.id, label: cardName(c), tone: CARD_TONE.customer })), (v) => set({ for: v }))
+  const tagItems = pickRows(f.tags, 'any tag', tags.map((t) => ({ key: t, label: `#${t}`, hint: `${tagCount.get(t)}` })), (v) => set({ tags: v }))
+  const regionItems = pickRows(f.regions, 'anywhere', regions.map((r) => ({ key: r, label: r })), (v) => set({ regions: v }))
   const linkItems: PromptEntry[] = [
     { key: 'all', label: 'every link', checked: f.links.length === 0, onSelect: () => set({ links: [] }) },
     ...LINK_GROUPS.map((g) => ({ key: g.key, label: g.label, checked: !f.links.includes(g.key), tone: linkTone(g.kind), glyph: '━', hint: START.links.includes(g.key) ? 'starts hidden' : undefined, onSelect: () => set({ links: flip(f.links, g.key) }) })),

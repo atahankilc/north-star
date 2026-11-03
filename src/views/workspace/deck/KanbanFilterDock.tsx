@@ -19,6 +19,8 @@ import { learn } from '../../../onboarding/learn'
 import styles from '../canvas/FilterDock.module.css'
 import { Button } from '../../../ui/primitives/Button'
 import { cardName } from '../../../model/cardName'
+import { flip, named, pickRows } from '../canvas/filterPick'
+import { ALL_TYPES } from '../../../model/cards'
 
 
 const DUE: { key: DueKey; label: string }[] = [
@@ -27,7 +29,6 @@ const DUE: { key: DueKey; label: string }[] = [
   { key: 'week', label: 'this week' },
   { key: 'none', label: 'no day' },
 ]
-const TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package'] as const
 
 // A kanban holding cards (D-268) has no task filter (its own filter is for later: docs/specs/priorities.md).
 export function KanbanFilterDock(props: { piece: WithId<Piece>; pool?: Task[] }) {
@@ -55,26 +56,25 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
   const members = useMembers(wid, 100).data.filter((m) => workspace.memberIds.includes(m.id) && m.id !== user?.id)
   const mine = pool ?? tasks.filter((t) => t.pieceId === piece.id)
   const set = (patch: Partial<KanbanFilter>) => setKanbanFilter(piece.id, { ...f, ...patch })
-  const flip = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v])
   const count = (keep: (t: (typeof mine)[number]) => boolean) => `${mine.filter(keep).length}`
-  const named = (list: string[], name: (v: string) => string) => (list.length === 0 ? 'any' : list.length === 1 ? name(list[0]) : `${list.length}`)
 
-  const who: PromptEntry[] = [
-    { key: 'any', label: 'anyone', checked: !f.who.length, onSelect: () => set({ who: [] }) },
-    { key: 'me', label: 'me', checked: f.who.includes('me'), hint: count((t) => t.assignee === user?.id), onSelect: () => set({ who: flip(f.who, 'me') }) },
-    { key: 'nobody', label: 'nobody', checked: f.who.includes('nobody'), hint: count((t) => !t.assignee), onSelect: () => set({ who: flip(f.who, 'nobody') }) },
-    ...members.map((m) => ({ key: m.id, label: m.name, checked: f.who.includes(m.id), hint: count((t) => t.assignee === m.id), onSelect: () => set({ who: flip(f.who, m.id) }) })),
-  ]
+  const who = pickRows(
+    f.who,
+    'anyone',
+    [
+      { key: 'me', label: 'me', hint: count((t) => t.assignee === user?.id) },
+      { key: 'nobody', label: 'nobody', hint: count((t) => !t.assignee) },
+      ...members.map((m) => ({ key: m.id, label: m.name, hint: count((t) => t.assignee === m.id) })),
+    ],
+    (v) => set({ who: v }),
+  )
   const whoName = (v: string) => (v === 'me' || v === 'nobody' ? v : (members.find((m) => m.id === v)?.name ?? 'someone'))
 
-  const due: PromptEntry[] = [
-    { key: 'any', label: 'any day', checked: !f.due.length, onSelect: () => set({ due: [] }) },
-    ...DUE.map((d) => ({ key: d.key, label: d.label, checked: f.due.includes(d.key), tone: d.key === 'past' ? 'var(--accent-magenta)' : undefined, onSelect: () => set({ due: flip(f.due, d.key) as DueKey[] }) })),
-  ]
+  const due = pickRows(f.due, 'any day', DUE.map((d) => ({ key: d.key, label: d.label, tone: d.key === 'past' ? 'var(--accent-magenta)' : undefined })), (v) => set({ due: v }))
 
   // The card types and cards its tasks are for.
   const forCards = [...new Set(mine.flatMap((t) => (t.cardId ? [t.cardId] : [])))].flatMap((id) => cards.filter((c) => c.id === id))
-  const types = TYPES.filter((ty) => forCards.some((c) => c.type === ty))
+  const types = ALL_TYPES.filter((ty) => forCards.some((c) => c.type === ty))
   const forItems: PromptEntry[] = [
     { key: 'any', label: 'anything', checked: !f.for.length, onSelect: () => set({ for: [] }) },
     { key: 'none', label: 'no card', checked: f.for.includes('none'), hint: count((t) => !t.cardId), onSelect: () => set({ for: flip(f.for, 'none') }) },
@@ -88,10 +88,7 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
   const labelCount = new Map<string, number>()
   for (const t of mine) for (const l of t.labels ?? []) labelCount.set(l, (labelCount.get(l) ?? 0) + 1)
   const labels = [...labelCount.keys()].sort()
-  const labelItems: PromptEntry[] = [
-    { key: 'any', label: 'any label', checked: !f.labels.length, onSelect: () => set({ labels: [] }) },
-    ...labels.map((l) => ({ key: l, label: `#${l}`, checked: f.labels.includes(l), hint: `${labelCount.get(l)}`, onSelect: () => set({ labels: flip(f.labels, l) }) })),
-  ]
+  const labelItems = pickRows(f.labels, 'any label', labels.map((l) => ({ key: l, label: `#${l}`, hint: `${labelCount.get(l)}` })), (v) => set({ labels: v }))
 
   return (
     <Appear className={styles.panel} role="group" aria-label="Filters" data-learn="filter-strip">
