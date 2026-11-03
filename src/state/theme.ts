@@ -2,6 +2,7 @@
 // Sets `data-theme` on <html> (tokens.css switches on it) and gives WebGL code the matching palette.
 import { create } from 'zustand'
 import { accents, palettes, type Palette, type Theme } from '../styles/tokens'
+import { keepLocal, readLocal } from './local'
 
 export type ThemePref = Theme | 'system'
 
@@ -9,13 +10,8 @@ const KEY = 'north-star.theme'
 const query = typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: light)') : null
 
 function load(): ThemePref {
-  try {
-    const v = localStorage.getItem(KEY)
-    if (v === 'light' || v === 'system') return v
-  } catch {
-    // Storage blocked: keep the default.
-  }
-  return 'dark'
+  const v = readLocal(KEY)
+  return v === 'light' || v === 'system' ? v : 'dark'
 }
 
 function resolve(pref: ThemePref): Theme {
@@ -41,11 +37,7 @@ export const useTheme = create<ThemeState>((set) => ({
   pref: initial,
   theme: resolve(initial),
   setPref: (pref) => {
-    try {
-      localStorage.setItem(KEY, pref)
-    } catch {
-      // Not persisted; still applies for this session.
-    }
+    keepLocal(KEY, pref)
     set({ pref, theme: resolve(pref) })
   },
 }))

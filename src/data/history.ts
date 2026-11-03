@@ -1,9 +1,8 @@
 // Undo and redo (Q-013): every tracked write snapshots the documents it touches before and after, so undo
 // and redo just put a snapshot back. Local to this tab and workspace; last write wins against collaborators.
-import { deleteDoc, getDoc, getDocFromCache, writeBatch, type DocumentData, type DocumentReference } from 'firebase/firestore'
+import { deleteDoc, getDoc, getDocFromCache, type DocumentData, type DocumentReference } from 'firebase/firestore'
 import { create } from 'zustand'
-import { db } from './firebase'
-import { WRITE_BATCH_MAX as BATCH_LIMIT } from '../model/limits'
+import { inBatches } from './batches'
 
 type Snapshot = { ref: DocumentReference; data: DocumentData | null }[]
 
@@ -70,16 +69,11 @@ const snapshot = (refs: DocumentReference[]) => Promise.all(refs.map(async (ref)
 
 // Issues the batches without waiting for the server (they apply locally at once), so undo works offline too.
 function restore(snap: Snapshot): Promise<unknown> {
-  const commits: Promise<void>[] = []
-  for (let i = 0; i < snap.length; i += BATCH_LIMIT) {
-    const batch = writeBatch(db())
-    for (const { ref, data } of snap.slice(i, i + BATCH_LIMIT)) {
-      if (data) batch.set(ref, data, { merge: isWorkspaceDoc(ref) })
-      else if (!isWorkspaceDoc(ref)) batch.delete(ref)
-    }
-    commits.push(batch.commit())
-  }
-  return allCommitted(commits)
+  const batches = inBatches(snap, (batch, { ref, data }) => {
+    if (data) batch.set(ref, data, { merge: isWorkspaceDoc(ref) })
+    else if (!isWorkspaceDoc(ref)) batch.delete(ref)
+  })
+  return allCommitted(batches.map((b) => b.commit()))
 }
 
 type Options = {

@@ -13,7 +13,7 @@
 // dock (`[order]`, yours, per kanban per browser; on to start): rated cards best first, their score, `!` when they rest
 // on something invalidated, the suggested P1–P3, `P2 → P1` in yellow where the card's own priority differs; a row picks
 // the card (its panel). Boxes sort by score too.
-import { memo, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import { updateCards, type Card } from '../../../data/cards'
@@ -24,6 +24,7 @@ import { boxKey, boxPatch, byBox, byColumn, columnsOf, FIELD_NAME, heldCards, is
 import { suggestedOrder, type Ranked } from '../plane/cardFacts'
 import { create } from 'zustand'
 import { Gap, kanbanOf, K, LaneHead, useKanbanSizes } from './Kanban'
+import { useMeasuredSize } from '../canvas/useMeasuredSize'
 import { CardSheet } from '../cards/CardSheet'
 import { PriorityChip } from '../cards/PriorityChip'
 import { CardRow } from '../cards/CardRow'
@@ -34,6 +35,7 @@ import { CARRIED, Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Mar
 import { loadFolds, saveFolds } from '../table/rows'
 import styles from './Kanban.module.css'
 import { cardName } from '../../../model/cardName'
+import { keepLocal, readLocal } from '../../../state/local'
 
 
 type Over = { col: string; row: string }
@@ -86,19 +88,7 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
   const boxTakes = (col: CardCol, row: CardCol, card: Card) => takes(col, card) && (!rowField || takes(row, card))
 
   // Its drawn size, for fit (written only when it changes).
-  useLayoutEffect(() => {
-    const el = board.current
-    if (!el) return
-    const note = () => {
-      const size = { w: el.offsetWidth, h: el.offsetHeight }
-      const was = useKanbanSizes.getState()[piece.id]
-      if (!was || was.w !== size.w || was.h !== size.h) useKanbanSizes.setState({ [piece.id]: size })
-    }
-    note()
-    const ro = new ResizeObserver(note)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [piece.id])
+  useMeasuredSize(board, useKanbanSizes, piece.id)
 
   // The box under the pointer, or the nearest, of those that take the held card (folded rows have none drawn).
   const landing = (x: number, y: number, card: Card): Over | null => {
@@ -244,13 +234,7 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
 
 // Whether the suggested order shows beside a priorities kanban (D-271): yours, per kanban, in this browser; on to start.
 const ORDER_KEY = (id: string) => `north-star:kanban-order:${id}`
-function orderSaved(id: string) {
-  try {
-    return localStorage.getItem(ORDER_KEY(id)) !== 'off'
-  } catch {
-    return true
-  }
-}
+const orderSaved = (id: string) => readLocal(ORDER_KEY(id)) !== 'off'
 const useOrderShown = create<Record<string, boolean>>(() => ({}))
 export const orderShown = (id: string) => useOrderShown.getState()[id] ?? orderSaved(id)
 export function useOrderOn(id: string) {
@@ -259,12 +243,7 @@ export function useOrderOn(id: string) {
 export function toggleOrder(id: string) {
   const on = !orderShown(id)
   useOrderShown.setState({ [id]: on })
-  try {
-    if (on) localStorage.removeItem(ORDER_KEY(id))
-    else localStorage.setItem(ORDER_KEY(id), 'off')
-  } catch {
-    // This tab only.
-  }
+  keepLocal(ORDER_KEY(id), on ? null : 'off')
 }
 
 type OrderProps = { order: Ranked[]; unrated: number; live: boolean; selected: string | null; onPick: (c: Card) => void; onPress?: (e: ReactPointerEvent) => void }

@@ -7,6 +7,7 @@ import type { KanbanRows, Task, TaskFields } from '../../../data/tasks'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { initials } from '../../../model/tasks'
 import { cardName } from '../../../model/cardName'
+import { keepLocal, readLocalJson } from '../../../state/local'
 
 export type Lane = {
   key: string
@@ -87,18 +88,5 @@ export function taskRows(rows: KanbanRows | undefined, cards: Card[], people: Pe
 
 // Which lanes are folded, per kanban, in this browser.
 const KEY = (piece: string) => `north-star:kanban-folds:${piece}`
-export function loadFolds(piece: string): string[] {
-  try {
-    return JSON.parse(localStorage.getItem(KEY(piece)) ?? '[]') as string[]
-  } catch {
-    return []
-  }
-}
-export function saveFolds(piece: string, folds: string[]) {
-  try {
-    if (folds.length) localStorage.setItem(KEY(piece), JSON.stringify(folds))
-    else localStorage.removeItem(KEY(piece))
-  } catch {
-    // This tab only.
-  }
-}
+export const loadFolds = (piece: string): string[] => readLocalJson<string[]>(KEY(piece), [])
+export const saveFolds = (piece: string, folds: string[]) => keepLocal(KEY(piece), folds.length ? JSON.stringify(folds) : null)

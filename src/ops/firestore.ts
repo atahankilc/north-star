@@ -1,6 +1,6 @@
 // The ops' one door to Firebase (S3, D-312): plans written as one undo step. Everything else in src/ops/ is pure (the
 // purity test, tests/unit/purity.test.ts, lets only this file reach data/ and Firebase).
-import { deleteField, doc, writeBatch, type DocumentReference } from 'firebase/firestore'
+import { deleteField, doc, type DocumentReference } from 'firebase/firestore'
 import { db, firebase } from '../data/firebase'
 import { allCommitted, tracked, useHistory, writable } from '../data/history'
 import { getRealWs, subscribeWs, type WorkspaceCtx } from '../state/wsStore'
@@ -9,7 +9,7 @@ import { projectLoose } from './project'
 import { docAt, toDocs, type DocStore } from './docs'
 import { autoId } from './newId'
 import { isDelete, OpsRefused, type OpActor, type OpCtx, type Plan, type Write } from './types'
-import { WRITE_BATCH_MAX as BATCH_LIMIT } from '../model/limits'
+import { inBatches } from '../data/batches'
 
 
 export function refOf(wid: string, w: Pick<Write, 'coll' | 'id'>): DocumentReference {
@@ -103,19 +103,14 @@ export async function apply(wid: string, plans: Plan[], opts: ApplyOpts = {}): P
   }
   // Every batch issued at once (they apply to the local cache at once, so the step's `after` sees them all).
   const write = () => {
-    const commits: Promise<void>[] = []
-    for (let i = 0; i < writes.length; i += BATCH_LIMIT) {
-      const batch = writeBatch(db())
-      for (const w of writes.slice(i, i + BATCH_LIMIT)) {
-        const r = refOf(wid, w)
-        if (w.del) batch.delete(r)
-        else if (w.set && w.merge) batch.set(r, forFirestore(w.set), { merge: true })
-        else if (w.set) batch.set(r, w.set)
-        else if (w.patch) batch.update(r, forFirestore(w.patch))
-      }
-      commits.push(batch.commit())
-    }
-    return allCommitted(commits)
+    const batches = inBatches(writes, (batch, w) => {
+      const r = refOf(wid, w)
+      if (w.del) batch.delete(r)
+      else if (w.set && w.merge) batch.set(r, forFirestore(w.set), { merge: true })
+      else if (w.set) batch.set(r, w.set)
+      else if (w.patch) batch.update(r, forFirestore(w.patch))
+    })
+    return allCommitted(batches.map((b) => b.commit()))
   }
 
   // Recorded: a step with the key that wasn't there before (a merge makes a new step object with the same key).

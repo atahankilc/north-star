@@ -21,6 +21,7 @@ import { Tabs } from '../../../ui/primitives/Tabs'
 import { ResizeEdge } from '../../../ui/primitives/ResizeEdge'
 import { useEscapeLayer } from '../../../ui/foundation/useEscapeLayer'
 import styles from './Threads.module.css'
+import { keepLocal, readLocal } from '../../../state/local'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
 type Convo = { thread: WithId<Thread> | null; draft: NewThread | null }
@@ -129,12 +130,8 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
   const seen = useReads(wid, me || null).data?.seen
   const [view, setView] = useState<View>('all')
   const [height, setHeight] = useState<number | null>(() => {
-    try {
-      const v = Number(localStorage.getItem(HEIGHT_KEY))
-      return v >= MIN_H ? v : null
-    } catch {
-      return null
-    }
+    const v = Number(readLocal(HEIGHT_KEY))
+    return v >= MIN_H ? v : null
   })
 
   // Escape closes it, unless a thread is open (that closes first): the one Escape stack (D-359).
@@ -168,13 +165,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
     d.to = Math.round(Math.min(d.room - HEAD_ROOM, Math.max(MIN_H, d.h + d.y - e.clientY)))
     setHeight(d.to)
   }
-  const keepHeight = () => {
-    try {
-      localStorage.setItem(HEIGHT_KEY, String(drag.current.to))
-    } catch {
-      // No storage (a private window): it's only for this time.
-    }
-  }
+  const keepHeight = () => keepLocal(HEIGHT_KEY, String(drag.current.to))
   return (
     <section
       ref={tab}

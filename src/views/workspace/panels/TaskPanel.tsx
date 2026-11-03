@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { isOnPlane, type Card } from '../../../data/cards'
 import { CHECK_MAX, LABEL_MAX, LABELS_MAX, TASK_PRIORITIES, deleteTask, deleteTasks, moveTasks, updateTasks, logLearned, moveTask, newCheck, orderBetween, overdue, setChecks, tasksIn, TASK_TITLE_MAX, today, untested, updateTask, type Check, type Task } from '../../../data/tasks'
 import type { Evidence } from '../../../data/evidence'
-import { useMembers } from '../../../data/workspaces'
+import { useWorkspaceMembers } from '../../../data/workspaces'
 import { useBesideW, useCanvasView } from '../../../state/canvasView'
 import { PanelAction, PanelSection, SidePanel } from '../../../ui/patterns/SidePanel'
 import { Select } from '../../../ui/patterns/Select'
@@ -166,7 +166,7 @@ function Title({ task, editor }: { task: Task; editor: boolean }) {
 // it); `[delete N]` at the foot. A value they don't share reads `several`.
 function ManyInside({ tasks: picked, cols, editor }: { tasks: Task[]; cols: { id: string; name: string; done?: boolean }[]; editor: boolean }) {
   const { wid, workspace, tasks } = useWs()
-  const members = useMembers(wid, 100).data.filter((m) => workspace.memberIds.includes(m.id))
+  const members = useWorkspaceMembers(wid, workspace.memberIds)
   const ids = picked.map((t) => t.id)
   const inCol = cols.map((c) => [c, picked.filter((t) => t.col === c.id).length] as const).filter(([, n]) => n)
   const same = <T,>(f: (t: Task) => T) => (picked.every((t) => f(t) === f(picked[0])) ? f(picked[0]) : SEVERAL)
@@ -265,8 +265,7 @@ const NOBODY = ''
 // Who it's given to: one member (a square with their initials on the card), or nobody.
 function Assignee({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
   const { wid, workspace } = useWs()
-  const members = useMembers(wid, 100)
-  const listed = members.data.filter((m) => workspace.memberIds.includes(m.id))
+  const listed = useWorkspaceMembers(wid, workspace.memberIds)
   const options = [{ value: NOBODY, label: 'nobody' }, ...listed.map((m) => ({ value: m.id, label: m.name }))]
   // Given to someone who's not loaded (or gone): their name as it was.
   if (task.assignee && !listed.some((m) => m.id === task.assignee)) options.push({ value: task.assignee, label: task.assigneeName ?? 'someone' })

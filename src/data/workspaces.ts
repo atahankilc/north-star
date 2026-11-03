@@ -13,12 +13,15 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore'
+import { useMemo } from 'react'
 import { db, firebase, isDemo } from './firebase'
 import { useDoc, usePaged, useQuery, type WithId } from './hooks'
 import type { AuthUser } from './auth'
 import { deleteThread } from './threads'
 import type { Invite, InviteCode, JoinRequest, Member, Role, Workspace } from './model'
-import { DESCRIPTION_MAX, WRITE_BATCH_MAX as BATCH_LIMIT } from '../model/limits'
+import { DESCRIPTION_MAX, MEMBERS_LISTED } from '../model/limits'
+import { WS_COLLECTIONS } from '../model/fromDocs'
+import { inBatches } from './batches'
 export { DESCRIPTION_MAX }
 
 // No 0/O/1/I/L: codes get read aloud and typed by hand.
@@ -181,6 +184,13 @@ export function useMembers(wid: string, size = 20) {
   return usePaged<Member>([firebase ? collection(db(), 'workspaces', wid, 'members') : null], `members:${wid}`, 'name', 'asc', size)
 }
 
+// The people a picker offers (D-361: a thread's `@`, a task's given to, the deck's filter): the first MEMBERS_LISTED by
+// name, only those still in the workspace (`memberIds`: an entry can outlive its person for a moment).
+export function useWorkspaceMembers(wid: string, memberIds: string[]): WithId<Member>[] {
+  const all = useMembers(wid, MEMBERS_LISTED).data
+  return useMemo(() => all.filter((m) => memberIds.includes(m.id)), [all, memberIds])
+}
+
 // Owners only. The rules keep at least one owner.
 export function setRole(wid: string, uid: string, role: Role) {
   return updateDoc(doc(db(), 'workspaces', wid), { [`roles.${uid}`]: role })
@@ -306,7 +316,9 @@ export function describeWorkspace(wid: string, description: string) {
 }
 
 // Every subcollection under workspaces/{wid}; Firestore doesn't cascade deletes.
-const WORKSPACE_COLLECTIONS = ['pieces', 'labels', 'customers', 'problems', 'competitors', 'ideas', 'features', 'packages', 'edges', 'competitorFeatures', 'comparisons', 'evidence', 'cells', 'tasks', 'places', 'canvases', 'pieceSpots']
+// The content's (model/fromDocs.ts, the listeners' list, so a new one is never left behind), threads apart: each goes
+// with its messages below.
+const WORKSPACE_COLLECTIONS = WS_COLLECTIONS.filter((c) => c !== 'threads')
 // A body's delete rule reads its summary (twice), and a batch's rules may read at most 20 documents, more and the
 // whole batch is refused: so documents and chats go a few to a batch.
 const BODIES_PER_BATCH = 6
@@ -335,11 +347,7 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
   // Once each: your own shared documents and chats come back from both queries. A body goes before its summary, which
   // its rule reads.
   const reportRefs = [...new Map(reports.flatMap((r) => r.docs.map((d) => [d.ref.path, d.ref] as const))).values()]
-  for (let i = 0; i < reportRefs.length; i += BODIES_PER_BATCH) {
-    const batch = writeBatch(db())
-    for (const ref of reportRefs.slice(i, i + BODIES_PER_BATCH)) batch.delete(doc(ref, 'content', 'body')).delete(ref)
-    await batch.commit()
-  }
+  for (const batch of inBatches(reportRefs, (b, ref) => b.delete(doc(ref, 'content', 'body')).delete(ref), BODIES_PER_BATCH)) await batch.commit()
   // Comment threads (D-159): each with all its messages (threads.ts: an owner may take others' messages only once
   // their thread is gone, D-166); then everyone's read marks.
   const threads = await getDocs(collection(db(), 'workspaces', wid, 'threads'))
@@ -350,11 +358,7 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
   const readers = new Set([uid, ...((ws.data() as Workspace | undefined)?.memberIds ?? []), ...snaps[snaps.length - 1].docs.map((d) => d.id)])
   const reads = [...readers].map((u) => doc(db(), 'workspaces', wid, 'threadReads', u))
   const refs = [...reads, ...snaps.flatMap((s) => s.docs.map((d) => d.ref))]
-  for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
-    const batch = writeBatch(db())
-    for (const ref of refs.slice(i, i + BATCH_LIMIT)) batch.delete(ref)
-    await batch.commit()
-  }
+  for (const batch of inBatches(refs, (b, ref) => b.delete(ref))) await batch.commit()
   const batch = writeBatch(db())
   batch.delete(doc(db(), 'inviteCodes', inviteCode))
   batch.delete(doc(db(), 'workspaces', wid))

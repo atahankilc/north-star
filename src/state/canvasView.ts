@@ -4,6 +4,7 @@
 import { create } from 'zustand'
 import { DUR, glideValues } from '../ui/foundation/motion'
 import { boundsOf } from '../model/layout'
+import { keepLocal, readLocal } from './local'
 
 export type Cam = { x: number; y: number; zoom: number }
 
@@ -85,21 +86,13 @@ export type PlaneCam = { ox: number; oy: number; zoom: number }
 export const SPLIT_MIN = 0.25
 export const SPLIT_MAX = 0.75
 function savedSplit() {
-  try {
-    const v = Number(localStorage.getItem('north-star:split'))
-    return v >= SPLIT_MIN && v <= SPLIT_MAX ? v : 0.5
-  } catch {
-    return 0.5
-  }
+  const v = Number(readLocal('north-star:split'))
+  return v >= SPLIT_MIN && v <= SPLIT_MAX ? v : 0.5
 }
 export function setSplit(v: number) {
   const split = Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, v))
   useCanvasView.setState({ split })
-  try {
-    localStorage.setItem('north-star:split', String(split))
-  } catch {
-    // Not kept: fine.
-  }
+  keepLocal('north-star:split', String(split))
 }
 
 // The focused plane's own part of the screen: all of it, or its half with something open beside it (D-211).

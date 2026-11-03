@@ -178,3 +178,19 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
   `.world` and shaded parts compose them. Checked: their unframed, on-the-canvas and in-focus gallery states in both
   themes pixel-identical to before (a second old shot as noise, the one differing state re-shot: 0).
 
+- **Group 2, the smaller ones (2026-11-03, north-star-48).**
+  - data/batches.ts `inBatches`: apply's and undo's batches (sent at once) and a workspace's delete (one after the
+    other); import keeps its own (it cuts by bytes too).
+  - One list of content collections: a workspace's delete takes model/fromDocs' `WS_COLLECTIONS` (threads apart), so
+    a new collection is never left behind.
+  - canvas/useMeasuredSize.ts: a piece's drawn size into its store, for CardKanban and the documents list. Left:
+    Kanban.tsx (another session was in it); DocumentPiece measures more than its box (its cut, its height), kept.
+  - data/workspaces.ts `useWorkspaceMembers`: the first `MEMBERS_LISTED` (100, limits.ts) by name, only those still
+    in the workspace; a task's given to (one and several) and a thread's `@`. Settled drift: `@` loaded only the first
+    20 people. Left: KanbanFilterDock.tsx (another session was in it).
+  - state/local.ts `readLocal`, `readLocalJson`, `keepLocal` (never throwing): the split, guides, the threads panel's
+    height, display, motion, theme, the change log, the suggested order, the tasks side view, folded lanes. Fixed: the
+    change log read storage unguarded as it loaded, so a browser refusing storage stopped the module loading. Left:
+    Kanban.tsx's `SOON` fold, the agent's settings, onboarding (its own merge).
+  - Not done: `useBusy` (each copy handles its error its own way; a hook would save three lines and hide that) and
+    `useStickToBottom` (Agent.tsx was being edited; next).

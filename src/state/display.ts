@@ -3,6 +3,7 @@
 // `strength` makes that field softer or stronger on the signed-in pages (the landing keeps its own). `hud` sizes the
 // HUD's tools, squares and breadcrumb, through `data-hud` on <html> (tokens.css; index.html sets it before the first paint).
 import { create } from 'zustand'
+import { keepLocal, readLocal } from './local'
 
 export type BackgroundPref = 'on' | 'off'
 export type StrengthPref = 'soft' | 'normal' | 'strong'
@@ -17,22 +18,11 @@ const HUD_KEY = 'north-star.hud-size'
 export const STRENGTH_FACTOR: Record<StrengthPref, number> = { soft: 0.7, normal: 1, strong: 1.35 } // tokens-ok: brightness factors, not sizes or colours
 
 function read<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
-  try {
-    const v = localStorage.getItem(key)
-    if (v && (allowed as readonly string[]).includes(v)) return v as T
-  } catch {
-    // Storage blocked: keep the default.
-  }
-  return fallback
+  const v = readLocal(key)
+  return v && (allowed as readonly string[]).includes(v) ? (v as T) : fallback
 }
 
-function save(key: string, value: string) {
-  try {
-    localStorage.setItem(key, value)
-  } catch {
-    // Not persisted; still applies for this session.
-  }
-}
+const save = (key: string, value: string) => keepLocal(key, value)
 
 function applyHud(size: HudSizePref) {
   const root = document.documentElement

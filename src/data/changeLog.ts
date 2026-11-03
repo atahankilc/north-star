@@ -18,6 +18,7 @@ import { onTracked, useHistory, type TrackedMeta } from './history'
 import { getRealWs } from '../state/wsStore'
 import { changeEntry, fromChangeDoc, mergeEntries, toChangeDoc, type ChangeEntry } from '../model/changeLog'
 import { REGISTRY } from '../ops/registry'
+import { keepLocal, readLocal } from '../state/local'
 
 const OPS: ReadonlySet<string> = new Set(REGISTRY.keys())
 
@@ -26,16 +27,12 @@ export type { ChangeEntry } from '../model/changeLog'
 const OFF_KEY = 'northstar.changeLog.off'
 const QUIET_MS = 2500
 
-let on = typeof localStorage === 'undefined' || localStorage.getItem(OFF_KEY) !== '1'
+// Read guarded: storage refusing (a private window, blocked site data) must not stop this module loading.
+let on = readLocal(OFF_KEY) !== '1'
 export const changeLogOn = () => on
 export function setChangeLogOn(v: boolean) {
   on = v
-  try {
-    if (v) localStorage.removeItem(OFF_KEY)
-    else localStorage.setItem(OFF_KEY, '1')
-  } catch {
-    // Storage refused: on for this tab only.
-  }
+  keepLocal(OFF_KEY, v ? null : '1')
   if (!v) pending = null
 }
 

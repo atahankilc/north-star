@@ -82,5 +82,8 @@ export const SUMMARY_CARDS_MAX = 300
 export const SUMMARY_PIECES_CHARS = 1400
 export const SUMMARY_CARDS_CHARS = 4000
 
+// The workspace's people a picker lists (`@` mentions, given to, the deck's filter): the first by name.
+export const MEMBERS_LISTED = 100
+
 // Writes in one Firestore batch (its own cap is 500; room left for the tracked undo snapshot).
 export const WRITE_BATCH_MAX = 450

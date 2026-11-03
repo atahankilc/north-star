@@ -74,6 +74,7 @@ const CLIENT_ONLY: Partial<Record<keyof typeof L, string>> = {
   TABLE_COL_NAME_MAX: "a table column's name, inside the cols list",
   CHANGE_IDS_MAX: 'ids in one change entry: the rules cap the joined string (6600), not the count',
   WRITE_BATCH_MAX: "Firestore's own batch cap (500), not a rule",
+  MEMBERS_LISTED: 'how many people a picker loads, not data',
   WORKSPACE_NAME_MAX: "the fields' cap; the rules' validName takes up to 200 (older names kept)",
   SUMMARY_PIECES_MAX: 'pieces in a workspace summary: the rules cap the joined string (SUMMARY_PIECES_CHARS), not the count',
   SUMMARY_CARDS_MAX: 'cards in a workspace summary: the rules cap the joined string (SUMMARY_CARDS_CHARS), not the count',

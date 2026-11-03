@@ -4,7 +4,7 @@
 // canvas a picture; unframed, live there, a row's `↗` places it (or drags it out onto the canvas on its own, DocPlace); in
 // focus live: a click opens the document beside the list (DocReader), a right-click has the rest (open, place on the
 // canvas, share, download, delete). Paged like a table (D-213); which page is yours. Files dropped on it are uploaded.
-import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
@@ -18,6 +18,7 @@ import { ago } from '../../../ui/foundation/ago'
 import { useWs } from '../canvas/context'
 import { KindMark, lengthOf } from './DocContent'
 import { useOpenSize } from '../canvas/shownBox'
+import { useMeasuredSize } from '../canvas/useMeasuredSize'
 import type { FindItem } from '../find/find'
 import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import styles from './Documents.module.css'
@@ -200,17 +201,7 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
   // Open on the canvas, how big it came out: its box there (shownBox.ts).
   const world = useRef<HTMLDivElement>(null)
   const settled = useSettledZoom(view.zoom, live)
-  useLayoutEffect(() => {
-    const el = world.current
-    if (!el || !onCanvas) return
-    const ro = new ResizeObserver(() => {
-      const next = { w: el.offsetWidth, h: el.offsetHeight }
-      const was = useOpenSize.getState()[piece.id]
-      if (!was || was.w !== next.w || was.h !== next.h) useOpenSize.setState({ [piece.id]: next })
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [onCanvas, piece.id])
+  useMeasuredSize(world, useOpenSize, piece.id, onCanvas)
   const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }
   // A row's or sheet's grip drags it out onto the canvas (editors only): the canvas places it where it's let go.
   const grip = (d: WithId<Doc>) =>

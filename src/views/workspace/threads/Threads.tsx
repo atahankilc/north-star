@@ -20,13 +20,14 @@ import {
   reply,
   setResolved,
   startThread,
-  useMembers,
   useMessages,
   useReads,
   demoThreads,
   type NewThread,
 } from '../../../data/threads'
 import { useHistory } from '../../../data/history'
+import { useWorkspaceMembers } from '../../../data/workspaces'
+import { useWs } from '../canvas/context'
 import { isOnPlane, type Card } from '../../../data/cards'
 import { ago } from '../../../ui/foundation/ago'
 import { useEscapeLayer } from '../../../ui/foundation/useEscapeLayer'
@@ -140,7 +141,7 @@ type PanelProps = {
 
 export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow, onList }: PanelProps) {
   const messages = useMessages(wid, thread?.id ?? null)
-  const members = useMembers(wid).data
+  const members = useWorkspaceMembers(wid, useWs().workspace.memberIds)
   const reads = useReads(wid, myUid() || null).data
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)

@@ -1,6 +1,7 @@
 // Motion preference: full motion (default, D-063), reduced, or follow the OS.
 // Saved per browser. Everything that animates reads `reduced` from here, never the media query directly.
 import { create } from 'zustand'
+import { keepLocal, readLocal } from './local'
 
 export type MotionPref = 'system' | 'full' | 'reduced'
 
@@ -8,12 +9,8 @@ const KEY = 'north-star.motion'
 const media = window.matchMedia('(prefers-reduced-motion: reduce)')
 
 function load(): MotionPref {
-  try {
-    const v = localStorage.getItem(KEY)
-    if (v === 'system' || v === 'full' || v === 'reduced') return v
-  } catch {
-    // Storage blocked (private mode, etc.): keep the default.
-  }
+  const v = readLocal(KEY)
+  if (v === 'system' || v === 'full' || v === 'reduced') return v
   // Full unless you choose otherwise: the OS setting only counts once you pick `system`.
   return 'full'
 }
@@ -34,11 +31,7 @@ export const useMotion = create<MotionState>((set, get) => ({
   systemReduced: media.matches,
   reduced: resolve(initial, media.matches),
   setPref: (pref) => {
-    try {
-      localStorage.setItem(KEY, pref)
-    } catch {
-      // Not persisted; still applies for this session.
-    }
+    keepLocal(KEY, pref)
     set({ pref, reduced: resolve(pref, get().systemReduced) })
   },
 }))

@@ -3,6 +3,7 @@
 // a task's panel fills it, and the widths: the left part's share with the days open and the deck's share of the side
 // view. Yours, kept per workspace in this browser; not in the address (it's not a place).
 import { create } from 'zustand'
+import { keepLocal, readLocalJson } from '../../../state/local'
 
 export type SideTab = 'mine' | 'all' | string
 type Kept = { open: boolean; tab: SideTab; days: boolean; splitDays: number; inner: number }
@@ -17,12 +18,7 @@ export const useTasksSide = create<State>(() => ({ ...NONE, wid: null, linked: n
 // Read once a workspace opens; written back on every change.
 export function loadTasksSide(wid: string) {
   if (useTasksSide.getState().wid === wid) return
-  let saved: Partial<Kept> = {}
-  try {
-    saved = JSON.parse(localStorage.getItem(KEY(wid)) ?? '{}') as Partial<Kept>
-  } catch {
-    /* nothing kept */
-  }
+  const saved = readLocalJson<Partial<Kept> | null>(KEY(wid), {}) ?? {}
   useTasksSide.setState({
     wid,
     open: !!saved.open,
@@ -37,12 +33,8 @@ export function loadTasksSide(wid: string) {
 
 useTasksSide.subscribe((s) => {
   if (!s.wid) return
-  try {
-    const kept: Kept = { open: s.open, tab: s.tab, days: s.days, splitDays: s.splitDays, inner: s.inner }
-    localStorage.setItem(KEY(s.wid), JSON.stringify(kept))
-  } catch {
-    /* private mode: kept for this visit */
-  }
+  const kept: Kept = { open: s.open, tab: s.tab, days: s.days, splitDays: s.splitDays, inner: s.inner }
+  keepLocal(KEY(s.wid), JSON.stringify(kept))
 })
 
 // The side nav's icon and `t`: open (on `tab` when given) or close. Opened this way it's every deck's, not a plane's.
