@@ -35,6 +35,8 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
   `npm run deploy:rules` (D-322; storage-less until Blaze, `deploy:storage` apart)
 - `npm run check:gallery`: every component in a covered folder has its `X.gallery.tsx`, and the gallery stays out of
   the app and every build (D-324); the gallery itself: `/gallery.html` on the dev server
+- `npm run check:gallery:live`: the gallery's examples that press, drag or right-click, run in headless Chrome; a step
+  that finds nothing fails it (~3 min, so by hand and in CI's own job, not on every write; `-- <path part>` runs some)
 - `npm run check:kit`: hand-made UI outside src/ui no more than scripts/kit-baseline.json (D-326)
 - `npm run check:memory`: the memory bank agrees with itself (log numbering, every standing decision has a line in
   decisions.md or decisions-1.0.md, nothing superseded cited as a rule, state.md ≤ 120 lines); run after editing memory-bank/

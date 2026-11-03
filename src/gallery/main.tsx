@@ -29,8 +29,8 @@ const refused = (e: { preventDefault: () => void }, message: string) => {
 window.addEventListener('unhandledrejection', (e) => refused(e, String((e.reason as Error)?.message ?? e.reason)))
 window.addEventListener('error', (e) => refused(e, String(e.message)))
 
-// For scripts (shots, checks by hand): every example and its states' addresses.
-;(window as unknown as { __gallery: unknown }).__gallery = ENTRIES.map((e) => ({ c: e.id, states: Object.keys(e.states).map(stateSlug) }))
+// For scripts (shots, check:gallery:live): every example, its own file and its states' addresses.
+;(window as unknown as { __gallery: unknown }).__gallery = ENTRIES.map((e) => ({ c: e.id, path: e.path, states: Object.keys(e.states).map(stateSlug) }))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

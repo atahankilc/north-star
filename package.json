@@ -19,6 +19,7 @@
     "check:memory": "node scripts/check-memory.mjs",
     "check:lessons": "node scripts/check-lessons.mjs",
     "check:gallery": "node scripts/check-gallery.mjs",
+    "check:gallery:live": "node scripts/check-gallery-live.mjs",
     "check:tokens": "node scripts/check-tokens.mjs",
     "check:kit": "node scripts/check-kit.mjs",
     "test": "vitest run",

@@ -47,6 +47,19 @@ jobs:
         with:
           path: dist
 
+  # The gallery's examples that act, run in headless Chrome (check:gallery:live, D-324): a step that finds nothing fails
+  # it. Its own job, so it shows red without holding the deploy (a headless run can stall now and then).
+  gallery-live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check:gallery:live
+
   deploy:
     needs: build
     runs-on: ubuntu-latest

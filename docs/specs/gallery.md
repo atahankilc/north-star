@@ -167,4 +167,13 @@ export default example({
   - a `.gallery.tsx` has no component file beside it any more;
   - anything outside `src/gallery/` and the `*.gallery.tsx` files imports a `*.gallery.tsx` or `src/gallery/`;
   - `gallery.html` appears in a build input (`vite.config.ts`, `vite.demo.config.ts`).
+- `npm run check:gallery:live` (`scripts/check-gallery-live.mjs`, D-361's follow-up) runs every example whose states act
+  (`press`, `drag`, `rightClick`, `find` from src/gallery/docks.tsx) in headless Chrome and fails on any `[gallery]`
+  warning or page error: a step that finds nothing only warns, and the state quietly shows something else (the
+  wizards' step states pressed `2` while their tabs read `02`, D-344, until 2026-11-03). About three minutes, so by hand
+  and in CI's own `gallery-live` job (red without holding the deploy), not in the write hook or the commit check.
+  puppeteer-core stays out of the repo: installed once in `~/.cache/north-star/check-gallery-live` (or
+  `CHECK_LIVE_CACHE`); Chrome is the machine's (`CHROME_PATH`). Each of its four workers is its own browser with one
+  tab: a tab behind another has its frames paused and its steps never run, silently. `-- <path part>` runs only the
+  examples whose file path has it.
 - Dev only, for good: the deployed site never has the gallery (the user: "Deploy ettiğim şeyde neden göstereyim").

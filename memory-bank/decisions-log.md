@@ -7023,4 +7023,5 @@ drag work's own).
 **Group 2, filter stores (2026-11-03):** canvas/heldStore.ts, canvas/filterPick.ts (shared-code.md's Done).
 **Group 3, wizards and cascades (2026-11-03):** useDraftWizard + StartFrom; one `rehome` for cards and one for pieces; `refsTo` kept apart (shared-code.md's Done). A record per piece kind and the setup shell: another session's.
 **Group 3, a record per piece kind and the setup shell (2026-11-03, north-star-48):** canvas/pieceKinds.tsx (shared-code.md's Done). All four groups done.
+**Follow-up (2026-11-03, the user: "check:gallery kontrolünü ekle", puppeteer kept out of the repo):** `npm run check:gallery:live` (docs/specs/gallery.md §7): the examples that act, run in headless Chrome, fail on a `[gallery]` warning or a page error; puppeteer-core in a cache outside the repo; one tab per browser (a background tab's steps never run); CI's own `gallery-live` job, not holding the deploy. Seen failing on the old `'2'` and passing on 71 states.
 **Not yet:** the checklist's add field keeps what's typed on blur while AddField drops it (to decide); `CheckField` as a CommitField option.

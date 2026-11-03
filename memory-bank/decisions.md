@@ -39,7 +39,7 @@ feature comes back as a piece, and check them with the user then.
   command; an index deploy never deletes Firebase's indexes (D-322).
 - Component gallery (D-324, docs/specs/gallery.md): `gallery.html`, dev only, never built; demo realm parts on real
   time; one `X.gallery.tsx` beside each component in a covered folder (`src/ui`, `src/views/workspace`, `src/onboarding`), required with a new or changed
-  component, `npm run check:gallery`.
+  component, `npm run check:gallery`; `check:gallery:live` runs the examples that act in headless Chrome (CI's own job, D-361).
 - Foundation (D-326, docs/foundation-audit-2026-10-31.md): the UI built from the bottom: tokens and motion, the kit in
   src/ui, patterns, then features; the gallery a page per component, grouped by layer and area (where its file lives), every
   state side by side, what it's built from and where it's used by area (D-336). Motion's numbers and the tween in src/ui/foundation/motionTokens.ts and motion.ts (held to tokens.css by a test), card
