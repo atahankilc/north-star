@@ -34,6 +34,7 @@ import { TASK_NOTES_MAX } from '../../../model/limits'
 import { TagList } from './TagList'
 import { NotesSection } from './NotesSection'
 import { usePicker } from './usePicker'
+import { AddField } from '../../../ui/primitives/AddField'
 
 const TONE = 'var(--accent-cyan)'
 
@@ -490,13 +491,13 @@ function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }
 function Checklist({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
   const { wid } = useWs()
   const checks = task.checks ?? []
-  const [adding, setAdding] = useState(false)
-  const [draft, setDraft] = useState('')
+  // A step being added (null: none), the kit's AddField: Enter adds and stays for the next, leaving adds and closes.
+  const [draft, setDraft] = useState<string | null>(null)
   const [typing, setTyping] = useState<string | null>(null)
   const set = (next: Check[], key?: string) => void setChecks(wid, task, next, key)
   const ticked = checks.filter((c) => c.done).length
   return (
-    <PanelSection n={n} name="checklist" count={checks.length ? `${ticked}/${checks.length}` : undefined} add={editor ? { label: 'step', onClick: () => setAdding(true) } : undefined} empty={!checks.length && !adding}>
+    <PanelSection n={n} name="checklist" count={checks.length ? `${ticked}/${checks.length}` : undefined} add={editor && draft === null ? { label: 'step', onClick: () => setDraft('') } : undefined} empty={!checks.length && draft === null}>
       <ul className={own.checks}>
         {checks.map((c) => (
           <li key={c.id} className={own.check} data-done={c.done || undefined}>
@@ -524,28 +525,15 @@ function Checklist({ task, editor, n }: { task: Task; editor: boolean; n: number
           </li>
         ))}
       </ul>
-      {adding && (
-        <Field
-          size="sm"
+      {draft !== null && (
+        <AddField
           label="A step"
-          autoFocus
           placeholder="a step"
           value={draft}
           maxLength={CHECK_MAX}
           onChange={setDraft}
-          onBlur={() => {
-            if (draft.trim()) set([...checks, newCheck(draft.trim())])
-            setAdding(false)
-            setDraft('')
-          }}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            if (e.key === 'Enter' && draft.trim()) {
-              set([...checks, newCheck(draft.trim())])
-              setDraft('')
-            }
-            if (e.key === 'Escape') (setAdding(false), setDraft(''))
-          }}
+          onClose={() => setDraft(null)}
+          onAdd={(t) => (set([...checks, newCheck(t)]), setDraft(''))}
         />
       )}
     </PanelSection>

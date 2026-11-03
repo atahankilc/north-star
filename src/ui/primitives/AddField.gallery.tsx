@@ -27,7 +27,7 @@ export default example({
   name: 'AddField',
   place: 'forms/fields',
   file: 'src/ui/primitives/AddField.tsx',
-  note: 'what a + tag turns into (D-359): Enter adds and stays for the next, Escape or leaving closes; the card panel’s tags, regions, criteria, a task’s labels',
+  note: 'what a + tag turns into (D-359): Enter adds and stays for the next, leaving adds what’s typed and closes, Escape closes and drops it; the card panel’s tags, regions, criteria, a task’s labels and checklist',
   states: {
     tags: () => <Tags />,
   },
