@@ -55,7 +55,7 @@ import { useWs } from '../canvas/context'
 import styles from './TextItems.module.css'
 import { usePeersOn } from '../canvas/collab'
 import { carriedStyle, Landing, Marks, type Handle } from '../../../ui/primitives/Marks'
-import { ThreadChip, threadOn } from '../threads/Threads'
+import { ThreadChip, useThreadOn } from '../threads/Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 import { headingSize, kickPx, labelBox, STICKY_TEXT_TOP, type HeadingSize } from '../../../model/labelBox'
 import { AUTOSAVE_MS } from '../../../ui/foundation/feel'
@@ -118,7 +118,9 @@ export function TextItems({ labels, layer, live, editor, zoom, carry }: Props) {
 type ItemProps = { l: Label; live: boolean; editor: boolean; zoom: number; labels: Label[]; carry: Carry }
 
 function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
-  const { wid, threads } = useWs()
+  const { wid } = useWs()
+  // Its own thread only: a message elsewhere doesn't draw it again (D-287).
+  const thread = useThreadOn(live ? l.id : null)
   const kind = kindOf(l)
   const selected = useCanvasView((s) => live && (s.labelSelected === l.id || s.cardMulti.includes(l.id)))
   const typing = useCanvasView((s) => live && editor && s.labelEditing === l.id)
@@ -282,7 +284,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
           resizing={sizing}
         />
       )}
-      {live && <ThreadChip wid={wid} thread={threadOn(threads, l.id)} zoom={zoom} />}
+      {live && <ThreadChip wid={wid} thread={thread} zoom={zoom} />}
     </>
   )
   const withLanding = (item: ReactNode) => (

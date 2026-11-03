@@ -3,9 +3,10 @@
 // refusal for viewers). A thread and its first message are written together; each reply bumps the thread's count and
 // says who wrote last. Mentions (D-166) are member ids on the message and, gathered, on the thread. What you've read is
 // `threadReads/{your uid}`: each thread's `lastAt` when you last had it open.
-import { arrayUnion, collection, doc, getDoc, getDocs, increment, limit, orderBy, query, setDoc, updateDoc, writeBatch, deleteField } from 'firebase/firestore'
+import { useCallback, useSyncExternalStore } from 'react'
+import { arrayUnion, collection, doc, getDoc, getDocs, increment, limit, onSnapshot, orderBy, query, setDoc, updateDoc, writeBatch, deleteField } from 'firebase/firestore'
 import { db, firebase } from './firebase'
-import { useDoc, useQuery, type Live, type WithId } from './hooks'
+import { useQuery, type Live, type WithId } from './hooks'
 import { MENTIONS_MAX, MESSAGE_MAX, type Member, type Thread, type ThreadMessage, type ThreadReads, type ThreadTarget } from './model'
 
 const threadsOf = (wid: string) => collection(db(), 'workspaces', wid, 'threads')
@@ -29,8 +30,42 @@ export function useMessages(wid: string, tid: string | null): Live<WithId<Thread
 }
 
 // What you've read (D-166).
+// One listener per reads doc, however many read it: every comment chip on a plane reads it (the sweep of 2026-11-03:
+// 300 cards were 300 listeners, and each read mark gave all 300 a new object). Started by the first that reads it,
+// stopped when the last one goes.
+type Shared = { live: Live<WithId<ThreadReads> | null>; subs: Set<() => void>; off: () => void }
+const sharedReads = new Map<string, Shared>()
+const READS_LOADING: Live<WithId<ThreadReads> | null> = { data: null, isLoading: true, error: null }
+const READS_NONE: Live<WithId<ThreadReads> | null> = { data: null, isLoading: false, error: null }
+
+function listenReads(path: string, on: () => void): () => void {
+  let s = sharedReads.get(path)
+  if (!s) {
+    const made: Shared = { live: READS_LOADING, subs: new Set(), off: () => {} }
+    const tell = (live: Live<WithId<ThreadReads> | null>) => ((made.live = live), made.subs.forEach((f) => f()))
+    made.off = onSnapshot(
+      doc(db(), path),
+      (snap) => tell({ data: snap.exists() ? { ...(snap.data() as ThreadReads), id: snap.id } : null, isLoading: false, error: null }),
+      (error) => tell({ data: null, isLoading: false, error }),
+    )
+    sharedReads.set(path, made)
+    s = made
+  }
+  const entry = s
+  entry.subs.add(on)
+  return () => {
+    entry.subs.delete(on)
+    if (entry.subs.size || sharedReads.get(path) !== entry) return
+    entry.off()
+    sharedReads.delete(path)
+  }
+}
+
 export function useReads(wid: string, uid: string | null): Live<WithId<ThreadReads> | null> {
-  const live = useDoc<ThreadReads>(uid ? `workspaces/${wid}/threadReads/${uid}` : null)
+  const path = firebase && uid ? `workspaces/${wid}/threadReads/${uid}` : null
+  const subscribe = useCallback((on: () => void) => (path ? listenReads(path, on) : () => {}), [path])
+  const get = useCallback(() => (path ? (sharedReads.get(path)?.live ?? READS_LOADING) : READS_NONE), [path])
+  const live = useSyncExternalStore(subscribe, get, get)
   return firebase ? live : { data: { id: uid ?? '', seen: demoThreads.seen } as WithId<ThreadReads>, isLoading: false, error: null }
 }
 

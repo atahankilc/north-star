@@ -1418,6 +1418,14 @@ north-star-e7 (recent commits), -48 and -51 told what each found. The user picke
   a focused button on the workspaces page presses it. Checked headless on emulators: Space opens `more for…`'s menu with
   the prompt empty; back/forward between two workspaces shows the right names (the old code showed no wrong frame
   either, so that test doesn't prove the fix; it rests on the remount). The double Escape not reproduced in a browser.
+- Then 12 and 13 (2026-11-03): `useReads` is one shared listener per reads doc (ref-counted, data/threads.ts);
+  `threadOn` looks up a map made once per threads list; `useThreadOn(id)` (useSyncExternalStore on the ws store) lets a
+  card, package or text draw again only when its own thread changes; `ThreadChip` reads the seen state only when it has
+  a thread (`ChipOf`). The documents list's rows are a memoised `DocumentsBoard` under the moving shell (D-279).
+  Measured headless on emulators with a devtools hook counting components that drew (skipping untouched subtrees):
+  one reply on a plane of 30 cards, CardBody 60 → 1, chips 64 → 7; 31 frames of pan and zoom on a list of 6
+  documents, rows 186 → 0. Left: the links' chips (LinkChips, one component) and a deck's TaskBoard still draw again on
+  any thread change, with O(1) lookups now.
 
 ## Done (2026-11-03): a test pass over the last 15 commits, and its fixes (north-star-e7; pushed)
 Eight reviewers (one area each) and two headless runs on emulators over 0db26da back to f2d28ac. The refactors held

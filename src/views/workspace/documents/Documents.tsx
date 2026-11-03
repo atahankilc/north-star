@@ -4,7 +4,7 @@
 // canvas a picture; unframed, live there, a row's `↗` places it (or drags it out onto the canvas on its own, DocPlace); in
 // focus live: a click opens the document beside the list (DocReader), a right-click has the rest (open, place on the
 // canvas, share, download, delete). Paged like a table (D-213); which page is yours. Files dropped on it are uploaded.
-import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
@@ -174,7 +174,26 @@ type Props = {
   page?: number
 }
 
-export function DocumentsView({ piece, view, live, editor, onCanvas = false, onOpen, page: pageAt }: Props) {
+// The view is a thin shell that moves the list (D-279): a pan or a wheel step changes only its transform, and the rows,
+// memoised apart (`DocumentsBoard`), never draw again for it.
+export function DocumentsView({ piece, view, live, editor, onCanvas = false, onOpen, page }: Props) {
+  // Open on the canvas, how big it came out: its box there (shownBox.ts).
+  const world = useRef<HTMLDivElement>(null)
+  const settled = useSettledZoom(view.zoom, live)
+  useMeasuredSize(world, useOpenSize, piece.id, onCanvas)
+  const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }
+  return (
+    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
+      <div ref={world} className={styles.world} data-zooming={view.zoom !== settled || undefined} style={style}>
+        <DocumentsBoard piece={piece} live={live} editor={editor} onCanvas={onCanvas} onOpen={onOpen} page={page} />
+      </div>
+    </div>
+  )
+}
+
+type BoardProps = Omit<Props, 'view' | 'onCanvas'> & { onCanvas: boolean }
+
+const DocumentsBoard = memo(function DocumentsBoard({ piece, live, editor, onCanvas, onOpen, page: pageAt }: BoardProps) {
   const { documents } = useWs()
   const { user } = useAuth()
   const me = user?.id
@@ -198,11 +217,6 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
   const grips = false
   // Each document's actions right there, no need to open it (D-232): rename, share, place, download, delete.
   const actions = (d: WithId<Doc>) => (live ? <RowActions d={d} list={piece} editor={editor} onCanvas={onCanvas} /> : null)
-  // Open on the canvas, how big it came out: its box there (shownBox.ts).
-  const world = useRef<HTMLDivElement>(null)
-  const settled = useSettledZoom(view.zoom, live)
-  useMeasuredSize(world, useOpenSize, piece.id, onCanvas)
-  const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }
   // A row's or sheet's grip drags it out onto the canvas (editors only): the canvas places it where it's let go.
   const grip = (d: WithId<Doc>) =>
     // Only where the list is live on the canvas (unframed, D-234): framed it's a picture, nothing on it takes a click.
@@ -213,105 +227,103 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
     ) : null
 
   return (
-    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div ref={world} className={styles.world} data-zooming={view.zoom !== settled || undefined} style={style}>
-        {all.length === 0 ? (
-          <div className={styles.empty} style={{ width: TABLE_W }}>
-            <p>No documents yet.</p>
-            <Empty tone="dim">Drop .md files here{live ? ', or [upload] below' : ''}. Images and PDFs come with Storage.</Empty>
-          </div>
-        ) : setup.view === 'shelf' ? (
-          <div className={styles.shelf} style={{ width: shelfW(shown.length), padding: D.pad, gap: D.sheet.gap, gridTemplateColumns: `repeat(${shelfCols(shown.length)}, ${D.sheet.w}px)` }}>
-            {shown.map((d) => (
-              // Its marks outside the sheet, which cuts its text off at its foot (D-265).
-              <div key={d.id} className={styles.sheetAt}>
-              <div
-                className={styles.sheet}
-                style={{ height: D.sheet.h }}
-                data-find-box
-                data-lit={readers.includes(d.id) || undefined}
-                data-target={live ? `doc:${d.id}` : undefined}
-                // A press here is the row's until it moves (the focus's pan would take the click, D-217).
-                data-cell={live || undefined}
-                onClick={live ? () => open(d) : undefined}
-                title={d.title}
-              >
-                <span className={styles.fold} aria-hidden />
-                <span className={styles.sheetHead}>
-                  <KindMark kind={d.kind} />
-                  {!d.shared && <span className={styles.private}>◐</span>}
-                </span>
-                {live && renaming === d.id ? <RenameField d={d} /> : <span className={styles.sheetTitle} data-find={`t|${d.id}`}>{d.title}</span>}
-                <SheetLines d={d} />
-                {actions(d)}
-                <span className={styles.sheetFoot}>
-                  <span data-find={`b|${d.id}`}>{d.uid === me ? 'you' : d.name}</span>
-                  <span>{ago(d.createdAt)}</span>
-                </span>
-                {grip(d)}
-              </div>
-              <Marks tone="var(--link-depends)" live={live} selected={readers.includes(d.id)} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.table} style={{ width: tableW(grips, live) }}>
-            <div className={styles.headRow} style={{ height: D.head }}>
-              {COLS.map((c) => (
-                <Head key={c} col={c} setup={setup} live={live && editor} piece={piece} />
-              ))}
-            </div>
-            {shown.map((d) => (
-              <div
-                key={d.id}
-                className={styles.row}
-                style={{ height: D.row }}
-                data-find-box
-                data-lit={readers.includes(d.id) || undefined}
-                data-target={live ? `doc:${d.id}` : undefined}
-                data-cell={live || undefined}
-                onClick={live ? () => open(d) : undefined}
-              >
-                <span className={styles.cell} style={{ width: COL_W.kind }}>
-                  <KindMark kind={d.kind} />
-                </span>
-                <span className={styles.cell} style={{ width: COL_W.title }}>
-                  {live && renaming === d.id ? <RenameField d={d} /> : <span className={styles.title} data-find={`t|${d.id}`}>{d.title}</span>}
-                  {d.excerpt && <span className={styles.excerpt} data-find={`e|${d.id}`}>{d.excerpt}</span>}
-                </span>
-                <span className={styles.cell} style={{ width: COL_W.by }}>
-                  <span className={styles.by} data-find={`b|${d.id}`}>{d.uid === me ? 'you' : d.name}</span>
-                  {!d.shared && (
-                    <span className={styles.private} title="only you see this until you share it">
-                      ◐
-                    </span>
-                  )}
-                </span>
-                <span className={`${styles.cell} ${styles.num}`} style={{ width: COL_W.size }}>
-                  {lengthOf(d)}
-                </span>
-                <span className={styles.cell} style={{ width: COL_W.added }}>
-                  {ago(d.createdAt)}
-                </span>
-                {live && (
-                  <span className={styles.cell} style={{ width: COL_W.actions }}>
-                    {actions(d)}
-                  </span>
-                )}
-                {grips && (
-                  <span className={styles.cell} style={{ width: COL_W.grip }}>
-                    {grip(d)}
-                  </span>
-                )}
-                <Marks tier="s" tone="var(--link-depends)" live={live} selected={readers.includes(d.id)} />
-              </div>
-            ))}
-          </div>
-        )}
+    <>
+    {all.length === 0 ? (
+      <div className={styles.empty} style={{ width: TABLE_W }}>
+        <p>No documents yet.</p>
+        <Empty tone="dim">Drop .md files here{live ? ', or [upload] below' : ''}. Images and PDFs come with Storage.</Empty>
       </div>
-    </div>
+    ) : setup.view === 'shelf' ? (
+      <div className={styles.shelf} style={{ width: shelfW(shown.length), padding: D.pad, gap: D.sheet.gap, gridTemplateColumns: `repeat(${shelfCols(shown.length)}, ${D.sheet.w}px)` }}>
+        {shown.map((d) => (
+          // Its marks outside the sheet, which cuts its text off at its foot (D-265).
+          <div key={d.id} className={styles.sheetAt}>
+          <div
+            className={styles.sheet}
+            style={{ height: D.sheet.h }}
+            data-find-box
+            data-lit={readers.includes(d.id) || undefined}
+            data-target={live ? `doc:${d.id}` : undefined}
+            // A press here is the row's until it moves (the focus's pan would take the click, D-217).
+            data-cell={live || undefined}
+            onClick={live ? () => open(d) : undefined}
+            title={d.title}
+          >
+            <span className={styles.fold} aria-hidden />
+            <span className={styles.sheetHead}>
+              <KindMark kind={d.kind} />
+              {!d.shared && <span className={styles.private}>◐</span>}
+            </span>
+            {live && renaming === d.id ? <RenameField d={d} /> : <span className={styles.sheetTitle} data-find={`t|${d.id}`}>{d.title}</span>}
+            <SheetLines d={d} />
+            {actions(d)}
+            <span className={styles.sheetFoot}>
+              <span data-find={`b|${d.id}`}>{d.uid === me ? 'you' : d.name}</span>
+              <span>{ago(d.createdAt)}</span>
+            </span>
+            {grip(d)}
+          </div>
+          <Marks tone="var(--link-depends)" live={live} selected={readers.includes(d.id)} />
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className={styles.table} style={{ width: tableW(grips, live) }}>
+        <div className={styles.headRow} style={{ height: D.head }}>
+          {COLS.map((c) => (
+            <Head key={c} col={c} setup={setup} live={live && editor} piece={piece} />
+          ))}
+        </div>
+        {shown.map((d) => (
+          <div
+            key={d.id}
+            className={styles.row}
+            style={{ height: D.row }}
+            data-find-box
+            data-lit={readers.includes(d.id) || undefined}
+            data-target={live ? `doc:${d.id}` : undefined}
+            data-cell={live || undefined}
+            onClick={live ? () => open(d) : undefined}
+          >
+            <span className={styles.cell} style={{ width: COL_W.kind }}>
+              <KindMark kind={d.kind} />
+            </span>
+            <span className={styles.cell} style={{ width: COL_W.title }}>
+              {live && renaming === d.id ? <RenameField d={d} /> : <span className={styles.title} data-find={`t|${d.id}`}>{d.title}</span>}
+              {d.excerpt && <span className={styles.excerpt} data-find={`e|${d.id}`}>{d.excerpt}</span>}
+            </span>
+            <span className={styles.cell} style={{ width: COL_W.by }}>
+              <span className={styles.by} data-find={`b|${d.id}`}>{d.uid === me ? 'you' : d.name}</span>
+              {!d.shared && (
+                <span className={styles.private} title="only you see this until you share it">
+                  ◐
+                </span>
+              )}
+            </span>
+            <span className={`${styles.cell} ${styles.num}`} style={{ width: COL_W.size }}>
+              {lengthOf(d)}
+            </span>
+            <span className={styles.cell} style={{ width: COL_W.added }}>
+              {ago(d.createdAt)}
+            </span>
+            {live && (
+              <span className={styles.cell} style={{ width: COL_W.actions }}>
+                {actions(d)}
+              </span>
+            )}
+            {grips && (
+              <span className={styles.cell} style={{ width: COL_W.grip }}>
+                {grip(d)}
+              </span>
+            )}
+            <Marks tier="s" tone="var(--link-depends)" live={live} selected={readers.includes(d.id)} />
+          </div>
+        ))}
+      </div>
+    )}
+    </>
   )
-}
+})
 
 // A document's actions in its row or on its sheet, as marks (their words in the tips): rename and share (its author),
 // place on the canvas (editors; asks first when it's private), download, delete (its author, an owner a shared one; asks

@@ -6,7 +6,7 @@
 // who wrote each message (full name) and when, the text, a `>` prompt (Enter sends, shift+Enter a new line, `@`
 // suggests the workspace's people), resolve or reopen. Only a message's writer edits or deletes it. Resolved threads
 // leave the canvas; every thread is in the threads panel (ThreadInbox.tsx). Anyone in the workspace comments, viewers too.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import { firebase } from '../../../data/firebase'
@@ -27,7 +27,7 @@ import {
 } from '../../../data/threads'
 import { useHistory } from '../../../data/history'
 import { useWorkspaceMembers } from '../../../data/workspaces'
-import { useWs } from '../canvas/context'
+import { useWs, WorkspaceContext } from '../canvas/context'
 import { isOnPlane, type Card } from '../../../data/cards'
 import { ago } from '../../../ui/foundation/ago'
 import { useEscapeLayer } from '../../../ui/foundation/useEscapeLayer'
@@ -89,18 +89,45 @@ export const threadIn = (t: Pick<Thread, 'planeId' | 'on' | 'targetId'>, plane: 
 }
 
 // The conversation on a component (D-193): its newest unresolved thread. One at a time: commenting again opens it.
-export const threadOn = (threads: WithId<Thread>[], id: string) =>
-  threads.filter((t) => t.targetId === id && !t.resolved).sort((a, b) => b.lastAt - a.lastAt)[0] ?? null
+// Looked up in a map made once per threads list, not a filter and sort over every thread per item per draw.
+const openByTarget = new WeakMap<readonly WithId<Thread>[], Map<string, WithId<Thread>>>()
+function threadsByTarget(threads: readonly WithId<Thread>[]) {
+  let m = openByTarget.get(threads)
+  if (!m) {
+    m = new Map()
+    for (const t of threads) {
+      if (t.resolved) continue
+      const had = m.get(t.targetId)
+      if (!had || t.lastAt > had.lastAt) m.set(t.targetId, t)
+    }
+    openByTarget.set(threads, m)
+  }
+  return m
+}
+export const threadOn = (threads: readonly WithId<Thread>[], id: string) => threadsByTarget(threads).get(id) ?? null
+
+// A component's own thread, read so the component draws again only when that thread changes, not on every message
+// anywhere in the workspace (D-287); null while `id` is null (not live).
+export function useThreadOn(id: string | null): WithId<Thread> | null {
+  const store = useContext(WorkspaceContext)
+  if (!store) throw new Error('useThreadOn() outside a workspace route')
+  const get = useCallback(() => (id ? threadOn(store.get().threads, id) : null), [store, id])
+  return useSyncExternalStore(store.subscribe, get, get)
+}
 
 // A component's comments (D-193): under its bottom-right corner, set like a plane's console, at the screen's size: the
 // comment mark and how many messages, magenta when someone wrote since you last read it, `@` when they mentioned you.
 // A click opens its thread in the threads panel (D-199). `c` hides them.
 export function ThreadChip({ wid, thread, zoom }: { wid: string; thread: WithId<Thread> | null; zoom: number }) {
   const show = useThreadView((s) => s.show)
+  // Only a component with a thread reads what you've seen: a read mark draws its chips, not every card's.
+  return thread && show ? <ChipOf wid={wid} thread={thread} zoom={zoom} /> : null
+}
+
+function ChipOf({ wid, thread, zoom }: { wid: string; thread: WithId<Thread>; zoom: number }) {
   const openId = useThreadView((s) => s.openId)
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
-  if (!thread || !show) return null
   const fresh = isNew(thread, seen, thread.id, me)
   const mentioned = fresh && !!thread.mentions?.includes(me)
   return (

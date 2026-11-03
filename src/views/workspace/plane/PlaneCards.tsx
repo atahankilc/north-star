@@ -27,7 +27,7 @@ import type { Label } from '../../../data/labels'
 import { labelBox, TextItems } from '../text/TextItems'
 import { usePeersOn } from '../canvas/collab'
 import { BoxSelect, carriedStyle, Landing, Marks, useSettledZoom } from '../../../ui/primitives/Marks'
-import { ThreadChip, threadOn } from '../threads/Threads'
+import { ThreadChip, useThreadOn } from '../threads/Threads'
 import { PackPick } from './PackPick'
 import { CardPanel } from '../panels/CardPanel'
 import { GRID, snap } from '../../../data/grid'
@@ -469,7 +469,9 @@ const CardBox = memo(CardBoxOf, sameProps)
 // rating, a cell per member, `[−]` to fold them in). The band takes the pointer (select, drag them all, its `›`); the
 // frame lets it through to the cards and the plane.
 function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: BoxProps & { place: Box }) {
-  const { wid, threads } = useWs()
+  const { wid } = useWs()
+  // Its own thread only: a message elsewhere doesn't draw it again (D-287).
+  const thread = useThreadOn(live ? card.id : null)
   const selected = useCanvasView((s) => live && (s.cardSelected === card.id || s.cardMulti.includes(card.id)))
   const hovered = useCanvasView((s) => live && s.cardHovered === card.id)
   const peers = usePeersOn(card.id, planeOf(card))
@@ -525,7 +527,7 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
         />
         <div className={styles.frame} />
         {live && <Marks zoom={zoom} tier="l" short={Math.min(place.w, place.h)} hover={hovered} selected={selected} pressed={pressed} dragging={!!carried} peers={peers} />}
-        {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
+        {live && <ThreadChip wid={wid} thread={thread} zoom={zoom} />}
       </div>
       {carried && lead && <Landing x={x} y={y} w={place.w} h={place.h} zoom={zoom} tier="l" tone={CARD_TONE.package} />}
     </>
@@ -533,7 +535,9 @@ function PackageFrame({ card, facts, zoom, live, editor, place, members = [] }: 
 }
 
 function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, parts, rows, carries, features, matched, open, counts, dim }: BoxProps) {
-  const { wid, threads } = useWs()
+  const { wid } = useWs()
+  // Its own thread only: a message elsewhere doesn't draw the card again (D-287).
+  const thread = useThreadOn(live ? card.id : null)
   // Every card and link only when a link is drawn from it: read then, so a card doesn't draw again when another changes.
   const now = useWsNow()
   const face = useRef<HTMLDivElement>(null)
@@ -669,7 +673,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
             <span aria-hidden>›</span>
           </span>
         )}
-        {live && <ThreadChip wid={wid} thread={threadOn(threads, card.id)} zoom={zoom} />}
+        {live && <ThreadChip wid={wid} thread={thread} zoom={zoom} />}
       </div>
       {/* Carried by what holds it (a section, a package), only that one's marks show where they land (D-291). */}
       {live && moving && (!shift?.lead || lifted) && <Landing x={x} y={y} w={CARD.w} h={h} zoom={zoom} tone={CARD_TONE[card.type]} />}
