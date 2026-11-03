@@ -223,4 +223,10 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
     the canvas's own (its cards and text). Checked: 17 galleries' states old vs new, pixel-identical (three needed 30 s
     for the camera's first fit); every dock's buttons, the console's on unframed pieces, setup and Escape in focus, on
     the canvas and beside, the same in both.
-  - Left for step 3: the finder (findIndex.ts, FindPreview.tsx) and shownBox.ts.
+  - Step 3: the finder on the record: a kind's `find` (its matches, what a row says it is, the heads a landing keeps
+    clear of) for the table, matrix and documents list, its bounds for every kind; the preview draws a match through
+    the kind's view (`page` passed). The deck's tasks and a document's pages stay the finder's own (their rows are
+    shaped apart). Checked: ten queries' rows and hints the same old vs new, their previews pixel-identical (one run
+    caught the canvas behind mid-glide; again, identical).
+  - Kept apart: shownBox.ts (an open piece's box: measured for the deck and lists, worked out for a matrix or table;
+    it sits on the import-cycle-sensitive path, D-287).

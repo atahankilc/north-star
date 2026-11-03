@@ -11,15 +11,17 @@ import type { Card } from '../../../data/cards'
 import type { Task } from '../../../data/tasks'
 import { kindOfPiece } from '../../../data/pieces'
 import type { Bounds, PlaneCam } from '../../../state/canvasView'
-import { matrixBounds, MatrixView, toggleMatrixSetup, useMatrixUi } from '../matrix/Matrix'
+import type { Cell } from '../../../data/matrix'
+import type { FindItem } from '../find/find'
+import { M, matrixBounds, matrixFindItems, MatrixView, toggleMatrixSetup, useMatrixUi } from '../matrix/Matrix'
 import { MatrixSetupPanel } from '../matrix/MatrixSetup'
-import { tableBounds, TablePager, TableView, useTableUi } from '../table/Table'
+import { tableBounds, tableFindItems, TablePager, TableView, useTableUi, type FieldText } from '../table/Table'
 import { TableSetupPanel } from '../table/TableSetup'
 import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView, useKanbanUi } from '../deck/Kanban'
 import { KanbanSetupPanel } from '../deck/KanbanSetup'
 import { KanbanFilterDock } from '../deck/KanbanFilterDock'
 import { timelineBounds, TimelineDockTools, TimelineView, TimelineWeeks } from '../deck/Timeline'
-import { documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, useDocUi } from '../documents/Documents'
+import { documentsBounds, documentsFindItems, documentsOf, DocumentsTools, DocumentsView, listed, useDocUi } from '../documents/Documents'
 import { DocFocus, documentBounds, DocumentPieceView } from '../documents/DocumentPiece'
 import { DockAction } from './FocusDock'
 
@@ -27,10 +29,13 @@ export type LensKind = Exclude<PieceKind, 'plane'>
 
 // How a kind is drawn wherever it shows: in its window (`live` false), open on the canvas (`onCanvas`), in focus.
 // `onFocus`: what takes it into focus (a documents list's row, a document's `[continue reading ↗]`, open on the canvas).
-export type ShownProps = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onFocus?: () => void }
+// `page`: a table's or list's page to show (the finder's preview, D-236).
+export type ShownProps = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onFocus?: () => void; page?: number }
 
 // What its contents' box is worked out from.
 export type BoundsCtx = { cards: Card[]; tasks: Task[]; pieces: WithId<Piece>[]; documents: WithId<Doc>[]; me?: string }
+// And what the finder reads its matches from.
+export type FindCtx = BoundsCtx & { cells: Cell[]; fieldText: FieldText }
 
 type SetupStore = UseBoundStore<StoreApi<{ setup: string | null }>>
 type PieceProps = { piece: WithId<Piece>; editor: boolean }
@@ -48,15 +53,20 @@ export type KindRecord = {
   dock?: ComponentType<PieceProps>
   // Open on the canvas (D-228): its tools on its console, before its setup.
   console?: ComponentType<PieceProps & { toolClass: string }>
+  // What the finder (D-236) looks through in it, every page: its matches (each with its box in its px), what a row says
+  // it is, and the heads its landing keeps clear of (a matrix's stay on the screen when panned past).
+  find?: { items: (piece: WithId<Piece>, ctx: FindCtx) => FindItem[]; hint: (it: FindItem) => string; heads?: { top: number; left: number } }
 }
+
+const pageOf = (it: FindItem) => (it.page !== undefined ? ` · page ${it.page + 1}` : '')
 
 const toggleIn = (store: SetupStore) => (id: string) => store.setState((s) => ({ setup: s.setup === id ? null : id }))
 
 // Drawn again only when what it shows changes, not as the camera moves (its view is the same object meanwhile).
 const MatrixShown = memo(({ piece, view, live, editor, onCanvas }: ShownProps) => <MatrixView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} />)
-const TableShown = memo(({ piece, view, live, editor, onCanvas }: ShownProps) => <TableView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} />)
+const TableShown = memo(({ piece, view, live, editor, onCanvas, page }: ShownProps) => <TableView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} page={page} />)
 // Open on the canvas (D-234), a row's click takes the list into focus with the document beside it.
-const DocumentsShown = memo(({ piece, view, live, editor, onCanvas, onFocus }: ShownProps) => <DocumentsView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} onOpen={onCanvas ? onFocus : undefined} />)
+const DocumentsShown = memo(({ piece, view, live, editor, onCanvas, onFocus, page }: ShownProps) => <DocumentsView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} onOpen={onCanvas ? onFocus : undefined} page={page} />)
 const DocumentShown = memo(({ piece, view, live, onCanvas, onFocus }: ShownProps) => <DocumentPieceView piece={piece} view={view} live={live} onCanvas={onCanvas} onMore={onCanvas ? onFocus : undefined} />)
 const KanbanShown = memo(({ piece, view, live, editor, onCanvas }: ShownProps) => <KanbanView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} />)
 const TimelineShown = memo(({ piece, view, live, editor, onCanvas }: ShownProps) => <TimelineView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} />)
@@ -93,6 +103,11 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
     bounds: (p, c) => matrixBounds(p, c.cards),
     fitted: true,
     setup: { store: useMatrixUi, toggle: toggleMatrixSetup, title: 'its rows, columns and cells', Panel: MatrixSetupPanel },
+    find: {
+      items: (p, c) => matrixFindItems(p, c.cards, c.cells),
+      hint: (it) => (it.key.startsWith('cols|') ? 'column' : it.key.startsWith('rows|') ? 'row' : `cell${pageOf(it)}`),
+      heads: { top: M.top, left: M.head },
+    },
   },
   table: {
     Shown: TableShown,
@@ -101,6 +116,10 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
     setup: { store: useTableUi, toggle: toggleIn(useTableUi), title: 'where its rows come from, its columns', Panel: TableSetupPanel },
     dock: pager,
     console: pager,
+    find: {
+      items: (p, c) => tableFindItems(p, c.cards, c.cells, c.fieldText),
+      hint: (it) => (it.key.startsWith('h|') ? 'column' : it.key.startsWith('n|') ? 'row' : 'cell') + pageOf(it),
+    },
   },
   documents: {
     Shown: DocumentsShown,
@@ -108,6 +127,10 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
     fitted: false,
     dock: DocumentsDock,
     console: ({ piece, editor, toolClass }) => <DocumentsTools piece={piece} editor={editor} toolClass={toolClass} />,
+    find: {
+      items: (p, c) => documentsFindItems(p, c.documents, c.me, true),
+      hint: (it) => (it.key.startsWith('t|') ? 'title' : it.key.startsWith('e|') ? 'first words' : 'added by') + pageOf(it),
+    },
   },
   document: {
     Shown: DocumentShown,

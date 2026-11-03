@@ -11,15 +11,15 @@ import type { Doc, DocBody } from '../../../data/documents'
 import { CANVAS, kindOf, type Label } from '../../../data/labels'
 import { kindOfPiece, KIND_NAME } from '../../../data/pieces'
 import { labelBox } from '../text/TextItems'
-import { matrixBounds, matrixFindItems, M } from '../matrix/Matrix'
-import { tableBounds, tableFindItems, type FieldText } from '../table/Table'
-import { documentsBounds, documentsFindItems, documentsOf, listed } from '../documents/Documents'
-import { kanbanBounds, kanbanOf, taskBox } from '../deck/Kanban'
+import type { FieldText } from '../table/Table'
+import { documentsOf, listed } from '../documents/Documents'
+import { kanbanOf, taskBox } from '../deck/Kanban'
 import { tasksIn, type Task } from '../../../data/tasks'
 import { landing, matchesIn, MOST, type FindItem, type FindTarget } from './find'
 import { pageText, snippet } from '../../../model/findIndex'
 import type { ReactNode } from 'react'
 import { PIECE_GLYPH, TEXT_GLYPH } from '../canvas/glyphs'
+import { kindRecord, type FindCtx } from '../canvas/pieceKinds'
 import type { Place } from '../canvas/goTo'
 import { cardsOn, type Place as CardPlace } from '../../../data/places'
 
@@ -97,8 +97,10 @@ export function findGroups(data: Data, re: RegExp, here: string): Group[] {
   if (canvas.length) groups.push({ space: CANVAS, title: 'on the canvas', glyph: '◇', rows: canvas, count: canvas.length })
 
   const ordered = [...pieces].sort(readingOrder)
+  const ctx: FindCtx = { cards, tasks, pieces, documents, me, cells, fieldText }
   for (const p of ordered) {
     const kind = kindOfPiece(p)
+    const rec = kindRecord(p)
     const name = kind === 'document' ? (documents.find((d) => d.id === p.docId)?.title ?? 'document') : p.name || KIND_NAME[kind]
     const title = `${name} · ${KIND_NAME[kind]}`
     let rows: Row[] = []
@@ -114,26 +116,25 @@ export function findGroups(data: Data, re: RegExp, here: string): Group[] {
         }),
         ...textRows(p.id),
       ]
-    } else if (kind === 'table' || kind === 'matrix' || kind === 'documents') {
+    } else if (rec?.find) {
+      // A table's, matrix's or documents list's matches (pieceKinds.tsx), built once while the finder's open.
+      const { find } = rec
       let built = held.get(p.id)
       if (!built) {
-        built = {
-          items: kind === 'table' ? tableFindItems(p, cards, cells, fieldText) : kind === 'matrix' ? matrixFindItems(p, cards, cells) : documentsFindItems(p, documents, me, true),
-          content: kind === 'table' ? tableBounds(p, cards) : kind === 'matrix' ? matrixBounds(p, cards) : documentsBounds(p, listed(documents, documentsOf(p), me).length),
-        }
+        built = { items: find.items(p, ctx), content: rec.bounds(p, ctx) }
         held.set(p.id, built)
       }
       const { items, content } = built
       rows = items.flatMap((it): Row[] => {
         if (!it.text || !matchesIn(it.text, re, 1).length) return []
-        // A matrix's cells land clear of its heads, which stay on the screen when panned past.
-        const heads = kind === 'matrix' && it.box.x && it.box.y ? { top: M.top, left: M.head } : undefined
+        // A cell lands clear of the heads that stay on the screen when panned past (a matrix's).
+        const heads = find.heads && it.box.x && it.box.y ? find.heads : undefined
         const view = landing(content, it.box, room, heads)
-        return [{ id: `${p.id}:${it.key}`, glyph: '·', text: snippet(it.text, re), hint: hintOf(kind, it), dest: { kind: 'lens', piece: p, page: it.page, target: { kind: 'lens', space: p.id, key: it.key, k: 0, view } } }]
+        return [{ id: `${p.id}:${it.key}`, glyph: '·', text: snippet(it.text, re), hint: find.hint(it), dest: { kind: 'lens', piece: p, page: it.page, target: { kind: 'lens', space: p.id, key: it.key, k: 0, view } } }]
       })
     } else if (kind === 'kanban') {
       // Its tasks column by column, in order; the first field that matches says where (its title, notes, a step).
-      const content = kanbanBounds(p, tasks)
+      const content = rec!.bounds(p, ctx)
       rows = kanbanOf(p).cols.flatMap((c) =>
         tasksIn(tasks.filter((t) => t.pieceId === p.id), c.id).flatMap((t): Row[] => {
           const fields: [string, string][] = [
@@ -175,13 +176,6 @@ export function findGroups(data: Data, re: RegExp, here: string): Group[] {
     left -= rows.length
     return { ...g, rows }
   })
-}
-
-function hintOf(kind: string, it: FindItem) {
-  const page = it.page !== undefined ? ` · page ${it.page + 1}` : ''
-  if (kind === 'matrix') return it.key.startsWith('cols|') ? 'column' : it.key.startsWith('rows|') ? 'row' : `cell${page}`
-  if (kind === 'documents') return (it.key.startsWith('t|') ? 'title' : it.key.startsWith('e|') ? 'first words' : 'added by') + page
-  return (it.key.startsWith('h|') ? 'column' : it.key.startsWith('n|') ? 'row' : 'cell') + page
 }
 
 // `here`: every other space folded to one row, `N inside`, going to its first match.

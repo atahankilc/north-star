@@ -5,7 +5,6 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { cardsOn } from '../../../data/places'
 import { CANVAS } from '../../../data/labels'
-import { kindOfPiece } from '../../../data/pieces'
 import { useAuth } from '../../../data/auth'
 import { useDocBody } from '../../../data/documents'
 import { useCanvasView, type PlaneCam } from '../../../state/canvasView'
@@ -13,13 +12,11 @@ import { useWs } from '../canvas/context'
 import { docScrolledTo, paintIn, unpaint, watch } from './find'
 import type { Dest } from './findIndex'
 import { aim } from '../canvas/goTo'
-import { TableView } from '../table/Table'
-import { MatrixView } from '../matrix/Matrix'
-import { KanbanView } from '../deck/Kanban'
 import { DocumentsView, documentsBounds, documentsOf, listed, pinnedView, readerLeft, useDocUi } from '../documents/Documents'
 import { DocumentPieceView, documentHome } from '../documents/DocumentPiece'
 import { DocContent } from '../documents/DocContent'
 import { PlaneCards } from '../plane/PlaneCards'
+import { kindRecord } from '../canvas/pieceKinds'
 import { Still } from '../canvas/still'
 import styles from './FindPreview.module.css'
 import paper from '../documents/DocumentPiece.module.css'
@@ -135,20 +132,9 @@ function Shown({ dest, lens, scale, refocus }: { dest: Dest } & Measure) {
   }
   if (dest.kind === 'lens') {
     const view = dest.target.view!
-    const kind = kindOfPiece(dest.piece)
-    return (
-      <div className={styles.plane}>
-        {kind === 'table' ? (
-          <TableView piece={dest.piece} view={view} live={false} editor={false} page={dest.page} />
-        ) : kind === 'matrix' ? (
-          <MatrixView piece={dest.piece} view={view} live={false} editor={false} />
-        ) : kind === 'kanban' ? (
-          <KanbanView piece={dest.piece} view={view} live={false} editor={false} />
-        ) : (
-          <DocumentsView piece={dest.piece} view={view} live={false} editor={false} page={dest.page} />
-        )}
-      </div>
-    )
+    // Its kind's view (pieceKinds.tsx), still, on the page the match is on.
+    const Shown = kindRecord(dest.piece)?.Shown
+    return <div className={styles.plane}>{Shown && <Shown piece={dest.piece} view={view} live={false} editor={false} page={dest.page} />}</div>
   }
   if (dest.kind === 'doc') return <DocPage dest={dest} lens={lens} scale={scale} refocus={refocus} />
   return <ReaderPage dest={dest} lens={lens} scale={scale} refocus={refocus} />
