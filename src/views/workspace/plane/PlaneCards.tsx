@@ -344,7 +344,8 @@ function usePlaneKeys(live: boolean, editor: boolean, cards: Card[], labels: Lab
   useEffect(() => {
     if (!live) return
     const onKey = (e: KeyboardEvent) => {
-      if (keysTaken(e.target, { docked: true })) return
+      // Already heard (the Escape stack closed what was on top, D-359): one key does one thing.
+      if (e.defaultPrevented || keysTaken(e.target, { docked: true })) return
       const { cards, labels, edges, editor, places, pieces } = now.current
       const { cardMulti } = useCanvasView.getState()
       const ids = selectedIds()

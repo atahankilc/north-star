@@ -1413,6 +1413,11 @@ north-star-e7 (recent commits), -48 and -51 told what each found. The user picke
   any thread change; documents list redraws on pan; Space on a workspaces-page button jumps to the prompt; Finder
   memo misses spots/places; Timeline drags without pointercancel; raw popup-closed error on the landing; join/decline
   errors swallowed; cleanup misses agentChats; the key proxy passes any tools; names not bound to auth.
+- Then 10, 11, 14 fixed (2026-11-03): a workspace is a new layout per id (App's `OneWorkspace`, `key={wid}`); the
+  plane's, deck's and package-pick's key handlers skip a key the Escape stack already took (`defaultPrevented`); Space on
+  a focused button on the workspaces page presses it. Checked headless on emulators: Space opens `more for…`'s menu with
+  the prompt empty; back/forward between two workspaces shows the right names (the old code showed no wrong frame
+  either, so that test doesn't prove the fix; it rests on the remount). The double Escape not reproduced in a browser.
 
 ## Done (2026-11-03): a test pass over the last 15 commits, and its fixes (north-star-e7; pushed)
 Eight reviewers (one area each) and two headless runs on emulators over 0db26da back to f2d28ac. The refactors held

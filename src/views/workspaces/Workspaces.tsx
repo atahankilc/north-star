@@ -176,6 +176,8 @@ export function Workspaces({ user }: { user: AuthUser }) {
       const t = e.target as HTMLElement | null
       if (e.metaKey || e.ctrlKey || e.altKey || e.key.length !== 1) return
       if (keysTaken(t, { docked: true }) || ask || menu) return
+      // Space on a button or link presses it; it never jumps to the prompt.
+      if (e.key === ' ' && t?.closest?.('button, a, [role=button], [role=link], [role=checkbox], [role=tab], [role=option]')) return
       prompt.current?.focus()
     }
     window.addEventListener('keydown', onKey)

@@ -2,7 +2,7 @@
 // link still boots the app.
 import { MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from '../data/auth'
 import { useHoldCurtain } from '../state/curtain'
 import { STRENGTH_FACTOR, useDisplay } from '../state/display'
@@ -70,7 +70,7 @@ function Shell() {
                   element={
                     // Its code still coming: the curtain holds, the field flowing, as for any loading (D-025).
                     <Suspense fallback={<HoldCurtain name="workspace-code" />}>
-                      <WorkspaceLayout />
+                      <OneWorkspace />
                     </Suspense>
                   }
                 />
@@ -89,6 +89,13 @@ function Shell() {
       <Curtain field={field} />
     </>
   )
+}
+
+// A new workspace is a new layout (`key`): going from one to another in place (back and forward) never draws a frame
+// of the one before's data under the new id, nor writes its picture into the new one's summary (glance.ts).
+function OneWorkspace() {
+  const { wid = '' } = useParams()
+  return <WorkspaceLayout key={wid} />
 }
 
 function HoldCurtain({ name }: { name: string }) {

@@ -27,7 +27,8 @@ export function PackPick({ cards }: { cards: Card[] }) {
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (keysTaken(e.target)) return
+      // Already heard (the Escape stack closed what was on top, D-359): one key does one thing.
+      if (e.defaultPrevented || keysTaken(e.target)) return
       if (e.key !== 'Escape' && e.key !== 'Enter') return
       e.preventDefault()
       e.stopImmediatePropagation()
