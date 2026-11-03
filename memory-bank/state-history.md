@@ -1431,6 +1431,10 @@ north-star-e7 (recent commits), -48 and -51 told what each found. The user picke
   popup or no connection says so in plain words, anything else as before (data/auth.ts, tests/unit/signIn.test.ts);
   join, decline and withdraw on the workspaces page say a failure in the page's note instead of swallowing it.
   Checked: tsc, the new test, check:tokens/kit/gallery/lessons/memory; not seen in a browser.
+- Then 9 (2026-11-03): a stop drops the steering words queued before it (agentStore's `abort`; they stay in the chat
+  as sent, as after a failed turn), so the turn's end no longer sends them as a new turn; words sent after the stop
+  still go. Checked headless on emulators with the dev stub: steer then stop, 1 turn (2 without the fix); steer, stop,
+  a new word, 2 turns (the new word's).
 
 ## Done (2026-11-03): a test pass over the last 15 commits, and its fixes (north-star-e7; pushed)
 Eight reviewers (one area each) and two headless runs on emulators over 0db26da back to f2d28ac. The refactors held

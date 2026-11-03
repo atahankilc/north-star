@@ -463,6 +463,9 @@ function run(chatId: string, e: Effect) {
       rt.steer.push(e.text)
       return
     case 'abort':
+      // A stop drops the words queued before it (they stay in the chat as sent, as after a failed turn): else the turn's
+      // end would send them as a new turn and the agent would start again. Words sent after the stop still go.
+      rt.steer.splice(0)
       return rt.abort?.abort()
     case 'preview': {
       // The store overlaid with the changes (S15, preview.ts), the app locked while it's open, the list in the chat.

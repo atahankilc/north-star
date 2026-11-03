@@ -76,6 +76,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 42 | the preview shows the model's warnings word for word | Preview | mid      | code (changeset) | fixed             |
 | 43 | a "we won't build this" line made a task         | Judgment     | mid      | prompt, eval     | eval built, to measure |
 | 44 | organising takes things already there far away   | Guards       | mid      | code (arrange, changeset) | fixed, to measure |
+| 45 | a steer, then stop, starts the agent again       | Plumbing     | mid      | code (agentStore) | fixed            |
 
 ## Order
 
@@ -371,6 +372,11 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     no one. *Fixed 2026-11-01 (code):* a name in `assigneeName` with no `assignee` is resolved as an assignee is (by
     name, email or `me`; nobody by that name is refused with the members), src/agent/change.ts `givenByName`.
     Replayed: edit-06 0/3 → 3/3, review-deck-03 1/3 → 2/3.
+
+45. **A steer, then stop, starts the agent again.** Found by the app-wide sweep, 2026-11-03: words sent while a turn ran
+    waited for its next step; a stop ended the turn and its end sent the waiting words as a new turn, so the agent went
+    on. Fixed: a stop drops the words queued before it (they stay in the chat as sent, as after a failed turn); words
+    sent after the stop still start the next turn. Checked headless with the dev stub (1 turn, 2 without the fix).
 
 ## Preview: what the person sees before applying
 
