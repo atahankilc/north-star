@@ -162,3 +162,8 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
   - Settled drift: a write refused by validate (a viewer, the demo) now gives `none` everywhere: addCard and addLabel
     gave the id of nothing, takeOff the count, removeHere the cards; a duplicate refused by its builder says so in the
     toast (it threw).
+- **Group 2, pick menus (2026-11-03, north-star-48).** ui/foundation/usePromptPick.ts: a list picked from inside a
+  typing field keeps the field's keys (↑ ↓ round the ends, Enter or Tab picks, Escape closes the list only, the first
+  row again as what's typed changes); the agent's `/` skills and a thread's `@` people stand on it. Settled drift: the
+  `@` list no longer picks on an Enter that ends an IME's word or on shift+Enter, and its Escape stops there.
+  tests/unit/promptPick.test.ts. Not seen live: the gallery has no people to mention (members come from Firestore).

@@ -30,6 +30,7 @@ import { useHistory } from '../../../data/history'
 import { isOnPlane, type Card } from '../../../data/cards'
 import { ago } from '../../../ui/foundation/ago'
 import { useEscapeLayer } from '../../../ui/foundation/useEscapeLayer'
+import { usePromptPick } from '../../../ui/foundation/usePromptPick'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
@@ -147,7 +148,6 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
   // People picked from `@` while typing: uid → name.
   const picked = useRef(new Map<string, string>())
   const [suggest, setSuggest] = useState<{ q: string; at: number } | null>(null)
-  const [hi, setHi] = useState(0)
   const field = useRef<HTMLTextAreaElement>(null)
   const list = useRef<HTMLOListElement>(null)
   const me = myUid()
@@ -216,7 +216,6 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
     setText(value)
     const m = MENTION_AT.exec(value.slice(0, caret))
     setSuggest(m ? { q: m[2], at: caret - m[2].length - 1 } : null)
-    setHi(0)
   }
   const pick = (m: WithId<Member>) => {
     if (!suggest) return
@@ -231,6 +230,8 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
       field.current?.setSelectionRange(at, at)
     })
   }
+  // The `@` list's keys (usePromptPick): its first row again as each key is typed.
+  const mention = usePromptPick(matches, !!suggest, { pick, close: () => setSuggest(null), reset: suggest })
 
   const resolved = !!thread?.resolved
   // Owners, or whoever wrote the one message left (D-166; firestore.rules says the same).
@@ -352,10 +353,10 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
                 role="listbox"
                 label="Mention someone"
                 entries={matches.map((m) => ({ key: m.id, label: `@${m.name}`, hint: m.email || undefined, onSelect: () => pick(m) }))}
-                picked={matches[hi]?.id ?? null}
+                picked={matches[mention.at]?.id ?? null}
                 q=""
                 onPick={(i) => i.onSelect({ shift: false, alt: false })}
-                onPoint={(k) => setHi(Math.max(0, matches.findIndex((m) => m.id === k)))}
+                onPoint={(k) => mention.setAt(Math.max(0, matches.findIndex((m) => m.id === k)))}
                 idOf={(k) => `mention-${k}`}
               />
             </div>
@@ -371,12 +372,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
             // Enter sends, unless it's picking a mention (the keys below take it).
             onSubmit={() => !(suggest && matches.length) && void send()}
             onKeyDown={(e) => {
-              if (suggest && matches.length) {
-                if (e.key === 'ArrowDown') return (e.preventDefault(), setHi((hi + 1) % matches.length))
-                if (e.key === 'ArrowUp') return (e.preventDefault(), setHi((hi - 1 + matches.length) % matches.length))
-                if (e.key === 'Enter' || e.key === 'Tab') return (e.preventDefault(), pick(matches[hi]))
-                if (e.key === 'Escape') return (e.preventDefault(), setSuggest(null))
-              }
+              if (mention.onKey(e)) return
               if (e.key === 'Escape') closeThread()
             }}
           />

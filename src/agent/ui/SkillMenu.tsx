@@ -2,9 +2,10 @@
 // look (D-222). The prompt itself is the `>` line: what's typed after the slash narrows the list (names that start with
 // it first: one letter puts its names first, more letters narrow), rows read `› /name usage` with the summary under,
 // `# analysis` / `# building` / `# documents` while nothing is typed (the prompt's rows, D-350). ↑↓ move, Enter or Tab picks (the prompt becomes `/name `), Esc closes. A click picks.
-import { useCallback, useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { PromptList } from '../../ui/patterns/PromptList'
 import type { PromptEntry } from '../../ui/foundation/promptModel'
+import { usePromptPick } from '../../ui/foundation/usePromptPick'
 import { SKILLS, type Skill } from '../skills'
 import styles from './Agent.module.css'
 
@@ -35,10 +36,8 @@ export function matchSkills(q: string): Skill[] {
 export function useSkillMenu(text: string, setText: (t: string) => void) {
   const q = typedName(text)
   const [closed, setClosed] = useState<string | null>(null)
-  const [at, setAt] = useState(0)
   const list = useMemo(() => (q === null ? [] : matchSkills(q)), [q])
   const open = q !== null && closed !== text && list.length > 0
-  useEffect(() => setAt(0), [q])
   const pick = useCallback(
     (s: Skill | undefined) => {
       if (!s) return
@@ -47,16 +46,8 @@ export function useSkillMenu(text: string, setText: (t: string) => void) {
     },
     [setText],
   )
-  // True when the key was the menu's (the prompt should not act on it).
-  const onKey = (e: ReactKeyboardEvent<HTMLTextAreaElement>): boolean => {
-    if (!open) return false
-    if (e.key === 'ArrowDown') (e.preventDefault(), setAt((i) => (i + 1) % list.length))
-    else if (e.key === 'ArrowUp') (e.preventDefault(), setAt((i) => (i - 1 + list.length) % list.length))
-    else if ((e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) || e.key === 'Tab') (e.preventDefault(), pick(list[at]))
-    else if (e.key === 'Escape') (e.preventDefault(), e.stopPropagation(), setClosed(text))
-    else return false
-    return true
-  }
+  // onKey: true when the key was the menu's (the prompt should not act on it).
+  const { at, setAt, onKey } = usePromptPick(list, open, { pick, close: () => setClosed(text), reset: q })
   const menu = open ? <SkillList q={q ?? ''} list={list} at={at} onPick={pick} onHover={setAt} /> : null
   return { open, onKey, menu }
 }
