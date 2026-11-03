@@ -1452,3 +1452,16 @@ tray presses on pressDrag, a cancel writes and picks nothing; regions keep a lea
 console taking a piece's whole edge in edit mode stops short of the corner handles, and Console re-fits on its own
 resize (it grows with `--cs` as the canvas zooms; fitted a frame later, no ResizeObserver loop). Checked in headless
 Chrome (each, plus 60 zoom steps with no error); the agentResearch stop test made timer-free (it timed out under load).
+
+## Done (2026-11-02 – 2026-11-03): shared code above the kit (D-361)
+Found by reading four areas (canvas, piece kinds, panels and pages, data/model/ops); planned in docs/specs/shared-code.md
+(its Done lists every step, what moved, what settled and how it was checked). Split between two sessions: groups 1, 2
+(panel sections, grid cells, paging, unframed CSS, filter stores) and 3 (wizards, cascades) here; group 4 (drag, pan,
+zoom), group 2's boxes, ops' writes with a value, pick menus and small hooks, and group 3's record per piece kind and
+setup shell by north-star-48. Visible changes, all settled drift: Settings and menus hold the canvas's keys; the matrix
+skips an open list; the agent's documents' excerpts drop images; a panel section's `+` hides while its field is open;
+the table's pager shows no `1 / 1`, the documents list offers 25 and 100. Checked each step with tsc, vitest, the
+checks, and headless gallery shots against an old worktree (a real node_modules copy: a symlinked one serves no fonts;
+a second old shot as noise; own ports, other sessions hold 5179, 5194, 5197). Also fixed: the wizards' gallery step
+states (they pressed `2`, the tabs read `02`).
+

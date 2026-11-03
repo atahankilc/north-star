@@ -7022,4 +7022,5 @@ drag work's own).
 **Group 2, unframed CSS (2026-11-03):** canvas/PieceLayer.module.css (shared-code.md's Done).
 **Group 2, filter stores (2026-11-03):** canvas/heldStore.ts, canvas/filterPick.ts (shared-code.md's Done).
 **Group 3, wizards and cascades (2026-11-03):** useDraftWizard + StartFrom; one `rehome` for cards and one for pieces; `refsTo` kept apart (shared-code.md's Done). A record per piece kind and the setup shell: another session's.
-**Not yet:** group 3's record per piece kind and setup shell (another session).
+**Group 3, a record per piece kind and the setup shell (2026-11-03, north-star-48):** canvas/pieceKinds.tsx (shared-code.md's Done). All four groups done.
+**Not yet:** the checklist's add field keeps what's typed on blur while AddField drops it (to decide); `CheckField` as a CommitField option.
