@@ -56,14 +56,16 @@ import { Button } from '../../../ui/primitives/Button'
 import { Choice } from '../../../ui/primitives/Choice'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
-import { AddField } from '../../../ui/primitives/AddField'
-import { CommitField } from '../../../ui/primitives/CommitField'
-import { Chip } from '../../../ui/primitives/Chip'
 import { Label as UiLabel } from '../../../ui/primitives/Label'
 import { EVIDENCE_TEXT_MAX, LONG_TEXT_MAX, SOURCE_MAX, TAG_MAX, URL_MAX } from '../../../model/limits'
 import { CARD_PLACEHOLDER } from '../../../model/cardName'
 import { ALIGNS, alignTo, spreadTo } from '../../../model/layout'
 import { plural } from '../../../model/words'
+import { TagList } from './TagList'
+import { NotesSection } from './NotesSection'
+import { PanelRow } from './PanelRow'
+import { usePicker } from './usePicker'
+import { useDismiss } from '../../../ui/foundation/useDismiss'
 
 // Type = the panel's colour, as the card's edge (D-055).
 const TONE: Record<AnyType, string> = CARD_TONE
@@ -291,31 +293,10 @@ function ManyInside({ cards, texts, editor }: { cards: Card[]; texts: Label[]; e
         n={3}
         name="tags"
         count={all.length ? `on all ${cards.length} cards` : undefined}
-        add={editor && cards.length ? { label: 'tag', onClick: () => setAdding('') } : undefined}
+        add={editor && cards.length && adding === null ? { label: 'tag', onClick: () => setAdding('') } : undefined}
         empty={!all.length && adding === null}
       >
-        <div className={styles.tags}>
-          {all.map((tag) => (
-            <Chip key={tag} onRemove={editor ? () => retag(tag, false) : undefined} removeLabel="Take it off all of them">
-              #{tag}
-            </Chip>
-          ))}
-          {adding !== null && (
-            <AddField
-              className={styles.tagInput}
-              label="Tag"
-              placeholder="tag"
-              value={adding}
-              maxLength={TAG_MAX}
-              onChange={setAdding}
-              onClose={() => setAdding(null)}
-              onAdd={(t) => {
-                const tag = t.replace(/^#/, '')
-                if (tag) (retag(tag, true), setAdding(''))
-              }}
-            />
-          )}
-        </div>
+        <TagList items={all} editor={editor} word="tag" max={TAG_MAX} removeLabel="Take it off all of them" draft={adding} onDraft={setAdding} onAdd={(t) => retag(t, true)} onRemove={(t) => retag(t, false)} />
       </PanelSection>
       {editor && packable.length > 0 && (
         <PanelSection n={4} name="package">
@@ -426,7 +407,7 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
     <PlanesSection key="planes" n={next()} {...p} />,
     <TasksSection key="tasks" n={next()} card={card} editor={editor} />,
     <TagsSection key="tags" n={next()} {...p} />,
-    <NotesSection key="notes" n={next()} {...p} />,
+    <CardNotes key="notes" n={next()} {...p} />,
   )
   return (
     <>
@@ -462,48 +443,44 @@ function PackagePlan({ n, card, editor }: P) {
 // a member's parts come with it, under it (taken out with it); `+ card` adds one from its plane.
 function Holds({ n, card, cards, editor }: P) {
   const { wid, edges } = useWs()
-  const [picking, setPicking] = useState(false)
+  const picker = usePicker()
   const ids = card.memberIds ?? []
   const tree = packageTree(card, cards, edges)
   // Not a package it's inside (no loops).
   const around = new Set(cards.filter((c) => c.type === 'package' && packageTree(c, cards, edges).some((r) => r.card.id === card.id)).map((c) => c.id))
   const set = (next: string[]) => void updateCard(wid, card, { memberIds: next }, 'contents of')
   return (
-    <PanelSection n={n} name="holds" count={tree.length || undefined} add={editor && ids.length < 60 ? { label: 'card', onClick: () => setPicking(true) } : undefined} empty={!tree.length && !picking}>
+    <PanelSection n={n} name="holds" count={tree.length || undefined} add={picker.add('card', editor && ids.length < 60)} empty={!tree.length && !picker.picking}>
       {tree.map(({ card: c, depth }) => (
-        <div key={c.id} className={styles.part} style={{ paddingLeft: `calc(${depth} * var(--space-4))` }}>
-          <span className={styles.tree} style={depth ? undefined : { color: TONE[c.type] }}>
-            {depth ? '└' : '▌'}
-          </span>
-          <Button link className={styles.to} onClick={() => goToCard(c)}>
-            {c.title || PLACEHOLDER[c.type]}
-          </Button>
-          <span className={styles.type}>{c.validation ?? c.priority ?? c.type}</span>
-          {editor && depth === 0 && (
-            <Button icon tone="danger" className={styles.x}
-              title="Take it out of the package, with its parts (the cards stay)"
-              onClick={() => {
-                // It and what's under it in the tree.
-                const at = tree.findIndex((r) => r.card.id === c.id)
-                const end = tree.findIndex((r, i) => i > at && r.depth <= depth)
-                const out = new Set(tree.slice(at, end < 0 ? undefined : end).map((r) => r.card.id))
-                set(ids.filter((x) => !out.has(x)))
-              }}
-            >
-              ×
-            </Button>
-          )}
-        </div>
+        <PanelRow
+          key={c.id}
+          tree={{ depth, mark: depth ? '└' : '▌', tone: depth ? undefined : TONE[c.type] }}
+          name={c.title || PLACEHOLDER[c.type]}
+          onGo={() => goToCard(c)}
+          type={c.validation ?? c.priority ?? c.type}
+          removeTitle="Take it out of the package, with its parts (the cards stay)"
+          onRemove={
+            editor && depth === 0
+              ? () => {
+                  // It and what's under it in the tree.
+                  const at = tree.findIndex((r) => r.card.id === c.id)
+                  const end = tree.findIndex((r, i) => i > at && r.depth <= depth)
+                  const out = new Set(tree.slice(at, end < 0 ? undefined : end).map((r) => r.card.id))
+                  set(ids.filter((x) => !out.has(x)))
+                }
+              : undefined
+          }
+        />
       ))}
-      {picking && (
+      {picker.picking && (
         <CardPicker
           card={card}
           cards={cards.filter((c) => isOnPlane(c, planeOf(card)))}
           types={['customer', 'problem', 'competitor', 'idea', 'feature', 'package']}
           exclude={new Set([card.id, ...around, ...tree.map((r) => r.card.id)])}
           make={false}
-          onPick={(c) => (setPicking(false), set([...ids, c.id]))}
-          onClose={() => setPicking(false)}
+          onPick={picker.pick((c: Card) => set([...ids, c.id]))}
+          onClose={picker.close}
         />
       )}
     </PanelSection>
@@ -790,46 +767,44 @@ export type LinkAdd = { label: string; types: AnyType[] | null; kind: EdgeKind |
 // the other card, its type. A row goes to that card; `×` unlinks.
 export function LinkSection({ n, name, card, cards, editor, links, add, count, extra }: P & { name: string; links: Edge[]; add: LinkAdd; count?: boolean; extra?: ReactNode }) {
   const { wid } = useWs()
-  const [picking, setPicking] = useState(false)
+  const picker = usePicker()
   const byId = new Map(cards.map((c) => [c.id, c]))
   const pick = (other: Card) => {
-    setPicking(false)
+    picker.close()
     const [from, to] = add.from === 'me' ? [card, other] : [other, card]
     const id = createEdge(wid, from, to, add.kind ?? defaultKind(from.type, to.type))
     // A plain link opens with its label ready, as one drawn on the plane does (D-154).
     if (!add.kind) useCanvasView.setState({ linkSelected: id, linkLabelling: true, cardSelected: null })
   }
   return (
-    <PanelSection n={n} name={name} count={count && links.length ? links.length : undefined} add={editor ? { label: add.label, onClick: () => setPicking(true) } : undefined} empty={!links.length && !picking && !extra} {...(add.kind === FOR && add.from === 'me' && { 'data-learn': 'panel-for' })}>
+    <PanelSection n={n} name={name} count={count && links.length ? links.length : undefined} add={picker.add(add.label, editor)} empty={!links.length && !picker.picking && !extra} {...(add.kind === FOR && add.from === 'me' && { 'data-learn': 'panel-for' })}>
       {links.map((e) => {
         const other = byId.get(e.fromId === card.id ? e.toId : e.fromId)!
         const out = e.fromId === card.id
         const kind = KIND_LABEL[e.kind] ?? e.kind
         return (
-          <div key={e.id} className={styles.link} style={{ ['--tone' as string]: linkTone(e.kind) }}>
-            <span className={styles.swatch} aria-hidden />
-            <span className={styles.kind}>{out ? `${kind} →` : `← ${kind}`}</span>
-            <Button link className={styles.to} onClick={() => goToCard(other)} title={e.label ? `"${e.label}"` : undefined}>
-              {other.title || PLACEHOLDER[other.type]}
-            </Button>
-            <span className={styles.type}>{other.type === 'feature' ? [other.priority, other.status].filter(Boolean).join(' · ') || 'feature' : other.type}</span>
-            {editor && (
-              <Button icon tone="danger" className={styles.x} title="Unlink" onClick={() => void deleteEdge(wid, e.id)}>
-                ×
-              </Button>
-            )}
-          </div>
+          <PanelRow
+            key={e.id}
+            tone={linkTone(e.kind)}
+            kind={out ? `${kind} →` : `← ${kind}`}
+            name={other.title || PLACEHOLDER[other.type]}
+            onGo={() => goToCard(other)}
+            goTitle={e.label ? `"${e.label}"` : undefined}
+            type={other.type === 'feature' ? [other.priority, other.status].filter(Boolean).join(' · ') || 'feature' : other.type}
+            onRemove={editor ? () => void deleteEdge(wid, e.id) : undefined}
+            removeTitle="Unlink"
+          />
         )
       })}
       {extra}
-      {picking && (
+      {picker.picking && (
         <CardPicker
           card={card}
           cards={cards}
           types={add.types}
           exclude={new Set([card.id, ...links.map((e) => (e.fromId === card.id ? e.toId : e.fromId))])}
           onPick={pick}
-          onClose={() => setPicking(false)}
+          onClose={picker.close}
         />
       )}
     </PanelSection>
@@ -870,11 +845,7 @@ export function CardPicker({
   const { wid, cards: all, places, pieces, edges, canvases, canvas } = useWs()
   const root = useRef<HTMLDivElement>(null)
   // A press outside closes it (the field keeps its focus while the list is scrolled).
-  useEffect(() => {
-    const away = (e: PointerEvent) => !root.current?.contains(e.target as Node) && onClose()
-    window.addEventListener('pointerdown', away, true)
-    return () => window.removeEventListener('pointerdown', away, true)
-  }, [onClose])
+  useDismiss(root, onClose)
   // A package is never made from here (only from a selection, D-239).
   const makeType = !makes || types?.[0] === 'package' ? undefined : types?.[0]
   const make = async (title: string) => {
@@ -969,7 +940,7 @@ function PlaneName({ name }: { name: string }) {
 // what's there, with its parts or members.
 function PlanesSection({ n, card, editor }: P) {
   const { wid, cards, places, pieces, edges, canvases, canvas } = useWs()
-  const [picking, setPicking] = useState(false)
+  const picker = usePicker()
   const focus = new URLSearchParams(location.search).get('focus')
   const on = planesOf(card, places)
   // On another canvas, with its name first (D-302's session 4).
@@ -986,29 +957,26 @@ function PlanesSection({ n, card, editor }: P) {
     void takeOff(wid, plane, [card], places)
   }
   const placeOn = (plane: string) => {
-    setPicking(false)
+    picker.close()
     const b = cardBounds(cardsOn(cards, places, plane))
     const at: [number, number] = b ? [b.x + b.w + GRID + CARD.w / 2, b.y + CARD.h / 2] : [CARD.w / 2, CARD.h / 2]
     const base = cards.find((c) => c.id === card.id) ?? card
     if (bringIn(wid, plane, [base], { cards, places, edges }, at).ids.length) useHistory.getState().say(`Brought "${card.title || `this ${card.type}`}" to ${name(plane)}`)
   }
   return (
-    <PanelSection n={n} name="planes" count={on.length > 1 ? on.length : undefined} add={editor && others.length ? { label: 'place on', onClick: () => setPicking((v) => !v) } : undefined}>
+    <PanelSection n={n} name="planes" count={on.length > 1 ? on.length : undefined} add={editor && others.length ? { label: 'place on', onClick: picker.toggle } : undefined}>
       {on.map((id) => (
-        <div key={id} className={styles.link} style={{ ['--tone' as string]: 'var(--fg)' }}>
-          <span className={styles.swatch} aria-hidden />
-          <Button link className={styles.to} onClick={() => go(id)} title={id === focus ? 'Show it' : 'Go there'}>
-            <PlaneName name={name(id)} />
-          </Button>
-          {id === focus && <span className={styles.type}>here</span>}
-          {editor && on.length > 1 && (
-            <Button icon tone="danger" className={styles.x} title="Take it off this plane (it stays on the others)" onClick={() => off(id)}>
-              ×
-            </Button>
-          )}
-        </div>
+        <PanelRow
+          key={id}
+          name={<PlaneName name={name(id)} />}
+          onGo={() => go(id)}
+          goTitle={id === focus ? 'Show it' : 'Go there'}
+          type={id === focus ? 'here' : undefined}
+          onRemove={editor && on.length > 1 ? () => off(id) : undefined}
+          removeTitle="Take it off this plane (it stays on the others)"
+        />
       ))}
-      {picking &&
+      {picker.picking &&
         others.map((p) => (
           <div key={p.id} className={styles.link}>
             <Button onClick={() => placeOn(p.id)}>
@@ -1024,61 +992,17 @@ function PlanesSection({ n, card, editor }: P) {
 function TagsSection({ n, card, editor }: P) {
   const { wid } = useWs()
   const tags = card.tags ?? []
-  const [adding, setAdding] = useState(false)
-  const [draft, setDraft] = useState('')
+  const [draft, setDraft] = useState<string | null>(null)
   const set = (next: string[]) => void updateCard(wid, card, { tags: next.length ? next : undefined }, 'tag')
   return (
-    <PanelSection n={n} name="tags" add={editor ? { label: 'tag', onClick: () => setAdding(true) } : undefined} empty={!tags.length && !adding}>
-      <div className={styles.tags}>
-        {tags.map((t) => (
-          <Chip key={t} onRemove={editor ? () => set(tags.filter((x) => x !== t)) : undefined} removeLabel="Remove">
-            #{t}
-          </Chip>
-        ))}
-        {adding && (
-          <Field
-            size="sm"
-            className={styles.tagInput}
-            label="Tag"
-            autoFocus
-            placeholder="tag"
-            value={draft}
-            maxLength={TAG_MAX}
-            onChange={setDraft}
-            onBlur={() => (setAdding(false), setDraft(''))}
-            onKeyDown={(e) => {
-              e.stopPropagation()
-              const t = draft.trim().replace(/^#/, '')
-              if (e.key === 'Enter' && t) {
-                if (!tags.includes(t)) set([...tags, t])
-                setDraft('')
-              }
-              if (e.key === 'Escape') (setAdding(false), setDraft(''))
-            }}
-          />
-        )}
-      </div>
+    <PanelSection n={n} name="tags" add={editor && draft === null ? { label: 'tag', onClick: () => setDraft('') } : undefined} empty={!tags.length && draft === null}>
+      <TagList items={tags} editor={editor} word="tag" max={TAG_MAX} draft={draft} onDraft={setDraft} onAdd={(t) => set([...tags, t])} onRemove={(t) => set(tags.filter((x) => x !== t))} />
     </PanelSection>
   )
 }
 
-// Notes: Inter, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
-function NotesSection({ n, card, editor }: P) {
+// Notes: the panel's NotesSection, with the type's hint.
+function CardNotes({ n, card, editor }: P) {
   const { wid } = useWs()
-  return (
-    <PanelSection n={n} name="notes">
-      <CommitField
-        enter="newline"
-        escape="keep"
-        className={styles.notes}
-        rows={2}
-        value={card.notes ?? ''}
-        readOnly={!editor}
-        placeholder={NOTES_HINT[card.type]}
-        maxLength={LONG_TEXT_MAX}
-        label="Notes"
-        onSave={(v) => void updateCard(wid, card, { notes: v.trim() ? v : undefined }, 'notes of')}
-      />
-    </PanelSection>
-  )
+  return <NotesSection n={n} value={card.notes} placeholder={NOTES_HINT[card.type]} max={LONG_TEXT_MAX} editor={editor} onSave={(v) => void updateCard(wid, card, { notes: v }, 'notes of')} />
 }

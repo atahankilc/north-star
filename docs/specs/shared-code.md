@@ -130,4 +130,17 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
     link drawn; a deck task, a card deck's card, a timeline bar; a section drawn; a plane moved in edit mode) in old and
     new in headless Chrome, pixel-identical while held and after (three first differed by the camera's first fit,
     re-shot settled: 0).
+- **Group 2, panel sections (2026-11-02).** In src/views/workspace/panels/, each with its gallery:
+  - `TagList`: chips + the kit's AddField, cleaned once (trimmed, `#` dropped, cut, never twice, `room`),
+    `suggest` as you type; used by a card's tags, several cards' tags, a task's labels (with its deck's labels
+    offered) and a competitor's regions (`inlineAdd`, no `#`). A card's tags had their own field by hand.
+  - `NotesSection`: a card's and a task's notes.
+  - `PanelRow`: a link row (swatch, kind) or a tree row (depth, mark), the name a link, a quiet word, `×` on hover;
+    links, planes, a package's holds, parts, rests on (and its `· solves` rows), matched by.
+  - `usePicker`: a section's `+ card` and its CardPicker (links, holds, parent, parts, rests on, a task's card;
+    `toggle` for planes' `+ place on`). CardPicker's press outside is `useDismiss`.
+  - Settled drift: a section's `+` hides while its field or picker is open (only the task panel did); a row with
+    nothing to say after its name no longer keeps an empty span.
+  - Left: the checklist's add field keeps what's typed on blur while AddField drops it (to decide); `CheckField` as a
+    CommitField option.
 

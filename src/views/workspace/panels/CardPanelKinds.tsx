@@ -35,10 +35,12 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { AddField } from '../../../ui/primitives/AddField'
 import { CommitField } from '../../../ui/primitives/CommitField'
-import { Chip } from '../../../ui/primitives/Chip'
 import { Label } from '../../../ui/primitives/Label'
 import { CATEGORY_MAX, FACT_MAX, CRITERION_MAX, LONG_TEXT_MAX, REGION_MAX, TITLE_MAX, URL_MAX } from '../../../model/limits'
 import { cardName } from '../../../model/cardName'
+import { TagList } from './TagList'
+import { PanelRow } from './PanelRow'
+import { usePicker } from './usePicker'
 
 const MAX_CRITERIA = 8
 
@@ -88,31 +90,7 @@ export function CompetitorProfile({ n, card, editor }: P) {
         <Label>pricing</Label>
         <ValueField value={card.pricing} placeholder="what it costs" editor={editor} onSave={save('pricing')} max={FACT_MAX} />
         <Label>where</Label>
-        <div className={styles.tags}>
-          {regions.map((r) => (
-            <Chip key={r} onRemove={editor ? () => setRegions(regions.filter((x) => x !== r)) : undefined} removeLabel="Remove">
-              {r}
-            </Chip>
-          ))}
-          {region !== null ? (
-            <AddField
-              className={styles.tagInput}
-              label="Region"
-              placeholder="US, Germany…"
-              value={region}
-              maxLength={REGION_MAX}
-              onChange={setRegion}
-              onClose={() => setRegion(null)}
-              onAdd={(r) => (regions.includes(r) || setRegions([...regions, r]), setRegion(''))}
-            />
-          ) : (
-            editor && (
-              <Button onClick={() => setRegion('')}>
-                <span className={styles.plus}>+</span> region
-              </Button>
-            )
-          )}
-        </div>
+        <TagList items={regions} editor={editor} word="region" placeholder="US, Germany…" hash={false} max={REGION_MAX} inlineAdd draft={region} onDraft={setRegion} onAdd={(r) => setRegions([...regions, r])} onRemove={(r) => setRegions(regions.filter((x) => x !== r))} />
         <Label>site</Label>
         <ValueField value={card.url} placeholder="their website" editor={editor} link onSave={save('url')} max={URL_MAX} />
       </div>
@@ -285,7 +263,7 @@ function FeatureDetails({ f, card, cards, ours, editor, categories, onClose }: {
 // Without one, `+ a feature` makes it a part of one (the user: from the part's side too, not only `+ part`).
 export function Parent({ card, cards, editor }: { card: Card; cards: Card[]; editor: boolean }) {
   const { wid, edges } = useWs()
-  const [picking, setPicking] = useState(false)
+  const picker = usePicker()
   const e = edges.find((x) => x.kind === 'part-of' && x.fromId === card.id)
   const parent = e && cards.find((c) => c.id === e.toId)
   if (!e || !parent) {
@@ -299,12 +277,12 @@ export function Parent({ card, cards, editor }: { card: Card; cards: Card[]; edi
     return (
       <div className={styles.parent} data-none>
         <span>part of</span>
-        {picking ? (
+        {picker.picking ? (
           <div className={styles.parentPick}>
-            <CardPicker card={card} cards={cards} types={[card.type]} exclude={below} onPick={(c) => (setPicking(false), createEdge(wid, card, c, 'part-of'))} onClose={() => setPicking(false)} />
+            <CardPicker card={card} cards={cards} types={[card.type]} exclude={below} onPick={picker.pick((c: Card) => createEdge(wid, card, c, 'part-of'))} onClose={picker.close} />
           </div>
         ) : (
-          <Button onClick={() => setPicking(true)}>
+          <Button onClick={picker.open}>
             <span className={styles.plus}>+</span> {card.type === 'idea' ? 'an idea' : `a ${card.type}`}
           </Button>
         )}
@@ -329,7 +307,7 @@ export function Parent({ card, cards, editor }: { card: Card; cards: Card[]; edi
 // Its parts (features `part of` it), as a tree; `+ part` picks a feature on the plane or makes one.
 export function Parts({ n, card, cards, editor }: P) {
   const { wid, edges } = useWs()
-  const [picking, setPicking] = useState(false)
+  const picker = usePicker()
   const byId = new Map(cards.map((c) => [c.id, c]))
   const kids = (id: string) => edges.filter((e) => e.kind === 'part-of' && e.toId === id && byId.has(e.fromId))
   const rows: { e: (typeof edges)[number]; c: Card; depth: number; last: boolean }[] = []
@@ -346,29 +324,26 @@ export function Parts({ n, card, cards, editor }: P) {
   const above = new Set<string>()
   for (let at: string | undefined = card.id; at && !above.has(at); at = edges.find((e) => e.kind === 'part-of' && e.fromId === at)?.toId) above.add(at)
   return (
-    <PanelSection n={n} name="parts" count={rows.length || undefined} add={editor ? { label: 'part', onClick: () => setPicking(true) } : undefined} empty={!rows.length && !picking}>
+    <PanelSection n={n} name="parts" count={rows.length || undefined} add={picker.add('part', editor)} empty={!rows.length && !picker.picking}>
       {rows.map(({ e, c, depth, last }) => (
-        <div key={e.id} className={styles.part} style={{ paddingLeft: `calc(${depth} * var(--space-4))` }}>
-          <span className={styles.tree}>{last ? '└' : '├'}</span>
-          <Button link className={styles.to} onClick={() => goToCard(c)}>
-            {c.title || PLACEHOLDER[c.type]}
-          </Button>
-          <span className={styles.type}>{c.status ?? c.validation}</span>
-          {editor && depth === 0 && (
-            <Button icon tone="danger" className={styles.x} title="Detach" onClick={() => void deleteEdge(wid, e.id)}>
-              ×
-            </Button>
-          )}
-        </div>
+        <PanelRow
+          key={e.id}
+          tree={{ depth, mark: last ? '└' : '├' }}
+          name={c.title || PLACEHOLDER[c.type]}
+          onGo={() => goToCard(c)}
+          type={c.status ?? c.validation}
+          onRemove={editor && depth === 0 ? () => void deleteEdge(wid, e.id) : undefined}
+          removeTitle="Detach"
+        />
       ))}
-      {picking && (
+      {picker.picking && (
         <CardPicker
           card={card}
           cards={cards}
           types={[card.type]}
           exclude={new Set([...above, ...rows.map((r) => r.c.id)])}
-          onPick={(c) => (setPicking(false), createEdge(wid, c, card, 'part-of'))}
-          onClose={() => setPicking(false)}
+          onPick={picker.pick((c: Card) => createEdge(wid, c, card, 'part-of'))}
+          onClose={picker.close}
         />
       )}
     </PanelSection>
@@ -457,7 +432,7 @@ export function Criteria({ n, card, editor }: P) {
 // it is the one rule (D-271, cardFacts.ts: the share of validated and testing; anything invalidated: `broken`).
 export function RestsOn({ n, card, cards, editor }: P) {
   const { wid, edges, evidence } = useWs()
-  const [picking, setPicking] = useState(false)
+  const picker = usePicker()
   const byId = new Map(cards.map((c) => [c.id, c]))
   const ideaLinks = edges.filter((e) => e.kind !== FOR && e.kind !== 'part-of' && ((e.fromId === card.id && e.toType === 'idea') || (e.toId === card.id && e.fromType === 'idea')))
   const ideas = ideaLinks.map((e) => ({ e, c: byId.get(e.fromId === card.id ? e.toId : e.fromId) })).filter((x): x is { e: typeof x.e; c: Card } => !!x.c)
@@ -466,36 +441,23 @@ export function RestsOn({ n, card, cards, editor }: P) {
   const parentCard = parent && byId.get(parent.toId)
   const status = (c: Card) => `${c.validation ?? 'no status'}${mismatch(c.validation, evidence.filter((e) => e.nodeId === c.id)) ? ' !' : ''}`
   return (
-    <PanelSection n={n} name="rests on" add={editor ? { label: 'idea', onClick: () => setPicking(true) } : undefined} empty={!ideas.length && !parentCard && !picking}>
+    <PanelSection n={n} name="rests on" add={picker.add('idea', editor)} empty={!ideas.length && !parentCard && !picker.picking}>
       {ideas.map(({ e, c }) => (
         <div key={e.id}>
-          <div className={styles.link} style={{ ['--tone' as string]: linkTone(e.kind) }}>
-            <span className={styles.swatch} aria-hidden />
-            <span className={styles.kind}>{e.fromId === card.id ? `${KIND_LABEL[e.kind] ?? e.kind} →` : `← ${KIND_LABEL[e.kind] ?? e.kind}`}</span>
-            <Button link className={styles.to} onClick={() => goToCard(c)}>
-              {c.title || PLACEHOLDER.idea}
-            </Button>
-            <span className={styles.type}>{status(c)}</span>
-            {editor && (
-              <Button icon tone="danger" className={styles.x} title="Unlink" onClick={() => void deleteEdge(wid, e.id)}>
-                ×
-              </Button>
-            )}
-          </div>
+          <PanelRow
+            tone={linkTone(e.kind)}
+            kind={e.fromId === card.id ? `${KIND_LABEL[e.kind] ?? e.kind} →` : `← ${KIND_LABEL[e.kind] ?? e.kind}`}
+            name={c.title || PLACEHOLDER.idea}
+            onGo={() => goToCard(c)}
+            type={status(c)}
+            onRemove={editor ? () => void deleteEdge(wid, e.id) : undefined}
+            removeTitle="Unlink"
+          />
           {edges
             .filter((s) => s.kind === 'solves' && s.fromId === c.id && byId.has(s.toId))
             .map((s) => {
               const p = byId.get(s.toId)!
-              return (
-                <div key={s.id} className={styles.link} style={{ ['--tone' as string]: linkTone('solves') }}>
-                  <span className={styles.swatch} data-faint aria-hidden />
-                  <span className={styles.kind}>· solves</span>
-                  <Button link className={styles.to} onClick={() => goToCard(p)}>
-                    {p.title || PLACEHOLDER.problem}
-                  </Button>
-                  <span className={styles.type}>{status(p)}</span>
-                </div>
-              )
+              return <PanelRow key={s.id} tone={linkTone('solves')} faint kind="· solves" name={p.title || PLACEHOLDER.problem} onGo={() => goToCard(p)} type={status(p)} />
             })}
         </div>
       ))}
@@ -507,14 +469,14 @@ export function RestsOn({ n, card, cards, editor }: P) {
           <span>· {sure.why}</span>
         </p>
       )}
-      {picking && (
+      {picker.picking && (
         <CardPicker
           card={card}
           cards={cards}
           types={['idea']}
           exclude={new Set([card.id, ...ideas.map((x) => x.c.id)])}
-          onPick={(c) => (setPicking(false), createEdge(wid, card, c, 'inspired-by'))}
-          onClose={() => setPicking(false)}
+          onPick={picker.pick((c: Card) => createEdge(wid, card, c, 'inspired-by'))}
+          onClose={picker.close}
         />
       )}
     </PanelSection>
@@ -532,19 +494,16 @@ export function MatchedBy({ card, cards, editor }: { card: Card; cards: Card[]; 
   return (
     <>
       {rows.map(({ c, f, who }) => (
-        <div key={c.id} className={styles.link} style={{ ['--tone' as string]: 'var(--accent-yellow)' }}>
-          <span className={styles.swatch} aria-hidden />
-          <span className={styles.kind}>≈ theirs</span>
-          <Button link className={styles.to} onClick={() => goToCard(who)}>
-            {who.title} · {f.name}
-          </Button>
-          <span className={styles.type}>{f.availability}</span>
-          {editor && (
-            <Button icon tone="danger" className={styles.x} title="Not a match" onClick={() => void matchOurs(wid, f, null, comparisons)}>
-              ×
-            </Button>
-          )}
-        </div>
+        <PanelRow
+          key={c.id}
+          tone="var(--accent-yellow)"
+          kind="≈ theirs"
+          name={`${who.title} · ${f.name}`}
+          onGo={() => goToCard(who)}
+          type={f.availability}
+          onRemove={editor ? () => void matchOurs(wid, f, null, comparisons) : undefined}
+          removeTitle="Not a match"
+        />
       ))}
     </>
   )

@@ -24,16 +24,16 @@ import { useTasksSide } from '../deck/sideState'
 import styles from './CardPanel.module.css'
 import own from './TaskPanel.module.css'
 import { Checkbox } from '../../../ui/primitives/Checkbox'
-import { Chip } from '../../../ui/primitives/Chip'
 import { Button } from '../../../ui/primitives/Button'
-import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Choice } from '../../../ui/primitives/Choice'
 import { Field } from '../../../ui/primitives/Field'
-import { AddField } from '../../../ui/primitives/AddField'
 import { CommitField } from '../../../ui/primitives/CommitField'
 import { Label } from '../../../ui/primitives/Label'
 import { CardRow } from '../cards/CardRow'
 import { TASK_NOTES_MAX } from '../../../model/limits'
+import { TagList } from './TagList'
+import { NotesSection } from './NotesSection'
+import { usePicker } from './usePicker'
 
 const TONE = 'var(--accent-cyan)'
 
@@ -404,44 +404,10 @@ function Labels({ task, editor, n }: { task: Task; editor: boolean; n: number })
   const labels = task.labels ?? []
   const [draft, setDraft] = useState<string | null>(null)
   const set = (next: string[]) => void updateTask(wid, task, { labels: next.length ? next : undefined }, 'label a task')
-  const known = [...new Set(tasks.filter((t) => t.pieceId === task.pieceId).flatMap((t) => t.labels ?? []))].filter((l) => !labels.includes(l)).sort()
-  const typed = (draft ?? '').trim().replace(/^#/, '').toLowerCase()
-  const offer = draft === null ? [] : known.filter((l) => l.toLowerCase().includes(typed)).slice(0, 6)
-  const add = (l: string) => {
-    const t = l.trim().replace(/^#/, '').slice(0, LABEL_MAX)
-    if (t && !labels.includes(t) && labels.length < LABELS_MAX) set([...labels, t])
-    setDraft('')
-  }
+  const known = [...new Set(tasks.filter((t) => t.pieceId === task.pieceId).flatMap((t) => t.labels ?? []))].sort()
   return (
     <PanelSection n={n} name="labels" add={editor && draft === null ? { label: 'label', onClick: () => setDraft('') } : undefined} empty={!labels.length && draft === null}>
-      <div className={styles.tags}>
-        {labels.map((l) => (
-          <Chip key={l} onRemove={editor ? () => set(labels.filter((x) => x !== l)) : undefined} removeLabel="Remove">
-            #{l}
-          </Chip>
-        ))}
-        {draft !== null && (
-          <AddField
-            className={styles.tagInput}
-            label="Label"
-            placeholder="label"
-            value={draft}
-            maxLength={LABEL_MAX}
-            onChange={setDraft}
-            onClose={() => setDraft(null)}
-            onAdd={add}
-          />
-        )}
-      </div>
-      {offer.length > 0 && (
-        <ButtonGroup>
-          {offer.map((l) => (
-            <Button key={l} onMouseDown={(e) => e.preventDefault()} onClick={() => add(l)}>
-              #{l}
-            </Button>
-          ))}
-        </ButtonGroup>
-      )}
+      <TagList items={labels} editor={editor} word="label" max={LABEL_MAX} room={LABELS_MAX} suggest={known} draft={draft} onDraft={setDraft} onAdd={(t) => set([...labels, t])} onRemove={(t) => set(labels.filter((x) => x !== t))} />
     </PanelSection>
   )
 }
@@ -451,7 +417,7 @@ const NO_CARD = { id: '', type: 'idea', pieceId: '', title: '', x: 0, y: 0 } as 
 // The card it's for (a feature, an idea, a problem…, on any plane): its row opens that card's panel; `×` lets go.
 function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
   const { wid, cards, tasks, pieces } = useWs()
-  const [picking, setPicking] = useState(false)
+  const { picking, close, add } = usePicker()
   // What the picker offers first (D-299): what this kanban's other tasks are for most, then the cards on the plane the
   // kanban is stuck to.
   const suggest = useMemo(() => {
@@ -473,7 +439,7 @@ function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }
   }
   const exclude = useMemo(() => new Set(task.cardId ? [task.cardId] : []), [task.cardId])
   return (
-    <PanelSection n={n} name="for" add={editor && !picking ? { label: task.cardId ? 'change' : 'card', onClick: () => setPicking(true) } : undefined} empty={!task.cardId && !picking}>
+    <PanelSection n={n} name="for" add={add(task.cardId ? 'change' : 'card', editor)} empty={!task.cardId && !picking}>
       {task.cardId && (
         <div className={own.row}>
           {card ? (
@@ -510,10 +476,10 @@ function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }
           make={false}
           suggest={suggest}
           onPick={(c) => {
-            setPicking(false)
+            close()
             void updateTask(wid, task, { cardId: c.id, cardType: c.type }, 'link a task')
           }}
-          onClose={() => setPicking(false)}
+          onClose={close}
         />
       )}
     </PanelSection>
@@ -614,23 +580,7 @@ function CheckField({ value, onDone }: { value: string; onDone: (text: string | 
   )
 }
 
-// Notes: Inter, as long as they are; kept on leaving the field (Enter is a new line), Escape leaves it too.
 function Notes({ task, editor, n }: { task: Task; editor: boolean; n: number }) {
   const { wid } = useWs()
-  return (
-    <PanelSection n={n} name="notes">
-      <CommitField
-        enter="newline"
-        escape="keep"
-        className={styles.notes}
-        rows={2}
-        value={task.notes ?? ''}
-        readOnly={!editor}
-        placeholder="What it takes, what done looks like."
-        maxLength={TASK_NOTES_MAX}
-        label="Notes"
-        onSave={(v) => void updateTask(wid, task, { notes: v.trim() ? v : undefined }, 'edit a task’s notes')}
-      />
-    </PanelSection>
-  )
+  return <NotesSection n={n} value={task.notes} placeholder="What it takes, what done looks like." max={TASK_NOTES_MAX} editor={editor} onSave={(v) => void updateTask(wid, task, { notes: v }, 'edit a task’s notes')} />
 }

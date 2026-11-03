@@ -7016,4 +7016,5 @@ and not another, two document excerpts, the agent reading decks by older rules, 
 **Group 1 (2026-11-02):** 1.1–1.8 and 1.10 done (shared-code.md's Done); group 4 taken by another session (the
 drag work's own).
 1.9 (small words, model/words.ts) done the same day.
-**Not yet:** groups 2–3.
+**Group 2, panel sections (2026-11-02):** TagList, NotesSection, PanelRow, usePicker in panels/ (shared-code.md's Done).
+**Not yet:** the rest of group 2; group 3.
