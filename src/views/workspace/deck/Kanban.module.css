@@ -2,41 +2,16 @@
    canvas the pointer goes through it to the canvas. Its board is laid out in its own px (Kanban.tsx's K), scaled by the
    view. */
 .layer {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
+  composes: layer from '../canvas/PieceLayer.module.css';
 }
 
-.layer[data-live='true'] {
-  pointer-events: auto;
-}
-
-/* Opened onto the canvas (D-228): nothing cut at its edge. */
-.layer[data-on-canvas='true'] {
-  overflow: visible;
+.world {
+  composes: world from '../canvas/PieceLayer.module.css';
 }
 
 /* Unframed (D-267): ink on the canvas, no paper box; each column's head and each task on a shade that hugs it. */
 .layer[data-on-canvas='true'] .head {
   position: relative;
-}
-
-.layer[data-on-canvas='true'] :is(.task, .head)::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: var(--z-under);
-  background: color-mix(in srgb, var(--bg) var(--mix-near), transparent);
-  box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
-  pointer-events: none;
-}
-
-.world {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
 }
 
 /* The heads in a row, then a row of cells for each lane (one lane, with no head, without lanes): columns side by side,
@@ -153,6 +128,7 @@
 /* A column's head, the right panel's section rule (D-219): `01 TODO ──── 5`. Its line a step brighter than a panel's
    (`--rule-line`): on the page's black it's what parts the columns. */
 .head {
+  composes: shade from '../canvas/PieceLayer.module.css';
   composes: label from '../../../ui/primitives/Label.module.css';
   --rule-line: var(--line-hover);
   display: flex;
@@ -675,4 +651,8 @@
 .heldTo:focus-visible {
   background: var(--wash-2);
   outline: none;
+}
+
+.task {
+  composes: shade from '../canvas/PieceLayer.module.css';
 }

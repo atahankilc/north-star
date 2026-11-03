@@ -1,0 +1,40 @@
+/* A piece's view (a table, a matrix, a documents list, a deck; D-361: each had written this): the layer fills its piece
+   (or the screen in focus) and clips it; on the canvas the pointer goes through it to the canvas until it's live.
+   Opened onto the canvas (D-228) nothing is cut at its edge. Its parts are placed in its own px inside `.world`.
+   Each kind's `.layer` and `.world` compose these. */
+.layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.layer[data-live='true'] {
+  pointer-events: auto;
+}
+
+.layer[data-on-canvas='true'] {
+  overflow: visible;
+}
+
+.world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+/* Unframed (D-267): ink on the canvas, no paper box; each part that composes `shade` (a row, a head, a cell, a task)
+   sits on a shade that hugs it, D-277's ink. A matrix's unfolded rows (`data-sub`) share their card's. */
+.shade {
+}
+
+.layer[data-on-canvas='true'] .shade:not([data-sub])::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-under);
+  background: color-mix(in srgb, var(--bg) var(--mix-near), transparent);
+  box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
+  pointer-events: none;
+}

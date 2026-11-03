@@ -7019,4 +7019,5 @@ drag work's own).
 **Group 2, panel sections (2026-11-02):** TagList, NotesSection, PanelRow, usePicker in panels/ (shared-code.md's Done).
 **Group 2, grid cells (2026-11-03):** useGridCursor and CellInput (shared-code.md's Done).
 **Group 2, paging's look (2026-11-03):** model/paging.ts' sizes, canvas/Pager.tsx (shared-code.md's Done).
+**Group 2, unframed CSS (2026-11-03):** canvas/PieceLayer.module.css (shared-code.md's Done).
 **Not yet:** the rest of group 2; group 3.

@@ -1,37 +1,11 @@
 /* A matrix (D-204, D-212). The layer fills its window (or the screen in focus) and clips it; on the canvas the pointer
    goes through it to the canvas. Its parts are placed in its own px (Matrix.tsx's M). */
 .layer {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.layer[data-live='true'] {
-  pointer-events: auto;
-}
-
-/* Opened onto the canvas (D-228): nothing cut at its edge (the bar under a cell hangs past it). */
-.layer[data-on-canvas='true'] {
-  overflow: visible;
-}
-
-/* Unframed (D-267): ink on the canvas, no paper box; each head and cell on a shade that hugs it, as text's does. */
-.layer[data-on-canvas='true'] :is(.rowHead:not([data-sub]), .colHead:not([data-sub]), .cell, .endCell)::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: var(--z-under);
-  background: color-mix(in srgb, var(--bg) var(--mix-near), transparent);
-  box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
-  pointer-events: none;
+  composes: layer from '../canvas/PieceLayer.module.css';
 }
 
 .world {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
+  composes: world from '../canvas/PieceLayer.module.css';
 }
 
 .table {
@@ -90,6 +64,7 @@
    name's in mono over a dashed rule, no paper. Lit while its row or column is under the pointer or selected. */
 .rowHead,
 .colHead {
+  composes: shade from '../canvas/PieceLayer.module.css';
   display: flex;
   gap: var(--space-2);
   color: var(--fg);
@@ -101,6 +76,7 @@
 }
 
 .rowHead {
+  composes: shade from '../canvas/PieceLayer.module.css';
   align-items: center;
   padding: 0 var(--space-3) 0 var(--space-3);
 }
@@ -163,7 +139,6 @@
 .name[data-unnamed='true'] {
   color: var(--fg-faint);
 }
-
 
 /* A head's `×` (a Button icon, tone danger), in its top-right corner, shown while the head is pointed at. */
 .remove {
@@ -253,6 +228,7 @@
 }
 
 .endCell {
+  composes: shade from '../canvas/PieceLayer.module.css';
   display: flex;
   align-items: center;
   padding: 0 var(--space-2);
@@ -267,6 +243,7 @@
 
 /* A cell: what it holds in the middle; its marks in its corners, out of the middle's way. */
 .cell {
+  composes: shade from '../canvas/PieceLayer.module.css';
   display: grid;
   place-items: center;
   padding: 0;

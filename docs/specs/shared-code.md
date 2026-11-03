@@ -172,4 +172,9 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
   `PageSize` (a Select for an editor, `25 a page` for anyone else), in the table's and the documents list's docks; the
   table's setup tab offers the same sizes. Settled drift: the arrows show only past one page (the table showed
   `1 / 1`); the documents list offers 25 and 100, not 20 (one set at 20 keeps it).
+- **Group 2, unframed CSS (2026-11-03).** canvas/PieceLayer.module.css: the layer (fills, clips, the pointer through it
+  until live, nothing cut when opened onto the canvas), the world, and `shade` (D-277's ink under each part when
+  unframed; a matrix's `data-sub` rows share their card's). The table's, matrix's, documents list's and deck's `.layer`,
+  `.world` and shaded parts compose them. Checked: their unframed, on-the-canvas and in-focus gallery states in both
+  themes pixel-identical to before (a second old shot as noise, the one differing state re-shot: 0).
 

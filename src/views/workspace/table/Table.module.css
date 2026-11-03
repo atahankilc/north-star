@@ -1,41 +1,16 @@
 /* A table (D-209). The layer fills its piece (or the screen in focus) and clips it; on the canvas the pointer goes
    through it to the canvas. Its parts are placed in its own px (Table.tsx's T). */
 .layer {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
+  composes: layer from '../canvas/PieceLayer.module.css';
 }
 
-.layer[data-live='true'] {
-  pointer-events: auto;
-}
-
-/* Opened onto the canvas (D-228): nothing cut at its edge (the bar under a cell hangs past it). */
-.layer[data-on-canvas='true'] {
-  overflow: visible;
+.world {
+  composes: world from '../canvas/PieceLayer.module.css';
 }
 
 /* Unframed (D-267): ink on the canvas, no paper box; each row and head on a shade that hugs it, as text's does. */
 .layer[data-on-canvas='true'] .table {
   background: none;
-}
-
-.layer[data-on-canvas='true'] :is(.band, .head)::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: var(--z-under);
-  background: color-mix(in srgb, var(--bg) var(--mix-near), transparent);
-  box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
-  pointer-events: none;
-}
-
-.world {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
 }
 
 /* Solid under its cells, so the backdrop stays out from under its text. */
@@ -52,6 +27,7 @@
 
 /* A dashed rule under each row; the selected cell's row washed. */
 .band {
+  composes: shade from '../canvas/PieceLayer.module.css';
   border-bottom: var(--line-w) dashed var(--line);
   pointer-events: none;
 }
@@ -72,6 +48,7 @@
 /* A column's head: faint caps at its bottom (the kit's Label, D-326); its own columns a little brighter. A click sorts
    by it. */
 .head {
+  composes: shade from '../canvas/PieceLayer.module.css';
   composes: label from '../../../ui/primitives/Label.module.css';
   display: flex;
   align-items: flex-end;
@@ -325,7 +302,4 @@
   align-items: center;
   gap: var(--space-1);
 }
-
-
-
 
