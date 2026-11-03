@@ -53,26 +53,20 @@ import { canvasParams } from '../../../app/paths'
 import { PlaneCards } from '../plane/PlaneCards'
 import { LensCardPanel } from '../panels/CardPanel'
 import { DockAction, FocusDock } from './FocusDock'
+import { closeOneSetup, closeSetups, kindRecord, LensLive, useOpenSetups, useSetupOn, type BoundsCtx } from './pieceKinds'
 import { deleteCards, isOnPlane, type Card } from '../../../data/cards'
 import { deleteEdge } from '../../../data/edges'
 import { GRID } from '../../../data/grid'
 import { goToPlace, useGoTo, type Place } from './goTo'
-import { matrixBounds, MatrixView, toggleMatrixSetup, useMatrixUi } from '../matrix/Matrix'
-import { MatrixSetupPanel } from '../matrix/MatrixSetup'
-import { tableBounds, TablePager, TableView, useTableUi } from '../table/Table'
-import { TableSetupPanel } from '../table/TableSetup'
-import { KanbanSetupPanel } from '../deck/KanbanSetup'
 import { Beside } from './Beside'
 import { TasksSide } from '../deck/TasksSide'
 import { closeTasksSide, escapeTasksSide, toggleDaysOf, toggleFromPlane, toggleTasksSide, useTasksSide } from '../deck/sideState'
 import { isOpen, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
 import { deleteDocument, downloadDocument, unshareDocument, type Doc } from '../../../data/documents'
-import { closeDocs, shareOrAsk, documentsBounds, documentsOf, DocumentsTools, DocumentsView, listed, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from '../documents/Documents'
-import { DocFocus, DocPlace, DocReaders, documentBounds, documentHome, DocumentPieceView, membersOf, piecesOfDoc } from '../documents/DocumentPiece'
+import { closeDocs, shareOrAsk, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from '../documents/Documents'
+import { DocPlace, DocReaders, documentHome, membersOf, piecesOfDoc } from '../documents/DocumentPiece'
 import { clearFound, useFind } from '../find/find'
-import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView, selectTask, useKanbanSizes, useKanbanUi } from '../deck/Kanban'
-import { timelineBounds, TimelineDockTools, TimelineView, TimelineWeeks } from '../deck/Timeline'
-import { KanbanFilterDock } from '../deck/KanbanFilterDock'
+import { selectTask, useKanbanSizes, useKanbanUi } from '../deck/Kanban'
 import { learn } from '../../../onboarding/learn'
 import { TaskPanel } from '../panels/TaskPanel'
 import { timelineKanbans, timelineOf } from '../../../data/tasks'
@@ -166,8 +160,8 @@ export function CanvasView() {
   const canvasLabels = labelsOf(CANVAS)
   const focusedCards = focused ? cardsOf(focused.id) : []
   const focusedLabels = focused ? labelsOf(focused.id) : []
-  const focusedMatrix = focused && kindOfPiece(focused) === 'matrix'
-  const focusedTable = focused && kindOfPiece(focused) === 'table'
+  // What the focused piece is, when it isn't a plane (pieceKinds.tsx).
+  const focusedRec = focused ? kindRecord(focused) : null
   // Documents (D-232): the list, and one on its own.
   const focusedDocuments = focused && kindOfPiece(focused) === 'documents'
   const focusedDocument = focused && kindOfPiece(focused) === 'document'
@@ -177,7 +171,6 @@ export function CanvasView() {
   const readerOpen = useDocUi((s) => s.readers.length > 0) && !!focusedDocuments
   // The list put away while documents are open: they fill the screen, and Escape goes straight back to the canvas.
   const listHidden = useDocUi((s) => s.listHidden) && readerOpen
-  const sideBySide = useDocUi((s) => s.sideBySide)
   // What's stuck to the focused plane (D-210) or kanban (D-262), and what of it is open beside it (D-211), in the address
   // (`beside`).
   // A deck's: its timeline linked through its plane too (D-300).
@@ -195,11 +188,9 @@ export function CanvasView() {
   const sideAt = useTasksSide((s) => (s.open ? `${s.linked ?? ''}|${s.tab}|${s.days ? 'days' : ''}` : ''))
   const setBesideRef = useRef(setBeside)
   setBesideRef.current = setBeside
-  const matrixSetup = useMatrixUi((s) => s.setup)
-  const tableSetup = useTableUi((s) => s.setup)
-  // A kanban's setup (D-268).
-  const kanbanSetup = useKanbanUi((s) => s.setup)
-  const canvasSetup = pieces.find((p) => isOpen(p) && (p.id === matrixSetup || p.id === tableSetup || p.id === kanbanSetup)) ?? null
+  // Whose setups are open (a matrix's, a table's, a deck's, D-268; pieceKinds.tsx).
+  const openSetups = useOpenSetups()
+  const canvasSetup = pieces.find((p) => isOpen(p) && openSetups.includes(p.id)) ?? null
   // What Escape closes next, after a selection (D-211): a setup, then what's beside (the last opened), then focus (the
   // key handler below; no key is shown on the docks, D-344).
   // Documents beside their list (D-232): Escape closes the last one; with the list put away, a framed list comes back,
@@ -211,21 +202,10 @@ export function CanvasView() {
   // A plane's filter changes what its box holds.
   const filters = usePlaneFilter((s) => s.byPlane)
   const contents = useMemo(() => {
+    const ctx: BoundsCtx = { cards, tasks, pieces, documents, me: user?.id }
     const of = (p: WithId<Piece>) => {
-      const kind = kindOfPiece(p)
-      return kind === 'matrix'
-        ? matrixBounds(p, cards)
-        : kind === 'table'
-          ? tableBounds(p, cards)
-          : kind === 'documents'
-            ? documentsBounds(p, listed(documents, documentsOf(p), user?.id).length)
-            : kind === 'document'
-              ? documentBounds(p)
-              : kind === 'kanban'
-                ? kanbanBounds(p, tasks)
-                : kind === 'timeline'
-                  ? timelineBounds(p, pieces, tasks, cards)
-                  : spaceBounds(cardsBy.get(p.id) ?? NONE, edges, labelsBy.get(p.id) ?? NONE, [], p.id)
+      const rec = kindRecord(p)
+      return rec ? rec.bounds(p, ctx) : spaceBounds(cardsBy.get(p.id) ?? NONE, edges, labelsBy.get(p.id) ?? NONE, [], p.id)
     }
     return new Map(pieces.map((p) => [p.id, of(p)]))
   }, [pieces, cards, edges, cardsBy, labelsBy, documents, user?.id, filters, tasks])
@@ -685,9 +665,7 @@ export function CanvasView() {
     useCanvasView.setState({ focusSpread: true, focusArrived: false, focusLeaving: false, selected: null, cardSelected: null })
     // A task picked (D-251, D-254) stays in the space it was picked in; a thread's go there picks after (`pending`).
     selectTask('', null)
-    useMatrixUi.setState({ setup: null })
-    useTableUi.setState({ setup: null })
-    useKanbanUi.setState({ setup: null })
+    closeSetups()
     closeDocs()
     setParams(canvasParams(p.spot ?? canvasOf(p), { focus: p.id }))
   }
@@ -877,9 +855,7 @@ export function CanvasView() {
           // A card, or a matrix's cell (D-204), lets go first; then the setup
           // closes, then what's beside, then focus goes.
           if (cardSelected) useCanvasView.setState({ cardSelected: null })
-          else if (useMatrixUi.getState().setup) useMatrixUi.setState({ setup: null })
-          else if (useTableUi.getState().setup) useTableUi.setState({ setup: null })
-          else if (useKanbanUi.getState().setup) useKanbanUi.setState({ setup: null })
+          else if (closeOneSetup()) return
           // Documents open beside their list (D-232): with the list there, the last opened closes; with it put away, a
           // framed list comes back (they all close), an unframed one goes straight to the canvas.
           else if (useDocUi.getState().readers.length && !useDocUi.getState().listHidden) useDocUi.setState((s) => ({ readers: s.readers.slice(0, -1) }))
@@ -898,9 +874,7 @@ export function CanvasView() {
       }
       // Something open on the canvas (D-228): Escape closes its setup, then lets go of its cell.
       if (e.key === 'Escape') {
-        if (useMatrixUi.getState().setup) return useMatrixUi.setState({ setup: null })
-        if (useTableUi.getState().setup) return useTableUi.setState({ setup: null })
-        if (useKanbanUi.getState().setup) return useKanbanUi.setState({ setup: null })
+        if (closeOneSetup()) return
         if (useCanvasView.getState().cardSelected) return useCanvasView.setState({ cardSelected: null })
         if (useTasksSide.getState().open && !useCanvasView.getState().selected) return escapeTasksSide(false)
       }
@@ -1018,19 +992,10 @@ export function CanvasView() {
           }}
           onLeft={left}
         >
-          {focusedMatrix ? (
-            <FocusedMatrix piece={focused} editor={editor} />
-          ) : focusedTable ? (
-            <FocusedTable piece={focused} editor={editor} />
-          ) : focusedDocuments ? (
-            <FocusedDocuments piece={focused} editor={editor} />
-          ) : focusedDocument ? (
-            // The same page as a document beside the list (D-232), its own dock with `[unfocus]`.
-            <DocFocus piece={focused} onUnfocus={unfocus} />
-          ) : focusedKanban ? (
-            <FocusedKanban piece={focused} editor={editor} />
-          ) : focusedTimeline ? (
-            <FocusedTimeline piece={focused} editor={editor} />
+          {focusedRec?.Focused ? (
+            <focusedRec.Focused piece={focused} onUnfocus={unfocus} />
+          ) : focusedRec ? (
+            <FocusedLens piece={focused} editor={editor} />
           ) : (
             <FocusedCards cards={focusedCards} labels={focusedLabels} editor={editor} />
           )}
@@ -1038,9 +1003,7 @@ export function CanvasView() {
           {focusArrived && !focusLeaving && (
             <Beside plane={focused} open={besideOpen} editor={editor} onClose={(id) => setBeside(besideIds.filter((x) => x !== id))} />
           )}
-          {focusedMatrix && editor && matrixSetup === focused.id && focusArrived && !focusLeaving && <MatrixSetupPanel piece={focused} />}
-          {focusedTable && editor && tableSetup === focused.id && focusArrived && !focusLeaving && <TableSetupPanel piece={focused} />}
-          {focusedKanban && editor && kanbanSetup === focused.id && focusArrived && !focusLeaving && <KanbanSetupPanel piece={focused} />}
+          {focusedRec?.setup && editor && openSetups.includes(focused.id) && focusArrived && !focusLeaving && <focusedRec.setup.Panel piece={focused} />}
           {/* A card picked from a matrix's or a table's head, in its focus or beside the plane: its panel. */}
           {focusArrived && !focusLeaving && <LensCardPanel space={focused.id} editor={editor} />}
           {/* A kanban's task picked (D-251), or a task from a card's panel (D-254): its panel. */}
@@ -1051,19 +1014,10 @@ export function CanvasView() {
           {/* A document's focus has the page's own dock (DocFocus). */}
           {focusArrived && !focusLeaving && !listHidden && !focusedDocument && (
             <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length || sideOpen ? (size.w * split) / 2 : undefined}>
-              {focusedMatrix && editor && (
-                <DockAction label="setup" pressed={matrixSetup === focused.id} title="its rows, columns and cells" onClick={() => toggleMatrixSetup(focused.id)} />
-              )}
-              {focusedTable && <TablePager piece={focused} editor={editor} />}
-              {focusedTable && editor && (
-                <DockAction label="setup" pressed={tableSetup === focused.id} title="where its rows come from, its columns" onClick={() => useTableUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
-              )}
-              {focusedDocuments && <DocumentsTools piece={focused} editor={editor} />}
-              {focusedKanban && <KanbanFilterDock piece={focused} />}
-              {focusedKanban && <KanbanLanes piece={focused} editor={editor} />}
-              {focusedKanban && <KanbanDockTools piece={focused} editor={editor} />}
-              {focusedKanban && editor && (
-                <DockAction label="setup" pressed={kanbanSetup === focused.id} title="what it holds: tasks, or cards by a field" onClick={() => useKanbanUi.setState((s) => ({ setup: s.setup === focused.id ? null : focused.id }))} />
+              {/* Its kind's own tools, then its setup (pieceKinds.tsx). */}
+              {focusedRec?.dock && <focusedRec.dock piece={focused} editor={editor} />}
+              {focusedRec?.setup && editor && (
+                <DockAction label="setup" pressed={openSetups.includes(focused.id)} title={focusedRec.setup.title} onClick={() => focusedRec.setup!.toggle(focused.id)} />
               )}
               {/* A timeline stuck to the deck (D-262): its days in the tasks side view, the deck on the left (D-300). */}
               {focusedKanban &&
@@ -1076,10 +1030,6 @@ export function CanvasView() {
                     onClick={() => toggleDaysOf(focused.id)}
                   />
                 ))}
-              {focusedTimeline && <TimelineDockTools piece={focused} editor={editor} />}
-              {/* Several documents side by side (D-232): a click opens one next to the others. */}
-              {focusedDocuments && <DockAction label="⧉ side by side" pressed={sideBySide} title={sideBySide ? 'a click opens a document in place of the one open' : 'a click opens a document next to the ones open'} onClick={() => useDocUi.setState((s) => ({ sideBySide: !s.sideBySide }))} />}
-              {focusedDocuments && readerOpen && <DockAction label="hide list" title="put the list away: the documents take the whole screen" onClick={() => useDocUi.setState({ listHidden: true })} />}
               {/* What the plane shows (D-233) and what's stuck to it (D-210), each a strip over the dock (D-235): a stuck
                   piece's button opens it beside the plane, or closes it (D-211). Its snapping and guides and what it shows, in the view menu (D-231). */}
               {!isBare(focused) && (
@@ -1412,7 +1362,7 @@ function innerView(box: Box, b: Bounds | null, bare = false, pad = GRID): PlaneC
 // How a piece shows what's in it: a table at its own size from the top-left, cut by its edge (D-208); a matrix fitted
 // whole in its window, a little room round it (D-214); a plane's cards fitted.
 // A timeline (D-262) is fitted in its window, as a matrix is: two weeks are wider than any window.
-const asShown = (p: Piece): [boolean, number] => (kindOfPiece(p) === 'matrix' || kindOfPiece(p) === 'timeline' ? [false, 12] : [isBare(p), GRID])
+const asShown = (p: Piece): [boolean, number] => (kindRecord(p)?.fitted ? [false, 12] : [isBare(p), GRID])
 
 // That view on the screen, where focus starts from and goes back to.
 function homeOf(piece: Piece, at: ScreenRect, content: Bounds | null): PlaneCam {
@@ -1421,34 +1371,11 @@ function homeOf(piece: Piece, at: ScreenRect, content: Bounds | null): PlaneCam 
   return { ox: at.x + at.zoom * (1 + v.ox), oy: at.y + at.zoom * (1 + v.oy), zoom: at.zoom * v.zoom }
 }
 
-// The focused matrix, live, on its own view (D-204).
-function FocusedMatrix({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+// A matrix, table, documents list, deck or timeline in focus, live, on its own view (D-204, D-209, D-232, D-251, D-262):
+// its kind's view (pieceKinds.tsx). A documents list's click opens a document beside it (DocReader).
+function FocusedLens({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const view = useCanvasView((s) => s.planeCam)
-  return view ? <MatrixView piece={piece} view={view} live editor={editor} /> : null
-}
-
-// The focused table, live, on its own view (D-209).
-function FocusedTable({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
-  const view = useCanvasView((s) => s.planeCam)
-  return view ? <TableView piece={piece} view={view} live editor={editor} /> : null
-}
-
-// The focused kanban, live, on its own view (D-251).
-// The focused timeline, live, on its own view (D-262).
-function FocusedTimeline({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
-  const view = useCanvasView((s) => s.planeCam)
-  return view ? <TimelineView piece={piece} view={view} live editor={editor} /> : null
-}
-
-function FocusedKanban({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
-  const view = useCanvasView((s) => s.planeCam)
-  return view ? <KanbanView piece={piece} view={view} live editor={editor} /> : null
-}
-
-// The focused documents list, live (D-232); a click opens a document beside it (DocReader).
-function FocusedDocuments({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
-  const view = useCanvasView((s) => s.planeCam)
-  return view ? <DocumentsView piece={piece} view={view} live editor={editor} /> : null
+  return view ? <LensLive piece={piece} view={view} editor={editor} /> : null
 }
 
 
@@ -1523,6 +1450,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
   const peers = usePeersOn(piece.id, CANVAS)
   const { wid } = useWs()
   const kind = kindOfPiece(piece)
+  const rec = kindRecord(piece)
   // A document on its own is named by its document's title (D-232); it has no name of its own.
   const docTitle = useWs().documents.find((d) => d.id === piece.docId)?.title
   const name = kind === 'document' ? docTitle : piece.name
@@ -1556,10 +1484,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
     window.addEventListener('pointerdown', away, true)
     return () => window.removeEventListener('pointerdown', away, true)
   }, [tapped])
-  const matrixSetupOn = useMatrixUi((s) => s.setup === piece.id)
-  const tableSetupOn = useTableUi((s) => s.setup === piece.id)
-  const kanbanSetupOn = useKanbanUi((s) => s.setup === piece.id)
-  const setupOn = matrixSetupOn || tableSetupOn || kanbanSetupOn
+  const setupOn = useSetupOn(piece.id)
   const tap = (e: ReactPointerEvent<HTMLElement>) => {
     if (e.pointerType !== 'touch' || editing || e.button !== 0) return
     const [sx, sy] = [e.clientX, e.clientY]
@@ -1788,33 +1713,11 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
         // Open on the canvas (D-228), live: at its own size a margin in, under the canvas's zoom (its view stays at 1, so
         // the camera moving never draws it again); what's at screen size in it reads the piece's `--z`.
         <div className={styles.openLayer} style={{ width: box.w, height: box.h }}>
-          {kind === 'matrix' ? (
-            <Matrix piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas />
-          ) : kind === 'table' ? (
-            <Table piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas />
-          ) : kind === 'documents' ? (
-            // Open on the canvas (D-234): its rows live there; a click takes the list into focus with the document beside it.
-            <DocsList piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas onOpen={onFocus} />
-          ) : kind === 'kanban' ? (
-            <Kanban piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas />
-          ) : kind === 'timeline' ? (
-            <Timeline piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas />
-          ) : (
-            <DocOne piece={piece} view={openView} live={live && !editing} onCanvas onMore={onFocus} />
-          )}
+          {/* Its rows live there; a documents list's click (or a document's `continue reading`) takes it into focus. */}
+          {rec && <rec.Shown piece={piece} view={openView} live={live && !editing} editor={editor} onCanvas onFocus={onFocus} />}
         </div>
-      ) : kind === 'matrix' ? (
-        <Matrix piece={piece} view={framedView} live={false} editor={editor} />
-      ) : kind === 'table' ? (
-        <Table piece={piece} view={framedView} live={false} editor={editor} />
-      ) : kind === 'documents' ? (
-        <DocsList piece={piece} view={framedView} live={false} editor={editor} />
-      ) : kind === 'document' ? (
-        <DocOne piece={piece} view={framedView} live={false} />
-      ) : kind === 'kanban' ? (
-        <Kanban piece={piece} view={framedView} live={false} editor={editor} />
-      ) : kind === 'timeline' ? (
-        <Timeline piece={piece} view={framedView} live={false} editor={editor} />
+      ) : rec ? (
+        <rec.Shown piece={piece} view={framedView} live={false} editor={editor} />
       ) : (
         <Cards cards={cards} labels={labels} view={inner} live={false} editor={editor} />
       )}
@@ -1838,11 +1741,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
         extra={
           // A documents list's tools (upload, table or shelf…) are in its focus, and on it once unframed; framed, its
           // console is only `[focus] [edit]`.
-          kind === 'documents' ? (
-            open ? <DocumentsTools piece={piece} editor={editor} toolClass={styles.tool} /> : undefined
-          ) : kind === 'document' ? undefined : open ? (
-            <OpenTools piece={piece} editor={editor} />
-          ) : undefined
+          open && rec && (rec.console || rec.setup) ? <OpenTools piece={piece} editor={editor} /> : undefined
         }
       />
     </div>
@@ -2100,25 +1999,15 @@ function PlaneConsole({ comments, editing = false, unframed = false, noun = 'pla
 // What an open matrix or table (D-228) is used by from its console: a table's pages (D-213), and the setup, which opens
 // at the bottom of the screen (CanvasSetup).
 function OpenTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
-  const kind = kindOfPiece(piece)
-  const matrix = kind === 'matrix'
-  const matrixOn = useMatrixUi((s) => s.setup === piece.id)
-  const tableOn = useTableUi((s) => s.setup === piece.id)
-  const kanbanOn = useKanbanUi((s) => s.setup === piece.id)
-  const on = matrix ? matrixOn : kind === 'kanban' ? kanbanOn : tableOn
-  const toggle = () =>
-    matrix
-      ? toggleMatrixSetup(piece.id)
-      : kind === 'kanban'
-        ? useKanbanUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))
-        : useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id }))
-  // A timeline's weeks (D-289); its filter and rows are in its focus.
-  if (kind === 'timeline') return <TimelineWeeks piece={piece} toolClass={styles.tool} />
+  const rec = kindRecord(piece)
+  const on = useSetupOn(piece.id)
+  if (!rec) return null
+  const { console: Tools, setup } = rec
   return (
     <>
-      {kind === 'table' && <TablePager piece={piece} editor={editor} />}
-      {editor && (
-        <Button className={styles.tool} pressed={on} title={matrix ? 'its rows, columns and cells' : kind === 'kanban' ? 'what it holds: tasks, or cards by a field' : 'where its rows come from, its columns'} onClick={toggle}>
+      {Tools && <Tools piece={piece} editor={editor} toolClass={styles.tool} />}
+      {setup && editor && (
+        <Button className={styles.tool} pressed={on} title={setup.title} onClick={() => setup.toggle(piece.id)}>
           setup
         </Button>
       )}
@@ -2128,17 +2017,11 @@ function OpenTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean })
 
 // The setup of a matrix or table open on the canvas (D-228), as in its focus.
 function CanvasSetup({ piece }: { piece: WithId<Piece> }) {
-  const kind = kindOfPiece(piece)
-  return kind === 'matrix' ? <MatrixSetupPanel piece={piece} /> : kind === 'kanban' ? <KanbanSetupPanel piece={piece} /> : <TableSetupPanel piece={piece} />
+  const Panel = kindRecord(piece)?.setup?.Panel
+  return Panel ? <Panel piece={piece} /> : null
 }
 
 // What's in a piece, drawn again only when it changes, not as the camera moves (its view is the same object meanwhile).
-const Matrix = memo(MatrixView)
-const Table = memo(TableView)
-const DocsList = memo(DocumentsView)
-const DocOne = memo(DocumentPieceView)
-const Kanban = memo(KanbanView)
-const Timeline = memo(TimelineView)
 const Cards = memo(PlaneCards)
 // The canvas's text, drawn again as the zoom changes (its editors follow it), not as the canvas pans.
 const Text = memo(TextItems)

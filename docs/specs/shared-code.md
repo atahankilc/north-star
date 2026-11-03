@@ -212,3 +212,15 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
   each kind of reference: merge points it at the kept card, the cascade deletes it or leaves it unread, D-141; a list
   would save little and hide that).
 
+- **Group 3, one record per piece kind (2026-11-03, north-star-48).**
+  - Step 1: the matrix's setup state took the table's and deck's shape (`setup` its id, `tab`), 2470763.
+  - Step 2: canvas/pieceKinds.tsx, a record per kind that isn't a plane (matrix, table, documents, document, deck,
+    timeline): its view (memoised, framed, open on the canvas or in focus), its own focus (a document's page), its
+    contents' bounds, fitted or at its size, its setup (store, toggle, title, panel), its focus-dock tools and its
+    console tools; `useSetupOn`, `useOpenSetups`, `closeSetups`, `closeOneSetup`. CanvasView's kind branches 48 → 17
+    (those left are how kinds relate: a deck's timeline, a list's open documents, a delete's words), five `Focused*`
+    wrappers one `FocusedLens`, six memo wrappers gone; Beside reads it for bounds, setup and dock tools. A plane stays
+    the canvas's own (its cards and text). Checked: 17 galleries' states old vs new, pixel-identical (three needed 30 s
+    for the camera's first fit); every dock's buttons, the console's on unframed pieces, setup and Escape in focus, on
+    the canvas and beside, the same in both.
+  - Left for step 3: the finder (findIndex.ts, FindPreview.tsx) and shownBox.ts.

@@ -17,11 +17,10 @@ import { isReducedMotion } from '../../../state/motion'
 import { SIDE_PANEL_W } from '../../../ui/patterns/SidePanel'
 import { SplitLine } from '../../../ui/primitives/SplitLine'
 import { useWs } from './context'
-import { matrixBounds, MatrixView, toggleMatrixSetup, useMatrixUi } from '../matrix/Matrix'
-import { MatrixSetupPanel } from '../matrix/MatrixSetup'
-import { tableBounds, TablePager, TableView, useTableUi } from '../table/Table'
+import { MatrixView } from '../matrix/Matrix'
+import { TableView } from '../table/Table'
+import { PIECE_KINDS, useSetupOn } from './pieceKinds'
 import { DockAction, FocusDock } from './FocusDock'
-import { TableSetupPanel } from '../table/TableSetup'
 import styles from './Beside.module.css'
 import { DUR } from '../../../ui/foundation/motion'
 import { wheelStep, zoomAt } from '../../../ui/foundation/feel'
@@ -151,9 +150,11 @@ export function glidePlaneTo(picked: Pick<Card, 'id'>, plane: string, cards: Car
 }
 
 function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
-  const { cards, places } = useWs()
+  const { cards, places, tasks, pieces, documents } = useWs()
   const kind = kindOfPiece(piece)
-  const content = kind === 'matrix' ? matrixBounds(piece, cards) : tableBounds(piece, cards)
+  // A matrix or a table (what sticks to a plane and opens beside it): its record (pieceKinds.tsx).
+  const rec = PIECE_KINDS[kind as 'matrix' | 'table']
+  const content = rec.bounds(piece, { cards, tasks, pieces, documents })
   const { el, view, setView, pan } = usePaneView(content, box)
 
   // A card's row picked: the card selected, and the plane's view glides to put it in the middle of the plane's part.
@@ -162,10 +163,8 @@ function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
     glidePlaneTo(card, plane.id, cards, places)
   }
 
-  const tableSetup = useTableUi((s) => s.setup === piece.id)
-  const matrixSetup = useMatrixUi((s) => s.setup === piece.id)
-  const setupOpen = kind === 'table' ? tableSetup : matrixSetup
-  const toggleSetup = () => (kind === 'table' ? useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : piece.id })) : toggleMatrixSetup(piece.id))
+  const setupOpen = useSetupOn(piece.id)
+  const { setup, dock: Tools } = rec
 
   return (
     <div
@@ -182,8 +181,7 @@ function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
       ) : (
         <TableView piece={piece} view={view} live editor={editor} onCard={toCard} onView={setView} />
       )}
-      {kind === 'table' && tableSetup && editor && <TableSetupPanel piece={piece} />}
-      {kind === 'matrix' && matrixSetup && editor && <MatrixSetupPanel piece={piece} />}
+      {setup && setupOpen && editor && <setup.Panel piece={piece} />}
       {/* Its dock: the focus dock itself, at the bottom middle of its part, named (D-189, D-211). */}
       <FocusDock
         label={`${KIND_NAME[kind]} beside`}
@@ -194,15 +192,8 @@ function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
           </>
         }
       >
-        {kind === 'table' && <TablePager piece={piece} editor={editor} />}
-        {editor && (
-          <DockAction
-            label="setup"
-            pressed={setupOpen}
-            title={kind === 'table' ? 'where its rows come from, its columns' : 'its rows, columns and cells'}
-            onClick={toggleSetup}
-          />
-        )}
+        {Tools && <Tools piece={piece} editor={editor} />}
+        {setup && editor && <DockAction label="setup" pressed={setupOpen} title={setup.title} onClick={() => setup.toggle(piece.id)} />}
         <DockAction label="close" main title="close it; it stays stuck to the plane" onClick={onClose} />
       </FocusDock>
     </div>
