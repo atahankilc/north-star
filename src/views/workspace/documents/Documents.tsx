@@ -28,6 +28,7 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { Empty } from '../../../ui/primitives/Empty'
 import { pagesOf } from '../../../model/paging'
+import { PageArrows, PageSize } from '../canvas/Pager'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const D = DOCS_PX
@@ -40,7 +41,6 @@ const TABLE_W = tableW(false)
 // A shelf only as wide as its sheets need: up to five a row.
 const shelfCols = (n: number) => Math.max(1, Math.min(D.sheet.cols, n))
 const shelfW = (n: number) => 2 * D.pad + shelfCols(n) * D.sheet.w + (shelfCols(n) - 1) * D.sheet.gap
-const PAGE_SIZES = [10, 20, 50]
 
 const NO_SETUP = emptyDocuments()
 export const documentsOf = (p: Pick<Piece, 'documents'>): DocumentsSetup => p.documents ?? NO_SETUP
@@ -550,19 +550,7 @@ export function DocumentsTools({ piece, editor, toolClass, compact = false }: { 
           {u.why ? ` · ${u.why}` : ''}
         </span>
       ))}
-      {p.size && p.pages > 1 && (
-        <ButtonGroup label="Pages">
-          <Button icon className={tool} disabled={p.at === 0} aria-label="Page before" onClick={() => go(p.at - 1)}>
-            ‹
-          </Button>
-          <span className={styles.pageAt}>
-            {p.at + 1} / {p.pages}
-          </span>
-          <Button icon className={tool} disabled={p.at >= p.pages - 1} aria-label="Page after" onClick={() => go(p.at + 1)}>
-            ›
-          </Button>
-        </ButtonGroup>
-      )}
+      <PageArrows p={p} go={go} toolClass={tool} />
       {editor && (
         <>
           {!compact && <Select<string>
@@ -574,15 +562,7 @@ export function DocumentsTools({ piece, editor, toolClass, compact = false }: { 
               void setDocumentsSetup(wid, piece, { kinds: KIND_FILTER.find((k) => k.value === v)?.kinds })
             }}
           />}
-          {!compact && <Select<string>
-            ariaLabel="Documents a page"
-            value={p.size ? String(p.size) : ALL}
-            options={[{ value: ALL, label: `all ${count}` }, ...PAGE_SIZES.map((n) => ({ value: String(n), label: `${n} a page` }))]}
-            onChange={(v) => {
-              go(0)
-              void setDocumentsSetup(wid, piece, { pageSize: v === ALL ? undefined : Number(v) })
-            }}
-          />}
+          {!compact && <PageSize p={p} count={count} noun="documents" editor onSize={(size) => (go(0), void setDocumentsSetup(wid, piece, { pageSize: size }))} />}
           {/* Table or shelf (D-232): shared, like its sort. */}
           <Choice bare label="Show as" options={['table', 'shelf'] as const} value={setup.view} onChange={(v) => void setDocumentsSetup(wid, piece, { view: v })} />
         </>

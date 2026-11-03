@@ -326,12 +326,6 @@
   gap: var(--space-1);
 }
 
-/* `2 / 5` between the page arrows, in their strip (ButtonGroup, D-344). */
-.pageAt {
-  padding: 0 var(--space-2);
-  color: var(--fg);
-  white-space: nowrap;
-}
 
 
 

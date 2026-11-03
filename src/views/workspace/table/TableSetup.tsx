@@ -18,7 +18,6 @@ import {
   MAX_COLS,
   NAME_COL,
   OWN_KINDS,
-  PAGE_SIZES,
   removeColumn,
   removeRow,
   setTable,
@@ -47,6 +46,7 @@ import { Empty } from '../../../ui/primitives/Empty'
 import { Options } from '../../../ui/patterns/Options'
 import { UNIT_MAX, VALUE_MAX } from '../../../model/limits'
 import { cardName } from '../../../model/cardName'
+import { pageSizesWith } from '../../../model/paging'
 
 const TAB_NAME: Record<TableTab, string> = { rows: 'rows', cols: 'columns', view: 'view' }
 
@@ -321,7 +321,7 @@ export function ViewEditor({ setup, onChange }: EditorProps) {
         <Choices<string>
           label="Rows a page"
           value={setup.pageSize ? String(setup.pageSize) : ALL}
-          options={[{ value: ALL, label: 'all' }, ...PAGE_SIZES.map((n) => ({ value: String(n), label: String(n) }))]}
+          options={[{ value: ALL, label: 'all' }, ...pageSizesWith(setup.pageSize).map((n) => ({ value: String(n), label: String(n) }))]}
           onChange={(v) => onChange('pageSize', v === ALL ? undefined : Number(v))}
         />
       </Row>

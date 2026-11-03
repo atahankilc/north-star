@@ -167,3 +167,9 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
   row again as what's typed changes); the agent's `/` skills and a thread's `@` people stand on it. Settled drift: the
   `@` list no longer picks on an Enter that ends an IME's word or on shift+Enter, and its Escape stops there.
   tests/unit/promptPick.test.ts. Not seen live: the gallery has no people to mention (members come from Firestore).
+- **Group 2, paging's look (2026-11-03).** model/paging.ts: one `PAGE_SIZES` (10, 25, 50, 100) and `pageSizesWith(size)`
+  (a size kept from before stays offered); canvas/Pager.tsx (with its gallery): `PageArrows` (`‹ 2 / 5 ›`) and
+  `PageSize` (a Select for an editor, `25 a page` for anyone else), in the table's and the documents list's docks; the
+  table's setup tab offers the same sizes. Settled drift: the arrows show only past one page (the table showed
+  `1 / 1`); the documents list offers 25 and 100, not 20 (one set at 20 keeps it).
+

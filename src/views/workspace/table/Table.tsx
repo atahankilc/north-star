@@ -11,10 +11,9 @@ import type { Piece } from '../../../data/model'
 import { retitleCard, TITLE_MAX, type Card } from '../../../data/cards'
 import { setCell, TEXT_MAX, TONE_VAR, type Cell } from '../../../data/matrix'
 import { rowsOf, statusOf, type Row } from '../../../data/source'
-import { addNamedRow, CHECKED, COL_W, colName, DEFAULT_STEPS, emptyTable, NAME_COL, PAGE_SIZES, readOwn, removeRow, renameRow, setColumnWidth, setTablePart, type Column, type TableSetup } from '../../../data/table'
+import { addNamedRow, CHECKED, COL_W, colName, DEFAULT_STEPS, emptyTable, NAME_COL, readOwn, removeRow, renameRow, setColumnWidth, setTablePart, type Column, type TableSetup } from '../../../data/table'
 import { kindOfPiece } from '../../../data/pieces'
 import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
-import { Select } from '../../../ui/patterns/Select'
 import { useWs } from '../canvas/context'
 import { useKept } from '../canvas/kept'
 import { useSeen, within } from '../canvas/visible'
@@ -27,12 +26,12 @@ import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import styles from './Table.module.css'
 import { DUR } from '../../../ui/foundation/motion'
 import { Button } from '../../../ui/primitives/Button'
-import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Label } from '../../../ui/primitives/Label'
 import { pagesOf } from '../../../model/paging'
 import { cellSel, useGridCursor, type CellAt } from '../canvas/gridCursor'
 import { CellInput } from '../canvas/CellInput'
+import { PageArrows, PageSize } from '../canvas/Pager'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
 export const T = { head: 40, row: 32, name: 260, add: 40 }
@@ -741,9 +740,8 @@ function OwnCell({ id, col, cell, style, label, selected, live, typing, onPress,
   )
 }
 
-const ALL = 'all'
 
-// The page controls in a table's dock (D-213): `‹ 2 / 5 ›` and how many rows a page (shared). Arrows step pages here.
+// The page controls in a table's dock (D-213): canvas/Pager's. Arrows step pages here.
 export function TablePager({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
   const { cards } = useWs()
   const setup = tableOf(piece)
@@ -753,32 +751,8 @@ export function TablePager({ piece, editor }: { piece: WithId<Piece>; editor: bo
   const { wid } = useWs()
   return (
     <span className={styles.pager} role="group" aria-label="Pages">
-      {p.size && (
-        <ButtonGroup>
-          <Button icon disabled={p.at === 0} title="the page before" aria-label="Page before" onClick={() => go(p.at - 1)}>
-            ‹
-          </Button>
-          <span className={styles.pageAt}>
-            {p.at + 1} / {p.pages}
-          </span>
-          <Button icon disabled={p.at >= p.pages - 1} title="the page after" aria-label="Page after" onClick={() => go(p.at + 1)}>
-            ›
-          </Button>
-        </ButtonGroup>
-      )}
-      {editor ? (
-        <Select<string>
-          ariaLabel="Rows a page"
-          value={p.size ? String(p.size) : ALL}
-          options={[{ value: ALL, label: `all ${count}` }, ...PAGE_SIZES.map((n) => ({ value: String(n), label: `${n} a page` }))]}
-          onChange={(v) => {
-            go(0)
-            void setTablePart(wid, piece.id, 'pageSize', v === ALL ? undefined : Number(v))
-          }}
-        />
-      ) : (
-        <span className={styles.pageAt}>{p.size ? `${p.size} a page` : `all ${count}`}</span>
-      )}
+      <PageArrows p={p} go={go} />
+      <PageSize p={p} count={count} noun="rows" editor={editor} onSize={(size) => (go(0), void setTablePart(wid, piece.id, 'pageSize', size))} />
     </span>
   )
 }

@@ -6,3 +6,8 @@ export function pagesOf(setup: { pageSize?: number }, count: number, page: numbe
   const at = Math.min(pages - 1, Math.max(0, page ?? 0))
   return { size, pages, at, from: size ? at * size : 0, to: size ? Math.min(count, (at + 1) * size) : count }
 }
+
+// How many a page can be chosen (D-361: the table's and the documents list's lists had drifted, 10/25/50/100 vs
+// 10/20/50). A size kept from before that isn't one of them stays offered, so it reads as what it is.
+export const PAGE_SIZES = [10, 25, 50, 100]
+export const pageSizesWith = (size: number | undefined) => (size && !PAGE_SIZES.includes(size) ? [...PAGE_SIZES, size].sort((a, b) => a - b) : PAGE_SIZES)
