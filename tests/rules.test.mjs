@@ -776,7 +776,7 @@ await deny('a non-member reads threads', () => getDocs(collection(carol.fs, 'wor
 await allow('editor answers', () => {
   const b = writeBatch(bob.fs)
   b.set(msg(bob.fs, 't1', 'm2'), { uid: bob.uid, name: 'b', text: 'Only without menus.', createdAt: 2 })
-  b.update(thr(bob.fs, 't1'), { count: 2, lastAt: 2, lastUid: bob.uid, lastName: 'b', lastText: 'Only without menus.', updatedAt: 2 })
+  b.update(thr(bob.fs, 't1'), { count: 2, lastMid: 'm2', lastAt: 2, lastUid: bob.uid, lastName: 'b', lastText: 'Only without menus.', updatedAt: 2 })
   return b.commit()
 })
 // The preview is the writer's own (audit P2): nobody changes what someone else wrote last, or the count by more than one.
@@ -787,6 +787,21 @@ await deny('a preview set back to a message that is not there', () =>
 await deny('a preview set back with words the message never had', () =>
   updateDoc(thr(dave.fs, 't1'), { lastMid: 'm2', lastUid: bob.uid, lastName: 'b', lastAt: 2, lastText: 'made up' }))
 await deny('the count jumped', () => updateDoc(thr(dave.fs, 't1'), { count: 40 }))
+// The sweep of 2026-11-03: the count moves only with a message really made or taken back, so nobody steps it down to
+// 1 and then deletes a thread others wrote in, or sets a preview of their own with no message.
+await deny('the count stepped down with no message taken back', () => updateDoc(thr(dave.fs, 't1'), { count: 1, updatedAt: 3 }))
+await deny('the count stepped down naming a message that stays', () => updateDoc(thr(dave.fs, 't1'), { count: 1, takenMid: 'm2', updatedAt: 3 }))
+await deny('the count stepped up with no message', () => updateDoc(thr(dave.fs, 't1'), { count: 3, updatedAt: 3 }))
+await deny('saying you wrote last with no message', () =>
+  updateDoc(thr(dave.fs, 't1'), { lastUid: dave.uid, lastName: 'd', lastAt: 3, lastText: 'made up', updatedAt: 3 }))
+await deny('a reply whose preview is not its message', () => {
+  const b = writeBatch(dave.fs)
+  b.set(msg(dave.fs, 't1', 'm9'), { uid: dave.uid, name: 'd', text: 'hello', createdAt: 3 })
+  b.update(thr(dave.fs, 't1'), { count: 3, lastMid: 'm9', lastAt: 3, lastUid: dave.uid, lastName: 'd', lastText: 'Bob agreed', updatedAt: 3 })
+  return b.commit()
+})
+await deny('a reply naming a message that was already there', () =>
+  updateDoc(thr(dave.fs, 't1'), { count: 3, lastMid: 'm1', lastAt: 1, lastUid: dave.uid, lastName: 'x', updatedAt: 3 }))
 await deny('a message in someone else\'s name', () => setDoc(msg(bob.fs, 't1', 'm3'), { uid: dave.uid, name: 'd', text: 'x', createdAt: 3 }))
 await deny('an empty message', () => setDoc(msg(bob.fs, 't1', 'm4'), { uid: bob.uid, name: 'b', text: '', createdAt: 3 }))
 await deny('a message in no thread', () => setDoc(msg(bob.fs, 'nope', 'm1'), { uid: bob.uid, name: 'b', text: 'x', createdAt: 3 }))
@@ -804,7 +819,7 @@ await deny('editor deletes a thread others answered', () => deleteDoc(thr(bob.fs
 await allow('writer deletes their own newest message, the preview back to the one before (audit P1 #7)', async () => {
   const b = writeBatch(bob.fs)
   b.delete(msg(bob.fs, 't1', 'm2'))
-  b.update(thr(bob.fs, 't1'), { count: 1, lastMid: 'm1', lastAt: 1, lastUid: dave.uid, lastName: 'x', lastText: 'Is 10 min real?', updatedAt: 5 })
+  b.update(thr(bob.fs, 't1'), { count: 1, takenMid: 'm2', lastMid: 'm1', lastAt: 1, lastUid: dave.uid, lastName: 'x', lastText: 'Is 10 min real?', updatedAt: 5 })
   await b.commit()
   assert.equal((await getDoc(thr(bob.fs, 't1'))).data().lastText, 'Is 10 min real?')
 })
@@ -819,11 +834,11 @@ await allow('the writer of the one message left deletes the thread with it', asy
   await start(dave, 't7')
   const b = writeBatch(bob.fs)
   b.set(msg(bob.fs, 't7', 'm2'), { uid: bob.uid, name: 'b', text: 'Only without menus.', createdAt: 2 })
-  b.update(thr(bob.fs, 't7'), { count: 2, lastAt: 2, lastUid: bob.uid, lastName: 'b', lastText: 'Only without menus.', updatedAt: 2 })
+  b.update(thr(bob.fs, 't7'), { count: 2, lastMid: 'm2', lastAt: 2, lastUid: bob.uid, lastName: 'b', lastText: 'Only without menus.', updatedAt: 2 })
   await b.commit()
   const d = writeBatch(dave.fs)
   d.delete(msg(dave.fs, 't7', 'm1'))
-  d.update(thr(dave.fs, 't7'), { count: 1, lastMid: 'm2', lastAt: 2, lastUid: bob.uid, lastName: 'b', lastText: 'Only without menus.', updatedAt: 3 })
+  d.update(thr(dave.fs, 't7'), { count: 1, takenMid: 'm1', lastMid: 'm2', lastAt: 2, lastUid: bob.uid, lastName: 'b', lastText: 'Only without menus.', updatedAt: 3 })
   await d.commit()
   const e = writeBatch(bob.fs)
   e.delete(msg(bob.fs, 't7', 'm2'))
@@ -839,7 +854,7 @@ await allow('a reply that mentions someone', async () => {
   await start(bob, 't6')
   const b = writeBatch(dave.fs)
   b.set(msg(dave.fs, 't6', 'm2'), { uid: dave.uid, name: 'd', text: '@Bob look', mentions: [bob.uid], createdAt: 2 })
-  b.update(thr(dave.fs, 't6'), { count: 2, lastAt: 2, lastUid: dave.uid, lastName: 'd', lastText: '@Bob look', mentions: [bob.uid], updatedAt: 2 })
+  b.update(thr(dave.fs, 't6'), { count: 2, lastMid: 'm2', lastAt: 2, lastUid: dave.uid, lastName: 'd', lastText: '@Bob look', mentions: [bob.uid], updatedAt: 2 })
   return b.commit()
 })
 await deny('saying someone else wrote last', () => updateDoc(thr(dave.fs, 't6'), { lastUid: bob.uid, lastAt: 3 }))

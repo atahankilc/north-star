@@ -150,8 +150,11 @@ export type Thread = {
   lastUid?: string
   lastName?: string
   lastText?: string
-  // That message's id, so the rules can check a preview set back to an earlier message after the newest was deleted.
+  // That message's id, so the rules can check the preview against it: a reply's own, or one set back to after the
+  // newest was deleted.
   lastMid?: string
+  // The message the last delete took back: the rules let the count go down only with one that really went.
+  takenMid?: string
   // Everyone mentioned in it (D-166), so it shows under their mentions.
   mentions?: string[]
   resolved?: boolean

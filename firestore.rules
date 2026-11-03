@@ -732,7 +732,7 @@ service cloud.firestore {
       // (count, time) and being resolved or reopened; owners and editors delete any, a starter one nobody answered.
       match /threads/{tid} {
         function validThread(d) {
-          return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'lastMid', 'mentions', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
+          return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'lastMid', 'takenMid', 'mentions', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
             // 'plane' (D-193): a comment on a plane on the canvas.
             // 'task' (D-260): one of a kanban's tasks.
             && d.on in ['card', 'label', 'link', 'plane', 'task']
@@ -742,7 +742,7 @@ service cloud.firestore {
             && isText(d.uid, 128) && isText(d.name, 200)
             && d.count is int && d.count >= 0 && d.count <= 100000
             && d.lastAt is number
-            && optText(d, 'lastUid', 128) && optText(d, 'lastName', 200) && optText(d, 'lastText', 160) && optText(d, 'lastMid', 128)
+            && optText(d, 'lastUid', 128) && optText(d, 'lastName', 200) && optText(d, 'lastText', 160) && optText(d, 'lastMid', 128) && optText(d, 'takenMid', 128)
             && (!('mentions' in d) || (d.mentions is list && d.mentions.size() <= 50))
             && optBool(d, 'resolved') && optText(d, 'resolvedBy', 128)
             && d.createdAt is number && d.updatedAt is number;
@@ -763,15 +763,42 @@ service cloud.firestore {
           return m.uid == d.lastUid && m.name == d.lastName && m.createdAt == d.lastAt
             && (!('lastText' in d) || d.lastText == m.text);
         }
+        // A reply (the sweep of 2026-11-03): the count goes up only with a message of yours made in the same batch,
+        // named by `lastMid`, and the preview is that message (a text past 160 is cut by the client, so then only that it's
+        // shorter is checked: rules can't compare the start of a string). Without this a member could say they wrote last, and push the count about, with no message.
+        function msgAt(mid) {
+          return /databases/$(database)/documents/workspaces/$(wid)/threads/$(tid)/messages/$(mid);
+        }
+        function posted(d) {
+          return 'lastMid' in d && !exists(msgAt(d.lastMid)) && existsAfter(msgAt(d.lastMid))
+            && postedPreview(d, getAfter(msgAt(d.lastMid)).data);
+        }
+        function postedPreview(d, m) {
+          return m.uid == request.auth.uid && d.lastUid == request.auth.uid && d.lastName == m.name && d.lastAt == m.createdAt
+            && (!('lastText' in d) || d.lastText == m.text || d.lastText.size() < m.text.size());
+        }
+        // A message taken back: the count goes down only with a message (`takenMid`) that is there before the batch and
+        // gone after it, and only its writer may delete one (below). Without this a member, a viewer too, could step
+        // the count down to 1 and then delete a thread others wrote in.
+        function taken(d) {
+          return 'takenMid' in d && exists(msgAt(d.takenMid)) && !existsAfter(msgAt(d.takenMid));
+        }
         allow update: if isMember(wid) && validThread(request.resource.data)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'lastMid', 'mentions', 'resolved', 'resolvedBy', 'updatedAt'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'lastMid', 'takenMid', 'mentions', 'resolved', 'resolvedBy', 'updatedAt'])
           && (!('resolvedBy' in request.resource.data) || request.resource.data.resolvedBy == request.auth.uid
             || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['resolvedBy']))
+          // The preview: a reply's own, set back to a message that is in the thread, or the newest message's text
+          // edited by its writer.
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastAt', 'lastUid', 'lastName', 'lastText', 'lastMid', 'mentions'])
-            || request.resource.data.get('lastUid', null) == request.auth.uid
-            || previewBack(request.resource.data))
+            || (request.resource.data.count == resource.data.count + 1 && posted(request.resource.data))
+            || previewBack(request.resource.data)
+            || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastText', 'updatedAt'])
+              && resource.data.get('lastUid', null) == request.auth.uid))
           && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['count'])
-            || request.resource.data.count == resource.data.count + 1 || request.resource.data.count == resource.data.count - 1);
+            || (request.resource.data.count == resource.data.count + 1 && posted(request.resource.data))
+            || (request.resource.data.count == resource.data.count - 1 && taken(request.resource.data)))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['takenMid'])
+            || (request.resource.data.count == resource.data.count - 1 && taken(request.resource.data)));
         // Owners, or whoever wrote the one message left (D-166: editors no longer delete others' words): its starter
         // while nobody answered, or the writer of an answer whose thread's first message was taken back (taking back
         // your own last message takes the thread with it; the preview, `lastUid`, is always the newest message left).

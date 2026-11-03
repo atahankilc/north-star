@@ -14,6 +14,7 @@ import { Landing } from '../views/landing/Landing'
 import { Workspaces } from '../views/workspaces/Workspaces'
 import { WORKSPACES } from './paths'
 import { fetchWorkspaceAhead, loadWorkspace } from './chunks'
+import { Crash } from './Crash'
 
 // A workspace's code comes with it (chunks.ts): the landing and the workspaces page load without it.
 const WorkspaceLayout = lazy(() => loadWorkspace().then((m) => ({ default: m.WorkspaceLayout })))
@@ -39,7 +40,8 @@ function Shell() {
     if (!isLoading) wasSignedIn.current = Boolean(user)
   }, [isLoading, user])
   const fontsReady = useFontsReady()
-  const inWorkspace = useLocation().pathname.startsWith(`${WORKSPACES}/`)
+  const { pathname } = useLocation()
+  const inWorkspace = pathname.startsWith(`${WORKSPACES}/`)
   // Switching the background off applies to signed-in pages only; the landing always flows (D-063). While auth
   // is still loading, assume the choice applies, so a signed-in user who turned it off never sees it flash in.
   const field = useDisplay((s) => s.background) === 'on' || (!isLoading && !user)
@@ -57,29 +59,32 @@ function Shell() {
       {/* The canvas shows the field a step dimmer than the landing (D-346); its pieces carry their own backgrounds (D-176). */}
       {field && <Backdrop dim={user ? (inWorkspace ? WORKSPACE_BACKDROP_DIM : 1) * strength : 1} />}
       {!isLoading && (
-        <Routes>
-          {user ? (
-            <>
-              <Route path={WORKSPACES} element={<Workspaces user={user} />} />
-              <Route
-                path={`${WORKSPACES}/:wid`}
-                element={
-                  // Its code still coming: the curtain holds, the field flowing, as for any loading (D-025).
-                  <Suspense fallback={<HoldCurtain name="workspace-code" />}>
-                    <WorkspaceLayout />
-                  </Suspense>
-                }
-              />
-              <Route path="/" element={<AfterSignIn />} />
-              <Route path="*" element={<Navigate to={WORKSPACES} replace />} />
-            </>
-          ) : (
-            <>
-              <Route path="/" element={<Landing error={error?.message} />} />
-              <Route path="*" element={<ToLanding remember={!wasSignedIn.current} />} />
-            </>
-          )}
-        </Routes>
+        // A page that throws, or whose code can't load, says so instead of leaving the screen blank.
+        <Crash at={pathname}>
+          <Routes>
+            {user ? (
+              <>
+                <Route path={WORKSPACES} element={<Workspaces user={user} />} />
+                <Route
+                  path={`${WORKSPACES}/:wid`}
+                  element={
+                    // Its code still coming: the curtain holds, the field flowing, as for any loading (D-025).
+                    <Suspense fallback={<HoldCurtain name="workspace-code" />}>
+                      <WorkspaceLayout />
+                    </Suspense>
+                  }
+                />
+                <Route path="/" element={<AfterSignIn />} />
+                <Route path="*" element={<Navigate to={WORKSPACES} replace />} />
+              </>
+            ) : (
+              <>
+                <Route path="/" element={<Landing error={error?.message} />} />
+                <Route path="*" element={<ToLanding remember={!wasSignedIn.current} />} />
+              </>
+            )}
+          </Routes>
+        </Crash>
       )}
       <Curtain field={field} />
     </>

@@ -80,9 +80,12 @@ export async function reply(wid: string, tid: string, text: string, mentions: st
   const now = Date.now()
   const ids = cap(mentions)
   const batch = writeBatch(db())
-  batch.set(doc(messagesOf(wid, tid)), { ...who, text: text.slice(0, MESSAGE_MAX), ...(ids.length && { mentions: ids }), createdAt: now } satisfies ThreadMessage)
+  // The rules check the count and the preview against this message, made in the same batch (`lastMid` names it).
+  const mref = doc(messagesOf(wid, tid))
+  batch.set(mref, { ...who, text: text.slice(0, MESSAGE_MAX), ...(ids.length && { mentions: ids }), createdAt: now } satisfies ThreadMessage)
   batch.update(doc(threadsOf(wid), tid), {
     count: increment(1),
+    lastMid: mref.id,
     lastAt: now,
     lastUid: who.uid,
     lastName: who.name,
@@ -123,6 +126,8 @@ export async function deleteMessage(wid: string, tid: string, mid: string, wasLa
   batch.delete(doc(messagesOf(wid, tid), mid))
   batch.update(doc(threadsOf(wid), tid), {
     count: increment(-1),
+    // The message going in this batch: the rules let the count down only with one that really goes.
+    takenMid: mid,
     updatedAt: Date.now(),
     ...(before && prev && {
       lastMid: before.id,

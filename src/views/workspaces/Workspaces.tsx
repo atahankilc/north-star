@@ -53,9 +53,11 @@ import { WorkspacePicture } from './WorkspacePicture'
 import styles from './Workspaces.module.css'
 import { keysTaken } from '../../ui/foundation/focus'
 import { codeText, people } from '../../model/words'
+import { loadOptional } from '../../app/chunks'
 
 // The onboarding's coach (D-315), loaded apart from this page (it's shared with the workspace's chunk).
-const Coach = lazy(() => import('../../onboarding/Coach').then((m) => ({ default: m.Coach })))
+// Its code missing after a deploy: one reload, then the page goes on without it (chunks.ts).
+const Coach = lazy(() => loadOptional(() => import('../../onboarding/Coach').then((m) => m.Coach)))
 
 // An invite code as typed (workspaces.ts): with the dash it reads as a code first; without, a name first (`Pazarlar`).
 const CODE = INVITE_CODE_TYPED

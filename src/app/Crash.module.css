@@ -1,0 +1,19 @@
+/* The page that couldn't draw (Crash.tsx): one line in the middle and the ways out, over the backdrop like the
+   workspace's own status line (WorkspaceLayout.module.css `.status`). */
+.crash {
+  position: relative;
+  z-index: var(--z-1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  height: 100%;
+  color: var(--fg-dim);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}

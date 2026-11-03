@@ -103,7 +103,10 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const places = useSame(useMemo(() => placesFrom(placeDocs.data as RawDoc[], pieces.data, cards), [placeDocs.data, pieces.data, cards]))
   // Each card says the planes it's on when that's more than its home (D-281); the others stay the same objects.
   const placed = useSame(useMemo(() => placedFrom(cards, places), [cards, places]))
-  const all = [canvasDocs, spotDocs, pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells, placeDocs]
+  // Every listener: the canvas shows once all of them have answered (links, tasks and threads too, so they don't pop in
+  // after it, and a delete in the first moments sees what hangs off a card), and any one's error is the workspace's.
+  const all = [canvasDocs, spotDocs, pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells, placeDocs,
+    evidence, competitorFeatures, comparisons, edges, threadDocs, tasks, documents]
   // The same object while nothing in it changed (the workspace's context is built from it).
   const data = useMemo(
     () => ({ canvases, spots, pieces: shared, cards: placed, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data, tasks: tasks.data, places }),
