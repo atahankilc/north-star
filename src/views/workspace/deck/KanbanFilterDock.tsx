@@ -6,7 +6,7 @@ import { AnimatePresence } from 'motion/react'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import { useAuth } from '../../../data/auth'
-import { useMembers } from '../../../data/workspaces'
+import { useWorkspaceMembers } from '../../../data/workspaces'
 import type { Task } from '../../../data/tasks'
 import { Appear } from '../../../ui/primitives/Appear'
 import { Menu } from '../../../ui/patterns/Menu'
@@ -53,7 +53,7 @@ function TaskFilterDock({ piece, pool }: { piece: WithId<Piece>; pool?: Task[] }
 function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool?: Task[] }) {
   const { wid, workspace, tasks, cards } = useWs()
   const { user } = useAuth()
-  const members = useMembers(wid, 100).data.filter((m) => workspace.memberIds.includes(m.id) && m.id !== user?.id)
+  const members = useWorkspaceMembers(wid, workspace.memberIds).filter((m) => m.id !== user?.id)
   const mine = pool ?? tasks.filter((t) => t.pieceId === piece.id)
   const set = (patch: Partial<KanbanFilter>) => setKanbanFilter(piece.id, { ...f, ...patch })
   const count = (keep: (t: (typeof mine)[number]) => boolean) => `${mine.filter(keep).length}`

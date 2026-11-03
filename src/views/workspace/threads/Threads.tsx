@@ -32,6 +32,7 @@ import { isOnPlane, type Card } from '../../../data/cards'
 import { ago } from '../../../ui/foundation/ago'
 import { useEscapeLayer } from '../../../ui/foundation/useEscapeLayer'
 import { usePromptPick } from '../../../ui/foundation/usePromptPick'
+import { useStickToBottom } from '../../../ui/foundation/useStickToBottom'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
@@ -189,10 +190,9 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
     }
     go()
   }, [thread?.id])
-  // The newest message in view.
-  useEffect(() => {
-    if (list.current) list.current.scrollTop = list.current.scrollHeight
-  }, [messages.data.length])
+  // The newest message in view, unless you scrolled up to read (then a new one doesn't pull you down); another thread
+  // opens at its newest.
+  const stick = useStickToBottom(list, [messages.data.length], thread?.id)
   // Open is read: what's in it now counts as seen (D-166).
   useEffect(() => {
     if (thread && (reads?.seen?.[thread.id] ?? 0) < thread.lastAt) void markSeen(wid, thread.id, thread.lastAt)
@@ -218,6 +218,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
       if (thread) await reply(wid, thread.id, body, mentions)
       else if (draft) openThread(await startThread(wid, draft, body, mentions))
       setText('')
+      stick.toBottom()
       picked.current.clear()
       if (field.current) field.current.style.height = ''
     } catch (e) {
@@ -317,7 +318,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
           </Button>
         </ButtonGroup>
       </header>
-      <ol ref={list} className={styles.log}>
+      <ol ref={list} className={styles.log} onScroll={stick.onScroll}>
         {!thread && <li className={styles.lead}>Start a thread here: everyone in the workspace sees it, viewers too. @ mentions someone.</li>}
         {thread && messages.isLoading && <li className={styles.lead}>Loading</li>}
         {messages.data.map((m: WithId<ThreadMessage>) => (

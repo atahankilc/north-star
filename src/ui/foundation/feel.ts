@@ -4,6 +4,8 @@
 
 // A press that moved this far (screen px) is a drag: a pan, a piece, a card, a cell, a task, a box (D-150, D-217).
 export const DRAG_PX = 5
+// A list counts as read to its bottom this close to it (useStickToBottom): new things keep it there.
+export const STICK_PX = 40
 
 // The zoom's range, on the canvas, in a focus and beside it (D-186).
 export const ZOOM_MIN = 0.1

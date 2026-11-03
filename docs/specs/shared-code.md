@@ -230,3 +230,8 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
     caught the canvas behind mid-glide; again, identical).
   - Kept apart: shownBox.ts (an open piece's box: measured for the deck and lists, worked out for a matrix or table;
     it sits on the import-cycle-sensitive path, D-287).
+- **Follow-ups (2026-11-03, north-star-48).** Kanban.tsx on `useMeasuredSize` and `readLocal`/`keepLocal` (its SOON
+  fold), the deck's filter on `useWorkspaceMembers`; ui/foundation/useStickToBottom.ts for the agent's chat and a
+  thread (`STICK_PX` in feel.ts). Settled drift: a thread no longer pulls you down to a new message while you read
+  further up; it opens at its newest and sending takes you back down, as the agent's chat did.
+  tests/unit/stickToBottom.test.ts.

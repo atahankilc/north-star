@@ -10,6 +10,7 @@
 // Everything it shows is DOM text, never under the ASCII effect; colours are tokens (light under [data-theme='light']);
 // every animation reads useMotion().reduced (Appear and the spinner do).
 import { AnimatePresence } from 'motion/react'
+import { useStickToBottom } from '../../ui/foundation/useStickToBottom'
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
@@ -301,11 +302,7 @@ function Column() {
   const viewer = isViewer(chat.wid)
 
   // Kept at the bottom while new things come in (unless the person scrolled up to read).
-  const stick = useRef(true)
-  useLayoutEffect(() => {
-    const el = log.current
-    if (el && stick.current) el.scrollTop = el.scrollHeight
-  }, [chat.entries])
+  const stick = useStickToBottom(log, [chat.entries])
   useEffect(() => input.current?.focus(), [])
 
   const onKey = (e: ReactKeyboardEvent<HTMLElement>) => {
@@ -330,7 +327,7 @@ function Column() {
       // While it works the words steer it: they reach the model at its next step (D-328).
       agentActions.send(text)
       setText('')
-      stick.current = true
+      stick.toBottom()
     }
   }
 
@@ -379,10 +376,7 @@ function Column() {
       <div
         className={styles.log}
         ref={log}
-        onScroll={(e) => {
-          const el = e.currentTarget
-          stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40
-        }}
+        onScroll={stick.onScroll}
       >
         {view === 'chats' ? <ChatsView /> : view === 'notes' ? <NotesView /> : chat.entries.length === 0 ? <Empty focus={focus} /> : numbered(chat.entries).map(([e, n]) => <EntryView key={e.id} entry={e} n={n} />)}
       </div>

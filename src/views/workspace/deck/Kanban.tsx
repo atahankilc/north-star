@@ -30,7 +30,7 @@
 //
 // Cards instead of tasks (D-268): a kanban whose setup holds cards is drawn by CardKanban.tsx, its columns a field's
 // values; made from `+ → kanban…` (KanbanWizard.tsx), set up in its tabbed panel (KanbanSetup.tsx).
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
@@ -61,6 +61,8 @@ import { learnable } from '../panels/TaskPanel'
 import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
 import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
 import { useKanbanSizes } from '../canvas/sizes'
+import { useMeasuredSize } from '../canvas/useMeasuredSize'
+import { keepLocal, readLocal } from '../../../state/local'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
@@ -87,13 +89,7 @@ export function soonOf(piece: Pick<Piece, 'kanban'>, tasks: Task[]) {
 }
 const hasSoon = (piece: Pick<Piece, 'kanban'>, tasks: Task[]) => soonOf(piece, tasks).length > 0
 const SOON_KEY = (id: string) => `north-star:kanban-soon:${id}`
-function soonFolded(id: string) {
-  try {
-    return localStorage.getItem(SOON_KEY(id)) === 'folded'
-  } catch {
-    return false
-  }
-}
+const soonFolded = (id: string) => readLocal(SOON_KEY(id)) === 'folded'
 
 const NO_SETUP = emptyKanban()
 export const kanbanOf = (p: Pick<Piece, 'kanban'>): KanbanSetup => p.kanban ?? NO_SETUP
@@ -283,19 +279,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
   }, [draggingNow])
 
   // Its drawn size, for fit (written only when it changes).
-  useLayoutEffect(() => {
-    const el = board.current
-    if (!el) return
-    const note = () => {
-      const size = { w: el.offsetWidth, h: el.offsetHeight }
-      const was = useSizes.getState()[piece.id]
-      if (!was || was.w !== size.w || was.h !== size.h) useSizes.setState({ [piece.id]: size })
-    }
-    note()
-    const ro = new ResizeObserver(note)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [piece.id])
+  useMeasuredSize(board, useSizes, piece.id)
 
   // A selected task that went (deleted here or elsewhere, or moved to another kanban) lets go; so does leaving focus.
   useEffect(() => {
@@ -617,12 +601,7 @@ function SoonBand({ piece, tasks, live, picked, onPick, onPress }: { piece: With
   const now = soon.filter((t) => t.due === day).length
   const fold = () => {
     setFolded(!folded)
-    try {
-      if (folded) localStorage.removeItem(SOON_KEY(piece.id))
-      else localStorage.setItem(SOON_KEY(piece.id), 'folded')
-    } catch {
-      // This tab only.
-    }
+    keepLocal(SOON_KEY(piece.id), folded ? null : 'folded')
   }
   const weekday = (due: string) => new Date(Date.UTC(+due.slice(0, 4), +due.slice(5, 7) - 1, +due.slice(8, 10))).toLocaleString('en', { weekday: 'short', timeZone: 'UTC' }).toLowerCase()
   return (
