@@ -66,6 +66,7 @@ import { NotesSection } from './NotesSection'
 import { PanelRow } from './PanelRow'
 import { usePicker } from './usePicker'
 import { useDismiss } from '../../../ui/foundation/useDismiss'
+import { CELL_SEL } from '../canvas/gridCursor'
 
 // Type = the panel's colour, as the card's edge (D-055).
 const TONE: Record<AnyType, string> = CARD_TONE
@@ -208,7 +209,6 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
 // are its only cards), so moving down a table's rows follows them. A cell crossing two cards, or none, closes it; closed,
 // a cell doesn't open it again (a head does). Its `[×]` there closes only the panel, the cell stays selected.
 const NONE: Card[] = []
-const CELL_SEL = /^t?cell\|[^|]+\|([^|]+)\|([^|]+)$/
 export function LensCardPanel({ space, editor }: { space: string | null; editor: boolean }) {
   const { cards, places } = useWs()
   const sel = useCanvasView((s) => (s.cardMulti.length ? null : s.cardSelected))

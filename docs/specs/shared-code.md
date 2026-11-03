@@ -143,4 +143,10 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
     nothing to say after its name no longer keeps an empty span.
   - Left: the checklist's add field keeps what's typed on blur while AddField drops it (to decide); `CheckField` as a
     CommitField option.
+- **Group 2, grid cells (2026-11-03).** canvas/gridCursor.ts: `cellSel(prefix)` (the selection key, `cell|` for a
+  matrix, `tcell|` for a table), `useGridCursor({ sel, piece, live, rows, cols, layer, onKey })` (the selected cell, the
+  arrows kept inside with the focus going along, letting go when its row or column goes, the guard and the window
+  listener), `CELL_SEL` (the card panel follows a cell's card). canvas/CellInput.tsx (with its gallery): a number or
+  text typed in a cell. Each grid keeps only its own keys (matrix: `-`, steps, rolled; table: Space on a check).
+  Checked: tsc, vitest, checks 0; in the gallery a click, → and ↓ move the cell and Escape lets go, in both.
 

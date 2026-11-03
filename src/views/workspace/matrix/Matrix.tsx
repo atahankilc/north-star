@@ -72,7 +72,8 @@ import { Console } from '../../../ui/patterns/Console'
 import { Empty } from '../../../ui/primitives/Empty'
 import { PromptList } from '../../../ui/patterns/PromptList'
 import { cardEntry } from '../plane/cardEntry'
-import { keysTaken } from '../../../ui/foundation/focus'
+import { cellSel, useGridCursor, type CellAt } from '../canvas/gridCursor'
+import { CellInput } from '../canvas/CellInput'
 
 // The matrix's parts in its own px: model/world.ts (D-325).
 export const M = MATRIX_PX
@@ -144,11 +145,9 @@ export const openMatrixSetup = (tab: SetupTab = 'rows') => useMatrixUi.setState(
 export const closeMatrixSetup = () => useMatrixUi.setState({ setup: false, canvas: null })
 export const toggleMatrixSetup = (tab?: SetupTab) => useMatrixUi.setState((s) => ({ setup: s.setup ? false : (tab ?? 'rows') }))
 
-// The selected cell rides on the canvas's card selection (D-187), so Escape and leaving focus let go of it as of a card.
-// The matrix's id in it: more than one can be live at once (open on the canvas, D-228; stacked beside a plane, D-211).
-const CELL = 'cell|'
-const selKey = (piece: string, row: string, col: string) => `${CELL}${piece}|${row}|${col}`
-const parseSel = (piece: string, s: string | null) => (s?.startsWith(`${CELL}${piece}|`) ? (s.slice(CELL.length + piece.length + 1).split('|') as [string, string]) : null)
+// The selected cell (canvas/gridCursor.ts): `cell|<matrix>|<row>|<col>`.
+const SEL = cellSel('cell')
+const selKey = SEL.key
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
@@ -178,11 +177,9 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   )
   const topRows = useMemo(() => tops(rows), [rows])
   const topCols = useMemo(() => tops(cols), [cols])
+  const rowKeys = useMemo(() => rows.map((r) => r.key), [rows])
+  const colKeys = useMemo(() => cols.map((c) => c.key), [cols])
   const L = layout(setup, rows.length, cols.length)
-  const sel = parseSel(piece.id, useCanvasView((s) => (live ? s.cardSelected : null)))
-  const ri = sel ? rows.findIndex((r) => r.key === sel[0]) : -1
-  const ci = sel ? cols.findIndex((c) => c.key === sel[1]) : -1
-  const selected = ri >= 0 && ci >= 0 ? { r: ri, c: ci } : null
   // The row and column under the pointer: their heads light up and their cells wash.
   // Kept in a little store of its own that each cell and head reads, so the pointer moving over it draws again only
   // the cells and heads it lights or stops lighting, never the whole matrix.
@@ -206,16 +203,11 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
 
 
   const write = (row: string, col: string, fields: Parameters<typeof setCell>[4]) => void setCell(wid, piece.id, row, col, fields)
-  const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(piece.id, rows[r].key, cols[c].key), labelSelected: null })
   // A card's head clicked: the card selected, its panel open as on its plane (LensCardPanel).
   const picked = useCanvasView((s) => (live ? s.cardSelected : null))
   const pick = (card: Card) => useCanvasView.setState({ cardSelected: card.id, labelSelected: null })
   const stepTo = (row: string, col: string, i: number | undefined) => write(row, col, { value: i === undefined ? undefined : setup.steps[i]?.id })
 
-  // A selected cell whose row or column went (taken out, or its card deleted) lets go.
-  useEffect(() => {
-    if (sel && !selected) useCanvasView.setState({ cardSelected: null })
-  }, [sel, selected])
   // The one just added, brought to the middle: a row up or down, a column across. Only on the focus's own view (a pane
   // beside a plane has its own).
   useEffect(() => {
@@ -238,24 +230,20 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
     return () => useMatrixUi.setState({ setup: false, canvas: null, naming: null })
   }, [live])
 
-  // The keys on a selected cell; not while typing anywhere.
-  const keysRef = useRef<(e: KeyboardEvent) => void>(() => {})
-  keysRef.current = (e: KeyboardEvent) => {
-    if (!selected) return
-    const t = e.target as HTMLElement | null
-    if (keysTaken(t, { docked: true })) return
-    if (e.metaKey || e.ctrlKey || e.altKey) return
+  // The selected cell and the arrows (gridCursor); the other keys on it are the matrix's.
+  const { selected, select } = useGridCursor({
+    sel: SEL,
+    piece: piece.id,
+    live,
+    rows: rowKeys,
+    cols: colKeys,
+    layer,
+    onKey: (e, selected) => keysRef.current(e, selected),
+  })
+  const keysRef = useRef<(e: KeyboardEvent, selected: CellAt) => void>(() => {})
+  keysRef.current = (e, selected) => {
     const row = rows[selected.r].key
     const col = cols[selected.c].key
-    const move = ({ ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] } as Record<string, number[]>)[e.key]
-    if (move) {
-      e.preventDefault()
-      const r = Math.min(rows.length - 1, Math.max(0, selected.r + move[0]))
-      const c = Math.min(cols.length - 1, Math.max(0, selected.c + move[1]))
-      select(r, c)
-      // The keyboard's focus goes along, so the one left behind isn't ringed.
-      return layer.current?.querySelector<HTMLElement>(`[data-cell="${selKey(piece.id, rows[r].key, cols[c].key)}"]`)?.focus()
-    }
     // A card's cell read from its parts is set through them; only `-` is its own.
     const rolled = !!shownAt(rows[selected.r], cols[selected.c])?.rolled
     if (!editor) return
@@ -271,12 +259,6 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
       setTyping(selKey(piece.id, row, col))
     }
   }
-  useEffect(() => {
-    if (!live) return
-    const onKey = (e: KeyboardEvent) => keysRef.current(e)
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [live])
 
   // A press on anything live is its own: the plane's pan would take the click.
   const own = live ? (e: ReactPointerEvent) => e.stopPropagation() : undefined
@@ -888,29 +870,7 @@ const CellBox = memo(function CellBox({ id, r, c, x, y, setup, cell, label, sele
   if (typing)
     return (
       <div className={styles.cell} style={style} data-selected>
-        <input /* kit-ok: a value typed in place in its world-sized cell, the cell's own face */
-          className={styles.cellField}
-          autoFocus
-          aria-label={label}
-          inputMode={setup.cell === 'number' ? 'decimal' : undefined}
-          defaultValue={read.number !== undefined ? String(read.number) : (read.text ?? '')}
-          maxLength={TEXT_MAX}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            if (e.key === 'Enter') e.currentTarget.blur()
-            if (e.key === 'Escape') {
-              e.currentTarget.dataset.cancel = 'true'
-              e.currentTarget.blur()
-            }
-          }}
-          onBlur={(e) => {
-            if (e.currentTarget.dataset.cancel) return onTyped(null)
-            const raw = e.currentTarget.value.trim()
-            if (setup.cell === 'text') return onTyped(raw || undefined)
-            const n = Number(raw.replace(',', '.'))
-            onTyped(raw === '' ? undefined : Number.isFinite(n) ? n : null)
-          }}
-        />
+        <CellInput className={styles.cellField} label={label} numeric={setup.cell !== 'text'} initial={read.number !== undefined ? String(read.number) : (read.text ?? '')} max={TEXT_MAX} onTyped={onTyped} />
         <Marks tier="s" selected />
       </div>
     )

@@ -30,8 +30,9 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Label } from '../../../ui/primitives/Label'
-import { keysTaken } from '../../../ui/foundation/focus'
 import { pagesOf } from '../../../model/paging'
+import { cellSel, useGridCursor, type CellAt } from '../canvas/gridCursor'
+import { CellInput } from '../canvas/CellInput'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
 export const T = { head: 40, row: 32, name: 260, add: 40 }
@@ -84,9 +85,8 @@ export type TableTab = (typeof TABLE_TABS)[number]
 
 // The selected cell rides on the canvas's card selection (D-187), so Escape and leaving focus let go of it as of a card.
 // The table's id in it: more than one can be live at once (open on the canvas, D-228; stacked beside a plane, D-211).
-const CELL = 'tcell|'
-const selKey = (piece: string, row: string, col: string) => `${CELL}${piece}|${row}|${col}`
-const parseSel = (piece: string, s: string | null) => (s?.startsWith(`${CELL}${piece}|`) ? (s.slice(CELL.length + piece.length + 1).split('|') as [string, string]) : null)
+const SEL = cellSel('tcell')
+const selKey = SEL.key
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
@@ -208,21 +208,20 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   const ws = cols.map(wOf)
   const xs = ws.reduce<number[]>((out, _, i) => [...out, i ? out[i - 1] + ws[i - 1] : nameW], [])
   const width = nameW + ws.reduce((s, w) => s + w, 0)
-  const sel = parseSel(piece.id, useCanvasView((s) => (live ? s.cardSelected : null)))
   // A card selected (on the plane beside it, D-211, or from its row): its row lit.
   const lit = useCanvasView((s) => (live ? s.cardSelected : null))
   // A card's row name clicked: beside its plane the plane goes to it; either way the card's selected, its panel open as
   // on its plane (LensCardPanel).
   const pick = onCard ?? ((card: Card) => useCanvasView.setState({ cardSelected: card.id, labelSelected: null }))
-  const ri = sel ? rows.findIndex((r) => r.key === sel[0]) : -1
-  const ci = sel ? cols.findIndex((c) => c.id === sel[1]) : -1
-  const selected = ri >= 0 && ci >= 0 ? { r: ri, c: ci } : null
   const [typing, setTyping] = useState<string | null>(null)
   const naming = useTableUi((s) => s.naming)
   const layer = useRef<HTMLDivElement>(null)
 
   const write = (row: string, col: string, value: Cell['value']) => void setCell(wid, piece.id, row, col, { value })
-  const select = (r: number, c: number) => useCanvasView.setState({ cardSelected: selKey(piece.id, rows[r].key, cols[c].id), labelSelected: null })
+  // The selected cell and the arrows (gridCursor); the other keys on it are the table's.
+  const rowKeyList = useMemo(() => rows.map((r) => r.key), [rows])
+  const colKeyList = useMemo(() => cols.map((c) => c.id), [cols])
+  const { selected, select } = useGridCursor({ sel: SEL, piece: piece.id, live, rows: rowKeyList, cols: colKeyList, layer, onKey: (e, at) => keysRef.current(e, at) })
   // A press on a cell: selects it; again, a scale steps on (then nothing) and a check flips.
   const press = (r: number, c: number) => {
     if (selected?.r !== r || selected.c !== c) return select(r, c)
@@ -238,10 +237,6 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
     }
   }
 
-  // A selected cell whose row or column went lets go.
-  useEffect(() => {
-    if (sel && !selected) useCanvasView.setState({ cardSelected: null })
-  }, [sel, selected])
   // Leaving focus closes the setup.
   useEffect(() => {
     if (!live) return
@@ -277,22 +272,10 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowKeys, colIds])
 
-  const keysRef = useRef<(e: KeyboardEvent) => void>(() => {})
-  keysRef.current = (e: KeyboardEvent) => {
-    if (!selected) return
-    const t = e.target as HTMLElement | null
-    if (keysTaken(t, { docked: true })) return
-    if (e.metaKey || e.ctrlKey || e.altKey) return
+  const keysRef = useRef<(e: KeyboardEvent, selected: CellAt) => void>(() => {})
+  keysRef.current = (e, selected) => {
     const row = rows[selected.r].key
     const col = cols[selected.c]
-    const move = ({ ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] } as Record<string, number[]>)[e.key]
-    if (move) {
-      e.preventDefault()
-      const r = Math.min(rows.length - 1, Math.max(0, selected.r + move[0]))
-      const c = Math.min(cols.length - 1, Math.max(0, selected.c + move[1]))
-      select(r, c)
-      return layer.current?.querySelector<HTMLElement>(`[data-cell="${selKey(piece.id, rows[r].key, cols[c].id)}"]`)?.focus()
-    }
     if (!editor || col.field) return
     const steps = col.steps ?? DEFAULT_STEPS
     if (col.kind === 'scale' && /^[1-9]$/.test(e.key) && Number(e.key) <= steps.length) return write(row, col.id, steps[Number(e.key) - 1].id)
@@ -309,12 +292,6 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
       write(row, col.id, readOwn(col, at(row, col.id)).checked ? undefined : CHECKED)
     }
   }
-  useEffect(() => {
-    if (!live) return
-    const onKey = (e: KeyboardEvent) => keysRef.current(e)
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [live])
 
   const own = live ? (e: ReactPointerEvent) => e.stopPropagation() : undefined
   const sortBy = (col: string) => {
@@ -725,29 +702,7 @@ function OwnCell({ id, col, cell, style, label, selected, live, typing, onPress,
     return (
       <div className={styles.cell} style={style} data-selected onPointerDown={onPress}>
         <Marks tier="s" selected />
-        <input /* kit-ok: a value typed in place in its world-sized cell, the cell's own face */
-          className={styles.cellField}
-          autoFocus
-          aria-label={label}
-          inputMode={col.kind === 'number' ? 'decimal' : undefined}
-          defaultValue={read.number !== undefined ? String(read.number) : (read.text ?? '')}
-          maxLength={TEXT_MAX}
-          onKeyDown={(e) => {
-            e.stopPropagation()
-            if (e.key === 'Enter') e.currentTarget.blur()
-            if (e.key === 'Escape') {
-              e.currentTarget.dataset.cancel = 'true'
-              e.currentTarget.blur()
-            }
-          }}
-          onBlur={(e) => {
-            if (e.currentTarget.dataset.cancel) return onTyped(null)
-            const raw = e.currentTarget.value.trim()
-            if (col.kind !== 'number') return onTyped(raw || undefined)
-            const n = Number(raw.replace(',', '.'))
-            onTyped(raw === '' ? undefined : Number.isFinite(n) ? n : null)
-          }}
-        />
+        <CellInput className={styles.cellField} label={label} numeric={col.kind === 'number'} initial={read.number !== undefined ? String(read.number) : (read.text ?? '')} max={TEXT_MAX} onTyped={onTyped} />
       </div>
     )
   return (
