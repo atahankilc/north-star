@@ -14,7 +14,7 @@
 // since left aside (model/lens.ts' editorChange: a column added, edited or moved; a row added), so their column, its
 // cells and your edit all stay. Anything else is written whole, as before (a concurrent edit can still be lost then).
 import type { Card } from './cards'
-import { applyUi, runUi, sayRefused, uiCtx } from '../ops/firestore'
+import { runUi, runUiWith } from '../ops/firestore'
 import { updateTable } from '../ops/table'
 import { axisAdd, axisRemove, axisUpdate } from '../ops/lens'
 import { editorChange } from '../model/lens'
@@ -62,20 +62,11 @@ export function setTablePart<K extends keyof TableSetup>(wid: string, id: string
 export const setRows = (wid: string, id: string, rows: Source, key?: string) => setTablePart(wid, id, 'rows', rows, key)
 
 // A typed row at the end; its id, to type its name in ('' when nothing was made).
-export async function addNamedRow(wid: string, id: string, _setup: TableSetup, name = '') {
-  const ctx = uiCtx(wid)
-  if (!ctx) return ''
-  let plan
-  try {
-    plan = axisAdd(ctx, { id, axis: 'rows', name, label: LABEL })
-  } catch (e) {
-    sayRefused(e, LABEL)
-    return ''
-  }
-  const done = await applyUi(wid, ctx, [plan], { label: LABEL })
-  if (!done) return ''
-  await done.written
-  return plan.ids.$new
+export function addNamedRow(wid: string, id: string, _setup: TableSetup, name = '') {
+  return runUiWith(wid, LABEL, (ctx) => {
+    const plan = axisAdd(ctx, { id, axis: 'rows', name, label: LABEL })
+    return { plans: [plan], value: plan.ids.$new }
+  }, '', { label: LABEL })
 }
 
 export function addCardRow(wid: string, id: string, _setup: TableSetup, card: Card) {

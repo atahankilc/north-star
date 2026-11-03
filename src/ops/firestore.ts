@@ -277,16 +277,45 @@ export function sayRefused(e: unknown, label: string) {
 // A UI write in one call: plans built in the UI's context and applied; resolves once the server has them (as tracked()
 // did), at once when nothing is written. A builder's refusal is said in the toast and resolves (nothing written).
 export function runUi(wid: string, make: (ctx: OpCtx) => Plan[], opts: UiOpts & { label?: string } = {}): Promise<void> {
+  return runUiWith(wid, opts.label ?? 'do that', (ctx) => ({ plans: make(ctx), value: undefined }), undefined, opts)
+}
+
+// A UI write that gives something back (D-361): `make` builds its plans in the UI's context and says what they give
+// (a new id, where things went…), or null when there's nothing to do. `none` when nothing was made: no workspace shown,
+// the builder refused (said in the toast as `refused`), nothing to write, or validate refused. `opts` may read the value
+// (an undo key on the new id, so what's typed into it next joins the step).
+type Made<T> = { plans: Plan[]; value: T } | null
+type OptsOf<T> = UiOpts | ((value: T) => UiOpts)
+const optsFor = <T,>(opts: OptsOf<T>, value: T) => (typeof opts === 'function' ? opts(value) : opts)
+
+function buildUi<T>(wid: string, refused: string, make: (ctx: OpCtx) => Made<T>): { ctx: OpCtx; made: NonNullable<Made<T>> } | null {
   const ctx = uiCtx(wid)
-  if (!ctx) return Promise.resolve()
-  let plans: Plan[]
+  if (!ctx) return null
   try {
-    plans = make(ctx)
+    const made = make(ctx)
+    return made ? { ctx, made } : null
   } catch (e) {
-    sayRefused(e, opts.label ?? 'do that')
-    return Promise.resolve()
+    sayRefused(e, refused)
+    return null
   }
-  return serverHas(applyUi(wid, ctx, plans, opts))
+}
+
+// Resolves with the value once the server has the write.
+export async function runUiWith<T>(wid: string, refused: string, make: (ctx: OpCtx) => Made<T>, none: T, opts: OptsOf<T> = {}): Promise<T> {
+  const b = buildUi(wid, refused, make)
+  if (!b) return none
+  const done = await applyUi(wid, b.ctx, b.made.plans, optsFor(opts, b.made.value))
+  if (!done) return none
+  await done.written
+  return b.made.value
+}
+
+// The value at once (to select or glide to before the write is confirmed); `applied` resolves once it's recorded and
+// issued locally (R4), null when nothing was written.
+export function startUiWith<T>(wid: string, refused: string, make: (ctx: OpCtx) => Made<T>, none: T, opts: OptsOf<T> = {}): { value: T; applied: Promise<Applied | null> } {
+  const b = buildUi(wid, refused, make)
+  if (!b) return { value: none, applied: Promise.resolve(null) }
+  return { value: b.made.value, applied: applyUi(wid, b.ctx, b.made.plans, optsFor(opts, b.made.value)) }
 }
 
 // Of `ids`, those the UI's snapshot holds (a collaborator may have deleted one a moment ago): a UI delete takes the

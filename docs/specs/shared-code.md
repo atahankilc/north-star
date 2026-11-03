@@ -150,3 +150,15 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
   text typed in a cell. Each grid keeps only its own keys (matrix: `-`, steps, rolled; table: Space on a check).
   Checked: tsc, vitest, checks 0; in the gallery a click, → and ↓ move the cell and Escape lets go, in both.
 
+- **Group 2, bounding boxes and the ops' writes that give back a value (2026-11-03, north-star-48).**
+  - Bounding boxes: model/layout.ts' `boundsOf` (it was already there) for every copy: the agent's picture, a plane's
+    cards (`cardBounds`), the demo's camera, a package's frame, placement's `boxOf`, the summary's picture, a section
+    round text, `moveToCanvas`'s bounds (its own copy deleted), the canvas's fit, the move's guides, a space's bounds.
+  - ops/firestore.ts: `runUiWith<T>` (the value once the server has the write) and `startUiWith<T>` (the value at once,
+    `applied` to wait for), on one builder: no workspace, a refused builder (the toast), nothing to do, a refused
+    write all give `none`. `opts` can read the value (the undo key on a new id). `runUi` stands on it. Moved onto them:
+    addPiece, placeDocument, addCard, addPackageOp, copyCardsOp, addLabel, addTask, createEdgeOp, addCanvas,
+    moveToCanvas, alsoOnCanvas, bringIn, takeOff, removeHere, a table's and a matrix's named row.
+  - Settled drift: a write refused by validate (a viewer, the demo) now gives `none` everywhere: addCard and addLabel
+    gave the id of nothing, takeOff the count, removeHere the cards; a duplicate refused by its builder says so in the
+    toast (it threw).

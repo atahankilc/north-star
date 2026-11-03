@@ -15,6 +15,7 @@ import { isReducedMotion } from '../state/motion'
 import { runCells } from '../ui/primitives/Appear'
 import { finishAnimations, releaseAnimations, restart, step as stepClock, stepAnimations, yieldTask, realClock } from './clock'
 import { CELLS_SHUT } from '../ui/foundation/cellReveal'
+import { boundsOf } from '../model/layout'
 
 export type Pt = { x: number; y: number }
 // Where the cursor goes: a CSS selector (the element's middle, or `aim()`'s point in it), a stage point, or a function
@@ -550,10 +551,8 @@ export const camera = {
         const ws = c.store.get()
         const boxes: Bounds[] = what === 'all' ? ws.pieces : ws.pieces.filter((p) => `piece:${p.id}` === what)
         if (!boxes.length) return void (to = from)
-        const x0 = Math.min(...boxes.map((b) => b.x))
-        const y0 = Math.min(...boxes.map((b) => b.y))
-        const x1 = Math.max(...boxes.map((b) => b.x + b.w))
-        const y1 = Math.max(...boxes.map((b) => b.y + b.h))
+        const all = boundsOf(boxes)
+        const [x0, y0, x1, y1] = [all.x, all.y, all.x + all.w, all.y + all.h]
         const { w, h } = c.size
         const zoom = Math.min(4, Math.max(0.1, Math.min((w - 2 * pad) / Math.max(1, x1 - x0), (h - 2 * pad) / Math.max(1, y1 - y0))))
         to = { x: -((x0 + x1) / 2) * zoom, y: -((y0 + y1) / 2) * zoom, zoom }

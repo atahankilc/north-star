@@ -5,7 +5,7 @@
 import type { Card } from './cards'
 import type { Edge } from './edges'
 import { elsewhere } from '../model/placement'
-import { applyUi, present, sayRefused, serverHas, uiCtx } from '../ops/firestore'
+import { present, serverHas, runUiWith, startUiWith } from '../ops/firestore'
 import { placeOnPlan, takeOffPlan } from '../ops/places'
 import { deleteThings } from '../ops/cards'
 
@@ -20,55 +20,30 @@ import type { Place } from '../model/placement'
 // px), to select and glide to before the write is confirmed (`written`). An op (S4: src/ops/places.ts' place_on), laid
 // out among the lists passed (a card the caller just let go of is left out of them).
 export function bringIn(wid: string, plane: string, picked: Card[], all: { cards: Card[]; places: Place[]; edges: Edge[] }, at: [number, number], move = false, layout?: string) {
-  const none = { ids: [] as string[], box: null, written: Promise.resolve() }
-  const ctx = uiCtx(wid)
-  if (!ctx) return none
-  let made
-  try {
-    made = placeOnPlan(ctx, { cards: picked.map((c) => c.id), plane, at, move, layout }, all)
-  } catch (e) {
-    sayRefused(e, `${move ? 'move' : 'bring'} cards here`)
-    return none
-  }
-  if (!made.list.length) return none
-  const written = serverHas(applyUi(wid, ctx, [made.plan]))
-  return { ids: made.list.map((c) => c.id), box: made.box, written }
+  const { value, applied } = startUiWith(wid, `${move ? 'move' : 'bring'} cards here`, (ctx) => {
+    const made = placeOnPlan(ctx, { cards: picked.map((c) => c.id), plane, at, move, layout }, all)
+    return made.list.length ? { plans: [made.plan], value: { ids: made.list.map((c) => c.id), box: made.box } } : null
+  }, { ids: [] as string[], box: null as ReturnType<typeof placeOnPlan>['box'] })
+  return { ...value, written: serverHas(applied) }
 }
 
 // Cards taken off `plane`, staying on the others they're on, one undo step. A card on no other plane isn't touched
 // (that's a delete). Returns how many came off. An op (S4: take_off); the places are read from the workspace.
-export async function takeOff(wid: string, plane: string, list: Card[], _places: Place[]) {
-  const ctx = uiCtx(wid)
-  if (!ctx) return 0
-  let made
-  try {
-    made = takeOffPlan(ctx, { cards: list.map((c) => c.id), plane })
-  } catch (e) {
-    sayRefused(e, 'take cards off this plane')
-    return 0
-  }
-  if (!made.n) return 0
-  await serverHas(applyUi(wid, ctx, [made.plan]))
-  return made.n
+export function takeOff(wid: string, plane: string, list: Card[], _places: Place[]) {
+  return runUiWith(wid, 'take cards off this plane', (ctx) => {
+    const made = takeOffPlan(ctx, { cards: list.map((c) => c.id), plane })
+    return made.n ? { plans: [made.plan], value: made.n } : null
+  }, 0)
 }
 
 // Delete on a plane (the user, D-281): cards also on another plane come off this one, the others are deleted with their
 // links (and what else hangs off them), text too; one undo step. Returns the cards taken off. An op (S4: delete with a
 // plane); what goes with them is read from the workspace.
-export async function removeHere(wid: string, plane: string, list: Card[], _all: { edges: Edge[]; places: Place[] }, labels: { id: string }[] = []) {
-  const ctx = uiCtx(wid)
-  if (!ctx) return []
-  const off = list.filter((c) => elsewhere(c, ctx.ws.places, plane).length)
-  let plan
-  try {
-    plan = deleteThings(ctx, { ids: present(ctx, [...list.map((c) => c.id), ...labels.map((l) => l.id)]), plane })
-  } catch (e) {
-    sayRefused(e, 'delete that')
-    return off
-  }
-  if (!plan.writes.length) return off
-  await serverHas(applyUi(wid, ctx, [plan]))
-  return off
+export function removeHere(wid: string, plane: string, list: Card[], _all: { edges: Edge[]; places: Place[] }, labels: { id: string }[] = []) {
+  return runUiWith(wid, 'delete that', (ctx) => {
+    const plan = deleteThings(ctx, { ids: present(ctx, [...list.map((c) => c.id), ...labels.map((l) => l.id)]), plane })
+    return { plans: [plan], value: list.filter((c) => elsewhere(c, ctx.ws.places, plane).length) }
+  }, [] as Card[])
 }
 
 // A plane's delete (its cards also on another plane stay there, their home moving; its places going) is an op now (S6:

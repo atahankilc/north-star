@@ -24,6 +24,7 @@ import { a, cardColl, find, handleOf, once, refuse } from './util'
 import { cardCascade } from './cards'
 import { TEXT_NAMES, updateText } from './text'
 import { boundTo, withPatch } from './stick'
+import { boundsOf } from '../model/layout'
 
 type P = Piece & { id: string }
 
@@ -492,12 +493,6 @@ function goingAlong(ctx: OpCtx, op: string, items: string[], from: string, carry
   }
   const list = carry ? withStuck(pieces, shown) : shown.filter((p) => pieces.includes(p.id))
   return { pieces: list, labels }
-}
-
-const boundsOf = (boxes: Box[]): Box => {
-  const x0 = Math.min(...boxes.map((b) => b.x))
-  const y0 = Math.min(...boxes.map((b) => b.y))
-  return { x: x0, y: y0, w: Math.max(...boxes.map((b) => b.x + b.w)) - x0, h: Math.max(...boxes.map((b) => b.y + b.h)) - y0 }
 }
 
 export type MoveToCanvasArgs = {

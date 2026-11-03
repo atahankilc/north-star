@@ -18,6 +18,7 @@ import { piecesShown } from '../model/textPlace'
 import { FOR } from '../model/edges'
 import type { ReadWs } from './read/types'
 import type { Ids } from './read/ids'
+import { boundsOf } from '../model/layout'
 
 export type Picture = { svg: string; w: number; h: number; text: string }
 
@@ -38,10 +39,6 @@ const cut = (s: string, n: number) => {
 }
 
 type Box = { x: number; y: number; w: number; h: number }
-const around = (bs: Box[]): Box => {
-  const [l, t] = [Math.min(...bs.map((b) => b.x)), Math.min(...bs.map((b) => b.y))]
-  return { x: l, y: t, w: Math.max(...bs.map((b) => b.x + b.w)) - l, h: Math.max(...bs.map((b) => b.y + b.h)) - t }
-}
 
 // The drawing's frame: everything in `bounds`, scaled down to fit PICTURE_MAX.
 function frame(bounds: Box) {
@@ -76,7 +73,7 @@ export function planePicture(ws: ReadWs, ids: Ids, planeId: string): Picture | n
   // focus (D-186, D-187). So the picture is the content, and the words say how it fits that window.
   const all = [...boxes.map((b) => b.box), ...frames.map((f) => f.box), ...labels.map((l) => labelBox(l))]
   if (!all.length) return null
-  const f = frame(around(all))
+  const f = frame(boundsOf(all))
   const small = fontFor(f.k, 13)
   const out: string[] = [f.open]
   // Sections and text under everything else.
@@ -119,7 +116,7 @@ export function planePicture(ws: ReadWs, ids: Ids, planeId: string): Picture | n
   }
   out.push('</svg>')
   // How the content fits the plane's window: the closer its shape to the window's, the larger it reads there.
-  const content = around(all)
+  const content = boundsOf(all)
   const fit = Math.min(plane.w / content.w, plane.h / content.h)
   const text = [
     `A picture of ${ids.short('piece', plane.id)} "${cut(plane.name ?? '', 40)}" as it is now (with your pending changes): ${boxes.length} cards, ${frames.length} unfolded packages, ${links} links drawn, ${labels.length} texts. Its content is ${Math.round(content.w)} × ${Math.round(content.h)}; the app fits it into the plane's ${plane.w} × ${plane.h} window, shown there at ${Math.round(Math.min(1, fit) * 100)} % (content shaped like the window reads largest). ${f.w} × ${f.h} px.`,
@@ -133,7 +130,7 @@ export function canvasPicture(ws: ReadWs, ids: Ids, canvasId: string): Picture |
   const labels = ws.labels.filter((l) => l.pieceId === 'canvas' && canvasOf(l) === canvasId)
   if (!pieces.length && !labels.length) return null
   const boxes = [...pieces.map((p) => ({ x: p.x, y: p.y, w: p.w, h: p.h })), ...labels.map((l) => labelBox(l))]
-  const f = frame(around(boxes))
+  const f = frame(boundsOf(boxes))
   const fs = fontFor(f.k, 28)
   const out: string[] = [f.open]
   const home = new Map<string, string>()

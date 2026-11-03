@@ -3,6 +3,7 @@
 import { CARD, type AnyType, type Card } from './cards'
 import { GRID, snap } from './grid'
 import type { Edge } from './edges'
+import { boundsOf } from './layout'
 
 export type Place = { id: string; planeId: string; cardId: string; type: AnyType; x: number; y: number; folded?: boolean; createdAt: number }
 
@@ -114,10 +115,7 @@ export function landing(list: Card[], cards: Card[], places: Place[], plane: str
       left += CARD.w + GRID
     }
   const all = [...spots.values()]
-  const x0 = Math.min(...all.map((s) => s.x))
-  const y0 = Math.min(...all.map((s) => s.y))
-  const w = Math.max(...all.map((s) => s.x)) + CARD.w - x0
-  const h = Math.max(...all.map((s) => s.y)) + CARD.h - y0
+  const { x: x0, y: y0, w, h } = boxOf(all)
   let dx = snap(at[0] - w / 2) - x0
   const dy = snap(at[1] - h / 2) - y0
   const others = [...cardsOn(cards, places, plane).filter((c) => !spots.has(c.id)).map((c) => ({ x: c.x, y: c.y, w: CARD.w, h: CARD.h })), ...boxes]
@@ -139,7 +137,5 @@ export function landing(list: Card[], cards: Card[], places: Place[], plane: str
 
 // The box round spots (plane px).
 export function boxOf(spots: { x: number; y: number }[]) {
-  const x = Math.min(...spots.map((s) => s.x))
-  const y = Math.min(...spots.map((s) => s.y))
-  return { x, y, w: Math.max(...spots.map((s) => s.x)) + CARD.w - x, h: Math.max(...spots.map((s) => s.y)) + CARD.h - y }
+  return boundsOf(spots.map((s) => ({ x: s.x, y: s.y, w: CARD.w, h: CARD.h })))
 }

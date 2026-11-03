@@ -5,7 +5,7 @@ import { collection, doc } from 'firebase/firestore'
 import { db } from './firebase'
 import { discardNew } from './history'
 import type { Edge } from './edges'
-import { applyUi, forgetRecent, present, runUi, sayRefused, serverHas, uiCtx } from '../ops/firestore'
+import { forgetRecent, present, runUi, runUiWith, startUiWith } from '../ops/firestore'
 import { createCard, createPackage, deleteThings, duplicatePlan, updateCard as updateCardOp } from '../ops/cards'
 
 // What a card is (its types, fields, the doc → card conversion) lives in src/model/cards.ts, without Firebase (S3).
@@ -13,6 +13,7 @@ export { CARD_TYPES, ALL_TYPES, CARD_COLLECTION, CARD, TITLE_MAX, VALIDATIONS, F
 export type { CardType, AnyType, Validation, CardFields, Card } from '../model/cards'
 import { CARD, CARD_COLLECTION, type AnyType, type Card, type CardFields, type CardType } from '../model/cards'
 import { placeId } from '../model/placement'
+import { boundsOf } from '../model/layout'
 
 const ref = (wid: string, type: AnyType, id?: string) =>
   id ? doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]), id) : doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]))
@@ -29,21 +30,13 @@ const one = (type: AnyType) => `${type === 'idea' ? 'an' : 'a'} ${type}`
 // signatures, labels, undo keys and promises (resolved once the server has the write).
 
 // A new card centred on `at` (plane px), on the grid, moved right past any card it would cover: one undo step.
-export async function addCard(wid: string, pieceId: string, type: CardType, at: [number, number], others: Card[]) {
-  // No card made (no workspace shown, or refused): '' (callers select it, which selects nothing).
-  const ctx = uiCtx(wid)
-  if (!ctx) return ''
-  let plan
-  try {
-    plan = createCard(ctx, { type, plane: pieceId, where: { at, avoid: others } })
-  } catch (e) {
-    sayRefused(e, `add ${one(type)}`)
-    return ''
-  }
-  const id = plan.ids.$new
-  // Keyed as its title is, so the title typed next (`fresh`) joins this step.
-  await serverHas(applyUi(wid, ctx, [plan], { key: `card-title:${id}` }))
-  return id
+export function addCard(wid: string, pieceId: string, type: CardType, at: [number, number], others: Card[]) {
+  // No card made (no workspace shown, or refused): '' (callers select it, which selects nothing). Keyed as its title
+  // is, so the title typed next (`fresh`) joins this step.
+  return runUiWith(wid, `add ${one(type)}`, (ctx) => {
+    const plan = createCard(ctx, { type, plane: pieceId, where: { at, avoid: others } })
+    return { plans: [plan], value: plan.ids.$new }
+  }, '', (id) => ({ key: `card-title:${id}` }))
 }
 
 // The end of a drag: one undo step from where it started.
@@ -87,16 +80,11 @@ export function addPackage(wid: string, plane: string, members: Card[], at: [num
 // As addPackage, with the write to wait for (R4): `applied` resolves once it's recorded and issued locally.
 export function addPackageOp(wid: string, plane: string, members: Card[], at: [number, number], n: number) {
   // Nothing made (no workspace shown, or refused): id ''.
-  const none = { id: '', applied: Promise.resolve(null) }
-  const ctx = uiCtx(wid)
-  if (!ctx) return none
-  try {
+  const { value: id, applied } = startUiWith(wid, 'package these', (ctx) => {
     const plan = createPackage(ctx, { cards: members.map((m) => m.id), plane, x: at[0], y: at[1], name: `Package ${n}` })
-    return { id: plan.ids.$new, applied: applyUi(wid, ctx, [plan]) }
-  } catch (e) {
-    sayRefused(e, 'package these')
-    return none
-  }
+    return { plans: [plan], value: plan.ids.$new }
+  }, '')
+  return { id, applied }
 }
 
 // A package folds its members in (`at`: where its card goes, where its band was) or lays them out again (`null`):
@@ -134,10 +122,11 @@ export function copyCards(wid: string, pieceId: string, list: Card[], edges: Edg
 
 // As copyCards, with the write to wait for (R4): `applied` resolves once it's recorded and issued locally.
 export function copyCardsOp(wid: string, pieceId: string, list: Card[], edges: Edge[], by: [number, number], labels: ({ id: string; x: number; y: number } & Record<string, unknown>)[] = []) {
-  const ctx = uiCtx(wid)
-  if (!ctx) return { ids: [] as string[], applied: Promise.resolve(null) }
-  const { plan, ids } = duplicatePlan(ctx, { to: pieceId, by, source: { cards: list, edges, labels } })
-  return { ids, applied: applyUi(wid, ctx, [plan]) }
+  const { value: ids, applied } = startUiWith(wid, 'duplicate these', (ctx) => {
+    const { plan, ids } = duplicatePlan(ctx, { to: pieceId, by, source: { cards: list, edges, labels } })
+    return { plans: [plan], value: ids }
+  }, [] as string[])
+  return { ids, applied }
 }
 
 // With its links (D-207), its places on other planes (D-281) and what hangs off it (evidence, a competitor's features,
@@ -151,9 +140,5 @@ export const cardRef = ref
 // The box round a plane's cards, in its px; null when it has none.
 export function cardBounds(cards: Card[]) {
   if (!cards.length) return null
-  const x0 = Math.min(...cards.map((c) => c.x))
-  const y0 = Math.min(...cards.map((c) => c.y))
-  const x1 = Math.max(...cards.map((c) => c.x + CARD.w))
-  const y1 = Math.max(...cards.map((c) => c.y + CARD.h))
-  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
+  return boundsOf(cards.map((c) => ({ x: c.x, y: c.y, w: CARD.w, h: CARD.h })))
 }

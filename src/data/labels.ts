@@ -5,7 +5,7 @@ import { collection, doc, type DocumentReference } from 'firebase/firestore'
 import { db } from './firebase'
 import { snap } from '../model/grid'
 import { discardNew } from './history'
-import { applyUi, forgetRecent, present, runUi, sayRefused, serverHas, uiCtx } from '../ops/firestore'
+import { forgetRecent, present, runUi, runUiWith } from '../ops/firestore'
 import { arrange, createText, TEXT_NAMES, updateText, type CreateTextArgs, type UpdateTextArgs } from '../ops/text'
 import { deleteThings } from '../ops/cards'
 
@@ -25,9 +25,7 @@ type New = Omit<Label, 'id' | 'createdAt'>
 
 // A new one, at its place: one undo step, which the text typed into it first joins (keyed as its text is, D-250).
 // On the canvas: the canvas of the workspace shown (the ops' ctx, R1), unless `canvasId` says. '' when nothing was made.
-export async function addLabel(wid: string, fields: New) {
-  const ctx = uiCtx(wid)
-  if (!ctx) return ''
+export function addLabel(wid: string, fields: New) {
   const kind = kindOf(fields)
   const { pieceId, x, y, kind: _k, size, canvasId, ...rest } = fields
   const style = Object.fromEntries(Object.entries(rest).filter(([k, v]) => v !== undefined && !(kind === 'title' && k === 'text')))
@@ -38,16 +36,10 @@ export async function addLabel(wid: string, fields: New) {
     ...(pieceId === CANVAS ? (canvasId ? { canvas: canvasId } : {}) : { plane: pieceId }),
     where: { x, y },
   }
-  let plan
-  try {
-    plan = createText(ctx, args)
-  } catch (e) {
-    sayRefused(e, `add ${TEXT_NAMES[kind]}`)
-    return ''
-  }
-  const id = plan.ids.$new
-  await serverHas(applyUi(wid, ctx, [plan], { key: `label:text:${id}` }))
-  return id
+  return runUiWith(wid, `add ${TEXT_NAMES[kind]}`, (ctx) => {
+    const plan = createText(ctx, args)
+    return { plans: [plan], value: plan.ids.$new }
+  }, '', (id) => ({ key: `label:text:${id}` }))
 }
 
 // Its text, its setting: typing merges into one undo step; `undefined` takes a field away. `fresh`: the first text of

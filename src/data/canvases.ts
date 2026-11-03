@@ -8,7 +8,7 @@ import type { Label } from './labels'
 import type { WithId } from './hooks'
 import type { Piece } from './model'
 import type { Box } from './pieces'
-import { applyUi, runUi, sayRefused, uiCtx } from '../ops/firestore'
+import { runUi, uiCtx, runUiWith } from '../ops/firestore'
 import { createCanvas, moveCanvas as moveCanvasOp, moveToCanvasPlan, piecesOff, piecesOnPlan, rename } from '../ops/pieces'
 import { deleteAny } from '../ops/delete'
 
@@ -70,20 +70,11 @@ export const canvasField = (): { canvasId?: string } => (here === MAIN ? {} : { 
 
 // A new canvas after the others; `main`'s doc written with it the first time (it had none). One undo step (S6:
 // create_canvas, made by the signed-in person). '' when none was made.
-export async function addCanvas(wid: string, name: string, _list: Canvas[], _uid?: string) {
-  const ctx = uiCtx(wid)
-  if (!ctx) return ''
-  let plan
-  try {
-    plan = createCanvas(ctx, { name })
-  } catch (e) {
-    sayRefused(e, 'add a canvas')
-    return ''
-  }
-  const done = await applyUi(wid, ctx, [plan])
-  if (!done) return ''
-  await done.written
-  return plan.ids.$new
+export function addCanvas(wid: string, name: string, _list: Canvas[], _uid?: string) {
+  return runUiWith(wid, 'add a canvas', (ctx) => {
+    const plan = createCanvas(ctx, { name })
+    return { plans: [plan], value: plan.ids.$new }
+  }, '')
 }
 
 // S6: rename (a canvas `main` without its doc yet gets one).
@@ -110,40 +101,21 @@ export function deleteCanvas(wid: string, canvas: string, _all?: CanvasContent) 
 // there round it (`boxes`: how big each is as drawn). A piece stuck to one that stays lets go. One undo step; returns
 // where they went (to look there), null when refused. S6: move_to_canvas with what the caller found (carry: false);
 // what's in the way there is read from the workspace (`all`, `spots` ignored).
-export async function moveToCanvas(wid: string, to: Canvas, pieces: WithId<Piece>[], labels: Label[], boxes: Box[], _all?: WithId<Piece>[], _spots: Spot[] = []) {
-  const ctx = uiCtx(wid)
-  if (!ctx) return null
-  let made
-  try {
-    made = moveToCanvasPlan(ctx, { items: [...pieces.map((p) => p.id), ...labels.map((l) => l.id)], canvas: to.id, from: canvasHere(), carry: false, boxes })
-  } catch (e) {
-    sayRefused(e, `move to ${to.name}`)
-    return null
-  }
-  const done = await applyUi(wid, ctx, [made.plan])
-  if (!done) return null
-  await done.written
-  return made.landed
+export function moveToCanvas(wid: string, to: Canvas, pieces: WithId<Piece>[], labels: Label[], boxes: Box[], _all?: WithId<Piece>[], _spots: Spot[] = []) {
+  return runUiWith(wid, `move to ${to.name}`, (ctx) => {
+    const made = moveToCanvasPlan(ctx, { items: [...pieces.map((p) => p.id), ...labels.map((l) => l.id)], canvas: to.id, from: canvasHere(), carry: false, boxes })
+    return { plans: [made.plan], value: made.landed }
+  }, null)
 }
 
 // The same pieces on the canvas `to` as well (D-302's session 3), all by one offset, where they are or the nearest clear
 // place there. Those already there stay as they are. One undo step (S6: place_on with pieces and a canvas; what the
 // caller found goes, carry: false); null when every one is there already.
-export async function alsoOnCanvas(wid: string, to: Canvas, pieces: WithId<Piece>[], boxes: Box[], _all?: WithId<Piece>[]) {
-  const ctx = uiCtx(wid)
-  if (!ctx) return null
-  let made
-  try {
-    made = piecesOnPlan(ctx, { pieces: pieces.map((p) => p.id), canvas: to.id, from: canvasHere(), carry: false, boxes })
-  } catch (e) {
-    sayRefused(e, `put it on ${to.name} too`)
-    return null
-  }
-  if (!made.landed) return null
-  const done = await applyUi(wid, ctx, [made.plan])
-  if (!done) return null
-  await done.written
-  return made.landed
+export function alsoOnCanvas(wid: string, to: Canvas, pieces: WithId<Piece>[], boxes: Box[], _all?: WithId<Piece>[]) {
+  return runUiWith(wid, `put it on ${to.name} too`, (ctx) => {
+    const made = piecesOnPlan(ctx, { pieces: pieces.map((p) => p.id), canvas: to.id, from: canvasHere(), carry: false, boxes })
+    return made.landed ? { plans: [made.plan], value: made.landed } : null
+  }, null)
 }
 
 // Off the canvas `canvas` only, staying on the others it's on (D-302's session 3); on its home, the home moves to its

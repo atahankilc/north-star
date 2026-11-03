@@ -4,6 +4,7 @@
 import { CARD, type AnyType, type Card } from './cards'
 import type { Piece, PieceKind } from '../data/model'
 import { SUMMARY_CARDS_CHARS, SUMMARY_CARDS_MAX, SUMMARY_PIECES_CHARS, SUMMARY_PIECES_MAX } from './limits'
+import { boundsOf } from './layout'
 
 export type SummaryDoc = { by: string; at: number; n: number; pieces: string; cards: string }
 // Drawn: boxes in 0–1000 of the pieces' bounding box; cards from their plane's first card, in tenths of a card's width
@@ -30,9 +31,8 @@ type Box = Pick<Piece, 'kind' | 'x' | 'y' | 'w' | 'h'> & { id: string }
 export function makeSummary(pieces: Box[], cards: Pick<Card, 'type' | 'pieceId' | 'x' | 'y' | 'on'>[], places: { planeId: string; type: AnyType; x: number; y: number }[]): Pick<SummaryDoc, 'n' | 'pieces' | 'cards'> {
   const shown = pieces.slice(0, SUMMARY_PIECES_MAX)
   if (!shown.length) return { n: 0, pieces: '', cards: '' }
-  const x0 = Math.min(...shown.map((p) => p.x)), y0 = Math.min(...shown.map((p) => p.y))
-  const x1 = Math.max(...shown.map((p) => p.x + p.w)), y1 = Math.max(...shown.map((p) => p.y + p.h))
-  const span = Math.max(x1 - x0, y1 - y0, 1)
+  const { x: x0, y: y0, w, h } = boundsOf(shown)
+  const span = Math.max(w, h, 1)
   const k = (v: number) => Math.max(0, Math.min(1000, Math.round((v * 1000) / span)))
   const pieceStr = shown.map((p) => `${KIND[p.kind] ?? 'p'} ${k(p.x - x0)} ${k(p.y - y0)} ${Math.max(1, k(p.w))} ${Math.max(1, k(p.h))}`).join(';')
 

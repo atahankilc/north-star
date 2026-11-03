@@ -6,6 +6,7 @@ import { GRID } from './grid'
 import { WORLD } from './world'
 import type { CompetitorFeature } from '../data/competitorFeatures'
 import type { Edge } from './edges'
+import { boundsOf } from './layout'
 
 // Where the list inside a card starts: under its type line and a title kept to two lines.
 export const INNER_TOP = 56
@@ -156,8 +157,8 @@ export const BAND_H = GRID
 const FRAME_PAD = GRID
 export function packageBox(members: Box[]): Box | null {
   if (!members.length) return null
-  const [l, t] = [Math.min(...members.map((b) => b.x)), Math.min(...members.map((b) => b.y))]
-  const [r, b] = [Math.max(...members.map((m) => m.x + m.w)), Math.max(...members.map((m) => m.y + m.h))]
+  const m = boundsOf(members)
+  const [l, t, r, b] = [m.x, m.y, m.x + m.w, m.y + m.h]
   const down = (v: number) => Math.floor(v / GRID + 1e-6) * GRID
   const up = (v: number) => Math.ceil(v / GRID - 1e-6) * GRID
   const [x0, y0, x1, y1] = [down(l - FRAME_PAD), down(t - FRAME_PAD) - BAND_H, up(r + FRAME_PAD), up(b + FRAME_PAD)]

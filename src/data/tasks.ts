@@ -18,7 +18,7 @@ import type { Evidence } from './evidence'
 import { newId } from './matrix'
 import type { Piece } from './model'
 import type { Source } from './source'
-import { applyUi, runUi, sayRefused, uiCtx } from '../ops/firestore'
+import { runUi, startUiWith } from '../ops/firestore'
 import { createTask, moveTask as moveTaskOp, updateTask as updateTaskOp, type TaskInput } from '../ops/tasks'
 import { createDeckColumn, deleteColumnPlan, moveDeckColumn, updateDeck, updateDeckColumn, updateTimeline } from '../ops/deck'
 import { createEvidence } from '../ops/evidence'
@@ -122,16 +122,10 @@ function inputOf(fields: TaskFields = {}): TaskInput {
 // A new task at the end of a column, its title typed (and from a card's panel, the card it's for): one undo step;
 // returns its id at once ('' when nothing was made). `uid` is the signed-in person (the op's actor).
 export function addTask(wid: string, pieceId: string, column: string, order: number, title: string, _uid: string, fields: Pick<TaskFields, 'cardId' | 'cardType' | 'assignee' | 'assigneeName' | 'start' | 'due'> = {}) {
-  const ctx = uiCtx(wid)
-  if (!ctx) return ''
-  try {
+  return startUiWith(wid, 'add a task', (ctx) => {
     const plan = createTask(ctx, { deck: pieceId, column, order, title, ...inputOf(fields) })
-    void applyUi(wid, ctx, [plan], { label: 'add a task' })
-    return plan.ids.$new
-  } catch (e) {
-    sayRefused(e, 'add a task')
-    return ''
-  }
+    return { plans: [plan], value: plan.ids.$new }
+  }, '', { label: 'add a task' }).value
 }
 
 // Its fields, merged; `undefined` takes one away. Typing in one field merges into one undo step.

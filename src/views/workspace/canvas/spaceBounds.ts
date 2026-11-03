@@ -10,6 +10,7 @@ import type { Bounds } from '../../../state/canvasView'
 import { keep, filterOf } from './planeFilter'
 import { foldedHeight, foldsOf, packageBox, type Box } from '../plane/cardInside'
 import { labelBox } from '../text/TextItems'
+import { boundsOf } from '../../../model/layout'
 
 function cardBoxes(cards: Card[], edges: Edge[], kept: Set<string> | null): Box[] {
   const folds = foldsOf(cards, edges)
@@ -29,9 +30,5 @@ export function spaceBounds(cards: Card[], edges: Edge[], labels: Label[], more:
   const kept = plane ? keep(cards, edges, filterOf(plane)) : null
   const boxes = [...cardBoxes(cards, edges, kept), ...labels.map(labelBox), ...more]
   if (!boxes.length) return null
-  const x0 = Math.min(...boxes.map((b) => b.x))
-  const y0 = Math.min(...boxes.map((b) => b.y))
-  const x1 = Math.max(...boxes.map((b) => b.x + b.w))
-  const y1 = Math.max(...boxes.map((b) => b.y + b.h))
-  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
+  return boundsOf(boxes)
 }

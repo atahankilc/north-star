@@ -6,6 +6,7 @@ import { canvasOf, type Spot } from './canvases'
 import { GRID, snap } from './grid'
 import { labelBox } from './labelBox'
 import type { Label } from './labels'
+import { boundsOf } from './layout'
 
 export type Box = { x: number; y: number; w: number; h: number }
 export type Boxed = Box & { id: string }
@@ -66,10 +67,8 @@ export function inSection(section: Box, size: { w: number; h: number }, others: 
 
 // A section round boxes: two grid steps clear on every side, three on top (its name sits in the top edge).
 export function around(boxes: Box[]): Box {
-  const x0 = Math.min(...boxes.map((b) => b.x))
-  const y0 = Math.min(...boxes.map((b) => b.y))
-  const x1 = Math.max(...boxes.map((b) => b.x + b.w))
-  const y1 = Math.max(...boxes.map((b) => b.y + b.h))
+  const all = boundsOf(boxes)
+  const [x0, y0, x1, y1] = [all.x, all.y, all.x + all.w, all.y + all.h]
   const x = Math.floor((x0 - 2 * GRID) / GRID) * GRID
   const y = Math.floor((y0 - 3 * GRID) / GRID) * GRID
   return { x, y, w: Math.ceil((x1 + 2 * GRID - x) / GRID) * GRID, h: Math.ceil((y1 + 2 * GRID - y) / GRID) * GRID }

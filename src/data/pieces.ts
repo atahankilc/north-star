@@ -18,7 +18,7 @@ import type { Cell } from './matrix'
 import type { Edge } from './edges'
 import type { Task } from './tasks'
 import type { Place } from './places'
-import { applyUi, runUi, sayRefused, uiCtx } from '../ops/firestore'
+import { runUi, uiCtx, runUiWith } from '../ops/firestore'
 import { createPiece, place, rename as renameOp, updatePiece } from '../ops/pieces'
 import { deleteAny } from '../ops/delete'
 import { nearClearIn } from '../model/pieceMoves'
@@ -52,18 +52,15 @@ export function nearClear(box: Box, all: Box[], canvas = canvasHere()): Pick<Box
 // (a kanban's from its wizard, D-268).
 // A document piece (D-232) shows `docId`, sized as `size` when given (an image's shape).
 // An op (S6: create_piece) on the canvas shown; '' when none was made (refused, or no workspace shown).
-export async function addPiece(wid: string, kind: PieceKind, at: [number, number], others: Box[], setup?: MatrixSetup | TableSetup | KanbanSetup, name?: string, docId?: string, size?: { w: number; h: number }) {
-  const ctx = uiCtx(wid)
-  if (!ctx) return ''
+export function addPiece(wid: string, kind: PieceKind, at: [number, number], others: Box[], setup?: MatrixSetup | TableSetup | KanbanSetup, name?: string, docId?: string, size?: { w: number; h: number }) {
   const { w, h } = size ?? PIECE_SIZE[kind]
   const box = { x: snap(at[0] - w / 2), y: snap(at[1] - h / 2), w, h }
   Object.assign(box, nearClear(box, others))
   const start = kind === 'matrix' ? (setup ?? emptySetup()) : kind === 'table' ? (setup ?? emptyTable()) : kind === 'kanban' ? (setup ?? emptyKanban()) : undefined
   // Only the kinds that always took a name keep one (as before).
   const named = name && (kind === 'matrix' || kind === 'table' || kind === 'documents' || kind === 'kanban') ? { name } : {}
-  let plan
-  try {
-    plan = createPiece(ctx, {
+  return runUiWith(wid, `add a ${KIND_NAME[kind]}`, (ctx) => {
+    const plan = createPiece(ctx, {
       kind,
       canvas: canvasHere(),
       where: { x: box.x, y: box.y },
@@ -72,15 +69,8 @@ export async function addPiece(wid: string, kind: PieceKind, at: [number, number
       ...(start ? { setup: JSON.parse(JSON.stringify(start)) } : {}),
       ...(kind === 'document' && docId ? { doc: docId } : {}),
     })
-  } catch (e) {
-    sayRefused(e, `add a ${KIND_NAME[kind]}`)
-    return ''
-  }
-  const id = plan.ids.$new
-  const done = await applyUi(wid, ctx, [plan])
-  if (!done) return ''
-  await done.written
-  return id
+    return { plans: [plan], value: plan.ids.$new }
+  }, '')
 }
 
 // The end of a move or a resize (D-180): one undo step from the box it started as.
@@ -129,21 +119,11 @@ export async function placeDocument(wid: string, d: Pick<Doc, 'shared' | 'kind' 
   const size = d.kind === 'image' && d.width && d.height ? { w: base.w, h: snap(Math.max(PIECE_MIN.h, Math.min(1200, (base.w * d.height) / d.width))) } : base
   const box = { x: snap(at[0] - size.w / 2), y: snap(at[1] - size.h / 2), ...size }
   Object.assign(box, nearClear(box, others))
-  if (!share) {
-    const ctx = uiCtx(wid)
-    if (!ctx) return ''
-    let plan
-    try {
-      plan = createPiece(ctx, { kind: 'document', doc: d.id, canvas: canvasHere(), size, where: { x: box.x, y: box.y } })
-    } catch (e) {
-      sayRefused(e, 'place a document')
-      return ''
-    }
-    const done = await applyUi(wid, ctx, [plan], { label: 'place a document' })
-    if (!done) return ''
-    await done.written
-    return plan.ids.$new
-  }
+  if (!share)
+    return runUiWith(wid, 'place a document', (ctx) => {
+      const plan = createPiece(ctx, { kind: 'document', doc: d.id, canvas: canvasHere(), size, where: { x: box.x, y: box.y } })
+      return { plans: [plan], value: plan.ids.$new }
+    }, '', { label: 'place a document' })
   const ref = doc(col(wid))
   const now = Date.now()
   const shared = docRef(wid, d.id)

@@ -15,6 +15,7 @@ import type { DocumentReference } from 'firebase/firestore'
 import { clearGuides, guide, showGuides, useGuides, type Box } from './guides'
 import { DRAG_PX } from '../../../ui/foundation/feel'
 import { pressDrag } from '../../../ui/foundation/dragPointer'
+import { boundsOf } from '../../../model/layout'
 
 // What's on the open plane, kept by its view as it draws: which ids are text, and how to move the selection (each
 // with what it carries: a folded card's parts).
@@ -122,13 +123,7 @@ export function startMove(e: { clientX: number; clientY: number; currentTarget: 
   const at = o.at ?? heldAt(e, from.x, from.y, zoom)
   const ids = new Set(items.map((i) => i.id))
   const boxes = o.box ? [o.box] : onPlane.boxes().filter((b) => ids.has(b.id)).map((b) => b.box)
-  const whole =
-    guided && boxes.length
-      ? (() => {
-          const [l, t] = [Math.min(...boxes.map((b) => b.x)), Math.min(...boxes.map((b) => b.y))]
-          return { x: l, y: t, w: Math.max(...boxes.map((b) => b.x + b.w)) - l, h: Math.max(...boxes.map((b) => b.y + b.h)) - t }
-        })()
-      : null
+  const whole = guided && boxes.length ? boundsOf(boxes) : null
   const others = whole ? othersThan(ids) : []
   const [sx, sy] = [e.clientX, e.clientY]
   let d: [number, number] | null = null

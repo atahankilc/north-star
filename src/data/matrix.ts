@@ -21,7 +21,7 @@
 import { collection, doc } from 'firebase/firestore'
 import type { Card } from './cards'
 import { db } from './firebase'
-import { applyUi, runUi, sayRefused, uiCtx } from '../ops/firestore'
+import { runUi, runUiWith } from '../ops/firestore'
 import { updateMatrix } from '../ops/matrix'
 import { axisAdd, axisRemove, axisUpdate, updateCell } from '../ops/lens'
 import { editorChange } from '../model/lens'
@@ -90,20 +90,11 @@ export function removeEntry(wid: string, id: string, _setup: MatrixSetup, which:
 }
 
 // A typed row or column at the end; its id, to type its name in ('' when nothing was made).
-export async function addNamed(wid: string, id: string, _setup: MatrixSetup, which: 'rows' | 'cols', name = '') {
-  const ctx = uiCtx(wid)
-  if (!ctx) return ''
-  let plan
-  try {
-    plan = axisAdd(ctx, { id, axis: which, name, label: 'change a matrix' })
-  } catch (e) {
-    sayRefused(e, 'change a matrix')
-    return ''
-  }
-  const done = await applyUi(wid, ctx, [plan], { label: 'change a matrix' })
-  if (!done) return ''
-  await done.written
-  return plan.ids.$new
+export function addNamed(wid: string, id: string, _setup: MatrixSetup, which: 'rows' | 'cols', name = '') {
+  return runUiWith(wid, 'change a matrix', (ctx) => {
+    const plan = axisAdd(ctx, { id, axis: which, name, label: 'change a matrix' })
+    return { plans: [plan], value: plan.ids.$new }
+  }, '', { label: 'change a matrix' })
 }
 
 export function addCardEntry(wid: string, id: string, _setup: MatrixSetup, which: 'rows' | 'cols', card: Card) {
