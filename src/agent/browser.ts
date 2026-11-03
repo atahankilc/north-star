@@ -56,6 +56,9 @@ function unlocked<T>(fn: () => T): T {
   }
 }
 
+// How long an apply waits for the server before it reports (a refusal comes back well within it when online).
+const SERVER_WAIT_MS = 5000
+
 // The env's apply in the browser: the plans written as one undo step as the agent, on the workspace as it is now
 // (`ws()`, the listeners' snapshot: freshWs). Refusals come back as errors with their fixes, never thrown.
 export function browserApply(wid: string, by: OpActor, ws: () => WorkspaceCtx | null): AgentEnv['apply'] {
@@ -71,6 +74,11 @@ export function browserApply(wid: string, by: OpActor, ws: () => WorkspaceCtx | 
     try {
       const a = await p
       if (!a.step && plans.some((x) => x.writes.length)) return { ok: false, errors: [{ op: 'apply', message: 'writes are refused right now (the app is locked or read-only)', fix: 'close what locks it, or ask an editor' }] }
+      // The server's answer, for a while: a refusal (the rules, a write that failed) is the model's to hear, never
+      // "applied". Still waiting after that (offline, slow), it goes on as applied, as the person's own writes do; a
+      // refusal later is said in the toast (its undo step is gone already).
+      const late = await Promise.race([a.written.then(() => false), new Promise<boolean>((r) => setTimeout(() => r(true), SERVER_WAIT_MS))])
+      if (late) a.written.catch((e) => useHistory.getState().say(`The server refused the agent's change (${a.step?.label ?? 'its writes'}): ${(e as Error)?.message ?? 'refused'}`))
       return { ok: true, label: a.step?.label ?? as.label ?? plans.map((x) => x.label).join(', '), plans, step: a.step }
     } catch (e) {
       return refused(e)

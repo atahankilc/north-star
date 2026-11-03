@@ -196,5 +196,8 @@ export function mergeCards(ctx: OpCtx, args: MergeCardsArgs): Plan {
   for (const c of gone) writes.push({ coll: cardColl(c.type), id: c.id, del: true })
 
   const n = gone.length
-  return { op: OP, label: `merge ${n === 1 ? 'a card' : `${n} cards`} into "${cut(keep.title)}"`, writes: once(writes), ids: {}, meta: { kind: keep.type, ids: [keep.id, ...ids] } }
+  // What it makes under worked-out ids (Plan.made): matches, places and cells that weren't there.
+  const had = new Set([...ws.comparisons.map((c) => c.id), ...ws.places.map((p) => p.id), ...ws.cells.map(cellIdOf)])
+  const made = [...new Set(writes.filter((w) => w.set && (w.coll === 'comparisons' || w.coll === 'places' || w.coll === 'cells') && !had.has(w.id)).map((w) => w.id))]
+  return { op: OP, label: `merge ${n === 1 ? 'a card' : `${n} cards`} into "${cut(keep.title)}"`, writes: once(writes), ids: {}, made, meta: { kind: keep.type, ids: [keep.id, ...ids] } }
 }

@@ -6,6 +6,9 @@ const fake = vi.hoisted(() => {
   const DEL = { __deleteField: true }
   const data = new Map<string, Record<string, unknown>>()
   const commits = { n: 0, batches: [] as number[] }
+  // As Firestore is: the cache has nothing for a doc that never existed; offline, a read past it fails. `failAt`: the
+  // commit (counted from 1) the server refuses.
+  const net = { offline: false, failAt: 0 }
   type Ref = { path: string; id: string; parent: { id: string } }
   const ref = (path: string): Ref => {
     const parts = path.split('/')
@@ -33,7 +36,7 @@ const fake = vi.hoisted(() => {
     }
     return out
   }
-  return { DEL, data, commits, ref, patch, merge }
+  return { DEL, data, commits, net, ref, patch, merge }
 })
 
 vi.mock('../../src/data/firebase', () => ({ db: () => ({}), firebase: null, useEmulators: false }))
@@ -42,8 +45,14 @@ vi.mock('firebase/firestore', () => {
   return {
     doc: (_db: unknown, ...segments: string[]) => fake.ref(segments.join('/')),
     deleteField: () => fake.DEL,
-    getDocFromCache: async (r: { path: string }) => snap(r.path),
-    getDoc: async (r: { path: string }) => snap(r.path),
+    getDocFromCache: async (r: { path: string }) => {
+      if (fake.net.offline && !fake.data.has(r.path)) throw new Error('Failed to get document from cache')
+      return snap(r.path)
+    },
+    getDoc: async (r: { path: string }) => {
+      if (fake.net.offline) throw new Error('Failed to get document because the client is offline')
+      return snap(r.path)
+    },
     deleteDoc: async (r: { path: string }) => void fake.data.delete(r.path),
     writeBatch: () => {
       const ops: (() => void)[] = []
@@ -60,6 +69,7 @@ vi.mock('firebase/firestore', () => {
         commit: () => {
           fake.commits.n++
           fake.commits.batches.push(ops.length)
+          if (fake.commits.n === fake.net.failAt) return Promise.reject(new Error('PERMISSION_DENIED'))
           ops.forEach((op) => op())
           return Promise.resolve()
         },
@@ -87,6 +97,8 @@ function seed() {
   fake.data.clear()
   fake.commits.n = 0
   fake.commits.batches = []
+  fake.net.offline = false
+  fake.net.failAt = 0
   const docs = fixtureDocs()
   for (const c of WS_COLLECTIONS) for (const { id, ...d } of docs[c]) fake.data.set(path(c, id), d)
   const { id: _, ...w } = WORKSPACE
@@ -291,5 +303,43 @@ describe('apply', () => {
     expect(res.step).toBeNull()
     expect(useHistory.getState().past).toHaveLength(0)
     expect(fake.commits.n).toBe(0)
+  })
+
+  it('a doc a plan makes under a worked-out id (Plan.made) is not read first: offline, the write still goes', async () => {
+    fake.net.offline = true
+    const fresh = `${ID.matrix}_${ID.orderly}_${ID.qr}y`
+    const p: Plan = { op: 'set_cell', label: 'set a cell', ids: {}, made: [fresh], writes: [{ coll: 'cells', id: fresh, merge: true, set: { matrixId: ID.matrix, row: ID.orderly, col: `${ID.qr}y`, value: 'full', updatedAt: T } }] }
+    const res = await apply(WID, [p], { ws: fixtureWs(), by: ALICE })
+    await res.written
+    expect(fake.data.get(path('cells', fresh))).toMatchObject({ value: 'full' })
+    expect(useHistory.getState().past[0].before[0].data).toBeNull()
+    expect(res.ids).toEqual({})
+  })
+
+  it('split in batches, some refused: the step stays and undo takes back what went through', async () => {
+    const before = new Map(fake.data)
+    fake.net.failAt = 2
+    const many: Plan = {
+      op: 'set_cell',
+      label: 'fill 500 cells',
+      ids: {},
+      writes: Array.from({ length: 500 }, (_, i) => ({ coll: 'cells' as const, id: `${ID.matrix}_${ID.orderly}_p${i}`, set: { matrixId: ID.matrix, row: ID.orderly, col: `p${i}`, value: 'full', updatedAt: T } })),
+    }
+    const res = await apply(WID, [many], { ws: fixtureWs(), by: ALICE })
+    await expect(res.written).rejects.toThrow(/only part of it was saved/)
+    await Promise.resolve()
+    expect(useHistory.getState().past.map((s) => s.label)).toEqual(['fill 500 cells'])
+    expect(useHistory.getState().notice?.text).toMatch(/^Only part of fill 500 cells was saved/)
+    await undo()
+    await Promise.resolve()
+    expect(new Map(fake.data)).toEqual(before)
+  })
+
+  it('every batch refused: nothing went through, the step goes', async () => {
+    fake.net.failAt = 1
+    const res = await apply(WID, [plans()[2]], { ws: fixtureWs(), by: ALICE })
+    await expect(res.written).rejects.toThrow('PERMISSION_DENIED')
+    await Promise.resolve()
+    expect(useHistory.getState().past).toHaveLength(0)
   })
 })

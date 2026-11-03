@@ -355,7 +355,7 @@ export function updateCell(ctx: OpCtx, args: UpdateCellArgs): Plan {
   }
   if (Object.keys(data).length === 4) refuse(op, 'nothing to change in the cell', 'give value, note, not_relevant, confidence or clear')
   // A first write's DELETEs are nothing to take away: left out (a set with merge still takes them).
-  return plan(op, label, p, [{ coll: 'cells', id, set: data, merge: true }])
+  return { ...plan(op, label, p, [{ coll: 'cells', id, set: data, merge: true }]), ...(had ? {} : { made: [id] }) }
 }
 
 // ---- Criteria (D-133, D-249): what a feature is judged on, taken off with its scores

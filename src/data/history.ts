@@ -79,7 +79,7 @@ function restore(snap: Snapshot): Promise<unknown> {
     }
     commits.push(batch.commit())
   }
-  return Promise.all(commits)
+  return allCommitted(commits)
 }
 
 type Options = {
@@ -176,8 +176,12 @@ async function record(label: string, refs: DocumentReference[], write: () => Pro
       // A listener's mistake never breaks the write.
     }
   }
-  // A write the server refuses never happened: forget it, and let the caller see the error.
-  pending.catch(() => useHistory.setState((h) => ({ past: h.past.filter((p) => p !== step) })))
+  // A write the server refuses never happened: forget it, and let the caller see the error. Part of it through: the
+  // step stays, to take that part back.
+  pending.catch((e) => {
+    if (e instanceof PartlyWritten) useHistory.getState().say(`Only part of ${label} was saved (${(e.cause as Error)?.message ?? 'refused'}): undo takes it back`)
+    else useHistory.setState((h) => ({ past: h.past.filter((p) => p !== step) }))
+  })
   // Wrapped: returning the promise itself would make the queue wait for the server.
   return { pending }
 }
@@ -191,6 +195,22 @@ export function discardNew(ref: DocumentReference, key: string) {
     useHistory.setState((h) => ({ past: h.past.filter((p) => p.key !== key) }))
     return { pending }
   }).then(({ pending }) => pending)
+}
+
+// A write sent in several batches (past WRITE_BATCH_MAX docs) where some went through and some didn't: what went
+// through stays, so its step stays too (undo takes it back; it puts back what didn't go through as it already is).
+export class PartlyWritten extends Error {
+  constructor(readonly cause: unknown) {
+    super(`only part of it was saved: ${(cause as Error)?.message ?? String(cause)}`)
+  }
+}
+
+// The batches' commits as one: all through, or the first refusal; some through, PartlyWritten.
+export async function allCommitted(commits: Promise<void>[]): Promise<void> {
+  const done = await Promise.allSettled(commits)
+  const failed = done.filter((d): d is PromiseRejectedResult => d.status === 'rejected')
+  if (!failed.length) return
+  throw failed.length === done.length ? failed[0].reason : new PartlyWritten(failed[0].reason)
 }
 
 export const absent = (refs: DocumentReference[]): Snapshot => refs.map((ref) => ({ ref, data: null }))

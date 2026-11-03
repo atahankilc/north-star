@@ -41,6 +41,10 @@ export type Plan = {
   label: string
   writes: Write[]
   ids: Record<string, string>
+  // Docs it makes under an id it works out (a cell's, a match's, a place's) rather than a new one: not there before, so
+  // the undo step reads nothing for them (the cache has nothing to give, and a read past it waits for the server, or
+  // fails offline and loses the write). Not handles: the model never sees them.
+  made?: string[]
   meta?: { kind?: string; ids?: string[] }
 }
 

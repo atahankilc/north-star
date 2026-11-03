@@ -16,6 +16,8 @@ function oursOk(ctx: OpCtx, op: string, ours: string | null | undefined) {
 }
 
 const cmpId = comparisonId
+// The matches a plan sets that aren't there yet (Plan.made).
+const newMatches = (ctx: OpCtx, writes: Write[]) => writes.filter((w) => w.coll === 'comparisons' && w.set && !ctx.ws.comparisons.some((c) => c.id === w.id)).map((w) => w.id)
 
 export type CreateFeatureArgs = FeatureFields & { competitor: string; ours?: string | null; handle?: string }
 
@@ -30,7 +32,7 @@ export function createCompetitorFeature(ctx: OpCtx, args: CreateFeatureArgs): Pl
   for (const k of Object.keys(data)) if (data[k] === undefined || data[k] === '') delete data[k]
   const writes: Write[] = [{ coll: 'competitorFeatures', id, set: data }]
   if (ours) writes.push({ coll: 'comparisons', id: cmpId(ours, comp.id), merge: true, set: { featureId: ours, competitorId: comp.id, competitorFeatureId: id } })
-  return { op, label: 'add a competitor feature', writes, ids: { [handleOf(args)]: id }, meta: { kind: 'feature' } }
+  return { op, label: 'add a competitor feature', writes, ids: { [handleOf(args)]: id }, made: newMatches(ctx, writes), meta: { kind: 'feature' } }
 }
 
 // `fields`: `undefined`, `null` or `''` takes an optional field away (never the name). `ours`: which of our features it
@@ -53,5 +55,5 @@ export function updateCompetitorFeature(ctx: OpCtx, args: UpdateFeatureArgs): Pl
     if (args.ours) writes.push({ coll: 'comparisons', id: cmpId(args.ours, f.competitorId), merge: true, set: { featureId: args.ours, competitorId: f.competitorId, competitorFeatureId: f.id } })
   }
   const label = args.ours !== undefined && !writes.some((w) => w.coll === 'competitorFeatures') ? 'match a feature' : 'edit a competitor feature'
-  return { op, label, writes, ids: {}, meta: { kind: 'feature' } }
+  return { op, label, writes, ids: {}, made: newMatches(ctx, writes), meta: { kind: 'feature' } }
 }

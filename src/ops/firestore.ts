@@ -2,7 +2,7 @@
 // purity test, tests/unit/purity.test.ts, lets only this file reach data/ and Firebase).
 import { deleteField, doc, writeBatch, type DocumentReference } from 'firebase/firestore'
 import { db, firebase } from '../data/firebase'
-import { tracked, useHistory, writable } from '../data/history'
+import { allCommitted, tracked, useHistory, writable } from '../data/history'
 import { getRealWs, subscribeWs, type WorkspaceCtx } from '../state/wsStore'
 import { validate } from './validate'
 import { projectLoose } from './project'
@@ -84,7 +84,7 @@ export async function apply(wid: string, plans: Plan[], opts: ApplyOpts = {}): P
   // Before: nothing for what the plans make (no read); the rest read by tracked itself, in its queue, after the writes
   // queued before this one.
   const created = [...new Set(Object.values(ids))]
-  const made = new Set(created)
+  const made = new Set([...created, ...plans.flatMap((p) => p.made ?? [])])
   // A new document's body (`…/documents/<id>/content/body`) is new with it (and can't be read before it: its rule reads
   // the summary).
   const absentRefs = [...refs.values()].filter((r) => made.has(r.id) || (r.id === 'body' && !!r.parent.parent && made.has(r.parent.parent.id)))
@@ -115,7 +115,7 @@ export async function apply(wid: string, plans: Plan[], opts: ApplyOpts = {}): P
       }
       commits.push(batch.commit())
     }
-    return Promise.all(commits)
+    return allCommitted(commits)
   }
 
   // Recorded: a step with the key that wasn't there before (a merge makes a new step object with the same key).
@@ -257,8 +257,15 @@ export function applyUi(wid: string, ctx: OpCtx, plans: Plan[], opts: UiOpts = {
     },
     (e) => {
       drop(entry)
-      if (!(e instanceof OpsRefused)) throw e
-      useHistory.getState().say(`Couldn't ${opts.label ?? plans.map((x) => x.label).join(', ')}: ${e.errors[0]?.message ?? 'refused'}`)
+      const what = opts.label ?? plans.map((x) => x.label).join(', ')
+      // Anything else failed before the write went out (the undo step's read, offline): nothing was written either.
+      // Said too, never a silent loss.
+      if (!(e instanceof OpsRefused)) {
+        console.error('ops: write not made', e)
+        useHistory.getState().say(`Couldn't ${what}: ${e instanceof Error ? e.message : 'it failed'}`)
+        return null
+      }
+      useHistory.getState().say(`Couldn't ${what}: ${e.errors[0]?.message ?? 'refused'}`)
       return null
     },
   )

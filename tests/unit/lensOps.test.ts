@@ -64,6 +64,12 @@ describe('model: rows and columns by name', () => {
     expect(cell(run(ctx, [p]), LENS.table, ID.loyalty, LENS.cost)?.value).toBe(12)
   })
 
+  it("a cell's first write says it makes the cell (Plan.made, so the undo step reads nothing for it); a later one doesn't", () => {
+    const ctx = ctxOf()
+    expect(updateCell(ctx, { id: LENS.table, row: 'Loyalty stamps', col: 'cost (€)', value: 12 }).made).toEqual([`${LENS.table}_${ID.loyalty}_${LENS.cost}`])
+    expect(updateCell(ctx, { id: ID.matrix, row: LENS.square, col: ID.qr, value: 2 }).made).toBeUndefined()
+  })
+
   it('oneChange: add at the end, remove, swap, edit; anything else null', () => {
     const a = [{ id: 'a', v: 1 }, { id: 'b', v: 2 }, { id: 'c', v: 3 }]
     const same = (x: { v: number }, y: { v: number }) => x.v === y.v

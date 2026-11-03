@@ -36,7 +36,9 @@ const fake = vi.hoisted(() => {
     }
     return out
   }
-  return { DEL, data, commits, ref, patch, merge }
+  // `refuse`: the server refuses the next commits (its rules), after they applied locally as Firestore does.
+  const net = { refuse: false }
+  return { DEL, data, commits, net, ref, patch, merge }
 })
 
 vi.mock('../../src/data/firebase', () => ({ db: () => ({}), firebase: null, useEmulators: false }))
@@ -64,7 +66,7 @@ vi.mock('firebase/firestore', () => {
           fake.commits.n++
           fake.commits.batches.push(ops.length)
           ops.forEach((op) => op())
-          return Promise.resolve()
+          return fake.net.refuse ? Promise.reject(new Error('PERMISSION_DENIED')) : Promise.resolve()
         },
       }
       return b
@@ -87,6 +89,7 @@ const path = (coll: string, id: string) => `workspaces/${WID}/${coll}/${id}`
 
 function seed() {
   fake.data.clear()
+  fake.net.refuse = false
   const docs = fixtureDocs()
   for (const c of WS_COLLECTIONS) for (const { id, ...d } of docs[c]) fake.data.set(path(c, id), d)
   const { id: _, ...w } = WORKSPACE
@@ -187,6 +190,16 @@ describe('the agent in the browser', () => {
     if (!a.ok) throw new Error('refused')
     await tracked('person after', [], async () => {}, { key: 'p' })
     expect(await undoAgentStep(a.step!.key)).toBe(false)
+  })
+
+  it('a write the server refuses comes back as errors, never as applied (and leaves no undo step)', async () => {
+    fake.net.refuse = true
+    const plans = [{ op: 'update_card', label: 'edit a problem', writes: [{ coll: 'problems' as const, id: ID.menu, patch: { title: 'x' } }], ids: {} }]
+    const r = await browserApply(WID, ALICE, fixtureWs)(plans, { actor: 'agent' })
+    expect(r.ok).toBe(false)
+    if (r.ok) return
+    expect(r.errors[0].message).toMatch(/PERMISSION_DENIED/)
+    expect(useHistory.getState().past).toHaveLength(0)
   })
 
   it('a refused plan comes back as errors, never thrown', async () => {

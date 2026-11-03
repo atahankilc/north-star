@@ -1377,3 +1377,16 @@ staged files and lost this session's log text, committed apart as f2d28ac (see t
 - Step 5: CardRow in the five rows; Assignee, DueMark, Progress; check:kit's cardFace, cardEdge, typeAccent.
 - Checked each step against the commit before in the gallery (headless Chrome, old/old/new worktrees, both themes, re-shot where unsure): only the listed changes (matrix heads' faint squares a little brighter, the timeline's P1 pill, a matrix name typed with the cyan line, the task panel's card line edged, its `↗` at the row's end).
 - After: one move for everything on a plane (`startMove` in selection.ts; a card by itself through its own op; `cardsLive` gone) and the no-day tray's task on the card face (cards/TrayTask). Drags compared old vs new in headless Chrome (one card, two picked, a heading, a section with two notes: pixel-identical held and after); demo scenes plane-drag, multi-select, section, kind-section (the same; multi-select's last frame now the scene's own landing).
+
+## Done (2026-11-03): three save bugs found by the app-wide sweep (north-star-1a's report)
+- A cell's first write, a new match and a merge's new places/cells/matches name what they make (`Plan.made`): the undo
+  step reads nothing for them. Before, the read missed the cache, went to the server (slow inside the queue) and,
+  offline, threw before the write: the first value typed into an empty cell was lost with no toast. Anything that
+  fails before a UI write goes out is now said in the toast (applyUi).
+- A write in several batches (past 450 docs) with some refused: the step stays and says so (`PartlyWritten`,
+  `allCommitted` in history.ts); undo takes back what went through. All refused: the step goes, as before. Undo's own
+  restore reports the same way.
+- The agent's apply (agent/browser.ts) waits up to 5 s for the server: a refusal comes back to the model as errors,
+  never "applied"; one later than that is said in the toast.
+- Checked: tests/unit/apply.test.ts (an offline fake cache, a refused batch), agentBrowser.test.ts (a server refusal),
+  lensOps.test.ts (`made`); the offline test fails without the fix. 1024/1024 on a clean HEAD with only these files.
