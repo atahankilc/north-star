@@ -140,4 +140,77 @@ describe('/research', () => {
     expect(r.history.some((m) => m.role === 'system' && /links no web page/.test(m.content))).toBe(true)
     expect(r.warnings.map((w) => w.person)).toContain('/research: the document "Research: fees" names no sources')
   })
+
+  it('two research calls in one step never put more than RESEARCHERS on the web: the second is refused', async () => {
+    let now = 0
+    let most = 0
+    let researchers = 0
+    const script: ModelResponse[] = [
+      { text: '', toolCalls: [
+        { id: 'r1', name: 'research', args: { questions: ['a1?', 'a2?', 'a3?'], context: 'P' } },
+        { id: 'r2', name: 'research', args: { questions: ['b1?', 'b2?', 'b3?'], context: 'P' } },
+      ], usage: { input: 1, output: 1 }, stop: 'tool_calls' },
+      { text: 'done', toolCalls: [], usage: { input: 1, output: 1 }, stop: 'end' },
+    ]
+    const model: AgentModel = {
+      name: 'fake',
+      async respond(req) {
+        if (req.tools.length) return script.shift()!
+        researchers++
+        now++
+        most = Math.max(most, now)
+        await new Promise((r) => setTimeout(r, 5))
+        now--
+        return { text: 'x [p](https://a.example/1)', toolCalls: [], usage: { input: 1, output: 1 }, stop: 'end' }
+      },
+    }
+    const env = makeEnv(loadFixture('medium'))
+    const history = [{ role: 'user' as const, content: '/research fees' }, { role: 'assistant' as const, content: '1. a' }]
+    const r = await runTurn(model, env, AGENT_TOOLS, history, 'go')
+    expect(most).toBeLessThanOrEqual(RESEARCHERS)
+    expect(researchers).toBe(3)
+    expect(r.turn.steps[0].results.map((x) => x.ok)).toEqual([true, false])
+    expect(r.turn.steps[0].results[1].text).toMatch(/already running this turn/)
+  })
+
+  it("a stop during research keeps what the finished researchers spent, and starts no new one", async () => {
+    const ac = new AbortController()
+    let calls = 0
+    const script: ModelResponse[] = [{ text: '', toolCalls: [{ id: 'r1', name: 'research', args: { questions: ['a1?', 'a2?', 'a3?', 'a4?'], context: 'P' } }], usage: { input: 1, output: 1 }, stop: 'tool_calls' }]
+    const model: AgentModel = {
+      name: 'fake',
+      async respond(req) {
+        if (req.tools.length) return script.shift()!
+        const k = ++calls
+        await new Promise((ok, no) => {
+          const t = setTimeout(ok, k === 1 ? 5 : 50)
+          req.signal?.addEventListener('abort', () => (clearTimeout(t), no(Object.assign(new Error('stopped'), { name: 'AbortError' }))))
+        })
+        if (k === 1) setTimeout(() => ac.abort(), 5)
+        return { text: 'x', toolCalls: [], usage: { input: 1000, output: 500, searches: 5 }, stop: 'end' }
+      },
+    }
+    const env = makeEnv(loadFixture('medium'))
+    const history = [{ role: 'user' as const, content: '/research fees' }, { role: 'assistant' as const, content: '1. a' }]
+    const r = await runTurn(model, env, AGENT_TOOLS, history, 'go', { signal: ac.signal })
+    expect(r.turn.end).toBe('stopped')
+    expect(r.turn.usage).toMatchObject({ input: 1001, output: 501, searches: 5 })
+    // The first's worker took the fourth question before the stop; nothing started after it.
+    expect(calls).toBe(RESEARCHERS + 1)
+  })
+
+  it('a plan turn with an earlier preview still waiting gets no research check', async () => {
+    const env = makeEnv(loadFixture('medium'))
+    const plane = loadFixture('medium').pieces.find((p) => p.kind === 'plane')!
+    const m1 = stubModel([
+      { calls: [{ name: 'change', args: { ops: [{ op: 'create_card', args: { type: 'idea', plane: env.ids.short('piece', plane.id), title: 'Pending idea' } }], summary: 'one idea' } }] },
+      { answer: 'Proposed an idea.' },
+    ])
+    const t1 = await runTurn(m1, env, AGENT_TOOLS, [], 'add an idea')
+    expect(env.changes?.items.length).toBeGreaterThan(0)
+    const m2 = stubModel([{ answer: '1. What does Localmate charge?\n2. Who else?\nSay go.' }, { answer: 'again' }])
+    const t2 = await runTurn(m2, env, AGENT_TOOLS, t1.history, '/research rival fees')
+    expect(t2.history.some((m) => m.role === 'system' && /not written up/.test(m.content))).toBe(false)
+    expect((env.changes?.warnings ?? []).filter((w) => w.model.startsWith('/research'))).toEqual([])
+  })
 })

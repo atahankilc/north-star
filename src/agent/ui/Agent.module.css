@@ -24,13 +24,15 @@
 .box {
   composes: frame from '../../ui/foundation/Frame.module.css';
   position: fixed;
-  right: var(--space-3);
-  bottom: var(--space-3);
+  /* Left of a column docked on the right and clear of a pane's dock (`--box-*`, measured: Agent.tsx useBoxRoom). */
+  right: calc(var(--box-inset, 0px) + var(--space-3));
+  bottom: calc(var(--box-lift, 0px) + var(--space-3));
   z-index: var(--z-panel);
   display: flex;
   flex-direction: column;
   /* Clear of the focus dock at the bottom's middle on narrower windows (≈ 360 px wide round the middle). */
   width: clamp(var(--size-xs), calc(50vw - var(--panel-w) / 2 - var(--space-3)), var(--size-md));
+  max-width: var(--box-room, none);
   border-color: var(--line-hover);
   color: var(--fg);
   font-family: var(--font-display);

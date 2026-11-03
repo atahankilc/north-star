@@ -35,6 +35,7 @@ import { AgentGhost } from './AgentGhost'
 import { PreviewMarks } from './PreviewMarks'
 import { ChatsView, NotesDiff, NotesView } from './AgentMemory'
 import styles from './Agent.module.css'
+import { tokenPx } from '../../styles/cssToken'
 import { skillChip, useSkillMenu } from './SkillMenu'
 import { SKILLS } from '../skills'
 import { Checkbox } from '../../ui/primitives/Checkbox'
@@ -142,6 +143,56 @@ function useWhere() {
 
 // ---- Closed: the box
 
+// Where the box can stand without covering something: left of a column docked on the right (a card's or a task's
+// panel: its foot's actions were under the box), and clear of the docks on the screen's foot (a pane's beside a plane):
+// narrower, or above them when there's no room beside. Measured, written as CSS variables on the box.
+function useBoxRoom(box: React.RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    let frame = 0
+    const fit = () => {
+      frame = 0
+      const W = window.innerWidth
+      const H = window.innerHeight
+      const gap = tokenPx('--space-3')
+      const least = tokenPx('--size-xs')
+      // Only a column over the box's own corner moves it (one docked further left, in a part of the screen, doesn't),
+      // and only while there's still room left of it (else it stays in the corner: the HUD's bottom left is never covered).
+      // Its own width, not the one narrowed last time (that would let it slip out from under what it cleared).
+      el.style.removeProperty('--box-room')
+      const wide = Math.max(least, el.getBoundingClientRect().width)
+      const over = [...document.querySelectorAll<HTMLElement>('[role=dialog][data-side=right]')]
+        .filter((c) => c !== el && !c.contains(el))
+        .map((c) => c.getBoundingClientRect())
+        .filter((r) => r.width && r.right > W - gap - wide)
+      const pushed = Math.max(0, ...over.map((r) => W - r.left))
+      // Room left of it: its least width, clear of the side nav and the corner's squares (a HUD tool and its margins).
+      const inset = W - pushed - gap - least >= tokenPx('--control') + 2 * gap ? pushed : 0
+      const right = W - inset - gap
+      // Docks standing on the foot, left of the box's right edge.
+      const docks = [...document.querySelectorAll<HTMLElement>('[data-learn=dock]')].map((d) => d.getBoundingClientRect()).filter((d) => d.width && d.bottom > H - gap * 4 && d.left < right)
+      const room = docks.length ? right - Math.max(...docks.map((d) => d.right)) - gap : Infinity
+      const lift = room < tokenPx('--size-xs') ? Math.max(...docks.map((d) => H - d.top)) : 0
+      el.style.setProperty('--box-inset', `${inset}px`)
+      if (Number.isFinite(room) && !lift) el.style.setProperty('--box-room', `${Math.max(0, room)}px`)
+      else el.style.removeProperty('--box-room')
+      el.style.setProperty('--box-lift', `${lift}px`)
+    }
+    const later = () => void (frame ||= requestAnimationFrame(fit))
+    // What opens and closes (panels, panes, docks) changes the page's elements; a split line dragged, the window's size.
+    const seen = new MutationObserver(later)
+    seen.observe(document.body, { childList: true, subtree: true })
+    window.addEventListener('resize', later)
+    later()
+    return () => {
+      seen.disconnect()
+      window.removeEventListener('resize', later)
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [box])
+}
+
 function Box() {
   const mode = useAgent((s) => s.mode)
   const entries = useAgent((s) => s.chat.entries.length)
@@ -153,6 +204,8 @@ function Box() {
   const input = useRef<HTMLTextAreaElement>(null)
   const skills = useSkillMenu(text, setText)
   const viewer = isViewer(useAgent.getState().wid)
+  const boxRef = useRef<HTMLElement>(null)
+  useBoxRoom(boxRef)
   // Closed, the box's prompt never keeps the keyboard.
   useEffect(() => {
     if (!open && document.activeElement === input.current) input.current?.blur()
@@ -175,6 +228,7 @@ function Box() {
   return (
     <Appear
       as="aside"
+      elRef={boxRef}
       className={styles.box}
       data-open={open || undefined}
       // Closed it's a region of the page (an <aside>); open, a dialog the keyboard is in.

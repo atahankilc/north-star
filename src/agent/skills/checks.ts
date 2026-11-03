@@ -19,6 +19,10 @@ export type CheckCtx = {
   ids: Ids
   // What came after `/name` in the ask.
   rest: string
+  // This turn only: the items it added to the pending changes (earlier turns' may still wait in the preview), and
+  // whether `research` found something in it.
+  fresh?: Set<string>
+  researched?: boolean
 }
 // Each finding in two voices (agent-bugs 42): the model's with short ids and the fix, the person's in names only.
 type Check = (c: CheckCtx) => Warning[]
@@ -142,8 +146,11 @@ const CHECKS: Record<string, Check> = {
     return out
   },
   // /research (D-360 step 2): the findings written up as a document, its facts linked to the pages.
+  // Only in the turn the research ran (a plan turn, or one where every researcher failed, writes nothing), and only on
+  // what this turn made (a preview left from an earlier turn isn't the research's).
   research: (c) => {
-    const made = madeOf(c.cs)
+    if (!c.researched) return []
+    const made = madeOf(c.fresh ? { ...c.cs, items: c.cs.items.filter((i) => c.fresh!.has(i.id)) } : c.cs)
     const docs = c.after.documents.filter((d) => made.has(d.id))
     if (!docs.length) return [{ model: 'the research is not written up: create_document "Research: <topic>" with the findings, each fact linked', person: 'the research has no document' }]
     const out: Warning[] = []

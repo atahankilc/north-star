@@ -51,7 +51,8 @@ export async function researchOne(model: AgentModel, question: string, context: 
     if (res.stop === 'error') return { question, text: '', sources: [], usage: res.usage, error: res.error ?? 'the provider failed' }
     return { question, text: res.text.trim(), sources: res.web?.sources ?? [], queries: res.web?.queries ?? [], usage: res.usage }
   } catch (e) {
-    if (o.signal?.aborted) throw e
+    // Stopped: said as a finding, so what the others already spent is still counted (a throw would lose it).
+    if (o.signal?.aborted) return { question, text: '', sources: [], usage: { ...NO_USAGE }, error: 'stopped' }
     return { question, text: '', sources: [], usage: { ...NO_USAGE }, error: (e as Error)?.message ?? String(e) }
   }
 }
@@ -63,7 +64,8 @@ export async function researchAll(model: AgentModel, questions: string[], contex
   const worker = async () => {
     while (next < questions.length) {
       const i = next++
-      out[i] = await researchOne(model, questions[i], context, o)
+      // After a stop no new researcher starts (the provider isn't called again).
+      out[i] = o.signal?.aborted ? { question: questions[i], text: '', sources: [], usage: { ...NO_USAGE }, error: 'stopped' } : await researchOne(model, questions[i], context, o)
     }
   }
   await Promise.all(Array.from({ length: Math.min(o.at ?? RESEARCHERS, questions.length) }, worker))
@@ -103,14 +105,18 @@ export const researchTool: AgentTool = {
   run: async (env, a) => {
     if (env.skill !== 'research') return { ok: false, text: 'research runs only in /research, after the person said go to its questions. For one fact, search the web yourself.' }
     if (!env.model) return { ok: false, text: 'research has no model to run here' }
+    if (env.researching) return { ok: false, text: `research ${env.researching === 'running' ? 'is already running' : 'already ran'} this turn: one call, with every question in it. Write up the findings you have.` }
     const raw = Array.isArray(a.questions) ? a.questions : []
     const questions = [...new Set(raw.map((q) => cut(q, QUESTION_MAX)).filter(Boolean))]
     if (!questions.length) return { ok: false, text: 'research needs questions: the ones in your plan the person kept' }
     if (questions.length > RESEARCH_QUESTIONS) return { ok: false, text: `research takes at most ${RESEARCH_QUESTIONS} questions: join or drop some` }
     const context = cut(a.context, CONTEXT_MAX)
+    env.researching = 'running'
     const found = await researchAll(env.model, questions, context, { ...(env.signal ? { signal: env.signal } : {}), ...(env.onSearch ? { onSearch: env.onSearch } : {}) })
     const web: WebUse = { queries: [...new Set(found.flatMap((f) => f.queries ?? []))], sources: joinSources(found.map((f) => f.sources)) }
     const ok = found.some((f) => !f.error)
+    // Nothing found (every researcher failed): it may be called again; something found: done for this turn.
+    env.researching = ok ? 'done' : undefined
     return { ok, text: ok ? foundText(found) : `No question could be researched: ${found[0]?.error ?? 'unknown'}. Tell the person; write nothing from memory.`, usage: usageOf(found), web }
   },
 }

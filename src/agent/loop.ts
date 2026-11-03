@@ -602,7 +602,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     else {
       // A skill's checks (agent-bugs 21), once: what they find goes back for one more step; what's left after it
       // goes into the preview's warnings.
-      const found = active && env.changes ? skillChecks(active.skill.name, { before: env.getWs(), after: agentEnv.getWs(), cs: env.changes, ids: env.ids, rest: active.rest }) : []
+      const found = active && env.changes ? skillChecks(active.skill.name, { before: env.getWs(), after: agentEnv.getWs(), cs: env.changes, ids: env.ids, rest: active.rest, fresh: new Set(env.changes.items.filter((i) => !before.has(i.id)).map((i) => i.id)), researched: agentEnv.researching === 'done' }) : []
       if (found.length && !checked && n < budget) {
         checked = true
         mine.push({ role: 'system', tag: 'checks', content: CHECKS_NOTE(active!.skill.name, found) })

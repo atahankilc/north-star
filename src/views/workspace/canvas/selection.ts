@@ -66,8 +66,11 @@ export function toggleSelected(id: string) {
 export function land(moves: { id: string; to: [number, number] }[]) {
   useCanvasView.setState((s) => ({ landing: { ...s.landing, ...Object.fromEntries(moves.map((m) => [m.id, m.to])) }, dragShift: null }))
 }
-export function landed(id: string) {
+// `to`: only if it's still held there (a later drop of the same thing keeps its own).
+export function landed(id: string, to?: [number, number]) {
   useCanvasView.setState((s) => {
+    const was = s.landing[id]
+    if (!was || (to && (was[0] !== to[0] || was[1] !== to[1]))) return s
     const { [id]: _, ...rest } = s.landing
     return { landing: rest }
   })
@@ -142,15 +145,19 @@ export function startMove(e: { clientX: number; clientY: number; currentTarget: 
     d = [to[0] - from.x, to[1] - from.y]
     useCanvasView.setState({ dragShift: { ids: items.map((i) => i.id), dx: d[0], dy: d[1], shrink: true, free: [dx / zoom, dy / zoom], at, lead } })
   }
-  const up = () => {
+  const up = (ev: PointerEvent) => {
     onEnd?.()
     clearGuides()
-    if (!d || (!d[0] && !d[1])) return useCanvasView.setState({ dragShift: null })
+    // A cancel (the browser took the gesture) puts them back: only a release moves anything.
+    if (!d || (!d[0] && !d[1]) || ev.type === 'pointercancel') return useCanvasView.setState({ dragShift: null })
     const [dx, dy] = d
-    land(items.map((i) => ({ id: i.id, to: [i.x + dx, i.y + dy] })))
-    void (commit ? commit(dx, dy) : moveMany(what, items.map((i) => ({ get ref() { return i.ref }, from: { x: i.x, y: i.y }, to: { x: i.x + dx, y: i.y + dy } })))).catch(() =>
-      items.forEach((i) => landed(i.id)),
-    )
+    const moves = items.map((i) => ({ id: i.id, to: [i.x + dx, i.y + dy] as [number, number] }))
+    land(moves)
+    // Let go once the write is settled, whatever came of it: a write refused (read only while the agent works, a
+    // preview, the demo) resolves with nothing written, and the thing would stay drawn where it was dropped.
+    void (commit ? commit(dx, dy) : moveMany(what, items.map((i) => ({ get ref() { return i.ref }, from: { x: i.x, y: i.y }, to: { x: i.x + dx, y: i.y + dy } }))))
+      .catch(() => {})
+      .finally(() => moves.forEach((m) => landed(m.id, m.to)))
   }
   pressDrag(move, up)
 }

@@ -39,7 +39,9 @@ export function SidePanel({ kind, tone, title, label, onClose, actions, right = 
     <EdgeColumn
       // Left of the agent's column when it's open (`--ai-w`, S14).
       offset={`calc(${right}px + var(--ai-w, 0px))`}
-      width={width}
+      // Never wider than the room left of where it stands (a plane's part beside the tasks side view is narrower than
+      // the panel: it went off the screen's left edge).
+      width={width ?? `min(var(--panel-w), calc(100vw - ${right}px - var(--ai-w, 0px)))`}
       label={label}
       onClose={onClose}
       data-learn="card-panel"

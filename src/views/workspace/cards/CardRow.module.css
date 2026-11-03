@@ -52,10 +52,6 @@
   color: var(--fg-dim);
 }
 
-.row[data-size='screen']:is(:hover, :focus-visible) .title {
+.row[data-size='screen']:is(:hover, :focus-visible) .title:not([data-empty='true']) {
   color: var(--fg-strong);
-}
-
-.row:focus-visible {
-  outline: none;
 }

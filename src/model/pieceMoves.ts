@@ -8,16 +8,19 @@ import type { Piece } from '../data/model'
 
 export type Box = { x: number; y: number; w: number; h: number }
 const GAP = 3 * GRID
+// How far round a new piece a clear spot is looked for, in its own sizes.
+const CLEAR_REACH = 3
 const overlaps = (a: Box, b: Box) => a.x < b.x + b.w + GAP && b.x < a.x + a.w + GAP && a.y < b.y + b.h + GAP && b.y < a.y + a.h + GAP
 
 // The nearest clear place for `box` among `others` (asked 2026-10-22: "direkt baktığım yere koysun"): where it is, or
-// the nearest clear spot round it within about its own size, in steps of the grid, nearest first; with none clear,
-// where it is (on top of what's there).
+// the nearest clear spot round it within about three times its own size (one size was too little among planes: a new
+// deck or table landed on top of them), in steps of the grid, nearest first; with none clear, where it is (on top of
+// what's there).
 export function nearClearIn(box: Box, others: Box[]): Pick<Box, 'x' | 'y'> {
   const free = (b: Box) => !others.some((o) => overlaps(b, o))
   if (free(box)) return { x: box.x, y: box.y }
   const step = 4 * GRID
-  const reach = Math.ceil(Math.max(box.w, box.h) / step)
+  const reach = Math.ceil((CLEAR_REACH * Math.max(box.w, box.h)) / step)
   const tries: [number, number][] = []
   for (let i = -reach; i <= reach; i++) for (let j = -reach; j <= reach; j++) if (i || j) tries.push([i * step, j * step])
   tries.sort((a, b) => Math.hypot(...a) - Math.hypot(...b))

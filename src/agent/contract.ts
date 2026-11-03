@@ -165,6 +165,9 @@ export type AgentEnv = {
   model?: AgentModel
   signal?: AbortSignal
   onSearch?: (query: string) => void
+  // Set by `research` itself: running or done this turn, so a second call (two in one step run at once, as reads do)
+  // never puts more than RESEARCHERS on the web together or pays for the same research twice.
+  researching?: 'running' | 'done'
 }
 
 // A tool the loop can run: its definition for the model and how it runs. Read tools never write; write tools go

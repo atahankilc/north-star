@@ -1413,3 +1413,26 @@ north-star-e7 (recent commits), -48 and -51 told what each found. The user picke
   any thread change; documents list redraws on pan; Space on a workspaces-page button jumps to the prompt; Finder
   memo misses spots/places; Timeline drags without pointercancel; raw popup-closed error on the landing; join/decline
   errors swallowed; cleanup misses agentChats; the key proxy passes any tools; names not bound to auth.
+
+## Done (2026-11-03): a test pass over the last 15 commits, and its fixes (north-star-e7; pushed)
+Eight reviewers (one area each) and two headless runs on emulators over 0db26da back to f2d28ac. The refactors held
+(pan/zoom, panel sections, data/model limits and ids, words.ts all the same as before). Fixed:
+- CardRow's `.row:focus-visible { outline: none }` took the focus ring off a card's tasks, a task's card, a
+  competitor's features and a folded card's members: removed (an empty title no longer brightens on hover).
+- Backspace/Delete with focus on a button in a docked panel deleted the selected card (CanvasView's keys) or task
+  (Kanban's): CanvasView passes `docked`, Kanban `docked` + `home` (keysTaken's new option: the dock that holds the deck
+  itself, the tasks side view, doesn't count).
+- startMove let go of its landing only on a rejected write; a refused one (read only while the agent works) resolves,
+  so the card stayed drawn where dropped: released on settle (`landed(id, to)` keeps a later drop's). The piece drag the
+  same. A `pointercancel` now puts a move back (startMove and the piece drag) instead of saving it.
+- `/research`: a second call in one step ran 3 more researchers at once: `env.researching` refuses it; a stop lost the
+  finished researchers' usage: a stopped researcher is a finding, none starts after the stop; the research check fired
+  on a plan turn with an earlier preview waiting: only in the turn research found something, only on that turn's items.
+  Tests: agentResearch (3 new, fail without the fix).
+- The agent's corner box covered a card panel's foot (comment, delete) and a beside pane's dock: `useBoxRoom` measures
+  the right-docked column over its corner and the docks on the foot (moves left, narrows, or lifts).
+- A card panel beside the tasks side view went 40 px off the left edge: SidePanel's width is capped to its room.
+- nearClearIn looks three sizes round (new decks and tables landed on planes).
+Checked: tsc, vitest 1027/1027, check:kit/tokens/gallery; headless Chrome on emulators: every fix above. Left: edit
+mode's console over a small plane's corner handles; Escape during an alt box select leaves focus; the timeline tray's
+press has no pointercancel; regions drop a leading `#` (TagList).

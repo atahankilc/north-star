@@ -836,7 +836,8 @@ export function CanvasView() {
   // Delete (in edit mode) and Escape for the selected plane, unless typing somewhere.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (keysTaken(e.target)) return
+      // A key in a docked panel (a card's, the agent's, the threads) is that panel's, never a Delete for the canvas.
+      if (keysTaken(e.target, { docked: true })) return
       // An open thread or the threads panel hears Escape first (D-192); `c` shows or hides the pins.
       const tv = useThreadView.getState()
       if (e.key === 'Escape' && (tv.openId || tv.draft || tv.inbox)) return
@@ -1626,17 +1627,22 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
       if (carried.length) useCanvasView.setState({ following: { ...Object.fromEntries(followed(to).map((f) => [f.id, f.to])), [piece.id]: to } })
       else if (lens && stick) useCanvasView.setState({ following: { [piece.id]: to } })
     }
-    const up = () => {
+    const up = (ev: PointerEvent) => {
       useCanvasView.setState({ stickHint: null })
       setMoving(null)
       setSizing(null)
       // The followers stay where they were carried until their data's back.
       const done = () => useCanvasView.setState({ following: {} })
-      if (to && !same(to, from)) {
+      // A cancel (the browser took the gesture) puts it back: nothing moves that wasn't let go.
+      if (to && !same(to, from) && ev.type !== 'pointercancel') {
         // An open one's window keeps its stored size.
         const kept = (b: Box): Box => (open ? { ...b, w: piece.w, h: piece.h } : b)
         const write = lens ? placeLens(wid, piece, kept(from), kept(to), stick, followed(to)) : placePiece(wid, piece.id, from, to, kind, followed(to))
-        void write.then(done, () => (setHeld(null), done()))
+        // Settled either way, it lets go: a write refused (read only while the agent works) writes nothing and resolves.
+        void write.then(
+          () => (setHeld(null), done()),
+          () => (setHeld(null), done()),
+        )
       } else {
         setHeld(null)
         done()

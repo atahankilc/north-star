@@ -70,7 +70,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - The agent's web (D-360, docs/specs/agent-web.md, 2026-11-02): both steps built (web search on every turn, sources under the answer; `/research` with parallel researchers and a cited document); checked on the stub and pushed (a6872f8; state-history); not on a real key yet: what to watch then is in D-360's *Not yet*.
 - Shared code above the kit (D-361, docs/specs/shared-code.md, 2026-11-02): group 1 done (9df939d, eb64e97, not pushed); group 4 (drag/pan/zoom) another session's; next groups 2–3.
 - Sweep 2026-11-03 (state-history): threads' rule (pushed 0f7ddf4, deployed, 639/0), Crash boundary, loading waits for every listener; the rest is listed open there.
-- Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
+- Smaller leftovers: each decision's *Not yet* in decisions-log.md; the 2026-11-03 test pass's fixes (pushed) and left items: state-history.
 
 ## Blockers
 - Blaze: the user's payments profile was refused once (OR_BAOOC_15, likely profile country vs German card); retrying.

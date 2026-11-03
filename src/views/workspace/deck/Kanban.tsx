@@ -324,7 +324,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
     if (!live || !picked) return
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
-      if (keysTaken(t)) return
+      if (keysTaken(t, { docked: true, home: board.current })) return
       if (e.key === 'Escape') {
         e.stopImmediatePropagation()
         selectTask(piece.id, null)

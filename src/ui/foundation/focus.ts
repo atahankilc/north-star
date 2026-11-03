@@ -27,10 +27,17 @@ export const isTyping = (t: EventTarget | null) =>
 
 // Taken: typing, or a menu, a list, a modal window or a lesson holds the keys. `docked` adds what's docked beside the
 // page (`role="dialog"`: a side panel, the agent's column, the threads): a key there isn't for the canvas under it.
-// Leave it off for what can itself live in one (a deck in the tasks side view).
+// What can itself live in one (a deck in the tasks side view) passes `home`, its own element: the docked thing that
+// holds it is its own, any other still takes the keys.
 const HOLDS_KEYS = '[role=menu], [role=listbox], [aria-modal=true], [role=alertdialog], [data-coach]'
-export const keysTaken = (t: EventTarget | null, o: { docked?: boolean } = {}) =>
-  isTyping(t) || (t instanceof Element && !!t.closest(o.docked ? `${HOLDS_KEYS}, [role=dialog]` : HOLDS_KEYS))
+export function keysTaken(t: EventTarget | null, o: { docked?: boolean; home?: Element | null } = {}) {
+  if (isTyping(t)) return true
+  if (!(t instanceof Element)) return false
+  if (t.closest(HOLDS_KEYS)) return true
+  if (!o.docked) return false
+  const dock = t.closest('[role=dialog]')
+  return !!dock && !(o.home && dock.contains(o.home))
+}
 
 // Tab and shift-Tab go round inside `root`.
 export function trapTab(e: ReactKeyboardEvent | KeyboardEvent, root: HTMLElement | null) {
