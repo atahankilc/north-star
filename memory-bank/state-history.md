@@ -1438,6 +1438,9 @@ Eight reviewers (one area each) and two headless runs on emulators over 0db26da 
   the right-docked column over its corner and the docks on the foot (moves left, narrows, or lifts).
 - A card panel beside the tasks side view went 40 px off the left edge: SidePanel's width is capped to its room.
 - nearClearIn looks three sizes round (new decks and tables landed on planes).
-Checked: tsc, vitest 1027/1027, check:kit/tokens/gallery; headless Chrome on emulators: every fix above. Left: edit
-mode's console over a small plane's corner handles; Escape during an alt box select leaves focus; the timeline tray's
-press has no pointercancel; regions drop a leading `#` (TagList).
+Checked: tsc, vitest 1027/1027, check:kit/tokens/gallery; headless Chrome on emulators: every fix above.
+Then the left items, same day: Escape while drawing an alt box drops the box (focus stays); the timeline's bar and
+tray presses on pressDrag, a cancel writes and picks nothing; regions keep a leading `#` (TagList's `hash`); a
+console taking a piece's whole edge in edit mode stops short of the corner handles, and Console re-fits on its own
+resize (it grows with `--cs` as the canvas zooms; fitted a frame later, no ResizeObserver loop). Checked in headless
+Chrome (each, plus 60 zoom steps with no error); the agentResearch stop test made timer-free (it timed out under load).

@@ -29,6 +29,8 @@ import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { TimelineBar } from '../cards/TimelineBar'
 import { TrayTask } from '../cards/TrayTask'
 import { useBoardDrag } from './boardDrag'
+import { pressDrag } from '../../../ui/foundation/dragPointer'
+import { DRAG_PX } from '../../../ui/foundation/feel'
 import { CardPicker } from '../panels/CardPanel'
 import { cardsOn } from '../../../data/places'
 import type { Card } from '../../../data/cards'
@@ -46,6 +48,9 @@ import { Empty } from '../../../ui/primitives/Empty'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { cardName } from '../../../model/cardName'
+
+// A press that only picks (a viewer's, a finished task's): on its release, never on a cancel.
+const released = (then: () => void) => pressDrag(() => undefined, (ev) => void (ev.type === 'pointerup' && then()))
 
 // Its parts in its own px: model/world.ts (D-325).
 export const T = STRIP_PX
@@ -389,11 +394,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
     if (!live || e.button !== 0) return
     e.stopPropagation()
     stopStrip(piece.id)
-    if (!editor || it.finished) {
-      const up = () => (window.removeEventListener('pointerup', up), pick(it.task))
-      window.addEventListener('pointerup', up)
-      return
-    }
+    if (!editor || it.finished) return released(() => pick(it.task))
     const r = e.currentTarget.closest('[data-bar]')!.getBoundingClientRect()
     const s = scaleOf()
     const day0 = Math.floor(dayAt(e.clientX))
@@ -420,13 +421,12 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
     const track = (ev: PointerEvent) => ((last = ev), move(ev))
     edge.current.x = e.clientX
     edgeScroll(() => follow(last))
-    const up = () => {
-      window.removeEventListener('pointermove', track)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
+    const up = (ev: PointerEvent) => {
       edgeStop()
       const d = dragRef.current
       setDrag(null)
+      // A cancel (the browser took the gesture) changes nothing and picks nothing.
+      if (ev.type === 'pointercancel') return
       if (!d?.moving) return pick(it.task)
       const fields: TaskFields = {}
       const t = it.task
@@ -443,9 +443,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
       const what = d.how === 'start' ? (d.point ? 'give a task a first day' : 'change a task’s first day') : d.how === 'due' ? 'change a task’s due day' : 'move a task to other days'
       void updateTask(wid, t, fields, what)
     }
-    window.addEventListener('pointermove', track)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    pressDrag(track, up)
   }
 
   // A press on empty space: a drag moves along the days (sideways) and the rows (up and down); let go without moving,
@@ -624,11 +622,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
   const pressTray = (t: Task) => (e: ReactPointerEvent<HTMLElement>) => {
     if (!live || e.button !== 0) return
     e.stopPropagation()
-    if (!editor) {
-      const up = () => (window.removeEventListener('pointerup', up), pick(t))
-      window.addEventListener('pointerup', up)
-      return
-    }
+    if (!editor) return released(() => pick(t))
     const [sx, sy] = [e.clientX, e.clientY]
     let moved = false
     const s = scaleOf()
@@ -637,14 +631,15 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
       return [(ev.clientX - r.left) / s, (ev.clientY - r.top) / s]
     }
     const move = (ev: PointerEvent) => {
-      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 5) return
+      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < DRAG_PX) return
       moved = true
       setTrayHeld({ id: t.id, at: atOf(ev) })
     }
+    // A cancel (a touch the browser took) lets go and writes nothing; its listeners go with it (they stayed, and the
+    // next release anywhere gave the task the day under it).
     const up = (ev: PointerEvent) => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
       setTrayHeld(null)
+      if (ev.type === 'pointercancel') return
       if (!moved) return pick(t)
       const lr = timeLayer.current?.parentElement?.getBoundingClientRect()
       if (!lr || ev.clientX < lr.left || ev.clientX > lr.right || ev.clientY < lr.top || ev.clientY > lr.bottom) return
@@ -653,8 +648,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
       if (field && r) Object.assign(fields, field.set(r.key) ?? {})
       void updateTask(wid, t, fields, 'give a task a day')
     }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
+    pressDrag(move, up)
   }
 
   // What's drawn, in the time layer's px (day `origin` at 0).

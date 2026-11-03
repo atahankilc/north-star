@@ -321,6 +321,13 @@
   pointer-events: none;
 }
 
+/* Taking the whole edge in edit mode (a piece small on screen), it stops where an unwrapped one does from the corner,
+   at both ends: the bottom corners' resize handles stay free to grab. */
+.console[data-full][data-editing][data-at='edge'] {
+  left: calc(var(--space-4) * var(--cs, 1));
+  right: calc(var(--space-4) * var(--cs, 1));
+}
+
 .console[data-fresh] {
   --mk: var(--accent-magenta);
 }

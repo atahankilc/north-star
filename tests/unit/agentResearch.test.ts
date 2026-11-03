@@ -181,13 +181,13 @@ describe('/research', () => {
       name: 'fake',
       async respond(req) {
         if (req.tools.length) return script.shift()!
-        const k = ++calls
-        await new Promise((ok, no) => {
-          const t = setTimeout(ok, k === 1 ? 5 : 50)
-          req.signal?.addEventListener('abort', () => (clearTimeout(t), no(Object.assign(new Error('stopped'), { name: 'AbortError' }))))
-        })
-        if (k === 1) setTimeout(() => ac.abort(), 5)
-        return { text: 'x', toolCalls: [], usage: { input: 1000, output: 500, searches: 5 }, stop: 'end' }
+        // The first answers at once and the person stops right after; the others wait until the stop (no timers: the
+        // order never depends on how busy the machine is).
+        if (++calls === 1) {
+          setTimeout(() => ac.abort(), 0)
+          return { text: 'x', toolCalls: [], usage: { input: 1000, output: 500, searches: 5 }, stop: 'end' }
+        }
+        return new Promise((_, no) => req.signal?.addEventListener('abort', () => no(Object.assign(new Error('stopped'), { name: 'AbortError' }))))
       },
     }
     const env = makeEnv(loadFixture('medium'))

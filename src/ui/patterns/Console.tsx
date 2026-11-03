@@ -56,9 +56,15 @@ export function Console({ at, children, name, info, editing, floor, room, fill =
     fit()
     const ro = new ResizeObserver(fit)
     if (host) ro.observe(host)
+    // Its own size too: on the canvas it grows as the canvas zooms out (`--cs`) while its host's px stay the same, so a
+    // console that fit at one zoom hung past the piece at another. Fitted on the next frame: fitting inside the same
+    // observer's callback changes the size it's watching (the browser's "ResizeObserver loop" error).
+    let frame = 0
+    const self = new ResizeObserver(() => void (frame ||= requestAnimationFrame(() => ((frame = 0), fit()))))
+    self.observe(el)
     const mo = new MutationObserver(fit)
     mo.observe(el, { childList: true, subtree: true, characterData: true })
-    return () => (ro.disconnect(), mo.disconnect())
+    return () => (ro.disconnect(), self.disconnect(), mo.disconnect(), cancelAnimationFrame(frame))
   }, [room, fill])
   return (
     <div

@@ -96,13 +96,26 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
     const keep = e.shiftKey || packing ? selectedIds() : []
     let last = { x0, y0, x1: x0, y1: y0 }
     setBox(last)
+    // Escape while drawing drops the box (it used to reach the canvas and leave the focus); so does a cancel.
+    let dropped = false
+    const esc = (ev: KeyboardEvent) => {
+      if (ev.key !== 'Escape') return
+      ev.preventDefault()
+      ev.stopImmediatePropagation()
+      dropped = true
+      setBox(null)
+    }
+    window.addEventListener('keydown', esc, true)
     const move = (ev: PointerEvent) => {
+      if (dropped) return
       const [x1, y1] = at(ev)
       last = { x0, y0, x1, y1 }
       setBox(last)
     }
-    const up = () => {
+    const up = (ev: PointerEvent) => {
+      window.removeEventListener('keydown', esc, true)
       setBox(null)
+      if (dropped || ev.type === 'pointercancel') return
       const [l, t, rr, b] = [Math.min(last.x0, last.x1), Math.min(last.y0, last.y1), Math.max(last.x0, last.x1), Math.max(last.y0, last.y1)]
       if (rr - l < 3 && b - t < 3) return
       setSelection([...new Set([...keep, ...onPlane.hit({ l, t, r: rr, b }, packing)])])

@@ -29,15 +29,16 @@ type Props = {
   inlineAdd?: boolean
 }
 
-export const cleanTag = (typed: string, max: number) => typed.trim().replace(/^#/, '').trim().slice(0, max)
+// `hash`: a leading `#` is the tag's mark, not its word, so it's dropped; a list without one (regions) keeps what's typed.
+export const cleanTag = (typed: string, max: number, hash = true) => (hash ? typed.trim().replace(/^#/, '') : typed).trim().slice(0, max)
 
 export function TagList({ items, editor, word, placeholder, hash = true, max, room = Infinity, suggest = [], removeLabel = 'Remove', draft, onDraft, onAdd, onRemove, inlineAdd }: Props) {
   const add = (typed: string) => {
-    const t = cleanTag(typed, max)
+    const t = cleanTag(typed, max, hash)
     if (t && !items.includes(t) && items.length < room) onAdd(t)
     onDraft('')
   }
-  const typed = cleanTag(draft ?? '', max).toLowerCase()
+  const typed = cleanTag(draft ?? '', max, hash).toLowerCase()
   const offer = draft === null ? [] : suggest.filter((s) => !items.includes(s) && s.toLowerCase().includes(typed)).slice(0, 6)
   return (
     <>
