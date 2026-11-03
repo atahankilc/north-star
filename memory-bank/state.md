@@ -16,7 +16,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 ## Live vs not yet
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. `refactor/north-star-1.5` was merged
   into `main` (fast-forward) and pushed 2026-10-27; Pages deployed.
-- Rules: Firestore rules + indexes and RTDB deployed 2026-10-29 (RTDB again for presence `tasks`, D-300) (latest change D-292, no `bends` check); rules tests 457/0 (2026-10-29, private emulators: the usual ports were in use). Until Blaze,
+- Rules: Firestore rules + indexes and RTDB deployed 2026-10-29 (RTDB again for presence `tasks`, D-300) (latest change D-292, no `bends` check); rules tests 639/0 (2026-11-03). Until Blaze,
   deploy without Storage: `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db`.
 - Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger) and Storage
   (documents' files, D-232; `storage.rules` allow nothing yet). The assistant's client code went with 1.0 (D-248); only
@@ -63,13 +63,13 @@ something is finished, add its entry to state-history.md and leave at most one l
   through more landing changes. AsciiButton deleted (e1b86de).
 - D-344 (pushed; + Steps on Tabs, tabs scroll in one row, 2026-11-02). Open: filters as always-open toggle strips.
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Q-033 closed by D-348.
-- D-352–D-356 (2026-11-02, state-history): pushed (756bd67); firestore:rules deployed after (633/0).
-- D-348 (2026-11-01, pushed): Settings → display: hud size and background strength; the user checked it in the app.
+- D-352–D-356 (2026-11-02, state-history): pushed (756bd67), firestore:rules deployed after (633/0); D-348 (Settings → display: hud size, background strength) pushed, the user checked it.
 - D-350 (2026-11-02, pushed): the prompt family on one set of parts, done (state-history); `@` and `/` checked on emulators.
 - Cards on one face (D-358, docs/specs/cards.md): done 2026-11-02, five steps, one move (`startMove`) and the tray's task after (state-history).
 - Windows and docked panels (D-359, 2026-11-02): all eight steps and the open items done, pushed and live (f2d28ac, deploy ok); left: beside's row line wins a press where it crosses the split line (as before).
 - The agent's web (D-360, docs/specs/agent-web.md, 2026-11-02): both steps built (web search on every turn, sources under the answer; `/research` with parallel researchers and a cited document); checked on the stub and pushed (a6872f8; state-history); not on a real key yet: what to watch then is in D-360's *Not yet*.
 - Shared code above the kit (D-361, docs/specs/shared-code.md, 2026-11-02): group 1 done (9df939d, eb64e97, not pushed); group 4 (drag/pan/zoom) another session's; next groups 2–3.
+- Sweep 2026-11-03 (state-history): threads' rule (pushed 0f7ddf4, deployed, 639/0), Crash boundary, loading waits for every listener; the rest is listed open there.
 - Smaller leftovers are the *Not yet* lines of each decision in decisions-log.md (grep `Not yet`).
 
 ## Blockers

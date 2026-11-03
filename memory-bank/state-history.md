@@ -1390,3 +1390,26 @@ staged files and lost this session's log text, committed apart as f2d28ac (see t
   never "applied"; one later than that is said in the toast.
 - Checked: tests/unit/apply.test.ts (an offline fake cache, a refused batch), agentBrowser.test.ts (a server refusal),
   lensOps.test.ts (`made`); the offline test fails without the fix. 1024/1024 on a clean HEAD with only these files.
+
+## Done (app-wide sweep and three fixes, 2026-11-03)
+A read-only sweep in five areas (rules/security, data/undo/sync, canvas views, agent+ops, shell/onboarding/kit) with
+north-star-e7 (recent commits), -48 and -51 told what each found. The user picked 1, 2, 3, 6; 3 was done by north-star-48.
+- **Threads' rule** (firestore.rules, threads update): the count goes up only with a message of yours made in the same
+  batch (`lastMid` names it, the preview must be that message), down only with a message there before and gone after
+  (`takenMid`, new field); the newest message's writer may still edit `lastText`. Before, any member (viewers too) could
+  step the count to 1 and delete a thread others wrote in, or set a preview and mentions with no message. Client:
+  `reply` sets `lastMid`, `deleteMessage` sets `takenMid`. Rules tests 639/0 (6 new). Pushed (0f7ddf4, Pages ok), then
+  firestore:rules + indexes + RTDB deployed 2026-11-03; tabs open from before can't reply until they reload. Left: a long reply's preview is only checked to be shorter.
+- **Crash** (src/app/Crash.tsx, round the Routes): a page that throws or whose chunk can't load shows a line, `reload`
+  and `← back to workspaces` instead of a blank screen; resets when the path changes. chunks.ts: `loadOptional` (the
+  workspaces page's Coach reloads once, then draws nothing), sessionStorage blocked no longer throws. Not seen in a browser.
+- **workspaceData**: loading and error now wait for all 19 listeners (edges, tasks, threads, documents, evidence,
+  competitorFeatures, comparisons were left out: they popped in after the reveal, and an early delete missed them).
+- Open from the sweep (not fixed): big writes over 450 docs not atomic (ops/firestore.ts, history.ts drops the step);
+  accept rebuilds plans on today's workspace and can delete more than the preview showed (changeset.ts:775);
+  update_notes text mode overwrites a newer edit; a steer then stop restarts the agent (agentStore.ts:599); A→B one
+  render with A's data, summary written into B (hooks.ts useSnapshot; `key={wid}`); one Escape doing two things
+  (PlaneCards/Kanban/PackPick ignore defaultPrevented); ThreadChip opens a listener per chip and every item redraws on
+  any thread change; documents list redraws on pan; Space on a workspaces-page button jumps to the prompt; Finder
+  memo misses spots/places; Timeline drags without pointercancel; raw popup-closed error on the landing; join/decline
+  errors swallowed; cleanup misses agentChats; the key proxy passes any tools; names not bound to auth.
