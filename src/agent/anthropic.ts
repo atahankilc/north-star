@@ -28,7 +28,7 @@
 // a call cut off by max_tokens is an `argsError`), server-side fallbacks on a refusal where the model has them.
 //
 // THE WEB (D-360): with `req.web`, Claude's `web_search` server tool beside ours (dynamic filtering where the model has
-// it, `web_search_20260209`; else the basic one), at most WEB_SEARCHES a response. The searches run on Anthropic's side
+// it, `web_search_20260209`; else the basic one), at most WEB_SEARCHES (or `req.searches`) a response. The searches run on Anthropic's side
 // within the response; their blocks (encrypted results and citations) go back unchanged with the rest of the content.
 // A long search turn can pause (`pause_turn`): the paused content is sent back as it came and the answer goes on, at
 // most PAUSES times, the parts joined into one response.
@@ -81,7 +81,7 @@ export const fallsBack = (model: string) => /^claude-(opus-5|fable-5|sonnet-5-5)
 // Dynamic filtering (the search's results filtered by code before they reach the context): Opus, Sonnet, Fable and
 // Mythos from 4.6 on; Haiku and older models get the basic tool, which needs no code execution.
 export const filtersWeb = (model: string) => /^claude-(opus|sonnet|fable|mythos)-(4-[6-9]|[5-9])/.test(model)
-export const webTool = (model: string) => ({ type: filtersWeb(model) ? ('web_search_20260209' as const) : ('web_search_20250305' as const), name: 'web_search' as const, max_uses: WEB_SEARCHES })
+export const webTool = (model: string, searches = WEB_SEARCHES) => ({ type: filtersWeb(model) ? ('web_search_20260209' as const) : ('web_search_20250305' as const), name: 'web_search' as const, max_uses: searches })
 // How many times a paused search turn is taken up again before its answer stands as it is.
 export const PAUSES = 3
 
@@ -195,7 +195,7 @@ export function requestBody(req: ModelRequest, o: Pick<AnthropicOptions, 'model'
     // A breakpoint on the system prompt: tools + system, the same for every chat.
     ...(system !== undefined ? { system: [{ type: 'text' as const, text: system, cache_control: CACHE }] } : {}),
     messages: messages as BetaMessageParam[],
-    ...(req.tools.length || req.web ? { tools: [...req.tools.map(toClaudeTool), ...(req.web ? [webTool(o.model)] : [])], tool_choice: { type: req.toolChoice === 'none' ? ('none' as const) : ('auto' as const) } } : {}),
+    ...(req.tools.length || req.web ? { tools: [...req.tools.map(toClaudeTool), ...(req.web ? [webTool(o.model, req.searches)] : [])], tool_choice: { type: req.toolChoice === 'none' ? ('none' as const) : ('auto' as const) } } : {}),
     ...(now ? { thinking: { type: 'adaptive' as const, ...(binding ? { block_binding: { prefix_mismatch_behavior: binding } } : {}) } } : {}),
     ...(now && o.effort ? { output_config: { effort: EFFORTS[o.effort] } } : {}),
     cache_control: CACHE,

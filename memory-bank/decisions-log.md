@@ -7025,3 +7025,21 @@ drag work's own).
 **Group 3, a record per piece kind and the setup shell (2026-11-03, north-star-48):** canvas/pieceKinds.tsx (shared-code.md's Done). All four groups done.
 **Follow-up (2026-11-03, the user: "check:gallery kontrolünü ekle", puppeteer kept out of the repo):** `npm run check:gallery:live` (docs/specs/gallery.md §7): the examples that act, run in headless Chrome, fail on a `[gallery]` warning or a page error; puppeteer-core in a cache outside the repo; one tab per browser (a background tab's steps never run); CI's own `gallery-live` job, not holding the deploy. Seen failing on the old `'2'` and passing on 71 states.
 **Not yet:** the checklist's add field keeps what's typed on blur while AddField drops it (to decide); `CheckField` as a CommitField option.
+
+### D-362 · 2026-11-03 · Accepted (the user: "agentı çok sınırlandırmışız researchte bikaç tane baktıktan sonra her şeyi araştırmadım falan diyo, bu sınırlandırmayı kaldıralım")
+**`/research` researches the topic whole: no one-call cap, more questions, deeper researchers.** It used to stop after a
+few looks and say it hadn't researched everything.
+- *What changed:* the plan has as many questions as cover the topic (three at least, ≤ 20 a call, was 3–6); the agent may
+  call `research` again where the findings leave a gap (the one-call-per-turn refusal is gone; calls running together
+  share one gate of `RESEARCHERS`, 3); a researcher may run 15 searches (`RESEARCH_SEARCHES`, `ModelRequest.searches`;
+  a chat response keeps 5) and is told to search until the question is answered or the web plainly doesn't say, and to
+  give every fact it found (was 5–10 lines); what the agent reads of a finding is up to 8000 characters and 20 pages
+  (was 2500 and 8); the findings tell it to research again before writing where a question is still open.
+- *Cost:* still the person's own key; one call at most 20 × 15 searches (~$3), most far fewer. The chat's 5 a response
+  stays (D-360).
+**Alternatives:** removing every cap (one runaway call could spend a lot on the person's key); only raising the question
+count (the researchers' 5 searches and 10 lines were what cut answers short).
+**Checked:** tests/unit/agentResearch.test.ts (two calls in one step both run within 3 at once, a second call later
+runs, the researcher's request carries 15 searches), agentWeb.test.ts (both adapters take `searches`), evals
+skill-research-01–03 on the stub (pass; `--wrong` fails), `researched()` grades the first call and every call's context.
+**Not yet:** a real-key run to see how many searches a researcher really uses.

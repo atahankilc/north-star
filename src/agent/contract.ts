@@ -63,8 +63,9 @@ export type ModelMessage =
 
 // `toolChoice: 'none'`: the tools stay listed (the prompt cache's prefix stays the same) but the model must answer in
 // text: the loop's last allowed step (S12, src/agent/loop.ts). Left out: the model may call tools ('auto').
-// `web`: the provider's own web search is offered too (D-360: always, the model decides when; left out: none).
-export type ModelRequest = { messages: ModelMessage[]; tools: ToolDef[]; signal?: AbortSignal; toolChoice?: 'auto' | 'none'; web?: boolean }
+// `web`: the provider's own web search is offered too (D-360: always, the model decides when; left out: none);
+// `searches`: the most it may run in this response (left out: WEB_SEARCHES; a researcher's RESEARCH_SEARCHES, D-362).
+export type ModelRequest = { messages: ModelMessage[]; tools: ToolDef[]; signal?: AbortSignal; toolChoice?: 'auto' | 'none'; web?: boolean; searches?: number }
 
 // Why the model stopped: it wants tools run, it answered, it ran out of room, the provider's filter stopped it, the
 // model refused, or the provider failed.
@@ -165,9 +166,10 @@ export type AgentEnv = {
   model?: AgentModel
   signal?: AbortSignal
   onSearch?: (query: string) => void
-  // Set by `research` itself: running or done this turn, so a second call (two in one step run at once, as reads do)
-  // never puts more than RESEARCHERS on the web together or pays for the same research twice.
-  researching?: 'running' | 'done'
+  // Set by `research` itself: 'done' once a call this turn found something (the skill's check then asks for the
+  // document). Calls may follow one another (D-362: research again where the findings leave a gap); researchers of
+  // calls running together share one gate of RESEARCHERS.
+  researching?: 'done'
 }
 
 // A tool the loop can run: its definition for the model and how it runs. Read tools never write; write tools go

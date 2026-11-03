@@ -8,7 +8,7 @@ import { runTurn } from '../../src/agent/loop'
 import { stubModel } from '../../src/agent/stubModel'
 import { AGENT_TOOLS } from '../../src/agent/tools'
 import { foundText, researchAll, researchTool, RESEARCHER_PROMPT } from '../../src/agent/research'
-import { RESEARCHERS, RESEARCH_QUESTIONS } from '../../src/agent/web'
+import { RESEARCHERS, RESEARCH_QUESTIONS, RESEARCH_SEARCHES } from '../../src/agent/web'
 import { skillGuide, skillNamed } from '../../src/agent/skills'
 import type { AgentModel, ModelRequest, ModelResponse } from '../../src/agent/contract'
 import { makeEnv } from '../../evals/env'
@@ -64,15 +64,17 @@ describe('/research', () => {
     expect(text).toContain('- [page](https://site.example/4)')
   })
 
-  it('the tool runs only in /research, takes 1–6 questions, and keeps the context short', async () => {
+  it('the tool runs only in /research, takes 1–RESEARCH_QUESTIONS questions a call, and keeps the context short', async () => {
     const env = makeEnv(loadFixture('medium'))
     const f = slowResearchers()
     expect((await researchTool.run({ ...env, model: f.model }, { questions: ['a?'], context: 'x' })).text).toMatch(/only in \/research/)
     const inSkill = { ...env, model: f.model, skill: 'research' }
     expect((await researchTool.run(inSkill, { questions: [], context: 'x' })).ok).toBe(false)
-    expect((await researchTool.run(inSkill, { questions: Array.from({ length: RESEARCH_QUESTIONS + 1 }, (_, i) => `q${i}?`), context: 'x' })).text).toMatch(/at most 6/)
+    expect((await researchTool.run(inSkill, { questions: Array.from({ length: RESEARCH_QUESTIONS + 1 }, (_, i) => `q${i}?`), context: 'x' })).text).toMatch(new RegExp(`at most ${RESEARCH_QUESTIONS} questions a call`))
     const r = await researchTool.run(inSkill, { questions: ['a?', 'a?'], context: 'y'.repeat(2000) })
     expect(f.seen).toHaveLength(1)
+    // A researcher may search more than a chat response (D-362).
+    expect(f.seen[0]).toMatchObject({ web: true, searches: RESEARCH_SEARCHES })
     expect(String(f.seen[0].messages[1].content).length).toBeLessThan(700)
     expect(r.usage).toMatchObject({ input: 100, output: 20, searches: 2 })
     expect(r.web?.sources).toEqual([{ url: 'https://site.example/2', title: 'page', cited: true }])
@@ -115,7 +117,8 @@ describe('/research', () => {
     const g = skillGuide(skillNamed('research')!, 'rival fees')
     expect(g).toMatch(/big job: answer first with a short numbered plan/)
     expect(g).toMatch(/Never search before go/)
-    expect(g).toMatch(/one research call/)
+    expect(g).toMatch(/a research call/)
+    expect(g).toMatch(/research again with sharper questions/)
     expect(g).toMatch(/\[title\]\(url\)/)
     expect(g).toMatch(/Nothing else of the workspace goes into it/)
   })
@@ -141,7 +144,7 @@ describe('/research', () => {
     expect(r.warnings.map((w) => w.person)).toContain('/research: the document "Research: fees" names no sources')
   })
 
-  it('two research calls in one step never put more than RESEARCHERS on the web: the second is refused', async () => {
+  it('two research calls in one step both run, sharing RESEARCHERS places on the web (D-362)', async () => {
     let now = 0
     let most = 0
     let researchers = 0
@@ -168,9 +171,30 @@ describe('/research', () => {
     const history = [{ role: 'user' as const, content: '/research fees' }, { role: 'assistant' as const, content: '1. a' }]
     const r = await runTurn(model, env, AGENT_TOOLS, history, 'go')
     expect(most).toBeLessThanOrEqual(RESEARCHERS)
-    expect(researchers).toBe(3)
-    expect(r.turn.steps[0].results.map((x) => x.ok)).toEqual([true, false])
-    expect(r.turn.steps[0].results[1].text).toMatch(/already running this turn/)
+    expect(researchers).toBe(6)
+    expect(r.turn.steps[0].results.map((x) => x.ok)).toEqual([true, true])
+  })
+
+  it('a second research call after the first, for what it left open, runs too (D-362)', async () => {
+    let researchers = 0
+    const script: ModelResponse[] = [
+      { text: '', toolCalls: [{ id: 'r1', name: 'research', args: { questions: ['a1?', 'a2?', 'a3?'], context: 'P' } }], usage: { input: 1, output: 1 }, stop: 'tool_calls' },
+      { text: '', toolCalls: [{ id: 'r2', name: 'research', args: { questions: ['a2, sharper?'], context: 'P' } }], usage: { input: 1, output: 1 }, stop: 'tool_calls' },
+      { text: 'done', toolCalls: [], usage: { input: 1, output: 1 }, stop: 'end' },
+    ]
+    const model: AgentModel = {
+      name: 'fake',
+      async respond(req) {
+        if (req.tools.length) return script.shift()!
+        researchers++
+        return { text: 'x [p](https://a.example/1)', toolCalls: [], usage: { input: 1, output: 1 }, stop: 'end' }
+      },
+    }
+    const env = makeEnv(loadFixture('medium'))
+    const history = [{ role: 'user' as const, content: '/research fees' }, { role: 'assistant' as const, content: '1. a' }]
+    const r = await runTurn(model, env, AGENT_TOOLS, history, 'go')
+    expect(researchers).toBe(4)
+    expect(r.turn.steps.slice(0, 2).map((st) => st.results[0].ok)).toEqual([true, true])
   })
 
   it("a stop during research keeps what the finished researchers spent, and starts no new one", async () => {

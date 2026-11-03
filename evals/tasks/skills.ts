@@ -1840,7 +1840,7 @@ export const SKILL_TASKS: Task[] = [
     ask: '/research what rivals charge market stalls, and how many people shop at Istanbul markets',
     followUps: ['go'],
     research: RESEARCH_FOUND,
-    graders: [noWritesInTurn(1), noWebInTurn(1), researched(3, 6), docWritten({ words: ['Sources'], cites: [R('c47')], min: 1 }), docCitesWeb(3), noDeletes(), undoRestores()],
+    graders: [noWritesInTurn(1), noWebInTurn(1), researched(3, 20), docWritten({ words: ['Sources'], cites: [R('c47')], min: 1 }), docCitesWeb(3), noDeletes(), undoRestores()],
     reference: [
       calls(['query', { kind: 'card', type: 'competitor', limit: 20 }], ['search', { query: 'market' }]),
       answer(RESEARCH_PLAN),

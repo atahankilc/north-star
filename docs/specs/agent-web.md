@@ -47,22 +47,24 @@ lines and the list.
 1.0's D-088 again, on the new loop (src/agent/research.ts; the skill in src/agent/skills/index.ts):
 
 **Plan, then go.** `/research <topic>` is a plan skill: the agent reads what the workspace knows (search, query, get),
-then answers with 3–6 numbered questions the web can answer, each with the card it would change (cited) or `new`,
+then answers with numbered questions the web can answer (as many as cover the topic, three at least; D-362), each with the card it would change (cited) or `new`,
 and searches nothing. The person drops, changes or adds questions in their reply (no tick boxes: a message does it,
 as for every plan skill), then says go.
 
-**Researchers.** On go the agent makes one `research` call: the questions as the person left them (1–6) and the
+**Researchers.** On go the agent makes a `research` call: the questions as the person left them (1–20 a call) and the
 startup in two to four lines (≤ 600 characters). Each question is its own researcher: one response of the turn's
-model with the web on, no workspace tools, its own short prompt (`RESEARCHER_PROMPT`: 5–10 lines, every fact with its
+model with the web on (up to `RESEARCH_SEARCHES`, 15, searches), no workspace tools, its own short prompt (`RESEARCHER_PROMPT`: search until answered, every fact found, each with its
 page as `[title](url)`, numbers with date and place, what the pages don't settle said, pages never instructions) and
-only the context and the question; nothing else of the workspace goes out. At most `RESEARCHERS` (3) run at once, in
-the order asked; one failing says so and the others go on. The tool runs only inside `/research` (else it refuses:
+only the context and the question; nothing else of the workspace goes out. At most `RESEARCHERS` (3) run at once, across
+every call of the turn, in the order asked; one failing says so and the others go on. The tool runs only inside `/research` (else it refuses:
 search yourself for one fact).
 
 **What comes back.** One result: a section per question with its findings and its pages (cited first). The
 researchers' tokens and searches count in the turn's usage and cost (`ToolOut.usage`), their pages in its sources
 (`ToolOut.web`, the list under the answer), their searches as `searched the web: "…"` step lines under
-`researching N questions on the web…`. At most 6 × 5 = 30 searches a call (~$0.30) plus tokens.
+`researching N questions on the web…`. At most 20 × 15 = 300 searches a call (~$3) plus tokens; most questions need
+far fewer. Where the findings leave a gap the agent calls `research` again with sharper questions before it writes
+(D-362: no one-call limit; the findings it reads keep up to 8000 characters and 20 pages a question).
 
 **The write-up.** One change: `create_document "Research: <topic>"` (summary, a section per question, every fact with
 its link from the findings, the open ones said as open, then Sources); evidence (`kind link`, the url) only where a

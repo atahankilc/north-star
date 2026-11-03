@@ -67,6 +67,7 @@ describe('OpenAI: the hosted web_search', () => {
     const on = openaiBody(req({ web: true }), { model: 'gpt-5.6-terra', reasoning: 'medium' })
     expect((on.tools as { type: string }[]).map((t) => t.type)).toEqual(['function', 'function', 'web_search'])
     expect(on.max_tool_calls).toBe(WEB_SEARCHES)
+    expect(openaiBody(req({ web: true, searches: 15 }), { model: 'gpt-5.6-terra', reasoning: 'medium' }).max_tool_calls).toBe(15)
     expect(on.include).toEqual(['web_search_call.action.sources', 'reasoning.encrypted_content'])
     expect(on.store).toBe(false)
     const off = openaiBody(req(), { model: 'gpt-5.6-terra', reasoning: 'medium' })
@@ -128,6 +129,7 @@ function claudeFetch(...answers: Response[]) {
 describe('Claude: the web_search server tool', () => {
   it('dynamic filtering where the model has it, the basic tool elsewhere; capped; offered only with web', () => {
     expect(webTool('claude-opus-5-5')).toEqual({ type: 'web_search_20260209', name: 'web_search', max_uses: WEB_SEARCHES })
+    expect(webTool('claude-opus-5-5', 15).max_uses).toBe(15)
     expect(webTool('claude-sonnet-4-6').type).toBe('web_search_20260209')
     expect(webTool('claude-haiku-5-5').type).toBe('web_search_20250305')
     expect(webTool('claude-sonnet-4-5-20250929').type).toBe('web_search_20250305')

@@ -288,8 +288,8 @@ export const SKILLS: Skill[] = [
     when: 'What the workspace can\'t say: rivals\' prices, a market, a rule, what customers say in public (D-360). Plan the questions first; the web is searched only after go.',
     steps: [
       'Read what the workspace already knows about the topic (search, query, get): the project, its customers, competitors, open questions.',
-      'Plan, then wait for go: 3–6 numbered questions the web can answer, each one thing (a rival\'s price in a country, a market\'s size, a rule), and for each the card it would change (cited) or "new". Say the person can drop, change or add questions in their reply. Never search before go.',
-      'On go: one research call with the questions as the person left them and the startup in two to four lines (what, for whom, where). Nothing else of the workspace goes into it.',
+      'Plan, then wait for go: numbered questions the web can answer, as many as cover the topic whole (three at least), each one thing (a rival\'s price in a country, a market\'s size, a rule), and for each the card it would change (cited) or "new". Say the person can drop, change or add questions in their reply. Never search before go.',
+      'On go: a research call with the questions as the person left them and the startup in two to four lines (what, for whom, where). Nothing else of the workspace goes into it. Where the findings leave a gap, research again with sharper questions before writing.',
       'Then one change: create_document "Research: <topic>": a short summary first, a section per question with its findings, every fact with its link as [title](url) from the findings (none from memory), what the pages don\'t settle said as open, then Sources. Only where a finding plainly backs or contradicts a card: create_evidence on it (kind link, stance, the fact, source the site, url the page). A rival the workspace lacks: create_card competitor, if the person asked about rivals.',
       'Answer in two or three lines: what the document holds and that it waits in the preview.',
     ],

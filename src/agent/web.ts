@@ -18,8 +18,10 @@ export function siteOf(url: string): string {
   }
 }
 
-// `/research` (D-360 step 2): at most this many questions a research call takes, and how many researchers run at once.
-// Each researcher is one response of its own with the web on (≤ WEB_SEARCHES searches), so one call costs at most
-// RESEARCH_QUESTIONS × WEB_SEARCHES searches.
-export const RESEARCH_QUESTIONS = 6
+// `/research` (D-360 step 2, loosened by D-362): at most this many questions one research call takes, how many
+// researchers run at once (one call or several), and how many searches one researcher may run (more than a chat
+// response's WEB_SEARCHES: it answers one question in depth). Calls aren't counted: the agent researches again where the
+// findings leave a gap. A call costs at most RESEARCH_QUESTIONS × RESEARCH_SEARCHES searches.
+export const RESEARCH_QUESTIONS = 20
 export const RESEARCHERS = 3
+export const RESEARCH_SEARCHES = 15

@@ -28,7 +28,7 @@
 //   credit), then a message; 5xx one retry; a network failure a message; an abort throws an `AbortError`.
 //   A failure inside the stream (`response.failed`, `error`) is a response with `stop: 'error'`, not a throw.
 // - Malformed tool-call JSON is `ToolCall.argsError` (the loop tells the model), never a throw.
-// - The web (D-360): with `req.web`, OpenAI's hosted `web_search` tool beside ours, at most WEB_SEARCHES built-in calls
+// - The web (D-360): with `req.web`, OpenAI's hosted `web_search` tool beside ours, at most WEB_SEARCHES (or `req.searches`) built-in calls
 //   a response (`max_tool_calls` counts only built-in tools); its `web_search_call` items go back with the rest, the
 //   pages it read come with `web_search_call.action.sources`, the cited ones as the text's `url_citation`s.
 import { joinSources, type AgentModel, type ImagePart, type ModelEvent, type ModelMessage, type ModelRequest, type ModelResponse, type Source, type StopReason, type ToolCall, type ToolDef, type Usage } from './contract'
@@ -145,7 +145,7 @@ export function requestBody(req: ModelRequest, o: Pick<OpenAIOptions, 'model' | 
     ...(instructions !== undefined ? { instructions } : {}),
     input,
     ...(tools.length ? { tools, tool_choice: req.toolChoice ?? 'auto', parallel_tool_calls: true } : {}),
-    ...(req.web ? { max_tool_calls: WEB_SEARCHES } : {}),
+    ...(req.web ? { max_tool_calls: req.searches ?? WEB_SEARCHES } : {}),
     // TODO(S12 review): OpenAI may take `reasoning.context` (e.g. 'current_turn', to drop reasoning items of earlier
     // turns server-side); not confirmed in docs we could check offline, so not sent. The loop's compaction already
     // drops old turns' provider items.

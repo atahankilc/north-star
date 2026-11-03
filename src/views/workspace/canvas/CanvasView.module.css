@@ -321,11 +321,13 @@
   pointer-events: none;
 }
 
-/* Taking the whole edge in edit mode (a piece small on screen), it stops where an unwrapped one does from the corner,
-   at both ends: the bottom corners' resize handles stay free to grab. */
+/* Taking the whole edge in edit mode (a piece small on screen), it hangs under the edge instead of on it, a handle's
+   reach below, and stops where an unwrapped one does from the corner at both ends: the bottom edge's resize handles
+   (its corners and the bar at its middle) stay free to grab. */
 .console[data-full][data-editing][data-at='edge'] {
   left: calc(var(--space-4) * var(--cs, 1));
   right: calc(var(--space-4) * var(--cs, 1));
+  transform: translateY(calc(100% + var(--space-4) * var(--cs, 1)));
 }
 
 .console[data-fresh] {

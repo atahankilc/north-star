@@ -1457,6 +1457,10 @@ tray presses on pressDrag, a cancel writes and picks nothing; regions keep a lea
 console taking a piece's whole edge in edit mode stops short of the corner handles, and Console re-fits on its own
 resize (it grows with `--cs` as the canvas zooms; fitted a frame later, no ResizeObserver loop). Checked in headless
 Chrome (each, plus 60 zoom steps with no error); the agentResearch stop test made timer-free (it timed out under load).
+Then, the user asking: a console taking a piece's whole edge in edit mode hangs under the edge, a handle's reach below
+(~22 px on screen), so the bottom edge's middle handle is free too (headless on emulators: s/se/sw on top at every
+zoom, dragging s resizes, the console's buttons hit, 60 zoom crossings with no error); and D-362, `/research`
+loosened (more questions, more calls, 15 searches a researcher, longer findings; tests and the stub's evals).
 
 ## Done (2026-11-02 – 2026-11-03): shared code above the kit (D-361)
 Found by reading four areas (canvas, piece kinds, panels and pages, data/model/ops); planned in docs/specs/shared-code.md

@@ -278,19 +278,22 @@ export const citesWeb = (min = 1): Grader => ({
   },
 })
 
-// `/research` (D-360 step 2): one research call with min–max questions, its context short and holding no ids of
-// the workspace (only the startup in a few lines goes out).
-export const researched = (min = 3, max = 6): Grader => ({
+// `/research` (D-360 step 2, D-362): its first research call with min–max questions (more calls may follow for what
+// the findings left open), every call's context short and holding no ids of the workspace (only the startup in a few
+// lines goes out).
+export const researched = (min = 3, max = 20): Grader => ({
   name: `researched(${min}–${max})`,
   grade: (r) => {
     const rc = r.transcript.turns.flatMap((t) => t.steps.flatMap((s) => s.toolCalls)).filter((c) => c.name === 'research')
     if (!rc.length) return ok(false, 'no research call')
     const qs = Array.isArray(rc[0].args.questions) ? rc[0].args.questions.length : 0
-    const ctx = String(rc[0].args.context ?? '')
     if (qs < min || qs > max) return ok(false, `${qs} questions`)
-    if (ctx.length > 600) return ok(false, `the context runs ${ctx.length} characters`)
-    if (/\b[cptxkevfdmu]\d+\b/.test(ctx)) return ok(false, 'the context holds the workspace\'s ids')
-    return ok(rc.length === 1, rc.length === 1 ? `${qs} questions in one research call` : `${rc.length} research calls`)
+    for (const c of rc) {
+      const ctx = String(c.args.context ?? '')
+      if (ctx.length > 600) return ok(false, `the context runs ${ctx.length} characters`)
+      if (/\b[cptxkevfdmu]\d+\b/.test(ctx)) return ok(false, 'the context holds the workspace\'s ids')
+    }
+    return ok(true, `${qs} questions in the first research call${rc.length > 1 ? `, ${rc.length} calls` : ''}`)
   },
 })
 
