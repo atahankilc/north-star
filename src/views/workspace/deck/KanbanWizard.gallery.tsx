@@ -3,6 +3,7 @@ import { Canvas, onCanvas, P } from '../../../gallery/canvas'
 import { press } from '../../../gallery/docks'
 import { KanbanWizard } from './KanbanWizard'
 import { useKanbanUi } from './Kanban'
+import { stepNumber } from '../../../ui/patterns/Steps'
 
 const wizard = (then?: () => Promise<void>) => ({
   ...onCanvas({ only: [P.lunch, P.product], then: async () => (useKanbanUi.setState({ wizard: true }), await then?.()) }),
@@ -23,7 +24,7 @@ export default example({
     'features by status': wizard(() => press('[data-learn="wizard"] button', 'features by status')),
     columns: wizard(async () => {
       await press('[data-learn="wizard"] button', 'features by status')
-      await press('[data-learn="wizard"] [role="tab"]', '3')
+      await press('[data-learn="wizard"] [role="tab"]', stepNumber(3))
     }),
   },
 })

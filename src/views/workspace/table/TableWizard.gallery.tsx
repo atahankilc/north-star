@@ -3,6 +3,7 @@ import { Canvas, onCanvas, P } from '../../../gallery/canvas'
 import { press } from '../../../gallery/docks'
 import { TableWizard } from './TableWizard'
 import { useTableUi } from './Table'
+import { stepNumber } from '../../../ui/patterns/Steps'
 
 const wizard = (then?: () => Promise<void>) => ({
   ...onCanvas({ only: [P.lunch, P.product], then: async () => (useTableUi.setState({ wizard: true }), await then?.()) }),
@@ -21,7 +22,7 @@ export default example({
   states: {
     'start from': wizard(),
     'features picked': wizard(() => press('[data-learn="wizard"] button', 'features')),
-    rows: wizard(() => press('[data-learn="wizard"] [role="tab"]', '2')),
-    columns: wizard(() => press('[data-learn="wizard"] [role="tab"]', '3')),
+    rows: wizard(() => press('[data-learn="wizard"] [role="tab"]', stepNumber(2))),
+    columns: wizard(() => press('[data-learn="wizard"] [role="tab"]', stepNumber(3))),
   },
 })
