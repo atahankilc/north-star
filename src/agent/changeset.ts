@@ -40,7 +40,7 @@ import { ID_KEYS } from './idKeys'
 import { entriesOf, type MatrixSetup } from '../model/matrix'
 import { colName, type Column, type TableSetup } from '../model/table'
 import { tableRows } from '../model/lens'
-import { lineDiff, notesOf, NOTES_TITLE, type DiffLine } from '../model/notes'
+import { lineDiff, notesOf, NOTES_ID, NOTES_TITLE, type DiffLine } from '../model/notes'
 
 // Handles are read under id keys, and `handle` itself (buildBatch's own default) is never resolved.
 const HANDLE_KEYS: ReadonlySet<string> = ID_KEYS
@@ -783,6 +783,13 @@ export async function accept(cs: Changeset, apply: (plans: Plan[], as: ApplyAs) 
       const said = `Not applied: the workspace changed since the preview, so ${came.length === 1 ? 'one change' : `${came.length} changes`} no longer work${came.length === 1 ? 's' : ''} and came off: ${came.map((i) => i.line).join('; ')}${why.length ? ` (${why.slice(0, 3).join('; ')})` : ''}. Look at what's left in the preview and apply again.`
       return { ok: false, stale: true, said, cs: { ...cur, warnings: [{ model: said, person: said }, ...cur.warnings.filter((w) => !/came off: it no longer works/.test(w.model))] }, errors: came.map((i) => ({ op: i.op, message: `${i.line}: no longer works on the workspace as it is now`, fix: 'look at the preview again and apply what is left, or ask the agent to redo it' })) }
     }
+    // Everything still builds, but not to what the person saw: nothing is written, the preview shows the plans as they
+    // are now and a second apply writes them.
+    const changed = changedSince(cs.plans, cur.plans, o.rebuild.live)
+    if (changed.length) {
+      const said = `Not applied: the workspace changed since the preview, so applying now would ${changed.join(', and ')}. Look at the preview again and apply.`
+      return { ok: false, stale: true, said, cs: { ...cur, warnings: [{ model: said, person: said }, ...cur.warnings] }, errors: [{ op: 'apply', message: said, fix: 'look at the preview again and apply, or ask the agent to redo it' }] }
+    }
   }
   const label = agentLabel(cur)
   if (!cur.plans.length) return { ok: true, label, applied: [], notDone: cur.off, step: null, cs: cleared(cur) }
@@ -794,6 +801,27 @@ export async function accept(cs: Changeset, apply: (plans: Plan[], as: ApplyAs) 
   }
   const made = cur.items.flatMap((i) => i.made)
   return { ok: true, label: r.label, applied: cur.items, notDone: cur.off, step: r.step ?? null, cs: { ...cleared(cur), agentMade: [...cur.agentMade, ...made] } }
+}
+
+// What the plans rebuilt at accept do that the previewed ones didn't, in words (empty: the same): they delete more (a
+// cascade picking up what a collaborator added, the sweep's 7), or a doc replaced whole holds other text than the one
+// the preview replaced (someone wrote in the agent notes meanwhile, the sweep's 8).
+function changedSince(was: Plan[], now: Plan[], ws: WorkspaceCtx): string[] {
+  const out: string[] = []
+  const deleted = new Set(was.flatMap((p) => p.writes.filter((w) => w.del).map((w) => `${w.coll}/${w.id}`)))
+  const more = [...new Set(now.flatMap((p) => p.writes.filter((w) => w.del && !deleted.has(`${w.coll}/${w.id}`)).map((w) => w.id)))]
+  if (more.length) {
+    const named = more.map((id) => inNames(id, ws)).filter((n) => n !== 'something that is gone').slice(0, 3)
+    const rest = more.length - named.length
+    const list = named.length ? `${named.join(', ')}${rest ? ` and ${rest} more` : ''}` : `${rest} ${rest === 1 ? 'thing' : 'things'}`
+    out.push(`also delete ${list} the preview didn't show`)
+  }
+  const saw = new Map(was.flatMap((p) => Object.entries(p.seen ?? {})))
+  for (const [key, text] of now.flatMap((p) => Object.entries(p.seen ?? {}))) {
+    if (!saw.has(key) || saw.get(key) === text) continue
+    out.push(key === `docBodies/${NOTES_ID}` ? 'replace an edit someone made to the agent notes' : 'replace an edit someone made since')
+  }
+  return out
 }
 
 // Nothing pending (the counters go on, so ids are never reused in the chat; what the agent made stays known).

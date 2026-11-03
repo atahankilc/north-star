@@ -1435,6 +1435,11 @@ north-star-e7 (recent commits), -48 and -51 told what each found. The user picke
   as sent, as after a failed turn), so the turn's end no longer sends them as a new turn; words sent after the stop
   still go. Checked headless on emulators with the dev stub: steer then stop, 1 turn (2 without the fix); steer, stop,
   a new word, 2 turns (the new word's).
+- Then 7 and 8 (2026-11-03; agent bugs 46, 47): accept refuses when the plans rebuilt on today's workspace delete
+  more than the previewed ones (a cascade taking a card added since) or replace a doc whole whose text changed
+  (update_notes `text` over someone's edit; `Plan.seen` keeps the replaced text); the preview then shows the plans as
+  they are, named, and a second apply writes them (changeset.ts `changedSince`). Tests: changeset.test.ts, 3 new
+  (2 fail without it); vitest 1038/1038.
 
 ## Done (2026-11-03): a test pass over the last 15 commits, and its fixes (north-star-e7; pushed)
 Eight reviewers (one area each) and two headless runs on emulators over 0db26da back to f2d28ac. The refactors held

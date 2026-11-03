@@ -69,14 +69,14 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Windows and docked panels (D-359, 2026-11-02): all eight steps and the open items done, pushed and live (f2d28ac, deploy ok); left: beside's row line wins a press where it crosses the split line (as before).
 - The agent's web (D-360, docs/specs/agent-web.md, 2026-11-02): both steps built (web search on every turn, sources under the answer; `/research` with parallel researchers and a cited document); checked on the stub and pushed (a6872f8; state-history); not on a real key yet: what to watch then is in D-360's *Not yet*.
 - Shared code above the kit (D-361, docs/specs/shared-code.md): all four groups done 2026-11-03 (state-history); left: the checklist's blur rule.
-- Sweep 2026-11-03 (state-history): threads' rule (pushed 0f7ddf4, deployed, 639/0), Crash boundary, loading waits for every listener; then 10, 11, 14, 12, 13, 15, 17, 18, 9; the rest is listed open there.
+- Sweep 2026-11-03 (state-history): threads' rule (pushed 0f7ddf4, deployed, 639/0), Crash boundary, loading waits for every listener; then 10, 11, 14, 12, 13, 15, 17, 18, 9, 7, 8; the rest is listed open there.
 - Smaller leftovers: each decision's *Not yet* in decisions-log.md; the 2026-11-03 test pass's fixes (pushed) and left items: state-history.
 
 ## Blockers
 - Blaze: the user's payments profile was refused once (OR_BAOOC_15, likely profile country vs German card); retrying.
 
 ## Known issues
-- Agent: bugs 1–45 (45, steer then stop: fixed 2026-11-03; 44, organising moving things far: fixed in code 2026-11-02, to measure; 43, non-goals as tasks: eval edit-17 built 2026-11-02, to run on credit), order and status in docs/specs/agent-bugs.md (add new ones there). Other providers: Q-031.
+- Agent: bugs 1–47 (45–47 from the sweep: fixed 2026-11-03; 44, organising moving things far: fixed in code 2026-11-02, to measure; 43, non-goals as tasks: eval edit-17 built 2026-11-02, to run on credit), order and status in docs/specs/agent-bugs.md (add new ones there). Other providers: Q-031.
 - Emulators only: after a Storage URL fetch, a tab's next Firestore write can queue ~55 s in Chrome (HTTP/1.1 connection limit).
 - Emulators only: the 6th page load in one Chrome tab stalls ~60 s (connections per host); use a new tab per few loads.
 - Emulators only: a Firestore emulator left running for days can stop sending one workspace's live updates; restart it.

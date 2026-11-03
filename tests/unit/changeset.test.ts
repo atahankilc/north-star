@@ -13,6 +13,9 @@ import { stubModel } from '../../src/agent/stubModel'
 import { canAutoApply, closure, previewDiff, viewOf, emptyChangeset, inNames, type Changeset } from '../../src/agent/changeset'
 import { parseChange, MAX_OPS } from '../../src/agent/change'
 import { deleteAny } from '../../src/ops/delete'
+import { createCard } from '../../src/ops/cards'
+import { updateNotes } from '../../src/ops/notes'
+import { notesOf } from '../../src/model/notes'
 import { arrangeAny } from '../../src/ops/arrange'
 import { counterIds } from '../../src/ops/newId'
 import { project } from '../../src/ops/project'
@@ -327,6 +330,54 @@ describe('reviewer fixes', () => {
     const r = await change.run(e, { ops: THREE, dry_run: true })
     expect(r.text).toContain('only examples')
     expect(JSON.stringify(e.ids.toJSON())).toBe(before)
+  })
+})
+
+// The sweep's 7 and 8: everything still builds at accept, but not to what the person saw. Nothing is written; the
+// preview shows the plans as they are now, and a second apply writes them.
+describe('a rebuild at accept that does more than the preview showed', () => {
+  const as = (e: ReturnType<typeof env>, now = 1) => ({ ws: e.getWs(), actor: { uid: e.actor.uid, role: 'editor' as const }, now, newId: () => 'latecard000000000001' })
+  it('a plane deleted with a card added on it since: refused, the card named; applied on the second go', async () => {
+    const e = env()
+    const r = await change.run(e, { ops: [{ op: 'delete', args: { ids: ['p3'] }, why: 'the person asked' }] })
+    expect(r.ok, r.text).toBe(true)
+    const late = createCard(as(e), { type: 'idea', plane: R('p3'), title: 'Late idea' })
+    expect((await e.apply([late], { actor: 'person' } as never)).ok).toBe(true)
+    const steps = e.steps.length
+    const a = await e.accept()
+    expect(a.ok).toBe(false)
+    if (a.ok) return
+    expect(a.stale).toBe(true)
+    expect(a.said).toMatch(/^Not applied: the workspace changed since the preview, so applying now would also delete idea "Late idea"( and \d+ more)? the preview didn't show\. Look at the preview again and apply\.$/)
+    expect(a.said).not.toMatch(/[A-Za-z0-9]{20}/)
+    expect(e.steps.length).toBe(steps)
+    expect(e.getWs().cards.some((c) => c.title === 'Late idea')).toBe(true)
+    const b = await e.accept()
+    expect(b.ok).toBe(true)
+    expect(e.getWs().cards.some((c) => c.title === 'Late idea')).toBe(false)
+  })
+  it('nothing changed since the preview: a delete applies at once', async () => {
+    const e = env()
+    await change.run(e, { ops: [{ op: 'delete', args: { ids: ['p3'] }, why: 'the person asked' }] })
+    expect((await e.accept()).ok).toBe(true)
+  })
+  it('the notes replaced whole after someone wrote in them: refused; adding a line goes on their words', async () => {
+    const e = env()
+    expect((await change.run(e, { ops: [{ op: 'update_notes', args: { text: '# Agent notes\n\n- Berlin only.' } }] })).ok).toBe(true)
+    expect((await e.apply([updateNotes(as(e), { text: '# Agent notes\n\n- Weekends too.' })], { actor: 'person' } as never)).ok).toBe(true)
+    const a = await e.accept()
+    expect(a.ok).toBe(false)
+    if (a.ok) return
+    expect(a.said).toBe("Not applied: the workspace changed since the preview, so applying now would replace an edit someone made to the agent notes. Look at the preview again and apply.")
+    expect(notesOf(e.getWs()).text).toBe('# Agent notes\n\n- Weekends too.')
+    // Seen again: the second apply replaces them.
+    expect((await e.accept()).ok).toBe(true)
+    expect(notesOf(e.getWs()).text).toBe('# Agent notes\n\n- Berlin only.')
+    // An add is built on the notes as they are at accept, so an edit in between is kept.
+    await change.run(e, { ops: [{ op: 'update_notes', args: { add: ['Cash only'] } }] })
+    expect((await e.apply([updateNotes(as(e, 2), { text: '# Agent notes\n\n- Berlin only.\n- Sundays off.' })], { actor: 'person' } as never)).ok).toBe(true)
+    expect((await e.accept()).ok).toBe(true)
+    expect(notesOf(e.getWs()).text).toBe('# Agent notes\n\n- Berlin only.\n- Sundays off.\n- Cash only')
   })
 })
 

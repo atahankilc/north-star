@@ -45,6 +45,10 @@ export type Plan = {
   // the undo step reads nothing for them (the cache has nothing to give, and a read past it waits for the server, or
   // fails offline and loses the write). Not handles: the model never sees them.
   made?: string[]
+  // What a plan that writes a doc whole read of it first (`coll/id` → its text), when it replaces what was there
+  // (update_notes' `text`): accept refuses if the workspace now holds something else, so an edit made since the
+  // preview is never overwritten unseen.
+  seen?: Record<string, string>
   meta?: { kind?: string; ids?: string[] }
 }
 

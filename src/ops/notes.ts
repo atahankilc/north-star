@@ -61,5 +61,7 @@ export function updateNotes(ctx: OpCtx, args: UpdateNotesArgs): Plan {
     // The notes are made the first time (so undo takes them away again).
     ids: notes.doc ? {} : { [args.handle ?? '$notes']: NOTES_ID },
     meta: { kind: 'document', ids: [NOTES_ID] },
+    // Replacing the whole text: the text it replaces, so accept can tell if someone wrote in them since the preview.
+    ...(args.text !== undefined ? { seen: { [`docBodies/${NOTES_ID}`]: notes.text } } : {}),
   }
 }

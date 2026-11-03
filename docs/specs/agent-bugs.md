@@ -77,6 +77,8 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 43 | a "we won't build this" line made a task         | Judgment     | mid      | prompt, eval     | eval built, to measure |
 | 44 | organising takes things already there far away   | Guards       | mid      | code (arrange, changeset) | fixed, to measure |
 | 45 | a steer, then stop, starts the agent again       | Plumbing     | mid      | code (agentStore) | fixed            |
+| 46 | an apply deletes more than the preview showed    | Guards       | high     | code (changeset) | fixed            |
+| 47 | replacing the notes overwrites an edit made since | Guards      | mid      | code (changeset, notes) | fixed      |
 
 ## Order
 
@@ -247,6 +249,17 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     (our feature × competitor, their feature) and each other cell stated as documented (src/agent/tools.ts
     `matchNotes`, read from the pending view, so a later call that fills them stops it). A replay can't show it (the
     model's calls are fixed); the next run does.
+
+46. **An apply deletes more than the preview showed.** Found by the app-wide sweep, 2026-11-03: accept builds the plans
+    again on the workspace as it is (so a collaborator's delete comes off), and a delete's cascade then took what was
+    added since (a card put on a plane being deleted), never shown. Fixed: if the rebuilt plans delete anything the
+    previewed ones didn't, nothing is written; the preview shows the plans as they are now, named (`also delete idea
+    "…" the preview didn't show`), and a second apply writes them (changeset.ts `changedSince`).
+
+47. **Replacing the agent notes overwrites an edit made since.** Same sweep: `update_notes` with `text` was rebuilt at
+    accept on the new notes and wrote its text over them. Fixed: a plan that replaces a doc whole keeps the text it
+    replaces (`Plan.seen`); accept refuses the same way if the notes now say something else. `add`/`remove` are built
+    on the notes as they are at accept, so an edit in between is kept. Tests: changeset.test.ts (both fail without it).
 
 ## Plumbing: wiring the app to what was built
 
