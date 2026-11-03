@@ -39,10 +39,26 @@ export function useAuth(): Auth {
   return isDemo ? DEMO : state
 }
 
-// Google sign-in (D-011). A popup keeps the page and its router state intact.
+// What a failed sign-in says, in plain words. Closing the popup yourself is no error: nothing is said.
+const SIGN_IN_SAYS: Record<string, string | null> = {
+  'auth/popup-closed-by-user': null,
+  'auth/cancelled-popup-request': null,
+  'auth/user-cancelled': null,
+  'auth/popup-blocked': 'The sign-in window was blocked. Allow pop-ups for this site and try again.',
+  'auth/network-request-failed': 'Could not reach Google. Check your connection and try again.',
+}
+
+// Google sign-in (D-011). A popup keeps the page and its router state intact. Throws only what's worth saying.
 export async function signInWithGoogle() {
   if (!firebase) return
-  await signInWithPopup(firebase.auth, new GoogleAuthProvider())
+  try {
+    await signInWithPopup(firebase.auth, new GoogleAuthProvider())
+  } catch (e) {
+    const code = (e as { code?: string }).code ?? ''
+    if (!(code in SIGN_IN_SAYS)) throw e
+    const says = SIGN_IN_SAYS[code]
+    if (says) throw new Error(says)
+  }
 }
 
 // Emulator only: sign in as a fake Google user. The auth emulator accepts unsigned ID tokens.

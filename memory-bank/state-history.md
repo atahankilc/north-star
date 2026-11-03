@@ -1426,6 +1426,11 @@ north-star-e7 (recent commits), -48 and -51 told what each found. The user picke
   one reply on a plane of 30 cards, CardBody 60 → 1, chips 64 → 7; 31 frames of pan and zoom on a list of 6
   documents, rows 186 → 0. Left: the links' chips (LinkChips, one component) and a deck's TaskBoard still draw again on
   any thread change, with O(1) lookups now.
+- Then 15, 17, 18 (2026-11-03): the finder's groups memo listens to `spots` and `places` too (a piece or card put on
+  another plane showed old matches), `held` to `places`; a Google sign-in closed by the person says nothing, a blocked
+  popup or no connection says so in plain words, anything else as before (data/auth.ts, tests/unit/signIn.test.ts);
+  join, decline and withdraw on the workspaces page say a failure in the page's note instead of swallowing it.
+  Checked: tsc, the new test, check:tokens/kit/gallery/lessons/memory; not seen in a browser.
 
 ## Done (2026-11-03): a test pass over the last 15 commits, and its fixes (north-star-e7; pushed)
 Eight reviewers (one area each) and two headless runs on emulators over 0db26da back to f2d28ac. The refactors held

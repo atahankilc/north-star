@@ -115,6 +115,7 @@ export function Workspaces({ user }: { user: AuthUser }) {
   }, [q, sorted])
   useEffect(() => setPick(0), [q])
 
+  const warn = useCallback((text: string) => setNote({ text, tone: 'warn' }), [])
   const make = async (name: string, description?: string) => {
     setBusy(true)
     setNote(null)
@@ -276,11 +277,11 @@ export function Workspaces({ user }: { user: AuthUser }) {
         {q ? (
           <Found rows={rows} pick={pick} q={q} visits={visits.data} tasks={tasks} onPick={setPick} onRun={run} onMenu={openMenu} />
         ) : none ? (
-          <FirstVisit onFile={() => file.current?.click()} invites={invites.data} requests={requests.data} user={user} onJoined={go} />
+          <FirstVisit onFile={() => file.current?.click()} invites={invites.data} requests={requests.data} user={user} onJoined={go} onError={warn} />
         ) : workspaces.isLoading ? null : (
           <>
             <ContinuePiece w={sorted[0]} uid={user.id} visit={visits.data[sorted[0].id]} onOpen={() => go(sorted[0].id)} onMenu={openMenu(sorted[0])} />
-            <NeedsYou user={user} workspaces={sorted} tasks={tasks} invites={invites.data} requests={requests.data} onOpen={go} />
+            <NeedsYou user={user} workspaces={sorted} tasks={tasks} invites={invites.data} requests={requests.data} onOpen={go} onError={warn} />
             {sorted.length > 1 && (
               <>
                 <Rule name="others" count={numText(sorted.length - 1)} countAt="end" className={styles.rule} />
@@ -429,13 +430,14 @@ function Found({ rows, pick, q, visits, tasks, onPick, onRun, onMenu }: {
 }
 
 // ── What needs you ───────────────────────────────────────────────────────────────────────────────────────────────
-function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen }: {
+function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen, onError }: {
   user: AuthUser
   workspaces: WithId<Workspace>[]
   tasks: Record<string, number>
   invites: ReturnType<typeof useMyInvites>['data']
   requests: ReturnType<typeof useMyJoinRequests>['data']
   onOpen: (wid: string) => void
+  onError: (text: string) => void
 }) {
   const withTasks = workspaces.filter((w) => (tasks[w.id] ?? 0) > 0)
   const total = withTasks.reduce((n, w) => n + (tasks[w.id] ?? 0), 0)
@@ -444,9 +446,10 @@ function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen }: {
   const onAsking = useCallback((wid: string, n: number) => setAsking((a) => (a[wid] === n ? a : { ...a, [wid]: n })), [])
   const askingIn = owned.filter((w) => (asking[w.id] ?? 0) > 0)
   const [busy, setBusy] = useState<string | null>(null)
-  const runBusy = async (key: string, fn: () => Promise<unknown>) => {
+  // A refusal or a lost connection is said in the page's note, never swallowed.
+  const runBusy = async (key: string, failed: string, fn: () => Promise<unknown>) => {
     setBusy(key)
-    await fn().catch(() => {})
+    await fn().catch(() => onError(failed))
     setBusy(null)
   }
   const pieces = total + askingIn.length + invites.length + requests.length
@@ -483,10 +486,10 @@ function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen }: {
                   invited you · {people(i.memberCount)}
                 </span>
                 <ButtonGroup className={styles.acts}>
-                  <Button tone="primary" disabled={busy !== null} onClick={() => runBusy(i.id, async () => (await acceptInvite(i.workspaceId, user), onOpen(i.workspaceId)))}>
+                  <Button tone="primary" disabled={busy !== null} onClick={() => runBusy(i.id, 'Could not join. Check your connection and try again; the invite may have been taken back.', async () => (await acceptInvite(i.workspaceId, user), onOpen(i.workspaceId)))}>
                     join
                   </Button>
-                  <Button disabled={busy !== null} onClick={() => runBusy(i.id, () => declineInvite(i.workspaceId, user.email ?? ''))}>
+                  <Button disabled={busy !== null} onClick={() => runBusy(i.id, 'Could not decline the invite. Check your connection and try again.', () => declineInvite(i.workspaceId, user.email ?? ''))}>
                     decline
                   </Button>
                 </ButtonGroup>
@@ -501,7 +504,7 @@ function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen }: {
                 </span>
                 <span className={styles.needS}>you asked to join · an owner lets you in</span>
                 <span className={styles.acts}>
-                  <Button disabled={busy !== null} onClick={() => runBusy(r.id, () => withdrawJoinRequest(r.workspaceId, user.id))}>
+                  <Button disabled={busy !== null} onClick={() => runBusy(r.id, 'Could not withdraw the request. Check your connection and try again.', () => withdrawJoinRequest(r.workspaceId, user.id))}>
                     withdraw
                   </Button>
                 </span>
@@ -573,12 +576,13 @@ function StartRow({ small, onFile }: { small?: boolean; onFile: () => void }) {
 }
 
 // ── A first visit: the same page, a START piece where the continue piece goes ───────────────────────────────────
-function FirstVisit({ onFile, invites, requests, user, onJoined }: {
+function FirstVisit({ onFile, invites, requests, user, onJoined, onError }: {
   onFile: () => void
   invites: ReturnType<typeof useMyInvites>['data']
   requests: ReturnType<typeof useMyJoinRequests>['data']
   user: AuthUser
   onJoined: (wid: string) => void
+  onError: (text: string) => void
 }) {
   return (
     <>
@@ -601,7 +605,7 @@ function FirstVisit({ onFile, invites, requests, user, onJoined }: {
           </div>
         </PieceCard>
       </Appear>
-      <NeedsYou user={user} workspaces={[]} tasks={{}} invites={invites} requests={requests} onOpen={onJoined} />
+      <NeedsYou user={user} workspaces={[]} tasks={{}} invites={invites} requests={requests} onOpen={onJoined} onError={onError} />
       <StartRow onFile={onFile} />
     </>
   )

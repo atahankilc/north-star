@@ -57,7 +57,7 @@ export function Landing({ error }: { error?: string | null }) {
               ))}
             </span>
           ) : isConfigured ? (
-            <Button size="md" onClick={() => signInWithGoogle().catch((e: Error) => setSignInError(e.message))}>
+            <Button size="md" onClick={() => (setSignInError(null), signInWithGoogle().catch((e: Error) => setSignInError(e.message)))}>
               sign in with Google
             </Button>
           ) : (

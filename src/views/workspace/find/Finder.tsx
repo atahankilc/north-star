@@ -136,7 +136,8 @@ function Panel() {
   }, [summoned])
 
   // What the tables, matrices and lists hold, kept until their data changes.
-  const held = useMemo(() => new Map(), [ws.pieces, ws.cards, ws.cells, ws.documents, fieldText, user?.id])
+  // `places`: a table's rows and a matrix's axes read which planes a card is on (isOnPlane).
+  const held = useMemo(() => new Map(), [ws.pieces, ws.cards, ws.places, ws.cells, ws.documents, fieldText, user?.id])
   const groups: Group[] = useMemo(() => {
     if (going) {
       const places = placesIn(here, shownPieces(piecesOn(ws.canvas, ws.pieces, ws.spots), ws.cards), ws.labels.filter((l) => l.pieceId !== CANVAS || canvasTextOn(ws.canvas)(l)), ws.workspace.name)
@@ -193,7 +194,7 @@ function Panel() {
     }
     const places: Group[] = named.length ? [{ space: 'places', title: 'places', glyph: '⌖', count: named.length, rows: named.map((n) => n.row) }] : []
     return [...places, ...(scope === 'here' ? folded(all, here) : all)]
-  }, [going, unfolded, found, scope, here, ws.pieces, ws.cards, ws.labels, ws.cells, ws.tasks, ws.documents, ws.workspace, ws.canvas, ws.canvases, bodies, user?.id, fieldText, size, held])
+  }, [going, unfolded, found, scope, here, ws.pieces, ws.spots, ws.places, ws.cards, ws.labels, ws.cells, ws.tasks, ws.documents, ws.workspace, ws.canvas, ws.canvases, bodies, user?.id, fieldText, size, held])
 
   // Only so many rows are drawn (typing more narrows them); each group still says how many it has.
   const total = groups.reduce((s, g) => s + (g.space === 'places' ? 0 : g.count), 0)
