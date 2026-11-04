@@ -39,7 +39,7 @@
   --accent-blue: #3d7bff;
   --accent-green: #3dff8a;
 
-  /* Each card type's colour (D-045, D-326): src/ui/foundation/cardTone.ts reads these; the light theme's accents follow. */
+  /* Each card type's colour (D-045, D-326): src/ui/foundation/cardTone.ts reads these; the light theme has its own (D-368). */
   --type-customer: var(--accent-green);
   --type-problem: var(--accent-magenta);
   --type-competitor: var(--accent-yellow);
@@ -289,6 +289,10 @@
   --piece-card-edge: transparent;
   /* A card's face: this much of its type's colour over the surface, a dark tone of its left edge (D-291). */
   --card-tint: 16%;
+  /* A card in a panel (its head, its rows): its colour's tint and how much the kind's word keeps of it. None in the dark
+     theme, where the column's black holds the colours up; the light theme wears the card's own tint. */
+  --panel-tint: 0%;
+  --panel-kind-mix: 100%;
   /* What the onboarding's ink sits on when it floats over pieces (D-315, onboarding.md §4): the page at 90 %, fed to the
      hugging, feathered shade (background + box-shadow 0 0 18px 12px), one layer under all the text. */
   --ink-shade: rgba(0, 0, 0, 0.9);
@@ -310,7 +314,9 @@
   --piece-card-edge: #e6e6e8;
   --piece-tab-ink: #ffffff;
   --piece-tab-mix: var(--mix-near);
-  --card-tint: 9%;
+  --card-tint: 16%;
+  --panel-tint: var(--card-tint);
+  --panel-kind-mix: var(--mix-strong);
   --ink-shade: rgba(243, 243, 243, 0.92);
   --line: #d9d9d9;
   --fg-dim: #595959;
@@ -323,29 +329,38 @@
   --line-hover: #b5b5b5;
   --edge: #8a8a8a;
   --card-behind: #e6e6e6;
-  --sticky-mix: 34%;
+  --sticky-mix: 44%;
   --sticky-base: #ffffff;
   --sticky-shadow: rgba(0, 0, 0, 0.18);
   --chip: #fafafa;
   --fg: #111111;
   --fg-strong: #000000;
 
-  --accent-magenta: #db1a7a;
-  --accent-cyan: #0a979c;
-  --accent-yellow: #a87d00;
-  --accent-blue: #2a5fe0;
-  --accent-green: #0f9a4b;
+  /* The strongest colour of each hue that reads no worse on white than the one before it. */
+  --accent-magenta: #e00070;
+  --accent-cyan: #0095ad;
+  --accent-yellow: #b47500;
+  --accent-blue: #1955ff;
+  --accent-green: #009a43;
+
+  /* The cards' own colours in this theme: hues that stay clean as a tint on white, where the accents went tan or grey. */
+  --type-customer: #00936a;
+  --type-problem: #e11d48;
+  --type-competitor: #e8590c;
+  --type-idea: #7c3aed;
+  --type-feature: #0891b2;
+  --type-package: #2563eb;
 
   --diff-new: #4f9400;
-  --diff-edited: #c56a00;
-  --diff-moved: #2a5fe0;
-  --diff-deleted: #d42a2a;
-  --link-solves: #6d4fd6;
-  --link-part: #1f78c8;
-  --link-competes: #c2600f;
-  --link-clashes: #c41e4e;
-  --link-draws: #94741c;
-  --link-depends: #4c8a1c;
+  --diff-edited: #d25d00;
+  --diff-moved: #1955ff;
+  --diff-deleted: #df0000;
+  --link-solves: #5a2ee6;
+  --link-part: #0072e0;
+  --link-competes: #d44e00;
+  --link-clashes: #cc003b;
+  --link-draws: #a36c00;
+  --link-depends: #3b8c00;
   --link-plain: #6e6e6e;
   --link-for: #2e2e2e;
 
@@ -361,10 +376,10 @@
   --wash-1: rgba(0, 0, 0, 0.025);
   --wash-2: rgba(0, 0, 0, 0.045);
   --wash-3: rgba(0, 0, 0, 0.07);
-  --wash-cyan: rgba(10, 151, 156, 0.08);
+  --wash-cyan: rgba(0, 149, 173, 0.1);
   --wash-4: rgba(0, 0, 0, 0.11);
   --wash-5: rgba(0, 0, 0, 0.16);
-  --wash-magenta: rgba(219, 26, 122, 0.1);
+  --wash-magenta: rgba(224, 0, 112, 0.12);
   --scrim: rgba(0, 0, 0, 0.3);
   --menu: rgba(255, 255, 255, 0.96);
 }

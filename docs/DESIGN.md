@@ -47,8 +47,10 @@ References in [design/references/](design/references/):
 
 **Light theme (D-069):** dark is the default; Settings → display → theme switches to light (or `system`). Light swaps the
 tokens above for neutral light grey (`--bg #f3f3f3`, D-342), white surfaces, near-black text (`--fg #111`, `--fg-muted #444`,
-`--fg-dim #595959`, `--fg-faint #767676`, D-337) and darker accents (magenta `#db1a7a`, cyan `#0a979c`,
-yellow `#a87d00`, blue `#2a5fe0`, green `#0f9a4b`); the ASCII field prints as ink on the paper. Values in `src/styles/tokens.css`
+`--fg-dim #595959`, `--fg-faint #767676`, D-337) and darker accents, each the strongest of its hue that reads no worse on
+white (magenta `#e00070`, cyan `#0095ad`, yellow `#b47500`, blue `#1955ff`, green `#009a43`, D-368). Cards have their own
+colours in light (`--type-*`: customer `#00936a`, problem `#e11d48`, competitor `#e8590c`, idea `#7c3aed`, feature `#0891b2`,
+package `#2563eb`), which also tint a card's panel head and rows (`--panel-tint`, none in dark). The ASCII field prints as ink on the paper. Values in `src/styles/tokens.css`
 (`[data-theme='light']`); what WebGL draws (bg, accents, the night sky) also in `palettes.light` in `tokens.ts`, read through
 `usePalette()` (D-321). Text on an accent fill uses `--on-accent`; tints use `--wash-*`.
 
@@ -175,7 +177,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   only while selected (a corner's L, an edge's bar), the moving edges lit cyan, no size shown (D-347).
 - **Cards** (D-055, D-152, D-205): flat, one shape for every type; a left border and a small uppercase label in the type's
   colour (customer green, problem magenta, competitor yellow, idea white, feature cyan, package blue), the face a dark
-  tone of it (`--card-tint` of the colour over `--bg-raised`: 16 %, light 9 %; a matrix's card heads and a package's
+  tone of it (`--card-tint` of the colour over `--bg-raised`: 16 %, light too, D-368; a matrix's card heads and a package's
   band too, D-291; a kanban's card sheets and a table's card names, D-294; inside it the greys and the type's label lean to the ink so every line reads ≥ 4.5, D-295), no edge of their own (D-148); never lift or tilt (D-061). Type colours are only for type: tags are white `#chips` (D-056). Inside: a
   header (type label; the status, regions, priority or rating, then evidence cells: filled supports, outlined against,
   magenta when they disagree with the status), the title (≤ 3 lines), a dim mono facts line, tag chips. Smaller on

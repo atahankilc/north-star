@@ -455,6 +455,7 @@ function Holds({ n, card, cards, editor }: P) {
         <PanelRow
           key={c.id}
           tree={{ depth, mark: depth ? '└' : '▌', tone: depth ? undefined : TONE[c.type] }}
+          card={TONE[c.type]}
           name={c.title || PLACEHOLDER[c.type]}
           onGo={() => goToCard(c)}
           type={c.validation ?? c.priority ?? c.type}
@@ -786,6 +787,7 @@ export function LinkSection({ n, name, card, cards, editor, links, add, count, e
           <PanelRow
             key={e.id}
             tone={linkTone(e.kind)}
+            card={TONE[other.type]}
             kind={out ? `${kind} →` : `← ${kind}`}
             name={other.title || PLACEHOLDER[other.type]}
             onGo={() => goToCard(other)}

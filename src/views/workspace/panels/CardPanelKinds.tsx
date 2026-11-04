@@ -26,6 +26,7 @@ import { createEdge } from '../../../data/edges'
 import { useWs } from '../canvas/context'
 import { useCanvasView } from '../../../state/canvasView'
 import { linkTone } from '../plane/PlaneLinks'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { packageTree } from '../plane/cardInside'
 import { confidenceFor } from '../plane/cardFacts'
 import styles from './CardPanel.module.css'
@@ -329,6 +330,7 @@ export function Parts({ n, card, cards, editor }: P) {
         <PanelRow
           key={e.id}
           tree={{ depth, mark: last ? '└' : '├' }}
+          card={CARD_TONE[c.type]}
           name={c.title || PLACEHOLDER[c.type]}
           onGo={() => goToCard(c)}
           type={c.status ?? c.validation}
@@ -446,6 +448,7 @@ export function RestsOn({ n, card, cards, editor }: P) {
         <div key={e.id}>
           <PanelRow
             tone={linkTone(e.kind)}
+            card={CARD_TONE[c.type]}
             kind={e.fromId === card.id ? `${KIND_LABEL[e.kind] ?? e.kind} →` : `← ${KIND_LABEL[e.kind] ?? e.kind}`}
             name={c.title || PLACEHOLDER.idea}
             onGo={() => goToCard(c)}
@@ -457,7 +460,7 @@ export function RestsOn({ n, card, cards, editor }: P) {
             .filter((s) => s.kind === 'solves' && s.fromId === c.id && byId.has(s.toId))
             .map((s) => {
               const p = byId.get(s.toId)!
-              return <PanelRow key={s.id} tone={linkTone('solves')} faint kind="· solves" name={p.title || PLACEHOLDER.problem} onGo={() => goToCard(p)} type={status(p)} />
+              return <PanelRow key={s.id} tone={linkTone('solves')} card={CARD_TONE[p.type]} faint kind="· solves" name={p.title || PLACEHOLDER.problem} onGo={() => goToCard(p)} type={status(p)} />
             })}
         </div>
       ))}
@@ -497,6 +500,7 @@ export function MatchedBy({ card, cards, editor }: { card: Card; cards: Card[]; 
         <PanelRow
           key={c.id}
           tone="var(--accent-yellow)"
+          card={CARD_TONE[who.type]}
           kind="≈ theirs"
           name={`${who.title} · ${f.name}`}
           onGo={() => goToCard(who)}

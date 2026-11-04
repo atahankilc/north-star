@@ -1501,3 +1501,9 @@ checks, and headless gallery shots against an old worktree (a real node_modules 
 a second old shot as noise; own ports, other sessions hold 5179, 5194, 5197). Also fixed: the wizards' gallery step
 states (they pressed `2`, the tabs read `02`).
 
+
+## Done (2026-11-04): light theme's colours stronger, cards with their own (D-368)
+Accents, links and diffs at the strongest colour each hue allows without reading worse on white; `--type-*` own values in
+light; card tint 16 %; `--panel-tint` on a side panel's head and title, `CardRow` and `PanelRow`. Dark theme's look unchanged. Checked in
+the gallery in headless Chrome (D-368's *Checked*); what wasn't seen is in its *Not yet*. Written with other sessions
+editing the repo, not reachable by message (apparently under another Claude profile): only named files staged.

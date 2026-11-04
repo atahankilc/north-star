@@ -13,6 +13,13 @@
   overflow-wrap: anywhere;
 }
 
+/* The head and title of a panel about a coloured thing wear its colour, as its card does (--panel-tint: none in the
+   dark theme); the kind's word leans to the ink there, as on a card's face (D-295). */
+.toned {
+  background: color-mix(in srgb, var(--tone) var(--panel-tint), transparent);
+  --panel-kind: color-mix(in srgb, var(--tone) var(--panel-kind-mix), var(--fg));
+}
+
 .body {
   flex: 1;
   min-height: 0;

@@ -12,6 +12,8 @@ type Props = {
   faint?: boolean
   // A tree row instead: how deep and its mark (`└`, `├`, `▌`), its colour when it has one.
   tree?: { depth: number; mark: string; tone?: string }
+  // The colour of the card it goes to: the row's tint (--panel-tint, none in the dark theme).
+  card?: string
   name: ReactNode
   onGo: () => void
   goTitle?: string
@@ -20,11 +22,15 @@ type Props = {
   removeTitle?: string
 }
 
-export function PanelRow({ tone, kind, faint, tree, name, onGo, goTitle, type, onRemove, removeTitle = 'Remove' }: Props) {
+export function PanelRow({ tone, kind, faint, tree, card, name, onGo, goTitle, type, onRemove, removeTitle = 'Remove' }: Props) {
   return (
     <div
       className={tree ? styles.part : styles.link}
-      style={tree ? { paddingLeft: `calc(${tree.depth} * var(--space-4))` } : { ['--tone' as string]: tone ?? 'var(--fg)' }}
+      data-card={card ? true : undefined}
+      style={{
+        ...(tree ? { paddingLeft: `calc(${tree.depth} * var(--space-4))` } : { ['--tone' as string]: tone ?? 'var(--fg)' }),
+        ...(card ? { ['--row-card' as string]: card } : undefined),
+      }}
     >
       {tree ? (
         <span className={styles.tree} style={tree.tone ? { color: tree.tone } : undefined}>

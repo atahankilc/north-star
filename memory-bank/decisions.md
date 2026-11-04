@@ -102,7 +102,7 @@ feature comes back as a piece, and check them with the user then.
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063,
   D-069), which also holds the background's strength (soft / normal / strong) and the HUD's size (small / normal /
   large), normal by default (D-348). Light theme via tokens under `[data-theme='light']` and `usePalette()` (three.js too;
-  `Palette` only what WebGL reads, D-321), bg `#f3f3f3` (D-342), no-flash script (D-069); the backdrop prints bolder, darker glyphs in light (D-342).
+  `Palette` only what WebGL reads, D-321), bg `#f3f3f3` (D-342), no-flash script (D-069); the backdrop prints bolder, darker glyphs in light (D-342). Light's accents the strongest of each hue that reads no worse on white; its cards have their own `--type-*` colours (idea violet); a card's colour tints its panel head and rows there (`--panel-tint`, none in dark) (D-368).
 - Buttons are cells (D-344, DESIGN.md §6): every button the same cell (`--wash-2`, a step brighter on hover), its kind
   only fill and ink: `main`, `primary` the one go of a surface (solid cyan, at most one), `danger`, `hazard` (solid
   magenta where deleting is the point), `pressed`; 24 px, glyphs 24 × 24, HUD tools 30, the page's 36 white; no brackets,
@@ -199,7 +199,7 @@ feature comes back as a piece, and check them with the user then.
   height, faint corner marks (D-347), kind + `[×] esc`, an Inter title, `01 NAME ──` sections, a `[verb]` foot; cell by cell.
 
 ## Cards and links on planes
-- Plane details (D-291, D-294): a card's face is `--card-tint` of its type's colour (16 %, light 9 %), on kanbans and a
+- Plane details (D-291, D-294): a card's face is `--card-tint` of its type's colour (16 % in both themes, D-368), on kanbans and a
   table's card names too (not tasks); `existing card…` last under a rule; a section or unfolded package dragged shrinks
   with what it holds as one, only its landing L's shown; text's L's on its edges, a heading's or paragraph's landing
   rounded up to the grid. Inside a tinted face the greys and the type's colour lean to the ink, every line ≥ 4.5 (D-295).

@@ -7112,3 +7112,24 @@ passed alone), check:tokens, check:kit, check:gallery, check:lessons.
 **Tried:** a piece too small on the screen hid what's in it and showed its kind's icon and name fitted in its middle, on a tint of the kind's colour, cell by cell both ways; first under a fixed canvas zoom, then by the piece's own size (under 280 × 140 on the screen).
 **Decision:** taken out. What's in a piece shows at every zoom; D-263's plain surface holds. D-365 (names, kind tab, drawn icons, sections) stays.
 **Why not:** the user's call after seeing it; don't propose it again unless asked.
+
+### D-368 · 2026-11-04 · Accepted (the user: "all the colors in light mode seems to washed out, and they do not pop out"; "you forgot the panel cards?"; "i am not liking the card colors in the light mode. But in terms of brightness and eye catching, this contrast is good. Find better colors for cards")
+**Decision:** the light theme's colours are stronger, and its cards have colours of their own. Dark theme looks as before.
+- **Accents and lines:** each light accent is the strongest colour of its hue that reads no worse on white than the one
+  before: magenta `#e00070`, cyan `#0095ad`, yellow `#b47500`, blue `#1955ff`, green `#009a43` (`palettes.light` the same).
+  Link and diff colours the same way (`--diff-new` could not gain and stays). `--wash-cyan` and `--wash-magenta` a step stronger.
+- **Cards:** `--type-*` no longer follow the accents in light: customer `#00936a`, problem `#e11d48`, competitor
+  `#e8590c`, idea `#7c3aed`, feature `#0891b2`, package `#2563eb`. Ideas are violet in light and white in dark, since a
+  white card colour can't work on a light page.
+- **Faces:** `--card-tint` 16 % in both themes (light was 9 %); sticky notes `--sticky-mix` 44 % (was 34 %).
+- **Panels:** `--panel-tint` (0 % in dark, the card's tint in light): a side panel with a tone wears it on its head and
+  title, its kind's word leaning to the ink (`--panel-kind-mix`); `CardRow` at screen size has it; `PanelRow` takes the
+  card it goes to (`card`), with a hairline of the page between rows.
+**Why:** darkening every accent enough to read as text on white had dulled them, and at 9 % a card's face was nearly white.
+Panels never used the tint, so changing values didn't reach them. The accents' dark tones went tan and grey as tints.
+**Alternatives:** one accent split into a vivid fill and a dark text colour (not done: every use would change); two other
+card palettes tried on the canvas (one muddier, one with an olive green). A warmer page than `#f3f3f3` stays rejected (D-069).
+**Checked:** gallery in headless Chrome, light (canvas, card faces; customer, feature, package and competitor
+panels), and dark (canvas, the customer panel); the contrast of each new accent and link or diff colour on white computed against the old one; tsc, unit tests, check:tokens, check:kit, check:gallery.
+**Not yet:** the real app, `CardRow` with its tint (the card panel's own task rows have no tone), a task panel and solid buttons not seen; piece kinds' tabs and `≈ theirs` keep the
+accents, so they no longer match the card colours exactly; a competitor's feature rows in its panel aren't tinted; cyan, green and yellow accents as text stay about 3.6:1 on white, as before.

@@ -47,11 +47,11 @@ export const palettes: Record<Theme, Palette> = {
   },
   light: {
     bg: '#f3f3f3',
-    magenta: '#db1a7a',
-    cyan: '#0a979c',
-    yellow: '#a87d00',
-    blue: '#2a5fe0',
-    green: '#0f9a4b',
+    magenta: '#e00070',
+    cyan: '#0095ad',
+    yellow: '#b47500',
+    blue: '#1955ff',
+    green: '#009a43',
     // Same as dark: the ASCII pass prints brightness as ink and darkens the hue itself, so darker values would barely show.
     ember: '#ff4a26',
     dawn: '#ff9a2e',

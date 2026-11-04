@@ -47,8 +47,8 @@ export function SidePanel({ kind, tone, title, label, onClose, actions, right = 
       data-learn="card-panel"
       style={{ ['--tone' as string]: tone ?? 'var(--accent-magenta)' }}
     >
-      <PanelHead kind={kind} tools={tools} onClose={onClose} />
-      <div className={styles.title}>{title}</div>
+      <PanelHead className={tone ? styles.toned : undefined} kind={kind} tools={tools} onClose={onClose} />
+      <div className={[styles.title, tone ? styles.toned : ''].filter(Boolean).join(' ')}>{title}</div>
       <div className={styles.body}>{children}</div>
       {actions && <footer className={styles.foot}>{actions}</footer>}
     </EdgeColumn>

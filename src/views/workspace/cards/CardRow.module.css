@@ -26,6 +26,11 @@
   box-shadow: inset var(--line-w-bold) 0 0 var(--tone);
 }
 
+/* In a panel, its card's tint too (--panel-tint: none in the dark theme); on a card's face the face already has one. */
+:where(.row[data-tone='true'][data-size='screen']) {
+  background: color-mix(in srgb, var(--tone) var(--panel-tint), transparent);
+}
+
 :where(.row[data-size='world']) {
   font-size: var(--w-text-xs);
 }

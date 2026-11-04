@@ -11,6 +11,13 @@ export default example({
   file: 'src/views/workspace/panels/PanelRow.tsx',
   note: 'one row of a panel’s list (D-361): links, planes, rests on, matched by; parts and a package’s holds as a tree',
   states: {
+    'tinted by the card it goes to (light theme)': () => (
+      <Box>
+        <PanelRow tone="var(--link-solves)" card="var(--type-problem)" kind="solves →" name="Cooks waste an hour a day" onGo={go} type="problem" />
+        <PanelRow tree={{ depth: 0, mark: '▌', tone: 'var(--type-feature)' }} card="var(--type-feature)" name="Lunch preorder" onGo={go} type="planned" />
+        <PanelRow tone="var(--accent-yellow)" card="var(--type-competitor)" kind="≈ theirs" name="Toast · Order ahead" onGo={go} type="paid" />
+      </Box>
+    ),
     links: () => (
       <Box>
         <PanelRow tone="var(--accent-magenta)" kind="solves →" name="Cooks waste an hour a day" onGo={go} type="problem" onRemove={go} removeTitle="Unlink" />
