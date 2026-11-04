@@ -13,6 +13,9 @@ export const ZOOM_MAX = 4
 // How far a plane's few cards grow to fill the space (D-363): its picture on the canvas, and its view in focus.
 export const PLANE_FIT_MAX = { picture: 2, focus: 1.5 }
 
+// Under this canvas zoom a piece's name is big enough that its tab keeps only its icon (D-370).
+export const KIND_WORD_ZOOM = 0.5
+
 // One wheel step's zoom: a pinch (ctrl, a trackpad) moves faster than a mouse wheel.
 const WHEEL = 0.0015
 const PINCH = 0.01

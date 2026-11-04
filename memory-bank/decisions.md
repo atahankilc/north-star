@@ -129,7 +129,7 @@ feature comes back as a piece, and check them with the user then.
     screen's foot; past 70 % of its edge (its open drawer counted) it takes the whole edge and wraps, the drawer spanning it too (D-354); no size in edit mode; marks (faint L's,
     cyan when pointed at) on its visible corners, no edge line, the selection bars too. Shown only while pointed at
     (cells in 170 / out 90 ms), in edit mode, with its setup open or the keyboard in it; fresh comments keep a small
-    tab; grows as the canvas zooms out (`--cs`, ≤ 1.4 ×); on touch a first tap shows it, a second focuses.
+    tab; its text always the size of the piece's name (`--cs`, D-370); on touch a first tap shows it, a second focuses.
   - `Marks` (D-265, D-270, D-272; `src/ui/primitives/Marks.tsx`) on everything selectable: three tiers in screen px (a step down
     when small), distance = state, tone = what it is, cyan = what you can do, press 70 ms, release a spring; a drag goes
     0.8 round the point held with `<Landing>` L's where it lands (a kanban opens a gap); `<BoxSelect>`; others'
@@ -182,7 +182,7 @@ feature comes back as a piece, and check them with the user then.
   (fetched ahead, one reload after a deploy); three.js, Firebase and React are files of their own that keep their names
   across deploys (D-288).
 - Piece names (D-223, D-365): in the top edge of every piece, 18 px close to 24 px far on screen, `--fg` caps weight 500,
-  after the kind's tab, a solid cell in its colour with a drawn icon and word (`▦ PLANE 01 PAZAR`); `…` first, then the
+  after the kind's tab, a solid cell in its colour with a drawn icon and word (`▦ PLANE 01 PAZAR`), under 50 % zoom only the icon (D-370); `…` first, then the
   tab's word goes, all of it on hover. Sections on a canvas never smaller on screen than 24 px. Edit mode: a cyan-framed
   field, a `>` and `17/80`.
 - Focus (D-184, D-185, D-189): `[focus]` or a double-click (D-198) makes a plane the view (`?focus=<id>`); the plane

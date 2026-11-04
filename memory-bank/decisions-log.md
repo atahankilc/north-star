@@ -7133,3 +7133,9 @@ card palettes tried on the canvas (one muddier, one with an olive green). A warm
 panels), and dark (canvas, the customer panel); the contrast of each new accent and link or diff colour on white computed against the old one; tsc, unit tests, check:tokens, check:kit, check:gallery.
 **Not yet:** the real app, `CardRow` with its tint (the card panel's own task rows have no tone), a task panel and solid buttons not seen; piece kinds' tabs and `≈ theirs` keep the
 accents, so they no longer match the card colours exactly; a competitor's feature rows in its panel aren't tinted; cyan, green and yellow accents as text stay about 3.6:1 on white, as before.
+
+### D-370 · 2026-11-04 · Accepted (the user: "component consolu ile component başlığı aynı büyüklükte olsunlar hep, referansı başlıktan alabilirsin. Yazı büyüdükçe componentin iconu kalabilir ama type'ını belki saklarız"; changes D-264's console size, D-365's tab)
+**Decision:** a piece's console always has the same text size on the screen as its name: `nameSize(zoom)` (CanvasView.tsx) sets `--name-size` and `--cs` from one place, so 18 px close to 24 px far, and the console's padding and gaps grow with it (was 12 px × up to 1.4). Under 50 % canvas zoom (`KIND_WORD_ZOOM`, feel.ts), when the name is big, the kind's tab keeps only its icon; the word folds away over `--dur-quick`. Unnamed, the word stays, since it's all there is.
+**Why:** one size for what belongs to one piece; the word took the room the name needed.
+**Checked:** measured headless at 36 % and 75 %: name 21.9 and 19.5 px, console the same; gallery canvas.
+**Not yet:** a console 1.5 × bigger at 100 % wraps sooner on small pieces (D-354's whole edge), to see by eye.

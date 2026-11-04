@@ -74,8 +74,9 @@ import { usePlaneFilter } from './planeFilter'
 import styles from './CanvasView.module.css'
 import { DUR, easeInOut, lerp } from '../../../ui/foundation/motion'
 import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
-import { DRAG_PX, PLANE_FIT_MAX, wheelStep, zoomAt } from '../../../ui/foundation/feel'
+import { DRAG_PX, KIND_WORD_ZOOM, PLANE_FIT_MAX, wheelStep, zoomAt } from '../../../ui/foundation/feel'
 import { PIECE_GLYPH } from './glyphs'
+import { tokenPx } from '../../../styles/cssToken'
 import type { PieceKind } from '../../../data/model'
 import { panPointer, pressDrag } from '../../../ui/foundation/dragPointer'
 import { keysTaken } from '../../../ui/foundation/focus'
@@ -1449,7 +1450,9 @@ function KindTab({ kind }: { kind: PieceKind }) {
   return (
     <span className={styles.nameTab}>
       {PIECE_GLYPH[kind]}
-      <span className={styles.nameTabWord}>{KIND_NAME[kind]}</span>
+      <span className={styles.nameTabWord}>
+        <span>{KIND_NAME[kind]}</span>
+      </span>
     </span>
   )
 }
@@ -1666,7 +1669,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
       // A matrix in focus is its focused copy's: the one here would show under it as it glides.
       data-away={bare && focusing ? true : undefined}
       // --z: the canvas's zoom, so the name holds its size on the screen (D-223).
-      style={{ ...carried, left, top, width: box.w, height: box.h, ['--cs' as string]: consoleScale(zoom), ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px`, ['--z' as string]: zoom }}
+      style={{ ...carried, left, top, width: box.w, height: box.h, ['--cs' as string]: consoleScale(zoom), ['--name-size' as string]: `${nameSize(zoom)}px`, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px`, ['--z' as string]: zoom }}
       ref={self}
       onPointerDown={(e) => (tap(e), press('move')(e))}
       onPointerEnter={(e) => (hover(true)(), e.pointerType !== 'touch' && setPointed(true))}
@@ -1677,7 +1680,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
       ) : (
         // Its kind's tab, then the name (D-365); unnamed: the tab alone. A number it starts with in magenta before it
         // (D-266); unframed, the name is a heading's small line, `04 ── RIVALS` (D-267).
-        <span className={styles.name} title={name || undefined}>
+        <span className={styles.name} data-wordless={(name && zoom < KIND_WORD_ZOOM) || undefined} title={name || undefined}>
           <KindTab kind={kind} />
           {numbered.num && <span className={styles.nameNum}>{numbered.num}</span>}
           {numbered.num && open && <span className={styles.nameRule} aria-hidden />}
@@ -1858,9 +1861,15 @@ const movingWith = (id: string) => {
   return editing.includes(id) ? editing : [id]
 }
 
-// A console's size on the screen (D-264): 11 px at 100 % and over, growing as the canvas zooms out, 1.4 times at most
-// (70 %: 13.1 px; 50 % and under: 15.4 px). In the canvas's px, so its zoom's divided back out.
-const consoleScale = (zoom: number) => Math.min(1.4, Math.max(1, zoom ** -0.5)) / zoom
+// A piece's name on the screen (D-365): 18 px at 100 % and closer, growing to 24 px as the canvas zooms out.
+function nameSize(zoom: number) {
+  const near = tokenPx('--piece-name-near')
+  const far = tokenPx('--piece-name-far')
+  return Math.min(far, Math.max(near, far - (far - near) * zoom))
+}
+
+// A console's size: its text always the size of the piece's name (D-370). In the canvas's px, so its zoom's divided back out.
+const consoleScale = (zoom: number) => nameSize(zoom) / tokenPx('--text-xs') / zoom
 
 function PlaneConsole({ comments, editing = false, unframed = false, noun = 'plane', onFocus, onEdit, onDelete, onMove, onAlso, shared, className, link, open, extra, shown = true }: ConsoleProps) {
   // Shown only while the piece is pointed at (D-264), in edit mode, or with the keyboard in it: built cell by cell as it

@@ -189,12 +189,11 @@
 
 /* A piece's name (D-180, D-223, D-365): set into the top edge, held at a size on the screen whatever the canvas's zoom:
    18 px at 100 %, growing to 24 px as you zoom out, where names are what you find things by. `--z` is the canvas's zoom,
-   set on the piece. Its kind's tab comes first (`▦ PLANE 01 PAZAR`); when it doesn't fit, the name is cut with `…`, then
+   and `--name-size` set on the piece (a piece's console reads the same, D-370). Its kind's tab comes first
+   (`▦ PLANE 01 PAZAR`), only its icon once the name is big (D-370); when it doesn't fit, the name is cut with `…`, then
    the tab's word goes, all of it shown while hovered. Sitting mostly over the edge, so the bigger name covers no more of
    what's inside than the smaller one did. */
 .name {
-  --name-size: clamp(var(--piece-name-near), calc(var(--piece-name-far) - (var(--piece-name-far) - var(--piece-name-near)) * var(--z, 1)), var(--piece-name-far));
-
   position: absolute;
   /* Over the plane's cards (D-187). */
   z-index: var(--z-1);
@@ -267,7 +266,6 @@
   overflow: hidden;
   flex: 0 1 auto;
   align-items: center;
-  gap: 0.4em;
   min-width: 2.25em;
   padding: 0.15em 0.5em;
   background: color-mix(in srgb, var(--kind) var(--piece-tab-mix), var(--on-accent));
@@ -283,8 +281,24 @@
 }
 
 .nameTabWord {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-width: 0;
+  transition: grid-template-columns var(--dur-quick) var(--ease-out);
+}
+
+.nameTabWord > span {
   overflow: hidden;
   min-width: 0;
+  padding-left: 0.4em;
+}
+
+.name[data-wordless] .nameTabWord {
+  grid-template-columns: 0fr;
+}
+
+.name[data-wordless] .nameTabWord > span {
+  padding-left: 0;
 }
 
 /* The name in edit mode (D-179, D-180, D-223): a field on the edge framed in cyan, a cyan `>` before what's typed and

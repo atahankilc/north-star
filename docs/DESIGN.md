@@ -235,7 +235,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   `--piece-card`.
 - Name (D-223, D-276, D-365): in the top edge, mostly over it (see *Names and lines*), 18 px close to 24 px far on the
   screen, `--fg` caps weight 500, after the kind's tab, a solid cell in the kind's colour with its drawn icon and word
-  (`▦ PLANE 01 PAZAR`; unnamed, the tab alone); tight, the name takes a `…`, then the tab's word goes; hovered, all of it.
+  (`▦ PLANE 01 PAZAR`; under 50 % zoom only the icon, D-370; unnamed, the tab alone); tight, the name takes a `…`, then the tab's word goes; hovered, all of it.
   Edit mode: a cyan-framed field, a cyan `>` and `17/80`.
 - Console (D-264, D-275, D-347; docs/specs/console-preview/, option D+E): one `Console` everywhere. A rail: who (name,
   mode, readouts, a page) · nouns (`filter 2`, `view`, `linked 2`), each opening its drawer as the rail's upper floor,
