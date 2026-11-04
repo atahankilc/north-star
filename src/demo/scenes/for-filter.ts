@@ -1,9 +1,9 @@
 // `card-panel` "Who it's for", `link-made` "Shown when it matters" (lessons.ts, D-349): 01 Lunch in focus, no HUD, two customers and the problems
-// tagged for them. The hand presses the dock's `[filter]`: the strip builds over the dock; it opens FOR, the real list
-// of the plane's customers, and picks Office workers: only their problems stay; FOR reads `Office workers`. All real:
+// tagged for them. The hand presses the dock's `[filter]`: its columns build over the dock (D-364); in FOR, the real
+// list of the plane's customers, it ticks Office workers: only their problems stay; FOR's count turns magenta. All real:
 // a filter writes nothing.
 import { aim, camera, cursor, inFocus, key, wait, type Scene } from '../director'
-import { PLANE_K, base, byText, focusRoute, moved, smallPlane } from '../fixtures/kit'
+import { PLANE_K, base, focusRoute, moved, smallPlane } from '../fixtures/kit'
 import { row, stage } from '../fixtures/o10'
 
 const cards = [
@@ -16,7 +16,6 @@ const cards = [
   moved('r-meetings', PLANE_K, 225, 300),
 ]
 const FILTER = aim('button[title="what this plane shows"]')
-const FOR = byText('[data-learn="filter-strip"] button', 'for')
 const OFFICE = row('Office workers')
 
 const scene: Scene = {
@@ -25,8 +24,8 @@ const scene: Scene = {
   view: 'focus',
   route: focusRoute(),
   size: [640, 400],
-  length: 7400,
-  poster: 7300,
+  length: 5500,
+  poster: 5400,
   cursor: inFocus(600, 120),
   setup: [...stage('for-filter'), camera.frame({ x: -25, y: -25, w: 725, h: 560 }, 4)],
   steps: [
@@ -34,15 +33,11 @@ const scene: Scene = {
     { do: wait(300) },
     { do: cursor.press() },
     { do: wait(700) },
-    { do: cursor.to(FOR, 600) },
-    { do: wait(300) },
-    { do: cursor.press() },
-    { do: wait(700) },
     { do: cursor.to(OFFICE, 600) },
     { do: wait(350) },
     { do: cursor.press() },
     { do: wait(700) },
-    // The list closed: what's left on the plane.
+    // The drawer closed: what's left on the plane.
     { do: key('Esc') },
     { do: cursor.to(inFocus(640, 330), 700) },
     { do: wait(300) },

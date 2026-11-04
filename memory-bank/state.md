@@ -61,7 +61,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   loads `.claude/settings.json` after `/hooks` or a new session.
 - Landing (D-340, 2026-11-01, committed): full-screen backdrop, mono name, no HUD, Button; the user is working
   through more landing changes. AsciiButton deleted (e1b86de).
-- D-344 (pushed; + Steps on Tabs, tabs scroll in one row, 2026-11-02). Open: filters as always-open toggle strips.
+- D-344 (pushed; + Steps on Tabs, tabs scroll in one row, 2026-11-02); its open item done by D-364 (2026-11-04, pushed): filters as columns of tick rows.
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Q-033 closed by D-348.
 - D-352–D-356 (2026-11-02, state-history): pushed (756bd67), firestore:rules deployed after (633/0); D-348 (Settings → display: hud size, background strength) pushed, the user checked it.
 - D-350 (2026-11-02, pushed): the prompt family on one set of parts, done (state-history); `@` and `/` checked on emulators.

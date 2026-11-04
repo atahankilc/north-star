@@ -74,7 +74,7 @@ isn't selected when a task is picked beside (that would close the task's panel),
 
 ## Session 4: filters, labels and priority, WIP limits (ideas 5, 10, 9) · **done (D-256, 2026-10-27)**
 
-- A filter strip in the dock, the plane filter's look (D-233): `GIVEN TO ▾  DUE ▾  FOR ▾  LABEL ▾`. Given to: me,
+- A filter in the dock, the plane filter's look (D-233): GIVEN TO, DUE, FOR, LABEL, each a column of tick rows (D-364). Given to: me,
   someone, nobody. Due: past, today, this week, none. For: a card type or a card. Kept per kanban, per browser.
 - Labels on tasks (`#tags` as on cards, D-056) and a priority (`P1`–`P3`), shown on the card; set in the panel.
 - A WIP limit per column (set from the head's tools): `DOING 4/3` in magenta when over.

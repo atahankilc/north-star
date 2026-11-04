@@ -35,7 +35,10 @@ export function PromptList({ entries, picked, q, hitTone, role = 'menu', label, 
     while (list && list.scrollHeight <= list.clientHeight && list.parentElement) list = list.parentElement.closest<HTMLElement>('[data-scrolls]') ?? null
     const row = picked ? box.current?.querySelector<HTMLElement>(`[data-key="${CSS.escape(picked)}"]`) : null
     if (!list || !row) return
-    const top = row.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop
+    // In the list's own px: a scaled stage (a lesson's demo) draws rects bigger than scrollTop counts.
+    const frame = list.getBoundingClientRect()
+    const scale = list.offsetHeight ? frame.height / list.offsetHeight : 1
+    const top = (row.getBoundingClientRect().top - frame.top) / scale + list.scrollTop
     if (top < list.scrollTop) list.scrollTop = top
     else if (top + row.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = top + row.offsetHeight - list.clientHeight
   }, [picked])

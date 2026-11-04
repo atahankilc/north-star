@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Filters as strips · options</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/inter/opsz.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/jetbrains-mono/index.css">
+<style>
+/* A preview only (D-344's open item: filters as always-open toggle strips). Not the app: the app's tokens, hand-made
+   copies of its cells. Served from the repo root so the token and font files load. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-mono); font-size: var(--text-xs); }
+button, input { font: inherit; color: inherit; }
+
+/* ── The preview's own bar ── */
+.top { position: fixed; inset: 0 0 auto 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.top h1 { margin: 0; font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); }
+.grp { display: flex; gap: 2px; align-items: center; }
+.grp > span { color: var(--fg-faint); margin-right: 6px; text-transform: uppercase; letter-spacing: .05em; font-size: 11px; }
+.opt { background: none; border: 1px solid transparent; padding: 5px 9px; color: var(--fg-dim); cursor: pointer; }
+.opt b { color: var(--accent-magenta); font-weight: 400; margin-right: 6px; }
+.opt:hover { color: var(--fg); }
+.opt[aria-pressed='true'] { color: var(--fg); border-color: var(--line-hover); background: var(--wash-2); }
+.about { position: fixed; top: 58px; left: 16px; right: 16px; z-index: 9; color: var(--fg-muted); font-family: var(--font-display); font-size: 14px; line-height: 1.5; max-width: 860px; }
+.about b { color: var(--fg); font-weight: 500; }
+.about em { color: var(--accent-cyan); font-style: normal; }
+
+/* ── A focused plane, faked: the grid, a few cards behind ── */
+.stage { position: fixed; inset: 0; background-image: radial-gradient(var(--grid-mark) 1px, transparent 1.4px); background-size: 25px 25px; }
+.cards { position: absolute; left: 50%; top: 190px; transform: translateX(-50%); display: flex; gap: 22px; }
+.card { width: 200px; height: 100px; background: color-mix(in srgb, var(--tone) var(--mix-wash, 16%), var(--piece-card)); border-left: 3px solid var(--tone); padding: 8px 10px; font-size: 10px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: .05em; transition: opacity .2s; }
+.card p { margin: 6px 0 0; text-transform: none; letter-spacing: 0; font-family: var(--font-display); font-size: 14px; color: var(--fg); line-height: 1.25; }
+.card.off { opacity: .12; }
+.count { position: absolute; left: 50%; top: 310px; transform: translateX(-50%); color: var(--fg-dim); }
+.count b { color: var(--accent-magenta); font-weight: 400; }
+
+/* ── The dock and its upper floor ── */
+.dock { background: linear-gradient(transparent, var(--bg) 24px); position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; width: max-content; max-width: calc(100vw - 32px); }
+/* The floor shades the grid away under it, as a console's drawer does. */
+.floor { background: radial-gradient(closest-side, var(--bg) 85%, transparent); background-size: 100% 100%; position: relative; padding: 18px 22px 16px; margin-bottom: 4px; min-width: 520px; max-width: calc(100vw - 32px); }
+.floor.wide { width: calc(100vw - 32px); }
+.floor::before, .floor::after, .floor > .lb, .floor > .rb { content: ''; position: absolute; width: 8px; height: 8px; border-color: var(--fg-faint); border-style: solid; }
+.floor::before { left: 0; top: 0; border-width: 1px 0 0 1px; }
+.floor::after { right: 0; top: 0; border-width: 1px 1px 0 0; }
+.floor > .lb { left: 0; bottom: 0; border-width: 0 0 1px 1px; }
+.floor > .rb { right: 0; bottom: 0; border-width: 0 1px 1px 0; }
+.title { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.title h2 { margin: 0; font-size: var(--text-sm); font-weight: 400; letter-spacing: .05em; text-transform: uppercase; color: var(--accent-cyan); }
+.title span { color: var(--fg-dim); font-size: var(--text-sm); }
+.title i { flex: 1; height: 1px; background: var(--line); }
+.rail { display: flex; gap: 2px; border-top: 1px solid var(--line); padding-top: 4px; }
+.rail .cell { height: 26px; font-size: var(--text-sm); padding: 0 10px; }
+.rail .tab { color: var(--accent-cyan); box-shadow: inset 0 -2px 0 var(--accent-cyan); }
+.rail .main { background: var(--wash-4); color: var(--fg-strong); }
+
+/* ── The kit's cell, copied (Button sm; pressed = cyan wash + line under) ── */
+.cell { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border: 0; background: var(--wash-2); color: var(--fg-dim); white-space: nowrap; cursor: pointer; transition: background .12s, color .12s; }
+.cell:hover { background: var(--wash-3); color: var(--fg-strong); }
+.cell[aria-pressed='true'] { --on: var(--tone, var(--accent-cyan)); background: color-mix(in srgb, var(--on) 10%, transparent); color: var(--on); box-shadow: inset 0 -1px 0 var(--on); }
+.cell .sw { width: 8px; height: 8px; background: var(--tone); flex: none; }
+.cell[aria-pressed='false'] .sw { background: none; box-shadow: inset 0 0 0 1px var(--tone); }
+.cell .bar { width: 12px; height: 2px; background: var(--tone); flex: none; }
+.cell[aria-pressed='false'] .bar { opacity: .35; }
+.cell .n { color: var(--fg-faint); }
+.cell[aria-pressed='true'] .n { color: inherit; opacity: .7; }
+.cell.more { color: var(--fg-muted); background: none; box-shadow: inset 0 0 0 1px var(--line); }
+.cell.more:hover { box-shadow: inset 0 0 0 1px var(--line-hover); }
+.lab { color: var(--fg-dim); letter-spacing: .05em; text-transform: uppercase; }
+.reset { margin-left: 4px; }
+
+/* Today: one `LABEL value ▾` after another. */
+.today { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.drop { gap: 0; padding: 0 10px; height: 24px; }
+.drop .lab { padding-right: 8px; margin-right: 8px; border-right: 1px solid var(--line-hover); }
+.drop .v { color: var(--fg); }
+.drop[data-on='true'] .v { color: var(--accent-cyan); }
+.drop .caret { margin-left: 8px; font-size: 9px; color: var(--fg-dim); }
+.drop .swatches { display: inline-flex; gap: 3px; }
+.drop .swatches i { width: 8px; height: 8px; background: var(--tone); }
+.drop .swatches i.off { background: none; box-shadow: inset 0 0 0 1px var(--tone); }
+
+/* A, B, C: a row per filter, its label in a column. */
+.rows { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; align-items: start; }
+.rows .lab { line-height: 24px; text-align: right; }
+.strip { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+.strip .gap { width: 8px; }
+.foot { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+/* D: columns side by side, each a short prompt list. */
+.cols { display: flex; gap: 18px; align-items: flex-start; }
+.col { width: 172px; flex: none; }
+.col.short { width: 136px; }
+.col h3 { margin: 0 0 6px; display: flex; gap: 8px; align-items: center; font-size: var(--text-xs); font-weight: 400; letter-spacing: .05em; text-transform: uppercase; color: var(--fg-dim); }
+.col h3 b { color: var(--accent-magenta); font-weight: 400; }
+.col h3 i { flex: 1; height: 1px; background: var(--line); }
+.col input { width: 100%; height: 22px; border: 0; border-bottom: 1px solid var(--line); background: none; padding: 0 0 0 14px; margin-bottom: 4px; outline: none; color: var(--fg); }
+.col .q { position: relative; }
+.col .q::before { content: '>'; position: absolute; left: 0; top: 3px; color: var(--accent-magenta); }
+.list { max-height: calc(6 * 22px); overflow-y: auto; scrollbar-width: thin; }
+.row { display: flex; align-items: center; gap: 8px; width: 100%; height: 22px; padding: 0 6px 0 2px; background: none; border: 0; color: var(--fg-dim); cursor: pointer; text-align: left; }
+.row:hover { background: var(--wash-2); color: var(--fg); }
+.row .box { width: 12px; height: 12px; flex: none; box-shadow: inset 0 0 0 1px var(--fg-faint); display: grid; place-items: center; font-size: 9px; color: transparent; }
+.row[aria-checked='true'] { color: var(--fg); }
+.row[aria-checked='true'] .box { box-shadow: inset 0 0 0 1px var(--tone, var(--accent-cyan)); color: var(--tone, var(--accent-cyan)); }
+.row .t { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .n { color: var(--fg-faint); }
+.row .sw { width: 8px; height: 8px; background: var(--tone); flex: none; }
+.row .bar { width: 12px; height: 2px; background: var(--tone); flex: none; }
+
+/* The prompt a dropdown opens (today, and B's long lists), roughly. */
+.pop { position: fixed; z-index: 20; width: 260px; background: var(--bg); box-shadow: 0 0 0 1px var(--line), 0 10px 40px rgba(0,0,0,.5); padding: 8px 0 6px; }
+.pop .q { position: relative; margin: 0 10px 6px; }
+.pop .q::before { content: '>'; position: absolute; left: 0; top: 3px; color: var(--accent-magenta); }
+.pop input { width: 100%; height: 24px; border: 0; border-bottom: 1px solid var(--line); background: none; padding-left: 16px; outline: none; color: var(--fg); }
+.pop .list { max-height: 260px; padding: 0 4px; }
+.pop .row { height: 26px; font-family: var(--font-display); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="stage"><div class="cards" id="cards"></div><div class="count" id="count"></div></div>
+
+<div class="top">
+  <h1>Filters as strips</h1>
+  <div class="grp" id="looks"><span>look</span></div>
+  <div class="grp" id="datas"><span>on</span></div>
+  <div class="grp" id="themes"><span>theme</span></div>
+</div>
+<div class="about" id="about"></div>
+
+<div class="dock">
+  <div class="floor" id="floor"><i class="lb"></i><i class="rb"></i><div class="title"><h2>filter</h2><span id="sum"></span><i></i></div><div id="body"></div></div>
+  <div class="rail" id="rail"></div>
+</div>
+
+<script>
+// ── Data: a small plane, a big one, a deck ──
+const TYPES = [['customer', '--type-customer'], ['problem', '--type-problem'], ['competitor', '--type-competitor'], ['idea', '--type-idea'], ['feature', '--type-feature'], ['package', '--type-package']]
+const LINKS = [['solves', '--link-solves'], ['part of', '--link-part'], ['competes', '--link-competes', 1], ['contradicts', '--link-clashes'], ['inspired by', '--link-draws'], ['depends on', '--link-depends'], ['relates', '--link-plain', 1], ['for', '--link-for', 1]]
+const tally = (list) => list.map(([k, n]) => ({ key: k, n }))
+const DATA = {
+  small: {
+    name: 'a small plane (Lunch)',
+    kind: 'plane',
+    lists: {
+      for: tally([['Office teams', 5], ['Home cooks', 3]]),
+      tag: tally([['pricing', 4], ['pilot', 3], ['delivery', 2], ['trust', 1]]),
+      region: tally([['Germany', 2], ['Europe', 1]]),
+    },
+  },
+  big: {
+    name: 'a big plane (Market map)',
+    kind: 'plane',
+    lists: {
+      for: tally([['Office teams', 12], ['Home cooks', 9], ['Students', 7], ['Night shift workers', 6], ['Gyms', 5], ['Hospitals', 4], ['Coworking spaces', 3], ['Schools', 2], ['Hotels', 1]]),
+      tag: tally([['pricing', 14], ['pilot', 11], ['delivery', 10], ['trust', 9], ['onboarding', 8], ['retention', 7], ['b2b', 7], ['subscription', 6], ['logistics', 6], ['quality', 5], ['packaging', 5], ['partners', 4], ['marketing', 4], ['refunds', 3], ['allergens', 3], ['halal', 3], ['vegan', 2], ['ratings', 2], ['payroll', 2], ['legal', 2], ['hygiene', 1], ['events', 1], ['kids', 1], ['seasonal', 1]]),
+      region: tally([['Germany', 6], ['Europe', 5], ['US', 4], ['Global', 3], ['France', 2], ['Turkey', 2], ['UK', 1], ['Netherlands', 1]]),
+    },
+  },
+  deck: {
+    name: 'a deck (Pilot)',
+    kind: 'deck',
+    lists: {
+      given: tally([['me', 4], ['nobody', 2], ['Bora', 5], ['Carol', 3], ['Deniz', 2], ['Elif', 1]]),
+      due: tally([['late', 2], ['this week', 4], ['next week', 3], ['later', 2], ['no date', 6]]),
+      for: tally([['Cooks rated by neighbours', 4], ['Weekly lunch plan', 3], ['Pickup shelf', 2], ['Tonight’s portions', 2], ['Team lunch order', 1]]),
+      label: tally([['urgent', 3], ['design', 3], ['research', 2], ['ops', 2], ['copy', 1]]),
+    },
+  },
+}
+
+const NOUN = { for: 'customers', tag: 'tags', region: 'places', given: 'people', label: 'labels' }
+
+// ── State ──
+const S = { look: 'A', data: 'big', theme: 'dark', f: null, open: {} }
+const fresh = () => ({ hide: [], links: LINKS.filter((l) => l[2]).map((l) => l[0]), for: [], tag: [], region: [], given: [], due: [], label: [] })
+S.f = fresh()
+
+const LOOKS = {
+  today: ['today', 'What’s in the app now: each filter a dropdown; the values are one click away, the drawer stays one line on any plane.'],
+  A: ['all open', '<b>Every value a cell, always open.</b> One row per filter, its label in a column. Nothing hidden: one click per value. On a big plane the drawer takes the whole edge and grows tall (24 tags wrap to two or three lines).'],
+  B: ['short open', '<b>Short lists open, long ones folded.</b> A filter with up to 6 values shows them as cells; past 6 it stays one dropdown cell (<em>24 tags ▾</em>) opening today’s prompt, with what you picked from it shown as cells before it. Always one line per filter.'],
+  C: ['first few', '<b>The most used values open, then + N more.</b> Each row shows its 5 most used values (what you picked always shown too), then <em>+ 19 more</em>, which opens the row in place (and <em>less</em> folds it). Small planes look like A; big ones stay short until asked.'],
+  D: ['columns', '<b>Columns side by side, each a short list.</b> Bolder: the drawer becomes a row of small prompt lists (tick boxes, counts), 6 rows high, scrolling past that, a <em>&gt;</em> line to narrow one past 7. In each list the default (<em>any …</em>) stays on top, and what you pick moves up under it. Fixed height on any plane; reads like a mixing desk.'],
+}
+
+// ── Little builders ──
+const h = (tag, props = {}, ...kids) => {
+  const el = document.createElement(tag)
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'on') for (const [e, fn] of Object.entries(v)) el.addEventListener(e, fn)
+    else if (k === 'style') el.style.cssText = v
+    else if (k === 'html') el.innerHTML = v
+    else if (v !== undefined && v !== false) el.setAttribute(k, v === true ? '' : v)
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) el.append(c.nodeType ? c : document.createTextNode(c))
+  return el
+}
+const flip = (arr, k) => (arr.includes(k) ? arr.filter((x) => x !== k) : [...arr, k])
+const set = (patch) => { Object.assign(S.f, patch); draw() }
+
+// What each filter is: its label, its values, which are "on" (pressed = shown).
+function filters() {
+  const d = DATA[S.data]
+  const L = d.lists
+  if (d.kind === 'deck')
+    return [
+      pick('given', 'given to', 'anyone', L.given),
+      pick('due', 'due', 'any day', L.due),
+      pick('for', 'for', 'any card', L.for),
+      pick('label', 'label', 'any label', L.label, '#'),
+    ]
+  return [
+    { key: 'show', label: 'show', narrow: S.f.hide.length > 0,
+      values: TYPES.map(([t, tone]) => ({ key: t, text: `${t}s`, tone: `var(${tone})`, sw: 'sw', on: !S.f.hide.includes(t), toggle: () => set({ hide: flip(S.f.hide, t) }) })) },
+    pick('for', 'for', 'any customer', L.for, '', '--type-customer'),
+    pick('tag', 'tag', 'any tag', L.tag, '#'),
+    pick('region', 'region', 'anywhere', L.region),
+    { key: 'links', label: 'links', narrow: S.f.links.some((g) => !LINKS.find((l) => l[0] === g)[2]),
+      values: LINKS.map(([k, tone, starts]) => ({ key: k, text: k, tone: `var(${tone})`, sw: 'bar', on: !S.f.links.includes(k), hint: starts ? 'starts hidden' : '', toggle: () => set({ links: flip(S.f.links, k) }) })) },
+  ]
+}
+// A narrowing filter: `any` on while nothing's picked; a pick turns it off.
+function pick(key, label, any, list, prefix = '', tone) {
+  const picked = S.f[key]
+  return {
+    key, label, any, narrow: picked.length > 0, picked,
+    anyCell: { key: '*', text: any, on: picked.length === 0, toggle: () => set({ [key]: [] }) },
+    values: list.map((v) => ({ key: v.key, text: prefix + v.key, n: v.n, tone: tone ? `var(${tone})` : undefined, sw: tone ? 'sw' : undefined, on: picked.includes(v.key), toggle: () => set({ [key]: flip(picked, v.key) }) })),
+  }
+}
+
+const cell = (v, extra = {}) =>
+  h('button', { class: 'cell', 'aria-pressed': String(v.on), style: v.tone ? `--tone:${v.tone}` : undefined, title: v.hint || undefined, on: { click: v.toggle }, ...extra },
+    v.sw && h('i', { class: v.sw }), v.text, v.n != null && h('span', { class: 'n' }, String(v.n)))
+
+// ── The looks ──
+function today(fs) {
+  return h('div', { class: 'today' },
+    fs.map((f) => {
+      let v
+      if (f.anyCell) v = f.picked.length === 0 ? 'any' : f.picked.length === 1 ? f.values.find((x) => x.on).text : `${f.picked.length}`
+      else v = h('span', { class: 'swatches' }, f.values.map((x) => h('i', { class: x.on ? '' : 'off', style: `--tone:${x.tone}` })))
+      return h('button', { class: 'cell drop', 'data-on': String(f.narrow), on: { click: (e) => popup(e.currentTarget, f) } },
+        h('span', { class: 'lab' }, f.label), h('span', { class: 'v' }, v), h('span', { class: 'caret' }, '▼'))
+    }),
+    h('button', { class: 'cell reset', on: { click: () => set(fresh()) } }, 'reset'))
+}
+
+function rowsLook(fs, mode) {
+  const grid = h('div', { class: 'rows' })
+  for (const f of fs) {
+    grid.append(h('span', { class: 'lab' }, f.label))
+    const strip = h('div', { class: 'strip' })
+    let vals = f.values
+    if (f.anyCell) strip.append(cell(f.anyCell), h('i', { class: 'gap' }))
+    if (mode === 'B' && f.anyCell && vals.length > 6) {
+      vals.filter((v) => v.on).forEach((v) => strip.append(cell(v)))
+      const rest = vals.filter((v) => !v.on).length
+      strip.append(h('button', { class: 'cell more', on: { click: (e) => popup(e.currentTarget, f) } }, `${f.picked.length ? '+ ' + rest : rest + ' ' + NOUN[f.key]} ▾`))
+    } else if (mode === 'C' && f.anyCell && vals.length > 6 && !S.open[f.key]) {
+      const top = [...vals].sort((a, b) => b.n - a.n).slice(0, 5)
+      const shown = [...top, ...vals.filter((v) => v.on && !top.includes(v))]
+      shown.forEach((v) => strip.append(cell(v)))
+      strip.append(h('button', { class: 'cell more', on: { click: () => { S.open[f.key] = true; draw() } } }, `+ ${vals.length - shown.length} more`))
+    } else {
+      vals.forEach((v) => strip.append(cell(v)))
+      if (mode === 'C' && S.open[f.key]) strip.append(h('button', { class: 'cell more', on: { click: () => { S.open[f.key] = false; draw() } } }, 'less'))
+    }
+    grid.append(strip)
+  }
+  return h('div', {}, grid, h('div', { class: 'foot' }, h('button', { class: 'cell reset', on: { click: () => set(fresh()) } }, 'reset')))
+}
+
+function columns(fs) {
+  return h('div', {},
+    h('div', { class: 'cols' }, fs.map((f) => {
+      // The default (`any …`) first, then what's picked, then the rest; show and links keep their order (no default).
+      const all = f.anyCell ? [f.anyCell, ...f.values.filter((v) => v.on), ...f.values.filter((v) => !v.on)] : f.values
+      const q = (S.open['q' + f.key] ?? '').toLowerCase()
+      const list = h('div', { class: 'list' }, all.filter((v) => v === f.anyCell || v.text.toLowerCase().includes(q)).map((v) => rowEl(v)))
+      const many = f.values.length > 7
+      const narrowN = f.anyCell ? f.picked.length : f.values.filter((v) => !v.on).length
+      return h('div', { class: 'col' + (f.values.length < 7 && !f.anyCell ? ' short' : '') },
+        h('h3', {}, f.label, h('i'), narrowN > 0 && f.narrow ? h('b', {}, String(narrowN)) : h('span', {}, String(f.values.length))),
+        many && h('div', { class: 'q' }, h('input', { placeholder: 'type to find…', value: S.open['q' + f.key] ?? '', on: { input: (e) => { S.open['q' + f.key] = e.target.value; const pos = e.target.selectionStart; draw(); const el = document.querySelector(`[data-q="${f.key}"]`); el?.focus(); el?.setSelectionRange(pos, pos) } }, 'data-q': f.key })),
+        list)
+    })),
+    h('div', { class: 'foot' }, h('button', { class: 'cell reset', on: { click: () => set(fresh()) } }, 'reset')))
+}
+const rowEl = (v) =>
+  h('button', { class: 'row', role: 'menuitemcheckbox', 'aria-checked': String(v.on), style: v.tone ? `--tone:${v.tone}` : undefined, title: v.hint || undefined, on: { click: v.toggle } },
+    h('span', { class: 'box' }, '✓'), v.sw && h('i', { class: v.sw }), h('span', { class: 't' }, v.text), v.n != null ? h('span', { class: 'n' }, String(v.n)) : v.hint ? h('span', { class: 'n' }, '·') : null)
+
+// The prompt a dropdown opens, roughly (a `>` line, tick rows).
+let popEl = null
+function popup(anchor, f) {
+  closePop()
+  const r = anchor.getBoundingClientRect()
+  const all = f.anyCell ? [f.anyCell, ...f.values] : f.values
+  const list = h('div', { class: 'list' })
+  const fill = (q) => { list.replaceChildren(...all.filter((v) => v === f.anyCell || v.text.toLowerCase().includes(q)).map((v) => { const el = rowEl(v); el.addEventListener('click', () => setTimeout(() => popup(document.querySelector(`[data-anchor="${f.key}"]`) || anchor, filters().find((x) => x.key === f.key)), 0)); return el })) }
+  anchor.setAttribute('data-anchor', f.key)
+  const input = h('input', { placeholder: 'type to find…', on: { input: (e) => fill(e.target.value.toLowerCase()) } })
+  popEl = h('div', { class: 'pop' }, h('div', { class: 'q' }, input), list)
+  fill('')
+  document.body.append(popEl)
+  const ph = popEl.offsetHeight
+  popEl.style.left = `${Math.min(r.left, innerWidth - 270)}px`
+  popEl.style.top = `${r.top - ph - 6}px`
+  input.focus()
+}
+const closePop = () => { popEl?.remove(); popEl = null }
+addEventListener('pointerdown', (e) => { if (popEl && !popEl.contains(e.target) && !e.target.closest('.drop, .more')) closePop() })
+addEventListener('keydown', (e) => { if (e.key === 'Escape') closePop() })
+
+// ── Cards behind, dimmed by the filter (so a click shows it doing something) ──
+const DEMO = [
+  ['customer', 'Office teams', { for: 'Office teams', tag: 'b2b' }],
+  ['problem', 'Lunch takes an hour out of the day', { for: 'Office teams', tag: 'pricing' }],
+  ['competitor', 'Lieferando', { region: 'Germany', tag: 'delivery' }],
+  ['idea', 'A pickup shelf in each office lobby', { for: 'Office teams', tag: 'pilot' }],
+  ['feature', 'Order by noon, eat at one', { tag: 'pricing' }],
+]
+function drawCards() {
+  const f = S.f
+  const deck = DATA[S.data].kind === 'deck'
+  let shown = 0
+  const els = DEMO.map(([type, title, m]) => {
+    const off = !deck && (f.hide.includes(type) || (f.for.length && !f.for.includes(m.for)) || (f.tag.length && !f.tag.includes(m.tag)) || (f.region.length && type === 'competitor' && !f.region.includes(m.region)))
+    if (!off) shown++
+    return h('div', { class: 'card' + (off ? ' off' : ''), style: `--tone:var(--type-${type})` }, type, h('p', {}, title))
+  })
+  document.getElementById('cards').replaceChildren(...els)
+  const n = narrowCount()
+  document.getElementById('count').replaceChildren(...(deck ? [] : [h('span', {}, 'showing '), h('b', {}, `${shown}`), ` of ${DEMO.length} (behind, to see a pick do something)`]))
+  return n
+}
+function narrowCount() { return filters().filter((f) => f.narrow).length }
+
+// ── Draw ──
+function bar(id, items, cur, onPick) {
+  const g = document.getElementById(id)
+  g.querySelectorAll('button').forEach((b) => b.remove())
+  for (const [k, label, num] of items) g.append(h('button', { class: 'opt', 'aria-pressed': String(cur === k), on: { click: () => onPick(k) } }, num && h('b', {}, num), label))
+}
+function draw() {
+  closePop()
+  document.documentElement.dataset.theme = S.theme
+  bar('looks', [['today', 'today'], ['A', 'all open', 'A'], ['B', 'short open', 'B'], ['C', 'first few', 'C'], ['D', 'columns', 'D']], S.look, (k) => { S.look = k; S.open = {}; draw() })
+  bar('datas', Object.entries(DATA).map(([k, d]) => [k, d.name]), S.data, (k) => { S.data = k; S.f = fresh(); S.open = {}; draw() })
+  bar('themes', [['dark', 'dark'], ['light', 'light']], S.theme, (k) => { S.theme = k; draw() })
+  document.getElementById('about').innerHTML = LOOKS[S.look][1]
+  const fs = filters()
+  const body = S.look === 'today' ? today(fs) : S.look === 'D' ? columns(fs) : rowsLook(fs, S.look)
+  document.getElementById('body').replaceChildren(body)
+  const n = drawCards()
+  document.getElementById('sum').textContent = n ? `${n} narrowing what's shown` : "everything's shown"
+  const floor = document.getElementById('floor')
+  floor.classList.toggle('wide', false)
+  requestAnimationFrame(() => { if (floor.offsetWidth > innerWidth * 0.7) floor.classList.add('wide') })
+  const deck = DATA[S.data].kind === 'deck'
+  document.getElementById('rail').replaceChildren(...[
+    h('button', { class: 'cell tab' }, 'filter ▾'),
+    h('button', { class: 'cell' }, deck ? 'lanes ▴' : 'view ▴'),
+    deck && h('button', { class: 'cell' }, 'setup'),
+    h('button', { class: 'cell main' }, 'unfocus')].filter(Boolean))
+}
+draw()
+</script>
+</body>
+</html>

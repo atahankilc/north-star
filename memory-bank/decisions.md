@@ -45,7 +45,7 @@ feature comes back as a piece, and check them with the user then.
   state side by side, what it's built from and where it's used by area (D-336). Motion's numbers and the tween in src/ui/foundation/motionTokens.ts and motion.ts (held to tokens.css by a test), card
   colours in `--type-*` and src/ui/foundation/cardTone.ts; one Spinner, the small entrances in src/ui/foundation/Enter.module.css, one
   cell-path builder. The kit in src/ui: Button (`sm`, `md`, `icon`, `link`), ButtonGroup, ToolButton (the HUD's icon tools), Steps (a wizard's tabs), Label, Rule, Empty, Field, PromptField, CommitField (a value edited where it's shown), AddField (what a `+ tag` turns into; leaving it adds what's typed, Escape drops it, D-361), Checkbox, Tabs, Chip, CountBadge, ResizeEdge, SplitLine. The gallery's `[tree]` shows what each
-  component draws and where it's used. Two buttons only (D-343): Button and ToolButton, both cells (D-344); a feature wrapping ToolButton is a `*Tool`, its icon from `src/ui/primitives/hudIcons.tsx` (one 18 px set), the gear too. The side nav holds the canvas's tools (decks and days too), the corner people (threads, you, settings). Patterns: Options, Window, Dialog, WizardShell, PromptOverlay, EdgeColumn, PanelHead, InPlaceMenu, Tip (a word with its meaning on hover, D-355). Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
+  component draws and where it's used. Two buttons only (D-343): Button and ToolButton, both cells (D-344); a feature wrapping ToolButton is a `*Tool`, its icon from `src/ui/primitives/hudIcons.tsx` (one 18 px set), the gear too. The side nav holds the canvas's tools (decks and days too), the corner people (threads, you, settings). Patterns: Options, Window, Dialog, WizardShell, PromptOverlay, EdgeColumn, PanelHead, InPlaceMenu, Tip (a word with its meaning on hover, D-355), FilterColumn (a filter as a column of tick rows, the default on top and what's picked under it once the pointer leaves, D-364). Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
   from coming back. Everything is on it (check:kit 0, 2026-11-01): the agent's column an EdgeColumn (D-359), a prompt laid in the page an `InPlaceMenu`; folders by layer and area.
 - Cards on one face (D-358, docs/specs/cards.md): every card and task drawing stands on one `CardFace` (tone, tint, world/screen size, states, D-295's ink, Marks) with shared parts, each card in `src/views/workspace/cards/` with its gallery; card colours only from `CARD_TONE`, a card's name from `cardName()`, task words from model/tasks.ts; one P1 (`PriorityChip`); one small row (`CardRow`); `check:kit` refuses a card face or edge by hand outside `cards/`; one move for everything on a plane (`startMove`, selection.ts). Done 2026-11-02.
 - Windows and docked panels are two families (D-359, DESIGN.md §6): over the page the one `Window` (Dialog, WizardShell,
@@ -235,7 +235,7 @@ feature comes back as a piece, and check them with the user then.
   Escape; the panel's `N selected` lines up, spaces out, tags all; others see it (`sel` + `more`), a follower takes it;
   a pan keeps it, only a click on the plane lets go.
 - Focus dock tools: guides (D-231: magenta lines while dragging; `a` guides, `g` snapping, per browser, in the dock's `view` drawer (D-347),
-  with comments `c`); `[filter]` (D-233: `SHOW FOR TAG REGION LINKS`, `for`/`relates`/`competes` hidden to start, its
+  with comments `c`); `[filter]` (D-233: `SHOW FOR TAG REGION LINKS` as columns of tick rows, D-364, `for`/`relates`/`competes` hidden to start, its
   menu saying so; only while the focus is open, D-308); `[linked · N]` (D-235: the pieces stuck to it); drawers open as the dock's upper floor (D-347).
 - Right-click in a focused plane (D-237): a card's open / fold / copy / duplicate / delete; text's edit / copy /
   duplicate / delete; a link's label / turn round / kind / remove; several's copy / duplicate / delete; the plane's
@@ -316,7 +316,7 @@ feature comes back as a piece, and check them with the user then.
   a plane with no deck, every deck's tasks for its cards; nothing, every deck on its canvas. Drawing days opens the card prompt.
 - Stuck to a plane (D-255, D-303): only that plane's tasks until unlinked (no switch, no note: the link shows it),
   beside it in its focus.
-- More (D-256, D-258): `[filter]` (GIVEN TO, DUE, FOR, LABEL; only while open, D-308); `#labels`, `P1`–`P3`; column limits (`4/3`
+- More (D-256, D-258): `[filter]` (GIVEN TO, DUE, FOR, LABEL as columns, D-364; only while open, D-308); `#labels`, `P1`–`P3`; column limits (`4/3`
   magenta); `lanes` (a dock drawer, D-347) by person or card (dropping sets it), lanes fold; several at once like on planes.
 - Together (D-260, D-261): picked tasks are your presence selection, a held one a ghost in your colour (`drag`);
   comments on tasks; `☐` by your square counts tasks given to you since you last looked (`givenAt`/`givenBy`,

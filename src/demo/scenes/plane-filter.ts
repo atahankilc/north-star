@@ -1,10 +1,10 @@
 // `focus-plane` "Show only some" (lessons.ts, D-349): 01 Lunch in focus, no HUD, its problems and the ideas for
-// them. The hand presses the dock's `[filter]`: the strip builds over the dock; it opens SHOW, the real list of card
-// types, and unticks ideas: the ideas go, the problems stay; SHOW's swatch for ideas goes dark. All real: a filter writes
+// them. The hand presses the dock's `[filter]`: its columns build over the dock (D-364); in SHOW, the real list of card
+// types, it unticks ideas: the ideas go, the problems stay; SHOW's count turns magenta. All real: a filter writes
 // nothing.
 import { aim, camera, cursor, inFocus, key, wait, type Scene } from '../director'
-import { PLANE_K, base, byText, focusRoute, moved, smallPlane } from '../fixtures/kit'
-import { row, stage } from '../fixtures/o10'
+import { PLANE_K, base, focusRoute, moved, smallPlane } from '../fixtures/kit'
+import { stage } from '../fixtures/o10'
 
 const cards = [
   moved('r-greasy', PLANE_K, 0, 0),
@@ -15,8 +15,7 @@ const cards = [
   moved('i-shelf', PLANE_K, 225, 150),
 ]
 const FILTER = aim('button[title="what this plane shows"]')
-const SHOW = byText('[data-learn="filter-strip"] button', 'show')
-const IDEAS = row('ideas')
+const IDEAS = aim('[data-learn="filter-strip"] [data-key="idea"]')
 
 const scene: Scene = {
   id: 'plane-filter',
@@ -24,8 +23,8 @@ const scene: Scene = {
   view: 'focus',
   route: focusRoute(),
   size: [640, 400],
-  length: 7400,
-  poster: 7300,
+  length: 5500,
+  poster: 5400,
   cursor: inFocus(600, 60),
   setup: [...stage('plane-filter'), camera.frame({ x: -25, y: -25, w: 725, h: 430 }, 4)],
   steps: [
@@ -33,15 +32,11 @@ const scene: Scene = {
     { do: wait(300) },
     { do: cursor.press() },
     { do: wait(700) },
-    { do: cursor.to(SHOW, 600) },
-    { do: wait(300) },
-    { do: cursor.press() },
-    { do: wait(700) },
     { do: cursor.to(IDEAS, 600) },
     { do: wait(350) },
     { do: cursor.press() },
     { do: wait(700) },
-    // The list closed: what's left on the plane.
+    // The drawer closed: what's left on the plane.
     { do: key('Esc') },
     { do: cursor.to(inFocus(640, 330), 700) },
     { do: wait(300) },

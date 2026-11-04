@@ -1,21 +1,19 @@
 // `deck` "Only some tasks" (lessons.ts, D-349): 05 Launch in focus, no HUD, framed on `to do` and
-// `doing`. The hand presses the dock's `[filter]`: the strip builds over the dock (GIVEN TO, DUE, FOR, LABEL); it opens
-// GIVEN TO and picks `me`: only the tasks given to you stay: `to do` empties, `doing`
+// `doing`. The hand presses the dock's `[filter]`: its columns build over the dock (GIVEN TO, DUE, FOR, LABEL, D-364);
+// in GIVEN TO it ticks `me`: only the tasks given to you stay: `to do` empties, `doing`
 // keeps yours. All real: a filter writes nothing.
 import { K } from '../../views/workspace/deck/Kanban'
 import { NO_FILTER } from '../../model/kanbanFilter'
 import { setKanbanFilter } from '../../views/workspace/deck/kanbanFilter'
-import { aim, camera, cursor, onStage, run, wait, type Scene } from '../director'
-import { base, byText } from '../fixtures/kit'
-import { row } from '../fixtures/o10'
+import { aim, camera, cursor, key, onStage, run, wait, type Scene } from '../director'
+import { base } from '../fixtures/kit'
 import { NO_HUD, calmTasks, pageStyle } from '../fixtures/o12'
 import { WID, P } from '../fixtures/pazar'
 
 const tasks = calmTasks(base.tasks)
 
 const FILTER = aim('button[title="which tasks it shows"]')
-const GIVEN = byText('[data-learn="filter-strip"] button', 'given to', 0.4, 0.5)
-const ME = row('me')
+const ME = aim('[data-learn="filter-strip"] [data-key="me"]')
 
 const scene: Scene = {
   id: 'deck-filter',
@@ -23,8 +21,8 @@ const scene: Scene = {
   view: 'focus',
   route: `/workspaces/${WID}?focus=${P.deck}`,
   size: [640, 400],
-  length: 7800,
-  poster: 7700,
+  length: 6300,
+  poster: 6200,
   cursor: onStage(560, 330),
   setup: [pageStyle('deck-filter', NO_HUD), run(() => setKanbanFilter(P.deck, NO_FILTER), 'no filter')],
   steps: [
@@ -35,18 +33,12 @@ const scene: Scene = {
     { do: wait(300) },
     { do: cursor.press() },
     { do: wait(700) },
-    { do: cursor.to(GIVEN, 600) },
-    { do: wait(300) },
-    { do: cursor.press() },
-    { do: wait(600) },
     { do: cursor.to(ME, 600) },
     { do: wait(350) },
     { do: cursor.press() },
     { do: wait(500) },
-    // The menu closed by its own button again: what's left on the deck, the strip saying why.
-    { do: cursor.to(GIVEN, 500) },
-    { do: wait(250) },
-    { do: cursor.press() },
+    // The drawer shut: what's left on the deck, the tab saying why (`filter 1`).
+    { do: key('Esc') },
     { do: cursor.to(onStage(600, 230), 800) },
     { do: wait(300) },
   ],

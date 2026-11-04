@@ -1,4 +1,4 @@
-/* A drawer on the focus dock's upper floor (D-233, D-235, D-347): its menus and buttons in a row, wrapping. The floor
+/* A drawer on the focus dock's upper floor (D-233, D-235, D-347): its columns (D-364) or cells in a row, wrapping. The floor
    (the kit's ConsoleFloor) is its frame. */
 .panel {
   display: flex;
@@ -14,4 +14,6 @@
 
 .reset {
   margin-left: var(--space-1);
+  /* Under the columns' last rows, not in their middle. */
+  align-self: flex-end;
 }

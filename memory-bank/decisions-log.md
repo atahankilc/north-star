@@ -6616,8 +6616,8 @@ D-343's unframed HUD icons; the two buttons (Button, ToolButton) stay.
     shelf on Choice, the threads inbox's views on Tabs; seven hand-made option rows are ButtonGroups.
   - One dropdown trigger (src/ui/primitives/Trigger.module.css) composed by Menu and Select; callers' recolourings of
     Select removed (a link kind's colour and the console's growing text kept).
-  - Filters stay dropdown triggers whose lists are toggle rows; always-open strips of toggles for SHOW/FOR/TAG/REGION/
-    LINKS were not built (long lists would run wide): ask if wanted.
+  - Filters stayed dropdown triggers whose lists are toggle rows; always-open strips were left open (long lists would
+    run wide). Built since as columns of tick rows: D-364.
 Alternatives (docs/specs/button-preview/, round 1): bare words with a line under on hover (A), the Marks' corners (B),
 inverted blocks (C), joined strips (D), the menus' `›` caret (E), Inter framed buttons (F), two tiers (G: bare words,
 one solid go; the user liked it but wanted every button alike); round 2: keycaps (I), framed cells (J), dot cells (K),
@@ -7044,3 +7044,26 @@ count (the researchers' 5 searches and 10 lines were what cut answers short).
 runs, the researcher's request carries 15 searches), agentWeb.test.ts (both adapters take `searches`), evals
 skill-research-01–03 on the stub (pass; `--wrong` fails), `researched()` grades the first call and every call's context.
 **Not yet:** a real-key run to see how many searches a researcher really uses.
+
+### D-364 · 2026-11-04 · Accepted (the user, on the preview docs/specs/filter-preview/: "D baya iyi ancak seçilen üste çıksa daha iyi olur gibi. En üstte tabii default düğmesi olsun ama seçilenler onun altında sıralanabilir", then "D ile git, uygulamada yap"; D-344's open item)
+**Decision:** a plane's and a deck's filter drawer is a row of columns, one per filter, never a row of dropdowns. Each
+column (`FilterColumn`, src/ui/patterns, on the prompt's rows, D-222) is its name over a rule with a count (magenta:
+how many it narrows by), a `>` line past seven values, then its values as tick rows, six rows high and scrolling (fewer
+on a low screen, at most a quarter of it, so a lesson's stage fits two rows of columns). Where a filter has a default
+(`any tag`, `anyone`), it stays on top and what's picked sits right under it, the rest after in their own order; the
+rows move only once the pointer leaves the column or the drawer opens again, never under the pointer. SHOW and LINKS
+(everything shown to start, a click hides one) keep their order. A filter with nothing to pick on this plane or deck
+(no customers, tags, regions, labels) isn't shown. LINKS has no `>` line (nine fixed kinds), its column wide for
+`starts hidden`; FOR is wide (names). Escape in a `>` line clears what's typed first, then closes the drawer.
+**Why:** every value one click away instead of two, and the drawer the same height on a big plane as on a small one;
+the default on top and the picks under it show what's on at a glance.
+**Alternatives** (the preview): all values as cells always open (A: runs tall and wide on a big plane), short lists
+open and long ones folded (B), the most used five then `+ N more` (C); today's dropdowns. Picks rising at once: a row
+would jump under the pointer while ticking several.
+**Also:** PromptList's keeping the picked row in view divides by the stage's scale (a lesson's scaled demo scrolled
+lists that needed no scrolling). Lessons' words unchanged and their versions not bumped (a bump would show the whole
+plane lesson again); the three filter demos tick the rows straight in the drawer.
+**Checked:** gallery (`Filter column` new; `Plane filter` and `Deck filter` states), the rise, the `>` line and Escape
+in headless Chrome, both themes; demos plane-filter, for-filter, deck-filter at the lesson's 640 × 400; tsc, unit tests
+1041/0, check:gallery, check:kit, check:tokens, check:lessons.
+**Not yet:** a timeline's filter (it uses the deck's) seen with many decks' people.

@@ -1,5 +1,5 @@
 // A kanban's filters in its dock (D-256), the plane's way (D-233): the `filter` tab (`filter N` while narrowing) opens
-// its drawer as the dock's upper floor (D-347): GIVEN TO, DUE, FOR, LABEL, each its own menu, then `[reset]`. Escape
+// its drawer as the dock's upper floor (D-347): GIVEN TO, DUE, FOR, LABEL, each a column of tick rows (D-364), then `[reset]`. Escape
 // closes it. In the kanban's focus and in its pane beside a plane; a timeline's too (D-262), over its kanbans' tasks
 // (`pool`). The filter lasts while one of these is open (D-308).
 import { AnimatePresence } from 'motion/react'
@@ -9,7 +9,7 @@ import { useAuth } from '../../../data/auth'
 import { useWorkspaceMembers } from '../../../data/workspaces'
 import type { Task } from '../../../data/tasks'
 import { Appear } from '../../../ui/primitives/Appear'
-import { Menu } from '../../../ui/patterns/Menu'
+import { FilterColumn, FilterColumns } from '../../../ui/patterns/FilterColumn'
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { useWs } from '../canvas/context'
 import { ConsoleFloor, ConsoleTab, FloorTitle, useDrawer } from '../../../ui/patterns/Console'
@@ -19,7 +19,7 @@ import { learn } from '../../../onboarding/learn'
 import styles from '../canvas/FilterDock.module.css'
 import { Button } from '../../../ui/primitives/Button'
 import { cardName } from '../../../model/cardName'
-import { flip, named, pickRows } from '../canvas/filterPick'
+import { flip, pickRows } from '../canvas/filterPick'
 import { ALL_TYPES } from '../../../model/cards'
 
 
@@ -68,7 +68,6 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
     ],
     (v) => set({ who: v }),
   )
-  const whoName = (v: string) => (v === 'me' || v === 'nobody' ? v : (members.find((m) => m.id === v)?.name ?? 'someone'))
 
   const due = pickRows(f.due, 'any day', DUE.map((d) => ({ key: d.key, label: d.label, tone: d.key === 'past' ? 'var(--accent-magenta)' : undefined })), (v) => set({ due: v }))
 
@@ -83,7 +82,6 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
     ...(forCards.length ? [{ key: 'h-cards', heading: 'cards' }] : []),
     ...forCards.map((c) => ({ key: c.id, label: cardName(c), checked: f.for.includes(c.id), tone: CARD_TONE[c.type], hint: count((t) => t.cardId === c.id), onSelect: () => set({ for: flip(f.for, c.id) }) })),
   ]
-  const forName = (v: string) => (v === 'none' ? 'no card' : v.startsWith('type:') ? `${v.slice(5)}s` : (cards.find((c) => c.id === v)?.title ?? 'a card'))
 
   const labelCount = new Map<string, number>()
   for (const t of mine) for (const l of t.labels ?? []) labelCount.set(l, (labelCount.get(l) ?? 0) + 1)
@@ -93,10 +91,12 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
   return (
     <Appear className={styles.panel} role="group" aria-label="Filters" data-learn="filter-strip">
       <FloorTitle summary={narrowing(f) ? `${narrowing(f)} narrowing its tasks` : 'every task'}>filter</FloorTitle>
-      <Menu label="given to" up summary={named(f.who, whoName)} active={f.who.length > 0} items={who} ariaLabel="Only tasks given to" />
-      <Menu label="due" up summary={named(f.due, (d) => DUE.find((x) => x.key === d)!.label)} active={f.due.length > 0} items={due} ariaLabel="Only tasks due" />
-      <Menu label="for" up summary={named(f.for, forName)} active={f.for.length > 0} items={forItems} ariaLabel="Only tasks for" />
-      <Menu label="label" up summary={named(f.labels, (l) => `#${l}`)} active={f.labels.length > 0} items={labels.length ? labelItems : []} ariaLabel="Only tasks with these labels" empty="No labels on its tasks" />
+      <FilterColumns>
+        <FilterColumn label="given to" items={who} narrowing={f.who.length} rise ariaLabel="Only tasks given to" />
+        <FilterColumn label="due" items={due} narrowing={f.due.length} rise ariaLabel="Only tasks due" />
+        <FilterColumn label="for" items={forItems} narrowing={f.for.length} rise wide ariaLabel="Only tasks for" />
+        {labels.length > 0 && <FilterColumn label="label" items={labelItems} narrowing={f.labels.length} rise ariaLabel="Only tasks with these labels" />}
+      </FilterColumns>
       <Button className={styles.reset} onClick={() => setKanbanFilter(piece.id, NO_FILTER)} title="show every task">
         reset
       </Button>

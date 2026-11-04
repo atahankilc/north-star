@@ -1,0 +1,62 @@
+/* A filter as a column (src/ui/patterns/FilterColumn.tsx, D-364): a head, maybe a `>` line, the prompt's tick rows. */
+.cols {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3) var(--space-4);
+}
+
+.col {
+  flex: none;
+  width: var(--size-xs);
+  display: flex;
+  flex-direction: column;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+}
+
+.col[data-wide] {
+  width: var(--size-sm);
+}
+
+/* `TAG ──── 24`: its name, a rule, how many values (magenta: how many it narrows by). */
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.name {
+  composes: label from '../primitives/Label.module.css';
+}
+
+.rule {
+  flex: 1;
+  height: var(--line-w);
+  background: var(--line);
+}
+
+.count {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--fg-faint);
+}
+
+.count[data-on] {
+  color: var(--accent-magenta);
+}
+
+/* The `>` line, tighter than a menu's head: it sits in a column. */
+.line[data-framed] {
+  padding: var(--space-1) var(--space-2);
+}
+
+/* Six rows high, the rest scrolling; fewer on a low screen (a lesson's stage), so two rows of columns still fit. */
+.list {
+  flex: none;
+  max-height: min(calc(var(--control-sm) * 6), 25vh); /* tokens-ok: six rows of the prompt's row height, at most a quarter of the screen */
+  padding: var(--space-1) 0 0;
+  scrollbar-width: thin;
+}
