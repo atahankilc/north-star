@@ -1450,6 +1450,14 @@ north-star-e7 (recent commits), -48 and -51 told what each found. The user picke
   a window opened from a right-click menu gives focus back to where the menu came from (`useFocusCameFrom`; headless on
   the workspaces page, was body; nothing had focus before a plain right-click, so nothing to give back then); after a
   switch from Claude the old map, notes and where aren't sent (agent bug 48). The `discardNew` and switch tests fail on the old code.
+- **Still open from the sweep (2026-11-04; everything else in it is fixed):**
+  - 5: a write past WRITE_BATCH_MAX (450 docs) goes in several batches, so it can land in part (ops/firestore.ts, history.ts
+    `restore`). Since 48's fix the step stays and a toast says so (`PartlyWritten`); it still isn't all or nothing.
+  - 20: the key proxy in functions/ passes any `tools` it is sent, unchecked. Not live until Blaze.
+  - 21: names in presence, the people list and the like are free text, not bound to the signed-in person; decide Q-030 first.
+  - Small: a long reply's thread preview is only checked to be shorter than the message, not to be its start;
+    LinkChips and a deck's TaskBoard still redraw on any thread change (cheap now).
+  - To try once Blaze is on: `cleanUpWorkspaceAi` deleting others' private `agentChats` (built, never run); until then those stay.
 
 ## Done (2026-11-03): a test pass over the last 15 commits, and its fixes (north-star-e7; pushed)
 Eight reviewers (one area each) and two headless runs on emulators over 0db26da back to f2d28ac. The refactors held
