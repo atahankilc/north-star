@@ -10,6 +10,8 @@ export const STICK_PX = 40
 // The zoom's range, on the canvas, in a focus and beside it (D-186).
 export const ZOOM_MIN = 0.1
 export const ZOOM_MAX = 4
+// How far a plane's few cards grow to fill the space (D-363): its picture on the canvas, and its view in focus.
+export const PLANE_FIT_MAX = { picture: 2, focus: 1.5 }
 
 // One wheel step's zoom: a pinch (ctrl, a trackpad) moves faster than a mouse wheel.
 const WHEEL = 0.0015

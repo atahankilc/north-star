@@ -5,6 +5,7 @@
 // (what the screen shows once you're there), gliding as it grows so it stays in the middle. ↓ with nothing typed lists
 // the places (go to, D-196). ↑ ↓ pick, Enter goes, Tab steps the scopes, alt C W X the switches, Escape closes.
 // Something on another canvas (D-302) goes there first: the canvas builds, then the view goes on as it would.
+import { PIECE_GLYPH } from '../canvas/glyphs'
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { canvasPath } from '../../../app/paths'
@@ -187,7 +188,7 @@ function Panel() {
       for (const p of shownPieces(pieces, ws.cards)) {
         if (!p.name || !matchesIn(p.name, re, 1).length) continue
         const kind = kindOfPiece(p)
-        const place = { id: p.id, space: CANVAS, label: p.name, glyph: '▦', box: p, whole: true }
+        const place = { id: p.id, space: CANVAS, label: p.name, glyph: PIECE_GLYPH[kind], box: p, whole: true }
         const row: Row = { id: `piece:${p.id}`, glyph: '⌖', text: p.name, hint: other ? `${KIND_NAME[kind]} · ${name}` : KIND_NAME[kind], dest: { kind: 'place', place, target: { kind: 'space', space: CANVAS, key: `${kind === 'plane' ? 'plane' : kind}:${p.id}`, k: 0 } } }
         named.push({ row: tag(row), canvas: c })
       }

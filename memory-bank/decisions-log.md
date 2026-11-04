@@ -3694,9 +3694,9 @@ categories shown like B, not in a card, and the features under them not indented
 
 ### D-223 · 2026-10-22 · Accepted (a piece's name readable at any zoom; changes D-180's name field)
 - *What:* the name in the top edge of a plane, matrix or table stays where it was but is held at a size on the **screen**:
-  13 px × the canvas's zoom, never under 11 or over 15 (`--z` on the piece, the font size divided by it). `--fg`, weight
-  500, caps, tracked; named, its kind follows faint (`PAZAR ARAŞTIRMASI · PLANE`); unnamed, the kind alone, faint. When it
-  doesn't fit in the piece, the kind gives way first, then the name is cut with `…`; hovering the piece shows all of it.
+  18 px close, 24 px far (D-365; `--z` on the piece, the font size divided by it). `--fg`, weight
+  500, caps, tracked; its kind a tab before it (D-365). When it doesn't fit in the piece, the name is cut with `…`, then
+  the tab's word goes; hovering the piece shows all of it.
   Edit mode: the name is a field framed in cyan on the edge, a cyan `>` before it, what's typed in its own case, and
   `17/80` after it (faint); the app's focus outline is off there since the frame says it.
 - *Why:* names were hard to read on the canvas. The name scaled with the canvas: 11 px was 5 px on screen at 45 % and 3 px
@@ -7044,6 +7044,18 @@ runs, the researcher's request carries 15 searches), agentWeb.test.ts (both adap
 skill-research-01–03 on the stub (pass; `--wrong` fails), `researched()` grades the first call and every call's context.
 **Not yet:** a real-key run to see how many searches a researcher really uses.
 
+### D-363 · 2026-11-04 · Accepted (the user: "canvas ortalaması az cardlı durumlarda cok uzak kalıyor. Özellikle focus değilken boşuna alan israf ediliyor")
+**Decision:** a plane's few cards grow to fill the space instead of stopping at their own size. Its picture on the
+canvas fits up to zoom 2, its view in focus up to 1.5 (`PLANE_FIT_MAX`, feel.ts); `fitInto` and `fitPlane` take the most
+as an argument, 1 by default. Planes only: a matrix, timeline and every other piece, the canvas's own fit and a plane
+beside something stay at 1. Past that the person's wheel still goes to `ZOOM_MAX`.
+**Why:** the fit stopped at 1 (D-186), so two cards sat small in the middle of a plane with most of it empty.
+**Alternatives:** no limit (one card would fill the whole plane, far too big); the same limit in both (focus is on the
+whole screen, so 2 is too big there).
+**Checked:** gallery `canvas`, new states `a plane with few cards` and `few cards in focus`, in headless Chrome; tsc,
+unit tests 1038/0, check:tokens, check:gallery, check:kit.
+**Not yet:** the user's eye on the two numbers; a plane beside something keeps 1.
+
 ### D-364 · 2026-11-04 · Accepted (the user, on the preview docs/specs/filter-preview/: "D baya iyi ancak seçilen üste çıksa daha iyi olur gibi. En üstte tabii default düğmesi olsun ama seçilenler onun altında sıralanabilir", then "D ile git, uygulamada yap"; D-344's open item)
 **Decision:** a plane's and a deck's filter drawer is a row of columns, one per filter, never a row of dropdowns. Each
 column (`FilterColumn`, src/ui/patterns, on the prompt's rows, D-222) is its name over a rule with a count (magenta:
@@ -7096,9 +7108,7 @@ passed alone), check:tokens, check:kit, check:gallery, check:lessons.
 **Checked:** gallery canvas, dark and light, edit mode, unframed, headless; tab text ≥ 5.4:1 in both themes in the preview.
 **Not yet:** H1–H3 headings stay in canvas px, only sections are held.
 
-### D-367 · 2026-11-04 · Accepted (the user: "not logical to show the inside of a component all the time … stop showing it after a point and just put the header inside"; then "hide based on the dimensions of the component, not a fixed number", the name fitting with its kind clear; "the transition is not smooth")
-**Decision:** a piece narrower than 280 or shorter than 140 px on the screen (`PIECE_FAR_PX`, feel.ts) hides what's in it and shows its kind's tab and name in its middle; not while it's being edited. `farName.ts` fits the name: the biggest size from 28 to 11 px at which it's whole under the tab, up to three lines; too small for that, the icon beside the name; past that, cut with `…`; the kind always stays. The band goes to 4 px on the screen. An unframed piece gets its window back. What's inside, the edge name and the middle name each break or build cell by cell (`useCells`, 320 ms), once the zoom settles; reduced motion: at once. What's inside stays mounted, only clipped, so what measures it goes on working.
-**Why:** past a point the inside is only noise, and it can't be read; by the piece's own size, since a big plane is readable long after a small table.
-**Alternatives:** one canvas zoom for all pieces (built first, 0.3; the user turned it down); unmounting the inside (would save drawing, but sizes and agent marks read it).
-**Checked:** tests/unit/farName.test.ts; gallery `seen from far`, `seen from far, one unframed`, `very far`, headless; the clip paths measured frame by frame through a wheel zoom, out and back.
-**Not yet:** the two numbers by the user's eye; a very narrow piece can break a long word (`FEAT/URES`); a hidden inside still costs its drawing.
+### D-367 · 2026-11-04 · Rejected (built and removed the same day; the user: "component içini zooma göre hide etmeyi kaldıralım")
+**Tried:** a piece too small on the screen hid what's in it and showed its kind's icon and name fitted in its middle, on a tint of the kind's colour, cell by cell both ways; first under a fixed canvas zoom, then by the piece's own size (under 280 × 140 on the screen).
+**Decision:** taken out. What's in a piece shows at every zoom; D-263's plain surface holds. D-365 (names, kind tab, drawn icons, sections) stays.
+**Why not:** the user's call after seeing it; don't propose it again unless asked.

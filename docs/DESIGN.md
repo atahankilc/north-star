@@ -235,8 +235,6 @@ Values will be tuned against contrast checks (WCAG AA for text).
   screen, `--fg` caps weight 500, after the kind's tab, a solid cell in the kind's colour with its drawn icon and word
   (`▦ PLANE 01 PAZAR`; unnamed, the tab alone); tight, the name takes a `…`, then the tab's word goes; hovered, all of it.
   Edit mode: a cyan-framed field, a cyan `>` and `17/80`.
-- From far (D-367): under 280 × 140 on the screen a piece hides what's in it, its tab and name fitted in its middle
-  (11–28 px, up to three lines; low ones the icon beside the name), a 4 px band; cell by cell both ways.
 - Console (D-264, D-275, D-347; docs/specs/console-preview/, option D+E): one `Console` everywhere. A rail: who (name,
   mode, readouts, a page) · nouns (`filter 2`, `view`, `linked 2`), each opening its drawer as the rail's upper floor,
   one at a time · tools · go last; groups by role, each a ButtonGroup. On the canvas cut into the piece's bottom edge,

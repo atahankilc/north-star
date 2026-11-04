@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Piece headings and kinds · options</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/inter/opsz.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/jetbrains-mono/index.css">
+<style>
+/* A preview only: bigger piece headings, and telling a piece's kind at a glance. Not the app: the app's tokens,
+   hand-made copies of its pieces. Served from the repo root so the token and font files load. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-mono); font-size: var(--text-xs); overflow: hidden; }
+button { font: inherit; color: inherit; }
+
+/* ── The preview's own bar ── */
+.top { position: fixed; inset: 0 0 auto 0; z-index: 10; display: grid; gap: 6px; padding: 10px 16px; background: var(--bg-raised); border-bottom: 1px solid var(--piece-edge); }
+.row { display: flex; flex-wrap: wrap; gap: 4px 20px; align-items: center; }
+.grp { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; }
+.grp > span { width: 64px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: .05em; }
+.row.small .grp > span { width: auto; margin-right: 6px; }
+.opt { background: var(--wash-2); border: 0; padding: 5px 9px; color: var(--fg-muted); cursor: pointer; }
+.opt:hover { background: var(--wash-3); }
+.opt[aria-pressed='true'] { background: var(--wash-5); color: var(--fg-strong); }
+.opt b { color: var(--accent-magenta); font-weight: 400; margin-right: 6px; }
+.go { background: var(--accent-cyan); color: #000; }
+.go:hover { background: var(--accent-cyan); }
+.note { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding-top: 6px; font-family: var(--font-display); font-size: 13px; line-height: 1.4; color: var(--fg-muted); }
+.note h2 { margin: 0 0 2px; font-size: 13px; font-weight: 600; color: var(--fg); }
+.note p { margin: 0; }
+.stage { position: fixed; inset: var(--bar, 110px) 0 0 0; overflow: auto; }
+.sizer { position: relative; }
+.world { position: absolute; top: 0; left: 0; width: 3560px; height: 1860px; transform-origin: 0 0; }
+
+/* ── A piece, as the app draws it ── */
+.piece { --kind: var(--fg); --bg: var(--piece); position: absolute; border: 1px solid var(--piece-edge); background: var(--piece); box-shadow: var(--piece-shadow); }
+.piece[data-kind='matrix'] { --kind: var(--link-solves); }
+.piece[data-kind='table'] { --kind: var(--link-part); }
+.piece[data-kind='kanban'] { --kind: var(--link-draws); }
+.piece[data-kind='documents'] { --kind: var(--link-depends); }
+.piece[data-kind='timeline'] { --kind: var(--link-competes); }
+.inside { position: absolute; inset: 0; overflow: hidden; }
+.piece[data-kind='plane'] .inside { background-image: radial-gradient(var(--piece-mark) 1px, transparent 1.4px); background-size: 25px 25px; }
+
+.band { position: absolute; top: -1px; left: -1px; right: -1px; height: calc(var(--band, 2px) / var(--z)); background: var(--kind); }
+.side { display: none; position: absolute; top: -1px; left: -1px; bottom: -1px; }
+
+.head { position: absolute; z-index: 1; top: 0; left: calc(16px / var(--z)); display: flex; align-items: center; gap: .6em; max-width: calc(100% - 32px / var(--z)); padding: 0 calc(8px / var(--z)); transform: translateY(-50%); background: var(--bg); color: var(--fg); font-family: var(--font-mono); font-size: calc(var(--hs) / var(--z)); font-weight: 500; line-height: 1.5; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+.num { flex: none; color: var(--accent-magenta); font-weight: 400; }
+.text { overflow: hidden; min-width: 0; text-overflow: ellipsis; }
+.sep, .word { overflow: hidden; flex-shrink: 100; min-width: 0; color: var(--fg-faint); font-weight: 400; }
+.tab, .icon { display: none; flex: none; }
+svg { display: block; width: 1.25em; height: 1.25em; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; }
+svg .f { fill: currentColor; stroke: none; }
+
+/* Headings. --zv is the view's zoom. */
+[data-h='a'] { --hs: clamp(12px, calc(14px * var(--zv)), 15px); }
+[data-h='b'] { --hs: clamp(16px, calc(21px - 5px * var(--zv)), 20px); }
+[data-h='c'] { --hs: clamp(18px, calc(24px - 6px * var(--zv)), 22px); }
+[data-h='c'] .head { gap: .45em; font-family: var(--font-display); font-weight: 600; letter-spacing: -.01em; text-transform: none; }
+[data-h='c'] .num, [data-h='c'] .word, [data-h='c'] .sep, [data-h='c'] .tab { font-family: var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+[data-h='c'] .word, [data-h='c'] .sep, [data-h='c'] .tab { font-size: .68em; }
+[data-h='c'] .num { font-weight: 400; }
+[data-h='d'] { --hs: clamp(18px, calc(24px - 6px * var(--zv)), 22px); }
+[data-h='d'] .head { top: calc(-6px / var(--z)); left: 0; max-width: 100%; padding: 0; transform: translateY(-100%); background: none; }
+
+/* Kinds. */
+[data-k='1'] { --band: 6px; }
+[data-k='1'] .word, [data-k='1'] .sep { color: var(--kind); }
+
+[data-k='2'] .tab, [data-k='6'] .tab { display: flex; align-items: center; gap: .4em; padding: .1em .5em; background: var(--kind); color: var(--on-kind); font-weight: 600; font-size: .8em; }
+/* White ink on the light theme's kind colours needs them a step darker to reach 4.5:1. */
+[data-theme='light'] [data-k='2'] .tab, [data-theme='light'] [data-k='6'] .tab { background: color-mix(in srgb, var(--kind) 86%, #000); }
+[data-k='2'] .sep, [data-k='2'] .word, [data-k='6'] .sep, [data-k='6'] .word { display: none; }
+/* The same tab, its word a step smaller; the icon keeps its size. */
+[data-k='6'] .tabWord { font-size: .78em; }
+/* A small piece on screen: the name wins, the tab keeps only its icon. Hovering shows it all, as in the app. */
+[data-k='2'] .piece[data-tight] .tabWord, [data-k='6'] .piece[data-tight] .tabWord { display: none; }
+.piece:hover .head { max-width: none; z-index: 2; }
+[data-k='2'] .piece[data-tight]:hover .tabWord, [data-k='6'] .piece[data-tight]:hover .tabWord { display: inline; }
+[data-h='c'][data-k='2'] .tab, [data-h='c'][data-k='6'] .tab { font-size: .68em; }
+
+[data-k='3'] { --band: 3px; }
+[data-k='3'] .icon { display: block; color: var(--kind); font-size: 1.1em; }
+[data-k='3'] .word, [data-k='3'] .sep { color: var(--fg-dim); }
+
+[data-k='4'] .word, [data-k='4'] .sep { color: var(--kind); }
+[data-k='4'] { --u: calc(1px / var(--z)); }
+[data-k='4'] .band { height: calc(9 * var(--u)); background: none; }
+[data-k='4'] [data-kind='plane'] .band { background: radial-gradient(circle, var(--kind) calc(1.6 * var(--u)), transparent calc(2 * var(--u))) 0 50% / calc(10 * var(--u)) calc(9 * var(--u)) repeat-x; }
+[data-k='4'] [data-kind='matrix'] .band { background: repeating-linear-gradient(90deg, var(--kind) 0 calc(9 * var(--u)), transparent calc(9 * var(--u)) calc(13 * var(--u))); }
+[data-k='4'] [data-kind='matrix'] .side { display: block; width: calc(9 * var(--u)); background: repeating-linear-gradient(180deg, var(--kind) 0 calc(9 * var(--u)), transparent calc(9 * var(--u)) calc(13 * var(--u))); }
+[data-k='4'] [data-kind='table'] .band { height: calc(3 * var(--u)); background: var(--kind); }
+[data-k='4'] [data-kind='table'] .side { display: block; width: calc(9 * var(--u)); background: repeating-linear-gradient(180deg, var(--kind) 0 calc(2 * var(--u)), transparent calc(2 * var(--u)) calc(9 * var(--u))); }
+[data-k='4'] [data-kind='kanban'] .band { height: calc(5 * var(--u)); background: repeating-linear-gradient(90deg, var(--kind) 0 calc(25% - 8 * var(--u)), transparent calc(25% - 8 * var(--u)) 25%); }
+[data-k='4'] [data-kind='timeline'] .band { background: repeating-linear-gradient(90deg, var(--kind) 0 calc(2 * var(--u)), transparent calc(2 * var(--u)) calc(35 * var(--u))) 0 0 / 100% 100% no-repeat, repeating-linear-gradient(90deg, var(--kind) 0 var(--u), transparent var(--u) calc(5 * var(--u))) 0 0 / 100% 45% no-repeat; }
+[data-k='4'] [data-kind='documents'] .band { height: calc(3 * var(--u)); background: var(--kind); }
+[data-k='4'] [data-kind='documents'] .side { display: block; left: auto; right: -1px; bottom: auto; width: calc(26 * var(--u)); height: calc(26 * var(--u)); background: linear-gradient(225deg, var(--bg-page, #000) 50%, var(--kind) 50%); }
+
+[data-k='5'] .band { display: none; }
+[data-k='5'] .head { top: 0; left: 0; right: 0; max-width: none; height: 2.1em; padding: 0 calc(12px / var(--z)); transform: none; background: color-mix(in srgb, var(--kind) 26%, var(--piece)); }
+[data-k='5'] .icon { display: block; color: var(--kind); }
+[data-k='5'] .sep { display: none; }
+[data-k='5'] .word { margin-left: auto; color: var(--kind); flex-shrink: 0; }
+[data-k='5'] .inside { top: calc(var(--hs) * 2.1 / var(--z)); }
+[data-h='c'][data-k='5'] .word { font-size: .68em; }
+
+/* What's inside, in the world's px. */
+.card { position: absolute; width: 200px; height: 100px; padding: 8px 10px; border-left: 3px solid var(--t); background: color-mix(in srgb, var(--t) 16%, var(--piece-card)); font-family: var(--font-display); font-size: 16px; line-height: 1.25; color: var(--fg); overflow: hidden; }
+.mx { position: absolute; inset: 40px 24px 24px; display: grid; gap: 4px; grid-template-columns: 220px repeat(5, 1fr); }
+.mx i { background: var(--piece-card); font-style: normal; font-family: var(--font-display); font-size: 13px; padding: 5px; color: var(--fg-muted); overflow: hidden; white-space: nowrap; }
+.mx i.h { background: color-mix(in srgb, var(--type-competitor) 16%, var(--piece-card)); }
+.mx i.r { background: color-mix(in srgb, var(--type-feature) 16%, var(--piece-card)); }
+.mx i.c::after { content: ''; display: block; width: 14px; height: 14px; margin: auto; background: var(--c, transparent); }
+.tb { position: absolute; inset: 36px 0 0; font-family: var(--font-display); font-size: 14px; color: var(--fg-muted); }
+.tb div { display: grid; grid-template-columns: 2.4fr 1fr 1fr 1fr; padding: 10px 24px; border-bottom: 1px solid var(--piece-edge); }
+.dk { position: absolute; inset: 44px 24px 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.dk h4 { margin: 0 0 8px; font-weight: 400; font-size: 13px; letter-spacing: .05em; color: var(--fg-dim); border-bottom: 1px solid var(--piece-edge); padding-bottom: 5px; }
+.dk p { margin: 0 0 8px; padding: 10px; min-height: 64px; background: var(--piece-card); border-left: 2px solid var(--t); font-family: var(--font-display); font-size: 14px; line-height: 1.3; color: var(--fg); }
+.tl { position: absolute; inset: 0; }
+.tl s { position: absolute; top: 40px; bottom: 0; width: 1px; background: var(--piece-edge); }
+.tl b { position: absolute; height: 30px; padding: 5px 8px; background: color-mix(in srgb, var(--t) 22%, var(--piece-card)); border-left: 2px solid var(--t); font-family: var(--font-display); font-weight: 400; font-size: 13px; color: var(--fg); white-space: nowrap; overflow: hidden; }
+.dc { position: absolute; inset: 40px 24px 0; font-family: var(--font-display); font-size: 14px; color: var(--fg); }
+.dc div { padding: 12px 0; border-bottom: 1px solid var(--piece-edge); }
+.dc small { display: block; color: var(--fg-dim); font-size: 12px; }
+
+/* Compare: every kind side by side. */
+.board { padding: 24px 16px; display: grid; gap: 28px; }
+.board h3 { margin: 0 0 22px; color: var(--fg-dim); font-weight: 400; letter-spacing: .05em; text-transform: uppercase; }
+.line { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 34px 24px; }
+.slot { position: relative; height: 60px; }
+.slot .piece { inset: 0; }
+</style>
+</head>
+<body>
+<div class="top" id="top">
+  <div class="row"><div class="grp" id="hs"><span>heading</span></div></div>
+  <div class="row"><div class="grp" id="ks"><span>kind</span></div></div>
+  <div class="row small">
+    <div class="grp" id="presets"><span>jump to</span></div>
+    <div class="grp" id="views"><span>view</span></div>
+    <div class="grp" id="zooms"><span>zoom</span></div>
+    <div class="grp" id="themes"><span>theme</span></div>
+  </div>
+  <div class="note" id="note"></div>
+</div>
+<div class="stage" id="stage"><div class="sizer" id="sizer"><div class="world" id="world"></div></div></div>
+
+<script>
+const ICON = {
+  plane: '<rect x="1.5" y="2.5" width="8" height="5"/><rect x="8.5" y="10.5" width="8" height="5"/><path d="M6 7.5 11 10.5"/>',
+  matrix: '<rect x="2" y="2" width="14" height="14"/><path d="M2 6.7h14M2 11.3h14M6.7 2v14M11.3 2v14"/><rect class="f" x="6.7" y="6.7" width="4.6" height="4.6"/>',
+  table: '<rect class="f" x="2" y="3" width="14" height="3"/><path d="M2 9h14M2 12h14M2 15h14"/>',
+  kanban: '<rect x="2" y="2.5" width="3.6" height="13"/><rect x="7.2" y="2.5" width="3.6" height="8"/><rect x="12.4" y="2.5" width="3.6" height="10.5"/>',
+  timeline: '<path d="M2 2v14"/><rect class="f" x="4" y="3" width="7" height="3"/><rect class="f" x="7" y="8" width="8" height="3"/><rect class="f" x="4.5" y="13" width="5" height="2.6"/>',
+  documents: '<path d="M2.5 13V1.5h7"/><path d="M5 4h6.5L15 7.5V16.5H5z M11.5 4v3.5H15 M7.5 10.5h5 M7.5 13h3.5"/>',
+}
+const WORD = { plane: 'plane', matrix: 'matrix', table: 'table', kanban: 'deck', timeline: 'timeline', documents: 'documents' }
+
+const H = [
+  ['a', 'today', 'mono caps, 12 to 15 px, smallest when zoomed out', 'Today. The size is 14 px × zoom, so a name is at its smallest (12 px) exactly when you zoom out to find something.'],
+  ['b', 'bigger, same voice', 'mono caps, 16 px close, 20 px far', 'Same look, turned the right way: 16 px at 100 %, growing to 20 px as you zoom out. Nothing else in the app has to change.'],
+  ['c', 'bigger, the person’s voice', 'Inter, 18 to 22 px, as typed', 'A name is something a person typed, and D-266 says people write in Inter. Reads faster, takes less width than mono caps, keeps its case. The kind stays mono, so name and kind stop looking the same.'],
+  ['d', 'above the edge', 'mono caps, 18 to 22 px, over the piece', 'The name leaves the edge and sits on the page over the piece, like a heading. The band stays whole. It needs the gap between pieces, and pieces placed tight would touch names.'],
+]
+const K = [
+  ['0', 'today', '2 px band, faint word', 'Today. The band is thin and the name hides part of it. The word is the faintest grey, and `▦ ▥ ▤` look alike when small.'],
+  ['1', 'stronger band', '6 px band, word in colour', 'The smallest change: same idea, more of it. Colour alone still has to be learned, and it does not help a colour-blind person.'],
+  ['2', 'kind tab', 'a solid cell: icon and word', 'A solid cell in the kind’s colour, cut into the edge: icon and word together. Colour, shape and word all say the same thing, so nothing has to be learned. Same family as the app’s buttons (cells, D-344).'],
+  ['3', 'drawn icon', 'new icon in colour, quieter word', 'A new drawn icon set, each a tiny picture of the piece. Quieter than the tab. The `+` menu and the finder would use the same icons, so you learn them once.'],
+  ['4', 'the edge says it', 'the edge drawn like what’s inside', 'The boldest idea: each edge is drawn like what the piece holds. Matrix cells along two sides, a table’s rows down the side, a deck’s columns, a timeline’s ruler, a plane’s dots, a page’s folded corner. Works with no colour. Only on the edge, so it is not the ASCII surface turned down in D-263, but it is busier.'],
+  ['5', 'filled head', 'a tinted strip across the top', 'The loudest: a tinted strip across the whole top, icon left, kind right. Very easy to read, but pieces start to look like ordinary app windows and it takes height. Close to the title bar option not picked in D-223.'],
+  ['6', 'kind tab, small word', 'the tab with a smaller word', 'The kind tab with its word a step smaller and the icon at the same size, so the name leads and the kind reads as a label beside it.'],
+]
+const VIEWS = [['canvas', 'canvas'], ['compare', 'every kind side by side']]
+const ZOOMS = [[0.2, '20 %'], [0.36, '36 %'], [0.6, '60 %'], [1, '100 %']]
+const S = { h: 'b', k: '2', z: 0.36, theme: 'dark', view: 'canvas' }
+const q = new URLSearchParams(location.hash.slice(1))
+for (const key of Object.keys(S)) if (q.has(key)) S[key] = key === 'z' ? +q.get(key) : q.get(key)
+
+const T = { customer: 'var(--type-customer)', problem: 'var(--type-problem)', competitor: 'var(--type-competitor)', idea: 'var(--type-idea)', feature: 'var(--type-feature)' }
+const cards = (list) => list.map(([t, x, y, s]) => `<div class="card" style="--t:${T[t]};left:${x}px;top:${y}px">${s}</div>`).join('')
+const LUNCH = cards([
+  ['customer', 40, 50, 'Office workers'], ['customer', 270, 50, 'Home cooks'], ['customer', 500, 50, 'Students'], ['customer', 730, 50, 'Night shifts'], ['customer', 960, 50, 'Team leads'],
+  ['problem', 40, 210, 'Delivery lunch is greasy and costs €14 or more'], ['problem', 270, 210, 'A 30-minute break leaves no time to queue'], ['problem', 500, 210, 'The canteen serves the same five dishes'],
+  ['problem', 40, 370, 'Cooks guess portions and throw food away'], ['problem', 270, 370, 'Hard to trust allergy info from a stranger'],
+  ['idea', 40, 550, 'Home cooks sell tomorrow’s lunch the night before'], ['idea', 270, 550, 'A pickup shelf in each office lobby'], ['idea', 500, 550, 'A weekly lunch plan you pay for once'], ['idea', 730, 550, 'Cooks rated by who eats with them'],
+])
+const PRODUCT = cards([
+  ['feature', 40, 50, 'Pre-order by 9 pm, pick up at noon'], ['feature', 270, 50, 'Pickup shelf opened with a QR code'], ['feature', 500, 50, 'Cook profile with a kitchen check'], ['feature', 730, 50, 'Allergen labels on every dish'],
+  ['feature', 40, 210, 'Portion counter for cooks at 9 pm'], ['feature', 270, 210, 'Weekly plan, paid on Mondays'], ['feature', 500, 210, 'One team order, split by person'],
+  ['competitor', 40, 550, 'Wolt'], ['competitor', 270, 550, 'Lieferando'], ['competitor', 500, 550, 'Too Good To Go'], ['competitor', 730, 550, 'Shef'], ['competitor', 960, 550, 'The office canteen'],
+])
+const MATRIX = (() => {
+  const cols = ['Lieferando', 'Shef', 'The canteen', 'Too Good', 'Wolt']
+  const rows = ['Allergen labels', 'Cook profile', 'One team order', 'Pickup shelf', 'Portion counter', 'Pre-order by 9 pm', 'Tip your cook', 'Weekly plan']
+  const dots = ['var(--accent-cyan)', '', 'var(--accent-yellow)', '', 'var(--accent-magenta)', '', '']
+  let s = '<i></i>' + cols.map((c) => `<i class="h">${c}</i>`).join('')
+  rows.forEach((r, a) => { s += `<i class="r">${r}</i>` + cols.map((_, b) => `<i class="c" style="--c:${dots[(a * 3 + b * 2) % 7] || 'transparent'}"></i>`).join('') })
+  return `<div class="mx">${s}</div>`
+})()
+const TABLE = `<div class="tb">${[['Allergen labels on every dish', 'shipped', 'P1', 'medium'], ['Pickup shelf opened with a QR code', 'planned', 'P1', 'high'], ['Portion counter for cooks', 'planned', 'P1', 'high'], ['Pre-order by 9 pm', 'building', 'P1', 'high'], ['Cook profile with a kitchen check', 'planned', 'P2', 'medium'], ['One team order, split by person', 'idea', 'P2', 'medium'], ['Tip your cook in the app', 'idea', 'P3', 'low'], ['Weekly plan, paid on Mondays', 'idea', 'P2', 'medium']].map((r) => `<div>${r.map((c) => `<span>${c}</span>`).join('')}</div>`).join('')}</div>`
+const DECK = `<div class="dk">${[['01 to do', [['problem', 'Ask the Bezirksamt which permit home cooks need'], ['feature', 'Find two lobbies that would host a shelf'], ['feature', 'Write the allergen checklist']]], ['02 doing', [['customer', 'Sign up five more cooks in Neukölln'], ['idea', 'Move the order cut-off']]], ['03 review', [['feature', 'QR shelf lock: test with the hardware sample'], ['idea', 'Portion counter: send at 9 pm']]], ['04 done', [['customer', 'Interview 12 people in Kreuzberg'], ['feature', 'Allergen labels on every dish']]]].map(([h, ps]) => `<section><h4>${h}</h4>${ps.map(([t, s]) => `<p style="--t:${T[t]}">${s}</p>`).join('')}</section>`).join('')}</div>`
+const TIMELINE = `<div class="tl">${[...Array(16)].map((_, i) => `<s style="left:${150 + i * 66}px"></s>`).join('')}${[['customer', 340, 90, 330, 'Sign up five more cooks in Neukölln'], ['problem', 720, 90, 380, 'Ask the Bezirksamt which permit'], ['feature', 280, 130, 300, 'QR shelf lock: test with sample'], ['idea', 640, 130, 240, 'Portion counter'], ['feature', 400, 170, 200, 'Move the cut-off']].map(([t, x, y, w, s]) => `<b style="--t:${T[t]};left:${x}px;top:${y}px;width:${w}px">${s}</b>`).join('')}</div>`
+const DOCS = `<div class="dc"><div>Pilot, week one: 31 pre-orders<small>Ayla Demir · 980 words</small></div><div>Interviews: Kreuzberg offices<small>Lena Hoffmann · 2.7k words</small></div></div>`
+
+const PIECES = [
+  ['plane', 0, 0, 1200, 725, '01', 'Lunch', LUNCH],
+  ['plane', 1300, 0, 1200, 725, '02', 'Product', PRODUCT],
+  ['matrix', 2600, 0, 900, 600, '03', 'Who covers what', MATRIX],
+  ['table', 2600, 700, 900, 450, '04', 'Features', TABLE],
+  ['kanban', 0, 850, 1200, 600, '05', 'Launch', DECK],
+  ['timeline', 1300, 850, 1200, 450, '06', 'Launch days', TIMELINE],
+  ['documents', 1300, 1400, 1200, 350, '07', 'Research', DOCS],
+  ['plane', 2600, 1250, 325, 200, '08', 'Interviews with office managers in Kreuzberg and Mitte', ''],
+  ['plane', 3025, 1250, 325, 200, '', '', ''],
+]
+const piece = ([kind, x, y, w, h, num, name, inner], box = true) => `
+  <div class="piece" data-kind="${kind}" ${name && w * S.z < 240 ? 'data-tight' : ''} ${box ? `style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"` : ''}>
+    <div class="inside">${inner}</div><div class="side"></div><div class="band"></div>
+    <div class="head">
+      <span class="tab"><svg viewBox="0 0 18 18">${ICON[kind]}</svg><span class="tabWord">${WORD[kind]}</span></span>
+      <svg class="icon" viewBox="0 0 18 18">${ICON[kind]}</svg>
+      ${num ? `<span class="num">${num}</span>` : ''}${name ? `<span class="text">${name}</span>` : ''}
+      <span class="sep">·</span><span class="word">${WORD[kind]}</span>
+    </div>
+  </div>`
+
+const bar = (id, items, now, pick) => {
+  const g = document.getElementById(id)
+  g.querySelectorAll('button').forEach((b) => b.remove())
+  for (const [v, label, tag] of items) {
+    const b = document.createElement('button')
+    b.className = 'opt'
+    b.setAttribute('aria-pressed', String(v === now))
+    b.innerHTML = (tag ? `<b>${tag}</b>` : '') + label
+    b.onclick = () => pick(v)
+    g.append(b)
+  }
+}
+
+function draw() {
+  document.documentElement.dataset.theme = S.theme
+  document.documentElement.style.setProperty('--on-kind', S.theme === 'dark' ? '#000' : '#fff')
+  document.documentElement.style.setProperty('--bg-page', getComputedStyle(document.body).backgroundColor)
+  location.replace('#' + new URLSearchParams(S))
+  const set = (k) => (v) => { S[k] = v; draw() }
+  bar('hs', H.map(([v, l], i) => [v, l, 'ABCD'[i]]), S.h, set('h'))
+  bar('ks', K.map(([v, l], i) => [v, l, i + 1]), S.k, set('k'))
+  bar('views', VIEWS, S.view, set('view'))
+  bar('zooms', ZOOMS, S.z, set('z'))
+  bar('themes', [['dark', 'dark'], ['light', 'light']], S.theme, set('theme'))
+  const now = S.h === 'a' && S.k === '0' ? 'today' : S.h === 'b' && S.k === '2' ? 'rec' : S.h === 'd' && S.k === '6' ? 'd7' : ''
+  bar('presets', [['rec', 'my pick: B + 3'], ['d7', 'D + 7'], ['today', 'today: A + 1']], now, (v) => { S.h = { rec: 'b', d7: 'd', today: 'a' }[v]; S.k = { rec: '2', d7: '6', today: '0' }[v]; draw() })
+  document.querySelector('#presets button').classList.add('go')
+
+  const world = document.getElementById('world')
+  const sizer = document.getElementById('sizer')
+  world.dataset.h = S.h
+  if (S.view === 'canvas') world.dataset.k = S.k
+  else delete world.dataset.k
+  if (S.view === 'canvas') {
+    world.style.cssText = `--z:${S.z};--zv:${S.z};transform:translate(40px,50px) scale(${S.z});width:3560px;height:1860px`
+    world.innerHTML = PIECES.map((p) => piece(p)).join('')
+    sizer.style.width = `${3560 * S.z + 80}px`
+    sizer.style.height = `${1860 * S.z + 90}px`
+  } else {
+    world.style.cssText = `--z:1;--zv:${S.z};transform:none;position:static;width:auto;height:auto`
+    sizer.style.cssText = ''
+    const six = PIECES.slice(0, 7).filter((p, i) => i !== 1)
+    world.innerHTML = `<div class="board">${K.map(([k, l], i) => `<section data-k="${k}" data-h="${S.h}"><h3>${i + 1} · ${l}</h3><div class="line">${six.map((p) => `<div class="slot">${piece([...p.slice(0, 7), ''], false)}</div>`).join('')}</div></section>`).join('')}</div>`
+  }
+  const h = H.find((x) => x[0] === S.h), k = K.find((x) => x[0] === S.k)
+  document.getElementById('note').innerHTML = `<div><h2>${'ABCD'[H.indexOf(h)]} · ${h[1]} <span style="font-weight:400;color:var(--fg-dim)">(${h[2]})</span></h2><p>${h[3]}</p></div>` + (S.view === 'canvas' ? `<div><h2>${K.indexOf(k) + 1} · ${k[1]} <span style="font-weight:400;color:var(--fg-dim)">(${k[2]})</span></h2><p>${k[3]}</p></div>` : '')
+  document.getElementById('stage').style.setProperty('--bar', document.getElementById('top').offsetHeight + 'px')
+}
+draw()
+addEventListener('resize', draw)
+</script>
+</body>
+</html>

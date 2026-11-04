@@ -3,6 +3,7 @@
 // where the side nav's `+` puts new things.
 import { create } from 'zustand'
 import { DUR, glideValues } from '../ui/foundation/motion'
+import { ZOOM_MIN } from '../ui/foundation/feel'
 import { boundsOf } from '../model/layout'
 import { keepLocal, readLocal } from './local'
 
@@ -169,9 +170,10 @@ export const stopGlide = () => moving()
 
 export type Bounds = { x: number; y: number; w: number; h: number }
 
-// The zoom and middle that fit `b` into a w × h box with `pad` round it, never past 1 (D-186, as the board's fit, D-060).
-export function fitInto(b: Bounds, w: number, h: number, pad: number) {
-  const zoom = Math.max(0.1, Math.min(1, (w - 2 * pad) / Math.max(1, b.w), (h - 2 * pad) / Math.max(1, b.h)))
+// The zoom and middle that fit `b` into a w × h box with `pad` round it, never past `most`: 1, but for a plane's cards
+// (D-186, as the board's fit, D-060; D-363).
+export function fitInto(b: Bounds, w: number, h: number, pad: number, most = 1) {
+  const zoom = Math.max(ZOOM_MIN, Math.min(most, (w - 2 * pad) / Math.max(1, b.w), (h - 2 * pad) / Math.max(1, b.h)))
   return { zoom, cx: b.x + b.w / 2, cy: b.y + b.h / 2 }
 }
 
@@ -197,14 +199,14 @@ export const fitHere = () => fitter()
 
 // The focused plane's contents in view (D-186): what's in it, centred and fitted to the screen. A plane holds nothing
 // yet, so this takes it back to where it was on the canvas. `instant`: no glide (arriving without the ink, a reload).
-export function fitPlane(content: Bounds | null, instant = false) {
+export function fitPlane(content: Bounds | null, instant = false, most = 1) {
   const { planeCam, planeHome } = useCanvasView.getState()
   if (!planeCam || !planeHome) return
   let to = planeHome
   // Its own half when something is open beside it (D-211).
   const size = planeArea()
   if (content) {
-    const { zoom, cx, cy } = fitInto(content, size.w, size.h, 96)
+    const { zoom, cx, cy } = fitInto(content, size.w, size.h, 96, most)
     to = { ox: size.w / 2 - cx * zoom, oy: size.h / 2 - cy * zoom, zoom }
   }
   if (instant) {

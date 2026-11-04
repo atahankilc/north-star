@@ -74,7 +74,9 @@ import { usePlaneFilter } from './planeFilter'
 import styles from './CanvasView.module.css'
 import { DUR, easeInOut, lerp } from '../../../ui/foundation/motion'
 import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
-import { DRAG_PX, wheelStep, zoomAt } from '../../../ui/foundation/feel'
+import { DRAG_PX, PLANE_FIT_MAX, wheelStep, zoomAt } from '../../../ui/foundation/feel'
+import { PIECE_GLYPH } from './glyphs'
+import type { PieceKind } from '../../../data/model'
 import { panPointer, pressDrag } from '../../../ui/foundation/dragPointer'
 import { keysTaken } from '../../../ui/foundation/focus'
 import { stuckChain } from '../../../model/pieceMoves'
@@ -228,7 +230,7 @@ export function CanvasView() {
     // A timeline fills the screen at its own size (D-304): a box as big as the screen less fit's margins.
     // Its part of the screen with the tasks side view open (D-314).
     else if (focused && focusedTimeline) fitPlane({ x: 0, y: 0, w: planeArea().w - 192, h: size.h - 192 }, instant)
-    else if (focused) fitPlane(contentOf(focused), instant)
+    else if (focused) fitPlane(contentOf(focused), instant, focusedBare ? 1 : PLANE_FIT_MAX.focus)
     else fitCanvas(wid, [...shown, ...canvasLabels.map(labelBox)])
   }
   useEffect(() => {
@@ -1351,18 +1353,18 @@ function Bond({ piece, plane: at, zoom, layer }: { piece: WithId<Piece>; plane: 
 const BOND_CELL = 9
 
 // What a piece shows of what's in it on the canvas (D-187): a plane's cards and text centred and fitted inside its box,
-// never past 1; nothing = its own (0, 0) at its corner. Its px inside its 1 px edge. A matrix is a window: its table at
-// its own size from the top-left, cut by the window's edge (D-208).
-function innerView(box: Box, b: Bounds | null, bare = false, pad = GRID): PlaneCam {
+// a few cards growing to fill it (D-363); nothing = its own (0, 0) at its corner. Its px inside its 1 px edge. A matrix is
+// a window: its table at its own size from the top-left, cut by the window's edge (D-208).
+function innerView(box: Box, b: Bounds | null, bare = false, pad = GRID, most = 1): PlaneCam {
   if (!b || bare) return { ox: 0, oy: 0, zoom: 1 }
-  const { zoom, cx, cy } = fitInto(b, box.w - 2, box.h - 2, pad)
+  const { zoom, cx, cy } = fitInto(b, box.w - 2, box.h - 2, pad, most)
   return { ox: (box.w - 2) / 2 - cx * zoom, oy: (box.h - 2) / 2 - cy * zoom, zoom }
 }
 
 // How a piece shows what's in it: a table at its own size from the top-left, cut by its edge (D-208); a matrix fitted
 // whole in its window, a little room round it (D-214); a plane's cards fitted.
 // A timeline (D-262) is fitted in its window, as a matrix is: two weeks are wider than any window.
-const asShown = (p: Piece): [boolean, number] => (kindRecord(p)?.fitted ? [false, 12] : [isBare(p), GRID])
+const asShown = (p: Piece): [boolean, number, number] => (kindRecord(p)?.fitted ? [false, 12, 1] : [isBare(p), GRID, PLANE_FIT_MAX.picture])
 
 // That view on the screen, where focus starts from and goes back to.
 function homeOf(piece: Piece, at: ScreenRect, content: Bounds | null): PlaneCam {
@@ -1440,6 +1442,16 @@ const KIND_TONE: Record<string, string> = {
   documents: 'var(--link-depends)',
   document: 'var(--link-depends)',
   timeline: 'var(--link-competes)',
+}
+
+// Its kind's tab (D-365): its icon and word.
+function KindTab({ kind }: { kind: PieceKind }) {
+  return (
+    <span className={styles.nameTab}>
+      {PIECE_GLYPH[kind]}
+      <span className={styles.nameTabWord}>{KIND_NAME[kind]}</span>
+    </span>
+  )
 }
 
 // A piece on the canvas, memoised on what it shows (its handler reads a ref, its lists compared by what's in them): a
@@ -1592,13 +1604,13 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
   }
   // Its cards fitted inside it, and its marks with them (D-187).
   const bare = isBare(piece)
-  const [noFit, pad] = asShown(piece)
+  const [noFit, pad, most] = asShown(piece)
   // Its own view, the same object until its box or contents change, so what's in it isn't drawn again as the canvas
   // moves (Matrix, Table, Cards below).
-  const inner = useMemo(() => innerView({ x: 0, y: 0, w: box.w, h: box.h }, content, noFit, pad), [box.w, box.h, content, noFit, pad])
+  const inner = useMemo(() => innerView({ x: 0, y: 0, w: box.w, h: box.h }, content, noFit, pad, most), [box.w, box.h, content, noFit, pad, most])
   // Going between framed and unframed (D-267): the window breaks cell by cell (or builds) while what's in it grows from
   // fitted in it to its own size (or shrinks back), 320 ms; nothing else moves. Reduced motion: at once.
-  const fitted = useMemo(() => innerView({ x: 0, y: 0, w: piece.w, h: piece.h }, content, noFit, pad), [piece.w, piece.h, content, noFit, pad])
+  const fitted = useMemo(() => innerView({ x: 0, y: 0, w: piece.w, h: piece.h }, content, noFit, pad, most), [piece.w, piece.h, content, noFit, pad, most])
   const [morph, setMorph] = useState<{ to: 'open' | 'framed'; t: number } | null>(null)
   const wasOpen = useRef(open)
   useEffect(() => {
@@ -1663,20 +1675,13 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
       {editing && kind !== 'document' ? (
         <NameField value={piece.name ?? ''} placeholder={KIND_NAME[kind]} onSave={(name) => name !== (piece.name ?? '') && void renamePiece(wid, piece.id, name, kind)} />
       ) : (
-        // Named: the name, then its kind faint (D-223); unnamed: the kind alone, faint. A number it starts with in
-        // magenta before it (D-266); unframed, the name is a heading's small line, `04 ── RIVALS · TABLE` (D-267).
-        <span className={styles.name} data-unnamed={!name || undefined} title={name || undefined}>
+        // Its kind's tab, then the name (D-365); unnamed: the tab alone. A number it starts with in magenta before it
+        // (D-266); unframed, the name is a heading's small line, `04 ── RIVALS` (D-267).
+        <span className={styles.name} title={name || undefined}>
+          <KindTab kind={kind} />
           {numbered.num && <span className={styles.nameNum}>{numbered.num}</span>}
           {numbered.num && open && <span className={styles.nameRule} aria-hidden />}
-          {(numbered.rest || !numbered.num) && <span className={styles.nameText}>{numbered.rest || KIND_NAME[kind]}</span>}
-          {name && (
-            <>
-              <span className={styles.nameSep} aria-hidden>
-                ·
-              </span>
-              <span className={styles.nameKind}>{KIND_NAME[kind]}</span>
-            </>
-          )}
+          {numbered.rest && <span className={styles.nameText}>{numbered.rest}</span>}
           {/* On other canvases too (D-302's session 3): how many it's on. */}
           {piece.canvases && (
             <span className={styles.nameShared} title={`on ${piece.canvases.length} canvases`}>

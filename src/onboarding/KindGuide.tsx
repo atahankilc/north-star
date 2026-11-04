@@ -20,6 +20,7 @@ import { useProgress } from './progress'
 import styles from './KindGuide.module.css'
 import { CARD_TONE } from '../ui/foundation/cardTone'
 import { Button } from '../ui/primitives/Button'
+import { PIECE_GLYPH } from '../views/workspace/canvas/glyphs'
 
 type Props = { menu: DOMRect; row: string | null; where: 'canvas' | 'plane'; onHide: () => void }
 
@@ -31,13 +32,13 @@ const PAD = 12
 
 // Each row's glyph and colour, as the `+` menu has them (AddToCanvas in WorkspaceLayout.tsx; check:lessons
 // keeps the labels in step). Read from the menu's own row when it's there; these are the fallback.
-const LOOK: Record<string, { glyph: string; tone?: string }> = {
-  plane: { glyph: '▦' },
-  matrix: { glyph: '⊞' },
-  table: { glyph: '☰' },
-  documents: { glyph: '▯' },
-  kanban: { glyph: '▥' },
-  timeline: { glyph: '▤' },
+const LOOK: Record<string, { glyph: ReactNode; tone?: string }> = {
+  plane: { glyph: PIECE_GLYPH.plane },
+  matrix: { glyph: PIECE_GLYPH.matrix },
+  table: { glyph: PIECE_GLYPH.table },
+  documents: { glyph: PIECE_GLYPH.documents },
+  kanban: { glyph: PIECE_GLYPH.kanban },
+  timeline: { glyph: PIECE_GLYPH.timeline },
   heading: { glyph: 'T' },
   paragraph: { glyph: '¶' },
   sticky: { glyph: '▤', tone: 'var(--accent-yellow)' },

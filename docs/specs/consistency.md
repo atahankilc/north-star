@@ -105,8 +105,8 @@ One component, `src/ui/primitives/Marks.tsx` (+ `Marks.module.css`, tokens `--ma
 ### Framed and unframed (D-267, option A)
 - **Framed = a window:** D-263's surface, band, shadow, name in the edge, the console. No scale readout.
 - **Unframed = ink on the canvas:** no edge, band, shadow; on the page's black since D-289 (it had no fill). Under each row a shade that hugs it (page colour at
-  80 %, feathered `0 0 16px 10px` at 72 %), as text's. Its name is a heading's small line: `04 ── RIVALS · TABLE`, mono
-  11 screen px, caps, tracked `.14em`, the number magenta, 8 px over its contents. Its console is the same console on
+  80 %, feathered `0 0 16px 10px` at 72 %), as text's. Its name is a heading's small line: its kind's tab, `04 ── RIVALS`, mono
+  at the name's size, caps, tracked `.14em`, the number magenta, 8 px over its contents. Its console is the same console on
   the same hover rule, hanging 10 px under the contents' right end.
 - **Going between:** unframing, the window breaks cell by cell (D-034, 320 ms) while the contents grow from fitted to
   their own size; framing, the reverse (cells build, contents shrink to fit). No other motion.

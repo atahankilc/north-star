@@ -20,15 +20,50 @@ function Page({ behind }: { behind?: boolean }) {
   )
 }
 
+// A piece's own small picture (D-365), drawn since the font's `▦ ▥ ▤` read as one when small: 1em square, as Page is.
+function Drawn({ children }: { children: ReactNode }) {
+  return (
+    <svg width="1em" height="1em" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round" style={{ verticalAlign: '-0.125em' }} aria-hidden>
+      {children}
+    </svg>
+  )
+}
+
 export const PIECE_GLYPH: Record<PieceKind, ReactNode> = {
-  plane: '▦',
-  matrix: '⊞',
-  table: '☰',
+  // Two cards and a link.
+  plane: (
+    <Drawn>
+      <path d="M1.5 2.5h8v5h-8z M8.5 10.5h8v5h-8z M6 7.5l5 3" />
+    </Drawn>
+  ),
+  // A grid with a cell filled.
+  matrix: (
+    <Drawn>
+      <path d="M2 2h14v14H2z M2 6.7h14 M2 11.3h14 M6.7 2v14 M11.3 2v14" />
+      <path d="M6.7 6.7h4.6v4.6H6.7z" fill="currentColor" stroke="none" />
+    </Drawn>
+  ),
+  // A head and rows.
+  table: (
+    <Drawn>
+      <path d="M2 3h14v3H2z" fill="currentColor" stroke="none" />
+      <path d="M2 9h14 M2 12h14 M2 15h14" />
+    </Drawn>
+  ),
   documents: <Page behind />,
   document: <Page />,
   // A kanban (D-251): columns side by side.
-  kanban: '▥',
-  // A timeline (D-262): days in a row.
-  timeline: '▤',
+  kanban: (
+    <Drawn>
+      <path d="M2 2.5h3.6v13H2z M7.2 2.5h3.6v8H7.2z M12.4 2.5H16V13h-3.6z" />
+    </Drawn>
+  ),
+  // A timeline (D-262): tasks along the days.
+  timeline: (
+    <Drawn>
+      <path d="M2 2v14" />
+      <path d="M4 3h7v3H4z M7 8h8v3H7z M4.5 13h5v2.6h-5z" fill="currentColor" stroke="none" />
+    </Drawn>
+  ),
 }
 export const TEXT_GLYPH = { heading: 'T', paragraph: '¶', sticky: '▤', section: '⬚', title: '✦' } as const

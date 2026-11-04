@@ -187,12 +187,13 @@
   visibility: hidden;
 }
 
-/* A piece's name (D-180, D-223): set into the top edge, held at a size on the screen whatever the canvas's zoom (13 px
-   at 100 %, never under 11 or over 15), so it reads zoomed out. `--z` is the canvas's zoom, set on the piece. Named, its
-   kind follows it faint (`PAZAR · PLANE`); when it doesn't fit, the kind goes first, then the name is cut with `…`, all
-   of it shown while hovered. */
+/* A piece's name (D-180, D-223, D-365): set into the top edge, held at a size on the screen whatever the canvas's zoom:
+   18 px at 100 %, growing to 24 px as you zoom out, where names are what you find things by. `--z` is the canvas's zoom,
+   set on the piece. Its kind's tab comes first (`▦ PLANE 01 PAZAR`); when it doesn't fit, the name is cut with `…`, then
+   the tab's word goes, all of it shown while hovered. Sitting mostly over the edge, so the bigger name covers no more of
+   what's inside than the smaller one did. */
 .name {
-  --name-size: clamp(var(--text-xs), calc(var(--text-sm) * var(--z, 1)), var(--text-md));
+  --name-size: clamp(var(--piece-name-near), calc(var(--piece-name-far) - (var(--piece-name-far) - var(--piece-name-near)) * var(--z, 1)), var(--piece-name-far));
 
   position: absolute;
   /* Over the plane's cards (D-187). */
@@ -201,10 +202,12 @@
   /* Cut into the edge as a section's name is (D-266): a 16 px lead of edge, then 8 px clear each side of it. */
   left: calc(var(--space-4) / var(--z, 1));
   display: flex;
+  overflow: hidden;
+  align-items: center;
   gap: 0.6em;
   max-width: calc(100% - 2 * var(--space-4) / var(--z, 1));
   padding: 0 calc(var(--space-2) / var(--z, 1));
-  transform: translateY(-50%);
+  transform: translateY(-75%);
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-mono);
@@ -222,7 +225,9 @@
 
 .nameText {
   overflow: hidden;
-  min-width: 0;
+  /* It's cut before the tab gives anything up, down to a few letters (D-365). */
+  flex: 0 100 auto;
+  min-width: 3em;
   text-overflow: ellipsis;
 }
 
@@ -234,12 +239,10 @@
 }
 
 /* Unframed (D-267): no edge to be cut into; the name is a heading's small line 8 px over its contents, on the canvas:
-   mono 11 px on the screen, caps, tracked, `04 ── RIVALS · TABLE`, on a shade that hugs it. */
+   its kind's tab, then mono caps, tracked, `04 ── RIVALS`, on a shade that hugs it. */
 .piece[data-open='true'] .name {
-  --name-size: var(--text-xs);
   top: calc(var(--w-grid) - var(--space-2) / var(--z, 1));
   left: var(--w-grid);
-  align-items: center;
   max-width: calc(100% - 2 * var(--w-grid));
   padding: 0;
   transform: translateY(-100%);
@@ -257,19 +260,31 @@
   background: var(--fg-dim);
 }
 
-.nameSep,
-.nameKind {
+/* Its kind's tab (D-365): a solid cell in the kind's colour, its icon and word, so the kind is read first. On a piece too
+   small on the screen for both the word gives way once the name is down to a few letters; the icon stays. */
+.nameTab {
+  display: flex;
   overflow: hidden;
-  /* The kind gives way before the name does. */
-  flex-shrink: 100;
-  min-width: 0;
-  color: var(--fg-faint);
-  font-weight: var(--weight-regular);
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 0.4em;
+  min-width: 2.25em;
+  padding: 0.15em 0.5em;
+  background: color-mix(in srgb, var(--kind) var(--piece-tab-mix), var(--on-accent));
+  color: var(--piece-tab-ink);
+  font-size: 0.7em;
+  font-weight: var(--weight-bold);
 }
 
-.name[data-unnamed='true'] {
-  color: var(--fg-faint);
-  font-weight: var(--weight-regular);
+.nameTab svg {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.nameTabWord {
+  overflow: hidden;
+  min-width: 0;
 }
 
 /* The name in edit mode (D-179, D-180, D-223): a field on the edge framed in cyan, a cyan `>` before what's typed and

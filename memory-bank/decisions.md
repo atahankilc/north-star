@@ -142,7 +142,7 @@ feature comes back as a piece, and check them with the user then.
     banded; text's shade line by line (`src/ui/primitives/Ink.tsx`); lines: straight holds, fading opens, dashed separates rows, a
     magenta lead starts something numbered.
   - Framed = a window, unframed = ink (D-267, D-276, D-289): on a black page feathered at its edge, rows on hugging
-    shades, the name a small line (`04 ── RIVALS · TABLE`), the console hanging under; framing turns cell by cell in
+    shades, the name a small line after its tab (`04 ── RIVALS`), the console hanging under; framing turns cell by cell in
     320 ms. Dropdowns in a console or dock are plain text like the link `Select` (`Menu`'s `plain`).
 
 ## Motion and backdrop
@@ -181,8 +181,9 @@ feature comes back as a piece, and check them with the user then.
   on what they show, their handlers through a ref, a piece's frame too (D-288). The workspace's code is its own chunk
   (fetched ahead, one reload after a deploy); three.js, Firebase and React are files of their own that keep their names
   across deploys (D-288).
-- Piece names (D-223): in the top edge of every piece, 13 px × zoom on screen (11–15), `--fg` caps weight 500, the kind
-  faint after it (`PAZAR · PLANE`); the kind gives way first, then `…`, all of it on hover. Edit mode: a cyan-framed
+- Piece names (D-223, D-365): in the top edge of every piece, 18 px close to 24 px far on screen, `--fg` caps weight 500,
+  after the kind's tab, a solid cell in its colour with a drawn icon and word (`▦ PLANE 01 PAZAR`); `…` first, then the
+  tab's word goes, all of it on hover. Sections on a canvas never smaller on screen than 24 px. Edit mode: a cyan-framed
   field, a `>` and `17/80`.
 - Focus (D-184, D-185, D-189): `[focus]` or a double-click (D-198) makes a plane the view (`?focus=<id>`); the plane
   spreads like ink, cell by cell on the 9 px grid (820 ms in, 700 out, Esc or `[unfocus]`), its view gliding to its fit
@@ -204,7 +205,7 @@ feature comes back as a piece, and check them with the user then.
   rounded up to the grid. Inside a tinted face the greys and the type's colour lean to the ink, every line ≥ 4.5 (D-295).
 - Cards (D-187, D-205): in their own collections with `pieceId`, x/y in plane px, 200 × 100 (8 × 4 marks). Inside: type
   edge and label, status/regions/priority with evidence cells, Inter title ≤ 3 lines, facts, tag chips; smaller on
-  screen, the title alone in whole words, then bars (D-152, D-153). On the canvas a plane shows a fitted picture; in
+  screen, the title alone in whole words, then bars (D-152, D-153). On the canvas a plane shows a fitted picture (few cards grow to fill it: up to 2 ×, in focus 1.5 ×, D-363); in
   focus click selects, drag moves (snapped, alt free), Delete removes. Deleting a plane takes its cards, links and text (cards also on another plane stay there, D-282).
 - Made and named (D-250): `+` in focus makes a card at the view's middle with its panel open for the title (never typed
   on the card, D-221); Enter keeps it (Tab makes the next of its type beside it), Escape or nothing typed takes it away;
@@ -418,6 +419,7 @@ feature comes back as a piece, and check them with the user then.
 
 ## Rejected: don't propose again
 Tried or asked for and turned down by the user. Details in the log under the D-number.
+- Hiding what's in a piece by zoom or by its size on the screen, its name in its middle instead (D-367): built, then taken out.
 - InstantDB (shutting down), Convex, Supabase as backend (D-010, D-014).
 - Coloured tile waves for entrances, the blur "rise", a magenta edge on the page reveal, staggered/diagonal reveals (D-029, D-031, D-033, D-035).
 - Floating post-its / 3D objects in the backdrop (D-028). Slowing the backdrop (D-061).
