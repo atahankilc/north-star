@@ -1440,6 +1440,11 @@ north-star-e7 (recent commits), -48 and -51 told what each found. The user picke
   (update_notes `text` over someone's edit; `Plan.seen` keeps the replaced text); the preview then shows the plans as
   they are, named, and a second apply writes them (changeset.ts `changedSince`). Tests: changeset.test.ts, 3 new
   (2 fail without it); vitest 1038/1038.
+- Then 16 and 19 (2026-11-04): the timeline's last two window drags (the strip's scrub, drawing days) were on hand-made
+  listeners with no `pointercancel`: a cancel left the strip following the pointer and the draft stuck. Both on `pressDrag`;
+  a cancel draws nothing. Checked headless on the gallery's timeline, old code against new: after a cancel the strip stays,
+  the draft goes, a release still opens the prompt. `cleanUpWorkspaceAi` also deletes `agentChats` with their bodies
+  (others' private chats, which an owner's browser can't delete); built, not run: functions wait for Blaze.
 
 ## Done (2026-11-03): a test pass over the last 15 commits, and its fixes (north-star-e7; pushed)
 Eight reviewers (one area each) and two headless runs on emulators over 0db26da back to f2d28ac. The refactors held

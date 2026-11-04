@@ -502,9 +502,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
     const grab = onWin ? dayOfX(e.clientX) - s.from : visible / 2
     if (!onWin) glideStrip(piece.id, { from: dayOfX(e.clientX) - visible / 2 }, 300)
     const move = (ev: PointerEvent) => (stopStrip(piece.id), setStrip(piece.id, { from: dayOfX(ev.clientX) - grab }))
-    const up = () => (window.removeEventListener('pointermove', move), window.removeEventListener('pointerup', up))
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
+    pressDrag(move)
   }
 
   // The wheel: sideways (or with shift) moves along the days, a pinch (or ⌘) changes the scale round the pointer, up and
@@ -587,14 +585,11 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
     const move = (ev: PointerEvent) => ((edge.current.x = ev.clientX), follow(ev.clientX))
     edge.current.x = e.clientX
     edgeScroll(() => follow(edge.current.x))
-    const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
+    pressDrag(move, (ev) => {
       edgeStop()
-      setDraft((v) => (v ? { ...v, naming: true } : v))
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
+      // A cancel (the browser took the gesture) draws nothing.
+      setDraft((v) => (v && ev.type === 'pointerup' ? { ...v, naming: true } : null))
+    })
   }
   // Its deck: the row's (rows by deck), the one it's linked to, else the first.
   const deckFor = (row: string) => {

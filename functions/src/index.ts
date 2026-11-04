@@ -275,7 +275,7 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
   }
 })
 
-// ---- A deleted workspace takes its key, AI records, reports, documents and invites with it ----
+// ---- A deleted workspace takes its key, AI records, reports, documents, agent chats and invites with it ----
 
 export const cleanUpWorkspaceAi = onDocumentDeleted('workspaces/{wid}', async (event) => {
   const wid = event.params.wid
@@ -288,6 +288,8 @@ export const cleanUpWorkspaceAi = onDocumentDeleted('workspaces/{wid}', async (e
   await db().recursiveDelete(db().collection(`workspaces/${wid}/members`))
   // Documents (D-232) with their content: members' private ones the owner's browser can't see (audit P2).
   await db().recursiveDelete(db().collection(`workspaces/${wid}/documents`))
+  // The agent's saved chats with their bodies: members' private ones, the same (deleteWorkspace takes the rest).
+  await db().recursiveDelete(db().collection(`workspaces/${wid}/agentChats`))
   // Invites (D-323) the client didn't get to.
   const invites = await db().collection('invites').where('workspaceId', '==', wid).get()
   await Promise.all(invites.docs.map((d) => d.ref.delete()))
