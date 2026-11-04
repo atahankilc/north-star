@@ -89,7 +89,7 @@
 
 /* Its own colour and world size over the kit's label (which can come again later): outweighs it */
 .board .overMonth {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--w-text-xs);
 }
 
@@ -268,7 +268,7 @@
 
 .rowCount {
   margin-left: auto;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   letter-spacing: 0;
 }
 
@@ -413,5 +413,5 @@
 }
 
 .trayHint {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }

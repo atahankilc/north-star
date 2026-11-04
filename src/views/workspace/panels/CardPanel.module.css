@@ -117,7 +117,7 @@
 
 .type {
   flex: none;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--text-xs);
 }
 
@@ -175,7 +175,7 @@
 
 .hint {
   margin-left: auto;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--text-xs);
 }
 
@@ -330,7 +330,7 @@
 }
 
 .critN {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 .crit:hover .x {
@@ -369,7 +369,7 @@
 }
 
 .parent[data-none] {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 .parentPick {
@@ -382,7 +382,7 @@
 
 /* `met by 2` / `◇ open`, read from the matrices that score it (D-249). */
 .critRead {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--text-xs);
   white-space: nowrap;
 }

@@ -67,7 +67,7 @@
 /* world: sized in the world's tokens, so it zooms with what it sits on (a card face's #tags; a link's kind a step
    bigger). */
 .chip[data-scale='world'] {
-  font-size: var(--w-text-3xs);
+  font-size: var(--w-text-2xs);
   line-height: var(--lh-body);
 }
 

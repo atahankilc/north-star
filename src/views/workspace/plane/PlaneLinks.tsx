@@ -20,6 +20,7 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Console } from '../../../ui/patterns/Console'
 import { Field } from '../../../ui/primitives/Field'
 import { LINK_LABEL_MAX } from '../../../model/limits'
+import { WORLD } from '../../../model/world'
 
 type LinkGroup = 'solves' | 'part' | 'competes' | 'clashes' | 'draws' | 'depends' | 'plain' | 'for'
 
@@ -47,7 +48,7 @@ const SPREAD = 25.6
 const CHIP_SHIFT = 28.8
 const CHIP_H = 12
 // The chip's text is a card's small text (D-154); below this on screen the chip isn't drawn (unless selected).
-const CHIP_TEXT = 8
+const CHIP_TEXT = WORLD.smallText
 const CHIP_MIN_PX = 4.5
 
 type V = [number, number]

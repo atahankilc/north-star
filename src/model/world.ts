@@ -11,6 +11,7 @@ export const WORLD = {
   rowCategory: 13, // a category's name over its features
   stickyH: 125, // a sticky note's height to start, and folded (D-257)
   docPad: 36, // a document piece's text margins
+  smallText: 8, // the world's smallest text: a card's chips and inner category, a link's chip, a sticky's glue band (D-366)
 }
 
 const VARS: Record<keyof typeof WORLD, string> = {
@@ -23,6 +24,7 @@ const VARS: Record<keyof typeof WORLD, string> = {
   rowCategory: '--w-row-category',
   stickyH: '--w-sticky-h',
   docPad: '--w-doc-pad',
+  smallText: '--w-text-2xs',
 }
 
 export function writeWorldCss(root: HTMLElement) {

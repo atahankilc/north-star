@@ -323,7 +323,7 @@ function PageOutline({ scroller, at }: { scroller: React.RefObject<HTMLDivElemen
   const top = Math.min(...parts.map((p) => p.level))
   return (
     <nav className={styles.pageOutline} aria-label="On this page">
-      <Label tone="faint" className={styles.outlineHead}>
+      <Label className={styles.outlineHead}>
         on this page
       </Label>
       {parts.map((p, i) => (

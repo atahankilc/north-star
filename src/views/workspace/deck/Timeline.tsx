@@ -715,7 +715,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
         <span className={styles.overToday} style={{ left: ((todayAt - layout.lo) / (layout.hi - layout.lo)) * tw }} />
         <div ref={win} className={styles.window} data-window />
       </div>
-      <Label tone="faint" className={styles.overName}>
+      <Label className={styles.overName}>
         overview
         <span>
           {short(layout.lo)} – {short(layout.hi)}

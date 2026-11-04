@@ -56,7 +56,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   checked headless on emulators). Left: D-326's smaller *Not yet* notes (Chip world size, a third Tabs look).
 - D-335 (Q-029 + old-data code deleted): pushed; firestore:rules deployed 2026-11-01 (rules tests 616/0).
 - D-337 fonts and greys (2026-11-01): Inter + JetBrains Mono, mono only on system bits, brighter greys, the agent's
-  column and picture too; pushed 2026-11-01. evals/fonts → Inter: the agent session's (after its terra run). Preview: docs/specs/font-preview/. Left: `--fg-faint`'s uses one by one, the world's 7/8 px sizes.
+  column and picture too; pushed 2026-11-01. evals/fonts → Inter: the agent session's (after its terra run). Preview: docs/specs/font-preview/. Its leftovers done by D-366 (2026-11-04): faint only on marks, the world's smallest text 8 px.
 - D-339 (2026-11-01, pushed): rules enforced by hooks; git hooks on (core.hooksPath set by the user). Claude Code
   loads `.claude/settings.json` after `/hooks` or a new session.
 - Landing (D-340, 2026-11-01, committed): full-screen backdrop, mono name, no HUD, Button; the user is working

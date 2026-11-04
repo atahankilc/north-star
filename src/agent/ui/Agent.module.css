@@ -73,7 +73,7 @@
   font-family: var(--font-mono);
   min-width: 0;
   overflow: hidden;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -239,7 +239,7 @@
   font-family: var(--font-mono);
   flex: none;
   margin-left: auto;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 /* What the model said between its steps (`Adding the idea to p3.`). */
@@ -349,7 +349,7 @@
 .tokens {
   font-family: var(--font-mono);
   margin: 0;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 .note {
@@ -968,7 +968,7 @@
 
 .jobStep[data-state='done'],
 .jobStep[data-state='skipped'] {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 .jobMark {
@@ -988,7 +988,7 @@
 }
 
 .jobWhy {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 .jobFoot {

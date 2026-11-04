@@ -234,9 +234,9 @@ function ProofCells({ proof }: { proof: Proof }) {
 }
 
 // Tags as framed chips in a row (the kit's Chip at the world's size, D-326); what doesn't fit becomes `+N`. Mono is
-// 0.6 em a character. The same sizes as the CSS (D-325): --w-text-3xs, --space-1, and the world's chip gap and card
+// 0.6 em a character. The same sizes as the CSS (D-325): --w-text-2xs (WORLD.smallText), --space-1, and the world's chip gap and card
 // padding (model/world.ts).
-const CHIP_TEXT = 7
+const CHIP_TEXT = WORLD.smallText
 const CHIP_PAD = 4
 const CHIP_GAP = WORLD.chipGap
 const CHIP_ROOM = CARD.w - 2 * WORLD.cardPad - WORLD.cardEdge

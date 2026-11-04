@@ -109,7 +109,7 @@
 /* Pieces are the kit's PieceCard (src/ui/patterns): these only lay out what's on them. */
 
 .kind {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 /* ── the continue piece (and a first visit's START) ── */
@@ -176,7 +176,7 @@
 
 .t {
   margin-left: var(--space-1);
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }

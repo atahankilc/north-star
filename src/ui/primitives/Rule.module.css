@@ -33,7 +33,7 @@
 
 .count,
 .aside {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   letter-spacing: normal;
   text-transform: none;
 }

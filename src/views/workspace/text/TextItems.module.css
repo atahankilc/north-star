@@ -170,7 +170,7 @@
   display: flex;
   flex-direction: column;
   padding: var(--space-1) var(--w-card-pad) var(--w-card-pad);
-  background: linear-gradient(var(--glue) 0 calc(2 * var(--space-1) + var(--w-text-3xs)), var(--paper) calc(calc(2 * var(--space-1) + var(--w-text-3xs)) + var(--line-w)));
+  background: linear-gradient(var(--glue) 0 calc(2 * var(--space-1) + var(--w-text-2xs)), var(--paper) calc(calc(2 * var(--space-1) + var(--w-text-2xs)) + var(--line-w)));
   box-shadow:
     0 var(--line-w) var(--line-w) color-mix(in srgb, var(--sticky-shadow) var(--mix-soft), transparent),
     0 var(--space-2) var(--space-2) calc(-1 * var(--space-1)) var(--sticky-shadow);
@@ -189,10 +189,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: var(--w-text-3xs);
+  height: var(--w-text-2xs);
   margin-bottom: var(--space-2);
   color: color-mix(in srgb, var(--sticky-ink) var(--mix-strong), transparent);
-  font-size: var(--w-text-3xs);
+  font-size: var(--w-text-2xs);
   line-height: var(--lh-none);
   letter-spacing: var(--track-label);
 }
@@ -222,7 +222,7 @@
   padding: 0.3em 0.5em;
   color: inherit;
   font-family: inherit;
-  font-size: var(--w-text-3xs);
+  font-size: var(--w-text-2xs);
 }
 
 .stickyFold[data-icon]:hover {

@@ -41,7 +41,7 @@
 .count {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 .count[data-on] {

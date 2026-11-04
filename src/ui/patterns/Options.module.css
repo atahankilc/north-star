@@ -61,7 +61,7 @@
 }
 
 .count {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 /* `cards`: a sample, the label, a line under it. */

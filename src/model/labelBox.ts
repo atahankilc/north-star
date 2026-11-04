@@ -4,8 +4,8 @@ import { WORLD } from './world'
 import { HEADING_PX, kindOf, PARA_PX, PARA_W, STICKY_H, STICKY_PX, STICKY_W, TITLE_W, type Label, type LabelSize } from './labels'
 
 // Down from a sticky note's top to its text: the glue band holding the signed line, then a gap (D-257). The CSS's
-// tokens (D-325): --space-1 + --w-text-3xs + --space-2.
-export const STICKY_TEXT_TOP = 4 + 7 + 8
+// tokens (D-325): --space-1 + --w-text-2xs (WORLD.smallText) + --space-2.
+export const STICKY_TEXT_TOP = 4 + WORLD.smallText + 8
 
 export type HeadingSize = Exclude<LabelSize, 'note'>
 // A heading's or a section name's size (a section never says `note`; if it did, H3).

@@ -248,7 +248,7 @@
 
 .empty {
   padding: var(--space-half) 0 0 var(--space-4);
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--text-xs);
 }
 
@@ -505,7 +505,7 @@
   padding: var(--space-1);
   border: var(--line-w) solid var(--line);
   background: transparent;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font: inherit;
   cursor: pointer;
 }
@@ -544,7 +544,7 @@
 
 .orderHow {
   margin: var(--space-half) 0 var(--space-2);
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--text-xs);
 }
 

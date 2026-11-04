@@ -91,7 +91,7 @@ feature comes back as a piece, and check them with the user then.
 - Fonts (D-337): Inter (`--font-display`) is the page's default for reading and the UI; JetBrains Mono (`--font-mono`)
   only on the system's bits (caps labels, numbers, `[verb]`, keys, the prompt's marks, cells, consoles, docks, tags,
   stickies), set on the bit, never on a container; self-hosted. `--text-xs` 12, `--text-sm` 14, caps tracked 0.05em.
-  Text greys: dim, muted, fg ≥ 4.5:1 on the page and on a piece, both themes; faint only for quiet marks.
+  Text greys: dim, muted, fg ≥ 4.5:1 on the page and on a piece, both themes; faint only for quiet marks, never words or numbers read (D-366). The world's smallest text 8 px, `WORLD.smallText` (D-366).
 - Tokens only, no raw colours, sizes or tracking (D-069, D-093, D-097); every CSS value a token from one set of short
   scales, consistency first (off-scale snaps), screen `--text-*` vs the world's `--w-*`, `npm run check:tokens` (CSS and
   TS/TSX) at 0 in CI (D-325, docs/specs/tokens.md); constants that aren't tokens by kind in one module each:

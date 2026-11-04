@@ -367,7 +367,7 @@
   padding: 0 var(--space-3);
   border: var(--line-w) dashed var(--line-hover);
   background: none;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font: inherit;
   font-size: var(--text-xs);
   white-space: nowrap;
@@ -425,7 +425,7 @@
 }
 
 .addHint {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--w-text-sm);
   white-space: nowrap;
 }
@@ -605,7 +605,7 @@
 .checkHint {
   display: block;
   margin: var(--space-half) 0 0;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--w-text-sm);
 }
 
@@ -763,7 +763,7 @@
 
 .stepKey {
   width: 2ch;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 .stepLook {
@@ -899,7 +899,7 @@
 
 .subN {
   flex-shrink: 0;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 .openMark {

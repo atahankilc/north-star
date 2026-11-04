@@ -87,7 +87,7 @@
 
 /* Its own over the kit's label (which can come again later): outweighs it. */
 .glued .noDemo {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 /* What it is (a title-weight line), when to use it. Room kept for their longest, so moving through the rows doesn't

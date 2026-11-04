@@ -105,8 +105,8 @@
   /* Type inside the zoomed world (D-325, docs/specs/tokens.md): canvas px, scaled with the zoom. The screen's --text-xs…lg
      hold in the world too; these add only what the screen doesn't have (below 12 px, read when zoomed in; a card's
      title; titles that don't shrink on phones). Never on screen-sized UI. */
-  --w-text-3xs: 7px; /* the tiniest caps: a card's chip and inner category, mini avatars, a sticky's glue band */
-  --w-text-2xs: 8px; /* a link's chip, a package band's caps */
+  /* --w-text-2xs, the world's smallest text (8 px; 7 px was too small to read, D-366), is WORLD.smallText in
+     src/model/world.ts: TS measures chips and a sticky's band with it, so it's written on <html> from there. */
   --w-text-xs: 9px; /* who, meta rows, members, month names */
   --w-text-sm: 10px; /* hints in cells, sheet text, readouts */
   --w-text-lg: 14px; /* card, task and package titles */

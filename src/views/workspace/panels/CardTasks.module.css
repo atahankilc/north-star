@@ -11,7 +11,7 @@
 .where {
   max-width: 14ch;
   overflow: hidden;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--text-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -26,5 +26,5 @@
 
 .none {
   margin: 0;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }

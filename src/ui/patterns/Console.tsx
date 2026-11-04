@@ -111,11 +111,11 @@ export function ConsoleTab({ label, open, n, title, learn, onClick }: { label: s
   )
 }
 
-// A drawer's row: a faint caps name, then its cells.
+// A drawer's row: a dim caps name, then its cells.
 export function FloorRow({ name, children }: { name: string; children: ReactNode }) {
   return (
     <div className={styles.frow}>
-      <Label tone="faint" className={styles.fkey}>
+      <Label className={styles.fkey}>
         {name}
       </Label>
       {children}

@@ -411,7 +411,7 @@ function Column() {
           )}
         </PromptField>
         <p className={styles.scope}>
-          <Label tone="faint" className={styles.scopeLabel}>sees</Label> whole workspace{here ? <> · you're in <span className={styles.scopeHere}>"{here}"</span></> : <> · {workspace}</>}
+          <Label className={styles.scopeLabel}>sees</Label> whole workspace{here ? <> · you're in <span className={styles.scopeHere}>"{here}"</span></> : <> · {workspace}</>}
         </p>
       </footer>
     </EdgeColumn>
@@ -749,7 +749,7 @@ function Sources({ sources }: { sources: Source[] }) {
   const shown = all ? sources : sources.slice(0, SOURCES_SHOWN)
   return (
     <div className={styles.sources}>
-      <Label tone="faint">sources</Label>
+      <Label>sources</Label>
       <ol className={styles.sourceList}>
         {shown.map((src, i) => (
           <li key={src.url} className={styles.source} data-cited={src.cited ? 'yes' : undefined}>

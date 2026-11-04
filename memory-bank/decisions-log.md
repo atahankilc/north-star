@@ -6392,8 +6392,7 @@ PROSE_EM stays 0.46 (Inter measured 0.463 vs Geist 0.451; the estimate ran 3–8
 up; its test passes).
 Verified: build, vitest 968, check:tokens 0, check:kit 13, check:gallery; headless shots of the gallery (card panel,
 deck, table, menu typed, settings, plane; dark and light) against a worktree of the code before.
-Not yet: `--fg-faint`'s 129 uses not read one by one (some hold words that should be `--fg-dim`); the world's smallest
-sizes (`--w-text-3xs` 7, `-2xs` 8) unchanged.
+Not yet (done by D-366): `--fg-faint`'s uses read one by one; the world's smallest sizes.
 
 ### D-338 · 2026-11-01 · Accepted (the user, from docs/specs/workspaces-preview/: "D çok iyi duruyor, B nin de arama çubuğu ile her şeyi birleştirmesi mükemmel fikir olmuş… büyük Workspaces yazısını seviyorum"; "centre daha iyi"; "first visit ile bir tane workspace a sahip olduktan sonraki görüntü… uyumlu olsa daha iyi"; "E yi yapalım")
 **The workspaces page is for going back to work: the big title, one prompt, the workspace you left, what needs you.**
@@ -7067,3 +7066,39 @@ plane lesson again); the three filter demos tick the rows straight in the drawer
 in headless Chrome, both themes; demos plane-filter, for-filter, deck-filter at the lesson's 640 × 400; tsc, unit tests
 1041/0, check:gallery, check:kit, check:tokens, check:lessons.
 **Not yet:** a timeline's filter (it uses the deck's) seen with many decks' people.
+
+### D-366 · 2026-11-04 · Accepted (the user: "lets do 2", the `--fg-faint` pass and the world's 7/8 px sizes, D-337's leftovers)
+**Decision:** `--fg-faint` (3.7:1 in dark) is only for marks: carets, corner marks, bullets, separators, rules,
+borders, grips, scroll bars, fold marks, an empty name's placeholder (`untitled`). Words and numbers people read are
+`--fg-dim` (≥ 4.5:1): a prompt row's hint and a heading's count, Tabs', Options' and a filter column's counts, Empty and
+a list's `nothing here` lines, a Rule's aside, the workspace's hints, the card panel's link kind, hints, criteria counts
+and `met by`, a card's tasks' where and none, a deck's empty column, box tone and order note, a timeline's month names,
+row counts and tray hint, a document's `inferred` and link domains, the finder's preview line, a matrix's `+ feature`,
+hints, step keys and sub counts, threads' titles, times and meta, the workspaces page's kinds and times, the agent's
+model name, timings, tokens, a job's done and skipped steps and their why; the six `Label tone="faint"` (a drawer row's
+name, the agent's `sees` and `sources`, a document's outline head, a timeline's overview name, the guide's `tips`) are
+plain labels. Kept faint on purpose: a weekend's day head, a low `how sure`, a card's inner category on its tinted face
+(its own faint mixes to the ink, D-295), the agent memory's `gap` rows. The gallery's own chrome is untouched (dev only).
+The world's smallest text is 8 px: `--w-text-3xs` (7) merged into `--w-text-2xs`, which is now `WORLD.smallText` in
+model/world.ts (written on <html> as `--w-text-2xs`), the one number the tag chips' width maths, a link chip's
+readable size and a sticky's text offset read.
+**Why:** D-337's brighter greys left faint on words; 7 px chips and categories were too small to read at 100 %.
+**Alternatives:** every world size up a step (9 px chips: the card's tag row would hold one tag fewer); Label's faint
+tone made dim (a tone with no meaning).
+**Checked:** headless gallery before/after (cards, chips, links, stickies: chips 1 px taller, `+1` still fits, the
+sticky's text 1 px lower), panels in both themes; tsc, unit tests 1041/0 (an eval test timed out once under load,
+passed alone), check:tokens, check:kit, check:gallery, check:lessons.
+
+### D-365 · 2026-11-04 · Accepted (the user: told the components' headings are too small and it's hard to see which component is which; from options on a port, "lets do B + 3"; then "headers should get bigger including section headers"; changes D-223, D-263's band as the only sign of a kind)
+**Decision:** a piece's name grows as you zoom out: 18 px at 100 % and closer to 24 px far (`--piece-name-near`, `--piece-name-far`), mono caps as before. Its kind is a solid tab first in the name (`▦ PLANE 01 LUNCH`): a cell in the kind's colour, a drawn icon and the word; the faint `· PLANE` is gone; unnamed, the tab alone. When it doesn't fit the name is cut first, then the tab's word goes. The name sits 75 % over the edge, so it covers no more of what's inside than before. Unframed pieces get the same. `PIECE_GLYPH` is a drawn set (`glyphs.tsx`; `▦ ▥ ▤` read as one when small), in the `+`, finder and kind guide too. A section's name on a canvas is never smaller on the screen than `--piece-name-far`.
+**Why:** the old size was 14 px × zoom, smallest exactly when zoomed out; the word was the faintest grey and the 2 px band half hidden by the name.
+**Alternatives:** preview docs/specs/piece-heads-preview/: Inter names, names above the edge, a stronger band, icon alone, edges drawn like the contents, a filled head; D with a smaller word was tried and needs the gap above a piece.
+**Checked:** gallery canvas, dark and light, edit mode, unframed, headless; tab text ≥ 5.4:1 in both themes in the preview.
+**Not yet:** H1–H3 headings stay in canvas px, only sections are held.
+
+### D-367 · 2026-11-04 · Accepted (the user: "not logical to show the inside of a component all the time … stop showing it after a point and just put the header inside"; then "hide based on the dimensions of the component, not a fixed number", the name fitting with its kind clear; "the transition is not smooth")
+**Decision:** a piece narrower than 280 or shorter than 140 px on the screen (`PIECE_FAR_PX`, feel.ts) hides what's in it and shows its kind's tab and name in its middle; not while it's being edited. `farName.ts` fits the name: the biggest size from 28 to 11 px at which it's whole under the tab, up to three lines; too small for that, the icon beside the name; past that, cut with `…`; the kind always stays. The band goes to 4 px on the screen. An unframed piece gets its window back. What's inside, the edge name and the middle name each break or build cell by cell (`useCells`, 320 ms), once the zoom settles; reduced motion: at once. What's inside stays mounted, only clipped, so what measures it goes on working.
+**Why:** past a point the inside is only noise, and it can't be read; by the piece's own size, since a big plane is readable long after a small table.
+**Alternatives:** one canvas zoom for all pieces (built first, 0.3; the user turned it down); unmounting the inside (would save drawing, but sizes and agent marks read it).
+**Checked:** tests/unit/farName.test.ts; gallery `seen from far`, `seen from far, one unframed`, `very far`, headless; the clip paths measured frame by frame through a wheel zoom, out and back.
+**Not yet:** the two numbers by the user's eye; a very narrow piece can break a long word (`FEAT/URES`); a hidden inside still costs its drawing.

@@ -71,8 +71,7 @@ the world adds:
 
 | Token | px | Was | For |
 |---|---|---|---|
-| `--w-text-3xs` | 7 | 5.2, 7, 7.5 | the tiniest caps: a card's chip and inner category, mini avatars, the sticky's glue band and fold |
-| `--w-text-2xs` | 8 | 8 | a link's chip, a package band's caps, a card's small text |
+| `--w-text-2xs` | 8 | 5.2, 7, 7.5, 8 | (WORLD.smallText in model/world.ts) the world's smallest: a card's chips and inner category, mini avatars, the sticky's glue band and fold, a link's chip, a package band's caps, a card's small text (`-3xs` 7 merged in, D-366) |
 | `--w-text-xs` | 9 | 9, 9.5 | who, meta rows, members, month names |
 | `--w-text-sm` | 10 | 10, 10.5 | hints in cells, sheet text, readouts |
 | `--w-text-lg` | 14 | 14 | card, task and package titles |

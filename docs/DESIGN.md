@@ -80,7 +80,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   `--track-display` -0.045em on the display headline, `--track-cells` -1px where glyph cells must touch. The same in the
   world (D-325). Lowercase actions are untracked.
 - *Inside the zoomed world (D-325):* the screen's `--text-xs`…`--text-lg` hold in canvas px too; `--w-text-*` adds only
-  what the screen lacks: `-3xs` 7, `-2xs` 8, `-xs` 9, `-sm` 10 (read when zoomed in), `-lg` 14 (card titles), `-xl` 22,
+  what the screen lacks: `-2xs` 8 (the smallest, D-366), `-xs` 9, `-sm` 10 (read when zoomed in), `-lg` 14 (card titles), `-xl` 22,
   `-2xl` 26 (don't shrink on phones). Screen UI never uses `--w-*`. Sizes TS also measures come from one source,
   `src/model/world.ts`, which writes them as `--w-grid`, `--w-card-*`, `--w-row-*`, `--w-sticky-h`, `--w-doc-pad`; the
   deck's and timeline's rows are exact in tokens. They never snap alone. `--text-title` 22 is the right panel's title, `--text-code` 0.88em code inside Markdown.
@@ -98,7 +98,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - *Two voices.* The system's: JetBrains Mono, caps, tracked (piece names, type labels, column heads, panel sections, the
   small line over a heading, consoles). The user's: Inter (card titles, headings, paragraphs, section names, the
   project title).
-- *Numbers.* A number, wherever there is one, is magenta, mono, before the name: a piece's name (`01 PAZAR · PLANE`, a
+- *Numbers.* A number, wherever there is one, is magenta, mono, before the name: a piece's name (`▦ PLANE 01 PAZAR`, a
   leading number in the name is taken apart), kanban columns (`01 TODO`), sections, a heading's small line, the right
   panel's sections (`01 STATUS`), the suggested order.
 - *Two edges.* Containers have one (pieces, sections), their name cut into it the same way: a 16 px lead of edge, 8 px
@@ -111,7 +111,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   what it holds on `--piece-card`) and exactly as big as its contents; under each row (a matrix's heads and cells, a table's
   rows, a kanban's heads and tasks, a list's rows and sheets) a shade that hugs it (page colour at 80 %, feathered
   `0 0 16px 10px` at 72 %), as under text; its name a heading's small line 8 px over its contents
-  (`04 ── RIVALS · TABLE`, mono 12 px on the screen, caps, tracked `--track-label`, the number magenta); its console the same rail, on
+  (its kind's tab, `04 ── RIVALS`, mono at the name's size on the screen, caps, tracked `--track-label`, the number magenta); its console the same rail, on
   the same hover rule, hanging 10 px under the contents' right end (D-347). A dropdown in a console or dock is plain text, like
   the link `Select` (`label value ▾`, no frame or fill).
   Going between: the window breaks (or builds) cell by cell while the contents grow from fitted to their own size (or
@@ -231,9 +231,12 @@ Values will be tuned against contrast checks (WCAG AA for text).
   kind's colour (plane fg, matrix violet, table sky, kanban gold, documents moss, timeline orange); what it holds sits a
   step lighter (`--piece-card`); in focus and beside, the screen is the page's black (D-289), what's held still
   `--piece-card`.
-- Name (D-223, D-276): in the top edge (see *Names and lines*), 13 px × zoom on screen (11–15), `--fg` caps weight 500,
-  the kind faint after it (`PAZAR · PLANE`; unnamed, the kind alone in `--fg-faint`); tight, the kind goes first, then
-  the name takes a `…`; hovered, all of it. Edit mode: a cyan-framed field, a cyan `>` and `17/80`.
+- Name (D-223, D-276, D-365): in the top edge, mostly over it (see *Names and lines*), 18 px close to 24 px far on the
+  screen, `--fg` caps weight 500, after the kind's tab, a solid cell in the kind's colour with its drawn icon and word
+  (`▦ PLANE 01 PAZAR`; unnamed, the tab alone); tight, the name takes a `…`, then the tab's word goes; hovered, all of it.
+  Edit mode: a cyan-framed field, a cyan `>` and `17/80`.
+- From far (D-367): under 280 × 140 on the screen a piece hides what's in it, its tab and name fitted in its middle
+  (11–28 px, up to three lines; low ones the icon beside the name), a 4 px band; cell by cell both ways.
 - Console (D-264, D-275, D-347; docs/specs/console-preview/, option D+E): one `Console` everywhere. A rail: who (name,
   mode, readouts, a page) · nouns (`filter 2`, `view`, `linked 2`), each opening its drawer as the rail's upper floor,
   one at a time · tools · go last; groups by role, each a ButtonGroup. On the canvas cut into the piece's bottom edge,

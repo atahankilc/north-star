@@ -96,7 +96,7 @@ function Line({ field, query, setQuery, onKeyDown }: { field: React.RefObject<HT
       placeholder="find a note or a key…"
       onKeyDown={onKeyDown as (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void}
     >
-      <Label tone="faint">tips</Label>
+      <Label>tips</Label>
       <span className={styles.tips} onMouseDown={(e) => e.preventDefault()}>
         <Tabs look="segments" label="Tips (⇥ switches)" options={TIPS} value={tipsOff ? 'off' : 'on'} onChange={(v) => set(v === 'off')} />
       </span>

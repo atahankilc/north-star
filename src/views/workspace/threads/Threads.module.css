@@ -86,7 +86,7 @@
   align-items: baseline;
   min-width: 0;
   overflow: hidden;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--text-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -131,7 +131,7 @@
 }
 
 .when {
-  color: var(--fg-faint);
+  color: var(--fg-dim);
 }
 
 .msgActions {
@@ -281,7 +281,7 @@
 
 .titleWhere {
   flex: none;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   white-space: pre;
 }
 
@@ -408,7 +408,7 @@
 
 .rowMeta {
   padding-left: 2ch;
-  color: var(--fg-faint);
+  color: var(--fg-dim);
   font-size: var(--text-xs);
 }
 
