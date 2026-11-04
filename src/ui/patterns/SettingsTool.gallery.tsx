@@ -7,7 +7,7 @@ export default example({
   name: 'SettingsTool',
   place: 'hud/corner',
   file: 'src/ui/patterns/SettingsTool.tsx',
-  note: 'the corner’s gear (D-175): cyan while settings are open, a cyan count of people waiting to join',
+  note: 'the corner’s gear (D-175): cyan while settings are open, a cyan count of people waiting to join, on its bottom-right corner (a top one would cover your square above it)',
   states: {
     default: () => <SettingsTool open={false} onClick={none} />,
     open: () => <SettingsTool open onClick={none} />,

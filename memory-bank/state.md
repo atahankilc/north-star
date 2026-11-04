@@ -53,7 +53,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
 - Gallery and foundation (D-324, D-326): done 2026-11-01: the whole UI on the kit, `check:kit` at 0 (baseline `{}`),
   folders by layer/area; the agent's column on Window, InPlaceMenu added, text caps in limits.ts (pushed 2026-11-01;
-  checked headless on emulators). Left: D-326's smaller *Not yet* notes (Chip world size, a third Tabs look).
+  checked headless on emulators). D-326's smaller notes all settled (2026-11-04).
 - D-335 (Q-029 + old-data code deleted): pushed; firestore:rules deployed 2026-11-01 (rules tests 616/0).
 - D-337 fonts and greys (2026-11-01): Inter + JetBrains Mono, mono only on system bits, brighter greys, the agent's
   column and picture too; pushed 2026-11-01. evals/fonts → Inter: the agent session's (after its terra run). Preview: docs/specs/font-preview/. Its leftovers done by D-366 (2026-11-04): faint only on marks, the world's smallest text 8 px.

@@ -6087,9 +6087,10 @@ docs/foundation-audit-2026-10-31.md).
   wizards' templates three to a row and picked on arrow keys, thread prompt `>` magenta, Finder's fold in brackets.
   (4) ~~Folders~~ done 2026-11-01 (the agent session paused): src/ui/{foundation,primitives,patterns},
   src/views/workspace/{canvas,plane,panels,deck,table,matrix,documents,text,threads,find,settings}; every import, CSS
-  composes, test, eval and doc path rewritten by a script (255 files moved). Also still open (what each copy still needs is in those forks' notes: a world size for
-  Chip on the canvas, a third Tabs look for the side view's tabs, an `onKeyDown` pass for PromptField in the agent and
-  MenuPanel, the settings gear's badge 4 px higher once moved); patterns (Dialog/Window, WizardShell, SetupPanel,
+  composes, test, eval and doc path rewritten by a script (255 files moved). Also open then, all settled since (checked 2026-11-04): a world size for Chip on the
+  canvas (`scale="world"`), a third Tabs look for the side view's tabs (not needed: they're the plain Tabs), an
+  `onKeyDown` pass for PromptField in the agent and MenuPanel (the agent's box is PromptField with its own keys, D-350),
+  the settings gear's badge (a ToolButton's count now; on its bottom-right corner, since a top one covered your square); patterns (Dialog/Window, WizardShell, SetupPanel,
   Dock); `check:kit`; folders.
 - *Built:* check:kit to 0 (2026-11-01, the user: "kit ve klasör yapalım"; folders were already done). The agent's column
   on Window (`look="bare"`, not modal, no trap, `escape={false}`: its own Escape order, list → view → preview → close,

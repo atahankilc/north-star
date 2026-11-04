@@ -8,3 +8,10 @@
 .gear[data-on='true'] > svg {
   transform: rotate(45deg);
 }
+
+/* Its count on its bottom-right corner, not its top one: the gear sits right under your square, which a top badge would
+   cover (and seem to be about); beside it, the threads panel would run into it. Outweighs CountBadge's corner. */
+.gear > [data-placement='corner'][data-tone] {
+  top: auto;
+  bottom: calc(-1 * var(--space-2));
+}
