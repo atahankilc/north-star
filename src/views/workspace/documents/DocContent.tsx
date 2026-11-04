@@ -49,13 +49,15 @@ type Props = {
   d: WithId<Doc>
   body: DocBody | null
   loading?: boolean
+  // Its content couldn't be read: said, never an empty page.
+  failed?: boolean
   // Who's looking: "you" for their own.
   me?: string
   // Followed links (in focus and beside the list; on the canvas they're only shown).
   links?: boolean
 }
 
-export const DocContent = memo(function DocContent({ d, body, loading = false, me, links = false }: Props) {
+export const DocContent = memo(function DocContent({ d, body, loading = false, failed = false, me, links = false }: Props) {
   const by = d.uid === me ? 'you' : d.name
   return (
     <article className={styles.doc}>
@@ -75,6 +77,8 @@ export const DocContent = memo(function DocContent({ d, body, loading = false, m
       </h1>
       {loading && !body ? (
         <p className={styles.note}>loading…</p>
+      ) : failed && !body ? (
+        <p className={styles.note}>This document&apos;s text couldn&apos;t be read. Reload the page to try again.</p>
       ) : d.kind === 'markdown' ? (
         <Markdown text={withoutTitle(body?.text ?? '', d.title)} links={links} />
       ) : d.kind === 'report' ? (

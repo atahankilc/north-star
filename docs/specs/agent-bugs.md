@@ -80,6 +80,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 46 | an apply deletes more than the preview showed    | Guards       | high     | code (changeset) | fixed            |
 | 47 | replacing the notes overwrites an edit made since | Guards      | mid      | code (changeset, notes) | fixed      |
 | 48 | after a switch from Claude, old maps sent every step | Plumbing | low      | code (loop)      | fixed            |
+| 49 | a saved document can't be reached without a documents list | Plumbing | high | code (UI; the user to pick how) | open |
 
 ## Order
 
@@ -395,6 +396,10 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 48. **After a switch from Claude, old maps go again on every step.** Same sweep: an append-only model keeps its map,
     notes, where and guide in the history; a model that isn't gets the fresh ones at its head, so the old ones went beside
     them on every step. Fixed 2026-11-04: they stay in the history (a switch back needs them) but aren't sent to it.
+
+49. **A saved document can't be reached without a documents list.** Seen 2026-11-04 on the stub: `/swot`, apply, and the
+    document is stored (private, origin `assistant`), but with no documents list on the canvas nothing shows it: `✓ APPLIED`
+    has only `undo`, and the finder says `nothing matches` here and everywhere. How to open it is the user's to pick.
 
 ## Preview: what the person sees before applying
 

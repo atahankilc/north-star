@@ -17,5 +17,6 @@ export default example({
     markdown: () => <div style={box}><DocContent d={interviews} body={{ text: text(interviews) }} me="demo" /></div>,
     'by you, private': () => <div style={box}><DocContent d={{ ...pilot, uid: 'demo', shared: false }} body={{ text: text(pilot) }} me="demo" links /></div>,
     loading: () => <div style={box}><DocContent d={interviews} body={null} loading me="demo" /></div>,
+    "text couldn't be read": () => <div style={box}><DocContent d={interviews} body={null} failed me="demo" /></div>,
   },
 })

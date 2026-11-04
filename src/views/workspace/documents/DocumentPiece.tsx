@@ -127,7 +127,7 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
           // On the canvas a press on it is its own until it moves 5 px (D-217's rule): a link's click still lands.
           <div ref={clip} className={onCanvas ? styles.openClip : undefined} style={onCanvas ? { maxHeight: OPEN_MAX } : undefined} data-cut={(onCanvas && cut) || undefined}>
             <div ref={content} className={styles.content} style={{ width, padding: PAD }} data-cell={(onCanvas && live) || undefined}>
-              <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links={live} />
+              <DocContent d={d} body={body.data} loading={body.isLoading} failed={!!body.error} me={user?.id} links={live} />
             </div>
           </div>
         )}
@@ -247,7 +247,7 @@ function DocPane({ id, list, box, first, focus }: PaneProps) {
       <div ref={el} className={styles.readerScroll} data-scrolls>
         <div className={styles.readerBody}>
           <div ref={column} className={styles.readerColumn} style={{ zoom }}>
-            <DocContent d={d} body={body.data} loading={body.isLoading} me={user?.id} links />
+            <DocContent d={d} body={body.data} loading={body.isLoading} failed={!!body.error} me={user?.id} links />
           </div>
           <PageOutline scroller={el} at={`${d.id}:${body.data ? 1 : 0}:${zoom}`} />
         </div>

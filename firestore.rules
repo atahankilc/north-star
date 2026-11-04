@@ -605,7 +605,9 @@ service cloud.firestore {
               && (!('openQuestions' in b) || (b.openQuestions is list && b.openQuestions.size() <= 30))
               && (!('sources' in b) || (b.sources is list && b.sources.size() <= 200));
           }
-          allow read: if part == 'body' && mayRead(summary());
+          // Not there yet reads as missing to any member, as the summary does: the app opens it as soon as the summary shows,
+          // which can be before the server has either, and a listener refused once never comes back (an empty page).
+          allow read: if part == 'body' && (resource == null ? isMember(wid) : mayRead(summary()));
           allow create: if part == 'body' && validBody(request.resource.data)
             && isMember(wid) && (isNotes(summaryAfter())
               ? (canEdit(wid) && notesBody(request.resource.data))

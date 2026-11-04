@@ -609,6 +609,8 @@ await allow('document file in its own folder', () => saveDoc(bob, 'd10', { kind:
 await allow('author reads their private document and its text', async () => { await getDoc(docDoc(bob.fs, 'd1')); await getDoc(docBody(bob.fs, 'd1')) })
 await deny('another member reads a private document', () => getDoc(docDoc(alice.fs, 'd1')))
 await deny("another member reads a private document's text", () => getDoc(docBody(alice.fs, 'd1')))
+await allow('member opens a text not on the server yet (it reads as missing)', () => getDoc(docBody(alice.fs, 'not-yet')))
+await deny('outsider opens a text not on the server yet', () => getDoc(docBody(carol.fs, 'not-yet')))
 await allow('member reads a document not there yet', () => getDoc(docDoc(alice.fs, 'nothing')))
 await deny('member lists every document', () => getDocs(docsCol(alice.fs)))
 await allow('member lists the shared documents', () => getDocs(query(docsCol(alice.fs), where('shared', '==', true))))

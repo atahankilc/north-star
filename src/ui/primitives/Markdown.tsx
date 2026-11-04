@@ -23,7 +23,9 @@ const ITEM = /^(\s*)([-*+]|\d{1,9}[.)])\s+(.*)$/
 const RULE = /^\s{0,3}([-*_])(\s*\1){2,}\s*$/
 const TABLE_SEP = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/
 
-const cellsOf = (line: string) => line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim())
+// `\|` is a pipe inside a cell, not the cell's end.
+const cellsOf = (line: string) => line.trim().replace(/^\|/, '').replace(/(?<!\\)\|$/, '').split(/(?<!\\)\|/).map((c) => c.trim())
+const startsTable = (lines: string[], i: number) => lines[i].includes('|') && i + 1 < lines.length && TABLE_SEP.test(lines[i + 1])
 
 export function parse(src: string): Block[] {
   const lines = src.replace(/\r\n?/g, '\n').split('\n')
@@ -61,7 +63,7 @@ export function parse(src: string): Block[] {
       out.push({ t: 'quote', blocks: parse(body.join('\n')) })
       continue
     }
-    if (line.includes('|') && i + 1 < lines.length && TABLE_SEP.test(lines[i + 1])) {
+    if (startsTable(lines, i)) {
       const head = cellsOf(line)
       const align = cellsOf(lines[i + 1]).map((c) => (c.startsWith(':') && c.endsWith(':') ? 'center' : c.endsWith(':') ? 'right' : c.startsWith(':') ? 'left' : null))
       const rows: string[][] = []
@@ -91,39 +93,49 @@ export function parse(src: string): Block[] {
     }
     // A paragraph: lines up to a blank one or the start of another block.
     const body: string[] = []
-    while (i < lines.length && lines[i].trim() && !HEADING.test(lines[i]) && !FENCE.test(lines[i]) && !RULE.test(lines[i]) && !/^\s{0,3}>/.test(lines[i]) && !(body.length && ITEM.test(lines[i]))) body.push(lines[i++].trim())
+    while (i < lines.length && lines[i].trim() && !HEADING.test(lines[i]) && !FENCE.test(lines[i]) && !RULE.test(lines[i]) && !/^\s{0,3}>/.test(lines[i]) && !(body.length && (ITEM.test(lines[i]) || startsTable(lines, i)))) body.push(lines[i++].trim())
     out.push({ t: 'p', text: body.join(' ') })
   }
   return out
 }
 
-const INLINE = /(`[^`]+`|!\[[^\]]*\]\([^)\s]*\)|\[[^\]]+\]\([^)\s]+\)|\*\*[^*]+\*\*|__[^_]+__|~~[^~]+~~|\*[^*\s][^*]*\*|_[^_\s][^_]*_|https?:\/\/[^\s<>()]+)/g
+// In order: an escaped mark, code, an image, a link (its url may hold one pair of brackets and be followed by a "title"),
+// bold italic, bold (italic may sit inside), struck, italic, a bare url. `_` marks only at a word's edge: snake_case stays.
+const INLINE = /(\\[\\`*_{}[\]()#+\-.!|~]|`[^`]+`|!\[[^\]]*\]\([^)\s]*\)|\[[^\]]+\]\((?:[^()\s]|\([^()\s]*\))+(?:\s+"[^"]*")?\)|\*\*\*[^*]+\*\*\*|\*\*(?:[^*]|\*(?!\*))+\*\*|(?<!\w)__[^_]+__(?!\w)|~~[^~]+~~|\*[^*\s][^*]*\*|(?<!\w)_[^_\s][^_]*_(?!\w)|https?:\/\/[^\s<>()]+)/g
 const SAFE = /^(https?:|mailto:)/i
+// What ends a sentence after a bare url isn't part of it.
+const URL_END = /[.,;:!?'"*_~]+$/
 
 function inline(line: string, links: boolean, key = 0): ReactNode[] {
   const out: ReactNode[] = []
   let at = 0
+  const link = (k: string, url: string, text: ReactNode) =>
+    links && SAFE.test(url) ? (
+      <a key={k} className={styles.link} href={url} target="_blank" rel="noreferrer noopener">
+        {text}
+      </a>
+    ) : (
+      <span key={k} className={styles.link} title={url}>
+        {text}
+      </span>
+    )
   for (const m of line.matchAll(INLINE)) {
+    if (m.index! < at) continue
     if (m.index! > at) out.push(line.slice(at, m.index))
-    const t = m[0]
+    let t = m[0]
     const k = `${key}-${m.index}`
-    if (t.startsWith('`')) out.push(<code key={k}>{t.slice(1, -1)}</code>)
+    if (t.startsWith('\\')) out.push(t[1])
+    else if (t.startsWith('`')) out.push(<code key={k}>{t.slice(1, -1)}</code>)
     else if (t.startsWith('![')) out.push(<span key={k} className={styles.image}>[{t.slice(2, t.indexOf('](')) || 'image'}]</span>)
-    else if (t.startsWith('[') || /^https?:/.test(t)) {
-      const text = t.startsWith('[') ? t.slice(1, t.indexOf('](')) : t
-      const url = t.startsWith('[') ? t.slice(t.indexOf('](') + 2, -1) : t
-      out.push(
-        links && SAFE.test(url) ? (
-          <a key={k} className={styles.link} href={url} target="_blank" rel="noreferrer noopener">
-            {inline(text, false, m.index)}
-          </a>
-        ) : (
-          <span key={k} className={styles.link} title={url}>
-            {inline(text, false, m.index)}
-          </span>
-        ),
-      )
-    } else if (t.startsWith('**') || t.startsWith('__')) out.push(<strong key={k}>{inline(t.slice(2, -2), links, m.index)}</strong>)
+    else if (t.startsWith('[')) {
+      const url = t.slice(t.indexOf('](') + 2, -1).split(/\s/)[0]
+      out.push(link(k, url, inline(t.slice(1, t.indexOf('](')), false, m.index)))
+    } else if (/^https?:/.test(t)) {
+      // Its own text, never read again: as a line of its own it would match itself for ever.
+      t = t.replace(URL_END, '')
+      out.push(link(k, t, t))
+    } else if (t.startsWith('***')) out.push(<strong key={k}><em>{inline(t.slice(3, -3), links, m.index)}</em></strong>)
+    else if (t.startsWith('**') || t.startsWith('__')) out.push(<strong key={k}>{inline(t.slice(2, -2), links, m.index)}</strong>)
     else if (t.startsWith('~~')) out.push(<s key={k}>{t.slice(2, -2)}</s>)
     else out.push(<em key={k}>{inline(t.slice(1, -1), links, m.index)}</em>)
     at = m.index! + t.length

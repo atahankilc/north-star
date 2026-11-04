@@ -25,7 +25,9 @@ orders close 21:00 the day before
 \`\`\`
 
 1. call the office park
-2. test with ten people`
+2. test with ten people
+
+Plain links work too: https://example.com/report, and \`snake_case_names\` or snake_case_names stay whole.`
 
 export default example({
   name: 'Markdown',

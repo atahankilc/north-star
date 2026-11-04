@@ -1507,3 +1507,14 @@ Accents, links and diffs at the strongest colour each hue allows without reading
 light; card tint 16 %; `--panel-tint` on a side panel's head and title, `CardRow` and `PanelRow`. Dark theme's look unchanged. Checked in
 the gallery in headless Chrome (D-368's *Checked*); what wasn't seen is in its *Not yet*. Written with other sessions
 editing the repo, not reachable by message (apparently under another Claude profile): only named files staged.
+
+## Done (2026-11-04): .md documents, the reader's crash and what else was wrong (not committed yet)
+A bare url in a document made `inline()` in Markdown.tsx match itself for ever: stack overflow, the Crash screen over the
+whole workspace, since D-232 (uploads and the agent's documents alike). Fixed, with snake_case kept whole, `***x***`, italic
+in bold, `\*` escapes, links with a title or brackets, a table right after a line of text, `\|` in a cell; the excerpt keeps
+snake_case and drops list marks and a table's rule. A text opened before the server has it was refused for good (an empty
+page): firestore.rules reads a missing body as missing to members (**not deployed yet**); DocContent says when it can't read one.
+Checked: tests/unit/markdown.test.ts, unit 1059/0, rules 641/0 (own ports, peers' emulators up), tsc, check:tokens/kit/gallery/
+lessons, headless on a frozen copy of HEAD plus these files (upload, open, a url in it; `/swot` on the stub). A dev server on the
+shared tree reloads when a peer saves, losing a write in flight: test on a frozen copy (`git archive`, own `cacheDir`).
+Open: agent bug 49 (a saved document can't be reached without a documents list).
