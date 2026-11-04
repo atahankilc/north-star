@@ -62,7 +62,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Landing (D-340, 2026-11-01, committed): full-screen backdrop, mono name, no HUD, Button; the user is working
   through more landing changes. AsciiButton deleted (e1b86de).
 - D-344 (pushed; + Steps on Tabs, tabs scroll in one row, 2026-11-02); its open item done by D-364 (2026-11-04, pushed): filters as columns of tick rows.
-- Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Q-033 closed by D-348. Stronger colours, cards' own, panels tinted: D-368 (2026-11-04, committed, not pushed).
+- Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Q-033 closed by D-348. Stronger colours, cards' own, panels tinted: D-368 (2026-11-04, pushed 53f1077, deploy ok).
 - D-352–D-356 (2026-11-02, state-history): pushed (756bd67), firestore:rules deployed after (633/0); D-348 (Settings → display: hud size, background strength) pushed, the user checked it.
 - D-350 (2026-11-02, pushed): the prompt family on one set of parts, done (state-history); `@` and `/` checked on emulators.
 - Cards on one face (D-358, docs/specs/cards.md): done 2026-11-02, five steps, one move (`startMove`) and the tray's task after (state-history). D-363 (few cards fill a plane), D-365 (bigger names, kind tab) 2026-11-04: not committed, the user to check their numbers; D-367 (far view) taken out; D-370 (console the name's size, tab's word goes under 50 %): pushed.
