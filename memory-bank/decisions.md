@@ -129,7 +129,7 @@ feature comes back as a piece, and check them with the user then.
     screen's foot; past 70 % of its edge (its open drawer counted) it takes the whole edge and wraps, the drawer spanning it too (D-354); no size in edit mode; marks (faint L's,
     cyan when pointed at) on its visible corners, no edge line, the selection bars too. Shown only while pointed at
     (cells in 170 / out 90 ms), in edit mode, with its setup open or the keyboard in it; fresh comments keep a small
-    tab; its text always the size of the piece's name (`--cs`, D-370); on touch a first tap shows it, a second focuses.
+    tab; its cells as tall as the piece's name's row (`--cs`, D-370); on touch a first tap shows it, a second focuses.
   - `Marks` (D-265, D-270, D-272; `src/ui/primitives/Marks.tsx`) on everything selectable: three tiers in screen px (a step down
     when small), distance = state, tone = what it is, cyan = what you can do, press 70 ms, release a spring; a drag goes
     0.8 round the point held with `<Landing>` L's where it lands (a kanban opens a gap); `<BoxSelect>`; others'

@@ -1868,8 +1868,10 @@ function nameSize(zoom: number) {
   return Math.min(far, Math.max(near, far - (far - near) * zoom))
 }
 
-// A console's size: its text always the size of the piece's name (D-370). In the canvas's px, so its zoom's divided back out.
-const consoleScale = (zoom: number) => nameSize(zoom) / tokenPx('--text-xs') / zoom
+// A console's size: its cells always as tall as the piece's name's row (D-370). A cell is two lines of `--text-xs` × scale,
+// the name's row 1.5 of its size, so the two are equal at the name's size over `--space-4`. In the canvas's px, so its
+// zoom's divided back out.
+const consoleScale = (zoom: number) => nameSize(zoom) / tokenPx('--space-4') / zoom
 
 function PlaneConsole({ comments, editing = false, unframed = false, noun = 'plane', onFocus, onEdit, onDelete, onMove, onAlso, shared, className, link, open, extra, shown = true }: ConsoleProps) {
   // Shown only while the piece is pointed at (D-264), in edit mode, or with the keyboard in it: built cell by cell as it
