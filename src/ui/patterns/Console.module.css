@@ -6,6 +6,9 @@
   --mk: var(--fg-faint);
   --mkt: var(--mk);
   --mkb: var(--mk);
+  /* Its Buttons at the console's own scale, shrinking with it too (D-370): `--cs` under 1 when the canvas is close. */
+  --button-h: 2em;
+  --button-pad: calc(var(--space-2) * var(--cs, 1));
   --mark-len: calc(var(--corner-mark) * var(--cs, 1));
   --mark-w: calc(var(--line-w) * var(--cs, 1));
   /* Its ButtonGroups' seam, scaled like everything in it: 1 px on the screen at any zoom (D-344). */

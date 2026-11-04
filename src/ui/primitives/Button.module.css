@@ -10,8 +10,8 @@
   justify-content: center;
   gap: var(--space-1);
   /* 24 px at 12 px text; it grows with its text where that grows (a console as the canvas zooms out, D-264). */
-  height: max(var(--control-sm), 2em);
-  padding: 0 var(--space-2);
+  height: var(--button-h, max(var(--control-sm), 2em));
+  padding: 0 var(--button-pad, var(--space-2));
   border: 0;
   background: var(--wash-2);
   color: var(--fg-dim);
