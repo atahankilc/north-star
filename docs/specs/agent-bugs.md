@@ -79,6 +79,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 45 | a steer, then stop, starts the agent again       | Plumbing     | mid      | code (agentStore) | fixed            |
 | 46 | an apply deletes more than the preview showed    | Guards       | high     | code (changeset) | fixed            |
 | 47 | replacing the notes overwrites an edit made since | Guards      | mid      | code (changeset, notes) | fixed      |
+| 48 | after a switch from Claude, old maps sent every step | Plumbing | low      | code (loop)      | fixed            |
 
 ## Order
 
@@ -390,6 +391,10 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
     waited for its next step; a stop ended the turn and its end sent the waiting words as a new turn, so the agent went
     on. Fixed: a stop drops the words queued before it (they stay in the chat as sent, as after a failed turn); words
     sent after the stop still start the next turn. Checked headless with the dev stub (1 turn, 2 without the fix).
+
+48. **After a switch from Claude, old maps go again on every step.** Same sweep: an append-only model keeps its map,
+    notes, where and guide in the history; a model that isn't gets the fresh ones at its head, so the old ones went beside
+    them on every step. Fixed 2026-11-04: they stay in the history (a switch back needs them) but aren't sent to it.
 
 ## Preview: what the person sees before applying
 

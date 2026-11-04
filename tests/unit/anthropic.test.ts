@@ -297,6 +297,20 @@ describe("the loop's append-only mode", () => {
     expect(m.seen.length).toBe(15)
   })
 
+  it('after a switch to another model the map left in the history stays kept but is not sent again (the sweep\'s 22)', async () => {
+    const e = env()
+    const { history } = await runTurn(claudeLike([{ answer: 'one' }]), e, [], [], 'first')
+    const m = stubModel([{ calls: [{ name: 'look', args: {} }] }, { answer: 'two' }])
+    const look = { def: { name: 'look', description: 'look', parameters: { type: 'object' as const, properties: {} } }, kind: 'read' as const, run: async () => ({ ok: true, text: 'seen' }) }
+    const next = await runTurn(m, e, [look], history, 'second')
+    expect(m.seen).toHaveLength(2)
+    for (const req of m.seen) {
+      expect(req.messages.filter((x) => x.role === 'system' && (x.tag === 'map' || x.tag === 'where'))).toEqual([])
+      expect(req.messages.filter((x) => x.role === 'user').map((x) => x.content)).toEqual(['first', 'second'])
+    }
+    expect(next.history.filter((x) => x.role === 'system' && x.tag === 'map')).toHaveLength(1)
+  })
+
   it('the next turn: the map only when it changed, where again; the last step note kept', async () => {
     const e = env()
     const m1 = claudeLike([{ answer: 'one' }])

@@ -2,16 +2,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const popup = vi.fn()
+const out = vi.fn()
+const leave = vi.fn(async () => {})
 vi.mock('firebase/auth', () => ({
   GoogleAuthProvider: class {},
   onAuthStateChanged: vi.fn(),
   signInWithCredential: vi.fn(),
   signInWithPopup: (...a: unknown[]) => popup(...a),
-  signOut: vi.fn(),
+  signOut: (...a: unknown[]) => out(...a),
 }))
 vi.mock('../../src/data/firebase', () => ({ firebase: { auth: {} }, isDemo: false, useEmulators: false }))
+vi.mock('../../src/data/presence', () => ({ leavePresence: () => leave() }))
 
-const { signInWithGoogle } = await import('../../src/data/auth')
+const { signInWithGoogle, signOut } = await import('../../src/data/auth')
 const failWith = (code: string) => popup.mockRejectedValueOnce(Object.assign(new Error(`Firebase: Error (${code}).`), { code }))
 
 describe('signInWithGoogle', () => {
@@ -34,5 +37,12 @@ describe('signInWithGoogle', () => {
   it('passes anything else on as it is', async () => {
     failWith('auth/internal-error')
     await expect(signInWithGoogle()).rejects.toThrow('auth/internal-error')
+  })
+})
+
+describe('signOut', () => {
+  it('leaves presence first: after it the rules refuse the write (the sweep\'s 22)', async () => {
+    await signOut()
+    expect(leave.mock.invocationCallOrder[0]).toBeLessThan(out.mock.invocationCallOrder[0])
   })
 })

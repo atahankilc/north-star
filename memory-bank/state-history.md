@@ -1445,6 +1445,11 @@ north-star-e7 (recent commits), -48 and -51 told what each found. The user picke
   a cancel draws nothing. Checked headless on the gallery's timeline, old code against new: after a cancel the strip stays,
   the draft goes, a release still opens the prompt. `cleanUpWorkspaceAi` also deletes `agentChats` with their bodies
   (others' private chats, which an owner's browser can't delete); built, not run: functions wait for Blaze.
+- Then 22, its four small things (2026-11-04): `signOut` leaves presence first (the session's clean-up ran after the
+  sign-out and the rules refused it: on emulators the node stayed, now it goes); `discardNew` takes its steps off redo too;
+  a window opened from a right-click menu gives focus back to where the menu came from (`useFocusCameFrom`; headless on
+  the workspaces page, was body; nothing had focus before a plain right-click, so nothing to give back then); after a
+  switch from Claude the old map, notes and where aren't sent (agent bug 48). The `discardNew` and switch tests fail on the old code.
 
 ## Done (2026-11-03): a test pass over the last 15 commits, and its fixes (north-star-e7; pushed)
 Eight reviewers (one area each) and two headless runs on emulators over 0db26da back to f2d28ac. The refactors held

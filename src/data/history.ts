@@ -186,7 +186,7 @@ export function discardNew(ref: DocumentReference, key: string) {
   if (!writable()) return Promise.resolve()
   return serial(async () => {
     const pending = deleteDoc(ref)
-    useHistory.setState((h) => ({ past: h.past.filter((p) => p.key !== key) }))
+    useHistory.setState((h) => ({ past: h.past.filter((p) => p.key !== key), future: h.future.filter((p) => p.key !== key) }))
     return { pending }
   }).then(({ pending }) => pending)
 }

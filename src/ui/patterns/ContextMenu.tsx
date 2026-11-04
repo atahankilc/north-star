@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from 'react'
 import { Appear } from '../primitives/Appear'
 import { placeAt } from '../foundation/floating'
+import { useFocusCameFrom } from '../foundation/focus'
 import { useDismiss } from '../foundation/useDismiss'
 import type { PromptEntry } from '../foundation/promptModel'
 import { PromptPanel } from './PromptPanel'
@@ -15,6 +16,7 @@ type Props = { at: [number, number]; items: PromptEntry[]; what: string; onClose
 // `data-learn` names it for the onboarding's lessons (D-315): the right-click menu, the move-to prompt.
 export function ContextMenu({ at, items, what, onClose, prompt, empty, wide, more, 'data-learn': learnAs }: Props) {
   const root = useRef<HTMLElement>(null)
+  useFocusCameFrom(root)
   useDismiss(root, () => onClose(), { wheel: true, escape: true })
   useLayoutEffect(() => void (root.current && placeAt(root.current, at)), [at])
   return (

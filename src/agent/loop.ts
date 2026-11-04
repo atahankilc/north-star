@@ -234,6 +234,10 @@ export function clearOldResults(msgs: ModelMessage[], keep = KEEP_RESULTS): numb
   return go.length
 }
 
+// What an append-only model left in the history for itself: any other model gets the fresh ones at its head, so after a
+// switch these stay kept (a switch back needs them) but aren't sent, on every step, beside the new map (the sweep's 22).
+const notAppended = (m: ModelMessage) => !(m.role === 'system' && (m.tag === 'map' || m.tag === 'notes' || m.tag === 'where' || m.tag === 'guide' || m.tag === 'final'))
+
 // A picture counts as this many tokens (a 1400 px one is about 1.5–2.5k on either provider).
 export const IMAGE_TOKENS = 2000
 export const historyTokens = (msgs: ModelMessage[]) =>
@@ -467,7 +471,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     const messages: ModelMessage[] = own(
       appendOnly
         ? [...head, ...past, ...lead, ask, ...context, ...mine]
-        : [...head, ...past, { role: 'system', content: where }, ...guide, ask, ...mine, ...(final ? [{ role: 'system' as const, content: FINAL_STEP_NOTE }] : [])],
+        : [...head, ...past.filter(notAppended), { role: 'system', content: where }, ...guide, ask, ...mine, ...(final ? [{ role: 'system' as const, content: FINAL_STEP_NOTE }] : [])],
     )
     let res: ModelResponse
     try {

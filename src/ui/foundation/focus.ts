@@ -2,11 +2,29 @@
 // it was when it closes; Tab kept round inside a modal one.
 import { useLayoutEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react'
 
+// A right-click menu goes as the window it opened comes, its field with it: where the menu came from is where that
+// window gives focus back (the sweep's 22). A menu with a trigger gives it back itself, before the window draws.
+const cameFrom = new WeakMap<Element, Element>()
+export function useFocusCameFrom(root: RefObject<HTMLElement | null>) {
+  const was = useRef(typeof document === 'undefined' ? null : document.activeElement)
+  useLayoutEffect(() => {
+    if (root.current && was.current) cameFrom.set(root.current, was.current)
+  }, [root])
+}
+function focusOrigin() {
+  const now = document.activeElement
+  for (let el = now; el; el = el.parentElement) {
+    const from = cameFrom.get(el)
+    if (from) return from
+  }
+  return now
+}
+
 // Focus inside while open, and back where it was on close: `first` (or the root) takes it as it opens, unless something
 // inside already took it (a field's autoFocus runs before this). Where it was is read as it first draws, before that.
 export function useDialogFocus(root: RefObject<HTMLElement | null>, first: RefObject<HTMLElement | null> | null, move = true) {
   const was = useRef<Element | null | undefined>(undefined)
-  if (was.current === undefined) was.current = typeof document === 'undefined' ? null : document.activeElement
+  if (was.current === undefined) was.current = typeof document === 'undefined' ? null : focusOrigin()
   useLayoutEffect(() => {
     const inside = !!root.current && root.current.contains(document.activeElement)
     if (move && (first?.current || !inside)) (first?.current ?? root.current)?.focus({ preventScroll: true })

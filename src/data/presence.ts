@@ -242,6 +242,15 @@ export const hasSelected = (p: Presence, id: string) => p.sel === id || (p.more 
 
 const round = (v: number) => Math.round(v * 1000) / 1000
 
+// Signing out: your node goes while you may still write it. The session's own clean-up runs once the sign-out has
+// happened, and the rules refuse it then (the sweep's 22).
+export async function leavePresence() {
+  const node = mine?.node
+  if (!node) return
+  mine = null
+  await Promise.allSettled([onDisconnect(node).cancel(), remove(node)])
+}
+
 // Announce yourself in a workspace while mounted, and listen for everyone else.
 // `canvas`: the one shown (D-302), said only when it isn't the first.
 export function usePresenceSession(wid: string, user: AuthUser | null, view: PresenceView, canvas = 'main') {

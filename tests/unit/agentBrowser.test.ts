@@ -77,7 +77,7 @@ vi.mock('firebase/firestore', () => {
 import { onTracked, setReadOnly, tracked, undo, useHistory } from '../../src/data/history'
 import { WS_COLLECTIONS } from '../../src/model/fromDocs'
 import { browserApply, lockTurn, unlockTurn, undoAgentStep, holdLock, releaseLock, locksHeld, lockPreview, releaseAgentLocks, PREVIEW_LOCK } from '../../src/agent/browser'
-import { redo } from '../../src/data/history'
+import { discardNew, redo } from '../../src/data/history'
 import { fromDocs } from '../../src/model/fromDocs'
 import type { WorkspaceCtx } from '../../src/state/wsStore'
 import { addCall, accept, emptyChangeset } from '../../src/agent/changeset'
@@ -190,6 +190,17 @@ describe('the agent in the browser', () => {
     if (!a.ok) throw new Error('refused')
     await tracked('person after', [], async () => {}, { key: 'p' })
     expect(await undoAgentStep(a.step!.key)).toBe(false)
+  })
+
+  it('a thing made and let go leaves nothing to redo either, and other steps stay (the sweep\'s 22)', async () => {
+    const r = (id: string) => fake.ref(path('cards', id)) as never
+    await tracked('other', [r('o')], async () => void fake.data.set(path('cards', 'o'), { n: 1 }), { key: 'other' })
+    await tracked('made', [r('m')], async () => void fake.data.set(path('cards', 'm'), { n: 1 }), { key: 'mine' })
+    await undo()
+    await undo()
+    expect(useHistory.getState().future.map((s) => s.key).sort()).toEqual(['mine', 'other'])
+    await discardNew(r('m'), 'mine')
+    expect(useHistory.getState().future.map((s) => s.key)).toEqual(['other'])
   })
 
   it('a write the server refuses comes back as errors, never as applied (and leaves no undo step)', async () => {

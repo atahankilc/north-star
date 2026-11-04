@@ -7,6 +7,7 @@ import {
 } from 'firebase/auth'
 import { useEffect, useState } from 'react'
 import { firebase, isDemo, useEmulators } from './firebase'
+import { leavePresence } from './presence'
 
 export type AuthUser = { id: string; email: string | null; name: string | null; photoURL: string | null }
 
@@ -69,7 +70,8 @@ export async function signInAsTestUser(name: string) {
   await signInWithCredential(firebase.auth, GoogleAuthProvider.credential(idToken))
 }
 
-export function signOut() {
+export async function signOut() {
   if (!firebase) return
+  await leavePresence()
   return fbSignOut(firebase.auth)
 }
