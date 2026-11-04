@@ -46,7 +46,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   content rewritten, every lesson the centred modal, ~30 lessons by screen/piece, no nudges; checked headless on
   emulators. Then Lesson/Nudge, 10 unused scenes, `idle` and seen-state `nudges` deleted; D-351: ≤ 8 pages, welcome
   reordered, lessons split; D-357: canvases in the welcome and piece-made; all pushed and live 2026-11-02,
-  firestore:rules deployed (631/0). Not seen in a browser: the comment lesson over the threads panel. The agent's
+  firestore:rules deployed (631/0). The comment lesson seen over the threads panel 2026-11-04 (clear of it; its thread demo hides the breadcrumb). The agent's
   lessons wait for its redesign.
 - Parked (D-312: the agent uses own keys only): the
   workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,

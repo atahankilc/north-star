@@ -7,7 +7,7 @@
 import { closeThread } from '../../views/workspace/threads/Threads'
 import { aim, camera, cursor, inFocus, key, run, set, wait, type Scene } from '../director'
 import { base, rightClick, type } from '../fixtures/kit'
-import { calm, thread, cornerOnly } from '../fixtures/o13'
+import { calm, thread, cornerOnly, noCrumbs } from '../fixtures/o13'
 import { closeIn } from '../fixtures/o10'
 import { P, PEOPLE } from '../fixtures/pazar'
 import { DEMO_DAY } from '../clock'
@@ -55,7 +55,8 @@ const scene: Scene = {
   poster: 7750,
   cursor: inFocus(700, 700),
   // The problems and customers in view, big enough to read; the thread opens bottom left over the customers.
-  setup: [cornerOnly('thread'), calm(), camera.frame({ x: 0, y: 0, w: 900, h: 560 }, 20)],
+  // No breadcrumb: framed this close, it would print over the customers' row.
+  setup: [cornerOnly('thread'), noCrumbs('thread'), calm(), camera.frame({ x: 0, y: 0, w: 900, h: 560 }, 20)],
   steps: [
     { at: 300, do: cursor.to(on, 900) },
     { do: wait(400) },

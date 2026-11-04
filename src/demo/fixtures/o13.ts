@@ -36,6 +36,8 @@ const hide = (scene: string, what: string, selector: string): Action =>
   }, `no ${what}`)
 export const sideOnly = (scene: string): Action => hide(scene, 'corner', `.${hudStyles.corner}`)
 export const cornerOnly = (scene: string): Action => hide(scene, 'side nav', '[data-learn="sidenav"]')
+// No breadcrumb: a scene framed close on a plane's top row would print it over the cards there.
+export const noCrumbs = (scene: string): Action => hide(scene, 'breadcrumb', `.${hudStyles.crumbs}`)
 
 // ——— teammates ———
 
