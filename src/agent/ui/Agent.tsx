@@ -22,6 +22,7 @@ import { EdgeColumn } from '../../ui/patterns/EdgeColumn'
 import { PanelHead } from '../../ui/patterns/PanelHead'
 import { ResizeEdge } from '../../ui/primitives/ResizeEdge'
 import { useWs } from '../../views/workspace/canvas/context'
+import { useDocUi } from '../../views/workspace/documents/Documents'
 import { isTyping, keysTaken } from '../../ui/foundation/focus'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
 import { pickerRows } from '../models'
@@ -1076,6 +1077,9 @@ function ReportLine({ entry }: { entry: Extract<Entry, { kind: 'report' }> }) {
   // Only the last applied step can be undone from here (browser.ts' undoAgentStep checks it's still the last).
   const current = wf.phase === 'applied' && wf.report?.step?.key && wf.report.step.key === r.step?.key
   const shown = current ? wf.report! : r
+  // What it wrote and is still there (undone, or deleted since: nothing to open).
+  const { documents } = useWs()
+  const docs = shown.undone ? [] : (r.docs ?? []).flatMap((id) => documents.filter((d) => d.id === id))
   if (!r.step) {
     return (
       <p className={styles.status}>
@@ -1092,10 +1096,19 @@ function ReportLine({ entry }: { entry: Extract<Entry, { kind: 'report' }> }) {
       </span>
       <span className={styles.statusWord}>{shown.undone ? 'undone' : 'applied'}</span>
       <span className={styles.statusText}>· {what.join(' · ')}</span>
-      {current && !shown.undone && (
-        <Button className={styles.undo} onClick={() => agentActions.undo()} disabled={shown.undoing}>
-          {shown.undoing ? 'undoing…' : 'undo'}
-        </Button>
+      {(docs.length > 0 || (current && !shown.undone)) && (
+        <ButtonGroup className={styles.undo}>
+          {docs.map((d, i) => (
+            <Button key={d.id} title={`read "${d.title}"`} onClick={() => useDocUi.setState({ reading: d.id })}>
+              {docs.length > 1 ? `open ${i + 1}` : 'open'}
+            </Button>
+          ))}
+          {current && !shown.undone && (
+            <Button onClick={() => agentActions.undo()} disabled={shown.undoing}>
+              {shown.undoing ? 'undoing…' : 'undo'}
+            </Button>
+          )}
+        </ButtonGroup>
       )}
       {current && wf.error && <span className={styles.reportError}>{wf.error}</span>}
     </div>

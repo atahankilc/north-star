@@ -71,8 +71,10 @@ export const useDocUi = create<{
   // Put on the canvas once it's shared: at `at` (canvas px), or beside `near` (a piece) when asked from a focus.
   placing: { docId: string; at?: [number, number]; near?: string } | null
   deleting: string | null
+  // Read in its own window, over whatever's open (DocReader.tsx).
+  reading: string | null
   uploads: { name: string; state: 'sending' | 'done' | 'refused'; why?: string }[]
-}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, readerWeights: {}, renaming: null, unsharing: null, drag: null, dropped: null, placing: null, deleting: null, uploads: [] }))
+}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, readerWeights: {}, renaming: null, unsharing: null, drag: null, dropped: null, placing: null, deleting: null, reading: null, uploads: [] }))
 
 // At most this many side by side.
 export const READERS_MAX = 4

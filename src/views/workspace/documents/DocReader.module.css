@@ -1,0 +1,20 @@
+/* A document read in a window (DocReader.tsx): its page scrolls, the foot stays. */
+.reader {
+  display: flex;
+  flex-direction: column;
+  width: calc(var(--size-xl) + 2 * var(--space-12));
+  max-width: calc(100vw - 2 * var(--space-8));
+  max-height: calc(100vh - 2 * var(--space-8));
+}
+
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-8) var(--space-12);
+}
+
+.foot {
+  align-self: flex-end;
+  padding: var(--space-4);
+}

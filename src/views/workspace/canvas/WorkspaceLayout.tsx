@@ -47,6 +47,7 @@ import { download, fileSlug, zipBundle } from '../../../io/bundle'
 import { useEditKeys } from './useEditKeys'
 import { Coach } from '../../../onboarding/Coach'
 import { Agent } from '../../../agent/ui/Agent'
+import { DocReader } from '../documents/DocReader'
 import styles from './WorkspaceLayout.module.css'
 import { DUR } from '../../../ui/foundation/motion'
 import { plural } from '../../../model/words'
@@ -133,6 +134,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
         {/* One per canvas (D-302): going to another builds it anew, its camera its own. */}
         {!isLoading && <CanvasView key={shown} />}
         {!isLoading && <Finder />}
+        {!isLoading && <DocReader />}
         <Toast />
         <Coach />
       </div>

@@ -94,6 +94,13 @@ of its own). Its text shows at every zoom, as everything else on the canvas (no 
 - **Unsharing it** while it's on the canvas asks first (hazard confirm): only its author would see it, so its pieces
   are taken off the canvas, the same undo step (⌘Z shares it again and puts them back).
 
+## Read in a window (D-371)
+
+`DocReader`, the one Window over whatever's open: the way to a document nothing on a canvas shows. From the agent's `open`
+beside `undo` on the applied line, and from the finder, which lists a document no list takes and no piece shows as `in no
+list`. Its foot: `place on the canvas` (a private one asks first), `download`. A documents list shows every document you may
+see, the agent's too, including ones written before the list was made.
+
 ## Unframed (D-234)
 
 Both pieces take D-228's `[unframe]` / `[frame]` (edit mode): out of the window onto the canvas, on a feathered page,
@@ -105,6 +112,6 @@ there is measured as drawn.
 ## Not yet
 
 - Images and PDFs (Storage, step 4): upload with thumbnails, pdf.js pages, `[◐ dark]`, an image taking its shape.
-- Writing a document in the app (kind `note`); renaming from the UI; the assistant writing documents.
+- Writing a document in the app (kind `note`).
 - Viewers uploading (the client's read-only mode refuses it).
 - Comments on a document in a list. (Documents are in the export since D-246: .md and reports; files once Storage is live.)

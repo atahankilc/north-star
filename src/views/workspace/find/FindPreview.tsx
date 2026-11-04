@@ -58,7 +58,7 @@ export const FindPreview = memo(function FindPreview({ dest, re, w, h, zoom, onZ
   useLayoutEffect(() => {
     const el = screen.current
     if (!el || !dest || !re) return unpaint()
-    const t = dest.target
+    const t = dest.kind === 'alone' ? undefined : dest.target
     const again = () => {
       paintIn(el, re, t?.key ? { el: el.querySelector(t.kind === 'lens' ? `[data-find="${t.key}"]` : `[data-target="${t.key}"]`), k: t.k } : t ? { k: t.k } : null)
       // Measured only while zoomed in (a measure lays the whole preview out again).
@@ -109,7 +109,7 @@ export const FindPreview = memo(function FindPreview({ dest, re, w, h, zoom, onZ
 // A place on the screen, from where it's drawn: the zoomed layer's top-left is its own (0, 0), at `scale`.
 const local = (r: DOMRect, origin: DOMRect, scale: number) => ({ x: (r.left + r.width / 2 - origin.left) / scale, y: (r.top + r.height / 2 - origin.top) / scale })
 
-const destKey = (d: Dest) => (d.kind === 'place' ? `place:${d.place.space}:${d.place.id}` : `${d.kind}:${d.target.space}:${d.target.key ?? ''}:${d.target.k}`)
+const destKey = (d: Dest) => (d.kind === 'place' ? `place:${d.place.space}:${d.place.id}` : d.kind === 'alone' ? `alone:${d.doc.id}` : `${d.kind}:${d.target.space}:${d.target.key ?? ''}:${d.target.k}`)
 
 type Measure = { lens: React.RefObject<HTMLDivElement | null>; scale: React.RefObject<number>; refocus: React.RefObject<() => void> }
 
@@ -137,6 +137,7 @@ function Shown({ dest, lens, scale, refocus }: { dest: Dest } & Measure) {
     return <div className={styles.plane}>{Shown && <Shown piece={dest.piece} view={view} live={false} editor={false} page={dest.page} />}</div>
   }
   if (dest.kind === 'doc') return <DocPage dest={dest} lens={lens} scale={scale} refocus={refocus} />
+  if (dest.kind === 'alone') return <AlonePage doc={dest.doc} />
   return <ReaderPage dest={dest} lens={lens} scale={scale} refocus={refocus} />
 }
 
@@ -172,6 +173,20 @@ function DocPage({ dest, lens, scale, refocus }: { dest: Extract<Dest, { kind: '
   return (
     <div className={styles.plane}>
       <DocumentPieceView piece={dest.piece} view={view} live={false} />
+    </div>
+  )
+}
+
+// A document in no list: its page, as its own window reads it.
+function AlonePage({ doc }: { doc: Extract<Dest, { kind: 'alone' }>['doc'] }) {
+  const { wid } = useWs()
+  const { user } = useAuth()
+  const body = useDocBody(wid, doc)
+  return (
+    <div className={paper.readerBody}>
+      <div className={paper.readerColumn}>
+        <DocContent d={doc} body={body.data} loading={body.isLoading} failed={!!body.error} me={user?.id} />
+      </div>
     </div>
   )
 }

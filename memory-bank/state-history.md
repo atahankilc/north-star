@@ -1518,3 +1518,8 @@ Checked: tests/unit/markdown.test.ts, unit 1059/0, rules 641/0 (own ports, peers
 lessons, headless on a frozen copy of HEAD plus these files (upload, open, a url in it; `/swot` on the stub). A dev server on the
 shared tree reloads when a peer saves, losing a write in flight: test on a frozen copy (`git archive`, own `cacheDir`).
 Open: agent bug 49 (a saved document can't be reached without a documents list).
+
+## Done (2026-11-04): a document read in a window, from the agent and the finder (D-371, agent bug 49)
+`DocReader` on the one Window; `open` on the agent's applied line (Report's `docs`); the finder's `aloneGroups`, `Dest` kind
+`alone`. Checked: tests/unit/findAlone.test.ts, unit 1062/0, tsc, check:tokens/kit/gallery/lessons, headless (D-371's *Checked*).
+The commit before left the shared index on the old blobs (a private-index commit does): `git reset -- <paths>` after one.

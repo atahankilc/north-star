@@ -80,7 +80,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 | 46 | an apply deletes more than the preview showed    | Guards       | high     | code (changeset) | fixed            |
 | 47 | replacing the notes overwrites an edit made since | Guards      | mid      | code (changeset, notes) | fixed      |
 | 48 | after a switch from Claude, old maps sent every step | Plumbing | low      | code (loop)      | fixed            |
-| 49 | a saved document can't be reached without a documents list | Plumbing | high | code (UI; the user to pick how) | open |
+| 49 | a saved document can't be reached without a documents list | Plumbing | high | code (UI, D-371) | fixed |
 
 ## Order
 
@@ -399,7 +399,7 @@ fixes can't be measured until it's fixed. Layer: where the fix goes.
 
 49. **A saved document can't be reached without a documents list.** Seen 2026-11-04 on the stub: `/swot`, apply, and the
     document is stored (private, origin `assistant`), but with no documents list on the canvas nothing shows it: `✓ APPLIED`
-    has only `undo`, and the finder says `nothing matches` here and everywhere. How to open it is the user's to pick.
+    has only `undo`, and the finder says `nothing matches` here and everywhere. Fixed by D-371: `open` beside `undo`, the finder's `in no list`.
 
 ## Preview: what the person sees before applying
 

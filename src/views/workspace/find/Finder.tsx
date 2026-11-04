@@ -21,7 +21,7 @@ import { useCanvasView } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
 import { useWs, useWsNow, type WorkspaceCtx } from '../canvas/context'
 import { closeFinder, findGo, matcherOf, matchesIn, openFinder, setQuery, setScope, toggleOpt, toggleScope, useFind, useMatcher, type FindOpts, type FindScope } from './find'
-import { findGroups, folded, type Dest, type Group, type Row } from './findIndex'
+import { aloneGroups, findGroups, folded, type Dest, type Group, type Row } from './findIndex'
 import { goToTask } from '../deck/Kanban'
 import { FindPreview } from './FindPreview'
 import { placesIn, shownPlaces, toggleOpen, useGoTo } from '../canvas/goTo'
@@ -194,7 +194,7 @@ function Panel() {
       }
     }
     const places: Group[] = named.length ? [{ space: 'places', title: 'places', glyph: '⌖', count: named.length, rows: named.map((n) => n.row) }] : []
-    return [...places, ...(scope === 'here' ? folded(all, here) : all)]
+    return [...places, ...aloneGroups(ws.documents, ws.pieces, bodies, re, user?.id), ...(scope === 'here' ? folded(all, here) : all)]
   }, [going, unfolded, found, scope, here, ws.pieces, ws.spots, ws.places, ws.cards, ws.labels, ws.cells, ws.tasks, ws.documents, ws.workspace, ws.canvas, ws.canvases, bodies, user?.id, fieldText, size, held])
 
   // Only so many rows are drawn (typing more narrows them); each group still says how many it has.
@@ -397,6 +397,10 @@ function Panel() {
 // Going to a match on the canvas shown.
 function goRow(row: Row, ws: WorkspaceCtx) {
   const d = row.dest
+  if (d.kind === 'alone') {
+    closeFinder()
+    return useDocUi.setState({ reading: d.doc.id })
+  }
   if (d.kind === 'place') return findGo({ ...(d.target ?? { kind: 'space', space: d.place.space, k: 0 }), place: d.place })
   // A kanban's task (D-261): its kanban's focus, the task picked.
   if (d.kind === 'lens' && kindOfPiece(d.piece) === 'kanban' && d.target.key?.startsWith('task:')) return goToTask(d.piece, ws.tasks, { id: d.target.key.slice(5) }, ws.pieces)
@@ -420,7 +424,7 @@ const SETTLE_MS = 160
 const PREVIEW_MS = 90
 const ROWS_MAX = 150
 const NO_POINT = () => {}
-const spaceOf = (d: Dest) => `${d.canvas ?? ''}${d.kind === 'place' ? d.place.space : d.target.space}`
+const spaceOf = (d: Dest) => `${d.canvas ?? ''}${d.kind === 'place' ? d.place.space : d.kind === 'alone' ? `doc:${d.doc.id}` : d.target.space}`
 const SCOPE_NAME: Record<FindScope, string> = { here: 'here', canvas: 'this canvas', everywhere: 'everywhere' }
 
 // Over the preview: where it goes, and its zoom (`[−] 100% [+]`; a click on the number puts it back).
@@ -434,6 +438,8 @@ function PreviewHead({ dest, zoom, onZoom, drawing }: { dest: Dest | null; zoom:
           ? `on ${canvases.find((c) => c.id === dest.canvas)?.name ?? 'another canvas'}`
           : 'on the canvas'
         : 'in its plane'
+      : dest.kind === 'alone'
+        ? `${dest.doc.title} · in no list`
       : dest.kind === 'reader'
         ? `${dest.doc.title} · beside ${dest.list.name || 'the documents'}`
         : dest.kind === 'doc'

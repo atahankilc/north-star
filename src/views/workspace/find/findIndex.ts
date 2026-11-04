@@ -34,6 +34,7 @@ export type Dest = (
   | { kind: 'lens'; piece: WithId<Piece>; target: FindTarget; page?: number }
   | { kind: 'doc'; piece: WithId<Piece>; target: FindTarget }
   | { kind: 'reader'; list: WithId<Piece>; doc: WithId<Doc>; target: FindTarget }
+  | { kind: 'alone'; doc: WithId<Doc> }
 ) & { canvas?: string }
 
 // `fold`: a plane's own places folded under it in go to (D-200), opened or not; `indent`: one of them.
@@ -56,6 +57,18 @@ type Data = {
   room: { w: number; h: number }
   // What a table, matrix or list holds, built once while its data stays the same (not on every key typed).
   held: Map<string, { items: FindItem[]; content: Bounds }>
+}
+
+// The documents nothing shows on any canvas (no list takes them, no piece is one): the agent's, with no list made yet.
+// There's nowhere to go to, so they open in their own window (DocReader.tsx).
+export function aloneGroups(documents: WithId<Doc>[], pieces: WithId<Piece>[], bodies: Record<string, DocBody>, re: RegExp, me?: string): Group[] {
+  const shown = new Set(pieces.filter((p) => kindOfPiece(p) === 'document').map((p) => p.docId))
+  for (const p of pieces) if (kindOfPiece(p) === 'documents') for (const d of listed(documents, documentsOf(p), me)) shown.add(d.id)
+  return documents.flatMap((d): Group[] => {
+    if (shown.has(d.id) || !bodies[d.id]) return []
+    const rows = pageRows(`doc:${d.id}`, pageText(d, bodies[d.id]), re, () => ({ kind: 'alone', doc: d }), 'in no list')
+    return rows.length ? [{ space: `doc:${d.id}`, title: `${d.title} · document`, glyph: PIECE_GLYPH.document, rows, count: rows.length }] : []
+  })
 }
 
 const readingOrder = (a: { x: number; y: number }, b: { x: number; y: number }) => a.y - b.y || a.x - b.x

@@ -7140,3 +7140,14 @@ accents, so they no longer match the card colours exactly; a competitor's featur
 **Why:** one size for what belongs to one piece; the word took the room the name needed.
 **Checked:** measured headless: the name's row and the `focus` cell the same height; gallery canvas.
 **Not yet:** a console a little bigger at 100 % wraps sooner on small pieces (D-354's whole edge), to see by eye.
+
+### D-371 · 2026-11-04 · Accepted (the user: "add the open button"): a document read in a window, from the agent and the finder
+A document the agent writes is private and shows in any documents list, but with no list on any canvas nothing led to it:
+`✓ APPLIED` had only `undo`, the finder said `nothing matches`. The user, 2026-11-04: "add the open button", and asked why
+they can't be found. Now `DocReader` (the one Window, mounted beside the finder) reads a document over whatever's open. The
+agent's applied line has `open` (`open 1`, `open 2` for several) while the document is there; after a reload the saved chat
+keeps no ids, so only the list leads to it. The finder finds a document no list takes and no piece shows, under its own
+group, `in no list`, and Enter opens the reader. From the reader: `place on the canvas` (asks to share, D-232) and `download`.
+Alternatives: the agent adding a documents list itself (changes the canvas unasked); going to a list when there is one (two
+paths, none when there's no list). *Checked:* headless, on emulators and the stub: /swot, apply, open, Escape, finder, Enter,
+place (asks, shares, a document piece), undo takes the button away. *Not yet:* the saved chat's `open`; real keys.

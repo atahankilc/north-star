@@ -631,7 +631,7 @@ async function accept(chat: Chat) {
   if (get().chat.id !== chat.id) return
   if (r.ok) {
     if (was) patchEntry(was.id, (x) => ({ ...x, state: 'applied' }) as Entry)
-    dispatch({ type: 'applied', report: reportOf({ applied: r.applied.map((i) => ({ line: i.line, where: i.where })), notDone: r.notDone.map((i) => ({ line: i.line })), step: r.step }) })
+    dispatch({ type: 'applied', report: reportOf({ applied: r.applied.map((i) => ({ line: i.line, where: i.where })), notDone: r.notDone.map((i) => ({ line: i.line })), step: r.step, docs: r.applied.filter((i) => i.op === 'create_document').flatMap((i) => i.made) }) })
     return
   }
   if (r.stale) {

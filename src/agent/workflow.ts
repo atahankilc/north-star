@@ -29,7 +29,8 @@ import type { ModelMessage } from './contract'
 
 export type Phase = 'idle' | 'running' | 'previewing' | 'applying' | 'applied' | 'discarded'
 
-export type Report = { text: string; done: string[]; notDone: string[]; step: { key: string; label: string } | null; undone?: boolean; undoing?: boolean }
+// `docs`: the documents it wrote, to open from the line that says so.
+export type Report = { text: string; done: string[]; notDone: string[]; step: { key: string; label: string } | null; undone?: boolean; undoing?: boolean; docs?: string[] }
 
 export type WorkflowState = {
   phase: Phase
@@ -149,7 +150,7 @@ export function step(s: WorkflowState, e: WorkflowEvent): { state: WorkflowState
 
 // The report line after an accept (agent.md §4.10 point 5): what was done (the items' lines, grouped by where), what
 // wasn't (unticked or dropped), and the undo step.
-export function reportOf(o: { applied: { line: string; where: string }[]; notDone: { line: string }[]; step: { key: string; label: string } | null }): Report {
+export function reportOf(o: { applied: { line: string; where: string }[]; notDone: { line: string }[]; step: { key: string; label: string } | null; docs?: string[] }): Report {
   const where = new Map<string, number>()
   for (const i of o.applied) where.set(i.where, (where.get(i.where) ?? 0) + 1)
   const places = [...where].map(([w, n]) => `${w} (${n})`).join(', ')
@@ -157,7 +158,7 @@ export function reportOf(o: { applied: { line: string; where: string }[]; notDon
     `Applied ${o.applied.length} change${o.applied.length === 1 ? '' : 's'}${places ? ` on ${places}` : ''}${o.step ? ', one undo step' : ''}.`,
     ...(o.notDone.length ? [`Not done: ${o.notDone.length} (${o.notDone.map((i) => i.line).slice(0, 3).join('; ')}${o.notDone.length > 3 ? '; …' : ''}).`] : []),
   ].join(' ')
-  return { text, done: o.applied.map((i) => i.line), notDone: o.notDone.map((i) => i.line), step: o.step }
+  return { text, done: o.applied.map((i) => i.line), notDone: o.notDone.map((i) => i.line), step: o.step, ...(o.docs?.length ? { docs: o.docs } : {}) }
 }
 
 // What the person did with a preview, told to the model (agent-bugs 5, 25): one line in its history, read with its
