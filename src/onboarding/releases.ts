@@ -20,6 +20,15 @@ export type ReleaseItem = {
 export type Release = { id: string; date: string; title: string; items: readonly ReleaseItem[] }
 
 export const RELEASES: readonly Release[] = [
+  {
+    id: '2026-11-05',
+    date: '2026-11-05',
+    title: 'Resize from any side',
+    items: [
+      { title: 'Every side, every corner', tab: 'resize', line: 'Sections and sticky notes resize from every side and corner; paragraphs and the title from both ends.', scene: 'section', lessons: ['section-draw', 'sticky-made'] },
+      { title: 'Panels as wide as you like', tab: 'panels', line: 'Drag a right panel’s left edge to set its width; this browser keeps it.', scene: 'card-panel', lessons: ['card-panel'] },
+    ],
+  },
   { id: 'launch', date: '2026-10-29', title: 'Onboarding', items: [] },
 ]
 

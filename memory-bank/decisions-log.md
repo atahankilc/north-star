@@ -7256,7 +7256,7 @@ The user, after seeing it: no space left of the kind's tab, on any piece's name,
 - *Text:* the same `resizedBox` as D-376, one path for everything: left and right bars, a turned paragraph's top and bottom (its height on the screen is its width). The moved end writes x or y with the width.
 - *Panels:* `SidePanel`'s `ResizeEdge` on its left, 320–800, one width for all of them, kept in this browser (src/ui/patterns/panelWidth.ts, `--panel-width` on <html>; `--panel-w` stays the start). A panel given its own `width` (a task's in the side view) isn't dragged. What keeps a card clear of the panel reads `sidePanelW()`.
 - *Clear of the dock:* never wider on this window than half of it less 180 px (`PANEL_W.dock`), so the dock at the foot's middle isn't covered; never under 400 for that. The width asked for comes back when the window grows. The agent's box watches <html>'s style, so it moves as the panel is dragged.
-- *Lessons:* `card-panel` v3.
+- *Lessons:* `card-panel` v3; the first real release, `2026-11-05` in releases.ts, tells everyone once (D-376's and this), `section-draw`, `sticky-made`, `card-panel` armed.
 - *Verified:* headless on emulators, a frozen copy: paragraph by w, e and past its smallest; turned both ways by n and s; title by w and e, all after a reload; a card's panel dragged to 570 (the cap at 1500 px), 320, 500, the box moved clear, 500 after a reload, 400 in a 700 px window, 500 again at 2200.
 - *Not yet:* a task's panel in the side view keeps its own width.
 

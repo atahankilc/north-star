@@ -314,7 +314,7 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'card-panel', v: 3, format: 'lesson', roles: ALL, area: 'planes', since: 'D-221, D-137, D-044, D-225, D-226, D-254, D-349',
+    id: 'card-panel', v: 3, format: 'lesson', roles: ALL, area: 'planes', since: 'D-221, D-137, D-044, D-225, D-226, D-254, D-349, D-378',
     trigger: [{ event: 'card-selected' }],
     pages: [
       { title: 'Everything about a card', tab: 'panel', body: 'The panel on the right holds what a card is, what backs it, its links by meaning, its tags and notes, all edited in place. Drag its left edge to widen it; `esc` closes it.', scene: 'card-panel' },
@@ -362,12 +362,12 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'sticky-made', v: 3, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-257, D-349',
+    id: 'sticky-made', v: 3, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-257, D-349, D-376',
     trigger: [{ event: 'text-made', when: { kind: 'sticky' } }],
     pages: [{ title: 'A sticky note', body: 'Paper in a colour, with who wrote it and when on its band. It grows with its text, and any side or corner drags it bigger; `▾` folds a long one back to its first lines.', scene: 'sticky' }],
   },
   {
-    id: 'section-draw', v: 3, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-130, D-349',
+    id: 'section-draw', v: 3, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-130, D-349, D-376',
     trigger: [{ event: 'text-made', when: { kind: 'section' } }],
     pages: [{ title: 'A section', body: 'A section frames things that belong together. Name it in its edge. Moving it carries everything fully inside it; any side or corner resizes it.', scene: 'section' }],
   },

@@ -45,9 +45,10 @@ describe('lessons', () => {
 })
 
 describe('releases', () => {
-  it('ship only launch, newest first', () => {
-    expect(RELEASES.map((r) => r.id)).toEqual(['launch'])
-    expect(NEWEST).toBe('launch')
+  it('start at launch, newest first', () => {
+    expect(RELEASES.at(-1)?.id).toBe('launch')
+    expect(NEWEST).toBe(RELEASES[0].id)
+    expect(RELEASES.map((r) => r.date)).toEqual(RELEASES.map((r) => r.date).sort().reverse())
   })
   it('arm only lessons that exist (the sample too)', () => {
     for (const r of [...RELEASES, ...SAMPLE_RELEASES]) for (const it of r.items) for (const id of it.lessons) expect(lessonById(id)).toBeDefined()

@@ -1,5 +1,5 @@
 // What's new end to end, without the browser (D-315, onboarding.md §4.4, §5.2, §7): the plan a canvas-open makes, the
-// arming it leaves in the seen-state, `?`'s NEW and dot, the `+ N more` paging, and the shipped list holding only launch.
+// arming it leaves in the seen-state, `?`'s NEW and dot, the `+ N more` paging, and the shipped list starting at an empty launch.
 import { afterEach, describe, expect, it } from 'vitest'
 import { planNews, releasesSince } from './audience'
 import { guideModel, hasNew } from './guideModel'
@@ -20,22 +20,24 @@ const LATER: Release = {
   items: [{ title: 'Comments', line: 'Talk on things.', lessons: ['comment'] }],
 }
 const THREE = [LATER, ...SAMPLE_RELEASES]
+// The list as it was at launch: what the plan does with nothing to show, whatever has shipped since.
+const ONLY_LAUNCH: Release[] = [{ id: 'launch', date: '2026-10-29', title: 'Onboarding', items: [] }]
 
 afterEach(() => setReleases(null))
 
 describe('the shipped list', () => {
-  it('holds only launch, with nothing in it', () => {
-    expect(RELEASES.map((r) => r.id)).toEqual(['launch'])
-    expect(RELEASES[0].items).toEqual([])
+  it('starts at launch, with nothing in it; the newest is first', () => {
+    expect(RELEASES.at(-1)?.id).toBe('launch')
+    expect(RELEASES.at(-1)?.items).toEqual([])
     expect(releases()).toBe(RELEASES)
-    expect(newest()).toBe('launch')
+    expect(newest()).toBe(RELEASES[0].id)
   })
 
   it('setReleases swaps the list in use (the dev switch) and back', () => {
     setReleases(SAMPLE_RELEASES)
     expect(newest()).toBe('2026-11')
     setReleases(null)
-    expect(newest()).toBe('launch')
+    expect(newest()).toBe(RELEASES[0].id)
   })
 })
 
@@ -48,8 +50,9 @@ describe('releasesSince, several lastRelease values', () => {
     expect(releasesSince('', THREE)).toEqual([])
   })
 
-  it('the shipped list gives nothing to anyone', () => {
-    expect(releasesSince('launch', RELEASES)).toEqual([])
+  it('the launch list gives nothing to anyone; the shipped one nothing to who is up to date', () => {
+    expect(releasesSince('launch', ONLY_LAUNCH)).toEqual([])
+    expect(releasesSince(RELEASES[0].id, RELEASES)).toEqual([])
   })
 })
 
@@ -66,7 +69,8 @@ describe('who gets what', () => {
 
   it('known and up to date: nothing', () => {
     expect(planNews(known('2026-11'), SAMPLE_RELEASES, v)).toEqual({ kind: 'none' })
-    expect(planNews(known('launch'), RELEASES, v)).toEqual({ kind: 'none' })
+    expect(planNews(known('launch'), ONLY_LAUNCH, v)).toEqual({ kind: 'none' })
+    expect(planNews(known(RELEASES[0].id), RELEASES, v)).toEqual({ kind: 'none' })
   })
 
   it('known with an older lastRelease: what’s new, the items’ lessons armed at their version', () => {
@@ -91,14 +95,14 @@ describe('who gets what', () => {
   })
 
   it('a lesson that no longer exists is not armed', () => {
-    const odd: Release[] = [{ id: 'x', date: '', title: '', items: [{ title: 't', line: 'l', lessons: ['gone-lesson'] }] }, ...RELEASES]
+    const odd: Release[] = [{ id: 'x', date: '', title: '', items: [{ title: 't', line: 'l', lessons: ['gone-lesson'] }] }, ...ONLY_LAUNCH]
     const plan = planNews(known('launch'), odd, v)
     if (plan.kind !== 'news') throw new Error(plan.kind)
     expect(plan.arm).toEqual([])
   })
 
   it('releases since with no items: lastRelease moves on, nothing shown', () => {
-    const empty: Release[] = [{ id: 'quiet', date: '', title: '', items: [] }, ...RELEASES]
+    const empty: Release[] = [{ id: 'quiet', date: '', title: '', items: [] }, ...ONLY_LAUNCH]
     expect(planNews(known('launch'), empty, v)).toEqual({ kind: 'set', lastRelease: 'quiet' })
   })
 
@@ -190,7 +194,8 @@ describe('the `+ N more` paging', () => {
 })
 
 describe("`?`'s what's new row follows the list in use", () => {
-  it('shipped: off; the sample: its count', () => {
+  it('nothing in the latest: off; the sample: its count', () => {
+    setReleases(ONLY_LAUNCH)
     expect(guideModel({ seen: {}, armed: [] }, 'owner').start.find((s) => s.id === 'whats-new')!.off).toBe(true)
     setReleases(SAMPLE_RELEASES)
     const row = guideModel({ seen: {}, armed: [] }, 'owner').start.find((s) => s.id === 'whats-new')!
