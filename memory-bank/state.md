@@ -69,7 +69,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Windows and docked panels (D-359, 2026-11-02): all eight steps and the open items done, pushed and live (f2d28ac, deploy ok); left: beside's row line wins a press where it crosses the split line (as before).
 - The agent's web (D-360, docs/specs/agent-web.md, 2026-11-02): both steps built (web search on every turn, sources under the answer; `/research` with parallel researchers and a cited document); checked on the stub and pushed (a6872f8; state-history); not on a real key yet: what to watch then is in D-360's *Not yet*.
 - Shared code above the kit (D-361, docs/specs/shared-code.md): all four groups done 2026-11-03 (state-history); the add fields keep what's typed on leaving.
-- Sweep 2026-11-03 (state-history): threads' rule (pushed 0f7ddf4, deployed, 639/0), Crash boundary, loading waits for every listener; then 10, 11, 14, 12, 13, 15, 17, 18, 9, 7, 8, 16, 19, 22; 5 (D-369, committed, not pushed; a real-server try left); still open: 20, 21 and small leftovers, listed there under **Still open from the sweep**.
+- Sweep 2026-11-03 (state-history): threads' rule (pushed 0f7ddf4, deployed, 639/0), Crash boundary, loading waits for every listener; then 10, 11, 14, 12, 13, 15, 17, 18, 9, 7, 8, 16, 19, 22; 5 (D-369, pushed d41a097; a real-server try left); still open: 20, 21 and small leftovers, listed there under **Still open from the sweep**.
 - Smaller leftovers: each decision's *Not yet* in decisions-log.md; the 2026-11-03 test pass's fixes (pushed) and left items: state-history. .md reader crash on a bare url fixed 2026-11-04, the body read rule deployed; a document read in a window D-371.
 
 ## Blockers

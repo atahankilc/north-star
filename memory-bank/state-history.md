@@ -1457,7 +1457,7 @@ north-star-e7 (recent commits), -48 and -51 told what each found. The user picke
     LinkChips and a deck's TaskBoard still redraw on any thread change (cheap now).
   - To try once Blaze is on: `cleanUpWorkspaceAi` deleting others' private `agentChats` (built, never run); until then those stay.
 
-## Done (2026-11-04): sweep 5, a big write lands whole (D-369; committed, not pushed)
+## Done (2026-11-04): sweep 5, a big write lands whole (D-369; pushed d41a097)
 `apply`, undo and redo go as one batch up to 1000 docs and 4 MB (`wholeBatches`, data/batches.ts); past that as before,
 with `PartlyWritten`. A refused undo or redo keeps its step, a part-landed undo says so, a refused tracked write has a
 toast. Why, the numbers and what was checked: D-369. Unit tests 1050/1050 (10 failed on the old code first); the real
