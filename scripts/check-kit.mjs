@@ -41,8 +41,14 @@ const RULES = {
     // src/views/workspace/cards/, where they're allowed.
     ['cardFace', /var\(--card-tint\)/g, /^src\/views\/workspace\/cards\//],
     ['cardEdge', /inset var\(--(?:w-card-edge|line-w-bold)\) 0 0 var\(--(?:type|tone)\b/g, /^src\/views\/workspace\/cards\//],
+    // D-377: a scroll bar styled by hand (global.css draws them all, from the --scroll-* tokens): in Chrome it silently
+    // brings the system's bar back on that element. The kit too: see `everywhere`.
+    ['scrollbar', /::-webkit-scrollbar|scrollbar-(?:width|color)\s*:/g],
   ],
 }
+
+// Rules that hold inside the kit as well, where the others don't look.
+const everywhere = new Set(['scrollbar'])
 
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -53,18 +59,23 @@ function walk(dir, out = []) {
   return out
 }
 
+const skipped = (file) => skip.some((r) => r.test(file))
+
 function count(file) {
   const kind = file.endsWith('.css') ? 'css' : 'tsx'
   const lines = fs.readFileSync(path.join(root, file), 'utf8').split('\n')
   const hits = []
   lines.forEach((line, i) => {
     if (/kit-ok/.test(line)) return
-    for (const [name, re, home] of RULES[kind]) if (!home?.test(file)) for (const _ of line.matchAll(re)) hits.push({ name, line: i + 1, text: line.trim() })
+    for (const [name, re, home] of RULES[kind]) {
+      if (home?.test(file) || (skipped(file) && !everywhere.has(name))) continue
+      for (const _ of line.matchAll(re)) hits.push({ name, line: i + 1, text: line.trim() })
+    }
   })
   return hits
 }
 
-const files = walk(path.join(root, 'src')).filter((f) => !skip.some((r) => r.test(f)))
+const files = walk(path.join(root, 'src'))
 const now = {}
 const all = {}
 for (const f of files) {

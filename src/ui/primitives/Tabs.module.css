@@ -21,11 +21,6 @@
   flex-wrap: nowrap;
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  scrollbar-width: none;
-}
-
-.row[data-look='tabs']::-webkit-scrollbar {
-  display: none;
 }
 
 .row[data-more='end'] {

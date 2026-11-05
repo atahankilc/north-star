@@ -1576,3 +1576,5 @@ Sections and sticky notes from every side and corner, paragraphs and the title f
 (also the pieces'); right panels' width from their left edge. Checked headless on emulators (the entries say how).
 Offered, not asked for: a deck's column width, the document reader's window.
 
+## Done (scroll bars from one place, D-377, 2026-11-05)
+- `--scroll-*` tokens, global.css the only drawer, `data-scrollbar='none'` (Tabs), the two `scrollbar-width: thin` gone (filter column, guide), check:kit's `scrollbar` rule reaching src/ui. Checked headless (D-377's *Verified*).

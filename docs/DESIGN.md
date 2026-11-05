@@ -324,9 +324,11 @@ Settings rows (D-097) are two columns: on the left the setting's name (mono, `--
 `--fg-muted` is the readable grey for explanations. On phones a side panel covers the filter row.
 
 ### Scroll bars (D-105)
-One rule for every scrolling area, in `src/styles/global.css`: an 8 px track with no background, a square thumb 4 px wide in
-`--line-hover`, 6 px and `--fg-faint` on hover, `--accent-cyan` while held (the focus colour). Colours are tokens, so light
-works too. No per-component scroll bar styles; a new scrolling area gets the look by itself.
+One look for every scrolling area: an 8 px track with no background, a square thumb 4 px wide in `--fg-dim`, 6 px and
+`--accent-cyan` on hover, the track's whole 8 px while held (D-377; Firefox only the resting colour). The look is set in one place, the `--scroll-*` tokens
+in `src/styles/tokens.css` (light follows by itself); `src/styles/global.css` draws it (D-377). No per-component scroll bar
+styles, `npm run check:kit` refuses them, in the kit too: `scrollbar-width` on an element makes Chrome draw the system's bar
+there. A new scrolling area gets the look by itself; one that scrolls with no bar sets `data-scrollbar='none'`.
 
 ## 7. Motion
 

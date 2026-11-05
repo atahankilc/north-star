@@ -1132,8 +1132,8 @@ overrides.
 **Every scroll bar in the app has the same thin, square, token-coloured look.** User: the browser's default bars didn't fit the design.
 Their pick: one global CSS rule, not a scroll bar component drawn in ASCII glyphs (that would need JS on every scroller and
 redoing keyboard, screen reader and touch behaviour; still possible later for the chat or report reader).
-- *Look:* an 8 px track, transparent; the thumb a square 4 px bar (`--line-hover`, inset by a transparent border), 6 px and
-  `--fg-faint` under the pointer, `--accent-cyan` while dragged. Corner transparent. Light theme from the tokens.
+- *Look:* an 8 px track, transparent; the thumb a square 4 px bar inset by a transparent border, wider under the pointer and
+  while dragged; its colours and sizes now D-377's. Corner transparent. Light theme from the tokens.
 - *How:* `::-webkit-scrollbar*` in `src/styles/global.css` for Chrome and Safari. The standard `scrollbar-width` /
   `scrollbar-color` go only to Firefox (`@supports (-moz-appearance: none)`), because setting them makes Chrome ignore the
   webkit rules (no hover, no cyan). Firefox gets the thin bar in the same colours, brighter while the area is hovered.
@@ -7253,3 +7253,9 @@ The user, after seeing it: no space left of the kind's tab, on any piece's name,
 - *Verified:* headless on emulators, a frozen copy: paragraph by w, e and past its smallest; turned both ways by n and s; title by w and e, all after a reload; a card's panel dragged to 570 (the cap at 1500 px), 320, 500, the box moved clear, 500 after a reload, 400 in a 700 px window, 500 again at 2200.
 - *Not yet:* a task's panel in the side view keeps its own width.
 
+### D-377 · 2026-11-05 · Accepted (the user: "uygulama scroll barı bizim dizaynımıza çok uymuyor gibi. Bi çek et bakalım bu scroll bar görünümünü bir noktadan ansıl control ederiz"; builds on D-105)
+**A scroll bar's look is set in one place, and nothing can step round it.** D-105's one global rule had two holes: `scrollbar-width: thin` in `FilterColumn.module.css` and `Guide.module.css`. On an element, that makes Chrome drop the `::-webkit-scrollbar` rules and draw the system's bar: measured 11 px, round, on a grey track, where the rest are 8 px.
+- *How:* the look is the `--scroll-*` tokens in tokens.css (size, inset, three thumb colours); global.css draws them, and holds `data-scrollbar='none'` for a row that scrolls with no bar (Tabs). No component styles a bar: check:kit's `scrollbar` rule refuses it, in src/ui too (its `everywhere`).
+- *Verified:* headless Chrome 156, bars on: the filter column 8 px in both themes; `--scroll-size` changed live, the bar follows; tabs made to overflow, no bar; check:kit fails on a `scrollbar-width` put back.
+- *The look (the user, from a preview of three: "B ile devam edelim"):* D-105's thumb was nearly invisible at rest (`--line-hover` on black). Now the same square shape in `--fg-dim`, 6 px and `--accent-cyan` on hover, 8 px held. Not picked: a stack of small cells. Firefox keeps the resting colour only: it can't tell the thumb's hover from the area's, and every bar going cyan under the pointer would be loud.
+  Checked headless, both themes: at rest, held and dragged; the hover state doesn't paint in headless Chrome, so it's for a look in a real browser.

@@ -48,7 +48,7 @@ export function Tabs<T extends string>({ options, value, onChange, label, look =
     requestAnimationFrame(() => row.current?.querySelector<HTMLElement>(`[data-value="${CSS.escape(next.value)}"]`)?.focus())
   }
   return (
-    <div ref={row} className={[styles.row, className].filter(Boolean).join(' ')} data-look={look} data-even={even || undefined} data-more={more} role={tabs ? 'tablist' : 'radiogroup'} aria-label={label} onKeyDown={move}>
+    <div ref={row} className={[styles.row, className].filter(Boolean).join(' ')} data-look={look} data-scrollbar={tabs ? 'none' : undefined} data-even={even || undefined} data-more={more} role={tabs ? 'tablist' : 'radiogroup'} aria-label={label} onKeyDown={move}>
       {options.map((o, i) => {
         const on = o.value === value
         return (

@@ -50,11 +50,13 @@ html[data-motion='reduced'] *::after {
   transition-duration: 0.01ms !important;
 }
 
-/* Scroll bars: thin square bars in line colours, brighter on hover, cyan while held. Chrome and Safari take the
-   ::-webkit-scrollbar rules (setting scrollbar-color would make Chrome ignore them); Firefox only knows the standard pair. */
+/* Scroll bars (D-105, D-377): the only place they're drawn; the look is the --scroll-* tokens. A component never styles
+   its own: check:kit refuses it, since `scrollbar-width` or `scrollbar-color` on an element makes Chrome drop the rules
+   below there and draw the system's bar. Firefox only knows that standard pair, so it gets them alone. A row that
+   scrolls with no bar says so with `data-scrollbar='none'`. */
 ::-webkit-scrollbar {
-  width: var(--space-2);
-  height: var(--space-2);
+  width: var(--scroll-size);
+  height: var(--scroll-size);
 }
 
 ::-webkit-scrollbar-track,
@@ -63,30 +65,34 @@ html[data-motion='reduced'] *::after {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: var(--line-hover);
+  background-color: var(--scroll-thumb);
   background-clip: padding-box;
-  border: var(--line-w-bold) solid transparent;
+  border: var(--scroll-inset) solid transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--fg-faint);
-  border-width: var(--line-w);
+  background-color: var(--scroll-thumb-hover);
+  border-width: var(--scroll-inset-on);
 }
 
 ::-webkit-scrollbar-thumb:active {
-  background-color: var(--accent-cyan);
-  border-width: var(--line-w);
+  background-color: var(--scroll-thumb-held);
+  border-width: var(--scroll-inset-held);
 }
 
 @supports (-moz-appearance: none) {
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--line-hover) transparent;
+    scrollbar-color: var(--scroll-thumb) transparent;
   }
+}
 
-  *:hover {
-    scrollbar-color: var(--fg-faint) transparent;
-  }
+[data-scrollbar='none'] {
+  scrollbar-width: none;
+}
+
+[data-scrollbar='none']::-webkit-scrollbar {
+  display: none;
 }
 
 /* Find (D-236): every match lit yellow, the current one solid; a match that isn't text on the page (a scale's step, a

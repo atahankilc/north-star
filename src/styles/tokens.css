@@ -168,6 +168,15 @@
   --arrow: 7px; /* every CSS-triangle arrowhead */
   --corner-mark: 7px; /* the magenta L's on a panel's, console's or dock's corners */
   --lead: 12px; /* a numbered rule's magenta lead (D-277) */
+
+  /* Scroll bars (D-105, D-377): the one place their look is set, for every scrolling area; drawn in global.css. */
+  --scroll-size: var(--space-2); /* the bar's width, its track */
+  --scroll-inset: var(--line-w-bold); /* the thumb's clear space each side, at rest */
+  --scroll-inset-on: var(--line-w); /* the same, pointed at: the thumb grows */
+  --scroll-inset-held: 0; /* held: the whole track's width */
+  --scroll-thumb: var(--fg-dim);
+  --scroll-thumb-hover: var(--accent-cyan);
+  --scroll-thumb-held: var(--accent-cyan);
   --underline-offset: 3px;
 
   /* Screen sizes (D-325). Squares and rows: a badge, an avatar or small button, a button or row, the side nav's tools,

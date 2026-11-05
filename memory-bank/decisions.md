@@ -100,6 +100,7 @@ feature comes back as a piece, and check them with the user then.
   zoom), motionTokens.ts (D-326); `Frame.module.css` is the one framed
   surface (D-024); shared `Page.module.css`, `fieldLabel` (D-093). Actions lowercase, labels uppercase; no
   native `<select>` (`src/ui/patterns/Select.tsx`) (D-093). `▸`/`▾` only open or fold something, never lead a row of actions (D-189).
+- Scroll bars (D-105, D-377): one look, thin and square (a 4 px `--fg-dim` thumb, 6 px cyan on hover, 8 px held), set only by the `--scroll-*` tokens and drawn only in global.css; `data-scrollbar='none'` for a row with no bar; check:kit refuses any other, the kit too (`scrollbar-width` on an element brings Chrome's system bar back).
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063,
   D-069), which also holds the background's strength (soft / normal / strong) and the HUD's size (small / normal /
   large), normal by default (D-348). Light theme via tokens under `[data-theme='light']` and `usePalette()` (three.js too;

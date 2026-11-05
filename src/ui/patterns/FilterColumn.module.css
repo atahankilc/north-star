@@ -59,5 +59,4 @@
   flex: none;
   max-height: min(calc(var(--control-sm) * 6), 25vh); /* tokens-ok: six rows of the prompt's row height, at most a quarter of the screen */
   padding: var(--space-1) 0 0;
-  scrollbar-width: thin;
 }
