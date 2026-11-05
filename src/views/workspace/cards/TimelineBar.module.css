@@ -1,16 +1,13 @@
 /* A task on a timeline (D-262, D-304, D-358): its bar on the card face. */
 /* A task: a sheet from its first day to its due day, its face its card's colour (D-291), its left edge that colour. */
 .bar {
+  --corner: var(--w-card-radius-sm);
+  --edge-in: var(--space-1);
+
   position: absolute;
   z-index: var(--z-1);
   height: var(--bar);
   color: var(--fg);
-}
-
-/* For no card: a grey tint and edge, so it still shows on the strip (a card's face and edge are CardFace's). */
-.bar:not([data-edge], [data-point='true']) {
-  background: color-mix(in srgb, var(--fg-dim) var(--card-tint), var(--bg-raised));
-  box-shadow: inset var(--line-w-bold) 0 0 var(--line-hover), 0 0 0 var(--line-w) var(--piece-card-edge);
 }
 
 .bar:focus-visible {
@@ -104,8 +101,8 @@
 /* Its checklist: a line along its foot, filled as far as it's done. */
 .checks {
   position: absolute;
-  left: var(--space-half);
-  right: 0;
+  left: var(--corner);
+  right: var(--corner);
   bottom: 0;
   height: var(--line-w-bold);
   background: color-mix(in srgb, var(--tone, var(--fg-dim)) 22%, transparent);

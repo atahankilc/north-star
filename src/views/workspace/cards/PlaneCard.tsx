@@ -52,7 +52,7 @@ type Props = {
 
 export function PlaneCard({ card, facts, detail, editor, parts, rows, inPkg, features, matched, open, className, style, ref, onFeature, onMember, onFold }: Props) {
   return (
-    <CardFace ref={ref} className={[styles.card, className].filter(Boolean).join(' ')} style={style} tone={CARD_TONE[card.type]} tint edge="card" data-detail={detail} data-type={card.type}>
+    <CardFace ref={ref} className={[styles.card, className].filter(Boolean).join(' ')} style={style} tone={CARD_TONE[card.type]} tint data-detail={detail} data-type={card.type}>
       {detail === 'full' ? (
         <FullCard card={card} facts={facts} editor={editor} parts={parts} rows={rows} inPkg={inPkg} features={features} matched={matched} open={open} onFeature={onFeature} onMember={onMember} onFold={onFold} />
       ) : (
@@ -78,7 +78,7 @@ type BandProps = {
 // per member in their colours, `− N` to fold them in.
 export function PackageBand({ card, facts, members, editor, onFold, className, onPointerDown, onPointerEnter, onPointerLeave, ...data }: BandProps) {
   return (
-    <CardFace {...data} className={[styles.band, className].filter(Boolean).join(' ')} tone={CARD_TONE.package} tint edge="card" onPointerDown={onPointerDown} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave}>
+    <CardFace {...data} className={[styles.band, className].filter(Boolean).join(' ')} tone={CARD_TONE.package} tint onPointerDown={onPointerDown} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave}>
       <span className={styles.kind}>package</span>
       <span className={styles.bandName} data-empty={!card.title || undefined}>
         {card.title || cardPlaceholder('package')}
@@ -239,7 +239,7 @@ function ProofCells({ proof }: { proof: Proof }) {
 const CHIP_TEXT = WORLD.smallText
 const CHIP_PAD = 4
 const CHIP_GAP = WORLD.chipGap
-const CHIP_ROOM = CARD.w - 2 * WORLD.cardPad - WORLD.cardEdge
+const CHIP_ROOM = CARD.w - 3 * WORLD.cardPad - WORLD.cardEdge
 const chipWidth = (text: string) => text.length * CHIP_TEXT * 0.6 + CHIP_PAD * 2
 function TagChips({ tags }: { tags: string[] }) {
   const shown: string[] = []

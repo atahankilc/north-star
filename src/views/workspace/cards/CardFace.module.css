@@ -1,23 +1,32 @@
 /* One face for every card and task (D-358, docs/specs/cards.md). Its paper in `:where()` (D-334's way): a caller's own
    class always wins where it places the face (`position: absolute` in a table, a timeline) or goes without paper (a
-   ◆ on a timeline); its edge and tint are its own. */
+   ◆ on a timeline); its edge and tint are its own. Squircle corners (D-380; a browser without `corner-shape` rounds
+   them); a face a line tall sets `--corner` and `--edge-in` to the small ones. */
 :where(.face) {
-  --edge-w: var(--line-w-bold);
+  --edge-w: var(--w-card-edge);
+  --edge-in: var(--w-card-pad);
+  --corner: var(--w-card-radius);
 
   position: relative;
+  border-radius: var(--corner);
+  corner-shape: squircle;
   background: var(--bg-raised);
   box-shadow: 0 0 0 var(--line-w) var(--piece-card-edge);
   user-select: none;
   outline: none;
 }
 
-.face[data-edge='card'] {
-  --edge-w: var(--w-card-edge);
-}
-
-/* Its card's colour on its left edge. */
-.face[data-edge] {
-  box-shadow: inset var(--edge-w) 0 0 var(--tone), 0 0 0 var(--line-w) var(--piece-card-edge);
+/* Its card's colour: a bar inside its left edge, clear of the corners (D-380). */
+.face[data-edge]::before {
+  content: '';
+  position: absolute;
+  top: min(var(--corner), 25%);
+  bottom: min(var(--corner), 25%);
+  left: var(--edge-in);
+  width: var(--edge-w);
+  border-radius: var(--edge-w);
+  background: var(--tone);
+  pointer-events: none;
 }
 
 /* A card's face: a dark tone of its type (D-294). On it the greys lean to the ink, and its type's colour and magenta a
@@ -33,14 +42,19 @@
 }
 
 /* Flat: no paper of its own, the tint over what's under it and its edge only (a table's row name: its row lines show
-   through). */
+   through): square, its edge flush. */
 .face[data-flat='true'] {
+  border-radius: 0;
   background: none;
   box-shadow: none;
 }
 
 .face[data-flat='true'][data-edge] {
-  box-shadow: inset var(--edge-w) 0 0 var(--tone);
+  box-shadow: inset var(--line-w-bold) 0 0 var(--tone);
+}
+
+.face[data-flat='true'][data-edge]::before {
+  content: none;
 }
 
 .face[data-flat='true'][data-tint='true'] {

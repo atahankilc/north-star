@@ -21,7 +21,7 @@ to the scale; what visibly changes is listed below (all agreed) and checked in b
 | Opacity | 69 | none | 10 distinct |
 | `color-mix` amounts | ~60 | `--card-tint` | 23 distinct (3 % → 96 %) |
 | Durations and eases | ~110 | `--dur-*`, `--ease-out` | 14 raw durations, 2 raw eases |
-| Radius | 0 | | nothing rounded anywhere (keep it so) |
+| Radius | 0 | | nothing rounded but cards' squircle corners (D-380: `--w-card-radius`, `--w-card-radius-sm`) |
 
 Colour and spacing are in good shape. Sizes, type inside the world, line heights, layers, opacity and shadows are where
 the 940 raw px and the inconsistency really are.

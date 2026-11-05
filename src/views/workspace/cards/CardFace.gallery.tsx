@@ -38,14 +38,6 @@ export default example({
           </CardFace>
         )),
       ),
-    'card edge (a plane card’s)': () =>
-      row(
-        ALL_TYPES.map((t) => (
-          <CardFace key={t} tone={CARD_TONE[t]} tint edge="card">
-            {inside(t)}
-          </CardFace>
-        )),
-      ),
     'flat (a table’s row name)': () =>
       row(
         ALL_TYPES.map((t) => (

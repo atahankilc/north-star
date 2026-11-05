@@ -113,7 +113,7 @@
   --w-text-xl: 22px; /* a card's compact title and handle */
   --w-text-2xl: 26px; /* the project title's description */
 
-  /* The world's geometry (--w-grid, --w-card-pad, --w-card-edge, --w-chip-gap, --w-row-*, --w-sticky-h, --w-doc-pad) is
+  /* The world's geometry (--w-grid, --w-card-pad, --w-card-edge, --w-card-radius, --w-chip-gap, --w-row-*, --w-sticky-h, --w-doc-pad) is
      written from src/model/world.ts, its one source (D-325): TS measures with the same numbers. */
 
   /* Tracking (D-093, D-325): every uppercase label, sans titles, the display headline; glyph cells that must touch.

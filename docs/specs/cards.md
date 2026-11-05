@@ -26,6 +26,8 @@ Anything that stands for **one card or one task** and shows its type's colour: a
 **Not cards, left as they are:** the sticky note (paper, not a card: `text/TextItems.tsx` `StickyBody`), `PieceCard`
 (a piece off the canvas, already in the kit), prompt rows with a tone band (`PromptRow`, already in the kit).
 
+**Corners and colour (D-380):** a face has squircle corners and its colour is a bar inside its left edge, not the edge. The counts below are from before that.
+
 ## What repeats (counted 2026-11-02)
 
 1. **The face is written 6 times in CSS:** a tint of the type (`--card-tint`), a coloured left edge, a thin outer line

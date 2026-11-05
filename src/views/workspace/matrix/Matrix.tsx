@@ -607,7 +607,7 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
     </>
   )
   return face ? (
-    <CardFace {...shell} style={{ ...style, ['--type' as string]: tone }} tone={tone} tint edge="card" data-card>
+    <CardFace {...shell} style={{ ...style, ['--type' as string]: tone }} tone={tone} tint data-card>
       {inside}
     </CardFace>
   ) : (

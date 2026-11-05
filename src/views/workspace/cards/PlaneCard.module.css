@@ -6,7 +6,7 @@
   --small: var(--w-text-2xs);
   display: flex;
   flex-direction: column;
-  padding: var(--w-card-pad) var(--w-card-pad) var(--w-card-pad) calc(var(--w-card-pad) + var(--w-card-edge));
+  padding: var(--w-card-pad) var(--w-card-pad) var(--w-card-pad) calc(2 * var(--w-card-pad) + var(--w-card-edge));
   overflow: hidden;
 }
 
@@ -276,6 +276,9 @@
 
 /* An unfolded package's band (D-239): a line of the card face. */
 .band {
+  --corner: var(--w-card-radius-sm);
+  --edge-in: var(--space-1);
+
   display: flex;
   align-items: center;
   gap: var(--space-2);

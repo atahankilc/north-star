@@ -179,6 +179,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   colour (customer green, problem magenta, competitor yellow, idea white, feature cyan, package blue), the face a dark
   tone of it (`--card-tint` of the colour over `--bg-raised`: 16 %, light too, D-368; a matrix's card heads and a package's
   band too, D-291; a kanban's card sheets and a table's card names, D-294; inside it the greys and the type's label lean to the ink so every line reads ≥ 4.5, D-295), no edge of their own (D-148); never lift or tilt (D-061). Type colours are only for type: tags are white `#chips` (D-056). Inside: a
+  squircle corners (16, 8 on a face a line tall; flat ones square) and the colour as a 3 px bar inside the left edge (D-380);
   header (type label; the status, regions, priority or rating, then evidence cells: filled supports, outlined against,
   magenta when they disagree with the status), the title (≤ 3 lines), a dim mono facts line, tag chips. Smaller on
   screen (D-111, D-153): the title alone, whole words, `…`; then each line a `--fg-dim` bar. A hovered card shows a dim

@@ -44,8 +44,8 @@ export function TimelineBar({ task, finished, late, point, out, selected, presse
   return (
     <CardFace
       className={[styles.bar, className].filter(Boolean).join(' ')}
-      // A ◆ has no sheet: no face colour, no edge; its tone only for the ◆.
-      tone={point ? undefined : tone}
+      // A ◆ has no sheet: no face colour, no edge; its tone only for the ◆. For no card: grey, so it still shows on the strip.
+      tone={point ? undefined : (tone ?? 'var(--fg-dim)')}
       tint
       style={point && tone ? ({ ['--tone' as string]: tone, ...style } as CSSProperties) : style}
       selected={selected}

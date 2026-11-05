@@ -4,7 +4,9 @@
 export const WORLD = {
   grid: 25, // the canvas's grid: snapping, a plane's `+` marks (D-182)
   cardPad: 7, // a card's padding
-  cardEdge: 4, // a card's type edge on its left
+  cardEdge: 3, // the bar in a card's colour, inside its left edge (D-380)
+  cardRadius: 16, // a card's and a task's corners, squircles (D-380)
+  cardRadiusSmall: 8, // the same on a face a line tall: a timeline's task, a tray's, a package's band, a matrix's head
   chipGap: 5, // between a card's tag chips
   rowPart: 15, // a part's row in a folded feature, a package member's row
   rowFeature: 21, // a competitor feature's small card (18 + 3 apart)
@@ -18,6 +20,8 @@ const VARS: Record<keyof typeof WORLD, string> = {
   grid: '--w-grid',
   cardPad: '--w-card-pad',
   cardEdge: '--w-card-edge',
+  cardRadius: '--w-card-radius',
+  cardRadiusSmall: '--w-card-radius-sm',
   chipGap: '--w-chip-gap',
   rowPart: '--w-row-part',
   rowFeature: '--w-row-feature',

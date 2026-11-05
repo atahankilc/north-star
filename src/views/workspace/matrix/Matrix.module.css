@@ -88,6 +88,12 @@
   padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
 }
 
+.rowHead[data-card],
+.colHead[data-card] {
+  --corner: var(--w-card-radius-sm);
+  --edge-in: var(--space-1);
+}
+
 .rowHead:not([data-card]),
 .colHead:not([data-card]) {
   border-bottom: var(--line-w) dashed var(--line-hover);
