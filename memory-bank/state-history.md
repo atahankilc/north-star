@@ -1547,3 +1547,6 @@ bright ground.
 
 ## Done (2026-11-05): a long piece name takes the whole top edge (D-375)
 `useNameFills` in CanvasView.tsx, `.name[data-full]` in its CSS, gallery state `a long name on the whole edge`. Checked headless; see D-375.
+
+## Done (2026-11-05): paragraphs and sticky notes keep their spaces and empty lines (D-190)
+Reading drew Markdown (double spaces collapsed, an empty line 0.6 em), the field the raw text, so a note jumped on edit. `LightMarkdown`'s `asTyped` keeps both as typed. Measured headless, view against edit: empty lines 163/216 now 216/216, double spaces 128/140 now 140/140. Still different, because the field shows the source: `**` marks (128/178) and bullets' hanging indent (153/128); only a word-processor field would close them.

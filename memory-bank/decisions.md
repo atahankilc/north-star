@@ -257,7 +257,7 @@ feature comes back as a piece, and check them with the user then.
   them turns ±90; sections (drawn with a crosshair, the name a heading in the top or left edge, a number only when typed,
   carry what's fully inside, resized from the corner); the project title (the workspace's name and description, one per
   workspace, canvas only; name 92 px, star + PROJECT, folding round the name below 6 px, `titleLayout.ts`).
-- Typed or not it reads the same (D-190): no frame, the item's face and size; the feathered shade only while typing (D-277).
+- Typed or not it reads the same (D-190): no frame, the item's face and size; the feathered shade only while typing (D-277); paragraphs' and notes' spaces and empty lines shown as typed (`asTyped`), only Markdown's marks differ.
 - Sticky notes (D-158, D-162, D-257, D-259): `kind: 'sticky'`, paper in its colour (dark ink; pastel in light), a glue band
   with `ATAHAN · 2m`, never tilted, yellow default; 150 × 125 growing down with its text, folded back from `▾`
   (`folded`, shared); mono text S/M/L; from `+` or right-click; not a place.

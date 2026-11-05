@@ -25,11 +25,12 @@ function inlineOf(line: string): ReactNode[] {
 }
 
 // `mark`: what a bullet line hangs in the margin (text on the canvas uses the old board's `•`). `ink`: each line on its
-// own shade (D-277), for text over the backdrop.
-export function LightMarkdown({ text, mark = '–', ink = false }: { text: string; mark?: string; ink?: boolean }) {
+// own shade (D-277), for text over the backdrop. `asTyped`: spaces and empty lines kept as they were typed, for text
+// edited in place in a plain field, so it stands the same in both (D-190).
+export function LightMarkdown({ text, mark = '–', ink = false, asTyped = false }: { text: string; mark?: string; ink?: boolean; asTyped?: boolean }) {
   const inline = (line: string) => (ink ? <Ink>{inlineOf(line)}</Ink> : inlineOf(line))
   return (
-    <div className={styles.md}>
+    <div className={styles.md} data-typed={asTyped || undefined}>
       {text.split('\n').map((raw, i) => {
         const line = raw.trimEnd()
         if (!line.trim()) return <div key={i} className={styles.gap} />

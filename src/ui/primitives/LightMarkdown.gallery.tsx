@@ -21,6 +21,11 @@ export default example({
         <LightMarkdown text={TEXT} />
       </div>
     ),
+    'as typed': () => (
+      <div style={{ width: 360 }}>
+        <LightMarkdown text={'Two  spaces stay two.\n\nAn empty line is a whole line.'} mark="•" asTyped />
+      </div>
+    ),
     'canvas mark': () => (
       <div style={{ width: 360 }}>
         <LightMarkdown text={TEXT} mark="•" />

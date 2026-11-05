@@ -374,7 +374,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     return withLanding(
       <div className={styles.para} style={{ ...style, fontSize: PARA_PX[l.scale ?? 'large'], ...(turn ? turnedBox : { width: pw }) }} {...common} onPointerDown={press} onDoubleClick={edit}>
         <div ref={body} className={styles.body} data-turn={turn} style={{ width: pw }}>
-          {typing ? <Field l={l} /> : l.text ? <LightMarkdown text={l.text} mark="•" ink /> : <span className={styles.empty}><Ink>a paragraph</Ink></span>}
+          {typing ? <Field l={l} /> : l.text ? <LightMarkdown text={l.text} mark="•" ink asTyped /> : <span className={styles.empty}><Ink>a paragraph</Ink></span>}
         </div>
         {marks}
         {bar}
@@ -453,7 +453,7 @@ function StickyBody({ l, who, typing, fold }: { l: Label; who: string; typing: b
         <Field l={l} />
       ) : (
         <div ref={text} className={styles.stickyText}>
-          {l.text ? <LightMarkdown text={l.text} mark="•" /> : <span className={styles.empty}>a note</span>}
+          {l.text ? <LightMarkdown text={l.text} mark="•" asTyped /> : <span className={styles.empty}>a note</span>}
         </div>
       )}
     </>
