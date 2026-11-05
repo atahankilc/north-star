@@ -2,14 +2,14 @@
 // purity test, tests/unit/purity.test.ts, lets only this file reach data/ and Firebase).
 import { deleteField, doc, type DocumentReference } from 'firebase/firestore'
 import { db, firebase } from '../data/firebase'
-import { allCommitted, tracked, useHistory, writable } from '../data/history'
+import { allCommitted, tracked, useHistory, writable, type Snapshot } from '../data/history'
 import { getRealWs, subscribeWs, type WorkspaceCtx } from '../state/wsStore'
 import { validate } from './validate'
 import { projectLoose } from './project'
 import { docAt, toDocs, type DocStore } from './docs'
 import { autoId } from './newId'
 import { isDelete, OpsRefused, type OpActor, type OpCtx, type Plan, type Write } from './types'
-import { inBatches } from '../data/batches'
+import { docBytes, wholeBatches } from '../data/batches'
 
 
 export function refOf(wid: string, w: Pick<Write, 'coll' | 'id'>): DocumentReference {
@@ -101,15 +101,21 @@ export async function apply(wid: string, plans: Plan[], opts: ApplyOpts = {}): P
     ...(kinds.length === 1 && kinds[0] ? { kind: kinds[0] } : {}),
     actor: opts.actor ?? 'person',
   }
-  // Every batch issued at once (they apply to the local cache at once, so the step's `after` sees them all).
-  const write = () => {
-    const batches = inBatches(writes, (batch, w) => {
-      const r = refOf(wid, w)
-      if (w.del) batch.delete(r)
-      else if (w.set && w.merge) batch.set(r, forFirestore(w.set), { merge: true })
-      else if (w.set) batch.set(r, w.set)
-      else if (w.patch) batch.update(r, forFirestore(w.patch))
-    })
+  // One batch, all or nothing, unless it's too big for one (wholeBatches). A write counts as what it writes or what it
+  // replaces, whichever is bigger: a delete is as big as its doc.
+  const write = (before: Snapshot) => {
+    const held = new Map(before.map((b) => [b.ref.path, docBytes(b.data)]))
+    const batches = wholeBatches(
+      writes,
+      (w) => Math.max(docBytes(w.set ?? w.patch), held.get(refOf(wid, w).path) ?? 0),
+      (batch, w) => {
+        const r = refOf(wid, w)
+        if (w.del) batch.delete(r)
+        else if (w.set && w.merge) batch.set(r, forFirestore(w.set), { merge: true })
+        else if (w.set) batch.set(r, w.set)
+        else if (w.patch) batch.update(r, forFirestore(w.patch))
+      },
+    )
     return allCommitted(batches.map((b) => b.commit()))
   }
 

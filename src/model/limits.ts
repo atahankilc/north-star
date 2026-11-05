@@ -85,5 +85,13 @@ export const SUMMARY_CARDS_CHARS = 4000
 // The workspace's people a picker lists (`@` mentions, given to, the deck's filter): the first by name.
 export const MEMBERS_LISTED = 100
 
-// Writes in one Firestore batch (its own cap is 500; room left for the tracked undo snapshot).
+// Writes in one batch of a write that has to be cut. Firestore itself has no cap on writes since March 2023, only 10 MiB
+// a request; the browser's SDK takes a batch's docs in time that grows with their square, on the main thread, so a batch
+// stays small unless being one is worth it.
 export const WRITE_BATCH_MAX = 450
+
+// What still goes as ONE batch, all or nothing, when a write and its undo have to land whole (D-369): past either, it's
+// cut. Docs: about 4 s of frozen page for sets of 1000 (2 s at 750, 18 s at 2000). Bytes: the docs' JSON, well under
+// Firestore's 10 MiB, which counts their index entries too.
+export const ATOMIC_WRITE_MAX = 1000
+export const ATOMIC_WRITE_BYTES = 4_000_000

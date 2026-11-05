@@ -77,6 +77,7 @@ feature comes back as a piece, and check them with the user then.
 - All DB access in `src/data/`; every write through `tracked()`: undo/redo by document snapshots (a cascade is one step;
   typing in a field and one drag merge), ⌘Z / ⇧⌘Z, local to the tab (D-046). Last write wins per field, no locks, no
   Yjs (D-071).
+- A write, its undo and its redo are one batch, all or nothing, up to 1000 docs and 4 MB (D-369; Firestore has no 500 cap since 2023, a batch's cost in the browser grows with its square); past that cut, with a toast if part lands; a refused undo keeps its step; a refused write says so.
 - No 1.0 data (D-248): cards and text always have a space (`pieceId`), threads a space (`planeId`) and a component;
   `domains`, `groups` (D-048, D-049), old `planes`/`placements`, `attachments`, `board` pieces, old presence views and
   1.0 exports are refused by the rules; old `reports` are gone (no rule, no move, D-335).

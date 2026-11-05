@@ -159,7 +159,7 @@ RTDB: presence/{wid}/{uid}   name, color, photo? (googleusercontent.com only, D-
   `src/data/hooks.ts`: several queries merged, never skipping rows). Composite indexes in `firestore.indexes.json`.
 - `edges` is one generic collection, so any card can link to any other; tagging a card with a customer is an edge
   `kind: 'for'` (card → customer) (D-044).
-- Undo/redo: every write in `src/data/` goes through `tracked()` in `history.ts`, which snapshots the touched documents (D-046).
+- Undo/redo: every write in `src/data/` goes through `tracked()` in `history.ts`, which snapshots the touched documents (D-046). A write and its undo go as one batch, all or nothing, up to 1000 docs and 4 MB (D-369).
 - No 1.0 shapes (D-248): cards, text and threads always have a space; `domains`, `groups`, `planes`, `placements`,
   `attachments` and `board` pieces are refused by the rules (not even read: old docs stay unseen in old workspaces).
 - Rules allow only these collections and check each one's basic shape (`firestore.rules`, mirrors `model.ts` and the

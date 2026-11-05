@@ -2,9 +2,9 @@
 // and redo just put a snapshot back. Local to this tab and workspace; last write wins against collaborators.
 import { deleteDoc, getDoc, getDocFromCache, type DocumentData, type DocumentReference } from 'firebase/firestore'
 import { create } from 'zustand'
-import { inBatches } from './batches'
+import { docBytes, wholeBatches } from './batches'
 
-type Snapshot = { ref: DocumentReference; data: DocumentData | null }[]
+export type Snapshot = { ref: DocumentReference; data: DocumentData | null }[]
 
 type Step = {
   label: string
@@ -67,12 +67,19 @@ async function snapshotBut(refs: DocumentReference[], absent: DocumentReference[
 
 const snapshot = (refs: DocumentReference[]) => Promise.all(refs.map(async (ref) => ({ ref, data: await read(ref) })))
 
-// Issues the batches without waiting for the server (they apply locally at once), so undo works offline too.
-function restore(snap: Snapshot): Promise<unknown> {
-  const batches = inBatches(snap, (batch, { ref, data }) => {
-    if (data) batch.set(ref, data, { merge: isWorkspaceDoc(ref) })
-    else if (!isWorkspaceDoc(ref)) batch.delete(ref)
-  })
+// Puts `snap` back over `was` (the step's other side, which knows how big what's deleted is): one batch, all or nothing,
+// unless it's too big for one (wholeBatches). Issued without waiting for the server (it applies locally at once), so
+// undo works offline too.
+function restore(snap: Snapshot, was: Snapshot): Promise<unknown> {
+  const held = new Map(was.map((s) => [s.ref.path, docBytes(s.data)]))
+  const batches = wholeBatches(
+    snap,
+    ({ ref, data }) => Math.max(docBytes(data), held.get(ref.path) ?? 0),
+    (batch, { ref, data }) => {
+      if (data) batch.set(ref, data, { merge: isWorkspaceDoc(ref) })
+      else if (!isWorkspaceDoc(ref)) batch.delete(ref)
+    },
+  )
   return allCommitted(batches.map((b) => b.commit()))
 }
 
@@ -132,14 +139,17 @@ export function writable(): boolean {
   return !why
 }
 
-export function tracked(label: string, refs: DocumentReference[], write: () => Promise<unknown>, opts: Options = {}) {
+// `write` is given the docs as they were, for what it needs of them (how big they are).
+type Write = (before: Snapshot) => Promise<unknown>
+
+export function tracked(label: string, refs: DocumentReference[], write: Write, opts: Options = {}) {
   if (!writable()) return Promise.resolve()
   return serial(() => record(label, refs, write, opts)).then(({ pending }) => pending)
 }
 
-async function record(label: string, refs: DocumentReference[], write: () => Promise<unknown>, opts: Options) {
+async function record(label: string, refs: DocumentReference[], write: Write, opts: Options) {
   const before = opts.before ?? (opts.absent ? await snapshotBut(refs, opts.absent) : await snapshot(refs))
-  const pending = write()
+  const pending = write(before)
   if (opts.settle) await pending
   const after = await snapshot(refs)
   const { past } = useHistory.getState()
@@ -170,11 +180,13 @@ async function record(label: string, refs: DocumentReference[], write: () => Pro
       // A listener's mistake never breaks the write.
     }
   }
-  // A write the server refuses never happened: forget it, and let the caller see the error. Part of it through: the
-  // step stays, to take that part back.
+  // A write the server refuses never happened: forget it, say so (what was drawn just goes back), and let the caller see
+  // the error. Part of it through (only a write too big for one batch): the step stays, to take that part back.
   pending.catch((e) => {
-    if (e instanceof PartlyWritten) useHistory.getState().say(`Only part of ${label} was saved (${(e.cause as Error)?.message ?? 'refused'}): undo takes it back`)
-    else useHistory.setState((h) => ({ past: h.past.filter((p) => p !== step) }))
+    const { say } = useHistory.getState()
+    if (e instanceof PartlyWritten) return say(onlyPart(label, e, 'undo takes it back'))
+    say(`Couldn't ${label}: the server refused it`)
+    useHistory.setState((h) => ({ past: h.past.filter((p) => p !== step) }))
   })
   // Wrapped: returning the promise itself would make the queue wait for the server.
   return { pending }
@@ -191,13 +203,15 @@ export function discardNew(ref: DocumentReference, key: string) {
   }).then(({ pending }) => pending)
 }
 
-// A write sent in several batches (past WRITE_BATCH_MAX docs) where some went through and some didn't: what went
-// through stays, so its step stays too (undo takes it back; it puts back what didn't go through as it already is).
+// A write too big for one batch (wholeBatches) where some batches went through and some didn't: what went through
+// stays, so its step stays too (undo takes it back; it puts back what didn't go through as it already is).
 export class PartlyWritten extends Error {
   constructor(readonly cause: unknown) {
     super(`only part of it was saved: ${(cause as Error)?.message ?? String(cause)}`)
   }
 }
+
+const onlyPart = (what: string, e: PartlyWritten, then: string) => `Only part of ${what} was saved (${(e.cause as Error)?.message ?? 'refused'}): ${then}`
 
 // The batches' commits as one: all through, or the first refusal; some through, PartlyWritten.
 export async function allCommitted(commits: Promise<void>[]): Promise<void> {
@@ -222,9 +236,15 @@ async function undoNow() {
   const { past, future, say } = useHistory.getState()
   const step = past[past.length - 1]
   if (!step) return say('Nothing to undo')
+  const at = past.length - 1
   useHistory.setState({ past: past.slice(0, -1), future: [step, ...future] })
   say(`Undid ${step.label}`)
-  restore(step.before).catch(() => say(`Couldn't undo ${step.label}`))
+  restore(step.before, step.after).catch((e) => {
+    if (e instanceof PartlyWritten) return say(onlyPart(`the undo of ${step.label}`, e, 'redo puts it back'))
+    // Refused, nothing changed: the step goes back where it was, under whatever was written since.
+    say(`Couldn't undo ${step.label}`)
+    useHistory.setState((h) => (h.past.includes(step) ? h : { past: [...h.past.slice(0, at), step, ...h.past.slice(at)].slice(-MAX_STEPS), future: h.future.filter((p) => p !== step) }))
+  })
 }
 
 async function redoNow() {
@@ -233,5 +253,10 @@ async function redoNow() {
   if (!step) return say('Nothing to redo')
   useHistory.setState({ past: [...past, step], future: future.slice(1) })
   say(`Redid ${step.label}`)
-  restore(step.after).catch(() => say(`Couldn't redo ${step.label}`))
+  restore(step.after, step.before).catch((e) => {
+    if (e instanceof PartlyWritten) return say(onlyPart(`the redo of ${step.label}`, e, 'undo takes it back'))
+    // Refused, nothing changed: it's still to redo, unless a write since has ended the redos.
+    say(`Couldn't redo ${step.label}`)
+    useHistory.setState((h) => (h.past[h.past.length - 1] === step ? { past: h.past.slice(0, -1), future: [step, ...h.future] } : { past: h.past.filter((p) => p !== step) }))
+  })
 }

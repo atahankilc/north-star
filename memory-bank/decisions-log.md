@@ -7135,6 +7135,37 @@ panels), and dark (canvas, the customer panel); the contrast of each new accent 
 **Not yet:** the real app, `CardRow` with its tint (the card panel's own task rows have no tone), a task panel and solid buttons not seen; piece kinds' tabs and `≈ theirs` keep the
 accents, so they no longer match the card colours exactly; a competitor's feature rows in its panel aren't tinted; cyan, green and yellow accents as text stay about 3.6:1 on white, as before.
 
+### D-369 · 2026-11-04 · Accepted (the user, on sweep finding 5: "onaylıyorum, 1000 sınırıyla başla, undo da ya hep ya hiç olsun")
+**Decision:** a tracked write through `apply`, and every undo and redo, goes as ONE Firestore batch, all or nothing, up to
+`ATOMIC_WRITE_MAX` (1000 docs) and `ATOMIC_WRITE_BYTES` (4 MB of JSON; a delete counts the doc it deletes, read from the
+step's other side). Past either it is cut (450 docs or those bytes, `wholeBatches`, data/batches.ts) and `PartlyWritten`
+and its toast stay, the undo's too (`Only part of the undo of …: redo puts it back`). A refused undo or redo changes
+nothing, so its step goes back where it was (under what was written since). Every refused tracked write now says so
+(`Couldn't … : the server refused it`); before, it went back in silence. The sequential writers (import, a workspace's
+delete) keep `WRITE_BATCH_MAX`.
+**Why:** Firestore dropped its 500-write cap on 2023-03-29 (release notes: "no longer limits the number of writes…";
+10 MiB a request and the time limit stay), so `limits.test.ts`'s reason was stale. What splits a write is per-doc: batches
+hold different docs, so one doc a rule refuses (a collaborator just deleted it: `update` refused; or its shape) refused
+only its batch. Reproduced in Chrome: 900 of 1000 landed, with one batch 0. A lost connection never does it (the SDK
+retries, the queue is in IndexedDB). The 20-read limit doesn't bite: content rules read only the workspace doc (3000 and
+6000 docs in a batch passed on the emulator, which does enforce the limit: 8 bodies pass, 12 don't).
+**Why 1000 and not all:** a batch's local cost grows with the square of its docs, on the main thread. Blocked ms, headless
+Chrome, IndexedDB cache, a listener on, cut at 450 → one batch: sets 750: 1045 → 2152; 1000: 1550 → ~4000; 2000: 3200 →
+17700; 3000: 5600 → 37800. Updates 1000: 720 → 1900. Deletes 1000: 142 → 421. A 4 s freeze on a rare write beats a
+half-written canvas. Who passes 450: on `medium` (945 docs, generated, no live numbers) deleting the Build canvas is 517;
+its biggest matrix 199, plane 162; an agent turn's merged step can pass it while no single apply does.
+**Rejected:** rolling back what landed (a write that can be refused too, and it would overwrite what came after);
+retrying (the SDK retries what's transient, a rule's refusal repeats); leaving it (the fix is small).
+**Accepted cost:** one refused doc now stops a big undo whole, where most of it used to come back; the step stays to try again.
+**Checked:** tests/unit/apply.test.ts (10 tests failed on the old code first; two more hold the cut past the cap, unchanged), 1050/1050; the real app on a
+private emulator, real rules, `medium` imported: delete Build (517) 929 → 416 docs, undo back with 0 differing, redo;
+undo offline (local at once, server after); 569 patches with one doc gone: 0 landed, no step, the toast; a refused undo of
+568: step kept, 568 still there, then undone once the rules were back.
+**Not yet:** never run on the live server: a batch past 500 and the 10 MiB limit (the emulator doesn't apply it: 12 MB
+passed) rest on Firebase's docs. Try ~600 docs on a throwaway workspace. On the emulator a refused batch's error message
+grows ~98 characters a write and past ~3000 (Node gRPC: ~1000) never reaches the client, which retries for ever; the cap
+stays under that in Chrome, production's message shouldn't grow but that's not checked.
+
 ### D-370 · 2026-11-04 · Accepted (the user: "component consolu ile component başlığı aynı büyüklükte olsunlar hep, referansı başlıktan alabilirsin. Yazı büyüdükçe componentin iconu kalabilir ama type'ını belki saklarız"; changes D-264's console size, D-365's tab)
 **Decision:** a piece's console cells are always as tall as its name's row: `nameSize(zoom)` (CanvasView.tsx) sets `--name-size` and `--cs` from one place, the console's text at 3/4 of the name's (near the tab's word), its padding and gaps growing with it (was 12 px × up to 1.4). Equal text first made the cells far taller than the name (44 against 33 px; the user: "focus şu an headerdan çok daha büyük"). A Console sets its Buttons' height and padding (`--button-h`, `--button-pad`, Button.module.css) from its own scale: Button's 24 px least was in canvas px, so close up it grew with the zoom (81 px at 338 %). Under 50 % canvas zoom (`KIND_WORD_ZOOM`, feel.ts), when the name is big, the kind's tab keeps only its icon; the word folds away over `--dur-quick`. Unnamed, the word stays, since it's all there is.
 **Why:** one size for what belongs to one piece; the word took the room the name needed.

@@ -8,7 +8,7 @@ const fake = vi.hoisted(() => {
   const commits = { n: 0, batches: [] as number[] }
   // As Firestore is: the cache has nothing for a doc that never existed; offline, a read past it fails. `failAt`: the
   // commit (counted from 1) the server refuses.
-  const net = { offline: false, failAt: 0 }
+  const net = { offline: false, failAt: 0, slow: false }
   type Ref = { path: string; id: string; parent: { id: string } }
   const ref = (path: string): Ref => {
     const parts = path.split('/')
@@ -69,7 +69,7 @@ vi.mock('firebase/firestore', () => {
         commit: () => {
           fake.commits.n++
           fake.commits.batches.push(ops.length)
-          if (fake.commits.n === fake.net.failAt) return Promise.reject(new Error('PERMISSION_DENIED'))
+          if (fake.commits.n === fake.net.failAt) return fake.net.slow ? new Promise((_, no) => setTimeout(() => no(new Error('PERMISSION_DENIED')), 5)) : Promise.reject(new Error('PERMISSION_DENIED'))
           ops.forEach((op) => op())
           return Promise.resolve()
         },
@@ -80,7 +80,8 @@ vi.mock('firebase/firestore', () => {
 })
 
 import { apply } from '../../src/ops/firestore'
-import { onTracked, setReadOnly, undo, useHistory } from '../../src/data/history'
+import { onTracked, redo, setReadOnly, undo, useHistory } from '../../src/data/history'
+import { ATOMIC_WRITE_BYTES, ATOMIC_WRITE_MAX } from '../../src/model/limits'
 import { WS_COLLECTIONS } from '../../src/model/fromDocs'
 import { DELETE } from '../../src/ops/types'
 import { wsFrom } from './fixtures/ws'
@@ -99,6 +100,7 @@ function seed() {
   fake.commits.batches = []
   fake.net.offline = false
   fake.net.failAt = 0
+  fake.net.slow = false
   const docs = fixtureDocs()
   for (const c of WS_COLLECTIONS) for (const { id, ...d } of docs[c]) fake.data.set(path(c, id), d)
   const { id: _, ...w } = WORKSPACE
@@ -184,7 +186,7 @@ describe('apply', () => {
     expect(new Map(fake.data)).toEqual(before)
   })
 
-  it('two applies are two steps (unique keys never merge), written in batches of at most 450', async () => {
+  it('two applies are two steps (unique keys never merge), each write one batch', async () => {
     const many: Plan = {
       op: 'set_cell',
       label: 'fill 500 cells',
@@ -196,7 +198,7 @@ describe('apply', () => {
     await b.written
     expect(a.step!.key).not.toBe(b.step!.key)
     expect(useHistory.getState().past.map((s) => s.label)).toEqual(['edit a problem', 'fill 500 cells'])
-    expect(fake.commits.batches).toEqual([1, 450, 50])
+    expect(fake.commits.batches).toEqual([1, 500])
     expect(useHistory.getState().past[1].after.every((s) => s.data)).toBe(true)
   })
 
@@ -316,23 +318,130 @@ describe('apply', () => {
     expect(res.ids).toEqual({})
   })
 
+  // `n` new cells, each with `pad` characters of text.
+  const cells = (n: number, tag: string, pad = 0): Plan => ({
+    op: 'set_cell',
+    label: `fill ${n} cells`,
+    ids: {},
+    writes: Array.from({ length: n }, (_, i) => ({ coll: 'cells' as const, id: `${ID.matrix}_${ID.orderly}_${tag}${i}`, set: { matrixId: ID.matrix, row: ID.orderly, col: `${tag}${i}`, value: 'full', notes: 'x'.repeat(pad), updatedAt: T } })),
+  })
+  const settled = () => new Promise((r) => setTimeout(r))
+
+  it('up to ATOMIC_WRITE_MAX docs go as one batch: refused, nothing is written and no step stays', async () => {
+    const before = new Map(fake.data)
+    fake.net.failAt = 1
+    const res = await apply(WID, [cells(ATOMIC_WRITE_MAX, 'a')], { ws: fixtureWs(), by: ALICE })
+    await expect(res.written).rejects.toThrow('PERMISSION_DENIED')
+    await settled()
+    expect(fake.commits.batches).toEqual([ATOMIC_WRITE_MAX])
+    expect(new Map(fake.data)).toEqual(before)
+    expect(useHistory.getState().past).toHaveLength(0)
+  })
+
+  it("the undo and redo of a write past 450 docs are one batch each", async () => {
+    const res = await apply(WID, [cells(600, 'u')], { ws: fixtureWs(), by: ALICE })
+    await res.written
+    await undo()
+    await settled()
+    await redo()
+    await settled()
+    expect(fake.commits.batches).toEqual([600, 600, 600])
+  })
+
+  it('past ATOMIC_WRITE_MAX docs it is cut in batches of at most 450', async () => {
+    const res = await apply(WID, [cells(ATOMIC_WRITE_MAX + 100, 'o')], { ws: fixtureWs(), by: ALICE })
+    await res.written
+    expect(fake.commits.batches).toEqual([450, 450, 200])
+  })
+
+  it('past ATOMIC_WRITE_BYTES it is cut by size too, however few docs', async () => {
+    const res = await apply(WID, [cells(300, 'b', 20_000)], { ws: fixtureWs(), by: ALICE })
+    await res.written
+    expect(fake.commits.batches.length).toBeGreaterThan(1)
+    expect(Math.max(...fake.commits.batches)).toBeLessThanOrEqual(Math.ceil(ATOMIC_WRITE_BYTES / 20_000))
+  })
+
+  it("a delete counts the size of what it deletes, and an undo's deletes what they delete", async () => {
+    const made = await apply(WID, [cells(300, 'd', 20_000)], { ws: fixtureWs(), by: ALICE })
+    await made.written
+    fake.commits.batches = []
+    const gone: Plan = { op: 'delete', label: 'delete cells', ids: {}, writes: cells(300, 'd').writes.map(({ coll, id }) => ({ coll, id, del: true })) }
+    const res = await apply(WID, [gone], { ws: listened(), by: ALICE })
+    await res.written
+    expect(fake.commits.batches.length).toBeGreaterThan(1)
+    // Taking the making back: the undo only says `delete`, the step's `after` knows how big they are.
+    fake.commits.batches = []
+    useHistory.setState({ past: useHistory.getState().past.slice(0, 1), future: [] })
+    await undo()
+    await settled()
+    expect(fake.commits.batches.length).toBeGreaterThan(1)
+  })
+
   it('split in batches, some refused: the step stays and undo takes back what went through', async () => {
     const before = new Map(fake.data)
     fake.net.failAt = 2
-    const many: Plan = {
-      op: 'set_cell',
-      label: 'fill 500 cells',
-      ids: {},
-      writes: Array.from({ length: 500 }, (_, i) => ({ coll: 'cells' as const, id: `${ID.matrix}_${ID.orderly}_p${i}`, set: { matrixId: ID.matrix, row: ID.orderly, col: `p${i}`, value: 'full', updatedAt: T } })),
-    }
-    const res = await apply(WID, [many], { ws: fixtureWs(), by: ALICE })
+    const res = await apply(WID, [cells(ATOMIC_WRITE_MAX + 100, 'p')], { ws: fixtureWs(), by: ALICE })
     await expect(res.written).rejects.toThrow(/only part of it was saved/)
     await Promise.resolve()
-    expect(useHistory.getState().past.map((s) => s.label)).toEqual(['fill 500 cells'])
-    expect(useHistory.getState().notice?.text).toMatch(/^Only part of fill 500 cells was saved/)
+    expect(useHistory.getState().past.map((s) => s.label)).toEqual([`fill ${ATOMIC_WRITE_MAX + 100} cells`])
+    expect(useHistory.getState().notice?.text).toMatch(/^Only part of fill 1100 cells was saved/)
     await undo()
     await Promise.resolve()
     expect(new Map(fake.data)).toEqual(before)
+  })
+
+  it('an undo the server refuses changes nothing: its step stays to undo, nothing is left to redo', async () => {
+    const res = await apply(WID, [cells(600, 'r')], { ws: fixtureWs(), by: ALICE })
+    await res.written
+    const step = useHistory.getState().past[0]
+    fake.net.failAt = fake.commits.n + 1
+    await undo()
+    await settled()
+    expect(useHistory.getState().past).toEqual([step])
+    expect(useHistory.getState().future).toHaveLength(0)
+    expect(useHistory.getState().notice?.text).toBe("Couldn't undo fill 600 cells")
+  })
+
+  it('a refused undo goes back where it was, under what was written since', async () => {
+    const first = await apply(WID, [cells(1, 'f')], { ws: fixtureWs(), by: ALICE })
+    await first.written
+    // The server answers after the next write is recorded.
+    fake.net.failAt = fake.commits.n + 1
+    fake.net.slow = true
+    await undo()
+    const next = await apply(WID, [cells(2, 'n')], { ws: fixtureWs(), by: ALICE })
+    await next.written
+    expect(useHistory.getState().past.map((s) => s.label)).toEqual(['fill 2 cells'])
+    await new Promise((r) => setTimeout(r, 10))
+    expect(useHistory.getState().past.map((s) => s.label)).toEqual(['fill 1 cells', 'fill 2 cells'])
+  })
+
+  it('a redo the server refuses changes nothing: its step stays to redo', async () => {
+    const res = await apply(WID, [cells(3, 'e')], { ws: fixtureWs(), by: ALICE })
+    await res.written
+    await undo()
+    await settled()
+    const step = useHistory.getState().future[0]
+    fake.net.failAt = fake.commits.n + 1
+    await redo()
+    await settled()
+    expect(useHistory.getState().past).toHaveLength(0)
+    expect(useHistory.getState().future).toEqual([step])
+    expect(useHistory.getState().notice?.text).toBe("Couldn't redo fill 3 cells")
+  })
+
+  it('an undo that lands in part says so, and redo puts it all back', async () => {
+    const res = await apply(WID, [cells(ATOMIC_WRITE_MAX + 100, 'q')], { ws: fixtureWs(), by: ALICE })
+    await res.written
+    const all = new Map(fake.data)
+    fake.net.failAt = fake.commits.n + 2
+    await undo()
+    await settled()
+    expect(useHistory.getState().notice?.text).toMatch(/^Only part of the undo of fill 1100 cells was saved/)
+    expect(useHistory.getState().future).toHaveLength(1)
+    await redo()
+    await settled()
+    expect(new Map(fake.data)).toEqual(all)
   })
 
   it('every batch refused: nothing went through, the step goes', async () => {
@@ -341,5 +450,6 @@ describe('apply', () => {
     await expect(res.written).rejects.toThrow('PERMISSION_DENIED')
     await Promise.resolve()
     expect(useHistory.getState().past).toHaveLength(0)
+    expect(useHistory.getState().notice?.text).toBe("Couldn't edit a problem: the server refused it")
   })
 })

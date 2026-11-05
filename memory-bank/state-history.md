@@ -1451,13 +1451,18 @@ north-star-e7 (recent commits), -48 and -51 told what each found. The user picke
   the workspaces page, was body; nothing had focus before a plain right-click, so nothing to give back then); after a
   switch from Claude the old map, notes and where aren't sent (agent bug 48). The `discardNew` and switch tests fail on the old code.
 - **Still open from the sweep (2026-11-04; everything else in it is fixed):**
-  - 5: a write past WRITE_BATCH_MAX (450 docs) goes in several batches, so it can land in part (ops/firestore.ts, history.ts
-    `restore`). Since 48's fix the step stays and a toast says so (`PartlyWritten`); it still isn't all or nothing.
   - 20: the key proxy in functions/ passes any `tools` it is sent, unchecked. Not live until Blaze.
   - 21: names in presence, the people list and the like are free text, not bound to the signed-in person; decide Q-030 first.
   - Small: a long reply's thread preview is only checked to be shorter than the message, not to be its start;
     LinkChips and a deck's TaskBoard still redraw on any thread change (cheap now).
   - To try once Blaze is on: `cleanUpWorkspaceAi` deleting others' private `agentChats` (built, never run); until then those stay.
+
+## Done (2026-11-04): sweep 5, a big write lands whole (D-369; committed, not pushed)
+`apply`, undo and redo go as one batch up to 1000 docs and 4 MB (`wholeBatches`, data/batches.ts); past that as before,
+with `PartlyWritten`. A refused undo or redo keeps its step, a part-landed undo says so, a refused tracked write has a
+toast. Why, the numbers and what was checked: D-369. Unit tests 1050/1050 (10 failed on the old code first); the real
+app on a private emulator through delete, undo, redo, offline undo, a refused patch and a refused undo. Left: one try on
+the live server (past 500 docs, the 10 MiB limit), which the emulator can't show.
 
 ## Done (2026-11-03): a test pass over the last 15 commits, and its fixes (north-star-e7; pushed)
 Eight reviewers (one area each) and two headless runs on emulators over 0db26da back to f2d28ac. The refactors held
