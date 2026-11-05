@@ -1596,3 +1596,8 @@ Offered, not asked for: a deck's column width, the document reader's window.
   `--ai-w`), `useDocUi.beside`, the row's first words and `read`, one go (the preview's), Escape's order in the column.
 - Checked: headless on the emulators with the dev stub, 15/15 (scratchpad agentdoc2.mjs); unit 1082/1082;
   tokens/kit/gallery 0. Pushed.
+
+## Done (2026-11-06): a documents list offered for the agent's document, D-383
+- `NoList` under the agent's report: `no documents list on this canvas` + `+ add a list`; no picker.
+- Checked: headless on the emulators with the dev stub (scratchpad nolist.mjs; its two fails were the test's own: the
+  title is the workspace's, nothing opens by itself on create); unit 1082/1082. Pushed.

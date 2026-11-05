@@ -110,7 +110,10 @@ open it written in. The agent's documents are read first, never written in by th
 agent's column, not in a window (D-382): its preview's row `read` docks the draft to the column's left, the whole
 height, no shade (`the agent's draft` in its head, `create it in the agent's preview →` at its foot: the one go is the
 preview's); `create` makes it and the same page reads the document made; the report's `open` reads it there too.
-Escape (or `×`) closes the page first, never the preview under it. Other ways in (the finder) keep the window. Its author renames it from the title there.
+Escape (or `×`) closes the page first, never the preview under it. Other ways in (the finder) keep the window.
+Made, it is saved to the documents like any other: a documents list shows it (a list shows every document you can
+see). With no list on this canvas the report says `no documents list on this canvas` and offers `+ add a list` (one
+where you're looking); nothing is put on a shared canvas unasked (D-383). Its author renames it from the title there.
 
 - Tools: a paragraph style (text, heading 1–4, quote, code block); bold, italic, struck, code in the line, link (⌘K,
   an address strip), clear the formatting; bullet, numbered and check lists, a level out and in; quote, code block,

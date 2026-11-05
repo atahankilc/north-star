@@ -40,7 +40,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
   which (D-313); pushed;
   rules deployed.
-- Documents (D-232): files (images, PDFs) once Storage is live. Written in the app: D-373 (2026-11-05, pushed, firestore:rules deployed; state-history). Writing together D-374: built, checked, pushed 2026-11-05; firestore:rules and database deployed (state-history). The agent's documents read before made (D-381, pushed), beside the agent's column (D-382, 2026-11-05, pushed).
+- Documents (D-232): files (images, PDFs) once Storage is live. Written in the app: D-373 (2026-11-05, pushed, firestore:rules deployed; state-history). Writing together D-374: built, checked, pushed 2026-11-05; firestore:rules and database deployed (state-history). The agent's documents read before made (D-381, pushed), beside the agent's column (D-382, pushed); a list offered when none shows it (D-383, 2026-11-06, pushed).
 - The agent (D-312, docs/specs/agent.md; the overnight build: docs/specs/agent-run.md): see the first item above.
 - Onboarding (D-315, D-316): **built and live** (O0–O16; state-history.md). D-349 (2026-11-02, committed, not pushed):
   content rewritten, every lesson the centred modal, ~30 lessons by screen/piece, no nudges; checked headless on

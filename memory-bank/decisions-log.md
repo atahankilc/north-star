@@ -7303,3 +7303,15 @@ it on the same page, the document there, Escape, `open`, Escape from the column 
 made, the finder's way still a window); unit 1082/1082; tokens, kit, gallery 0.
 *Not yet:* where it lands: made, it is still private and in no list (the `where ▾` of the preview not built); a card's
 right panel open at the same time sits under the page.
+
+### D-383 · 2026-11-06 · Accepted (the user, of a `saved to ▾` picker: "yap, varsayılan otomatik documents a saved olsun. Documents componentini koyunca içinde gözüksün ama documents componenti yoksa da gözükmesin napalım yani", then of a report line offering a list, "yap"): the agent's documents saved to the documents, a list offered when none shows them
+**Decision:** no `saved to ▾` picker: what the agent writes is saved to the documents like any other, and a documents
+list already shows every document you can see (its kinds aside), so it shows there. With no documents list on this
+canvas, the report under the apply says `no documents list on this canvas` with `+ add a list` (owners and editors),
+which puts one where you're looking (`addPiece`, the side nav's way) and closes the page beside the column so it shows.
+A list here that leaves it out (its kinds) says `not in this canvas's documents list`. Never made unasked: a piece on a
+shared canvas is everyone's.
+*Alternatives:* the picker (`only saved / on the canvas / a list`, D-382's preview), a list made by itself on create.
+*Verified:* headless on the emulators with the dev stub: no note before create; after it, the note and the button;
+the button makes one documents list, the note goes, the list shows the document; a second document with the list
+there, no note. Unit 1082/1082.

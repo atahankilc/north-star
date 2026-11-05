@@ -652,6 +652,15 @@
   margin-left: auto;
 }
 
+/* Saved but on no list on this canvas (D-383): said under the report, with the one way to show it. */
+.noList {
+  display: flex;
+  flex-basis: 100%;
+  align-items: baseline;
+  gap: 1ch;
+  color: var(--fg-dim);
+}
+
 .reportError {
   flex-basis: 100%;
   color: var(--accent-yellow);

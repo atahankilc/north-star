@@ -22,7 +22,11 @@ import { EdgeColumn } from '../../ui/patterns/EdgeColumn'
 import { PanelHead } from '../../ui/patterns/PanelHead'
 import { ResizeEdge } from '../../ui/primitives/ResizeEdge'
 import { useWs } from '../../views/workspace/canvas/context'
-import { useDocUi } from '../../views/workspace/documents/Documents'
+import { documentsOf, listed, useDocUi } from '../../views/workspace/documents/Documents'
+import { addPiece } from '../../data/pieces'
+import { canvasHere, piecesOn } from '../../data/canvases'
+import { canvasCenter } from '../../state/canvasView'
+import { shownPieces } from '../../views/workspace/canvas/shownBox'
 import { isTyping, keysTaken } from '../../ui/foundation/focus'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
 import { pickerRows } from '../models'
@@ -1177,8 +1181,38 @@ function ReportLine({ entry }: { entry: Extract<Entry, { kind: 'report' }> }) {
           )}
         </ButtonGroup>
       )}
+      {!shown.undone && <NoList docs={docs} />}
       {current && wf.error && <span className={styles.reportError}>{wf.error}</span>}
     </div>
+  )
+}
+
+// What it wrote is saved to the documents (D-383): a documents list shows it (it shows every document you can see).
+// With none on this canvas it shows nowhere, so the report says so and offers one, never made unasked (a shared canvas).
+function NoList({ docs }: { docs: { id: string }[] }) {
+  const { wid, workspace, pieces, spots, cards, documents } = useWs()
+  const { user } = useAuth()
+  if (!docs.length || !user) return null
+  const role = workspace.roles[user.id]
+  if (role !== 'owner' && role !== 'editor') return null
+  const here = piecesOn(canvasHere(), pieces, spots)
+  const lists = here.filter((p) => kindOfPiece(p) === 'documents')
+  const shown = new Set(lists.flatMap((p) => listed(documents, documentsOf(p), user.id).map((d) => d.id)))
+  if (docs.every((d) => shown.has(d.id))) return null
+  const add = () => {
+    // The page beside the column would cover where it lands.
+    useDocUi.setState({ reading: null, draft: null, editing: false, beside: false })
+    void addPiece(wid, 'documents', canvasCenter(wid), shownPieces(here, cards))
+  }
+  return (
+    <span className={styles.noList}>
+      <span>{lists.length ? 'not in this canvas\'s documents list' : 'no documents list on this canvas'}</span>
+      {!lists.length && (
+        <Button title="put a documents list where you're looking: it shows this and every document you can see" onClick={add}>
+          + add a list
+        </Button>
+      )}
+    </span>
   )
 }
 
