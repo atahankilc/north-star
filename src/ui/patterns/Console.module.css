@@ -196,7 +196,7 @@
   /* A row of its own over the drawer's contents, whatever they flow in. */
   flex-basis: 100%;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-3);
   color: var(--accent-cyan);
@@ -211,6 +211,15 @@
   align-self: center;
   height: var(--line-w);
   background: var(--line);
+}
+
+/* After the title's rule (its `::after`), at the right end. */
+.faction {
+  order: 1;
+  flex: none;
+  align-self: center;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .summary {

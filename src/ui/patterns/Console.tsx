@@ -123,12 +123,14 @@ export function FloorRow({ name, children }: { name: string; children: ReactNode
   )
 }
 
-// A floor's title: what the drawer is, a cyan caps word, and what it says now (`2 types hidden · #pricing`).
-export function FloorTitle({ children, summary }: { children: ReactNode; summary?: ReactNode }) {
+// A floor's title: what the drawer is, a cyan caps word, and what it says now (`2 types hidden · #pricing`); `action`
+// what acts on the whole drawer (`reset`), at the rule's right end, as a panel section's `+ add`.
+export function FloorTitle({ children, summary, action }: { children: ReactNode; summary?: ReactNode; action?: ReactNode }) {
   return (
     <div className={styles.ftitle}>
       {children}
       {summary && <span className={styles.summary}>{summary}</span>}
+      {action && <span className={styles.faction}>{action}</span>}
     </div>
   )
 }

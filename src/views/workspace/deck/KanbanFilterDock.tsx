@@ -1,5 +1,5 @@
 // A kanban's filters in its dock (D-256), the plane's way (D-233): the `filter` tab (`filter N` while narrowing) opens
-// its drawer as the dock's upper floor (D-347): GIVEN TO, DUE, FOR, LABEL, each a column of tick rows (D-364), then `[reset]`. Escape
+// its drawer as the dock's upper floor (D-347): GIVEN TO, DUE, FOR, LABEL, each a column of tick rows (D-364), `reset` in its title. Escape
 // closes it. In the kanban's focus and in its pane beside a plane; a timeline's too (D-262), over its kanbans' tasks
 // (`pool`). The filter lasts while one of these is open (D-308).
 import { AnimatePresence } from 'motion/react'
@@ -90,15 +90,21 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
 
   return (
     <Appear className={styles.panel} role="group" aria-label="Filters" data-learn="filter-strip">
-      <FloorTitle summary={narrowing(f) ? `${narrowing(f)} narrowing its tasks` : 'every task'}>filter</FloorTitle>
+      <FloorTitle
+        summary={narrowing(f) ? `${narrowing(f)} narrowing its tasks` : 'every task'}
+        action={
+          <Button onClick={() => setKanbanFilter(piece.id, NO_FILTER)} title="show every task">
+            reset
+          </Button>
+        }
+      >
+        filter
+      </FloorTitle>
       <FilterColumns>
         <FilterColumn label="given to" items={who} narrowing={f.who.length} rise ariaLabel="Only tasks given to" />
         <FilterColumn label="due" items={due} narrowing={f.due.length} rise ariaLabel="Only tasks due" />
         <FilterColumn label="for" items={forItems} narrowing={f.for.length} rise wide ariaLabel="Only tasks for" />
         {labels.length > 0 && <FilterColumn label="label" items={labelItems} narrowing={f.labels.length} rise ariaLabel="Only tasks with these labels" />}
-        <Button className={styles.reset} onClick={() => setKanbanFilter(piece.id, NO_FILTER)} title="show every task">
-          reset
-        </Button>
       </FilterColumns>
     </Appear>
   )

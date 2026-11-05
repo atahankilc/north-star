@@ -24,7 +24,9 @@ function Drawer() {
         floor={
           open && (
             <>
-              <FloorTitle summary={open === 'filter' ? '2 types hidden' : undefined}>{open}</FloorTitle>
+              <FloorTitle summary={open === 'filter' ? '2 types hidden' : undefined} action={open === 'filter' && <Button>reset</Button>}>
+                {open}
+              </FloorTitle>
               <ButtonGroup>
                 <Button pressed>customers</Button>
                 <Button pressed>problems</Button>

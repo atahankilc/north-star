@@ -2,7 +2,7 @@
 // the dock's upper floor, picked again it closes. What's linked to the plane (D-210) has its own `linked N` tab and
 // drawer the same way (D-235); one open at a time. On it, the filters as
 // columns of tick rows side by side (D-364): SHOW (card types), FOR (the plane's customers), TAG (its tags),
-// REGION (where its competitors are), LINKS (kinds of link, each in its colour), then `[reset]`. Builds and breaks cell
+// REGION (where its competitors are), LINKS (kinds of link, each in its colour); `reset` in its title. Builds and breaks cell
 // by cell (D-034). The filter lasts while the focus is open (D-308).
 import { AnimatePresence } from 'motion/react'
 import { useEffect, type ReactNode } from 'react'
@@ -76,7 +76,16 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   const linksNarrow = f.links.filter((g) => !START.links.includes(g)).length
   return (
     <Appear className={styles.panel} role="group" aria-label="Filters" data-learn="filter-strip">
-      <FloorTitle summary={narrowing(f) ? `${narrowing(f)} narrowing what's shown` : "everything's shown"}>filter</FloorTitle>
+      <FloorTitle
+        summary={narrowing(f) ? `${narrowing(f)} narrowing what's shown` : "everything's shown"}
+        action={
+          <Button onClick={() => setFilter(plane, START)} title="back to how it starts">
+            reset
+          </Button>
+        }
+      >
+        filter
+      </FloorTitle>
       <FilterColumns>
         <FilterColumn label="show" items={show} narrowing={f.hide.length} ariaLabel="Show card types" />
         {/* A filter with nothing to pick on this plane isn't shown: the drawer keeps its room for the rest. */}
@@ -85,9 +94,6 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
         {regions.length > 0 && <FilterColumn label="region" items={regionItems} narrowing={f.regions.length} rise ariaLabel="Competitors in these places" />}
         {/* `for`, `relates` and `competes` start hidden, so only hiding another kind counts as narrowing. */}
         <FilterColumn label="links" items={linkItems} narrowing={linksNarrow} wide noLine ariaLabel="Show links by kind" />
-        <Button className={styles.reset} onClick={() => setFilter(plane, START)} title="back to how it starts">
-          reset
-        </Button>
       </FilterColumns>
     </Appear>
   )

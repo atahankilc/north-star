@@ -1567,6 +1567,6 @@ Reading drew Markdown (double spaces collapsed, an empty line 0.6 em), the field
 ## Done (2026-11-05: the filter drawer's empty right side, D-364)
 The floor takes its width from `.panel`, a wrapping flex row, so the title's width was added to the columns': 208 px empty
 at 1920, and at 1440 the sum passed 70 %, the drawer took the whole edge and 476 px stayed empty. Now `.panel` stacks
-(grid), `reset` sits in `FilterColumns`, what's linked in `.cells`; on a whole edge the columns share the width
+(grid), `reset` at the right end of its title (`FloorTitle`'s `action`), what's linked in `.cells`; on a whole edge the columns share the width
 (`--col-grow`, set by Console's `data-full`). Measured headless in the gallery at 700, 1000, 1440, 1920 (plane and deck):
 the right edge ends at `reset`. tsc, check:tokens, check:kit, check:gallery ok.
