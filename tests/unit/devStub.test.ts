@@ -2,7 +2,7 @@
 // on the medium fixture (a question answered with cited items after a search and a get; a small edit as one change
 // proposed, then applied as the agent; a refusal with no tools; a plan for a big job with no writes); it streams; it stops when asked.
 // And it is never in a production build: models.ts built for production must not hold DEV_STUB_MARK.
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { build } from 'vite'
 import { resolve } from 'node:path'
 import { devStubModel, pickScript, DEV_STUB_MARK } from '../../src/agent/devStub'
@@ -11,7 +11,7 @@ import { AGENT_TOOLS } from '../../src/agent/tools'
 import { makeModel } from '../../src/agent/models'
 import { callsOf, type Transcript } from '../../src/agent/contract'
 import { makeEnv } from '../../evals/env'
-import { loadFixture } from '../../evals/fixtures'
+import { loadFixture, NOW } from '../../evals/fixtures'
 
 const fast = { thinkMs: 0, wordMs: 0 }
 
@@ -155,6 +155,10 @@ describe('never in production', () => {
 // S17: one script per `/` command, on the medium fixture through the real loop and tools: every turn answers, every
 // change it proposes is accepted (nothing refused), big jobs plan first and run on "go", answers cite real ids.
 describe('the dev stub skills', () => {
+  // The fixture's day is fixed; the skills read the clock (`/digest`'s "since yesterday"). Only Date: the loop's timers stay real.
+  beforeAll(() => void vi.useFakeTimers({ toFake: ['Date'], now: NOW }))
+  afterAll(() => void vi.useRealTimers())
+
   const ASKS: [string, string[]][] = [
     ['/ask what solves the bread problems?', []],
     ['/gaps', []],
