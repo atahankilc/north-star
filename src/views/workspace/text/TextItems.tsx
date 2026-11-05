@@ -319,7 +319,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
           <span className={styles.secLine} style={{ flex: `0 0 ${Math.max(0, inset - gap)}px` }} />
           <span
             className={styles.secName}
-            style={{ padding: `0 ${gap}px`, fontSize: px, fontWeight: l.bold ? 'var(--weight-bold)' : undefined, fontStyle: l.italic ? 'italic' : undefined, letterSpacing: tracking(l, size) }}
+            style={{ ['--sec-grow' as string]: `${px - HEADING_PX[size]}px`, padding: `0 ${gap}px`, fontSize: px, fontWeight: l.bold ? 'var(--weight-bold)' : undefined, fontStyle: l.italic ? 'italic' : undefined, letterSpacing: tracking(l, size) }}
             onPointerDown={press}
             onDoubleClick={edit}
           >

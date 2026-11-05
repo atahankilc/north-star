@@ -233,7 +233,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   kind's colour (plane fg, matrix violet, table sky, kanban gold, documents moss, timeline orange); what it holds sits a
   step lighter (`--piece-card`); in focus and beside, the screen is the page's black (D-289), what's held still
   `--piece-card`.
-- Name (D-223, D-276, D-365): in the top edge, mostly over it (see *Names and lines*), 18 px close to 24 px far on the
+- Name (D-223, D-276, D-365, D-372): in the top edge, mostly over it (see *Names and lines*; zoomed out it grows down onto the piece, a section's name out of its section), 18 px close to 24 px far on the
   screen, `--fg` caps weight 500, after the kind's tab, a solid cell in the kind's colour with its drawn icon and word
   (`▦ PLANE 01 PAZAR`; under 50 % zoom only the icon, D-370; unnamed, the tab alone); tight, the name takes a `…`, then the tab's word goes; hovered, all of it.
   Edit mode: a cyan-framed field, a cyan `>` and `17/80`.

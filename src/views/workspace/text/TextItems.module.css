@@ -309,6 +309,9 @@
   font-weight: var(--weight-medium);
   line-height: var(--lh-snug);
   white-space: nowrap;
+  /* Grown past its own size by the zoom (`--sec-grow`), the name grows out of the section, away from the names of what's
+     in it (D-372); up the left edge that's leftwards. */
+  transform: translateY(calc(var(--sec-grow, 0px) * var(--lh-snug) / -2));
   pointer-events: auto;
   cursor: grab;
 }

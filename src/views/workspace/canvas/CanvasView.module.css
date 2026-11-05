@@ -191,8 +191,9 @@
    18 px at 100 %, growing to 24 px as you zoom out, where names are what you find things by. `--z` is the canvas's zoom,
    and `--name-size` set on the piece (a piece's console reads the same, D-370). Its kind's tab comes first
    (`▦ PLANE 01 PAZAR`), only its icon once the name is big (D-370); when it doesn't fit, the name is cut with `…`, then
-   the tab's word goes, all of it shown while hovered. Sitting mostly over the edge, so the bigger name covers no more of
-   what's inside than the smaller one did. */
+   the tab's word goes, all of it shown while hovered. Sitting mostly over the edge at 100 %; zoomed out, what's over the
+   edge stays that many canvas px and the rest grows down onto its own piece, so names that clear each other at 100 %
+   clear each other at every zoom (a section's name grows the other way, out of it, D-372). */
 .name {
   position: absolute;
   /* Over the plane's cards (D-187). */
@@ -206,7 +207,7 @@
   gap: 0.6em;
   max-width: calc(100% - 2 * var(--space-4) / var(--z, 1));
   padding: 0 calc(var(--space-2) / var(--z, 1));
-  transform: translateY(-75%);
+  transform: translateY(calc(-1 * min(75%, var(--piece-name-near) * var(--lh-body) * 0.75)));
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-mono);
@@ -238,13 +239,14 @@
 }
 
 /* Unframed (D-267): no edge to be cut into; the name is a heading's small line 8 px over its contents, on the canvas:
-   its kind's tab, then mono caps, tracked, `04 ── RIVALS`, on a shade that hugs it. */
+   its kind's tab, then mono caps, tracked, `04 ── RIVALS`, on a shade that hugs it. Zoomed out it grows down over them,
+   its top where it is at 100 % (D-372). */
 .piece[data-open='true'] .name {
-  top: calc(var(--w-grid) - var(--space-2) / var(--z, 1));
+  top: calc(var(--w-grid) - var(--space-2) / max(var(--z, 1), 1));
   left: var(--w-grid);
   max-width: calc(100% - 2 * var(--w-grid));
   padding: 0;
-  transform: translateY(-100%);
+  transform: translateY(calc(-1 * min(100%, var(--piece-name-near) * var(--lh-snug))));
   background: color-mix(in srgb, var(--bg) var(--mix-near), transparent);
   box-shadow: 0 0 calc(var(--space-4) / var(--z, 1)) calc(var(--space-3) / var(--z, 1)) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
   font-weight: var(--weight-regular);

@@ -7182,3 +7182,8 @@ group, `in no list`, and Enter opens the reader. From the reader: `place on the 
 Alternatives: the agent adding a documents list itself (changes the canvas unasked); going to a list when there is one (two
 paths, none when there's no list). *Checked:* headless, on emulators and the stub: /swot, apply, open, Escape, finder, Enter,
 place (asks, shares, a document piece), undo takes the button away. *Not yet:* the saved chat's `open`; real keys.
+
+### D-372 · 2026-11-05 · Accepted (the user: "uzak zoomda bazen headerlar birbiri üstüne çıkıyor özellikle component ve section iç içeyse, belki headerlar büyürken yukarı ve aşşağıya eşit büyümez ama daha çok aşşağıya, kendi componenti üzerine büyür"; changes D-365's place of the name): names grow away from each other
+Zoomed out a name keeps its size on the screen while the gap between things shrinks, so a section's name (on its edge's middle) and a piece's (75 % over its edge) ran into each other: 31 px at 17 % with a section 50 px round a plane. Now what's over a piece's edge stays what it is at 100 % in canvas px and the rest grows down onto the piece (framed: `min(75%, …)`; unframed: its top stays, it grows over its contents). A section's name does the opposite, out of the section (`--sec-grow`; up the left edge, leftwards). Only growing both down wouldn't part them: they'd move together. So names clear of each other at 100 % stay clear at every zoom. Close up nothing changes.
+Checked headless (gallery `pieces in a section`, framed and unframed): overlap 0 from 10 % to 54 % where it was 13–31 px; left edge too.
+*Not yet:* pieces stacked with a small gap at about 10 % (a 200 px piece is 20 px on the screen, its name's row 36), and a section tight inside a section (both grow up), can still touch.

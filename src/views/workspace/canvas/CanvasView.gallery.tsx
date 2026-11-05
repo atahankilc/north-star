@@ -1,11 +1,20 @@
 import { example } from '../../../gallery/example'
 import { onCanvas, P, type OnCanvas } from '../../../gallery/canvas'
+import { CANVAS } from '../../../data/labels'
+import { text } from '../../../demo/fixtures/kit'
 
 // Two cards on the first plane and nothing else on it: they grow to fill it (D-363).
 const fewCards: NonNullable<OnCanvas['change']> = (ws) => ({
   ...ws,
   cards: [...ws.cards.filter((c) => c.pieceId !== P.lunch), ...ws.cards.filter((c) => c.pieceId === P.lunch).slice(0, 2)],
   labels: ws.labels.filter((l) => l.pieceId !== P.lunch),
+})
+
+// A section tight round two pieces, one framed and one unframed: zoomed out their names part, the section's going out of
+// it and theirs onto themselves (D-372).
+const inSection: NonNullable<OnCanvas['change']> = (ws) => ({
+  ...ws,
+  labels: [...ws.labels, text({ id: 'sec-round', pieceId: CANVAS, kind: 'section', text: 'This week', x: -50, y: -50, w: 3600, h: 825 })],
 })
 
 export default example({
@@ -19,5 +28,6 @@ export default example({
     empty: onCanvas({ only: [] }),
     'a plane with few cards': onCanvas({ only: [P.lunch, P.product], change: fewCards }),
     'few cards in focus': onCanvas({ focus: P.lunch, change: fewCards }),
+    'pieces in a section': onCanvas({ only: [P.lunch, P.matrix], open: [P.matrix], change: inSection }),
   },
 })
