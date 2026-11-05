@@ -13,16 +13,16 @@
   height: 0.6em;
 }
 
-/* A bullet or a number hangs in the margin. */
+/* A bullet or a number hangs in the margin. The row isn't positioned, or it would paint as a layer of its own and the
+   next row's ink would fall on its words (Ink.tsx); the mark finds its place from where it stands. */
 .item {
-  position: relative;
   padding-left: 1.2em;
 }
 
 .item::before {
   content: attr(data-mark);
   position: absolute;
-  left: 0;
+  margin-left: -1.2em;
   color: var(--fg-dim);
 }
 

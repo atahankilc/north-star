@@ -51,7 +51,7 @@ import { useGuides } from '../canvas/guides'
 import { useMotion } from '../../../state/motion'
 import { ago } from '../../../ui/foundation/ago'
 import { LightMarkdown } from '../../../ui/primitives/LightMarkdown'
-import { Ink, inkClass } from '../../../ui/primitives/Ink'
+import { Ink } from '../../../ui/primitives/Ink'
 import { useWs } from '../canvas/context'
 import styles from './TextItems.module.css'
 import { usePeersOn } from '../canvas/collab'
@@ -479,8 +479,8 @@ function Checks() {
 function Kicker({ kick, size, hidden }: { kick: { num: string; rest: string }; size: number; hidden: boolean }) {
   return (
     <span className={styles.kicker} style={{ fontSize: size, visibility: hidden ? 'hidden' : undefined }}>
-      {kick.num && <span className={`${styles.kickNum} ${inkClass}`}>{kick.num}</span>}
-      {kick.rest && <span className={`${styles.kickRest} ${inkClass}`}>{kick.num ? `── ${kick.rest}` : kick.rest}</span>}
+      {kick.num && <span className={styles.kickNum}><Ink>{kick.num}</Ink></span>}
+      {kick.rest && <span className={styles.kickRest}><Ink>{kick.num ? `── ${kick.rest}` : kick.rest}</Ink></span>}
     </span>
   )
 }

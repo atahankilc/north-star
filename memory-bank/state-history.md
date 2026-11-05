@@ -1535,3 +1535,12 @@ The commit before left the shared index on the old blobs (a private-index commit
   editors once shared), rules tests 651/0, unit 1062/0 (word counts now skip Markdown's marks). Checked headless on
   emulators as Alice: new, title, heading, code, bold, lists, checklist, table, saved text read back; gallery in both themes.
 - Beside: the pane lines drawn before the split line, so where they cross a press moves the split (hit test + zoomed shot).
+
+## Done (2026-11-05): ink's shades no longer dim the lines above them (D-277)
+A browser paints inline content line by line, so each line's shade and feather fell on the words of the lines above.
+`<Ink>` now holds its words in a positioned span (they paint after every shade), `inkClass` is gone (the kicker uses
+`<Ink>`), and LightMarkdown's `.item` is no longer positioned (it painted as a layer of its own; its mark finds its place
+by `margin-left`). A row that holds ink must stay unpositioned. Measured headless in the gallery: before, a three-line
+Ink's first line peaked at 214 against 237 (dark); after, every line of paragraphs, bullets, the project title, headings
+and sections reads its exact colour, both themes. The shades themselves still add up where they overlap, seen only on a
+bright ground.

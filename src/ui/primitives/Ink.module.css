@@ -5,3 +5,8 @@
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
+
+/* Over every line's shade, not only its own (see Ink.tsx). */
+.words {
+  position: relative;
+}

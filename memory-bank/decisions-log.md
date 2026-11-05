@@ -4965,7 +4965,7 @@ The user asked for session 6 of the consistency plan.
 ### D-277 · 2026-10-27 · Accepted (the consistency spec's "Asked, not decided", chosen by the user: "İkisi de, önce <Ink>"; changes D-190's shade behind text)
 **Text on the canvas sits on ink, line by line; one family of lines: straight holds, fading opens, dashed separates
 rows, a magenta lead starts something numbered.**
-- *Ink:* `src/ui/primitives/Ink.tsx` (`<Ink>`, `inkClass`): an inline shade on each line of text, as long as the line
+- *Ink:* `src/ui/primitives/Ink.tsx` (`<Ink>`; the words a positioned span inside it, so they paint over every line's shade, 2026-11-05): an inline shade on each line of text, as long as the line
   (`box-decoration-break: clone`), the page (or the piece's surface inside one) at 84 %, feathered `0 0 12px 8px` at
   70 %. On a heading's text and its small line, a paragraph's lines (`LightMarkdown`'s `ink`), the project title's
   PROJECT, name and description, a section's number and name. It replaces D-190's one feathered box per item (a box as
