@@ -41,6 +41,7 @@ export const AWAY_AFTER_MS = 5 * 60_000
 
 // A console past this share of the width it hangs on takes the whole edge and wraps, never shrinking or hiding a tool
 // (D-347, the user: "belki console yer yoksa tam alan kaplayabilir").
+// A piece's name past it takes the whole top edge too (D-375).
 export const CONSOLE_FILL = 0.7
 
 // A Select's list gets the prompt's `>` line past this many options; a shorter one jumps by a first letter (D-093, D-350).

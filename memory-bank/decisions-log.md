@@ -7201,3 +7201,9 @@ saved document opens to be written. Code in a line and code blocks now stand out
 the strong ink). Alternatives: Milkdown (Markdown-first, more to build by hand), MDXEditor (its own look, ~850 kB),
 our own editor (months). *Not yet:* who else is writing now (last write wins, D-071); images by upload (Storage);
 raw HTML in a .md is kept as text, Markdown's rarer spellings (`*` lists, `__bold__`) come back in the common one.
+
+### D-375 · 2026-11-05 · Accepted (the user: "component console u bir süre sonra tam alan alıyor ya, Başlıkları da öyle tam sola mı yaslasak Console kısmı tam alan kaplamaya başlıyınca componentte, başlıklarda üstte tam alan kaplasın gibi")
+**Decision:** a framed piece's name past 70 % of its piece's width (`CONSOLE_FILL`) takes the whole top edge: flush left, as wide as the piece, a line under it as the console has one over it; hovered it still grows to its full length. Unframed pieces keep their name as it was (no edge to fill).
+**Why its own width, not the console's state:** a console exists only while pointed at, so a name tied to it would jump on every hover. Names and consoles both take more of a piece as you zoom out, so the two go full at about the same zoom, not at exactly the same one.
+**Checked:** gallery `a long name on the whole edge`, dark and light, full and reduced motion, headless: full at far zooms, back to its 16 px lead close in, on both ways. Measuring turns transitions off: reduced motion's global `transition: all` kept the old `min-width` for the measure.
+

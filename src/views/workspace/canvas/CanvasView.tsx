@@ -4,7 +4,7 @@
 // when they're the plane's (FocusedPlane). A plane is moved, resized and renamed only in edit mode (D-180), switched on
 // and off from its console; in edit mode it takes the drag, it's selected, and Delete takes it away. Escape or a click on
 // empty space lets go of the selection. `0` (or the side nav's fit) frames everything, or in focus the plane's contents.
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react'
 import { previewOpen } from '../../../agent/preview'
 import { flushSync } from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
@@ -74,7 +74,7 @@ import { usePlaneFilter } from './planeFilter'
 import styles from './CanvasView.module.css'
 import { DUR, easeInOut, lerp } from '../../../ui/foundation/motion'
 import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
-import { DRAG_PX, KIND_WORD_ZOOM, PLANE_FIT_MAX, wheelStep, zoomAt } from '../../../ui/foundation/feel'
+import { CONSOLE_FILL, DRAG_PX, KIND_WORD_ZOOM, PLANE_FIT_MAX, wheelStep, zoomAt } from '../../../ui/foundation/feel'
 import { PIECE_GLYPH } from './glyphs'
 import { tokenPx } from '../../../styles/cssToken'
 import type { PieceKind } from '../../../data/model'
@@ -1457,6 +1457,28 @@ function KindTab({ kind }: { kind: PieceKind }) {
   )
 }
 
+// A name past CONSOLE_FILL of its piece's width takes the whole top edge, as the console takes the bottom one (D-375). Its
+// own width decides, not the console's: a console is only there while pointed at, and the name would jump with it.
+// Measured at its full length (the name may be cut), on the attribute so a redraw leaves it, synchronous so it never
+// shows the wrong one; again once the fonts are in and when the tab's word has finished going.
+function useNameFills(name: RefObject<HTMLSpanElement | null>, width: number, zoom: number, shown: unknown) {
+  useLayoutEffect(() => {
+    const el = name.current
+    if (!el) return
+    const fit = () => {
+      el.style.cssText = 'transition: none; width: max-content; min-width: 0; max-width: none'
+      const wide = el.offsetWidth
+      el.style.cssText = ''
+      el.toggleAttribute('data-full', wide > CONSOLE_FILL * width)
+    }
+    fit()
+    let gone = false
+    void document.fonts.ready.then(() => gone || fit())
+    el.addEventListener('transitionend', fit)
+    return () => ((gone = true), el.removeEventListener('transitionend', fit))
+  }, [name, width, zoom, shown])
+}
+
 // A piece on the canvas, memoised on what it shows (its handler reads a ref, its lists compared by what's in them): a
 // change in one piece, or a card on one plane, doesn't draw the others (D-287's *Not yet*).
 const PieceBox = memo(PieceBoxOf, alikeProps)
@@ -1651,6 +1673,8 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
     : carriedStyle(shift, [box.x, box.y])
   const tone = KIND_TONE[kind]
   const numbered = numberOf(name)
+  const nameRef = useRef<HTMLSpanElement | null>(null)
+  useNameFills(nameRef, box.w, zoom, `${name} ${editing} ${piece.canvases?.length}`)
   return (
     <>
     <div
@@ -1680,7 +1704,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
       ) : (
         // Its kind's tab, then the name (D-365); unnamed: the tab alone. A number it starts with in magenta before it
         // (D-266); unframed, the name is a heading's small line, `04 ── RIVALS` (D-267).
-        <span className={styles.name} data-wordless={(name && zoom < KIND_WORD_ZOOM) || undefined} title={name || undefined}>
+        <span ref={nameRef} className={styles.name} data-wordless={(name && zoom < KIND_WORD_ZOOM) || undefined} title={name || undefined}>
           <KindTab kind={kind} />
           {numbered.num && <span className={styles.nameNum}>{numbered.num}</span>}
           {numbered.num && open && <span className={styles.nameRule} aria-hidden />}

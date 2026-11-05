@@ -1544,3 +1544,6 @@ by `margin-left`). A row that holds ink must stay unpositioned. Measured headles
 Ink's first line peaked at 214 against 237 (dark); after, every line of paragraphs, bullets, the project title, headings
 and sections reads its exact colour, both themes. The shades themselves still add up where they overlap, seen only on a
 bright ground.
+
+## Done (2026-11-05): a long piece name takes the whole top edge (D-375)
+`useNameFills` in CanvasView.tsx, `.name[data-full]` in its CSS, gallery state `a long name on the whole edge`. Checked headless; see D-375.

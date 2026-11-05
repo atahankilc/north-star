@@ -231,6 +231,18 @@
   text-overflow: ellipsis;
 }
 
+/* Past the share of the piece a console takes the whole edge at, the name takes the whole top edge (D-375): flush with
+   the piece's left, a line under it as the console has one over it. Hovered it still grows to all of it. */
+.piece:not([data-open='true']) .name[data-full] {
+  left: 0;
+  min-width: 100%;
+  border-bottom: calc(var(--line-w) / var(--z, 1)) solid var(--piece-edge);
+}
+
+.piece:not([data-open='true'], :hover) .name[data-full] {
+  max-width: 100%;
+}
+
 /* A number it starts with: magenta, before it (D-266). */
 .nameNum {
   flex: none;

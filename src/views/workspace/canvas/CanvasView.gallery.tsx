@@ -17,6 +17,12 @@ const inSection: NonNullable<OnCanvas['change']> = (ws) => ({
   labels: [...ws.labels, text({ id: 'sec-round', pieceId: CANVAS, kind: 'section', text: 'This week', x: -50, y: -50, w: 3600, h: 825 })],
 })
 
+// A name too long for its piece: past 70 % of the width it takes the whole top edge, as the console does the bottom (D-375).
+const longName: NonNullable<OnCanvas['change']> = (ws) => ({
+  ...ws,
+  pieces: ws.pieces.map((p) => (p.id === P.lunch ? { ...p, name: '01 Everyone who orders lunch at the office every week' } : p)),
+})
+
 export default example({
   name: 'Canvas',
   place: 'canvas/the canvas',
@@ -29,5 +35,6 @@ export default example({
     'a plane with few cards': onCanvas({ only: [P.lunch, P.product], change: fewCards }),
     'few cards in focus': onCanvas({ focus: P.lunch, change: fewCards }),
     'pieces in a section': onCanvas({ only: [P.lunch, P.matrix], open: [P.matrix], change: inSection }),
+    'a long name on the whole edge': onCanvas({ only: [P.lunch, P.matrix], change: longName }),
   },
 })
