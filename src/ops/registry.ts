@@ -104,7 +104,7 @@ const textStyle = (nullable: boolean): Record<string, ArgSchema> => {
     side: e(['left'], "section: its name up the left edge instead of the top"),
     folded: nullable ? nb('sticky note: held at its first height') : b('sticky note: held at its first height'),
     w: t('number', 'paragraph, sticky note, title: its width; section: its width (px)'),
-    h: t('number', 'section: its height (px)'),
+    h: t('number', 'section: its height; sticky note: the least it is tall, its text can make it taller (px)'),
   }
 }
 
@@ -460,8 +460,8 @@ export const OPS: OpDef[] = [
   {
     name: 'resize',
     kind: 'any',
-    summary: "Resize a piece (at least 325 × 200; framed only; what's stuck to it follows) or text: a paragraph's, sticky note's or the title's width, a section's width and height.",
-    args: obj({ id: s(), w: n('px'), h: n('px; a piece or a section only') }, ['id', 'w']),
+    summary: "Resize a piece (at least 325 × 200; framed only; what's stuck to it follows) or text: a paragraph's or the title's width, a section's or sticky note's width and height (a note's height is the least it is: its text can make it taller).",
+    args: obj({ id: s(), w: n('px'), h: n('px; a piece, a section or a sticky note only') }, ['id', 'w']),
     build: resize,
   },
   { name: 'create_canvas', kind: 'canvas', summary: 'Make a canvas (after the others).', args: obj({ name: s(), handle }, ['name']), build: createCanvas },

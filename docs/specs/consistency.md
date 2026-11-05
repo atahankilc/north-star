@@ -83,9 +83,8 @@ One component, `src/ui/primitives/Marks.tsx` (+ `Marks.module.css`, tokens `--ma
 - **Resize, one language: handles on the ring, in cyan, only when selected** (never on hover). A corner that resizes:
   that corner's L itself, cyan, grabbable. An edge that resizes: a bar at its middle, the L's stroke wide, `1.2 × L`
   long, on the ring. Hovered, a handle grows like a pressed L. Dragging: the moving edges light cyan along their whole
-  length, and a readout beside them (`410` for a width, `560 × 340` for both). Which handles: paragraph, sticky note,
-  project title, a table column: the right bar; section: right, bottom, bottom-right; a piece in edit mode: all four
-  corners and edges.
+  length, and a readout beside them (`410` for a width, `560 × 340` for both). Which handles: paragraph, project title: a bar at both ends of the text (D-378); a table column: the right bar; section, sticky note and a piece in edit mode: all four corners and edges (a folded
+  note only its left and right, D-376).
 - **Box select (alt + drag):** a cyan wash with cyan L's at its corners.
 - Replaces: plane cards' (PlaneCards.module.css), text's (TextItems.module.css), pieces' (CanvasView.module.css `.mark`,
   `.bar`), kanban tasks' (Kanban.module.css `.mark`, the cyan `.slot`), matrix cells' (`.marks`), table cells' `[ ● ]`,

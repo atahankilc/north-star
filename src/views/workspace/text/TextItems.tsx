@@ -55,6 +55,7 @@ import { Ink } from '../../../ui/primitives/Ink'
 import { useWs } from '../canvas/context'
 import styles from './TextItems.module.css'
 import { usePeersOn } from '../canvas/collab'
+import { resizedBox } from '../../../model/resizeBox'
 import { carriedStyle, Landing, Marks, zsOf, type Handle } from '../../../ui/primitives/Marks'
 import { ThreadChip, useThreadOn } from '../threads/Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
@@ -103,6 +104,8 @@ const onGrid = (v: number) => Math.ceil(v / GRID - 0.02) * GRID
 const inside = (b: { x: number; y: number; w: number; h: number }, s: { x: number; y: number; w: number; h: number }) =>
   b.x >= s.x && b.y >= s.y && b.x + b.w <= s.x + s.w && b.y + b.h <= s.y + s.h
 
+const EVERY_SIDE: Handle[] = ['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']
+
 type Props = { labels: Label[]; layer: 'frames' | 'text'; live: boolean; editor: boolean; zoom: number; carry: Carry }
 
 export function TextItems({ labels, layer, live, editor, zoom, carry }: Props) {
@@ -128,13 +131,14 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const shift = useCanvasView((s) => (s.dragShift && s.dragShift.ids.includes(l.id) ? s.dragShift : null))
   // Held down (a press, or a drag): its corner marks close in, as a card's do (D-150).
   const [pressed, setPressed] = useState(false)
-  // A new size (and a turned one's top, as it grows upwards), held until the data's back.
-  const [held, setHeld] = useState<{ w?: number; h?: number; y?: number } | null>(null)
+  // A new size (and its top or left, when those edges moved), held until the data's back.
+  const [held, setHeld] = useState<{ w?: number; h?: number; x?: number; y?: number } | null>(null)
   useEffect(() => {
-    if (held && (held.w === undefined || held.w === l.w) && (held.h === undefined || held.h === l.h) && (held.y === undefined || held.y === l.y)) setHeld(null)
-  }, [held, l.w, l.h, l.y])
+    if (held && (held.w === undefined || held.w === l.w) && (held.h === undefined || held.h === l.h) && (held.x === undefined || held.x === l.x) && (held.y === undefined || held.y === l.y)) setHeld(null)
+  }, [held, l.w, l.h, l.x, l.y])
   const w = held?.w ?? l.w
   const h = held?.h ?? l.h
+  const x = held?.x ?? l.x
   const y = held?.y ?? l.y
 
   // A turned heading or paragraph (D-156): its text laid out level, then turned; the box it takes is that measured,
@@ -192,26 +196,35 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     })
   }
 
-  // A width from the right edge (along the text: a turned one's top or bottom), a section's from its right edge, its
-  // height from its bottom, both from its corner: snapped, alt = free, one undo step. A paragraph reading upwards keeps
-  // its start (the bottom) where it is. From its handle on the ring (D-265), shown only while it's selected.
   const [sizing, setSizing] = useState<Handle | null>(null)
-  const resize = (which: 'w' | 'h' | 'wh', handle: Handle) => (e: ReactPointerEvent<HTMLElement>) => {
+  // From its handles on the ring (D-265), shown only while it's selected: snapped, alt = free, one undo step, only what
+  // the handle moves written. A section or sticky note from any side (D-376), a sticky note's height the least it is,
+  // never less than its text needs at the width it's being given. A paragraph or the title from either end of its text
+  // (D-378): a turned paragraph's run up the screen, so its height is its width there.
+  const resizeBox = (handle: Handle) => (e: ReactPointerEvent<HTMLElement>) => {
     if (!live || !editor || e.button !== 0) return
     e.stopPropagation()
     setSizing(handle)
     const [sx, sy] = [e.clientX, e.clientY]
-    const w0 = w ?? { paragraph: PARA_W.initial, sticky: STICKY_W.initial, title: TITLE_W.initial, section: 400, heading: 0 }[kind]
-    const h0 = h ?? labelBox(l).h
-    const lim = kind === 'paragraph' ? PARA_W : kind === 'sticky' ? STICKY_W : kind === 'title' ? TITLE_W : { min: SECTION_MIN.w, max: 100000 }
-    let to: { w?: number; h?: number; y?: number } | null = null
+    const sticky = kind === 'sticky'
+    const near = labelBox(l)
+    const lim = kind === 'paragraph' ? PARA_W : TITLE_W
+    const long = w ?? lim.initial
+    const box = sticky || kind === 'section'
+    const from = !box && turn ? { x: l.x, y: l.y, w: near.w, h: long } : { x: l.x, y: l.y, w: box ? (w ?? near.w) : long, h: sticky ? (self.current?.offsetHeight ?? near.h) : (h ?? near.h) }
+    const min = sticky ? { w: STICKY_W.min, h: STICKY_H } : box ? SECTION_MIN : turn ? { w: 0, h: lim.min } : { w: lim.min, h: 0 }
+    const max = sticky ? { w: STICKY_W.max, h: Infinity } : box ? undefined : turn ? { w: Infinity, h: lim.max } : { w: lim.max, h: Infinity }
+    let to: { w?: number; h?: number; x?: number; y?: number } | null = null
     const move = (ev: PointerEvent) => {
       const at = (v: number) => (ev.altKey || !useGuides.getState().snap ? Math.round(v) : snap(v))
       const [dx, dy] = [(ev.clientX - sx) / zoom, (ev.clientY - sy) / zoom]
-      const edge = turn === 90 ? l.y + w0 - at(l.y + dy) : turn === -90 ? at(l.y + w0 + dy) - l.y : at(l.x + w0 + dx) - l.x
-      const nw = Math.min(lim.max, Math.max(lim.min, edge))
-      const nh = Math.max(SECTION_MIN.h, at(l.y + h0 + dy) - l.y)
-      to = which === 'w' ? { w: nw, ...(turn === 90 && { y: l.y + w0 - nw }) } : which === 'h' ? { h: nh } : { w: nw, h: nh }
+      let b = resizedBox(from, handle, dx, dy, at, min, max)
+      if (sticky) b = resizedBox(from, handle, dx, dy, at, { ...min, h: labelBox({ ...l, w: b.w, h: undefined }).h }, max)
+      to = {
+        ...(box ? { ...(/[ew]/.test(handle) && { w: b.w }), ...(/[ns]/.test(handle) && { h: b.h }) } : { w: turn ? b.h : b.w }),
+        ...(handle.includes('w') && { x: b.x }),
+        ...(handle.includes('n') && { y: b.y }),
+      }
       setHeld(to)
     }
     const up = () => {
@@ -235,7 +248,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [!!carried])
   const peers = usePeersOn(l.id, l.pieceId)
-  const left = landing ? landing[0] : l.x + (shift?.dx ?? 0)
+  const left = landing ? landing[0] : x + (shift?.dx ?? 0)
   const top = landing ? landing[1] : y + (shift?.dy ?? 0)
   const style: CSSProperties = {
     left,
@@ -263,10 +276,10 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
   const stepped = kind === 'heading' || kind === 'paragraph'
   const tier = kind === 'section' ? 'l' : 'm'
   const near = labelBox(l)
-  // Its handle (D-265): a paragraph's, sticky note's or the title's width at its right edge (a turned one's along its
-  // text: the top reading upwards, the bottom reading down); a section's right, bottom and corner.
-  const handles: Handle[] = kind === 'section' ? ['e', 's', 'se'] : kind === 'heading' ? [] : [turn === 90 ? 'n' : turn === -90 ? 's' : 'e']
-  const onHandle = (hd: Handle, e: ReactPointerEvent<HTMLElement>) => resize(kind !== 'section' ? 'w' : hd === 'e' ? 'w' : hd === 's' ? 'h' : 'wh', hd)(e)
+  // Its handles (D-265): a paragraph's or the title's at both ends of its text (a turned one's top and bottom, D-378); a
+  // section's and a sticky note's every side and corner (D-376), a folded note's only its sides, its height being the fold's.
+  const handles: Handle[] = kind === 'heading' ? [] : kind === 'section' || (kind === 'sticky' && !l.folded) ? EVERY_SIDE : turn ? ['n', 's'] : ['e', 'w']
+  const onHandle = (hd: Handle, e: ReactPointerEvent<HTMLElement>) => resizeBox(hd)(e)
   const marks = (
     <>
       {live && (
@@ -357,7 +370,7 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
         className={styles.sticky}
         data-learn="sticky"
         data-folded={(l.folded && !typing) || undefined}
-        style={{ ...style, width: w ?? STICKY_W.initial, minHeight: STICKY_H, fontSize: STICKY_PX[l.scale ?? 'medium'], ...((l.color ?? 'yellow') === 'yellow' && { ['--paper-tone' as string]: 'var(--sticky-yellow)' }) }}
+        style={{ ...style, width: w ?? STICKY_W.initial, minHeight: l.folded && !typing ? STICKY_H : Math.max(STICKY_H, h ?? 0), fontSize: STICKY_PX[l.scale ?? 'medium'], ...((l.color ?? 'yellow') === 'yellow' && { ['--paper-tone' as string]: 'var(--sticky-yellow)' }) }}
         {...common}
         onPointerDown={press}
         onDoubleClick={edit}

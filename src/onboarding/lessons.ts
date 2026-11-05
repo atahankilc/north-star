@@ -314,10 +314,10 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'card-panel', v: 2, format: 'lesson', roles: ALL, area: 'planes', since: 'D-221, D-137, D-044, D-225, D-226, D-254, D-349',
+    id: 'card-panel', v: 3, format: 'lesson', roles: ALL, area: 'planes', since: 'D-221, D-137, D-044, D-225, D-226, D-254, D-349',
     trigger: [{ event: 'card-selected' }],
     pages: [
-      { title: 'Everything about a card', tab: 'panel', body: 'The panel on the right holds what a card is, what backs it, its links by meaning, its tags and notes, all edited in place. `esc` closes it.', scene: 'card-panel' },
+      { title: 'Everything about a card', tab: 'panel', body: 'The panel on the right holds what a card is, what backs it, its links by meaning, its tags and notes, all edited in place. Drag its left edge to widen it; `esc` closes it.', scene: 'card-panel' },
       { title: 'Is it true?', tab: 'evidence', body: 'Customers, problems and ideas have a status: hypothesis, testing, validated, invalidated. Evidence for or against shows on the card as cells, filled for, hollow against; `!` when they disagree.', scene: 'evidence' },
       { title: "Who it's for", tab: 'for', body: "A `for` link tags a card with a customer, so each customer is a segment. The plane's filter, FOR, then shows only that customer's cards.", scene: 'for-filter' },
       { kinds: ['competitor'], title: 'Their features inside', tab: 'features', body: "A competitor holds its features as small cards inside it. Point at it to see them; open its panel to add more and match them to ours.", scene: 'competitor-features' },
@@ -362,14 +362,14 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'sticky-made', v: 2, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-257, D-349',
+    id: 'sticky-made', v: 3, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-257, D-349',
     trigger: [{ event: 'text-made', when: { kind: 'sticky' } }],
-    pages: [{ title: 'A sticky note', body: 'Paper in a colour, with who wrote it and when on its band. It grows with its text; `▾` folds a long one back to its first lines.', scene: 'sticky' }],
+    pages: [{ title: 'A sticky note', body: 'Paper in a colour, with who wrote it and when on its band. It grows with its text, and any side or corner drags it bigger; `▾` folds a long one back to its first lines.', scene: 'sticky' }],
   },
   {
-    id: 'section-draw', v: 2, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-130, D-349',
+    id: 'section-draw', v: 3, format: 'lesson', roles: EDITORS, area: 'text', since: 'D-130, D-349',
     trigger: [{ event: 'text-made', when: { kind: 'section' } }],
-    pages: [{ title: 'A section', body: 'A section frames things that belong together. Name it in its edge. Moving it carries everything fully inside it; its corner resizes it.', scene: 'section' }],
+    pages: [{ title: 'A section', body: 'A section frames things that belong together. Name it in its edge. Moving it carries everything fully inside it; any side or corner resizes it.', scene: 'section' }],
   },
 
   // 5. Matrix and table: taught when first made or opened, wizard and setup included (D-349).

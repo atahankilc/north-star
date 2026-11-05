@@ -171,10 +171,10 @@ describe('resize, arrange with followers and sticking', () => {
     throwsRefused(() => resize(open, { id: TABLE, w: 900, h: 500 }), /as big as what it shows/)
   })
 
-  it('resize text: a sticky note its width (h refused), a section its box', () => {
+  it('resize text: a sticky note its width and height (D-376), a section its box', () => {
     const ctx = ctxOf()
     expect(resize(ctx, { id: ID.note, w: 200 })).toMatchObject({ op: 'resize', label: 'resize a sticky note', writes: [{ patch: { w: 200 } }] })
-    throwsRefused(() => resize(ctx, { id: ID.note, w: 200, h: 300 }), /has no h/)
+    expect(resize(ctx, { id: ID.note, w: 200, h: 300 }).writes[0].patch).toMatchObject({ w: 200, h: 300 })
     expect(resize(ctx, { id: SEC.plane, w: 500, h: 400 }).writes[0].patch).toMatchObject({ w: 500, h: 400 })
   })
 

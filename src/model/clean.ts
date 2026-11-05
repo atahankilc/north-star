@@ -175,7 +175,7 @@ export function cleanLabel(d: Raw, now: number) {
     author: kind === 'sticky' ? str(d.author, AUTHOR_NAME_MAX) : undefined,
     folded: kind === 'sticky' ? yes(d.folded) : undefined,
     w,
-    h: kind === 'section' ? h : undefined,
+    h: kind === 'section' || kind === 'sticky' ? h : undefined,
     ...times(d, now),
   })
 }

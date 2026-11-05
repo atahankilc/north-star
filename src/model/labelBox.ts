@@ -55,7 +55,7 @@ export function labelBox(l: Label) {
     const w = l.w ?? STICKY_W.initial
     const px = STICKY_PX[l.scale ?? 'medium']
     const lines = wrappedLines(l.text, w - 2 * WORLD.cardPad, px, MONO_EM)
-    return { x: l.x, y: l.y, w, h: l.folded ? STICKY_H : Math.max(STICKY_H, STICKY_TEXT_TOP + lines * px * 1.5 + 7) }
+    return { x: l.x, y: l.y, w, h: l.folded ? STICKY_H : Math.max(STICKY_H, l.h ?? 0, STICKY_TEXT_TOP + lines * px * 1.5 + 7) }
   }
   if (k === 'title') return { x: l.x, y: l.y, w: l.w ?? TITLE_W.initial, h: 340 }
   let w: number

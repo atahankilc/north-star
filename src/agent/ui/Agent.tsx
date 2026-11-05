@@ -182,9 +182,11 @@ function useBoxRoom(box: React.RefObject<HTMLElement | null>) {
       el.style.setProperty('--box-lift', `${lift}px`)
     }
     const later = () => void (frame ||= requestAnimationFrame(fit))
-    // What opens and closes (panels, panes, docks) changes the page's elements; a split line dragged, the window's size.
+    // What opens and closes (panels, panes, docks) changes the page's elements; a split line dragged, the window's size;
+    // a right panel's width dragged, <html>'s style (D-378).
     const seen = new MutationObserver(later)
     seen.observe(document.body, { childList: true, subtree: true })
+    seen.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] })
     window.addEventListener('resize', later)
     later()
     return () => {

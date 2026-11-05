@@ -38,14 +38,14 @@ export default example({
   name: 'SidePanel',
   place: 'panels/frame',
   file: 'src/ui/patterns/SidePanel.tsx',
-  note: 'every right panel (D-219): on EdgeColumn with PanelHead (D-359), 400 px, flush right, full height, Escape on the one stack; with PanelSection and PanelAction; its × and its foot Button cells, joined (D-344)',
+  note: 'every right panel (D-219): on EdgeColumn with PanelHead (D-359), 400 px to start, its left edge dragged 320–800 (clear of the foot’s dock) and kept in this browser, one width for all of them (D-378), flush right, full height, Escape on the one stack; with PanelSection and PanelAction; its × and its foot Button cells, joined (D-344)',
   states: {
     default: { size: 'full', render: () => <Problem /> },
     'long title': {
       size: 'full',
       render: () => <SidePanel kind="idea" tone="var(--accent-green)" title="A daily fixed menu from three cooks, ordered by nine the night before, picked up at the lobby" label="idea" onClose={none} />,
     },
-    'tools and width': {
+    'width of its own': {
       size: 'full',
       render: () => (
         <SidePanel kind="task" title="Call the office park" label="task" onClose={none} width={320} tools={<Button onClick={none}>full</Button>}>

@@ -81,6 +81,7 @@ import type { PieceKind } from '../../../data/model'
 import { panPointer, pressDrag } from '../../../ui/foundation/dragPointer'
 import { keysTaken } from '../../../ui/foundation/focus'
 import { stuckChain } from '../../../model/pieceMoves'
+import { resizedBox } from '../../../model/resizeBox'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
 export const SCROLLS_ITSELF = 'section[aria-label=Threads], [role=dialog], [role=menu], [data-scrolls]'
@@ -1410,20 +1411,7 @@ type Handle = (typeof CORNERS)[number] | (typeof EDGES)[number] | 'move'
 function dragBox(from: Box, handle: Handle, dx: number, dy: number, free: boolean): Box {
   const at = (v: number) => (free ? Math.round(v) : snap(v))
   if (handle === 'move') return { ...from, x: at(from.x + dx), y: at(from.y + dy) }
-  let { x, y, w, h } = from
-  const right = from.x + from.w
-  const bottom = from.y + from.h
-  if (handle.includes('e')) w = Math.max(PIECE_MIN.w, at(right + dx) - from.x)
-  if (handle.includes('s')) h = Math.max(PIECE_MIN.h, at(bottom + dy) - from.y)
-  if (handle.includes('w')) {
-    x = Math.min(at(from.x + dx), right - PIECE_MIN.w)
-    w = right - x
-  }
-  if (handle.includes('n')) {
-    y = Math.min(at(from.y + dy), bottom - PIECE_MIN.h)
-    h = bottom - y
-  }
-  return { x, y, w, h }
+  return resizedBox(from, handle, dx, dy, at, PIECE_MIN)
 }
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h

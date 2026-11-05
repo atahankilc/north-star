@@ -14,7 +14,7 @@ import { cardsOn, type Place } from '../../../data/places'
 import { KIND_NAME, kindOfPiece } from '../../../data/pieces'
 import { fitInto, glide, setSplit, stopGlide, useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
-import { SIDE_PANEL_W } from '../../../ui/patterns/SidePanel'
+import { sidePanelW } from '../../../ui/patterns/panelWidth'
 import { SplitLine } from '../../../ui/primitives/SplitLine'
 import { useWs } from './context'
 import { MatrixView } from '../matrix/Matrix'
@@ -143,7 +143,7 @@ export function glidePlaneTo(picked: Pick<Card, 'id'>, plane: string, cards: Car
   const { planeCam: c, size, split } = useCanvasView.getState()
   if (!c) return
   const part = size.w * split
-  const w = panel ? part - Math.min(SIDE_PANEL_W, part) : part
+  const w = panel ? part - Math.min(sidePanelW(), part) : part
   const to = { ...c, ox: w / 2 - (card.x + CARD.w / 2) * c.zoom, oy: size.h / 2 - (card.y + CARD.h / 2) * c.zoom }
   stopGlide()
   if (isReducedMotion()) useCanvasView.setState({ planeCam: to })

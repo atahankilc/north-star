@@ -34,7 +34,8 @@ import { glide, useBesideW, useCanvasView } from '../../../state/canvasView'
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { cardEntry, whereList } from '../plane/cardEntry'
 import { InPlaceMenu } from '../../../ui/patterns/InPlaceMenu'
-import { PanelAction, PanelSection, SIDE_PANEL_W, SidePanel } from '../../../ui/patterns/SidePanel'
+import { PanelAction, PanelSection, SidePanel } from '../../../ui/patterns/SidePanel'
+import { sidePanelW } from '../../../ui/patterns/panelWidth'
 import { factsOf } from '../plane/cardFacts'
 import { packageTree } from '../plane/cardInside'
 import { labelBox } from '../text/TextItems'
@@ -120,7 +121,7 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
     const { planeCam: c, size } = useCanvasView.getState()
     if (!c) return
     const area = size.w - right
-    const clear = area - Math.min(SIDE_PANEL_W, area) - 48
+    const clear = area - Math.min(sidePanelW(), area) - 48
     const end = c.ox + (card.x + CARD.w) * c.zoom
     if (end > clear) glide(c, { ...c, ox: c.ox - (end - clear) }, 320, (v) => useCanvasView.setState({ planeCam: v }))
     // When a card is picked, or the panel's room changes.
@@ -918,7 +919,7 @@ export function goToCard(c: Card) {
   // Where it's drawn (an unfolded package is its frame).
   const b = onPlane.boxes().find((x) => x.id === c.id)?.box ?? { x: c.x, y: c.y, w: CARD.w, h: CARD.h }
   const area = beside ? Math.round(size.w * split) : size.w
-  const room = area - Math.min(SIDE_PANEL_W, area)
+  const room = area - Math.min(sidePanelW(), area)
   const [sx0, sy0] = [v.ox + b.x * v.zoom, v.oy + b.y * v.zoom]
   const [sx1, sy1] = [sx0 + b.w * v.zoom, sy0 + b.h * v.zoom]
   if (sx0 >= 48 && sx1 <= room - 48 && sy0 >= 56 && sy1 <= size.h - 56) return

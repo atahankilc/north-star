@@ -16,6 +16,10 @@ export const PLANE_FIT_MAX = { picture: 2, focus: 1.5 }
 // Under this canvas zoom a piece's name is big enough that its tab keeps only its icon (D-370).
 export const KIND_WORD_ZOOM = 0.5
 
+// How narrow and wide a right panel can be dragged (D-378); `dock`: what it keeps free right of the screen's middle, for
+// the dock at the foot's middle (≈ 360 px wide round it).
+export const PANEL_W = { min: 320, max: 800, dock: 180 }
+
 // One wheel step's zoom: a pinch (ctrl, a trackpad) moves faster than a mouse wheel.
 const WHEEL = 0.0015
 const PINCH = 0.01

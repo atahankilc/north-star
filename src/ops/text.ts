@@ -57,7 +57,7 @@ const ALLOWED: Record<keyof TextStyle, TextKind[]> = {
   side: ['section'],
   folded: ['sticky'],
   w: ['paragraph', 'sticky', 'section', 'title'],
-  h: ['section'],
+  h: ['section', 'sticky'],
 }
 
 const FIX: Partial<Record<keyof TextStyle, string>> = {
