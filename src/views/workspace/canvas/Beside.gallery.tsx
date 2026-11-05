@@ -20,6 +20,11 @@ export default example({
       route: route(P.product, P.matrix),
     },
     'wide split': { ...onCanvas({ change: () => lensFixture(true), only: [PLANE_F, TABLE_F], focus: PLANE_F, then: split(0.7) }), route: route(PLANE_F, TABLE_F) },
+    // Two panes stacked: where the line between them meets the split line, a press moves the split (D-359's leftover).
+    'two stacked': {
+      ...onCanvas({ change: (ws) => ({ ...ws, pieces: ws.pieces.map((p) => (p.id === P.matrix || p.id === P.table ? { ...p, stuckTo: P.product } : p)) }), only: [P.product, P.matrix, P.table], focus: P.product, then: split(0.5) }),
+      route: route(P.product, `${P.matrix},${P.table}`),
+    },
     'deck stuck: in focus': { ...onCanvas({ change: deckStuck, only: [P.lunch, P.deck], focus: P.lunch }), note: 'its `[⇆ deck · 05 Launch]` in the dock' },
   },
 })

@@ -69,10 +69,11 @@ export function Beside({ plane, open, editor, onClose }: Props) {
       {open.map((p, i) => (
         <Pane key={p.id} piece={p} plane={plane} box={{ x: left, y: tops[i], w: size.w - left, h: tops[i + 1] - tops[i] }} editor={editor} first={i === 0} onClose={() => onClose(p.id)} />
       ))}
-      <SplitLine data-off-space data-learn="split" style={{ left }} onDrag={drag} label="Plane and what's beside it" />
       {open.slice(0, -1).map((p, i) => (
         <SplitLine key={`row-${p.id}`} axis="y" data-off-space style={{ left, top: tops[i + 1] }} onDrag={dragRow(i)} label="Between two panes" />
       ))}
+      {/* After the pane lines, so where one meets it (the same layer) a press moves the split, not the panes' heights. */}
+      <SplitLine data-off-space data-learn="split" style={{ left }} onDrag={drag} label="Plane and what's beside it" />
     </>
   )
 }
