@@ -183,9 +183,9 @@ feature comes back as a piece, and check them with the user then.
   on what they show, their handlers through a ref, a piece's frame too (D-288). The workspace's code is its own chunk
   (fetched ahead, one reload after a deploy); three.js, Firebase and React are files of their own that keep their names
   across deploys (D-288).
-- Piece names (D-223, D-365): in the top edge of every piece, 18 px close to 24 px far on screen, `--fg` caps weight 500,
+- Piece names (D-223, D-365, D-379): in the top edge of every piece, 14 px close to 18 px far on screen, `--fg` caps weight 500,
   after the kind's tab, a solid cell in its colour with a drawn icon and word (`▦ PLANE 01 PAZAR`), under 50 % zoom only the icon (D-370); `…` first, then the
-  tab's word goes, all of it on hover. Sections on a canvas never smaller on screen than 24 px. Zoomed out a piece's name grows down onto it, a section's out of it, so they part (D-372). A framed piece's name past 70 % of its width takes the whole top edge, flush left, as the console does the bottom (D-375). No space before a piece name's tab, in either (D-375). Edit mode: a cyan-framed
+  tab's word goes, all of it on hover. Sections on a canvas never smaller on screen than 24 px, always a step over the pieces' names (D-379). Zoomed out a piece's name grows down onto it, a section's out of it, so they part (D-372). A framed piece's name past 70 % of its width takes the whole top edge, flush left, as the console does the bottom (D-375). No space before a piece name's tab, in either (D-375). Edit mode: a cyan-framed
   field, a `>` and `17/80`.
 - Focus (D-184, D-185, D-189): `[focus]` or a double-click (D-198) makes a plane the view (`?focus=<id>`); the plane
   spreads like ink, cell by cell on the 9 px grid (820 ms in, 700 out, Esc or `[unfocus]`), its view gliding to its fit

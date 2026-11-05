@@ -315,8 +315,8 @@ function LabelItem({ l, live, editor, zoom, labels, carry }: ItemProps) {
     // Its name is set like a heading (D-130, D-157), whatever the frame's size, into the top edge or up the left one,
     // the line breaking round it; a number (its small line) before it only when someone typed one.
     const size = headingSize(l)
-    // Zoomed out, never smaller on the screen than a piece's name (D-365).
-    const px = Math.max(HEADING_PX[size], live ? tokenPx('--piece-name-far') / zoom : 0)
+    // Zoomed out, always a step over the names of the pieces in it (D-379).
+    const px = Math.max(HEADING_PX[size], live ? tokenPx('--section-name-far') / zoom : 0)
     // The same geometry as a piece's name in its edge (D-266): a 16 px lead of line, 8 px clear each side.
     const inset = 24
     const gap = 8

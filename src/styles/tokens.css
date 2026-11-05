@@ -288,9 +288,11 @@
   --piece-hi: rgba(255, 255, 255, 0.05);
   --piece-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(0, 0, 0, 0.6);
   --piece-band: 2px;
-  /* A piece's name on the screen (D-365): the first at 100 % and closer, growing to the second as the canvas zooms out. */
-  --piece-name-near: 18px;
-  --piece-name-far: 24px;
+  /* A piece's name on the screen (D-365, D-379): the first at 100 % and closer, growing to the second as the canvas zooms out. */
+  --piece-name-near: 14px;
+  --piece-name-far: 18px;
+  /* A section's name on a canvas is never smaller on the screen than this, always a step over the pieces' it holds (D-379). */
+  --section-name-far: 24px;
   /* Its kind's tab: dark ink on the kind's colour; the light theme's white ink needs the colour a step darker. */
   --piece-tab-ink: #000000;
   --piece-tab-mix: 100%;

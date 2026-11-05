@@ -1873,7 +1873,7 @@ const movingWith = (id: string) => {
   return editing.includes(id) ? editing : [id]
 }
 
-// A piece's name on the screen (D-365): 18 px at 100 % and closer, growing to 24 px as the canvas zooms out.
+// A piece's name on the screen (D-365, D-379): 14 px at 100 % and closer, growing to 18 px as the canvas zooms out.
 function nameSize(zoom: number) {
   const near = tokenPx('--piece-name-near')
   const far = tokenPx('--piece-name-far')

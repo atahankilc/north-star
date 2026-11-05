@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Component names against section names · options</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/inter/opsz.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/jetbrains-mono/index.css">
+<style>
+/* A preview only: how much smaller a piece's name should be than a section's. Not the app: the app's tokens and the
+   app's sizing maths (nameSize, consoleScale, a section's px), hand-made copies of its pieces. Served from the repo root
+   so the token and font files load. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-mono); font-size: var(--text-xs); }
+button { font: inherit; color: inherit; }
+
+.top { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 6px 24px; align-items: center; padding: 10px 16px; background: var(--bg-raised); border-bottom: 1px solid var(--piece-edge); }
+.grp { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; }
+.grp > span { margin-right: 6px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: .05em; }
+.opt { background: var(--wash-2); border: 0; padding: 5px 9px; color: var(--fg-muted); cursor: pointer; }
+.opt:hover { background: var(--wash-3); }
+.opt[aria-pressed='true'] { background: var(--wash-5); color: var(--fg-strong); }
+.opt b { color: var(--accent-magenta); font-weight: 400; margin-right: 6px; }
+
+.board { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--slot)), 1fr)); gap: 28px 24px; padding: 20px 16px 40px; }
+.slot h3 { margin: 0 0 8px; font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--fg-strong); }
+.slot h3 b { margin-right: 6px; color: var(--accent-magenta); font-family: var(--font-mono); font-weight: 400; }
+.slot h3 small { margin-left: 8px; color: var(--fg-dim); font-family: var(--font-mono); font-size: 12px; font-weight: 400; }
+.slot p { margin: 0 0 10px; color: var(--fg-muted); font-family: var(--font-display); font-size: 13px; line-height: 1.4; }
+.view { position: relative; overflow: auto; height: var(--view-h); border: 1px solid var(--piece-edge); background: var(--bg-page); }
+.world { position: absolute; top: 0; left: 0; width: 1640px; height: 1000px; transform-origin: 0 0; }
+
+/* A piece, as the app draws it. */
+.piece { --kind: var(--fg); --bg: var(--piece); position: absolute; border: 1px solid var(--piece-edge); background: var(--piece); box-shadow: var(--piece-shadow); }
+.piece[data-kind='matrix'] { --kind: var(--link-solves); }
+.piece[data-kind='table'] { --kind: var(--link-part); }
+.piece[data-kind='kanban'] { --kind: var(--link-draws); }
+.piece[data-kind='timeline'] { --kind: var(--link-competes); }
+.inside { position: absolute; inset: 0; overflow: hidden; }
+.piece[data-kind='plane'] .inside { background-image: radial-gradient(var(--piece-mark) 1px, transparent 1.4px); background-size: 25px 25px; }
+.band { position: absolute; top: -1px; left: -1px; right: -1px; height: calc(2px / var(--z)); background: var(--kind); }
+
+/* src/views/workspace/canvas/CanvasView.module.css `.name`, `.nameTab`, `.nameNum`. */
+.name { position: absolute; z-index: 1; top: 0; left: calc(16px / var(--z)); display: flex; overflow: hidden; align-items: center; gap: .6em; max-width: calc(100% - 32px / var(--z)); padding: 0 calc(8px / var(--z)) 0 0; transform: translateY(calc(-1 * min(75%, var(--near) * 1.5 * .75))); background: var(--bg); color: var(--fg); font-family: var(--font-mono); font-size: calc(var(--name-size) / var(--z)); font-weight: 500; line-height: 1.5; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; }
+.piece:hover .name { max-width: none; }
+.num { flex: none; color: var(--accent-magenta); font-weight: 400; }
+.text { overflow: hidden; flex: 0 100 auto; min-width: 3em; text-overflow: ellipsis; }
+.tab { display: flex; overflow: hidden; flex: 0 1 auto; align-items: center; min-width: 2.25em; padding: .15em .5em; background: color-mix(in srgb, var(--kind) var(--piece-tab-mix), var(--on-accent)); color: var(--piece-tab-ink); font-size: .7em; font-weight: 700; }
+.tab span { overflow: hidden; min-width: 0; padding-left: .4em; }
+[data-wordless] .tab span { display: none; }
+svg { display: block; flex: none; width: 1.25em; height: 1.25em; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; }
+svg .f { fill: currentColor; stroke: none; }
+
+/* A console: its cells as tall as the name's row (D-370), so it shrinks with the name. */
+.console { position: absolute; z-index: 1; left: 50%; bottom: 0; display: flex; gap: calc(2px * var(--cs)); transform: translate(-50%, 50%); padding: calc(4px * var(--cs)); background: var(--bg); font-size: calc(12px * var(--cs)); line-height: 2; }
+.console i { padding: 0 calc(8px * var(--cs)); background: var(--wash-2); color: var(--fg); font-style: normal; white-space: nowrap; }
+[data-consoles='off'] .console { display: none; }
+
+/* src/views/workspace/text/TextItems: a section's line and the name cut into it. */
+.section { position: absolute; border: 1px solid var(--edge); }
+.secName { position: absolute; top: 0; left: 16px; padding: 0 8px; transform: translateY(calc(-50% - var(--grow) * 1.3 / 2)); background: var(--bg-page); color: var(--fg); font-family: var(--font-display); font-size: var(--sec); font-weight: 500; line-height: 1.3; white-space: nowrap; }
+
+.card { position: absolute; width: 200px; height: 100px; padding: 8px 10px; background: color-mix(in srgb, var(--t) 16%, var(--piece-card)); font-family: var(--font-display); font-size: 16px; line-height: 1.25; color: var(--fg); overflow: hidden; }
+.rows { position: absolute; inset: 44px 24px 44px; display: grid; gap: 6px; }
+.rows i { background: var(--piece-card); }
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="grp" id="views"><span>view</span></div>
+  <div class="grp" id="zooms"><span>zoom</span></div>
+  <div class="grp" id="sections"><span>section</span></div>
+  <div class="grp" id="consoles"><span>console</span></div>
+  <div class="grp" id="themes"><span>theme</span></div>
+</div>
+<div id="out"></div>
+
+<script>
+const ICON = {
+  plane: '<rect x="1.5" y="2.5" width="8" height="5"/><rect x="8.5" y="10.5" width="8" height="5"/><path d="M6 7.5 11 10.5"/>',
+  matrix: '<rect x="2" y="2" width="14" height="14"/><path d="M2 6.7h14M2 11.3h14M6.7 2v14M11.3 2v14"/><rect class="f" x="6.7" y="6.7" width="4.6" height="4.6"/>',
+  table: '<rect class="f" x="2" y="3" width="14" height="3"/><path d="M2 9h14M2 12h14M2 15h14"/>',
+  kanban: '<rect x="2" y="2.5" width="3.6" height="13"/><rect x="7.2" y="2.5" width="3.6" height="8"/><rect x="12.4" y="2.5" width="3.6" height="10.5"/>',
+}
+const WORD = { plane: 'plane', matrix: 'matrix', table: 'table', kanban: 'deck' }
+// near = at 100 % and closer, far = zoomed right out. The section's far size stays 24 px in every option.
+const OPTIONS = [
+  ['A', 'today', 18, 24, 'Today. Zoomed out, a component and a section are both 24 px: what you are telling apart.'],
+  ['B', 'one step down', 16, 20, 'The smallest change: still clearly a heading, a section a step above it.'],
+  ['C', 'two steps down', 14, 18, 'A component reads as a label, a section as the heading over it.'],
+  ['D', 'quiet', 14, 16, 'Barely grows as you zoom out; a section is half as big again.'],
+  ['E', 'smallest', 12, 14, 'Close to the size D-365 moved away from (12 to 15 px): the most contrast, the hardest to read far away.'],
+]
+const SECTIONS = [[48, 'H1 48 (default)'], [29, 'H2 29'], [22, 'H3 22']]
+const ZOOMS = [[0.2, '20 %'], [0.36, '36 %'], [0.5, '50 %'], [0.75, '75 %'], [1, '100 %']]
+const S = { view: 'all', pick: 'B', z: 0.36, sec: 48, consoles: 'on', theme: 'dark' }
+const q = new URLSearchParams(location.hash.slice(1))
+for (const key of Object.keys(S)) if (q.has(key)) S[key] = typeof S[key] === 'number' ? +q.get(key) : q.get(key)
+
+// CanvasView.tsx nameSize and consoleScale; TextItems.tsx a section's px, with the far size that stays 24.
+const nameSize = (near, far, z) => Math.min(far, Math.max(near, far - (far - near) * z))
+const SECTION_FAR = 24
+const sectionPx = (size, z) => Math.max(size, SECTION_FAR / z)
+
+const T = ['var(--type-customer)', 'var(--type-problem)', 'var(--type-idea)', 'var(--type-feature)', 'var(--type-competitor)']
+const WORDS = ['Office workers', 'Delivery lunch costs €14', 'A pickup shelf in each lobby', 'Pre-order by 9 pm', 'Lieferando', 'Home cooks']
+const cards = (n) => [...Array(n)].map((_, i) => `<div class="card" style="--t:${T[i % 5]};left:${50 + (i % 3) * 225}px;top:${50 + Math.floor(i / 3) * 125}px">${WORDS[i % 6]}</div>`).join('')
+const rows = (n) => `<div class="rows">${'<i></i>'.repeat(n)}</div>`
+// Two sections as the app would hold them: pieces inside, one piece outside, in canvas px.
+const SECTIONS_ON_CANVAS = [[40, 70, 880, 860, 'Who we serve'], [1000, 70, 600, 500, 'Plan']]
+const PIECES = [
+  ['plane', 90, 130, 780, 350, '01', 'Lunch', cards(6)],
+  ['matrix', 90, 560, 375, 320, '02', 'Who covers what', rows(6)],
+  ['table', 495, 560, 375, 320, '03', 'Features', rows(6)],
+  ['kanban', 1050, 130, 500, 390, '04', 'Launch', rows(5)],
+  ['plane', 1000, 650, 600, 280, '05', 'Interviews in Kreuzberg and Mitte', cards(3)],
+]
+const piece = ([kind, x, y, w, h, num, name, inner]) => `
+  <div class="piece" data-kind="${kind}" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px">
+    <div class="inside">${inner}</div><div class="band"></div>
+    <div class="name"><span class="tab"><svg viewBox="0 0 18 18">${ICON[kind]}</svg><span>${WORD[kind]}</span></span><span class="num">${num}</span><span class="text">${name}</span></div>
+    <div class="console"><i>focus</i><i>edit</i></div>
+  </div>`
+const scene = (near, far) => {
+  const z = S.z, size = nameSize(near, far, z), sec = sectionPx(S.sec, z)
+  return `<div class="world" ${z < 0.5 ? 'data-wordless' : ''} style="--z:${z};--near:${near}px;--name-size:${size}px;--cs:${size / 16 / z};--sec:${sec}px;--grow:${sec - S.sec}px;transform:scale(${z})">
+    ${SECTIONS_ON_CANVAS.map(([x, y, w, h, n]) => `<div class="section" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"><span class="secName">${n}</span></div>`).join('')}
+    ${PIECES.map(piece).join('')}
+  </div>`
+}
+const slot = ([id, label, near, far, why]) => {
+  const size = nameSize(near, far, S.z), sec = sectionPx(S.sec, S.z) * S.z
+  return `<section class="slot"><h3><b>${id}</b>${label}<small>${near} → ${far} px · here ${+size.toFixed(1)} px, section ${+sec.toFixed(1)} px</small></h3><p>${why}</p><div class="view">${scene(near, far)}</div></section>`
+}
+
+const bar = (id, items, now, pick) => {
+  const g = document.getElementById(id)
+  g.querySelectorAll('button').forEach((b) => b.remove())
+  for (const [v, label, tag] of items) {
+    const b = document.createElement('button')
+    b.className = 'opt'
+    b.setAttribute('aria-pressed', String(v === now))
+    b.innerHTML = (tag ? `<b>${tag}</b>` : '') + label
+    b.onclick = () => pick(v)
+    g.append(b)
+  }
+}
+
+function draw() {
+  document.documentElement.dataset.theme = S.theme
+  document.body.dataset.consoles = S.consoles
+  document.documentElement.style.setProperty('--bg-page', getComputedStyle(document.documentElement).getPropertyValue('--bg'))
+  location.replace('#' + new URLSearchParams(S))
+  const set = (k) => (v) => { S[k] = v; draw() }
+  bar('views', [['all', 'side by side'], ...OPTIONS.map(([id, l]) => [id, l, id])], S.view === 'all' ? 'all' : S.pick, (v) => { if (v === 'all') S.view = 'all'; else { S.view = 'one'; S.pick = v } draw() })
+  bar('zooms', ZOOMS, S.z, set('z'))
+  bar('sections', SECTIONS, S.sec, set('sec'))
+  bar('consoles', [['on', 'shown'], ['off', 'hidden']], S.consoles, set('consoles'))
+  bar('themes', [['dark', 'dark'], ['light', 'light']], S.theme, set('theme'))
+  const w = Math.ceil(1640 * S.z) + 20, h = Math.ceil(1000 * S.z) + 20
+  const list = S.view === 'all' ? OPTIONS : OPTIONS.filter((o) => o[0] === S.pick)
+  document.getElementById('out').innerHTML = `<div class="board" style="--slot:${S.view === 'all' ? Math.max(w, 420) : 4000}px;--view-h:${Math.min(h, S.view === 'all' ? 620 : 820)}px">${list.map(slot).join('')}</div>`
+}
+draw()
+</script>
+</body>
+</html>

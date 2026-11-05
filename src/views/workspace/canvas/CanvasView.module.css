@@ -187,8 +187,8 @@
   visibility: hidden;
 }
 
-/* A piece's name (D-180, D-223, D-365): set into the top edge, held at a size on the screen whatever the canvas's zoom:
-   18 px at 100 %, growing to 24 px as you zoom out, where names are what you find things by. `--z` is the canvas's zoom,
+/* A piece's name (D-180, D-223, D-365, D-379): set into the top edge, held at a size on the screen whatever the canvas's zoom:
+   14 px at 100 %, growing to 18 px as you zoom out, where names are what you find things by. `--z` is the canvas's zoom,
    and `--name-size` set on the piece (a piece's console reads the same, D-370). Its kind's tab comes first
    (`▦ PLANE 01 PAZAR`), only its icon once the name is big (D-370); when it doesn't fit, the name is cut with `…`, then
    the tab's word goes, all of it shown while hovered. Sitting mostly over the edge at 100 %; zoomed out, what's over the
