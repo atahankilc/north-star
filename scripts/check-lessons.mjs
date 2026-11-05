@@ -15,6 +15,7 @@
 //   src/onboarding/events.ts (`learn('…'`, `emit('…'` or its exported EMITS list). Those still to be built are listed in scripts/lessons-pending.json: the list only shrinks
 //   (one built and still listed fails too). `--write-pending` rewrites it from what's missing now.
 // Run: npm run check:lessons. Exits 1 with a list of problems.
+import { fileURLToPath } from 'node:url'
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -349,7 +350,7 @@ const walk = (dir) => {
     else if (/\.(tsx?|html)$/.test(f)) srcFiles.push(p)
   }
 }
-walk(at('src/').pathname)
+walk(fileURLToPath(at('src/')))
 // Anchors count only where the app draws them: the coach's own selectors (`[data-learn="plus"]`) and the demo don't.
 const learnIn = new Set()
 const coachOrDemo = /[\\/]src[\\/](onboarding|demo)[\\/]/

@@ -3,10 +3,11 @@
 // - every example has its component file, and names it (`file: 'src/ui/X.tsx'`);
 // - nothing in the app imports the gallery (src/gallery/ or a *.gallery.tsx), so it never reaches a build;
 // - gallery.html is in no build input.
+import { fileURLToPath } from 'node:url'
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
 import { join, relative, dirname, basename } from 'node:path'
 
-const ROOT = join(dirname(new URL(import.meta.url).pathname), '..')
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 // The folders whose components need an example (D-324): src/ui since G1, src/views/workspace since G2, src/onboarding
 // since G3.
 const COVERED = ['src/ui', 'src/views/workspace', 'src/views/workspaces', 'src/onboarding']

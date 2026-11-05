@@ -6,6 +6,7 @@
 // puppeteer-core is kept out of the repo (memory: visual checks), installed once in a cache of its own
 // (CHECK_LIVE_CACHE, else ~/.cache/north-star/check-gallery-live); Chrome is the one on the machine (CHROME_PATH, else
 // the usual places). Its own dev server on a free port, stopped at the end.
+import { fileURLToPath } from 'node:url'
 import { execFileSync, spawn } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, statSync, mkdirSync } from 'node:fs'
 import { createServer } from 'node:net'
@@ -13,7 +14,7 @@ import { homedir } from 'node:os'
 import { dirname, join, relative } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-const ROOT = join(dirname(new URL(import.meta.url).pathname), '..')
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const ACTS = /\b(press|drag|rightClick|find)\(/
 // How long a state gets to do what it does (its steps wait up to 2 s for what they look for) and how many at once.
 const SETTLE_MS = 7000

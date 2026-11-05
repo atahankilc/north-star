@@ -3,11 +3,12 @@
 // second): tokens and the kit (D-325, D-326), the gallery (D-324), the lessons (D-315), the memory bank. Anything they
 // refuse goes back to the agent as the tool's feedback (exit 2), so it's fixed at once and no one has to ask.
 // Commits are held to the same and to the gallery and onboarding going with a changed component: scripts/commit-rules.mjs.
+import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 let input = {}
 try {

@@ -7,10 +7,11 @@
 //   npm run check:kit            check
 //   npm run check:kit -- --list  print every hit, file by file
 //   npm run check:kit -- --write lower the baseline to today's counts (never raises it)
+import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const baselinePath = path.join(root, 'scripts/kit-baseline.json')
 // The kit itself, the dev-only gallery and the demo realm's stage, tests.
 const skip = [/^src\/ui\//, /^src\/gallery\//, /^src\/demo\//, /\.gallery\.tsx$/, /\.test\.tsx?$/]

@@ -5,10 +5,11 @@
 //   npm run check:tokens            check
 //   npm run check:tokens -- --list  print every raw value, file by file
 //   npm run check:tokens -- --write lower the baseline to today's counts (never raises it)
+import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const baselinePath = path.join(root, 'scripts/tokens-baseline.json')
 const skip = [/^src\/styles\/tokens\.css$/, /^src\/gallery\//, /\.gallery\.tsx$/, /\.test\.tsx?$/]
 // The sources themselves: tokens.ts (WebGL's palette), the card types' colours, motion's TS mirror, the world's geometry.
@@ -18,7 +19,7 @@ function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name)
     if (e.isDirectory()) walk(p, out)
-    else if (/\.(css|tsx?)$/.test(e.name)) out.push(path.relative(root, p))
+    else if (/\.(css|tsx?)$/.test(e.name)) out.push(path.relative(root, p).split(path.sep).join('/'))
   }
   return out
 }
@@ -46,7 +47,7 @@ function scanTs(file) {
   if (sources.some((r) => r.test(file))) return []
   const found = []
   const src = fs.readFileSync(path.join(root, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '))
-  src.split('\n').forEach((line, i) => {
+  src.split(/\r?\n/).forEach((line, i) => {
     if (/tokens-ok/.test(line)) return
     const l = line.replace(/(^|\s)\/\/.*$/, '')
     for (const m of l.matchAll(/(?<![\w.$}-])-?(?!0+(\.0+)?px)\d*\.?\d+px\b/g)) found.push({ line: i + 1, kind: 'px', text: m[0] })
@@ -60,7 +61,7 @@ function scan(file) {
   if (/\.tsx?$/.test(file)) return scanTs(file)
   const src = fs.readFileSync(path.join(root, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '))
   const found = []
-  const lines = src.split('\n')
+  const lines = src.split(/\r?\n/)
   lines.forEach((line, i) => {
     // Breakpoints and container queries can't be variables (D-325: 760 and 640 only).
     if (/^\s*@(media|container)/.test(line)) return

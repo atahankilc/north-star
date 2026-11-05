@@ -5,11 +5,12 @@
 // X.gallery.tsx and its lesson), so it asks the commit to say: when a component file is staged without its gallery
 // file, the message needs a `Gallery: …` line (why it's unchanged); when UI is staged without src/onboarding/lessons.ts
 // or docs/specs/onboarding-lessons.md, a `Lessons: …` line. Saying so is enough; forgetting it isn't.
+import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const [mode, msgFile] = process.argv.slice(2)
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
 // What's staged (RULES_STAGED, comma-separated, stands in for it in a test without touching the index).
