@@ -168,6 +168,7 @@
 
 /* Its drawer, too: the whole edge, its rows wrapping, never past it (D-354); after the floor's own rules, which it overrides. */
 .console[data-full] .floor {
+  --col-grow: 1; /* FilterColumn's columns share the width, so none of it stays empty on the right */
   left: 0;
   right: 0;
   width: auto;

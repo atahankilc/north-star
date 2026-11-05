@@ -96,10 +96,10 @@ function Strip({ piece, f, pool }: { piece: WithId<Piece>; f: KanbanFilter; pool
         <FilterColumn label="due" items={due} narrowing={f.due.length} rise ariaLabel="Only tasks due" />
         <FilterColumn label="for" items={forItems} narrowing={f.for.length} rise wide ariaLabel="Only tasks for" />
         {labels.length > 0 && <FilterColumn label="label" items={labelItems} narrowing={f.labels.length} rise ariaLabel="Only tasks with these labels" />}
+        <Button className={styles.reset} onClick={() => setKanbanFilter(piece.id, NO_FILTER)} title="show every task">
+          reset
+        </Button>
       </FilterColumns>
-      <Button className={styles.reset} onClick={() => setKanbanFilter(piece.id, NO_FILTER)} title="show every task">
-        reset
-      </Button>
     </Appear>
   )
 }

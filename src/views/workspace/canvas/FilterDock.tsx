@@ -46,7 +46,7 @@ export function PlaneDockExtras({ plane, cards, stuck }: { plane: string; cards:
           {linked && stuck && stuck.count > 0 && (
             <Appear key="linked" className={styles.panel} role="group" aria-label="Linked">
               <FloorTitle summary="open one beside the plane">linked</FloorTitle>
-              {stuck.strip}
+              <div className={styles.cells}>{stuck.strip}</div>
             </Appear>
           )}
           {filter && <Panel key="filter" plane={plane} cards={cards} f={f} />}
@@ -85,10 +85,10 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
         {regions.length > 0 && <FilterColumn label="region" items={regionItems} narrowing={f.regions.length} rise ariaLabel="Competitors in these places" />}
         {/* `for`, `relates` and `competes` start hidden, so only hiding another kind counts as narrowing. */}
         <FilterColumn label="links" items={linkItems} narrowing={linksNarrow} wide noLine ariaLabel="Show links by kind" />
+        <Button className={styles.reset} onClick={() => setFilter(plane, START)} title="back to how it starts">
+          reset
+        </Button>
       </FilterColumns>
-      <Button className={styles.reset} onClick={() => setFilter(plane, START)} title="back to how it starts">
-        reset
-      </Button>
     </Appear>
   )
 }

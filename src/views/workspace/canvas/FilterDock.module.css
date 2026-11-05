@@ -1,9 +1,9 @@
-/* A drawer on the focus dock's upper floor (D-233, D-235, D-347): its columns (D-364) or cells in a row, wrapping. The floor
-   (the kit's ConsoleFloor) is its frame. */
+/* A drawer on the focus dock's upper floor (D-233, D-235, D-347): its title over its columns (D-364) or cells. The floor
+   (the kit's ConsoleFloor) is its frame. Stacked, not wrapped: the floor takes its width from this, and a wrapping row
+   would count the title beside what's under it, leaving that much empty on the right. */
 .panel {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
   color: var(--fg-dim);
   font-family: var(--font-mono);
@@ -12,6 +12,15 @@
   cursor: default;
 }
 
+/* What's linked: cells in a row, wrapping. */
+.cells {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The last thing among the columns. */
 .reset {
   margin-left: var(--space-1);
   /* Under the columns' last rows, not in their middle. */

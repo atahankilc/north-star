@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { example } from '../../gallery/example'
 import type { PromptEntry } from '../foundation/promptModel'
+import { Console, FloorTitle } from './Console'
 import { FilterColumn, FilterColumns } from './FilterColumn'
 
 const TAGS = ['pricing', 'pilot', 'delivery', 'trust', 'onboarding', 'retention', 'b2b', 'subscription', 'logistics', 'quality', 'packaging', 'partners']
@@ -41,6 +42,27 @@ export default example({
         <Picks label="region" values={['Germany', 'Europe', 'US', 'Global']} />
         <Picks label="tag" values={TAGS} />
       </FilterColumns>
+    ),
+    // Past 70 % of what it hangs on the drawer takes the whole edge: the columns share it, nothing left over on the right.
+    'on a whole edge': () => (
+      <div style={{ position: 'relative', width: 'calc(var(--size-md) * 2)', height: 'calc(var(--size-sm) * 1.5)' }}>
+        <Console
+          at="foot"
+          info="14 cards"
+          floor={
+            <>
+              <FloorTitle summary="everything's shown">filter</FloorTitle>
+              <FilterColumns>
+                <Show />
+                <Picks label="region" values={['Germany', 'Europe', 'US', 'Global']} />
+                <Picks label="tag" values={TAGS} />
+              </FilterColumns>
+            </>
+          }
+        >
+          <span />
+        </Console>
+      </div>
     ),
     'some picked': () => (
       <FilterColumns>

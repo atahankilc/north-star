@@ -7067,6 +7067,8 @@ rows move only once the pointer leaves the column or the drawer opens again, nev
 (everything shown to start, a click hides one) keep their order. A filter with nothing to pick on this plane or deck
 (no customers, tags, regions, labels) isn't shown. LINKS has no `>` line (nine fixed kinds), its column wide for
 `starts hidden`; FOR is wide (names). Escape in a `>` line clears what's typed first, then closes the drawer.
+The drawer is as wide as its columns and `reset`, its title over them, never counted beside them; one taking the whole
+edge (D-354) has its columns share the width (`--col-grow`), so nothing stays empty on the right (the user, 2026-11-05).
 **Why:** every value one click away instead of two, and the drawer the same height on a big plane as on a small one;
 the default on top and the picks under it show what's on at a glance.
 **Alternatives** (the preview): all values as cells always open (A: runs tall and wide on a big plane), short lists

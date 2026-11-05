@@ -116,7 +116,8 @@ export function FilterColumn({ label, items, narrowing = 0, rise, ariaLabel, emp
   )
 }
 
-// The drawer's columns side by side, wrapping where the screen runs out.
+// The drawer's columns side by side, wrapping where the screen runs out; on a drawer taking the whole edge they share
+// its width. What follows them (`reset`) goes in here too: the drawer's width is theirs and its.
 export function FilterColumns({ children }: { children: ReactNode }) {
   return <div className={styles.cols}>{children}</div>
 }
