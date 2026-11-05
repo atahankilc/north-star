@@ -55,7 +55,7 @@ import { Ink } from '../../../ui/primitives/Ink'
 import { useWs } from '../canvas/context'
 import styles from './TextItems.module.css'
 import { usePeersOn } from '../canvas/collab'
-import { carriedStyle, Landing, Marks, type Handle } from '../../../ui/primitives/Marks'
+import { carriedStyle, Landing, Marks, zsOf, type Handle } from '../../../ui/primitives/Marks'
 import { ThreadChip, useThreadOn } from '../threads/Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 import { headingSize, kickPx, labelBox, STICKY_TEXT_TOP, type HeadingSize } from '../../../model/labelBox'
@@ -876,7 +876,7 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
   const named = kind === 'heading' || kind === 'section'
   const sizes = named ? SIZES : kind === 'paragraph' || kind === 'sticky' ? SCALES : []
   return (
-    <Console at="under" fill={false} name={kind} aria-label={kind} className={styles.bar} data-learn="text-bar" data-screen-sized style={{ transform: `scale(${1 / zoom})` }} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
+    <Console at="under" fill={false} name={kind} aria-label={kind} className={styles.bar} data-learn="text-bar" data-screen-sized style={{ ...zsOf(zoom), transform: `scale(${1 / zoom})` }} onPointerDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
       {sizes.length > 0 && (
         <ButtonGroup label="Size">
           {sizes.map(([s, name]) => (

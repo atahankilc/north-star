@@ -530,10 +530,11 @@
 }
 
 /* The bar under the selected one: at the screen's size (scaled back from the zoom), a terminal line; over its own
-   comment chip, and taking the pointer even inside a section (whose frame lets clicks through). */
+   comment chip, and taking the pointer even inside a section (whose frame lets clicks through). Its gap is screen px
+   too, so it stays under the thing's L's at every zoom: their ring (the biggest tier's), the bar's own L's, then air. */
 .bar {
   position: absolute;
-  top: calc(100% + var(--space-3));
+  top: calc(100% + (var(--mark-l-sel) + var(--mark-l-th) + var(--space-1) + var(--space-2)) * var(--zs, 1));
   left: 0;
   z-index: calc(var(--z-3) + 1);
   pointer-events: auto;

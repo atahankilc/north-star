@@ -45,6 +45,8 @@ export type OnCanvas = {
   cards?: string[]
   link?: string
   label?: string
+  // The canvas this far out or in, round the screen's middle.
+  zoom?: number
   // More, once it's all there.
   then?: (c: GalleryCtx) => void | Promise<void>
   note?: string
@@ -78,6 +80,12 @@ export function onCanvas(o: OnCanvas = {}): StateSpec {
       if (o.cards) s.cardMulti = o.cards
       if (o.link) s.linkSelected = o.link
       if (o.label) s.labelSelected = o.label
+      if (o.zoom) {
+        const { cams } = useCanvasView.getState()
+        const cam = cams[WID]
+        const by = o.zoom / cam.zoom
+        s.cams = { ...cams, [WID]: { x: cam.x * by, y: cam.y * by, zoom: o.zoom } }
+      }
       useCanvasView.setState(s)
       await o.then?.(c)
     },

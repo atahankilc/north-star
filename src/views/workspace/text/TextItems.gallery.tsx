@@ -46,5 +46,8 @@ export default example({
     'project title': { ...only(TITLE), note: 'the workspace’s name and description, one per workspace' },
     'heading picked': { ...onCanvas({ only: [], change: (ws) => ({ ...ws, labels: HEADINGS }), label: 'h2' }), note: 'its bar under it' },
     'sticky picked': onCanvas({ only: [], change: (ws) => ({ ...ws, labels: STICKIES }), label: 's2' }),
+    'sticky picked, far out': { ...onCanvas({ only: [], change: (ws) => ({ ...ws, labels: STICKIES }), label: 's2', zoom: 0.25 }), note: 'the bar stays under its L’s at every zoom' },
+    'paragraph picked, far out': onCanvas({ only: [], change: (ws) => ({ ...ws, labels: PARAGRAPHS }), label: 'p2', zoom: 0.25 }),
+    'section picked, far out': onCanvas({ only: [], change: (ws) => ({ ...ws, labels: SECTION }), label: 'sec', zoom: 0.25 }),
   },
 })
