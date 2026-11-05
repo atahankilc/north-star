@@ -1,11 +1,17 @@
 // A document read in a window over whatever's open: the way to one that nothing on a canvas shows (the agent's `open`,
 // the finder's match in a document no list takes). A list or a piece stays where a document is worked with (D-232);
 // this reads it, with what takes it further: placing it on the canvas, downloading it, and writing a .md (D-373):
-// `edit` turns the page into the editor in place (DocEditor, loaded then), `done` back.
-import { lazy, Suspense } from 'react'
+// `edit` turns the page into the editor in place (DocEditor, loaded then), `done` back. Written together (D-374): the
+// editor is the shared text (liveTransport.ts), others' carets come through presence, and the head shows who's writing.
+import { lazy, Suspense, useEffect, useMemo } from 'react'
 import type { WithId } from '../../../data/hooks'
 import { downloadDocument, mayWriteDoc, renameDocument, useDocBody, writeDocumentText, type Doc, type DocBody } from '../../../data/documents'
 import { useAuth } from '../../../data/auth'
+import { caretsIn, onCarets, presenceColor, setPresenceDoc, usePresence, type Peer } from '../../../data/presence'
+import { firestoreLive } from '../../../data/liveTransport'
+import { themeAccent } from '../../../state/theme'
+import { Avatar } from '../../../ui/primitives/Avatar'
+import type { LiveSetup } from './DocEditor'
 import { DOC_LIMITS } from '../../../model/shapes'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
@@ -35,17 +41,24 @@ type ViewProps = {
   onSave?: (text: string) => void
   // Its author renames it there.
   onRename?: (title: string) => void
+  // Written together (D-374): the shared text while editing, and who else is writing in it now.
+  live?: LiveSetup
+  writers?: Peer[]
 }
 
-export function DocReaderView({ d, body, loading, failed, me, onClose, onDownload, onPlace, editing = false, onEdit, onSave, onRename }: ViewProps) {
-  const writing = editing && !!onSave
+export function DocReaderView({ d, body, loading, failed, me, onClose, onDownload, onPlace, editing = false, onEdit, onSave, onRename, live, writers = [] }: ViewProps) {
+  // Only on its own text, once it's read: what the page opens with seeds the shared text (D-374).
+  const writing = editing && !!onSave && !!body
   const { head, rest } = splitTitle(body?.text ?? '', d.title)
   const editor = writing ? (
     <Suspense fallback={<p className={content.note}>loading the editor…</p>}>
       <DocEditor
+        // A page per document: another one opened while writing gets its own (never the first one's text).
+        key={d.id}
         text={rest}
         label={`${d.title}: text`}
         autoFocus
+        live={live}
         // The title's heading stays in front, as it came (renamed: the new title).
         onSave={(t) => onSave?.((head ? `# ${d.title}\n\n` : '') + t)}
       />
@@ -58,7 +71,7 @@ export function DocReaderView({ d, body, loading, failed, me, onClose, onDownloa
   return (
     <Window label={d.title} onClose={onClose} close className={styles.reader}>
       <div className={styles.page} data-scrolls>
-        <DocContent d={d} body={body} loading={loading} failed={failed} me={me} links title={title} editor={editor} />
+        <DocContent d={d} body={body} loading={loading} failed={failed} me={me} links title={title} editor={editor} people={people(writers)} />
       </div>
       <ButtonGroup className={styles.foot}>
         {writing ? (
@@ -87,14 +100,59 @@ export function DocReaderView({ d, body, loading, failed, me, onClose, onDownloa
   )
 }
 
+// Who's writing in it now (D-374): their squares, as people here draws them, a name on hover.
+function people(writers: Peer[]) {
+  if (!writers.length) return undefined
+  return (
+    <span className={styles.writers} title={`writing in it: ${writers.map((p) => p.name).join(', ')}`} aria-label={`${writers.length} writing in it`}>
+      {writers.map((p) => (
+        <Avatar key={p.uid} name={p.name} color={themeAccent(p.color)} photo={p.photo} size="sm" away={p.away} />
+      ))}
+    </span>
+  )
+}
+
 export function DocReader() {
   const reading = useDocUi((s) => s.reading)
-  const editing = useDocUi((s) => s.editing)
-  const { wid, documents, workspace } = useWs()
-  const { user } = useAuth()
+  const { documents } = useWs()
   const d = documents.find((x) => x.id === reading) ?? null
+  // One reader per document: its body is read afresh (a listener moved to another path still holds the last one's
+  // text for a moment, and writing would open on it, D-374).
+  return d ? <Reading key={d.id} d={d} /> : null
+}
+
+function Reading({ d }: { d: WithId<Doc> }) {
+  const editing = useDocUi((s) => s.editing)
+  const { wid, workspace } = useWs()
+  const { user } = useAuth()
   const body = useDocBody(wid, d)
-  if (!d) return null
+  const peers = usePresence((s) => s.peers)
+  const myColor = usePresence((s) => s.myColor)
+  const id = d.id
+  const uid = user?.id
+  const writing = !!uid && editing && mayWriteDoc(d, uid, user ? workspace.roles[user.id] : undefined)
+  const name = user?.name || user?.email || 'Someone'
+  // The shared text and the carets, made once per document opened for writing.
+  const live = useMemo<LiveSetup | undefined>(() => {
+    if (!writing || !id || !uid) return undefined
+    return {
+      transport: () => firestoreLive(wid, id, uid),
+      user: { name, color: themeAccent(myColor ?? presenceColor(uid)) },
+      carets: {
+        list: () => caretsIn(id).map((c) => ({ ...c, color: themeAccent(c.color) })),
+        listen: onCarets,
+        here: (c) => setPresenceDoc({ id, ...(c ?? {}) }),
+        gone: () => setPresenceDoc(null),
+      },
+    }
+    // The colour is read when it opens (it's settled by then); a new one would reopen the shared text.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [writing, id, uid, wid, name])
+  useEffect(() => {
+    if (!writing || !id) return
+    setPresenceDoc({ id })
+    return () => setPresenceDoc(null)
+  }, [writing, id])
   const role = user ? workspace.roles[user.id] : undefined
   const editor = role === 'owner' || role === 'editor'
   const writes = mayWriteDoc(d, user?.id, role)
@@ -110,8 +168,10 @@ export function DocReader() {
       onPlace={editor ? () => useDocUi.setState({ reading: null, editing: false, placing: { docId: d.id } }) : undefined}
       editing={writes && editing}
       onEdit={writes ? (on) => useDocUi.setState({ editing: on }) : undefined}
-      onSave={writes ? (text) => void writeDocumentText(wid, d.id, text, { joinNew: !d.updatedAt || d.updatedAt === d.createdAt }) : undefined}
+      onSave={writes ? (text) => void writeDocumentText(wid, d.id, text) : undefined}
       onRename={d.uid === user?.id ? (title) => void renameDocument(wid, d.id, title) : undefined}
+      live={live}
+      writers={peers.filter((p) => p.doc?.id === d.id)}
     />
   )
 }

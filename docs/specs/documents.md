@@ -111,15 +111,18 @@ and the agent's `open` (for a .md it wrote) open it written in. Its author renam
 - Tools: a paragraph style (text, heading 1–4, quote, code block); bold, italic, struck, code in the line, link (⌘K,
   an address strip), clear the formatting; bullet, numbered and check lists, a level out and in; quote, code block,
   table (inside one, a strip: rows above/below, columns left/right, take a row, a column or the table out), a line
-  across; undo and redo (the editor's own while typing, ⌘Z outside it the workspace's); a word count. Markdown's
+  across; undo and redo (your own changes only, D-374; ⌘Z outside the page the workspace's), all in one row (a
+  little wider than the text; the word count is the head line's). Markdown's
   shortcuts work as typed (`# `, `- `, `[ ] `, `> `, `**…**`), turning into what they mean.
 - The page reads as the reader does (Markdown.module.css styles its tags too); code in a line is its own edged cell.
-- Saved as typed (D-330's pace, `AUTOSAVE_MS`): a pause, leaving the page, a hidden tab or closing writes the text and
-  its counts (excerpt, size, words) in one batch; one go of writing is one undo step, a new one's first text joins its
-  making. The title's heading at the top stays as it came.
+- Written together (D-374, docs/specs/live-writing.md): the page is a shared Yjs text (`src/data/liveText.ts`, the
+  channel `liveTransport.ts`: `edits/` packets and `live/state` under the document), others' carets in their colour with
+  their name, the squares of who's writing in it at the end of the head line. The Markdown body is written again after
+  a 2 s pause in your typing (`LIVE_TEXT_PAUSE_MS`), leaving, a hidden tab or closing, with its counts, outside the
+  workspace's undo (making a document stays one undo step). The title's heading at the top stays as it came. One reader
+  per document: another opened while writing gets its own page.
 - Who (firestore.rules' `mayWrite`, `mayWriteDoc`): its author, or any owner or editor once it's shared; never the
-  agent notes (their own preview), a report or a file. Last write wins (D-071): while someone types, others' changes
-  wait; with the keyboard away, theirs come in.
+  agent notes (their own preview), a report or a file. Everyone's changes merge (D-374, not last write wins).
 - Kept, not dropped: an image is `[alt]` (nothing is fetched, as in the reader) and saved back as it came.
 
 ## Unframed (D-234)
@@ -133,6 +136,6 @@ there is measured as drawn.
 ## Not yet
 
 - Images and PDFs (Storage, step 4): upload with thumbnails, pdf.js pages, `[◐ dark]`, an image taking its shape.
-- Writing (D-373): telling who else is writing the same document now; images by upload once Storage is live.
+- Writing: images by upload once Storage is live; the shared text's channel on RTDB once Blaze is on (D-374).
 - Viewers uploading (the client's read-only mode refuses it).
 - Comments on a document in a list. (Documents are in the export since D-246: .md and reports; files once Storage is live.)

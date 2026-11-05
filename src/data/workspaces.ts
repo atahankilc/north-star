@@ -1,3 +1,4 @@
+import { deleteLive } from './liveTransport'
 import {
   arrayRemove,
   arrayUnion,
@@ -347,6 +348,8 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
   // Once each: your own shared documents and chats come back from both queries. A body goes before its summary, which
   // its rule reads.
   const reportRefs = [...new Map(reports.flatMap((r) => r.docs.map((d) => [d.ref.path, d.ref] as const))).values()]
+  // A .md written together (D-374): its packets and state, while its summary is still there for their rules.
+  for (const ref of reportRefs) if (ref.parent.id === 'documents') await deleteLive(wid, ref.id).catch(() => {})
   for (const batch of inBatches(reportRefs, (b, ref) => b.delete(doc(ref, 'content', 'body')).delete(ref), BODIES_PER_BATCH)) await batch.commit()
   // Comment threads (D-159): each with all its messages (threads.ts: an owner may take others' messages only once
   // their thread is gone, D-166); then everyone's read marks.

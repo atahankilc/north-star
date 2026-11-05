@@ -402,13 +402,13 @@ export const LESSONS: readonly Lesson[] = [
 
   // 6. Documents
   {
-    id: 'documents', v: 3, format: 'lesson', roles: ALL, area: 'documents', since: 'D-232, D-349, D-373',
+    id: 'documents', v: 4, format: 'lesson', roles: ALL, area: 'documents', since: 'D-232, D-349, D-373, D-374',
     trigger: [{ event: 'focus-in', when: { kind: 'documents' } }, { event: 'piece-made', when: { kind: 'documents' } }], after: ['piece-made'],
     pages: [
       { title: 'Your files', tab: 'files', body: 'A documents list holds notes, research and reports. Upload `.md` files, or drop them on the list.', scene: 'documents' },
       { title: 'Private until shared', tab: 'private', body: 'A new document is yours alone. Only you, its author, can share it with everyone here or take it back: right-click its row.', scene: 'documents' },
       { title: 'Read beside', tab: 'beside', body: 'In focus, a click opens a document next to the list, to read as a page, with its headings to jump between. Open several side by side.', scene: 'doc-beside' },
-      { title: 'Write one', tab: 'write', body: "`write` starts a new document; `¶` on a row writes in one. Type on the page as it reads, with the tools above it. A shared one, any owner or editor can write in.", scene: 'documents' },
+      { title: 'Write one', tab: 'write', body: "`write` starts a new document; `¶` on a row writes in one. Type on the page as it reads. A shared one, every owner and editor can write in at once: you see where each one types.", scene: 'documents' },
     ],
   },
   {

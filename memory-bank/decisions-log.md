@@ -406,7 +406,7 @@ address, and `/#/w/<id>` was hard to read.
 ### D-071 · 2026-10-17 · Accepted (reverses D-067's typing indicator; closes Phase 3)
 **No "who's typing" anywhere; last write wins, no guard.** The user: seeing who has a card open (and how many people) is enough,
 so `Bob ✎ title`, the field outline and the `edit`/`field` presence writes are gone. Concurrent edits stay last-write-wins per field
-with no lock or warning (answers Q-006 for good: no Yjs). The panel strip now only says `Bob is here`.
+with no lock or warning (answers Q-006: no Yjs; changed for documents' text only by D-374, written together with Yjs). The panel strip now only says `Bob is here`.
 The RTDB rules accepted `edit`/`field` for a while so tabs on the previous build kept working; they were dropped later the same day. **Phase 3 is done.**
 
 ### D-072 · 2026-10-17 · Accepted (extends D-028)
@@ -7201,6 +7201,31 @@ saved document opens to be written. Code in a line and code blocks now stand out
 the strong ink). Alternatives: Milkdown (Markdown-first, more to build by hand), MDXEditor (its own look, ~850 kB),
 our own editor (months). *Not yet:* who else is writing now (last write wins, D-071); images by upload (Storage);
 raw HTML in a .md is kept as text, Markdown's rarer spellings (`*` lists, `__bold__`) come back in the common one.
+
+### D-374 · 2026-11-05 · Accepted, built 2026-11-05 (the user: "insanların aynı anda edit yapmasını sağlayan bir şey implemente edemez miyiz? Mesela google sheets gibi. Orda da kim nereye ne yazıyo gözüküyor ya"; then "tamam, planı çıkar. Sonraki session implementasyonu yapıcak"; changes D-071 for documents' text only): writing together
+Documents are written by several people at once, as in Google Docs: Yjs (MIT, a library, not a service; asked whether
+it ties us to anything: no, and the Markdown body stays the document) merges what each types, through Tiptap's open
+extensions (Collaboration, CollaborationCaret), with others' carets and selections in their colour and name. The
+channel is Firestore for now (packets under the document, `edits/` and a folded `live/state`, guarded by D-373's
+`mayWrite`; ~0.2–0.5 s); carets through RTDB presence (positions only). Once Blaze is on, the channel moves to RTDB
+(~0.05–0.1 s) with roles mirrored by a Function. Undo becomes each person's own (Yjs's UndoManager). Only free text:
+cards, tables and the rest stay last write wins (D-071), since rules can't read inside a packet and the agent, undo and
+export work on today's shapes; asked where else Yjs helps: paragraphs, sticky notes, card and task notes later, on the
+same provider. Alternatives: Liveblocks or Tiptap Cloud (paid, the data elsewhere), only a "Bob is writing" notice (no
+writing at once), our own merge (months). The plan: docs/specs/live-writing.md.
+**Built 2026-11-05** (the user: "D-374'ü yap … önce provider ve rules, sonra editör ve imleçler, sonra iki tarayıcıyla
+test et"): `src/data/liveText.ts` (the provider), `liveTransport.ts` (Firestore), `liveMemory.ts` (tests, gallery);
+the rules for `edits/` and `live/state`, presence's `doc` (`id`, `a`, `h`); DocEditor's `live`, DocReader passing it,
+the writers' squares in the head line. Where it differs from the plan: the state is listened to (a fold's new state
+applied, so packets deleted by someone else's fold are never missed); a change over 64 KB goes straight into the state
+(a Yjs update can't be split); the bar's word count went (the user, mid-session: "the actions is not one row": the
+editor's tools wrapped in the reader; now one row, a little wider than the text). Found while checking: the reader
+moved to another document while writing kept the first one's page, and the body listener briefly held the old text,
+which would have seeded the new document with it: one reader per document now (`key`), and the editor waits for its
+own body. Checked: rules 696/0, unit 1075/1075, headless three Chromes 23/23 (docs/specs/live-writing.md). Pushed; firestore:rules and database deployed 2026-11-05.
+*Not yet:* RTDB as the channel (Blaze); a writer's tab that dies
+in its 2 s leaves the Markdown behind until someone types again; Tiptap writes `>` at a line's start as `&gt;` in the
+Markdown (D-373's serializer, reads the same).
 
 ### D-375 · 2026-11-05 · Accepted (the user: "component console u bir süre sonra tam alan alıyor ya, Başlıkları da öyle tam sola mı yaslasak Console kısmı tam alan kaplamaya başlıyınca componentte, başlıklarda üstte tam alan kaplasın gibi")
 **Decision:** a framed piece's name past 70 % of its piece's width (`CONSOLE_FILL`) takes the whole top edge: flush left, as wide as the piece, a line under it as the console has one over it; hovered it still grows to its full length. Unframed pieces keep their name as it was (no edge to fill).

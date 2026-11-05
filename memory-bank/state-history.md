@@ -1550,3 +1550,16 @@ bright ground.
 
 ## Done (2026-11-05): paragraphs and sticky notes keep their spaces and empty lines (D-190)
 Reading drew Markdown (double spaces collapsed, an empty line 0.6 em), the field the raw text, so a note jumped on edit. `LightMarkdown`'s `asTyped` keeps both as typed. Measured headless, view against edit: empty lines 163/216 now 216/216, double spaces 128/140 now 140/140. Still different, because the field shows the source: `**` marks (128/178) and bullets' hanging indent (153/128); only a word-processor field would close them.
+
+## Done (2026-11-05): writing together, D-374
+- Provider `src/data/liveText.ts`, Firestore channel `liveTransport.ts`, in-memory `liveMemory.ts`; rules for
+  `documents/{id}/edits/{eid}` and `live/state`, presence `doc`; DocEditor `live` (Collaboration, CollaborationCaret,
+  carets through presence), DocReader one per document, writers' squares; delete takes `edits` and `live`; the
+  documents lesson v4; DESIGN.md's carets; documents.md; live-writing.md marked built.
+- The editor's tools in one row (the user's mid-session ask); word count left to the head line.
+- Checked: `npm run test:rules` 696/0; `npx vitest run` 1075/1075; headless on the emulators, three Chromes (Alice
+  owner, Bob editor, Carol viewer), 23/23: one seed when both open an old document at once, same paragraph and same
+  word at once, carets and selections, Bob offline then back, undo only your own, a viewer following the Markdown,
+  300 edits folded and a reload, light and dark, moving the reader to another document, delete takes edits/live and
+  its undo reseeds. Script: the session's scratchpad (live.mjs, lib.mjs, seed.mjs).
+- Pushed 2026-11-05; firestore:rules and database deployed the same day (after the rules tests, 696/0).

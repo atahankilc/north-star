@@ -14,6 +14,7 @@ import { useMemo } from 'react'
 import { db, useEmulators } from './firebase'
 import { absent, tracked } from './history'
 import { useDoc, useQuery, type WithId } from './hooks'
+import { deleteLive } from './liveTransport'
 
 export { DOC_KINDS, DOC_COLS, DOC_LIMITS } from '../model/shapes'
 export type { DocKind, DocCol } from '../model/shapes'
@@ -193,7 +194,8 @@ export function mayWriteDoc(d: Pick<Doc, 'kind' | 'uid' | 'shared'> & { id: stri
   return d.uid === me || (d.shared && (role === 'owner' || role === 'editor'))
 }
 
-// A new empty .md of yours, private until shared, titled `untitled` until it's named; one undo step.
+// A new empty .md of yours, private until shared, titled `untitled` until it's named; one undo step (making it: what's
+// typed in it is undone in the page, D-374).
 export async function newDocument(wid: string, who: { uid: string; name: string }): Promise<string> {
   const ref = doc(docsOf(wid))
   const body = bodyRef(wid, ref.id)
@@ -204,23 +206,20 @@ export async function newDocument(wid: string, who: { uid: string; name: string 
     batch.set(ref, summary)
     batch.set(body, { text: '' })
     return batch.commit()
-  }, { before: absent([ref, body]), key: `doc-text:${ref.id}` })
+  }, { before: absent([ref, body]) })
   return ref.id
 }
 
-// A .md's text as it's typed (D-330's pace: the caller waits for a pause): the text and its counts, one batch. One
-// writing go is one undo step (`key`); a new one's first text joins its making, so undoing it takes the document away.
-export function writeDocumentText(wid: string, id: string, text: string, opts: { joinNew?: boolean } = {}) {
+// A .md's Markdown, written again from the shared text on a pause in someone's typing (D-374): the text and its counts,
+// one batch, outside the workspace's undo (the page's own undo takes back only your changes; an undo here would write
+// old text over everyone's). Everyone's text is the same once merged, so whoever writes last writes the same thing.
+export function writeDocumentText(wid: string, id: string, text: string) {
   if (bytesOf(text) > DOC_LIMITS.text) return Promise.reject(new DocumentError('over 900 KB of text'))
-  const ref = docRef(wid, id)
-  const body = bodyRef(wid, id)
+  const batch = writeBatch(db())
   const excerpt = excerptOf(text)
-  return tracked('write a document', [ref, body], () => {
-    const batch = writeBatch(db())
-    batch.update(ref, { excerpt: excerpt || deleteField(), size: bytesOf(text), words: wordsOf(text), updatedAt: Date.now() })
-    batch.set(body, { text })
-    return batch.commit()
-  }, { key: `doc-text:${id}`, mergeAlways: opts.joinNew })
+  batch.update(docRef(wid, id), { excerpt: excerpt || deleteField(), size: bytesOf(text), words: wordsOf(text), updatedAt: Date.now() })
+  batch.set(bodyRef(wid, id), { text })
+  return batch.commit()
 }
 
 // ---- Changes (the author's own: sharing, renaming; firestore.rules lets no one else)
@@ -250,9 +249,12 @@ export function renameDocument(wid: string, id: string, title: string) {
 }
 
 // The document, its content and every piece showing it, as one undo step. The body first: its rule reads the summary.
-export function deleteDocument(wid: string, id: string, pieces: DocumentReference[]) {
+// What it was written together with (D-374: packets and state) goes first, outside the step: an undo brings the
+// Markdown back, and the shared text is seeded from it again when it's next written.
+export async function deleteDocument(wid: string, id: string, pieces: DocumentReference[]) {
   const ref = docRef(wid, id)
   const body = bodyRef(wid, id)
+  await deleteLive(wid, id).catch(() => {})
   return tracked('delete a document', [ref, body, ...pieces], () => {
     const batch = writeBatch(db())
     batch.delete(body)

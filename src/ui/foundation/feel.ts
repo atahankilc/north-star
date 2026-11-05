@@ -46,3 +46,8 @@ export const CONSOLE_FILL = 0.7
 
 // A Select's list gets the prompt's `>` line past this many options; a shorter one jumps by a first letter (D-093, D-350).
 export const SELECT_FIND_PAST = 7
+
+// Writing a document together (D-374): your changes go out as one packet every LIVE_SEND_MS; the Markdown underneath
+// (what the reader, the agent and export read) is written again after a pause this long in your typing.
+export const LIVE_SEND_MS = 200
+export const LIVE_TEXT_PAUSE_MS = 2000

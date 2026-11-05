@@ -604,6 +604,36 @@ service cloud.firestore {
         function summaryAfter() {
           return getAfter(/databases/$(database)/documents/workspaces/$(wid)/documents/$(id)).data;
         }
+        // Writing together (D-374, docs/specs/live-writing.md, src/data/liveTransport.ts): who may write the .md sends its
+        // changes as packets (a Yjs update each, created, never changed) and folds them into `live/state`. Rules can't read
+        // inside a packet: who sends is all they check. With the summary gone (the document deleted) any member clears what's
+        // left, as with its body.
+        function summaryGone() {
+          return !exists(/databases/$(database)/documents/workspaces/$(wid)/documents/$(id));
+        }
+        match /edits/{eid} {
+          allow read: if mayRead(summary());
+          allow create: if mayWrite(summary())
+            && request.resource.data.keys().hasOnly(['u', 'by', 'at']) && request.resource.data.keys().hasAll(['u', 'by', 'at'])
+            && validPacket(request.resource.data);
+          function validPacket(d) {
+            return d.by == request.auth.uid && d.u is bytes && d.u.size() <= 65536 && d.at == request.time;
+          }
+          allow delete: if summaryGone() ? isMember(wid) : (mayWrite(summary()) || mayDelete(summary()));
+        }
+        // Everything folded so far: seeded once from the Markdown (a create), then each compaction one step on (`v`).
+        match /live/{part} {
+          function validState(d) {
+            return d.keys().hasOnly(['s', 'v', 'at']) && d.keys().hasAll(['s', 'v', 'at'])
+              && d.s is bytes && d.s.size() <= 921600 && d.v is int && d.at == request.time;
+          }
+          allow read: if part == 'state' && (resource == null ? isMember(wid) : mayRead(summary()));
+          allow create: if part == 'state' && mayWrite(summary()) && validState(request.resource.data) && request.resource.data.v == 0;
+          allow update: if part == 'state' && mayWrite(summary()) && validState(request.resource.data)
+            && request.resource.data.v == resource.data.v + 1;
+          allow delete: if part == 'state' && (summaryGone() ? isMember(wid) : mayDelete(summary()));
+        }
+
         // A .md's text, or a report's answer and sections; written with its summary (the same batch, hence getAfter).
         match /content/{part} {
           function validBody(b) {

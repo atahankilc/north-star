@@ -55,6 +55,8 @@ const CASES: [keyof typeof L, () => number][] = [
   ['CHANGE_KINDS_MAX', () => num(rules.slice(rules.indexOf('match /changes/')), list('d.kinds'))],
   ['SUMMARY_PIECES_CHARS', () => num(body('validSummary'), list('d.pieces'))],
   ['SUMMARY_CARDS_CHARS', () => num(body('validSummary'), list('d.cards'))],
+  ['LIVE_PACKET_MAX', () => num(rules, /d\.u is bytes && d\.u\.size\(\) <= (\d+)/)],
+  ['LIVE_STATE_MAX', () => num(rules, /d\.s is bytes && d\.s\.size\(\) <= (\d+)/)],
 ]
 
 // Limits the rules can't hold, each with why: they bound an item inside a list or map (Firestore rules can't loop over
@@ -79,6 +81,10 @@ const CLIENT_ONLY: Partial<Record<keyof typeof L, string>> = {
   MEMBERS_LISTED: 'how many people a picker loads, not data',
   WORKSPACE_NAME_MAX: "the fields' cap; the rules' validName takes up to 200 (older names kept)",
   SUMMARY_PIECES_MAX: 'pieces in a workspace summary: the rules cap the joined string (SUMMARY_PIECES_CHARS), not the count',
+  LIVE_FOLD_PACKETS: 'when a writer folds the packets, not data',
+  LIVE_FOLD_BYTES: 'when a writer folds the packets, not data',
+  LIVE_DROP_BATCH: 'how a compaction cuts its deletes, not a rule',
+  CARET_MAX: 'a caret in presence: database.rules.json, checked in tests/unit/liveText.test.ts',
   SUMMARY_CARDS_MAX: 'cards in a workspace summary: the rules cap the joined string (SUMMARY_CARDS_CHARS), not the count',
 }
 

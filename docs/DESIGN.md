@@ -362,4 +362,6 @@ works too. No per-component scroll bar styles; a new scrolling area gets the loo
 - Collaborator cursors are drawn 200 ms behind on a curve through what was sent, so they glide like the sender's
   (D-169, D-193; no trail: tried and removed, D-067); their name shows only while you point at the arrow, so it never
   hides what's under it (D-352)
+- In a document written together (D-374), someone's caret is a 1 px line in their colour with their name on a tag
+  over it (the Marks' peer tag), what they've selected shaded in it (`--mix-soft`); never yours, never someone away
 - Marks and drags: see §6 (D-265).

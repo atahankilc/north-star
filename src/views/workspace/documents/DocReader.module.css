@@ -27,3 +27,10 @@
   font-size: var(--text-heading);
   font-weight: var(--weight-medium);
 }
+
+/* Who's writing in it now (D-374): their squares at the end of the head line. */
+.writers {
+  display: inline-flex;
+  gap: var(--space-1);
+  margin-left: auto;
+}

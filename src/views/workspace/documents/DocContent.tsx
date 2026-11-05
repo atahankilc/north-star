@@ -58,9 +58,11 @@ type Props = {
   // Written in the app (D-373): the title's field and the page's editor in place of its title and Markdown.
   title?: ReactNode
   editor?: ReactNode
+  // Who's writing in it now (D-374), at the end of its head line.
+  people?: ReactNode
 }
 
-export const DocContent = memo(function DocContent({ d, body, loading = false, failed = false, me, links = false, title, editor }: Props) {
+export const DocContent = memo(function DocContent({ d, body, loading = false, failed = false, me, links = false, title, editor, people }: Props) {
   const by = d.uid === me ? 'you' : d.name
   return (
     <article className={styles.doc}>
@@ -74,6 +76,7 @@ export const DocContent = memo(function DocContent({ d, body, loading = false, f
             ◐ only you
           </span>
         )}
+        {people}
       </p>
       {title ?? (
         <h1 className={styles.title} data-heading="title">

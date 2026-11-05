@@ -34,6 +34,10 @@ export type Presence = {
   // The tasks side view's tab while it's open (D-300): `mine`, `days` or a deck's id, ` days` after a deck on its days.
   // A follower's opens on it.
   tasks?: string
+  // The document they're writing in (D-374), with their caret: anchor and head as base64 Yjs relative positions (so it
+  // stays on its letter as others type), none while the keyboard is elsewhere. In `usePresence`'s peers only `id` is
+  // kept: the caret comes from `caretsIn` (it moves with every key, and redrawing every view for it would be waste).
+  doc?: PresenceDoc
   // Away (D-331): their tab is hidden or they haven't touched it for AWAY_AFTER_MS. Still here, drawn faint; no cursor,
   // their selection and drag not shown, not to be followed. Absent = here.
   away?: true
@@ -43,6 +47,30 @@ export type Presence = {
 }
 
 export type Peer = Presence & { uid: string }
+export type PresenceDoc = { id: string; a?: string; h?: string }
+
+// Others' carets in documents (D-374), kept out of React state as the board's cursors are.
+export type Caret = { uid: string; docId: string; name: string; color: string; a: string; h: string }
+let carets: Caret[] = []
+const caretListeners = new Set<() => void>()
+const caretsByDoc = new Map<string, Caret[]>()
+export function caretsIn(docId: string): Caret[] {
+  return caretsByDoc.get(docId) ?? []
+}
+export function onCarets(fn: () => void): () => void {
+  caretListeners.add(fn)
+  return () => void caretListeners.delete(fn)
+}
+function setCarets(next: Caret[]) {
+  const key = (c: Caret[]) => c.map((x) => `${x.uid} ${x.docId} ${x.color} ${x.name} ${x.a} ${x.h}`).join('|')
+  if (key(next) === key(carets)) return
+  carets = next
+  caretsByDoc.clear()
+  for (const c of next) {
+    caretsByDoc.set(c.docId, [...(caretsByDoc.get(c.docId) ?? []), c])
+  }
+  caretListeners.forEach((fn) => fn())
+}
 
 // 10 writes a second at most while the pointer moves (D-193; was ~16): the watching side draws a smooth curve through
 // them, a little in the past, so fewer points still move evenly.
@@ -198,6 +226,14 @@ export function setCursor(at: [number, number] | null) {
   patch(at && !mine?.data.away ? { x: round(at[0]), y: round(at[1]) } : { x: undefined, y: undefined })
 }
 
+// The document being written in and the caret there (D-374); null when done or gone. Sent with the cursor (10 a second
+// at most); none while away.
+export function setPresenceDoc(d: PresenceDoc | null) {
+  const now = mine?.data.doc
+  if (d?.id === now?.id && d?.a === now?.a && d?.h === now?.h) return
+  patch({ doc: d ? { id: d.id, ...(d.a && d.h ? { a: d.a, h: d.h } : {}) } : undefined })
+}
+
 // Going away drops the cursor and a drag in hand; the selection stays (it's shown again on coming back, D-331).
 function setAway(away: boolean) {
   if (!mine || !!mine.data.away === away) return
@@ -291,17 +327,23 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
       }
       for (const id of tracks.keys()) if (!here.some((p) => p.uid === id)) tracks.delete(id)
       if (moved) listeners.forEach((fn) => fn())
+      const colors = assignColors([...here, { uid, since: mine?.since ?? undefined }])
+      // Carets in documents (D-374); someone away has none.
+      setCarets(
+        here.flatMap((p) =>
+          p.doc?.a && p.doc.h && !p.away ? [{ uid: p.uid, docId: p.doc.id, name: p.name, color: colors.get(p.uid)!, a: p.doc.a, h: p.doc.h }] : [],
+        ),
+      )
       const next = JSON.stringify([
         mine?.since,
-        here.map(({ x, y, ts: _ts, ...p }) => ({ ...p, at: x !== undefined && y !== undefined })),
+        here.map(({ x, y, ts: _ts, doc, ...p }) => ({ ...p, doc: doc?.id, at: x !== undefined && y !== undefined })),
       ])
       if (next === shape) return
       shape = next
-      const colors = assignColors([...here, { uid, since: mine?.since ?? undefined }])
       const { following } = usePresence.getState()
       usePresence.setState({
         // Those here first, then those away (D-331), each by name.
-        peers: here.map((p) => ({ ...p, color: colors.get(p.uid)! })).sort((a, b) => Number(!!a.away) - Number(!!b.away) || a.name.localeCompare(b.name)),
+        peers: here.map((p) => ({ ...p, doc: p.doc ? { id: p.doc.id } : undefined, color: colors.get(p.uid)! })).sort((a, b) => Number(!!a.away) - Number(!!b.away) || a.name.localeCompare(b.name)),
         myColor: colors.get(uid)!,
         // They left: stop following.
         following: following && here.some((p) => p.uid === following) ? following : null,
@@ -354,6 +396,7 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
       mine = null
       republish = null
       tracks.clear()
+      setCarets([])
       usePresence.setState({ peers: [], myColor: null, following: null })
       onDisconnect(node).cancel().catch(() => {})
       remove(node).catch(() => {})

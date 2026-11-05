@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-05 (documents written in the app D-373; light theme's colours D-368; the agent's web D-360 checked on the stub and pushed; windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-05 (writing together D-374 built; documents written in the app D-373; light theme's colours D-368; the agent's web D-360 checked on the stub and pushed; windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -40,7 +40,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
   which (D-313); pushed;
   rules deployed.
-- Documents (D-232): files (images, PDFs) once Storage is live. Written in the app: D-373 (2026-11-05, pushed, firestore:rules deployed; state-history).
+- Documents (D-232): files (images, PDFs) once Storage is live. Written in the app: D-373 (2026-11-05, pushed, firestore:rules deployed; state-history). Writing together D-374: built, checked, pushed 2026-11-05; firestore:rules and database deployed (state-history).
 - The agent (D-312, docs/specs/agent.md; the overnight build: docs/specs/agent-run.md): see the first item above.
 - Onboarding (D-315, D-316): **built and live** (O0–O16; state-history.md). D-349 (2026-11-02, committed, not pushed):
   content rewritten, every lesson the centred modal, ~30 lessons by screen/piece, no nudges; checked headless on

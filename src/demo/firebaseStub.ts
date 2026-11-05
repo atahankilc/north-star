@@ -29,6 +29,12 @@ export const remove = refuse
 export const serverTimestamp = refuse
 export const set = refuse
 // firebase/firestore
+// Writing together's packets (D-374, liveTransport.ts); never made in the demo.
+export class Bytes {
+  static fromUint8Array(): never {
+    return refuse()
+  }
+}
 export const arrayRemove = refuse
 export const arrayUnion = refuse
 export const collection = refuse
@@ -47,6 +53,7 @@ export const onSnapshot = refuse
 export const orderBy = refuse
 export const persistentLocalCache = refuse
 export const query = refuse
+export const runTransaction = refuse
 export const setDoc = refuse
 export const updateDoc = refuse
 export const where = refuse
