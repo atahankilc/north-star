@@ -4866,7 +4866,7 @@ The user asked for session 3 of the consistency plan.
   are a 1 px cyan line their whole length on the ring, and a cyan tag says the size (`410`; `560 × 340`): right of the
   middle for a width, beside the bottom-right corner when the height moves too (clear of a text's bar and a console).
 - *Which:* paragraph, sticky note, project title: the right bar (a turned paragraph's along its text: the top reading
-  upwards, the bottom reading down); a heading none; a section: right, bottom, bottom-right; a piece in edit mode: all
+  upwards, the bottom reading down); a heading none; a section: right, bottom, bottom-right (every side and corner since D-376, a sticky note too); a piece in edit mode: all
   four corners and edges (an unframed one only moves). Only while selected: hovering never shows them (before, a
   paragraph's strip showed on hover and an unselected one could be resized by accident).
 - *A table column:* not a selectable thing, so its handle shows where it's found: under the pointer at its head's right
@@ -7235,4 +7235,21 @@ Markdown (D-373's serializer, reads the same).
 The user, after seeing it: no space left of the kind's tab, on any piece's name, full or not ("remove the left emptyness"): the tab touches the edge's lead, 8 px clear only after the name.
 **Why its own width, not the console's state:** a console exists only while pointed at, so a name tied to it would jump on every hover. Names and consoles both take more of a piece as you zoom out, so the two go full at about the same zoom, not at exactly the same one.
 **Checked:** gallery `a long name on the whole edge`, dark and light, full and reduced motion, headless: full at far zooms, back to its 16 px lead close in, on both ways. Measuring turns transitions off: reduced motion's global `transition: all` kept the old `min-width` for the measure.
+
+### D-376 · 2026-11-05 · Accepted (the user: "sectionlar bitek sağdan ve alttan boyu düzeltilebiliyor ancak bunu her alanda izin vermeliyiz. Sticky notelar ve aklına gelen başka bir şey var ise bunda da uygulabilirz"; changes D-273's handles, D-257's height)
+**A section and a sticky note resize from every side and corner, as a piece in edit mode does.**
+- *One rule:* `resizedBox` (src/model/resizeBox.ts) is the box a handle gives, for pieces, sections and notes: the sides it names move, the others stay, an edge stopped by the smallest size stops against the side that stays. A left or top edge writes x or y with the size, one undo step. What a section holds doesn't move: only its frame does.
+- *A note's height:* `h` is the least it is, not a fixed height: its text can make it taller, and a drag never makes it shorter than its text at the width it's being given (`labelBox`). Text is never cut; `▾` folds it to the first height whatever `h` is, so a folded note has only its left and right handles. No rules change (`h` was already allowed); export keeps it; the agent's `resize` and `update_text` take it.
+- *Lessons:* `section-draw` and `sticky-made` v3.
+- *Verified:* unit tests (tests/unit/resizeBox.test.ts); headless on emulators, a frozen copy: a section by w, n, nw, sw, ne and past its smallest; a note by s, n, w, se, its undo, shrunk from the top to its floor, a long one stopping at its text, folded (only `e w`); all still there after a reload.
+- *Not yet:* a long section name can reach the top edge's middle bar (the handle wins there, the name is still pressed either side); paragraph and title got both ends in D-378.
+
+### D-378 · 2026-11-05 · Accepted (the user: "paragraf ve başlığı yap, sonra commit push et. Sağ panellerin hepsinin genişliği de ayarlanabilir olsa süper olur"; changes D-219's 400 px, D-273's handles)
+**A paragraph and the project title resize from both ends of their text; every right panel's width is dragged from its left edge.**
+- *Text:* the same `resizedBox` as D-376, one path for everything: left and right bars, a turned paragraph's top and bottom (its height on the screen is its width). The moved end writes x or y with the width.
+- *Panels:* `SidePanel`'s `ResizeEdge` on its left, 320–800, one width for all of them, kept in this browser (src/ui/patterns/panelWidth.ts, `--panel-width` on <html>; `--panel-w` stays the start). A panel given its own `width` (a task's in the side view) isn't dragged. What keeps a card clear of the panel reads `sidePanelW()`.
+- *Clear of the dock:* never wider on this window than half of it less 180 px (`PANEL_W.dock`), so the dock at the foot's middle isn't covered; never under 400 for that. The width asked for comes back when the window grows. The agent's box watches <html>'s style, so it moves as the panel is dragged.
+- *Lessons:* `card-panel` v3.
+- *Verified:* headless on emulators, a frozen copy: paragraph by w, e and past its smallest; turned both ways by n and s; title by w and e, all after a reload; a card's panel dragged to 570 (the cap at 1500 px), 320, 500, the box moved clear, 500 after a reload, 400 in a 700 px window, 500 again at 2200.
+- *Not yet:* a task's panel in the side view keeps its own width.
 

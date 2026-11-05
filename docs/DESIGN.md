@@ -192,7 +192,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   fades right. Paragraphs (`¶`, S/M/L, L the default and still under an H3, D-161, D-162) wrap at their width, light
   Markdown (bold in `fgStrong`, italic, bullets, `code`, cyan links), a hairline down the left. Any text turns a quarter
   (↺ reads up, ↻ down). Headings and paragraphs never turn into each other; headings and section names show at any zoom
-  (D-160). A paragraph's or sticky note's width drags by the cyan bar on its right edge (D-273).
+  (D-160). A paragraph's and the title's width drag by the cyan bars at both ends of the text (D-273, D-378); a section and a sticky note resize from every side and corner (D-376): a note's height is the least it is, its text can make it taller.
 - Sticky notes (D-158, D-162, D-257, D-259): paper in its colour (92 % with black in dark, a 34 % pastel in light; yellow
   the bright one), dark ink (`--sticky-ink`), a darker 13 px glue band with `ATAHAN · 2h` and three checks, a soft shade
   under its foot, never tilted. 150 × 125 to start (6 × 5 steps), growing down as you type; a long one folds back from
@@ -300,7 +300,7 @@ Two families, each on its own shell; they share only foundation parts (`src/ui/f
 (`useEscapeLayer`: what opened last closes first; a field keeps its Escape in a panel), focus in and back
 (`focus.ts`), the canvas guard, `dragPointer`, and the docked marks (`Corners.module.css`: faint L's, cyan when pointed at).
 - **Docked to an edge:** `EdgeColumn` (full height, a line on its inner edge, the marks, cell by cell) with `PanelHead`
-  (kind in its tone, tools and one `×` joined): the right panel (`SidePanel`, 400 px) and the agent's column. The
+  (kind in its tone, tools and one `×` joined): the right panel (`SidePanel`, 400 px to start, its left edge dragged 320–800 and kept in the browser, D-378) and the agent's column. The
   threads dock stays bottom left in its own shape with the same parts. A dragged edge is `ResizeEdge` (a cyan line on
   the edge while pointed at); a line that shares the screen between two parts is `SplitLine` (9 px to grab, 1 px drawn,
   cyan when pointed at): beside a plane, between stacked panes, the tasks side view and its days, the documents.

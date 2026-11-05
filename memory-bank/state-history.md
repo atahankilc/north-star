@@ -1570,3 +1570,9 @@ at 1920, and at 1440 the sum passed 70 %, the drawer took the whole edge and 476
 (grid), `reset` at the right end of its title (`FloorTitle`'s `action`), what's linked in `.cells`; on a whole edge the columns share the width
 (`--col-grow`, set by Console's `data-full`). Measured headless in the gallery at 700, 1000, 1440, 1920 (plane and deck):
 the right edge ends at `reset`. tsc, check:tokens, check:kit, check:gallery ok.
+
+## Done (2026-11-05): resize from every side (D-376, D-378)
+Sections and sticky notes from every side and corner, paragraphs and the title from both ends, on one `resizedBox`
+(also the pieces'); right panels' width from their left edge. Checked headless on emulators (the entries say how).
+Offered, not asked for: a deck's column width, the document reader's window.
+

@@ -135,8 +135,8 @@ feature comes back as a piece, and check them with the user then.
     when small), distance = state, tone = what it is, cyan = what you can do, press 70 ms, release a spring; a drag goes
     0.8 round the point held with `<Landing>` L's where it lands (a kanban opens a gap); `<BoxSelect>`; others'
     selections as L's + a name tag in every view.
-  - Resize (D-273): cyan handles on the ring, only when selected (paragraph, sticky, title: the right bar; section:
-    right, bottom, corner; a piece in edit mode: every corner and edge; a table column: its head's edge); the moving
+  - Resize (D-273): cyan handles on the ring, only when selected (paragraph, title: a bar at both ends of the text, D-378; section, sticky note
+    (D-376) and a piece in edit mode: every corner and edge, a folded note only its sides; a table column: its head's edge); the moving
     edges lit, no size shown (D-347); pieces and sections move at 0.8 with landing L's.
   - Names and lines (D-266, D-276, D-277): two voices (system mono caps, user Inter); numbers magenta (a piece name's
     leading number, kanban columns, panel sections); containers edged, the name cut in (16 lead, 8 clear), held things
@@ -196,7 +196,7 @@ feature comes back as a piece, and check them with the user then.
   (their headings and sections folded under `[▸ N inside]`), the project title, H1/H2 headings, named sections, in
   reading order; typed, matches grouped by space (`here`, Tab `everywhere`) with a live preview of where you'll land.
   Enter or a double-click goes: it glides there, into a plane's focus first.
-- Right panel (D-219): every panel on the right is a terminal column flush with its space's right edge, 400 px, full
+- Right panel (D-219): every panel on the right is a terminal column flush with its space's right edge, 400 px to start (its left edge dragged 320–800, one width for all, kept in the browser, never over the foot's dock, D-378), full
   height, faint corner marks (D-347), kind + `[×] esc`, an Inter title, `01 NAME ──` sections, a `[verb]` foot; cell by cell.
 
 ## Cards and links on planes
@@ -255,11 +255,11 @@ feature comes back as a piece, and check them with the user then.
 - Kinds and looks (D-194, as 1.0 set them): headings H1–H3 (48/29/22 px, H1's rule fading right) with an optional small
   line (`02 ── WHO WE BEAT`); paragraphs (light Markdown, S/M/L, a left hairline, width from the right edge); any of
   them turns ±90; sections (drawn with a crosshair, the name a heading in the top or left edge, a number only when typed,
-  carry what's fully inside, resized from the corner); the project title (the workspace's name and description, one per
+  carry what's fully inside, resized from every side and corner, D-376); the project title (the workspace's name and description, one per
   workspace, canvas only; name 92 px, star + PROJECT, folding round the name below 6 px, `titleLayout.ts`).
 - Typed or not it reads the same (D-190): no frame, the item's face and size; the feathered shade only while typing (D-277); paragraphs' and notes' spaces and empty lines shown as typed (`asTyped`), only Markdown's marks differ.
 - Sticky notes (D-158, D-162, D-257, D-259): `kind: 'sticky'`, paper in its colour (dark ink; pastel in light), a glue band
-  with `ATAHAN · 2m`, never tilted, yellow default; 150 × 125 growing down with its text, folded back from `▾`
+  with `ATAHAN · 2m`, never tilted, yellow default; 150 × 125 growing down with its text, its dragged height the least it is (D-376), folded back from `▾`
   (`folded`, shared); mono text S/M/L; from `+` or right-click; not a place.
 
 ## Matrix and table
