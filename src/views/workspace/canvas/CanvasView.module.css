@@ -199,14 +199,14 @@
   /* Over the plane's cards (D-187). */
   z-index: var(--z-1);
   top: 0;
-  /* Cut into the edge as a section's name is (D-266): a 16 px lead of edge, then 8 px clear each side of it. */
+  /* Cut into the edge (D-266): a 16 px lead of edge, the kind's tab straight after it, 8 px clear after the name (D-375). */
   left: calc(var(--space-4) / var(--z, 1));
   display: flex;
   overflow: hidden;
   align-items: center;
   gap: 0.6em;
   max-width: calc(100% - 2 * var(--space-4) / var(--z, 1));
-  padding: 0 calc(var(--space-2) / var(--z, 1));
+  padding: 0 calc(var(--space-2) / var(--z, 1)) 0 0;
   transform: translateY(calc(-1 * min(75%, var(--piece-name-near) * var(--lh-body) * 0.75)));
   background: var(--bg);
   color: var(--fg);
