@@ -1571,10 +1571,11 @@ at 1920, and at 1440 the sum passed 70 %, the drawer took the whole edge and 476
 (`--col-grow`, set by Console's `data-full`). Measured headless in the gallery at 700, 1000, 1440, 1920 (plane and deck):
 the right edge ends at `reset`. tsc, check:tokens, check:kit, check:gallery ok.
 
+## Done (scroll bars from one place, D-377, 2026-11-05)
+- `--scroll-*` tokens, global.css the only drawer, `data-scrollbar='none'` (Tabs), the two `scrollbar-width: thin` gone (filter column, guide), check:kit's `scrollbar` rule reaching src/ui. Checked headless (D-377's *Verified*).
+
 ## Done (2026-11-05): resize from every side (D-376, D-378)
 Sections and sticky notes from every side and corner, paragraphs and the title from both ends, on one `resizedBox`
 (also the pieces'); right panels' width from their left edge. Checked headless on emulators (the entries say how).
 Offered, not asked for: a deck's column width, the document reader's window.
 
-## Done (scroll bars from one place, D-377, 2026-11-05)
-- `--scroll-*` tokens, global.css the only drawer, `data-scrollbar='none'` (Tabs), the two `scrollbar-width: thin` gone (filter column, guide), check:kit's `scrollbar` rule reaching src/ui. Checked headless (D-377's *Verified*).
