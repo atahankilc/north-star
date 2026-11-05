@@ -49,6 +49,7 @@ import { entriesOf, turnsOf } from './chatEntries'
 export { entriesOf, turnsOf } from './chatEntries'
 import type { MemberInfo } from '../read'
 import type { DiffLine } from '../../model/notes'
+import { useDocUi } from '../../views/workspace/documents/Documents'
 
 export { plainError, KEY_REFUSED, NO_KEY } from './errors'
 
@@ -58,7 +59,7 @@ export type StepLine = { id: string; label: string; running: boolean; ok?: boole
 
 // `on`: ticked; off, either the person unticked it (`off`) or it needs one that is (`needs`: those items).
 // `diff`: an agent-notes change's lines (S16), shown in the preview as + / −.
-export type ChangeLine = { id: string; line: string; strike?: string; where: string; delete: boolean; why?: string; on: boolean; needs?: string[]; needsWords?: string[]; kind: string; op: string; sign: '+' | '~' | '−'; diff?: DiffLine[] }
+export type ChangeLine = { id: string; line: string; strike?: string; where: string; delete: boolean; why?: string; on: boolean; needs?: string[]; needsWords?: string[]; kind: string; op: string; sign: '+' | '~' | '−'; diff?: DiffLine[]; doc?: { title: string; shared: boolean } }
 
 export type Entry =
   // `steer`: sent while the agent worked (D-328), handed to it between its steps; `auto`: the app's own go-on to the
@@ -412,6 +413,7 @@ const lineOf = (i: ChangeItem, on: boolean, needs?: string[], all?: ChangeItem[]
   on,
   ...(i.why ? { why: i.why } : {}),
   ...(i.diff ? { diff: i.diff } : {}),
+  ...(i.doc ? { doc: i.doc } : {}),
   ...(needs?.length ? { needs, needsWords: needs.map((n) => { const x = all?.find((y) => y.id === n); return x ? wordsOfItem(x) : n }) } : {}),
 })
 const linesOf = (cs: Changeset): ChangeLine[] => cs.items.map((i) => lineOf(i, true))
@@ -631,7 +633,11 @@ async function accept(chat: Chat) {
   if (get().chat.id !== chat.id) return
   if (r.ok) {
     if (was) patchEntry(was.id, (x) => ({ ...x, state: 'applied' }) as Entry)
-    dispatch({ type: 'applied', report: reportOf({ applied: r.applied.map((i) => ({ line: i.line, where: i.where })), notDone: r.notDone.map((i) => ({ line: i.line })), step: r.step, docs: r.applied.filter((i) => i.op === 'create_document').flatMap((i) => i.made) }) })
+    const docs = r.applied.filter((i) => i.op === 'create_document').flatMap((i) => i.made)
+    dispatch({ type: 'applied', report: reportOf({ applied: r.applied.map((i) => ({ line: i.line, where: i.where })), notDone: r.notDone.map((i) => ({ line: i.line })), step: r.step, docs }) })
+    // Its draft being read (D-381): the window goes on to the document made, read; nothing more to press.
+    const ui = useDocUi.getState()
+    if (ui.draft) useDocUi.setState(docs.length ? { draft: null, reading: ui.draft && docs[0], editing: false } : { draft: null })
     return
   }
   if (r.stale) {

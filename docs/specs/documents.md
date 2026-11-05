@@ -106,7 +106,9 @@ see, the agent's too, including ones written before the list was made.
 A `.md` is written on the page as it reads, never its Markdown: `DocEditor` (Tiptap on ProseMirror, `@tiptap/markdown`,
 loaded only when someone writes) in the reader window. `edit` in the reader's foot turns the page into it, `done` back;
 `write` beside `upload` makes a new empty one of yours (private, `untitled`) and opens it there; `¶` on a list's row
-and the agent's `open` (for a .md it wrote) open it written in. Its author renames it from the title there.
+open it written in. The agent's documents are read first, never written in by themselves (D-381): its preview's row
+`view` shows the draft here (`the agent's draft · not made yet`, `create` / `discard` in the foot), `create` makes it
+and the window reads the document made; the report's `open` reads it too. Its author renames it from the title there.
 
 - Tools: a paragraph style (text, heading 1–4, quote, code block); bold, italic, struck, code in the line, link (⌘K,
   an address strip), clear the formatting; bullet, numbered and check lists, a level out and in; quote, code block,

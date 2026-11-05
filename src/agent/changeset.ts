@@ -80,8 +80,11 @@ export type ChangeItem = {
   // The mark the preview gives it, the same as its things' marks: `+` makes, `−` takes away, `~` changes.
   sign: '+' | '~' | '−'
   why?: string
-  // The agent notes' text before → after, line by line (update_notes only, S16): the preview's diff.
+  // The agent notes' text before → after, line by line (update_notes only, S16): the preview's diff. A new document's
+  // text (create_document), each line added: read in the document's own view, never listed (D-381).
   diff?: DiffLine[]
+  // A new document's title and whether it's shared (create_document, D-381).
+  doc?: { title: string; shared: boolean }
   // The words in `line` to strike (S17: a merge strikes only the merged card's name).
   strike?: string
 }
@@ -439,7 +442,7 @@ function itemsOf(groups: Group[], built: Built[], live: WorkspaceCtx, ids: Ids |
         const sum = plan.writes.find((w) => w.coll === 'documents')?.set ?? {}
         const lines: DiffLine[] = text.split('\n').map((t) => ({ sign: '+', text: t }))
         const n = lines.filter((l) => l.text.trim()).length
-        items.push({ id: s.item, call: g.call, op: s.op, kind: 'document', label: plan.label, line: `${plan.label}: ${n} line${n === 1 ? '' : 's'}, ${sum.shared ? 'shared with everyone here' : 'private to you'}`, where: `${String(sum.title ?? 'a document')} · document`, sign: '+', ids: wrote, made, dependsOn, delete: false, diff: lines, ...(s.why ? { why: s.why } : {}) })
+        items.push({ id: s.item, call: g.call, op: s.op, kind: 'document', label: plan.label, line: `${plan.label}: ${n} line${n === 1 ? '' : 's'}, ${sum.shared ? 'shared with everyone here' : 'private to you'}`, where: `${String(sum.title ?? 'a document')} · document`, sign: '+', ids: wrote, made, dependsOn, delete: false, diff: lines, doc: { title: String(sum.title ?? 'untitled'), shared: !!sum.shared }, ...(s.why ? { why: s.why } : {}) })
         ws = after
         return
       }

@@ -52,11 +52,27 @@ const WIDTH_STORE = 'northstar.agent.width'
 const W_MIN = 340
 const W_MAX = 720
 
+// The agent's draft read in the document's window (D-381) lasts while its preview does: discarded, revised past it, or
+// unticked, the window closes (an apply goes on to the document made, agentStore's accept).
+function useDraftFollows() {
+  const entries = useAgent((s) => s.chat.entries)
+  const draft = useDocUi((s) => s.draft)
+  useEffect(() => {
+    if (!draft) return
+    const live = [...entries].reverse().find((e): e is Extract<Entry, { kind: 'changes' }> => e.kind === 'changes' && (e.state === 'pending' || e.state === 'applying'))
+    const item = live?.items.find((i) => i.id === draft.item && i.on)
+    if (!item) return void useDocUi.setState({ draft: null })
+    const others = live!.items.filter((i) => i.on).length - 1
+    if (others !== draft.others) useDocUi.setState({ draft: { ...draft, others } })
+  }, [entries, draft])
+}
+
 export function Agent() {
   const { user } = useAuth()
   const ws = useWs()
   const wid = ws.wid
   const mode = useAgent((s) => s.mode)
+  useDraftFollows()
 
   useEffect(() => {
     agentActions.attach(wid, user ? { uid: user.id, ...(user.name || user.email ? { name: (user.name || user.email)! } : {}) } : null)
@@ -963,7 +979,7 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
           </div>
           <ul className={styles.items}>
             {list.map((i) => (
-              <ChangeRow key={i.id} i={i} live={live} current={i.id === current} onGo={() => go(on.findIndex((x) => x.id === i.id))} />
+              <ChangeRow key={i.id} i={i} live={live} current={i.id === current} onGo={() => go(on.findIndex((x) => x.id === i.id))} others={on.length - 1} />
             ))}
           </ul>
         </div>
@@ -999,7 +1015,7 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
             <ButtonGroup>
             <span ref={apply} className={styles.applyBox}>
               <Button tone="primary" onClick={() => agentActions.accept()}>
-                apply{deletes > 0 && <span className={styles.applyDeletes}> · {deletes} delete{deletes === 1 ? '' : 's'}</span>}
+                {on.length === 1 && on[0].op === 'create_document' ? 'create' : 'apply'}{deletes > 0 && <span className={styles.applyDeletes}> · {deletes} delete{deletes === 1 ? '' : 's'}</span>}
               </Button>
             </span>
             <Button tone="danger" onClick={() => agentActions.discard()}>
@@ -1047,7 +1063,46 @@ const STATE_WORDS: Record<Extract<Entry, { kind: 'changes' }>['state'], string> 
   unapplied: 'not applied',
 }
 
-function ChangeRow({ i, live, current, onGo }: { i: ChangeLine; live: boolean; current: boolean; onGo: () => void }) {
+// A new document (D-381): its name and how long, never its text here; `view` reads it in the document's own window,
+// where `create` makes it.
+const docText = (i: ChangeLine) => (i.diff ?? []).map((l) => l.text).join('\n')
+function docLine(i: ChangeLine) {
+  const n = (i.diff ?? []).filter((l) => l.text.trim()).length
+  return `new document "${i.doc!.title}" · ${n} line${n === 1 ? '' : 's'}, ${i.doc!.shared ? 'shared with everyone here' : 'private to you'}`
+}
+
+function ChangeRow({ i, live, current, onGo, others }: { i: ChangeLine; live: boolean; current: boolean; onGo: () => void; others: number }) {
+  const draft = useDocUi((s) => s.draft)
+  if (i.op === 'create_document' && i.doc) {
+    const viewing = draft?.item === i.id
+    return (
+      <li className={styles.item} data-off={!i.on || undefined} data-current={current || viewing || undefined}>
+        {live && <Checkbox checked={i.on} aria-label={`${i.on ? 'untick' : 'tick'}: ${docLine(i)}`} onChange={(on) => agentActions.tick(i.id, on)} disabled={!i.on && !!i.needs} />}
+        <span className={styles.itemMark} aria-hidden>
+          {i.sign}
+        </span>
+        <span className={styles.itemLine}>
+          <ItemText line={docLine(i)} struck={false} />
+          {i.why && <span className={styles.why}> — {i.why}</span>}
+        </span>
+        {live && i.on && (
+          <Button
+            className={styles.docView}
+            pressed={viewing}
+            title="read it as the document it would be; create it there"
+            onClick={() =>
+              useDocUi.setState({
+                reading: null,
+                draft: viewing ? null : { item: i.id, title: i.doc!.title, text: docText(i), shared: i.doc!.shared, others, create: () => agentActions.accept(), discard: () => agentActions.discard() },
+              })
+            }
+          >
+            view
+          </Button>
+        )}
+      </li>
+    )
+  }
   return (
     <li className={styles.item} data-diff={i.diff ? '' : undefined} data-delete={i.delete || undefined} data-off={!i.on || undefined} data-current={current || undefined}>
       {live && (
@@ -1101,7 +1156,7 @@ function ReportLine({ entry }: { entry: Extract<Entry, { kind: 'report' }> }) {
       {(docs.length > 0 || (current && !shown.undone)) && (
         <ButtonGroup className={styles.undo}>
           {docs.map((d, i) => (
-            <Button key={d.id} title={d.kind === 'markdown' ? `read and write "${d.title}"` : `read "${d.title}"`} onClick={() => useDocUi.setState({ reading: d.id, editing: d.kind === 'markdown' })}>
+            <Button key={d.id} title={`read "${d.title}"`} onClick={() => useDocUi.setState({ reading: d.id, editing: false, draft: null })}>
               {docs.length > 1 ? `open ${i + 1}` : 'open'}
             </Button>
           ))}

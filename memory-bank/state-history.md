@@ -1582,6 +1582,12 @@ Sections and sticky notes from every side and corner, paragraphs and the title f
 (also the pieces'); right panels' width from their left edge. Checked headless on emulators (the entries say how).
 Offered, not asked for: a deck's column width, the document reader's window.
 
-
 ## Done (2026-11-05): pieces' names a step under sections' (D-379)
 `--piece-name-near/far` 14 → 18, a section's least size on its own `--section-name-far` 24; consoles follow the name (D-370). Measured headless in the gallery's `pieces in a section` at 39 %: name 16.4 px, section 24 px. tsc, check:memory ok; check:kit 0 and check:tokens clean on the changed files through a patched copy (both scripts crash on Windows paths, `new URL(...).pathname`); unit tests: no new failures against 37eb378 (69, in agentRead and purity, fail there too on Windows).
+
+## Done (2026-11-05): the agent's documents read before they're made, D-381
+- The preview's document row (name, length, `view`), DocReader's draft (`useDocUi.draft`, `create`/`discard`), apply
+  going on to read the document made, the report's `open` reading; agent.md §4.5 and documents.md.
+- Checked: unit 1082/1082; check:tokens/kit/gallery 0; headless on the emulators with the dev stub's `/one-pager`,
+  12/12 (scratchpad agentdoc.mjs). Pushed.
+

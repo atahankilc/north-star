@@ -296,7 +296,8 @@ feature comes back as a piece, and check them with the user then.
 
 ## Documents
 - Writing together (D-374, built, docs/specs/live-writing.md): several write a document at once (Yjs through Tiptap's open extensions, carets in presence with names, the writers' squares in the head), Firestore as the channel (`edits/`, `live/state`) until Blaze, then RTDB; the Markdown body stays the document, written on a 2 s pause outside the workspace's undo; each undoes only their own; one reader per document.
-- Documents written in the app (D-373): on the page as it reads, never its Markdown (Tiptap, lazy), a word processor's tools; `edit` in the reader, `write` beside `upload`, `¶` on a row, the agent's `open`; saved as Markdown as typed; its author, or any owner or editor once it's shared.
+- Documents written in the app (D-373): on the page as it reads, never its Markdown (Tiptap, lazy), a word processor's tools; `edit` in the reader, `write` beside `upload`, `¶` on a row; saved as Markdown as typed; its author, or any owner or editor once it's shared.
+- The agent's documents (D-381): one preview row (name, length, `view`), never its text; `view` reads the draft in DocReader, `create` there or the preview's go makes it and the window reads it; nothing opens by itself, nothing opens written in.
 - A document read in a window (D-371): `DocReader` over whatever's open, from the agent's `open` beside `undo` and the finder's `in no list` group (a document no list or piece shows); `place on the canvas`, `download`.
 - Documents (D-232, D-234, docs/specs/documents.md): every file is a document (`markdown | image | pdf | report`; old
   reports moved over once), private until shared. A `documents` list piece (table or shelf) and a `document` piece (one,

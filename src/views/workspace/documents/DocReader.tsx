@@ -3,6 +3,8 @@
 // this reads it, with what takes it further: placing it on the canvas, downloading it, and writing a .md (D-373):
 // `edit` turns the page into the editor in place (DocEditor, loaded then), `done` back. Written together (D-374): the
 // editor is the shared text (liveTransport.ts), others' carets come through presence, and the head shows who's writing.
+// The agent's draft (D-381): a document it proposes, read here before it's made, `create` making it (the preview's
+// apply) and the window going on to the document made, read, nothing more to press.
 import { lazy, Suspense, useEffect, useMemo } from 'react'
 import type { WithId } from '../../../data/hooks'
 import { downloadDocument, mayWriteDoc, renameDocument, useDocBody, writeDocumentText, type Doc, type DocBody } from '../../../data/documents'
@@ -19,7 +21,8 @@ import { CommitField } from '../../../ui/primitives/CommitField'
 import { Window } from '../../../ui/patterns/Window'
 import { useWs } from '../canvas/context'
 import { DocContent, splitTitle } from './DocContent'
-import { useDocUi } from './Documents'
+import { useDocUi, type DocDraft } from './Documents'
+import { wordsOf } from '../../../model/notes'
 import styles from './DocReader.module.css'
 import content from './DocContent.module.css'
 
@@ -44,9 +47,11 @@ type ViewProps = {
   // Written together (D-374): the shared text while editing, and who else is writing in it now.
   live?: LiveSetup
   writers?: Peer[]
+  // The agent's draft (D-381): not made yet; its foot makes it or drops it.
+  draft?: { others: number; onCreate: () => void; onDiscard: () => void }
 }
 
-export function DocReaderView({ d, body, loading, failed, me, onClose, onDownload, onPlace, editing = false, onEdit, onSave, onRename, live, writers = [] }: ViewProps) {
+export function DocReaderView({ d, body, loading, failed, me, onClose, onDownload, onPlace, editing = false, onEdit, onSave, onRename, live, writers = [], draft }: ViewProps) {
   // Only on its own text, once it's read: what the page opens with seeds the shared text (D-374).
   const writing = editing && !!onSave && !!body
   const { head, rest } = splitTitle(body?.text ?? '', d.title)
@@ -71,10 +76,19 @@ export function DocReaderView({ d, body, loading, failed, me, onClose, onDownloa
   return (
     <Window label={d.title} onClose={onClose} close className={styles.reader}>
       <div className={styles.page} data-scrolls>
-        <DocContent d={d} body={body} loading={loading} failed={failed} me={me} links title={title} editor={editor} people={people(writers)} />
+        <DocContent d={d} body={body} loading={loading} failed={failed} me={me} links title={title} editor={editor} people={draft ? <span className={styles.draftMark}>the agent&apos;s draft · not made yet</span> : people(writers)} />
       </div>
       <ButtonGroup className={styles.foot}>
-        {writing ? (
+        {draft ? (
+          <>
+            <Button tone="primary" title={draft.others ? `make it, with the ${draft.others} other change${draft.others === 1 ? '' : 's'} in the agent's preview` : 'make it: saved at once'} onClick={draft.onCreate}>
+              {draft.others ? `create · ${draft.others + 1} changes` : 'create'}
+            </Button>
+            <Button tone="danger" title="drop the agent's proposal" onClick={draft.onDiscard}>
+              discard
+            </Button>
+          </>
+        ) : writing ? (
           <Button tone="primary" title="back to reading it (it's saved as you type)" onClick={() => onEdit?.(false)}>
             done
           </Button>
@@ -114,11 +128,31 @@ function people(writers: Peer[]) {
 
 export function DocReader() {
   const reading = useDocUi((s) => s.reading)
+  const draft = useDocUi((s) => s.draft)
   const { documents } = useWs()
   const d = documents.find((x) => x.id === reading) ?? null
+  if (!d && draft) return <DraftReader draft={draft} />
   // One reader per document: its body is read afresh (a listener moved to another path still holds the last one's
   // text for a moment, and writing would open on it, D-374).
   return d ? <Reading key={d.id} d={d} /> : null
+}
+
+// The agent's draft read as the document it would be (D-381): yours, now, its words counted; nothing fetched or written.
+function DraftReader({ draft }: { draft: DocDraft }) {
+  const { user } = useAuth()
+  const me = user?.id ?? ''
+  const now = Date.now()
+  const d: WithId<Doc> = { id: `draft-${draft.item}`, kind: 'markdown', title: draft.title, origin: 'assistant', uid: me, name: user?.name ?? '', shared: draft.shared, contentType: 'text/markdown', size: draft.text.length, words: wordsOf(draft.text), createdAt: now, updatedAt: now }
+  return (
+    <DocReaderView
+      d={d}
+      body={{ text: draft.text }}
+      me={me}
+      onClose={() => useDocUi.setState({ draft: null })}
+      onDownload={() => {}}
+      draft={{ others: draft.others, onCreate: draft.create, onDiscard: draft.discard }}
+    />
+  )
 }
 
 function Reading({ d }: { d: WithId<Doc> }) {

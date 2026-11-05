@@ -34,3 +34,9 @@
   gap: var(--space-1);
   margin-left: auto;
 }
+
+/* The agent's draft (D-381): said at the end of the head line, in the agent's cyan. */
+.draftMark {
+  margin-left: auto;
+  color: var(--accent-cyan);
+}

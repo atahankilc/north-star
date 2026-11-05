@@ -74,8 +74,23 @@ export const useDocUi = create<{
   // Read in its own window, over whatever's open (DocReader.tsx); `editing`: written there (D-373).
   reading: string | null
   editing: boolean
+  // A document the agent proposes, read before it's made (D-381): its text in the reader's own view, `create` there
+  // making it (the preview's apply). Not a document yet: nothing here is written.
+  draft: DocDraft | null
   uploads: { name: string; state: 'sending' | 'done' | 'refused'; why?: string }[]
-}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, readerWeights: {}, renaming: null, unsharing: null, drag: null, dropped: null, placing: null, deleting: null, reading: null, editing: false, uploads: [] }))
+}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, readerWeights: {}, renaming: null, unsharing: null, drag: null, dropped: null, placing: null, deleting: null, reading: null, editing: false, draft: null, uploads: [] }))
+
+export type DocDraft = {
+  // The preview's item it is (the agent's), so a new preview closes it.
+  item: string
+  title: string
+  text: string
+  shared: boolean
+  // What the preview holds besides it (its apply makes them too).
+  others: number
+  create: () => void
+  discard: () => void
+}
 
 // At most this many side by side.
 export const READERS_MAX = 4

@@ -7270,3 +7270,16 @@ Every card and task on `CardFace` has squircle corners (`corner-shape: squircle`
 Alternatives shown: square, round 10, squircle 12/16/24/32, bevel, cut on two corners, squircle without a bar. A squircle under about 16 reads as a plain round corner.
 Verified: check:tokens, check:kit, check:gallery, unit tests; in the gallery, dark: plane cards full, compact, far, an open competitor, a folded feature, a package band, deck sheets, timeline, tray, matrix.
 *Not yet:* seen in the real app on a plane; Safari and Firefox not tried (without `corner-shape` the corners are plain round). A card's text has 6 px less width.
+
+### D-381 · 2026-11-05 · Accepted (the user: "ai ın text üretmesi çok saçma. Önce ai panelinde textin aynısını görüyorum ve apply yada discard demem gerekiyor. Sonra open deyince saçma sapan bir modal açılıyo orda editing viewdayım ve ona da done demem gerekiyor. Sonra da dökümana tamamen gitmem gerektiğinde … documents componenti nerde bulup … Ai ürettikten sonra direkt document ui ını açsın, sağda dökümanın ismi olsun create etmek ister misin diye. Tabi otomatik açılmasın bu ui ama kullanıcı check tuşuna basarsa gidip görsün ana document viewından. Ondan sonra apply diyince direkt kayıt etsin"; changes D-373's agent `open` written in, and agent.md §4.5's documents row): the agent's documents read before they're made
+**Decision:** a document the agent proposes is one row in its preview: `new document "Title" · N lines, private to you`
+and a `view` at its end, never its text (it was every line as `+`). Nothing opens by itself. `view` reads it in the
+document's own window (DocReader) as it would be, `the agent's draft · not made yet` on its head line, `create` and
+`discard` in the foot (`create · N changes` when the preview holds more). `create` there, or the preview's go (named
+`create` when the document is its only change), makes it at once; the window goes on to the document made, read, with
+nothing more to press (no editing view, no `done`). The report's `open` reads it (D-373 opened it written in).
+The draft window follows the preview: discarded, revised past it or unticked, it closes. Built in `useDocUi.draft`
+(callbacks from the agent, so the documents view never imports the agent), `ChangeRow`'s document row,
+`useDraftFollows`, accept going on to `reading` the document made. Checked headless on the emulators with the dev
+stub's `/one-pager`, 12/12 (the row and its words, nothing opened by itself, view, create, the document there, open,
+discard). *Not yet:* the agent's lessons wait for its redesign (D-312).

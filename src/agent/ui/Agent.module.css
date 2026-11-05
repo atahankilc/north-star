@@ -510,6 +510,13 @@
   overflow-wrap: anywhere;
 }
 
+/* A new document's `view` (D-381): at the row's end, its text read in the document's own window. */
+.docView {
+  flex: none;
+  margin-left: auto;
+  align-self: center;
+}
+
 .changes[data-state='discarded'] .itemLine,
 .changes[data-state='undone'] .itemLine {
   color: var(--fg-dim);
