@@ -1591,3 +1591,8 @@ Offered, not asked for: a deck's column width, the document reader's window.
 - Checked: unit 1082/1082; check:tokens/kit/gallery 0; headless on the emulators with the dev stub's `/one-pager`,
   12/12 (scratchpad agentdoc.mjs). Pushed.
 
+## Done (2026-11-05): the agent's documents read beside its column, D-382
+- Three options on a port (docs/specs/agent-doc-preview/), the user picked B. `DocReaderView` `docked` (EdgeColumn at
+  `--ai-w`), `useDocUi.beside`, the row's first words and `read`, one go (the preview's), Escape's order in the column.
+- Checked: headless on the emulators with the dev stub, 15/15 (scratchpad agentdoc2.mjs); unit 1082/1082;
+  tokens/kit/gallery 0. Pushed.

@@ -16,13 +16,13 @@ export default example({
   name: 'Document reader',
   place: 'panels/documents',
   file: 'src/views/workspace/documents/DocReader.tsx',
-  note: "a document read in a window: the agent's open, the finder's match in a document no list shows; the agent's draft read before it's made (D-381)",
+  note: "a document read in a window: the agent's open, the finder's match in a document no list shows; beside the agent's column, docked (D-382): its draft read before it's made, then the document made",
   states: {
     'an editor': () => <DocReaderView d={interviews} body={body} me="demo" onClose={none} onDownload={none} onPlace={none} />,
     'a viewer': () => <DocReaderView d={interviews} body={body} me="demo" onClose={none} onDownload={none} />,
     'two others writing in it': () => <DocReaderView d={interviews} body={body} me="demo" onClose={none} onDownload={none} onPlace={none} onEdit={none} onSave={none} writers={writers} />,
-    "the agent's draft, before it's made": () => <DocReaderView d={{ ...interviews, origin: 'assistant' }} body={body} me="demo" onClose={none} onDownload={none} draft={{ others: 0, onCreate: none, onDiscard: none }} />,
-    "the agent's draft with two more changes": () => <DocReaderView d={{ ...interviews, origin: 'assistant' }} body={body} me="demo" onClose={none} onDownload={none} draft={{ others: 2, onCreate: none, onDiscard: none }} />,
+    "beside the agent: its draft, before it's made": () => <DocReaderView d={{ ...interviews, origin: 'assistant' }} body={body} me="demo" onClose={none} onDownload={none} draft docked />,
+    'beside the agent: the document made': () => <DocReaderView d={{ ...interviews, origin: 'assistant' }} body={body} me="demo" onClose={none} onDownload={none} onPlace={none} onEdit={none} onSave={none} docked />,
     loading: () => <DocReaderView d={interviews} body={null} loading me="demo" onClose={none} onDownload={none} onPlace={none} />,
   },
 })

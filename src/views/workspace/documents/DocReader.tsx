@@ -3,8 +3,9 @@
 // this reads it, with what takes it further: placing it on the canvas, downloading it, and writing a .md (D-373):
 // `edit` turns the page into the editor in place (DocEditor, loaded then), `done` back. Written together (D-374): the
 // editor is the shared text (liveTransport.ts), others' carets come through presence, and the head shows who's writing.
-// The agent's draft (D-381): a document it proposes, read here before it's made, `create` making it (the preview's
-// apply) and the window going on to the document made, read, nothing more to press.
+// Beside the agent (D-382): what the agent wrote is read docked to the left of its column, the whole height, no shade,
+// so the chat and its one `create` stay where they are. Its draft (D-381) is read there before it's made; the
+// preview's `create` makes it and the same page goes on to the document made, nothing more to press.
 import { lazy, Suspense, useEffect, useMemo } from 'react'
 import type { WithId } from '../../../data/hooks'
 import { downloadDocument, mayWriteDoc, renameDocument, useDocBody, writeDocumentText, type Doc, type DocBody } from '../../../data/documents'
@@ -19,6 +20,8 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { CommitField } from '../../../ui/primitives/CommitField'
 import { Window } from '../../../ui/patterns/Window'
+import { EdgeColumn } from '../../../ui/patterns/EdgeColumn'
+import { PanelHead } from '../../../ui/patterns/PanelHead'
 import { useWs } from '../canvas/context'
 import { DocContent, splitTitle } from './DocContent'
 import { useDocUi, type DocDraft } from './Documents'
@@ -47,11 +50,13 @@ type ViewProps = {
   // Written together (D-374): the shared text while editing, and who else is writing in it now.
   live?: LiveSetup
   writers?: Peer[]
-  // The agent's draft (D-381): not made yet; its foot makes it or drops it.
-  draft?: { others: number; onCreate: () => void; onDiscard: () => void }
+  // The agent's draft (D-381): not made yet, made from the agent's preview.
+  draft?: boolean
+  // Docked beside the agent's column (D-382), not a window.
+  docked?: boolean
 }
 
-export function DocReaderView({ d, body, loading, failed, me, onClose, onDownload, onPlace, editing = false, onEdit, onSave, onRename, live, writers = [], draft }: ViewProps) {
+export function DocReaderView({ d, body, loading, failed, me, onClose, onDownload, onPlace, editing = false, onEdit, onSave, onRename, live, writers = [], draft = false, docked = false }: ViewProps) {
   // Only on its own text, once it's read: what the page opens with seeds the shared text (D-374).
   const writing = editing && !!onSave && !!body
   const { head, rest } = splitTitle(body?.text ?? '', d.title)
@@ -73,43 +78,50 @@ export function DocReaderView({ d, body, loading, failed, me, onClose, onDownloa
     writing && onRename ? (
       <CommitField className={styles.titleField} value={d.title} onSave={(v) => v.trim() && onRename(v)} label="Document title" empty="undo" maxLength={DOC_LIMITS.title} />
     ) : undefined
+  const page = (
+    <div className={styles.page} data-scrolls>
+      <DocContent d={d} body={body} loading={loading} failed={failed} me={me} links title={title} editor={editor} people={people(writers)} />
+    </div>
+  )
+  const foot = draft ? (
+    <p className={styles.draftNote}>not made yet · create it in the agent&apos;s preview →</p>
+  ) : (
+    <ButtonGroup className={styles.foot}>
+      {writing ? (
+        <Button tone="primary" title="back to reading it (it's saved as you type)" onClick={() => onEdit?.(false)}>
+          done
+        </Button>
+      ) : (
+        <>
+          {onSave && onEdit && (
+            <Button title="write in it, on the page as it reads" onClick={() => onEdit(true)}>
+              edit
+            </Button>
+          )}
+          {onPlace && (
+            <Button title={d.shared ? 'put it on the canvas on its own' : 'put it on the canvas on its own (shares it; asks first)'} onClick={onPlace}>
+              place on the canvas
+            </Button>
+          )}
+          <Button title="save it as a .md file" onClick={onDownload}>
+            download
+          </Button>
+        </>
+      )}
+    </ButtonGroup>
+  )
+  if (docked)
+    return (
+      <EdgeColumn label={d.title} onClose={onClose} offset="var(--ai-w, 0px)" width="var(--doc-beside-w)" className={styles.beside} data-doc-beside>
+        <PanelHead className={styles.besideHead} kind={draft ? "the agent's draft" : 'document'} tone={draft ? 'var(--accent-cyan)' : undefined} onClose={onClose} />
+        {page}
+        {foot}
+      </EdgeColumn>
+    )
   return (
     <Window label={d.title} onClose={onClose} close className={styles.reader}>
-      <div className={styles.page} data-scrolls>
-        <DocContent d={d} body={body} loading={loading} failed={failed} me={me} links title={title} editor={editor} people={draft ? <span className={styles.draftMark}>the agent&apos;s draft · not made yet</span> : people(writers)} />
-      </div>
-      <ButtonGroup className={styles.foot}>
-        {draft ? (
-          <>
-            <Button tone="primary" title={draft.others ? `make it, with the ${draft.others} other change${draft.others === 1 ? '' : 's'} in the agent's preview` : 'make it: saved at once'} onClick={draft.onCreate}>
-              {draft.others ? `create · ${draft.others + 1} changes` : 'create'}
-            </Button>
-            <Button tone="danger" title="drop the agent's proposal" onClick={draft.onDiscard}>
-              discard
-            </Button>
-          </>
-        ) : writing ? (
-          <Button tone="primary" title="back to reading it (it's saved as you type)" onClick={() => onEdit?.(false)}>
-            done
-          </Button>
-        ) : (
-          <>
-            {onSave && onEdit && (
-              <Button title="write in it, on the page as it reads" onClick={() => onEdit(true)}>
-                edit
-              </Button>
-            )}
-            {onPlace && (
-              <Button title={d.shared ? 'put it on the canvas on its own' : 'put it on the canvas on its own (shares it; asks first)'} onClick={onPlace}>
-                place on the canvas
-              </Button>
-            )}
-            <Button title="save it as a .md file" onClick={onDownload}>
-              download
-            </Button>
-          </>
-        )}
-      </ButtonGroup>
+      {page}
+      {foot}
     </Window>
   )
 }
@@ -129,15 +141,17 @@ function people(writers: Peer[]) {
 export function DocReader() {
   const reading = useDocUi((s) => s.reading)
   const draft = useDocUi((s) => s.draft)
+  const beside = useDocUi((s) => s.beside)
   const { documents } = useWs()
   const d = documents.find((x) => x.id === reading) ?? null
   if (!d && draft) return <DraftReader draft={draft} />
   // One reader per document: its body is read afresh (a listener moved to another path still holds the last one's
   // text for a moment, and writing would open on it, D-374).
-  return d ? <Reading key={d.id} d={d} /> : null
+  return d ? <Reading key={d.id} d={d} docked={beside} /> : null
 }
 
-// The agent's draft read as the document it would be (D-381): yours, now, its words counted; nothing fetched or written.
+// The agent's draft read as the document it would be (D-381), beside its column (D-382): yours, now, its words counted;
+// nothing fetched or written.
 function DraftReader({ draft }: { draft: DocDraft }) {
   const { user } = useAuth()
   const me = user?.id ?? ''
@@ -148,14 +162,15 @@ function DraftReader({ draft }: { draft: DocDraft }) {
       d={d}
       body={{ text: draft.text }}
       me={me}
-      onClose={() => useDocUi.setState({ draft: null })}
+      onClose={() => useDocUi.setState({ draft: null, beside: false })}
       onDownload={() => {}}
-      draft={{ others: draft.others, onCreate: draft.create, onDiscard: draft.discard }}
+      draft
+      docked
     />
   )
 }
 
-function Reading({ d }: { d: WithId<Doc> }) {
+function Reading({ d, docked }: { d: WithId<Doc>; docked: boolean }) {
   const editing = useDocUi((s) => s.editing)
   const { wid, workspace } = useWs()
   const { user } = useAuth()
@@ -197,15 +212,16 @@ function Reading({ d }: { d: WithId<Doc> }) {
       loading={body.isLoading}
       failed={!!body.error}
       me={user?.id}
-      onClose={() => useDocUi.setState({ reading: null, editing: false })}
+      onClose={() => useDocUi.setState({ reading: null, editing: false, beside: false })}
       onDownload={() => void downloadDocument(wid, d)}
-      onPlace={editor ? () => useDocUi.setState({ reading: null, editing: false, placing: { docId: d.id } }) : undefined}
+      onPlace={editor ? () => useDocUi.setState({ reading: null, editing: false, beside: false, placing: { docId: d.id } }) : undefined}
       editing={writes && editing}
       onEdit={writes ? (on) => useDocUi.setState({ editing: on }) : undefined}
       onSave={writes ? (text) => void writeDocumentText(wid, d.id, text) : undefined}
       onRename={d.uid === user?.id ? (title) => void renameDocument(wid, d.id, title) : undefined}
       live={live}
       writers={peers.filter((p) => p.doc?.id === d.id)}
+      docked={docked}
     />
   )
 }

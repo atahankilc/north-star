@@ -74,11 +74,13 @@ export const useDocUi = create<{
   // Read in its own window, over whatever's open (DocReader.tsx); `editing`: written there (D-373).
   reading: string | null
   editing: boolean
-  // A document the agent proposes, read before it's made (D-381): its text in the reader's own view, `create` there
-  // making it (the preview's apply). Not a document yet: nothing here is written.
+  // Read beside the agent's column, docked, rather than in a window (D-382): what the agent wrote, read from its chat.
+  beside: boolean
+  // A document the agent proposes, read before it's made (D-381, D-382): its text in the reader's own view, beside the
+  // agent's column; the preview's `create` makes it. Not a document yet: nothing here is written.
   draft: DocDraft | null
   uploads: { name: string; state: 'sending' | 'done' | 'refused'; why?: string }[]
-}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, readerWeights: {}, renaming: null, unsharing: null, drag: null, dropped: null, placing: null, deleting: null, reading: null, editing: false, draft: null, uploads: [] }))
+}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, readerWeights: {}, renaming: null, unsharing: null, drag: null, dropped: null, placing: null, deleting: null, reading: null, editing: false, beside: false, draft: null, uploads: [] }))
 
 export type DocDraft = {
   // The preview's item it is (the agent's), so a new preview closes it.
@@ -86,10 +88,6 @@ export type DocDraft = {
   title: string
   text: string
   shared: boolean
-  // What the preview holds besides it (its apply makes them too).
-  others: number
-  create: () => void
-  discard: () => void
 }
 
 // At most this many side by side.
@@ -104,7 +102,7 @@ export function openDoc(id: string, alongside = useDocUi.getState().sideBySide) 
 }
 // Opens a document in its reader window (DocReader.tsx), written in at once (D-373) when `edit` (a new one, the agent's,
 // a list's `¶`); the reader turns it off for who may not write it.
-export const readDoc = (id: string, edit = false) => useDocUi.setState({ reading: id, editing: edit })
+export const readDoc = (id: string, edit = false) => useDocUi.setState({ reading: id, editing: edit, beside: false })
 export const closeDoc = (id: string) => useDocUi.setState((s) => ({ readers: s.readers.filter((x) => x !== id) }))
 // Sharing or unsharing (its author's). Unsharing one that's on the canvas on its own asks first (its pieces would go).
 export function shareOrAsk(wid: string, d: Pick<Doc, 'shared'> & { id: string }, pieces: Pick<Piece, 'docId'>[]) {

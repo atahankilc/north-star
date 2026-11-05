@@ -517,6 +517,12 @@
   align-self: center;
 }
 
+/* A new document's first words under its line (D-382). */
+.docStart {
+  display: block;
+  color: var(--fg-dim);
+}
+
 .changes[data-state='discarded'] .itemLine,
 .changes[data-state='undone'] .itemLine {
   color: var(--fg-dim);

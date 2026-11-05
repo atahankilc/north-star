@@ -399,7 +399,7 @@ function goRow(row: Row, ws: WorkspaceCtx) {
   const d = row.dest
   if (d.kind === 'alone') {
     closeFinder()
-    return useDocUi.setState({ reading: d.doc.id, editing: false })
+    return useDocUi.setState({ reading: d.doc.id, editing: false, beside: false })
   }
   if (d.kind === 'place') return findGo({ ...(d.target ?? { kind: 'space', space: d.place.space, k: 0 }), place: d.place })
   // A kanban's task (D-261): its kanban's focus, the task picked.

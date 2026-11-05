@@ -35,8 +35,31 @@
   margin-left: auto;
 }
 
-/* The agent's draft (D-381): said at the end of the head line, in the agent's cyan. */
-.draftMark {
-  margin-left: auto;
+/* Beside the agent's column (D-382): docked to its left, the whole height, a reading width that leaves the side nav's
+   tools clear (the HUD's margin, a tool, a gap). Over the canvas, under nothing; no shade. */
+.beside {
+  --doc-beside-w: min(calc(var(--size-xl) + 2 * var(--space-12)), calc(100vw - var(--ai-w, 0px) - 2 * var(--hud-x) - var(--hud-tool)));
+}
+
+.besideHead {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--line-w) solid var(--line);
+}
+
+.beside .page {
+  padding: var(--space-8) var(--space-8) var(--space-12);
+}
+
+.beside .foot {
+  padding: var(--space-3) var(--space-4);
+}
+
+/* The agent's draft (D-381): where it's made, said at its foot (the go is the preview's, never a second one here). */
+.draftNote {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-top: var(--line-w) solid var(--line);
   color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  text-align: right;
 }

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>The agent's documents · flow options</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/inter/opsz.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/jetbrains-mono/index.css">
+<style>
+/* A preview only: how a document the agent writes reaches the person. Hand-made copies of the app's parts on its
+   tokens. Served from the repo root so the token and font files load. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-display); font-size: 14px; }
+button { font: inherit; color: inherit; }
+
+.top { position: fixed; inset: 0 0 auto 0; height: 44px; z-index: 20; display: flex; gap: 20px; align-items: center; padding: 0 16px; background: var(--bg); border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 12px; }
+.top h1 { margin: 0; font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); }
+.grp { display: flex; gap: 2px; align-items: center; }
+.grp > span { color: var(--fg-faint); margin-right: 6px; text-transform: uppercase; letter-spacing: .05em; font-size: 11px; }
+.opt { background: none; border: 1px solid transparent; padding: 5px 9px; color: var(--fg-dim); cursor: pointer; }
+.opt b { color: var(--accent-magenta); font-weight: 400; margin-right: 6px; }
+.opt:hover { color: var(--fg); }
+.opt[aria-pressed='true'] { color: var(--fg); border-color: var(--line-hover); background: var(--wash-2); }
+.rec { color: var(--accent-cyan); margin-left: 4px; }
+
+.about { position: fixed; top: 44px; left: 0; width: 330px; bottom: 0; overflow: auto; padding: 16px 18px 40px; border-right: 1px solid var(--line); color: var(--fg-muted); font-size: 13px; line-height: 1.55; }
+.about h2 { margin: 16px 0 6px; font: 500 11px/1.3 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--fg-dim); }
+.about h2:first-child { margin-top: 0; }
+.about b { color: var(--fg); font-weight: 500; }
+.about em { color: var(--accent-cyan); font-style: normal; }
+.about .bad b { color: var(--accent-magenta); }
+.about ul, .about ol { padding-left: 18px; margin: 0; }
+.about li { margin-bottom: 6px; }
+
+/* The screen: a mock of the app at 1280 × 760, scaled to fit. */
+.stageWrap { position: fixed; top: 44px; left: 330px; right: 0; bottom: 0; display: grid; place-items: center; overflow: hidden; }
+.stage { width: 1280px; height: 760px; position: relative; overflow: hidden; border: 1px solid var(--line); background: var(--bg); transform-origin: center; }
+.dots { position: absolute; inset: 0; background-image: radial-gradient(var(--fg-faint) 1px, transparent 1.2px); background-size: 18px 18px; opacity: .35; }
+.crumb { position: absolute; left: 20px; top: 16px; font-size: 13px; color: var(--fg-dim); }
+.crumb b { color: var(--fg); font-weight: 400; }
+.crumb i { color: var(--accent-magenta); font-style: normal; }
+
+/* Pieces on the canvas. */
+.piece { position: absolute; background: var(--piece); border-top: 2px solid var(--piece-band); box-shadow: 0 0 0 1px var(--piece-edge); }
+.pname { position: absolute; top: -11px; left: 14px; display: flex; gap: 6px; align-items: center; font: 500 11px/1 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+.ptab { background: var(--fg); color: var(--bg); padding: 3px 5px; }
+.pcard { position: absolute; width: 120px; height: 56px; background: var(--wash-2); border-left: 3px solid var(--type-idea); padding: 6px 8px; font-size: 11px; color: var(--fg-muted); }
+.pcard.c { border-left-color: var(--type-customer); } .pcard.p { border-left-color: var(--type-problem); } .pcard.k { border-left-color: var(--type-competitor); }
+
+.docPiece { position: absolute; background: var(--piece); box-shadow: 0 0 0 1px var(--piece-edge); }
+.docPiece .in { position: absolute; inset: 0; padding: 26px 26px 20px; overflow: hidden; }
+.docPiece .pname { left: 14px; }
+.docPiece.draft { box-shadow: none; outline: 1px dashed var(--accent-cyan); background: color-mix(in srgb, var(--piece) 85%, var(--accent-cyan)); }
+.docPiece.draft .ptab { background: var(--accent-cyan); }
+.plus { position: absolute; top: -14px; right: -14px; width: 24px; height: 24px; display: grid; place-items: center; background: var(--accent-cyan); color: var(--bg); font: 600 16px/1 var(--font-mono); }
+.docPiece h3 { margin: 0 0 10px; font-size: 20px; font-weight: 500; }
+.docPiece h4 { margin: 12px 0 4px; font-size: 13px; font-weight: 500; }
+.docPiece p { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--fg-muted); }
+.fade { position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: linear-gradient(transparent, var(--piece)); }
+.marks { position: absolute; inset: -8px; pointer-events: none; }
+.marks i { position: absolute; width: 12px; height: 12px; border: 0 solid var(--accent-cyan); }
+.marks i:nth-child(1) { left: 0; top: 0; border-width: 2px 0 0 2px; } .marks i:nth-child(2) { right: 0; top: 0; border-width: 2px 2px 0 0; }
+.marks i:nth-child(3) { left: 0; bottom: 0; border-width: 0 0 2px 2px; } .marks i:nth-child(4) { right: 0; bottom: 0; border-width: 0 2px 2px 0; }
+
+/* The agent's column. */
+.agent { position: absolute; top: 0; right: 0; bottom: 0; width: 380px; background: var(--bg); border-left: 1px solid var(--line); display: flex; flex-direction: column; font-size: 13px; transition: width .3s; }
+.agent.wide { width: 720px; }
+.ahead { display: flex; align-items: center; gap: 8px; padding: 14px 18px; font: 500 11px/1 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--accent-cyan); }
+.ahead span { color: var(--fg-dim); text-transform: none; letter-spacing: 0; }
+.abody { flex: 1; overflow: auto; padding: 4px 18px 16px; }
+.ask { font: 12px var(--font-mono); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); display: inline-block; padding: 2px 6px; margin-bottom: 10px; }
+.said { color: var(--fg-muted); line-height: 1.55; margin: 0 0 14px; }
+.sec { display: flex; align-items: center; gap: 8px; font: 11px/1 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--fg-dim); margin: 14px 0 8px; }
+.sec b { color: var(--accent-magenta); font-weight: 400; }
+.sec hr { flex: 1; border: 0; border-top: 1px solid var(--line); }
+.row { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.tick { width: 16px; height: 16px; border: 1px solid var(--accent-cyan); color: var(--accent-cyan); display: grid; place-items: center; font-size: 11px; flex: none; }
+.row .what { flex: 1; line-height: 1.4; }
+.row .what small { display: block; color: var(--fg-dim); font-size: 11.5px; }
+.row .doc { width: 14px; height: 18px; border: 1px solid var(--fg-muted); flex: none; position: relative; }
+.row .doc::after { content: ''; position: absolute; left: 3px; right: 3px; top: 4px; height: 7px; border-top: 1px solid var(--fg-dim); border-bottom: 1px solid var(--fg-dim); }
+.btn { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; background: var(--wash-2); color: var(--fg-muted); font: 12px var(--font-mono); white-space: nowrap; }
+.btn.go { background: var(--accent-cyan); color: var(--bg); }
+.btn.lit { color: var(--fg); outline: 1px solid var(--accent-cyan); }
+.btns { display: inline-flex; gap: 1px; }
+.foot { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-top: 1px solid var(--line); font: 11px var(--font-mono); color: var(--fg-dim); }
+.prompt { padding: 14px 18px; border-top: 1px solid var(--line); color: var(--fg-faint); font-size: 13px; }
+.prompt b { color: var(--accent-magenta); font-weight: 400; margin-right: 8px; }
+.done { color: var(--accent-green); font: 11px var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+.where { font: 11px var(--font-mono); color: var(--fg-dim); margin-top: 8px; }
+.where u { text-decoration: none; color: var(--fg); border-bottom: 1px dotted var(--fg-dim); }
+
+/* A document read as a page (its focus, or beside the agent). */
+.read { position: absolute; top: 0; bottom: 0; left: 0; background: var(--bg); overflow: hidden; padding: 56px 0 0; }
+.read .col { max-width: 640px; margin: 0 auto; padding: 0 40px; }
+.meta { font: 11px/1 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--fg-dim); display: flex; gap: 10px; align-items: center; }
+.meta .draftTag { color: var(--accent-cyan); }
+.read h2 { font-size: 30px; font-weight: 500; margin: 14px 0 18px; }
+.read h4 { font-size: 17px; font-weight: 500; margin: 22px 0 6px; }
+.read p { margin: 0; line-height: 1.65; color: var(--fg-muted); }
+.read .dock { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 1px; }
+.ink { position: absolute; inset: 0; background-image: radial-gradient(var(--fg-faint) 1px, transparent 1.2px); background-size: 9px 9px; opacity: .15; pointer-events: none; }
+
+/* Today: a modal over everything. */
+.shade { position: absolute; inset: 0; background: color-mix(in srgb, var(--bg) 70%, transparent); }
+.modal { position: absolute; left: 330px; top: 200px; width: 560px; height: 420px; border: 1px solid var(--fg-dim); background: var(--bg); padding: 26px 40px; }
+.modal h2 { font-size: 22px; font-weight: 500; margin: 12px 0 14px; }
+.modal h4 { margin: 10px 0 2px; font-size: 14px; font-weight: 500; }
+.modal p { margin: 0; color: var(--fg-muted); font-size: 12px; }
+.modal .foot2 { position: absolute; right: 16px; bottom: 14px; display: flex; gap: 1px; }
+.pin { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: var(--accent-magenta); color: var(--bg); font: 600 12px/22px var(--font-mono); text-align: center; z-index: 5; }
+
+/* Inside the chat (C). */
+.docCard { border: 1px solid var(--line-hover); padding: 14px 16px 12px; margin: 6px 0 10px; position: relative; }
+.docCard h3 { margin: 6px 0 8px; font-size: 16px; font-weight: 500; }
+.docCard h4 { margin: 10px 0 2px; font-size: 13px; font-weight: 500; }
+.docCard p { margin: 0; color: var(--fg-muted); font-size: 12.5px; line-height: 1.55; }
+.docCard .clip { max-height: 120px; overflow: hidden; position: relative; }
+.docCard .clip::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 50px; background: linear-gradient(transparent, var(--bg)); }
+.docCard.full .clip { max-height: none; }
+.docCard.full .clip::after { display: none; }
+.docCard .bar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+.chip { display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--line-hover); padding: 8px 10px; margin: 6px 0; }
+.toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: 24px; background: var(--bg-raised); border: 1px solid var(--line-hover); padding: 8px 14px; font: 12px var(--font-mono); color: var(--fg-muted); }
+.finder { position: absolute; left: 190px; top: 260px; width: 520px; background: var(--bg); border: 1px solid var(--line-hover); padding: 12px 14px; font: 12.5px var(--font-mono); }
+.finder .q { color: var(--fg); margin-bottom: 8px; } .finder .q b { color: var(--accent-magenta); font-weight: 400; margin-right: 8px; }
+.finder .h { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin: 8px 0 4px; }
+.finder .r { padding: 5px 6px; color: var(--fg-muted); } .finder .r.on { background: var(--wash-3); color: var(--fg); }
+.say { position: absolute; left: 20px; bottom: 16px; max-width: 760px; font: 12px var(--font-mono); color: var(--accent-yellow); }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>The agent's documents</h1>
+  <div class="grp" id="opts"><span>option</span></div>
+  <div class="grp" id="steps"><span>step</span></div>
+</div>
+<aside class="about" id="about"></aside>
+<div class="stageWrap"><div class="stage" id="stage"></div></div>
+
+<script>
+const DOC = { title: 'Agent docs in one page', parts: [
+  ['For whom', 'Stall owners at the weekly market who sell fresh food and lose a day a week on paperwork.'],
+  ['The problem', 'Six of eight owners said price comes first; four said they write orders on paper and lose them.'],
+  ['Our approach', 'One shared order list on a phone, set up in five minutes, filled from what they sold last week.'],
+  ['Competitors', 'Pazarim and Tezgah: both need a laptop; neither works offline at the stall.'],
+  ['Next steps', 'Pilot our main idea at one stall for a week.'] ] }
+const docBody = (n = 9) => DOC.parts.slice(0, n).map(([h, p]) => `<h4>${h}</h4><p>${p}</p>`).join('')
+
+const canvas = (extra = '') => `<div class="dots"></div>
+  <div class="crumb"><i>#</i> north-star / workspaces / <b>Pazar</b></div>
+  <div class="piece" style="left:60px;top:110px;width:420px;height:270px"><div class="pname"><span class="ptab">▦ PLANE</span>01 PAZAR</div>
+    <div class="pcard c" style="left:24px;top:30px">Stall owners</div><div class="pcard p" style="left:160px;top:30px">Orders on paper</div>
+    <div class="pcard" style="left:24px;top:110px">Shared order list</div><div class="pcard k" style="left:160px;top:110px">Pazarim</div>
+    <div class="pcard k" style="left:280px;top:110px">Tezgah</div><div class="pcard" style="left:160px;top:190px">Offline at the stall</div></div>
+  <div class="piece" style="left:60px;top:430px;width:300px;height:180px"><div class="pname"><span class="ptab">▤ TABLE</span>02 RIVALS</div></div>
+  ${extra}`
+
+const agentHead = `<div class="ahead">▣ AGENT <span>gpt-5.4-mini</span></div>`
+const asked = `<div class="ask">/one-pager</div><p class="said">I wrote a one-pager from the workspace, every point tied to its card.</p>`
+const prompt = (t = 'change something…') => `<div class="prompt"><b>&gt;</b>${t}</div>`
+const agent = (body, foot = '', cls = '') => `<div class="agent ${cls}">${agentHead}<div class="abody">${asked}${body}</div>${foot}${prompt()}</div>`
+const footGo = (go = 'create', note = 'one undo step') => `<div class="foot"><span class="btns"><span class="btn go">${go}</span><span class="btn">discard</span></span>${note}</div>`
+
+const docPiece = (x, y, w, h, draft, marks) => `<div class="docPiece ${draft ? 'draft' : ''}" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px">
+  <div class="pname"><span class="ptab">≡ DOCUMENT</span>03 ${DOC.title.toUpperCase()}</div>${draft ? '<div class="plus">+</div>' : ''}
+  <div class="in"><h3>${DOC.title}</h3>${docBody()}<div class="fade"></div></div>${marks ? '<div class="marks"><i></i><i></i><i></i><i></i></div>' : ''}</div>`
+
+const readPage = (right, draft, dock = '') => `<div class="read" style="right:${right}px"><div class="ink"></div><div class="col">
+  <div class="meta"><span>■ md</span><span>you · 24 words · only you</span>${draft ? '<span class="draftTag">· the agent\'s draft</span>' : ''}</div>
+  <h2>${DOC.title}</h2>${docBody()}</div>${dock}</div>`
+
+const OPTIONS = [
+{ key: 'now', label: 'today', steps: [
+  { name: 'view', about: `<h2>What happens today</h2><p>The agent's row says <b>view</b>. View opens the document in a box in the middle, over a dark shade.</p>
+    <h2>Why it reads badly</h2><ol>
+    <li class="bad"><b>A box over everything.</b> The canvas is gone behind the shade, and the shade cuts the agent's column's edge (its words are clipped on the left).</li>
+    <li class="bad"><b>Two go buttons.</b> <em>create</em> in the box and <em>create</em> in the agent. Which one is it? Both do the same.</li>
+    <li class="bad"><b>A small box for a page.</b> 560 px for a document; you scroll a box inside a screen with empty space all round.</li>
+    <li class="bad"><b>The head is noise.</b> <code>md · YOU · NOW · 24 WORDS · ONLY YOU · THE AGENT'S DRAFT · NOT MADE YET</code> in one line.</li>
+    <li class="bad"><b>It lands nowhere.</b> After create the box shows the document, but close it and it's in no list and on no canvas. Next time you hunt for it (finder → "in no list").</li>
+    <li class="bad"><b>Unlike every other change.</b> Cards, tables, decks: the agent shows them <em>on the canvas</em> where they'll be, and its ‹ 1/3 › glides there. Documents alone jump into a modal.</li></ol>`,
+    html: () => canvas() + agent(`<div class="sec"><b>1</b> CHANGES<hr>nothing written yet</div>
+      <div class="row"><span class="tick">✓</span><span class="what">+ new document "${DOC.title}" · 7 lines, private to you</span><span class="btn lit">view</span></div>`, footGo()) +
+      `<div class="shade"></div><div class="modal"><div class="meta">■ md · you · now · 24 words · only you <span class="draftTag">the agent's draft · not made yet</span></div>
+      <h2>${DOC.title}</h2>${DOC.parts.map(([h]) => `<h4>${h}</h4>`).join('')}<p>Pilot our main idea at one stall for a week.</p>
+      <div class="foot2"><span class="btn go">create</span><span class="btn">discard</span></div></div>` },
+] },
+{ key: 'A', label: 'on the canvas', rec: true, steps: [
+  { name: 'it arrives', about: `<h2>A · On the canvas, like every other change</h2>
+    <p>The document is a <b>document piece</b> in the preview, the way the agent shows a new card or table: drawn where it will land (the nearest clear spot, beside what it's about), dashed cyan with a <em>+</em>, the camera gliding to it.</p>
+    <p>The row in the chat says <b>where</b>: <em>on the canvas</em>, changeable to <em>only saved</em> (no piece, private, like today) or into a documents list on the canvas.</p>
+    <p>One go, at the agent's foot: <b>create</b>. Nothing else to press.</p>`,
+    html: () => canvas(docPiece(540, 110, 300, 400, true, true)) + agent(`<div class="sec"><b>1</b> CHANGE<hr>‹ 1 / 1 ›</div>
+      <div class="row"><span class="tick">✓</span><span class="doc"></span><span class="what">new document "${DOC.title}"<small>7 lines · private to you</small><div class="where">where: <u>on the canvas ▾</u></div></span><span class="btn lit">read</span></div>`, footGo()) },
+  { name: 'read', about: `<h2>Reading it before it's made</h2>
+    <p><b>read</b> (or a double-click on the piece) opens it as a page: the document's focus, the way a plane opens. Full height, reading width, the canvas inked behind; the agent's column stays as it is, untouched.</p>
+    <p>No second go: the head says <em>the agent's draft</em>, and <b>create</b> stays in one place, the agent's foot. Esc goes back to the canvas.</p>`,
+    html: () => canvas(docPiece(540, 110, 300, 400, true)) + readPage(380, true, `<div class="dock"><span class="btn">‹ back to the canvas  esc</span></div>`) + agent(`<div class="sec"><b>1</b> CHANGE<hr>‹ 1 / 1 ›</div>
+      <div class="row"><span class="tick">✓</span><span class="doc"></span><span class="what">new document "${DOC.title}"<small>7 lines · private to you</small><div class="where">where: <u>on the canvas ▾</u></div></span><span class="btn lit">reading</span></div>`, footGo()) },
+  { name: 'create', about: `<h2>Create</h2><p>The piece turns solid in the same place; if you were reading it, the page stays open, now the document itself (its <b>edit</b> is there if you want it, nothing asks you to).</p>
+    <p>The chat keeps a short line: <em>APPLIED · on the canvas</em> with <b>go to</b> and <b>undo</b>.</p>`,
+    html: () => canvas(docPiece(540, 110, 300, 400, false)) + agent(`<div class="sec"><b>1</b> CHANGE<hr></div>
+      <div class="row"><span class="doc"></span><span class="what">"${DOC.title}"<small>on the canvas · private to you</small></span></div>
+      <p style="margin:10px 0"><span class="done">APPLIED</span> <span style="color:var(--fg-dim);font-size:12px">· 1 document</span></p><span class="btns"><span class="btn">go to</span><span class="btn">undo</span></span>`) },
+  { name: 'later', about: `<h2>Later</h2><p>It's where you saw it: on the canvas, beside the plane it's about. No hunting: you pan to it, or ⌘F finds it under <em>here</em>.</p>
+    <p><b>Worth deciding:</b> private or shared on create? Today the agent's documents are private. On a shared canvas a private piece shows others a locked sheet. I'd keep it private, its tab saying <em>only you</em>, and let the row's ▾ share it.</p>`,
+    html: () => canvas(docPiece(540, 110, 300, 400, false)) + `<div class="finder"><div class="q"><b>&gt;</b>one page</div><div class="h">here</div><div class="r on">≡ ${DOC.title} · document</div><div class="r">▦ 01 Pazar · plane</div></div>` + agent(`<p style="margin:10px 0"><span class="done">APPLIED</span></p>`) },
+] },
+{ key: 'B', label: 'beside the agent', steps: [
+  { name: 'it arrives', about: `<h2>B · A page beside the agent</h2><p>No piece on the canvas while it's a draft. The row shows the name and its first line, and <b>read</b>.</p>`,
+    html: () => canvas() + agent(`<div class="sec"><b>1</b> CHANGE<hr></div>
+      <div class="row"><span class="tick">✓</span><span class="doc"></span><span class="what">new document "${DOC.title}"<small>"Stall owners at the weekly market who sell fresh food…"</small><div class="where">saved to: <u>only saved ▾</u></div></span><span class="btn lit">read</span></div>`, footGo()) },
+  { name: 'read', about: `<h2>Read</h2><p>The page opens <b>docked</b> left of the agent's column, the whole height, no shade, no box. It's one surface with the chat: what you read on the left, the go on the right.</p>`,
+    html: () => canvas() + readPage(380, true) + agent(`<div class="sec"><b>1</b> CHANGE<hr></div>
+      <div class="row"><span class="tick">✓</span><span class="doc"></span><span class="what">new document "${DOC.title}"<small>reading on the left</small><div class="where">saved to: <u>only saved ▾</u></div></span><span class="btn lit">reading</span></div>`, footGo()) },
+  { name: 'create', about: `<h2>Create</h2><p>The page stays, its head now the document's (<em>edit</em>, <em>place on the canvas</em>). Where it went is what the row's ▾ said: only saved, a documents list, or the canvas.</p>
+    <p><b>Weakness:</b> "only saved" still lands nowhere you can see; the person has to choose a place each time, or we make the canvas the default, and then it's A with a different reader.</p>`,
+    html: () => canvas() + readPage(380, false, `<div class="dock"><span class="btn">edit</span><span class="btn">place on the canvas</span><span class="btn">download</span><span class="btn">×</span></div>`) + agent(`<p style="margin:10px 0"><span class="done">APPLIED</span> <span style="color:var(--fg-dim);font-size:12px">· only saved</span></p><span class="btns"><span class="btn">open</span><span class="btn">undo</span></span>`) },
+] },
+{ key: 'C', label: 'inside the chat', steps: [
+  { name: 'it arrives', about: `<h2>C · The document in the chat</h2><p>The agent's answer <b>is</b> the document: a sheet in the chat with its title and first lines, fading, and <b>read all</b>. Like a long answer, not a change to look for elsewhere.</p>`,
+    html: () => canvas() + agent(`<div class="docCard"><div class="meta">≡ document · draft</div><h3>${DOC.title}</h3><div class="clip">${docBody(3)}</div><div class="bar"><span class="btn">read all</span><span class="where">where: <u>on the canvas ▾</u></span></div></div>`, footGo()) },
+  { name: 'read all', about: `<h2>Read all</h2><p>The column widens to reading width (720) and the whole document is there, in the chat; <b>create</b> under it is the same go as the foot's. Esc narrows it back.</p>
+    <p><b>Weakness:</b> the column is a chat, not a page: headings and long text there feel cramped, and the canvas behind is half hidden.</p>`,
+    html: () => canvas() + agent(`<div class="docCard full"><div class="meta">≡ document · draft</div><h3>${DOC.title}</h3><div class="clip">${docBody()}</div><div class="bar"><span class="btn">narrow</span><span class="where">where: <u>on the canvas ▾</u></span></div></div>`, footGo(), 'wide') },
+  { name: 'create', about: `<h2>Create</h2><p>The sheet folds to one line, a chip: the document's name, where it went, and <b>open ↗</b>.</p>`,
+    html: () => canvas(docPiece(540, 110, 300, 400, false)) + agent(`<div class="chip"><span class="doc" style="width:14px;height:18px;border:1px solid var(--fg-muted)"></span>${DOC.title} <span style="color:var(--fg-dim);font:11px var(--font-mono)">on the canvas</span> <span class="btn">open ↗</span></div>
+      <p style="margin:10px 0"><span class="done">APPLIED</span></p><span class="btns"><span class="btn">undo</span></span>`) },
+] },
+]
+
+let opt = OPTIONS[1], step = 0
+const $ = (id) => document.getElementById(id)
+function render() {
+  $('opts').innerHTML = '<span>option</span>' + OPTIONS.map((o, i) => `<button class="opt" data-o="${i}" aria-pressed="${o === opt}"><b>${o.key}</b>${o.label}${o.rec ? '<span class="rec">· recommended</span>' : ''}</button>`).join('')
+  $('steps').innerHTML = '<span>step</span>' + opt.steps.map((s, i) => `<button class="opt" data-s="${i}" aria-pressed="${i === step}"><b>${i + 1}</b>${s.name}</button>`).join('')
+  const s = opt.steps[step]
+  $('about').innerHTML = s.about + `<h2>keys</h2><p>← → steps · 1–4 options</p>`
+  $('stage').innerHTML = s.html()
+  fit()
+}
+function fit() { const w = $('stage').parentElement; const k = Math.min((w.clientWidth - 32) / 1280, (w.clientHeight - 32) / 760, 1); $('stage').style.transform = `scale(${k})` }
+document.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.o) { opt = OPTIONS[+b.dataset.o]; step = 0 } if (b.dataset.s) step = +b.dataset.s; render() })
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') step = Math.min(step + 1, opt.steps.length - 1)
+  else if (e.key === 'ArrowLeft') step = Math.max(step - 1, 0)
+  else if (/^[1-4]$/.test(e.key)) { opt = OPTIONS[+e.key - 1]; step = 0 } else return
+  render()
+})
+addEventListener('resize', fit)
+render()
+</script>
+</body>
+</html>

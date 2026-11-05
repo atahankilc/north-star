@@ -200,7 +200,7 @@ Applied = **one undo step** (`⌘Z` or `[undo]` in the chat). Deletes are always
 | Timeline | new bars; moved or resized bars with a ghost of the old span |
 | Pieces | a new piece where it will land (nearClear), its setup drawn; stuck lines; moved with followers |
 | Canvases | a new canvas listed in the breadcrumb's prompt; pieces moved to another canvas shown on both |
-| Documents | a new one (D-381): one row, its name and length, never its text; `view` reads it in the document's own window (DocReader) as it would be, `create` there or the preview's go (`create` when it's the only change) makes it, the window going on to the document made, read; nothing opens by itself. The agent notes: their text with changes marked like a diff |
+| Documents | a new one (D-381, D-382): one row, its name, length and first words, never its text; `read` docks it beside the column (DocReader, the whole height, no shade) as it would be; the preview's go (`create` when it's the only change) makes it, the page going on to the document made, read; nothing opens by itself; Escape closes the page before the preview. The agent notes: their text with changes marked like a diff |
 | Places (one card on several planes) | the `⧉ N` and the card on each plane it lands on |
 
 Later, a setting (off by default) may let small batches apply at once with undo (no delete, ≤ 5 changes, only the

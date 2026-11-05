@@ -635,9 +635,9 @@ async function accept(chat: Chat) {
     if (was) patchEntry(was.id, (x) => ({ ...x, state: 'applied' }) as Entry)
     const docs = r.applied.filter((i) => i.op === 'create_document').flatMap((i) => i.made)
     dispatch({ type: 'applied', report: reportOf({ applied: r.applied.map((i) => ({ line: i.line, where: i.where })), notDone: r.notDone.map((i) => ({ line: i.line })), step: r.step, docs }) })
-    // Its draft being read (D-381): the window goes on to the document made, read; nothing more to press.
+    // Its draft being read (D-381): the page beside the column goes on to the document made, read (D-382).
     const ui = useDocUi.getState()
-    if (ui.draft) useDocUi.setState(docs.length ? { draft: null, reading: ui.draft && docs[0], editing: false } : { draft: null })
+    if (ui.draft) useDocUi.setState(docs.length ? { draft: null, reading: docs[0], editing: false, beside: true } : { draft: null, beside: false })
     return
   }
   if (r.stale) {

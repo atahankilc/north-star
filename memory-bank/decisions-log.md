@@ -7282,4 +7282,24 @@ The draft window follows the preview: discarded, revised past it or unticked, it
 (callbacks from the agent, so the documents view never imports the agent), `ChangeRow`'s document row,
 `useDraftFollows`, accept going on to `reading` the document made. Checked headless on the emulators with the dev
 stub's `/one-pager`, 12/12 (the row and its words, nothing opened by itself, view, create, the document there, open,
-discard). *Not yet:* the agent's lessons wait for its redesign (D-312).
+discard). *Not yet:* the agent's lessons wait for its redesign (D-312). *Changed by D-382:* the draft is read beside the
+agent's column, not in a window, and its `create`/`discard` are only the preview's.
+
+### D-382 · 2026-11-05 · Accepted (the user, of D-381's window: "bu yeni eklenen document modal ı bok gibi dostum. Şu flow üzerine iyice düşün ve ne yapabilriz bana bir port üzerinden sun"; of three options on a port, docs/specs/agent-doc-preview/, "B daha iyi şu an"; changes D-381's window): what the agent writes is read beside its column
+**Decision:** a document the agent proposes or wrote is read docked to the left of the agent's column (`DocReaderView`
+`docked`, an `EdgeColumn` at `--ai-w`, a reading width that leaves the side nav clear, the whole height, no shade), not
+in a window over everything. The preview's row: `new document "Title" · N lines, private to you`, its first words under
+it, and `read` (`reading` while open). The page's head says `the agent's draft`; its foot `not made yet · create it in
+the agent's preview →`: one go only, the preview's (D-381 had a second in the window). `create` makes it and the same
+page reads the document made (`edit`, `place on the canvas`, `download`); the report's `open` reads it there too.
+Escape, from the page or from the agent's column, closes the page first, never the preview under it (it used to
+discard the preview). Other ways in (the finder, `readDoc`) keep the window. `useDocUi.beside`; the draft no longer
+carries the agent's callbacks.
+*Alternatives shown:* A, the draft as a document piece on the canvas like every other change, the camera gliding to it
+(recommended for where it ends up); C, the document in the chat, the column widening to read it.
+*Verified:* headless on the emulators with the dev stub's `/one-pager`, 15/15 (row and first words, nothing opened by
+itself, docked flush to the column the whole height, no create of its own, the canvas still pressable, create making
+it on the same page, the document there, Escape, `open`, Escape from the column keeping the preview, discard, nothing
+made, the finder's way still a window); unit 1082/1082; tokens, kit, gallery 0.
+*Not yet:* where it lands: made, it is still private and in no list (the `where ▾` of the preview not built); a card's
+right panel open at the same time sits under the page.

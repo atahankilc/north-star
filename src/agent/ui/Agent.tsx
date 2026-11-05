@@ -52,8 +52,8 @@ const WIDTH_STORE = 'northstar.agent.width'
 const W_MIN = 340
 const W_MAX = 720
 
-// The agent's draft read in the document's window (D-381) lasts while its preview does: discarded, revised past it, or
-// unticked, the window closes (an apply goes on to the document made, agentStore's accept).
+// The agent's draft read beside the column (D-381, D-382) lasts while its preview does: discarded, revised past it, or
+// unticked, the page closes (an apply goes on to the document made, agentStore's accept).
 function useDraftFollows() {
   const entries = useAgent((s) => s.chat.entries)
   const draft = useDocUi((s) => s.draft)
@@ -61,9 +61,7 @@ function useDraftFollows() {
     if (!draft) return
     const live = [...entries].reverse().find((e): e is Extract<Entry, { kind: 'changes' }> => e.kind === 'changes' && (e.state === 'pending' || e.state === 'applying'))
     const item = live?.items.find((i) => i.id === draft.item && i.on)
-    if (!item) return void useDocUi.setState({ draft: null })
-    const others = live!.items.filter((i) => i.on).length - 1
-    if (others !== draft.others) useDocUi.setState({ draft: { ...draft, others } })
+    if (!item) useDocUi.setState({ draft: null, beside: false })
   }, [entries, draft])
 }
 
@@ -330,7 +328,10 @@ function Column() {
       if (e.defaultPrevented) return
       e.preventDefault()
       e.stopPropagation()
-      if (useAgent.getState().view !== 'chat') agentActions.show('chat')
+      // A document read beside the column (D-382) closes first: never the preview under it.
+      const doc = useDocUi.getState()
+      if (doc.beside && (doc.draft || doc.reading)) useDocUi.setState({ draft: null, reading: null, editing: false, beside: false })
+      else if (useAgent.getState().view !== 'chat') agentActions.show('chat')
       else if (phase === 'previewing') agentActions.discard()
       else closeAgent()
     }
@@ -979,7 +980,7 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
           </div>
           <ul className={styles.items}>
             {list.map((i) => (
-              <ChangeRow key={i.id} i={i} live={live} current={i.id === current} onGo={() => go(on.findIndex((x) => x.id === i.id))} others={on.length - 1} />
+              <ChangeRow key={i.id} i={i} live={live} current={i.id === current} onGo={() => go(on.findIndex((x) => x.id === i.id))} />
             ))}
           </ul>
         </div>
@@ -1063,15 +1064,22 @@ const STATE_WORDS: Record<Extract<Entry, { kind: 'changes' }>['state'], string> 
   unapplied: 'not applied',
 }
 
-// A new document (D-381): its name and how long, never its text here; `view` reads it in the document's own window,
-// where `create` makes it.
+// A new document (D-381): its name, how long, its first words, never its text here; `read` opens it beside the column
+// (D-382), and the preview's `create` makes it.
 const docText = (i: ChangeLine) => (i.diff ?? []).map((l) => l.text).join('\n')
 function docLine(i: ChangeLine) {
   const n = (i.diff ?? []).filter((l) => l.text.trim()).length
   return `new document "${i.doc!.title}" · ${n} line${n === 1 ? '' : 's'}, ${i.doc!.shared ? 'shared with everyone here' : 'private to you'}`
 }
+// Its first line of prose (past the title and headings), cut short.
+function docStart(i: ChangeLine) {
+  const line = (i.diff ?? []).map((l) => l.text.trim()).find((t) => t && !t.startsWith('#'))
+  if (!line) return ''
+  const words = line.replace(/^[-*>]\s+/, '')
+  return words.length > 90 ? `${words.slice(0, 90).trimEnd()}…` : words
+}
 
-function ChangeRow({ i, live, current, onGo, others }: { i: ChangeLine; live: boolean; current: boolean; onGo: () => void; others: number }) {
+function ChangeRow({ i, live, current, onGo }: { i: ChangeLine; live: boolean; current: boolean; onGo: () => void }) {
   const draft = useDocUi((s) => s.draft)
   if (i.op === 'create_document' && i.doc) {
     const viewing = draft?.item === i.id
@@ -1083,21 +1091,23 @@ function ChangeRow({ i, live, current, onGo, others }: { i: ChangeLine; live: bo
         </span>
         <span className={styles.itemLine}>
           <ItemText line={docLine(i)} struck={false} />
+          {docStart(i) && <span className={styles.docStart}>“{docStart(i)}”</span>}
           {i.why && <span className={styles.why}> — {i.why}</span>}
         </span>
         {live && i.on && (
           <Button
             className={styles.docView}
             pressed={viewing}
-            title="read it as the document it would be; create it there"
+            title={viewing ? 'close the page' : 'read it beside the chat, as the document it would be'}
             onClick={() =>
-              useDocUi.setState({
-                reading: null,
-                draft: viewing ? null : { item: i.id, title: i.doc!.title, text: docText(i), shared: i.doc!.shared, others, create: () => agentActions.accept(), discard: () => agentActions.discard() },
-              })
+              useDocUi.setState(
+                viewing
+                  ? { draft: null, beside: false }
+                  : { reading: null, editing: false, beside: true, draft: { item: i.id, title: i.doc!.title, text: docText(i), shared: i.doc!.shared } },
+              )
             }
           >
-            view
+            {viewing ? 'reading' : 'read'}
           </Button>
         )}
       </li>
@@ -1156,7 +1166,7 @@ function ReportLine({ entry }: { entry: Extract<Entry, { kind: 'report' }> }) {
       {(docs.length > 0 || (current && !shown.undone)) && (
         <ButtonGroup className={styles.undo}>
           {docs.map((d, i) => (
-            <Button key={d.id} title={`read "${d.title}"`} onClick={() => useDocUi.setState({ reading: d.id, editing: false, draft: null })}>
+            <Button key={d.id} title={`read "${d.title}"`} onClick={() => useDocUi.setState({ reading: d.id, editing: false, beside: true, draft: null })}>
               {docs.length > 1 ? `open ${i + 1}` : 'open'}
             </Button>
           ))}
