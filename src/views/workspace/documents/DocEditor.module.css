@@ -1,0 +1,153 @@
+/* A .md written in the app (DocEditor.tsx, D-373): the tools on top, the page reading as the reader does (Markdown's own
+   look, Markdown.module.css), only what a typed page has besides: lists in their native marks, a task's box, a table's
+   picked cells, the caret's place when empty. */
+.editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* The tools (the bar and its strips) stay at the top of what scrolls. */
+.tools {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-float);
+  background: var(--bg-raised);
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: var(--line-w) solid var(--line);
+}
+
+.bar b,
+.bar i,
+.bar s {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+}
+
+.count {
+  margin-left: auto;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* A strip under the tools: a link's address, a table's own tools. */
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: var(--line-w) dashed var(--line);
+}
+
+.stripName {
+  composes: label from '../../../ui/primitives/Label.module.css';
+  font-family: var(--font-mono);
+}
+
+.linkField {
+  flex: 1;
+  min-width: var(--size-xs);
+}
+
+.host {
+  padding-top: var(--space-6);
+}
+
+.page {
+  min-height: var(--size-xs);
+  outline: none;
+  white-space: pre-wrap;
+}
+
+.page ul,
+.page ol {
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-6);
+}
+
+.page li {
+  margin: 0 0 var(--space-1);
+}
+
+.page li > p {
+  margin: 0;
+}
+
+.page li::marker {
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+}
+
+.page ul[data-type='taskList'] {
+  padding-left: 0;
+  list-style: none;
+}
+
+.page ul[data-type='taskList'] li {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.page ul[data-type='taskList'] li > label {
+  flex: none;
+}
+
+.page ul[data-type='taskList'] li > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.page ul[data-type='taskList'] input {
+  accent-color: var(--accent-cyan);
+}
+
+.page li[data-checked='true'] > div {
+  color: var(--fg-dim);
+}
+
+.page table {
+  width: 100%;
+  margin: 0 0 var(--space-4);
+}
+
+.page th,
+.page td {
+  position: relative;
+  min-width: var(--control-lg);
+}
+
+.page th > p,
+.page td > p {
+  margin: 0;
+}
+
+.page :global(.selectedCell)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--wash-cyan);
+  pointer-events: none;
+}
+
+.page :global(.ProseMirror-selectednode) {
+  outline: var(--line-w-bold) solid var(--accent-cyan);
+}
+
+.page :global(.is-editor-empty):first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--fg-dim);
+  pointer-events: none;
+}

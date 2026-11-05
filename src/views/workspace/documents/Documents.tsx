@@ -8,7 +8,7 @@ import { memo, useMemo, useRef, useState, type CSSProperties, type PointerEvent 
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
-import { DOC_LIMITS, DocumentError, downloadDocument, emptyDocuments, refusal, renameDocument, shareDocument, typeOfFile, uploadMarkdown, type Doc, type DocCol, type DocKind, type DocumentsSetup } from '../../../data/documents'
+import { DOC_LIMITS, DocumentError, downloadDocument, emptyDocuments, mayWriteDoc, newDocument, refusal, renameDocument, shareDocument, typeOfFile, uploadMarkdown, type Doc, type DocCol, type DocKind, type DocumentsSetup } from '../../../data/documents'
 import { setDocumentsSetup } from '../../../data/pieces'
 import { useHistory } from '../../../data/history'
 import { useAuth } from '../../../data/auth'
@@ -33,7 +33,7 @@ import { PageArrows, PageSize } from '../canvas/Pager'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const D = DOCS_PX
-const COL_W: Record<DocCol | 'grip' | 'actions', number> = { kind: 70, title: 370, by: 130, size: 90, added: 96, grip: 36, actions: 160 }
+const COL_W: Record<DocCol | 'grip' | 'actions', number> = { kind: 70, title: 340, by: 130, size: 90, added: 96, grip: 36, actions: 190 }
 const COLS: DocCol[] = ['kind', 'title', 'by', 'size', 'added']
 // The grips' column only where they show (unframed on the canvas, D-234): elsewhere no empty column at its end.
 // The actions' column only where the list is live (in focus, unframed): a picture has nothing to press.
@@ -71,10 +71,11 @@ export const useDocUi = create<{
   // Put on the canvas once it's shared: at `at` (canvas px), or beside `near` (a piece) when asked from a focus.
   placing: { docId: string; at?: [number, number]; near?: string } | null
   deleting: string | null
-  // Read in its own window, over whatever's open (DocReader.tsx).
+  // Read in its own window, over whatever's open (DocReader.tsx); `editing`: written there (D-373).
   reading: string | null
+  editing: boolean
   uploads: { name: string; state: 'sending' | 'done' | 'refused'; why?: string }[]
-}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, readerWeights: {}, renaming: null, unsharing: null, drag: null, dropped: null, placing: null, deleting: null, reading: null, uploads: [] }))
+}>(() => ({ pages: {}, readers: [], sideBySide: false, listHidden: false, readerAt: null, readerZooms: {}, readerWeights: {}, renaming: null, unsharing: null, drag: null, dropped: null, placing: null, deleting: null, reading: null, editing: false, uploads: [] }))
 
 // At most this many side by side.
 export const READERS_MAX = 4
@@ -86,6 +87,9 @@ export function openDoc(id: string, alongside = useDocUi.getState().sideBySide) 
     return { readers: [...s.readers, id].slice(-READERS_MAX) }
   })
 }
+// Opens a document in its reader window (DocReader.tsx), written in at once (D-373) when `edit` (a new one, the agent's,
+// a list's `¶`); the reader turns it off for who may not write it.
+export const readDoc = (id: string, edit = false) => useDocUi.setState({ reading: id, editing: edit })
 export const closeDoc = (id: string) => useDocUi.setState((s) => ({ readers: s.readers.filter((x) => x !== id) }))
 // Sharing or unsharing (its author's). Unsharing one that's on the canvas on its own asks first (its pieces would go).
 export function shareOrAsk(wid: string, d: Pick<Doc, 'shared'> & { id: string }, pieces: Pick<Piece, 'docId'>[]) {
@@ -353,6 +357,11 @@ function RowActions({ d, list, editor, onCanvas }: { d: WithId<Doc>; list: WithI
           ◐
         </Button>
       )}
+      {mayWriteDoc(d, user?.id, workspace.roles[user?.id ?? '']) && (
+        <Button icon title="write in it" aria-label="Write in it" onClick={act(() => readDoc(d.id, true))}>
+          ¶
+        </Button>
+      )}
       {editor && (
         <Button icon title={`place it on the canvas where you're looking${onCanvas ? ', or drag it where you want it' : ''}${d.shared ? '' : ' (shares it; asks first)'}`} aria-label="Place on the canvas" onPointerDown={onCanvas ? dragOut(d.id) : undefined} onClick={act(() => useDocUi.setState({ placing: { docId: d.id, near: list.id } }))}>
           ↗
@@ -525,6 +534,18 @@ export function UploadAction({ className }: { className?: string }) {
   )
 }
 
+// `write`: a new empty .md of yours (private until shared), opened in its reader to be written (D-373).
+export function WriteAction({ className }: { className?: string }) {
+  const { wid } = useWs()
+  const { user } = useAuth()
+  if (!user) return null
+  return (
+    <Button className={className} title="write a new document (only you see it until you share it)" onClick={() => void newDocument(wid, { uid: user.id, name: user.name || user.email || 'someone' }).then((id) => readDoc(id, true))}>
+      write
+    </Button>
+  )
+}
+
 const ALL = 'all'
 const KIND_FILTER: { value: string; label: string; kinds?: DocKind[] }[] = [
   { value: ALL, label: 'every kind' },
@@ -572,6 +593,7 @@ export function DocumentsTools({ piece, editor, toolClass, compact = false }: { 
           <Choice bare label="Show as" options={['table', 'shelf'] as const} value={setup.view} onChange={(v) => void setDocumentsSetup(wid, piece, { view: v })} />
         </>
       )}
+      <WriteAction className={tool} />
       <UploadAction className={tool} />
     </span>
   )

@@ -9,7 +9,7 @@
 //
 // The pieces (pieces.ts): a `documents` piece lists them (a table or a shelf of sheets, `DocumentsSetup`); a `document`
 // piece shows one (`docId`).
-import { collection, doc, getDoc, query, updateDoc, where, writeBatch, type DocumentReference } from 'firebase/firestore'
+import { collection, deleteField, doc, getDoc, query, updateDoc, where, writeBatch, type DocumentReference } from 'firebase/firestore'
 import { useMemo } from 'react'
 import { db, useEmulators } from './firebase'
 import { absent, tracked } from './history'
@@ -18,7 +18,7 @@ import { useDoc, useQuery, type WithId } from './hooks'
 export { DOC_KINDS, DOC_COLS, DOC_LIMITS } from '../model/shapes'
 export type { DocKind, DocCol } from '../model/shapes'
 import { DOC_LIMITS, type DocCol, type DocKind } from '../model/shapes'
-import { bytesOf, markdownSummary } from '../model/notes'
+import { bytesOf, excerptOf, markdownSummary, wordsOf } from '../model/notes'
 
 // Where it came from: uploaded by someone, or written by the assistant.
 export type DocOrigin = 'upload' | 'assistant'
@@ -182,6 +182,45 @@ export async function uploadMarkdown(wid: string, who: { uid: string; name: stri
     return batch.commit()
   }, { before: absent([ref, body]) })
   return ref.id
+}
+
+// ---- Writing a .md in the app (D-373)
+
+// Who may write a .md's text (firestore.rules' `mayWrite`): its author, or any owner or editor once it's shared. Never
+// the agent notes (their own preview), a report or a file.
+export function mayWriteDoc(d: Pick<Doc, 'kind' | 'uid' | 'shared'> & { id: string }, me: string | undefined, role: string | undefined) {
+  if (!me || d.kind !== 'markdown' || d.id === 'agent-notes') return false
+  return d.uid === me || (d.shared && (role === 'owner' || role === 'editor'))
+}
+
+// A new empty .md of yours, private until shared, titled `untitled` until it's named; one undo step.
+export async function newDocument(wid: string, who: { uid: string; name: string }): Promise<string> {
+  const ref = doc(docsOf(wid))
+  const body = bodyRef(wid, ref.id)
+  const now = Date.now()
+  const summary: Doc = markdownSummary('', { title: 'untitled', uid: who.uid, name: who.name, origin: 'upload', shared: false, createdAt: now, now })
+  await tracked('write a document', [ref, body], () => {
+    const batch = writeBatch(db())
+    batch.set(ref, summary)
+    batch.set(body, { text: '' })
+    return batch.commit()
+  }, { before: absent([ref, body]), key: `doc-text:${ref.id}` })
+  return ref.id
+}
+
+// A .md's text as it's typed (D-330's pace: the caller waits for a pause): the text and its counts, one batch. One
+// writing go is one undo step (`key`); a new one's first text joins its making, so undoing it takes the document away.
+export function writeDocumentText(wid: string, id: string, text: string, opts: { joinNew?: boolean } = {}) {
+  if (bytesOf(text) > DOC_LIMITS.text) return Promise.reject(new DocumentError('over 900 KB of text'))
+  const ref = docRef(wid, id)
+  const body = bodyRef(wid, id)
+  const excerpt = excerptOf(text)
+  return tracked('write a document', [ref, body], () => {
+    const batch = writeBatch(db())
+    batch.update(ref, { excerpt: excerpt || deleteField(), size: bytesOf(text), words: wordsOf(text), updatedAt: Date.now() })
+    batch.set(body, { text })
+    return batch.commit()
+  }, { key: `doc-text:${id}`, mergeAlways: opts.joinNew })
 }
 
 // ---- Changes (the author's own: sharing, renaming; firestore.rules lets no one else)

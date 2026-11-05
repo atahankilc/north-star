@@ -101,6 +101,27 @@ beside `undo` on the applied line, and from the finder, which lists a document n
 list`. Its foot: `place on the canvas` (a private one asks first), `download`. A documents list shows every document you may
 see, the agent's too, including ones written before the list was made.
 
+## Written in the app (D-373)
+
+A `.md` is written on the page as it reads, never its Markdown: `DocEditor` (Tiptap on ProseMirror, `@tiptap/markdown`,
+loaded only when someone writes) in the reader window. `edit` in the reader's foot turns the page into it, `done` back;
+`write` beside `upload` makes a new empty one of yours (private, `untitled`) and opens it there; `¶` on a list's row
+and the agent's `open` (for a .md it wrote) open it written in. Its author renames it from the title there.
+
+- Tools: a paragraph style (text, heading 1–4, quote, code block); bold, italic, struck, code in the line, link (⌘K,
+  an address strip), clear the formatting; bullet, numbered and check lists, a level out and in; quote, code block,
+  table (inside one, a strip: rows above/below, columns left/right, take a row, a column or the table out), a line
+  across; undo and redo (the editor's own while typing, ⌘Z outside it the workspace's); a word count. Markdown's
+  shortcuts work as typed (`# `, `- `, `[ ] `, `> `, `**…**`), turning into what they mean.
+- The page reads as the reader does (Markdown.module.css styles its tags too); code in a line is its own edged cell.
+- Saved as typed (D-330's pace, `AUTOSAVE_MS`): a pause, leaving the page, a hidden tab or closing writes the text and
+  its counts (excerpt, size, words) in one batch; one go of writing is one undo step, a new one's first text joins its
+  making. The title's heading at the top stays as it came.
+- Who (firestore.rules' `mayWrite`, `mayWriteDoc`): its author, or any owner or editor once it's shared; never the
+  agent notes (their own preview), a report or a file. Last write wins (D-071): while someone types, others' changes
+  wait; with the keyboard away, theirs come in.
+- Kept, not dropped: an image is `[alt]` (nothing is fetched, as in the reader) and saved back as it came.
+
 ## Unframed (D-234)
 
 Both pieces take D-228's `[unframe]` / `[frame]` (edit mode): out of the window onto the canvas, on a feathered page,
@@ -112,6 +133,6 @@ there is measured as drawn.
 ## Not yet
 
 - Images and PDFs (Storage, step 4): upload with thumbnails, pdf.js pages, `[◐ dark]`, an image taking its shape.
-- Writing a document in the app (kind `note`).
+- Writing (D-373): telling who else is writing the same document now; images by upload once Storage is live.
 - Viewers uploading (the client's read-only mode refuses it).
 - Comments on a document in a list. (Documents are in the export since D-246: .md and reports; files once Storage is live.)

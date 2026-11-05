@@ -572,20 +572,30 @@ service cloud.firestore {
             // The notes: any owner or editor (`uid` only says who started them, so an undo restores someone else's).
             && (isNotes(d) ? canEdit(wid) : (d.uid == request.auth.uid || (d.shared == true && isOwner(wid))));
         }
+        // A .md's text, written in the app (D-373): its author, or any owner or editor once it's shared. Not the notes
+        // (their own rule), never a report or a file.
+        function mayWrite(d) {
+          return isMember(wid) && d.kind == 'markdown' && !isNotes(d)
+            && (d.uid == request.auth.uid || (d.shared == true && canEdit(wid)));
+        }
         function mayDelete(d) {
           return isMember(wid) && (isNotes(d) ? canEdit(wid) : (d.uid == request.auth.uid || (d.shared == true && isOwner(wid))));
         }
         // Not there yet reads as missing to any member, as reports do (a listener refused once never comes back).
         allow read: if resource == null ? isMember(wid) : mayRead(resource.data);
         allow create: if mayCreate(request.resource.data);
-        // Its author shares, unshares or renames a document; nothing else in it changes. The notes: an editor changes
+        // Its author shares, unshares or renames a document; a .md's text is written by its author or, once it's shared, any
+        // owner or editor (D-373), only its counts changing here; nothing else in it changes. The notes: an editor changes
         // their text's counts and title, never who started them, when, or that they're shared.
         allow update: if isMember(wid) && validDoc(request.resource.data)
           && (isNotes(resource.data)
             ? (canEdit(wid) && isNotes(request.resource.data)
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'excerpt', 'size', 'words', 'origin', 'updatedAt']))
-            : (resource.data.uid == request.auth.uid && !('role' in request.resource.data)
-              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shared', 'title', 'updatedAt'])));
+            : (!('role' in request.resource.data)
+              && ((resource.data.uid == request.auth.uid
+                  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shared', 'title', 'updatedAt']))
+                // A .md written in the app (D-373): its author, or any owner or editor once it's shared; only its counts.
+                || (mayWrite(resource.data) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['excerpt', 'size', 'words', 'updatedAt'])))));
         allow delete: if mayDelete(resource.data);
 
         function summary() {
@@ -612,8 +622,11 @@ service cloud.firestore {
             && isMember(wid) && (isNotes(summaryAfter())
               ? (canEdit(wid) && notesBody(request.resource.data))
               : (summaryAfter().uid == request.auth.uid || (summaryAfter().shared == true && isOwner(wid))));
-          // Only the agent notes' text changes after it's made (S16).
-          allow update: if part == 'body' && isMember(wid) && canEdit(wid) && isNotes(summaryAfter()) && notesBody(request.resource.data);
+          // The agent notes' text (S16); a .md's, written in the app (D-373), by whoever may write it, only its text.
+          allow update: if part == 'body' && isMember(wid)
+            && (isNotes(summaryAfter())
+              ? (canEdit(wid) && notesBody(request.resource.data))
+              : (mayWrite(summaryAfter()) && validBody(request.resource.data) && request.resource.data.keys().hasOnly(['text'])));
           allow delete: if part == 'body'
             && (!exists(/databases/$(database)/documents/workspaces/$(wid)/documents/$(id)) ? isMember(wid) : mayDelete(summary()));
           function notesBody(b) {

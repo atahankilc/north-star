@@ -294,6 +294,7 @@ feature comes back as a piece, and check them with the user then.
   row or column is a card (D-247).
 
 ## Documents
+- Documents written in the app (D-373): on the page as it reads, never its Markdown (Tiptap, lazy), a word processor's tools; `edit` in the reader, `write` beside `upload`, `¶` on a row, the agent's `open`; saved as Markdown as typed; its author, or any owner or editor once it's shared.
 - A document read in a window (D-371): `DocReader` over whatever's open, from the agent's `open` beside `undo` and the finder's `in no list` group (a document no list or piece shows); `place on the canvas`, `download`.
 - Documents (D-232, D-234, docs/specs/documents.md): every file is a document (`markdown | image | pdf | report`; old
   reports moved over once), private until shared. A `documents` list piece (table or shelf) and a `document` piece (one,

@@ -635,6 +635,24 @@ await allow('a documents list opened onto the canvas (D-234)', () => addDoc(sub(
 await allow('a document opened onto the canvas (D-234)', () => addDoc(sub(alice.fs, 'pieces'), { kind: 'document', docId: 'd1', open: true, x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
 await deny('a plane holding a docId', () => addDoc(sub(alice.fs, 'pieces'), { kind: 'plane', docId: 'd1', x: 0, y: 0, w: 1, h: 1, createdAt: 1, updatedAt: 1 }))
 
+// Writing a .md in the app (D-373): its author, or any owner or editor once it's shared; the text and its counts only.
+const writeText = (who, id, text, counts = { size: text.length, words: 3, excerpt: text.slice(0, 20), updatedAt: 3 }) => {
+  const w = writeBatch(who.fs)
+  w.update(docDoc(who.fs, id), counts)
+  w.set(docBody(who.fs, id), { text })
+  return w.commit()
+}
+await allow('author writes their shared document', () => writeText(bob, 'd1', 'Owner interviews, six of them'))
+await allow('owner writes a shared document', () => writeText(alice, 'd1', 'Owner interviews, seven'))
+await allow('viewer writes their own private document', () => writeText(dave, 'd2', 'My own notes here'))
+await deny("viewer writes someone's shared document", () => writeText(dave, 'd1', 'mine now'))
+await deny("editor writes someone's private document", () => writeText(alice, 'd2', 'not yours'))
+await deny('editor renames a shared document while writing it', () => writeText(alice, 'd1', 'x', { title: 'Mine', updatedAt: 4 }))
+await deny("editor changes a shared document's author", () => writeText(alice, 'd1', 'x', { uid: alice.uid, updatedAt: 4 }))
+await deny('a written text with another field', () => setDoc(docBody(alice.fs, 'd1'), { text: 'x', answer: 'y' }))
+await allow('author writes the text alone', () => setDoc(docBody(bob.fs, 'd1'), { text: 'Only the text' }))
+await deny('outsider writes a shared document', () => setDoc(docBody(carol.fs, 'd1'), { text: 'x' }))
+
 // The agent notes (S16): one shared markdown document per workspace (`agent-notes`); members read, editors write.
 const notesSummary = (who, extra = {}) => ({ kind: 'markdown', role: 'agent-notes', title: 'Agent notes', excerpt: 'We only sell in Berlin', origin: 'assistant', uid: who.uid, name: 'x', shared: true, contentType: 'text/markdown', size: 30, words: 6, createdAt: 1, updatedAt: 1, ...extra })
 const saveNotes = (who, extra, text = '# Agent notes\n\n- We only sell in Berlin.', id = 'agent-notes') => {
@@ -663,7 +681,7 @@ await deny('viewer edits the agent notes', () => updateDoc(docBody(dave.fs, 'age
 await deny('editor changes who started the agent notes', () => updateDoc(docDoc(alice.fs, 'agent-notes'), { uid: alice.uid }))
 await deny('editor unshares the agent notes', () => updateDoc(docDoc(bob.fs, 'agent-notes'), { shared: false }))
 await deny('agent notes\' body with another field', () => setDoc(docBody(bob.fs, 'agent-notes'), { text: 'x', secret: 'k' }))
-await deny('a document\'s body is never rewritten (only the notes)', () => setDoc(docBody(alice.fs, 'd1'), { text: 'changed' }))
+await deny("a private document's body rewritten by someone else (D-373: its author, or anyone who edits once it's shared)", () => setDoc(docBody(alice.fs, 'd2'), { text: 'changed' }))
 await deny('a document takes the notes\' role', () => updateDoc(docDoc(bob.fs, 'd1'), { role: 'agent-notes' }))
 await deny('viewer deletes the agent notes', () => { const w = writeBatch(dave.fs); w.delete(docBody(dave.fs, 'agent-notes')); w.delete(docDoc(dave.fs, 'agent-notes')); return w.commit() })
 await allow('editor\'s undo takes the agent notes away', () => { const w = writeBatch(bob.fs); w.delete(docBody(bob.fs, 'agent-notes')); w.delete(docDoc(bob.fs, 'agent-notes')); return w.commit() })

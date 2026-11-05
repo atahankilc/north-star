@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-04 (light theme's colours D-368; the agent's web D-360 checked on the stub and pushed; windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-05 (documents written in the app D-373; light theme's colours D-368; the agent's web D-360 checked on the stub and pushed; windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -40,7 +40,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
   which (D-313); pushed;
   rules deployed.
-- Documents (D-232): files (images, PDFs) once Storage is live; writing documents in the app; renaming from the UI.
+- Documents (D-232): files (images, PDFs) once Storage is live. Written in the app: D-373 (2026-11-05, pushed, firestore:rules deployed; state-history).
 - The agent (D-312, docs/specs/agent.md; the overnight build: docs/specs/agent-run.md): see the first item above.
 - Onboarding (D-315, D-316): **built and live** (O0–O16; state-history.md). D-349 (2026-11-02, committed, not pushed):
   content rewritten, every lesson the centred modal, ~30 lessons by screen/piece, no nudges; checked headless on
@@ -66,7 +66,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - D-352–D-356 (2026-11-02, state-history): pushed (756bd67), firestore:rules deployed after (633/0); D-348 (Settings → display: hud size, background strength) pushed, the user checked it.
 - D-350 (2026-11-02, pushed): the prompt family on one set of parts, done (state-history); `@` and `/` checked on emulators.
 - Cards on one face (D-358, docs/specs/cards.md): done 2026-11-02, five steps, one move (`startMove`) and the tray's task after (state-history). D-363 (few cards fill a plane), D-365 (bigger names, kind tab) 2026-11-04: not committed, the user to check their numbers; D-367 (far view) taken out; D-370 (console cells the name's row, tab's word goes under 50 %): pushed. D-372 (names grow apart, a piece's down, a section's out): pushed.
-- Windows and docked panels (D-359, 2026-11-02): all eight steps and the open items done, pushed and live (f2d28ac, deploy ok); left: beside's row line wins a press where it crosses the split line (as before).
+- Windows and docked panels (D-359, 2026-11-02): all eight steps and the open items done, pushed and live (f2d28ac, deploy ok); beside's row line no longer wins a press where it crosses the split line (2026-11-05).
 - The agent's web (D-360, docs/specs/agent-web.md, 2026-11-02): both steps built (web search on every turn, sources under the answer; `/research` with parallel researchers and a cited document); checked on the stub and pushed (a6872f8; state-history); not on a real key yet: what to watch then is in D-360's *Not yet*.
 - Shared code above the kit (D-361, docs/specs/shared-code.md): all four groups done 2026-11-03 (state-history); the add fields keep what's typed on leaving.
 - Sweep 2026-11-03 (state-history): threads' rule (pushed 0f7ddf4, deployed, 639/0), Crash boundary, loading waits for every listener; then 10, 11, 14, 12, 13, 15, 17, 18, 9, 7, 8, 16, 19, 22; 5 (D-369, pushed d41a097; a real-server try left); still open: 20, 21 and small leftovers, listed there under **Still open from the sweep**.

@@ -1099,7 +1099,7 @@ function ReportLine({ entry }: { entry: Extract<Entry, { kind: 'report' }> }) {
       {(docs.length > 0 || (current && !shown.undone)) && (
         <ButtonGroup className={styles.undo}>
           {docs.map((d, i) => (
-            <Button key={d.id} title={`read "${d.title}"`} onClick={() => useDocUi.setState({ reading: d.id })}>
+            <Button key={d.id} title={d.kind === 'markdown' ? `read and write "${d.title}"` : `read "${d.title}"`} onClick={() => useDocUi.setState({ reading: d.id, editing: d.kind === 'markdown' })}>
               {docs.length > 1 ? `open ${i + 1}` : 'open'}
             </Button>
           ))}

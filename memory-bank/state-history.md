@@ -1528,3 +1528,10 @@ Open: agent bug 49 (a saved document can't be reached without a documents list).
 `DocReader` on the one Window; `open` on the agent's applied line (Report's `docs`); the finder's `aloneGroups`, `Dest` kind
 `alone`. Checked: tests/unit/findAlone.test.ts, unit 1062/0, tsc, check:tokens/kit/gallery/lessons, headless (D-371's *Checked*).
 The commit before left the shared index on the old blobs (a private-index commit does): `git reset -- <paths>` after one.
+
+## Done (2026-11-05): documents written in the app (D-373), beside's crossing lines
+- D-373: `DocEditor` (Tiptap 3, lazy chunk ~160 kB gz) in the reader window: `edit`/`done`, `write` beside `upload`, `¶`
+  on a row, the agent's `open` written in; saved as Markdown as typed; firestore.rules `mayWrite` (author, or owners and
+  editors once shared), rules tests 651/0, unit 1062/0 (word counts now skip Markdown's marks). Checked headless on
+  emulators as Alice: new, title, heading, code, bold, lists, checklist, table, saved text read back; gallery in both themes.
+- Beside: the pane lines drawn before the split line, so where they cross a press moves the split (hit test + zoomed shot).

@@ -46,7 +46,7 @@ describe('update_notes', () => {
     const after = project(ws, [plan]) as AgentWs
     const n = notesOf(after)
     expect(n.text).toBe('# Agent notes\n\n- We only sell in Berlin for now.')
-    expect(n.doc).toMatchObject({ kind: 'markdown', role: 'agent-notes', shared: true, uid: 'u-ayse', origin: 'assistant', words: 11 })
+    expect(n.doc).toMatchObject({ kind: 'markdown', role: 'agent-notes', shared: true, uid: 'u-ayse', origin: 'assistant', words: 9 })
     expect([...diff(ws, after)].map(([id, c]) => `${c.change} ${c.kind}/${id}`)).toEqual([`added documents/${NOTES_ID}`])
     // Nothing else moved: the other documents keep their objects.
     expect(after.documents.filter((d) => d.id !== NOTES_ID).every((d) => ws.documents.includes(d))).toBe(true)

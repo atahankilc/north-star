@@ -2,7 +2,7 @@
 // (its kind's mark, who and when, its length; its title) and its content: a .md's Markdown, a report's answer and
 // sections (the old report reader, D-089), or for a file what it is until Storage is live. Laid out at a width given in
 // its own px; the frame round it and how it moves are the caller's.
-import { memo } from 'react'
+import { memo, type ReactNode } from 'react'
 import type { WithId } from '../../../data/hooks'
 import { filesAvailable, type Doc, type DocBody, type DocKind } from '../../../data/documents'
 import { ago } from '../../../ui/foundation/ago'
@@ -55,9 +55,12 @@ type Props = {
   me?: string
   // Followed links (in focus and beside the list; on the canvas they're only shown).
   links?: boolean
+  // Written in the app (D-373): the title's field and the page's editor in place of its title and Markdown.
+  title?: ReactNode
+  editor?: ReactNode
 }
 
-export const DocContent = memo(function DocContent({ d, body, loading = false, failed = false, me, links = false }: Props) {
+export const DocContent = memo(function DocContent({ d, body, loading = false, failed = false, me, links = false, title, editor }: Props) {
   const by = d.uid === me ? 'you' : d.name
   return (
     <article className={styles.doc}>
@@ -72,15 +75,19 @@ export const DocContent = memo(function DocContent({ d, body, loading = false, f
           </span>
         )}
       </p>
-      <h1 className={styles.title} data-heading="title">
-        {d.title}
-      </h1>
+      {title ?? (
+        <h1 className={styles.title} data-heading="title">
+          {d.title}
+        </h1>
+      )}
       {loading && !body ? (
         <p className={styles.note}>loading…</p>
       ) : failed && !body ? (
         <p className={styles.note}>This document&apos;s text couldn&apos;t be read. Reload the page to try again.</p>
+      ) : editor ? (
+        editor
       ) : d.kind === 'markdown' ? (
-        <Markdown text={withoutTitle(body?.text ?? '', d.title)} links={links} />
+        <Markdown text={splitTitle(body?.text ?? '', d.title).rest} links={links} />
       ) : d.kind === 'report' ? (
         <Report body={body ?? {}} research={d.reportKind === 'research'} links={links} />
       ) : (
@@ -90,10 +97,11 @@ export const DocContent = memo(function DocContent({ d, body, loading = false, f
   )
 })
 
-// A .md's first heading is its title (mdTitle), shown in the head already: not twice.
-function withoutTitle(text: string, title: string) {
+// A .md's first heading is its title (mdTitle), shown in the head already: not twice. Writing it (D-373) edits the
+// rest and puts the heading back in front.
+export function splitTitle(text: string, title: string) {
   const m = /^\s*#{1,6}\s+(.+?)\s*#*\s*(\n|$)/.exec(text)
-  return m && m[1].trim() === title.trim() ? text.slice(m[0].length) : text
+  return m && m[1].trim() === title.trim() ? { head: m[0].replace(/\n?$/, '\n\n'), rest: text.slice(m[0].length).replace(/^\n+/, '') } : { head: '', rest: text }
 }
 
 // A research report or a chat's write-up (D-089, D-090): its answer, a section per question with its points and their

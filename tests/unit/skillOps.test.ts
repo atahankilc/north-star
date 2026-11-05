@@ -143,7 +143,7 @@ describe('create_document', () => {
     const id = plan.ids.$d
     const ws = run(ctx, [plan]) as WorkspaceCtx & { bodies?: Record<string, { text?: string }> }
     const doc = ws.documents.find((d) => d.id === id)!
-    expect(doc).toMatchObject({ kind: 'markdown', title: 'SWOT: Tablebook', origin: 'assistant', uid: 'u-bob', name: 'Bob', shared: false, contentType: 'text/markdown', words: 13 })
+    expect(doc).toMatchObject({ kind: 'markdown', title: 'SWOT: Tablebook', origin: 'assistant', uid: 'u-bob', name: 'Bob', shared: false, contentType: 'text/markdown', words: 11 })
     expect(ws.bodies?.[id]?.text).toContain('loses 20 orders')
     const shared = createDocument(ctxOf(), { title: 'One-pager', text: 'Hello', share: true })
     expect(shared.writes[0].set).toMatchObject({ shared: true, origin: 'upload' })

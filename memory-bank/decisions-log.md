@@ -7187,3 +7187,17 @@ place (asks, shares, a document piece), undo takes the button away. *Not yet:* t
 Zoomed out a name keeps its size on the screen while the gap between things shrinks, so a section's name (on its edge's middle) and a piece's (75 % over its edge) ran into each other: 31 px at 17 % with a section 50 px round a plane. Now what's over a piece's edge stays what it is at 100 % in canvas px and the rest grows down onto the piece (framed: `min(75%, …)`; unframed: its top stays, it grows over its contents). A section's name does the opposite, out of the section (`--sec-grow`; up the left edge, leftwards). Only growing both down wouldn't part them: they'd move together. So names clear of each other at 100 % stay clear at every zoom. Close up nothing changes.
 Checked headless (gallery `pieces in a section`, framed and unframed): overlap 0 from 10 % to 54 % where it was 13–31 px; left edge too.
 *Not yet:* pieces stacked with a small gap at about 10 % (a 200 px piece is 20 px on the screen, its name's row 36), and a section tight inside a section (both grow up), can still touch.
+
+### D-373 · 2026-11-05 · Accepted (the user: "bence burda markdownda sanki word gibi bir toolset vermeliyiz. İnsanlar word editor gibi kullanıp aslında markdown preview üzerinde yazıp çizsin. Hiç altta yatan markdown karakterlerini görmesin"; then "Tiptap ile deneme sayfasını yap", "ikisine de evet, uygulamada yap", and that the tools were few and code barely showed): documents written in the app
+A `.md` could only be uploaded. Three looks were shown (docs/specs/doc-writing-preview/: source beside the page, write
+in place, `edit` turning the page into its Markdown); the user wanted a word processor instead, writing on the page as
+it reads and never seeing Markdown's marks, with a library if one exists. A Tiptap test page (a scratchpad, port 5184)
+was tried and kept. Now `DocEditor` (Tiptap 3 on ProseMirror with @tiptap/markdown, lazy, ~165 kB gzipped) is the
+reader window's `edit`: a paragraph style, marks, link, lists with levels, quote, code block, table with its own strip,
+a line, undo/redo, a word count; saved as Markdown as typed (D-330's pace), one undo step per go. `write` beside
+`upload` starts a new private one; `¶` on a row and the agent's `open` open one written in. Who writes (the user, yes
+to both): its author, or any owner or editor once it's shared (firestore.rules `mayWrite`, rules tests 651/0); the agent's
+saved document opens to be written. Code in a line and code blocks now stand out in the reader too (an edged cell,
+the strong ink). Alternatives: Milkdown (Markdown-first, more to build by hand), MDXEditor (its own look, ~850 kB),
+our own editor (months). *Not yet:* who else is writing now (last write wins, D-071); images by upload (Storage);
+raw HTML in a .md is kept as text, Markdown's rarer spellings (`*` lists, `__bold__`) come back in the common one.

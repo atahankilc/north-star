@@ -40,7 +40,8 @@ export function bytesOf(s: string): number {
   return n
 }
 
-export const wordsOf = (text: string) => (text.match(/\S+/g) ?? []).length
+// Words read, not Markdown's marks: a run with a letter or a digit in it (`-`, `|`, `---`, `#` aren't words, D-373).
+export const wordsOf = (text: string) => (text.match(/\S*[\p{L}\p{N}]\S*/gu) ?? []).length
 
 // The first words without Markdown marks: headings, code, images, list marks, emphasis, links to their text.
 export function excerptOf(text: string): string {

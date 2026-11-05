@@ -18,7 +18,13 @@
 .h1,
 .h2,
 .h3,
-.h4 {
+.h4,
+.md h1,
+.md h2,
+.md h3,
+.md h4,
+.md h5,
+.md h6 {
   margin: var(--space-8) 0 var(--space-3);
   color: var(--fg-strong);
   font-weight: var(--weight-medium);
@@ -26,20 +32,26 @@
   line-height: var(--lh-snug);
 }
 
-.h1 {
+.h1,
+.md h1 {
   font-size: var(--text-heading);
 }
 
-.h2 {
+.h2,
+.md h2 {
   font-size: var(--text-lg);
 }
 
-.h3 {
+.h3,
+.md h3 {
   font-size: var(--text-md);
 }
 
 /* The smallest headings as labels: mono caps, faint. */
-.h4 {
+.h4,
+.md h4,
+.md h5,
+.md h6 {
   margin-top: var(--space-6);
   color: var(--fg-muted);
   font-family: var(--font-mono);
@@ -49,37 +61,47 @@
   text-transform: uppercase;
 }
 
+/* Code in a line: its own cell, edged, in the strong ink, so it reads apart from the words round it (D-373). */
 .md code {
-  padding: var(--space-half) var(--space-1);
-  background: var(--chip);
+  padding: 0 var(--space-1);
+  border: var(--line-w) solid var(--line-hover);
+  background: var(--wash-3);
+  color: var(--fg-strong);
   font-family: var(--font-mono);
   font-size: var(--text-code);
 }
 
-.code {
+.code,
+.md pre {
   margin: 0 0 var(--space-4);
   padding: var(--space-3) var(--space-4);
   overflow-x: auto;
-  border-left: var(--line-w) solid var(--line-hover);
-  background: var(--bg-raised);
+  border-left: var(--line-w-bold) solid var(--line-hover);
+  background: var(--wash-2);
+  font-family: var(--font-mono);
   font-size: var(--text-sm);
   line-height: var(--lh-body);
   white-space: pre;
 }
 
-.code code {
+.code code,
+.md pre code {
   padding: 0;
+  border: 0;
   background: none;
+  color: inherit;
 }
 
-.quote {
+.quote,
+.md blockquote {
   margin: 0 0 var(--space-3);
   padding-left: var(--space-4);
   border-left: var(--line-w) solid var(--accent-magenta);
   color: var(--fg-muted);
 }
 
-.rule {
+.rule,
+.md hr {
   margin: var(--space-6) 0;
   border: 0;
   border-top: var(--line-w) solid var(--line-hover);
@@ -132,12 +154,14 @@ a.link:hover {
   overflow-x: auto;
 }
 
-.table {
+.table,
+.md table {
   border-collapse: collapse;
   font-size: var(--text-sm);
 }
 
-.table th {
+.table th,
+.md th {
   padding: var(--space-2) var(--space-3);
   border-bottom: var(--line-w) solid var(--line-hover);
   color: var(--fg-dim);
@@ -149,7 +173,8 @@ a.link:hover {
   text-transform: uppercase;
 }
 
-.table td {
+.table td,
+.md td {
   padding: var(--space-2) var(--space-3);
   border-bottom: var(--line-w) dashed var(--line);
   vertical-align: top;

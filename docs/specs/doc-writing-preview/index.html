@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Writing a document · options</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/inter/opsz.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/jetbrains-mono/index.css">
+<style>
+/* A preview only (documents.md's Not yet: writing a document in the app). The app's tokens, hand-made copies of its
+   reading page (DocContent) and dock. Served from the repo root so the token and font files load. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-display); font-size: var(--text-sm); }
+button, textarea, input { font: inherit; color: inherit; }
+
+.top { position: fixed; inset: 0 0 auto 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 12px; }
+.top h1 { margin: 0; font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); }
+.grp { display: flex; gap: 2px; align-items: center; }
+.grp > span { color: var(--fg-faint); margin-right: 6px; text-transform: uppercase; letter-spacing: .05em; font-size: 11px; }
+.opt { background: none; border: 1px solid transparent; padding: 5px 9px; color: var(--fg-dim); cursor: pointer; }
+.opt b { color: var(--accent-magenta); font-weight: 400; margin-right: 6px; }
+.opt:hover { color: var(--fg); }
+.opt[aria-pressed='true'] { color: var(--fg); border-color: var(--line-hover); background: var(--wash-2); }
+.about { position: fixed; top: 52px; left: 16px; width: 300px; bottom: 16px; overflow: auto; z-index: 9; color: var(--fg-muted); font-size: 13px; line-height: 1.5; padding-right: 8px; }
+.about h2 { margin: 18px 0 6px; font: 500 11px/1 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--fg-dim); }
+.about b { color: var(--fg); font-weight: 500; }
+.about em { color: var(--accent-cyan); font-style: normal; }
+.about ol { padding-left: 18px; margin: 0; }
+.about li { margin-bottom: 8px; }
+
+/* The reading page (DocContent): a column, its head, its text at reading size. */
+.page { position: fixed; top: 52px; left: 340px; right: 0; bottom: 64px; overflow: auto; padding: 40px 48px 80px; }
+.col { max-width: 760px; margin: 0 auto; }
+.col.wide { max-width: none; }
+.meta { font: 12px/1 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--fg-dim); display: flex; gap: 12px; align-items: center; }
+.meta .kind { color: var(--fg); text-transform: none; display: inline-flex; gap: 6px; align-items: center; }
+.meta .kind i { width: 6px; height: 6px; background: var(--fg); display: inline-block; }
+.meta .saved { color: var(--fg-dim); text-transform: none; letter-spacing: 0; }
+.meta .saved.typing { color: var(--accent-cyan); }
+.title { font-size: 26px; font-weight: 500; margin: 14px 0 22px; outline: none; }
+.title[contenteditable='true']:empty::before { content: 'Untitled'; color: var(--placeholder); }
+.md h1 { font-size: 22px; font-weight: 500; margin: 28px 0 12px; }
+.md h2 { font-size: 18px; font-weight: 500; margin: 26px 0 10px; }
+.md p { margin: 0 0 14px; line-height: 1.6; }
+.md ul { margin: 0 0 14px; padding: 0; list-style: none; }
+.md li { position: relative; padding-left: 24px; margin-bottom: 6px; line-height: 1.6; }
+.md li::before { content: '–'; position: absolute; left: 4px; color: var(--fg-dim); }
+.md strong { font-weight: 600; color: var(--fg-strong); }
+
+/* A: source and page side by side. */
+.split { display: grid; grid-template-columns: 1fr 1px 1fr; gap: 0 32px; height: 100%; }
+.split .rule { background: var(--line); }
+.src { width: 100%; min-height: 60vh; resize: none; border: 0; outline: none; background: none; color: var(--fg); font: 14px/1.7 var(--font-mono); padding: 0; }
+.srcHead { font: 11px/1 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 14px; display: flex; gap: 8px; }
+.srcHead b { color: var(--accent-magenta); font-weight: 400; }
+
+/* B: the block you're in shows its marks; the rest reads. */
+.blk { position: relative; border-radius: 0; cursor: text; }
+.blk:hover { box-shadow: -12px 0 0 -10px var(--line-hover); }
+.blk.on { box-shadow: -12px 0 0 -10px var(--accent-cyan); }
+.blk textarea { display: block; width: 100%; border: 0; outline: none; background: none; resize: none; overflow: hidden; padding: 0; margin: 0 0 14px; line-height: 1.6; color: var(--fg); }
+.blk textarea.h1 { font-size: 22px; font-weight: 500; margin: 28px 0 12px; }
+.blk textarea.h2 { font-size: 18px; font-weight: 500; margin: 26px 0 10px; }
+.marks { color: var(--fg-faint); }
+.hintline { font: 12px var(--font-mono); color: var(--fg-dim); margin-top: 26px; }
+.hintline b { color: var(--fg); font-weight: 400; }
+
+/* C: the page turns into its source in place. */
+.srcPage { width: 100%; min-height: 60vh; resize: none; border: 0; outline: none; background: none; color: var(--fg); font: 15px/1.75 var(--font-mono); padding: 0; caret-color: var(--accent-cyan); }
+
+/* The dock (Console at the screen's foot). */
+.dock { position: fixed; left: calc(340px + (100vw - 340px) / 2); bottom: 14px; transform: translateX(-50%); display: flex; gap: 2px; align-items: center; padding: 6px 8px; }
+.dock::before, .dock::after { content: ''; position: absolute; width: 8px; height: 8px; border-color: var(--fg-faint); border-style: solid; top: 0; }
+.dock::before { left: 0; border-width: 1px 0 0 1px; }
+.dock::after { right: 0; border-width: 1px 1px 0 0; }
+.dlab { font: 12px var(--font-mono); letter-spacing: .05em; color: var(--fg-dim); margin-right: 10px; text-transform: uppercase; }
+.cell { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border: 0; background: var(--wash-2); color: var(--fg-dim); font: 12px var(--font-mono); cursor: pointer; white-space: nowrap; }
+.cell:hover { background: var(--wash-3); color: var(--fg-strong); }
+.cell.main { background: var(--wash-4); color: var(--fg-strong); }
+.cell.primary { background: var(--accent-cyan); color: var(--on-accent); font-weight: 500; }
+.cell[aria-pressed='true'] { background: color-mix(in srgb, var(--accent-cyan) 10%, transparent); color: var(--accent-cyan); box-shadow: inset 0 -1px 0 var(--accent-cyan); }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Writing a document</h1>
+  <div class="grp" id="looks"><span>look</span></div>
+  <div class="grp" id="themes"><span>theme</span></div>
+</div>
+
+<div class="about" id="about"></div>
+<div class="page" id="page"></div>
+<div class="dock" id="dock"></div>
+
+<script>
+const START = `Twelve people in three offices round Moritzplatz, one question first: *what did you eat yesterday, and why?*
+
+## What we heard
+
+- **9 of 12** skip delivery lunch most days: "it's heavy and it's dear".
+- Most have **30 minutes or less**; the queue at the salad bar eats half of it.
+- Three would pay **€8–9** for a home-cooked dish they ordered the night before.
+
+## What surprised us
+
+Nobody minded walking two minutes to a shelf in the lobby. Everybody minded not knowing who cooked it.
+
+## Next
+
+Ask the cooks in Neukölln how many portions they could promise by 9 pm.`
+
+const S = { look: 'C', theme: 'dark', text: START, title: 'Interviews: Kreuzberg offices', editing: true, typing: false, block: -1 }
+
+const LOOKS = {
+  A: ['source and page', '<b>Source on the left, the page on the right.</b> <em>edit</em> in the dock splits the reading page: the Markdown you type on the left (mono), the page it makes on the right, updating as you type. You always see both; it halves the width you read at.'],
+  B: ['writes as it reads', '<b>The page itself is where you type.</b> Click a paragraph, heading or list: that block shows its Markdown marks (faint) while you’re in it, everything else stays the page. No mode to switch; nothing moves. The most work to build (each block its own field; pasting, Enter and Backspace across blocks).'],
+  C: ['a page that turns', '<b>One switch: the page turns into its source, in place.</b> <em>edit</em> swaps the reading page for its Markdown at the same width and place (mono, a cyan caret); <em>done</em> turns it back, cell by cell. One field, the simplest and surest to build; you read and write in turns, not at once.'],
+}
+
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>')
+// The text's blocks: a heading, a list (its lines), a paragraph.
+function blocks(text) {
+  const out = []
+  for (const part of text.split(/\n\s*\n/)) {
+    const t = part.trim()
+    if (!t) continue
+    if (/^#{1,2} /.test(t)) out.push({ kind: t.startsWith('## ') ? 'h2' : 'h1', raw: t })
+    else if (/^- /.test(t)) out.push({ kind: 'ul', raw: t })
+    else out.push({ kind: 'p', raw: t })
+  }
+  return out
+}
+function html(b) {
+  if (b.kind === 'h1') return `<h1>${inline(b.raw.slice(2))}</h1>`
+  if (b.kind === 'h2') return `<h2>${inline(b.raw.slice(3))}</h2>`
+  if (b.kind === 'ul') return `<ul>${b.raw.split('\n').map((l) => `<li>${inline(l.replace(/^- /, ''))}</li>`).join('')}</ul>`
+  return `<p>${inline(b.raw)}</p>`
+}
+const render = (text) => blocks(text).map(html).join('')
+const words = (t) => (t.match(/\S+/g) || []).length
+
+let typingT = 0
+function typed() {
+  S.typing = true
+  clearTimeout(typingT)
+  typingT = setTimeout(() => { S.typing = false; head() }, 500)
+  head()
+}
+
+function head() {
+  const el = document.getElementById('meta')
+  if (!el) return
+  const saved = S.editing ? (S.typing ? 'saving…' : 'saved') : ''
+  el.innerHTML = `<span class="kind"><i></i>md</span><span>you · now · ${words(S.text)} words</span><span>◐ only you</span>${saved ? `<span class="saved${S.typing ? ' typing' : ''}">${saved}</span>` : ''}`
+}
+
+function draw() {
+  document.documentElement.dataset.theme = S.theme
+  const bar = (id, items, cur, pick) => { const g = document.getElementById(id); g.querySelectorAll('button').forEach((b) => b.remove()); for (const [k, label, n] of items) { const b = document.createElement('button'); b.className = 'opt'; b.setAttribute('aria-pressed', String(cur === k)); b.innerHTML = (n ? `<b>${n}</b>` : '') + label; b.onclick = () => pick(k); g.append(b) } }
+  bar('looks', [['A', 'source and page', 'A'], ['B', 'writes as it reads', 'B'], ['C', 'a page that turns', 'C']], S.look, (k) => { S.look = k; S.editing = k !== 'B' ? S.editing : true; S.block = -1; draw() })
+  bar('themes', [['dark', 'dark'], ['light', 'light']], S.theme, (k) => { S.theme = k; draw() })
+
+  document.getElementById('about').innerHTML = `${LOOKS[S.look][1]}
+    <h2>The same in every look</h2>
+    <ol>
+      <li><b>Making one:</b> <em>+ new document</em> in a documents list's dock, and <em>document</em> in the canvas's <em>+</em> menu (a document piece, private, asked before it's shown, as today). It opens straight in writing, the title first.</li>
+      <li><b>What it is:</b> a <em>markdown</em> document like an uploaded .md (no new kind), so an uploaded one can be written in too.</li>
+      <li><b>Who writes in it:</b> its author; once shared, owners and editors too (as the agent notes, D-312). Viewers read.</li>
+      <li><b>Saving:</b> as it's typed (D-330): a 500 ms pause, leaving or a hidden tab writes it; one go is one undo step; <em>saved</em> in its head. Two people at once: the last write wins, as everywhere (D-071).</li>
+      <li><b>The title:</b> typed in its place at the top; Enter goes to the text.</li>
+      <li><b>Markdown only</b> (what the reader shows today): headings, lists, bold, italic, links. No toolbar of buttons: the marks are typed.</li>
+    </ol>
+    <h2>Questions for you</h2>
+    <ol>
+      <li>Which look?</li>
+      <li>Shared: should owners and editors write in someone else's document, or only its author?</li>
+      <li>Also from the agent: should <em>save as a document</em> open the result for writing?</li>
+    </ol>`
+
+  const page = document.getElementById('page')
+  const dock = document.getElementById('dock')
+  const titleEl = `<div class="title" ${S.editing || S.look === 'B' ? 'contenteditable="true"' : ''} id="title">${esc(S.title)}</div>`
+  if (S.look === 'A' && S.editing) {
+    page.innerHTML = `<div class="split"><div><div class="srcHead"><b>›</b> markdown</div><textarea class="src" id="src" spellcheck="false"></textarea></div><div class="rule"></div><div><div class="meta" id="meta"></div>${titleEl}<div class="md" id="out">${render(S.text)}</div></div></div>`
+    const ta = document.getElementById('src'); ta.value = S.text
+    ta.oninput = () => { S.text = ta.value; document.getElementById('out').innerHTML = render(S.text); typed() }
+  } else if (S.look === 'C' && S.editing) {
+    page.innerHTML = `<div class="col"><div class="meta" id="meta"></div>${titleEl}<textarea class="srcPage" id="src" spellcheck="false"></textarea></div>`
+    const ta = document.getElementById('src'); ta.value = S.text
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px' }
+    ta.oninput = () => { S.text = ta.value; fit(); typed() }
+    requestAnimationFrame(fit)
+  } else if (S.look === 'B') {
+    const bs = blocks(S.text)
+    page.innerHTML = `<div class="col"><div class="meta" id="meta"></div>${titleEl}<div class="md" id="bs"></div><p class="hintline">click any line to write in it · <b>Enter</b> twice starts a new block · the marks show only where you are</p></div>`
+    const host = document.getElementById('bs')
+    bs.forEach((b, i) => {
+      const d = document.createElement('div')
+      d.className = 'blk' + (S.block === i ? ' on' : '')
+      if (S.block === i) {
+        const ta = document.createElement('textarea'); ta.value = b.raw; ta.className = b.kind === 'h1' || b.kind === 'h2' ? b.kind : ''; ta.spellcheck = false
+        const fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px' }
+        ta.oninput = () => { bs[i].raw = ta.value; S.text = bs.map((x) => x.raw).join('\n\n'); fit(); typed() }
+        ta.onblur = () => { setTimeout(() => { if (S.block === i) { S.block = -1; draw() } }, 0) }
+        d.append(ta); requestAnimationFrame(() => { fit(); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length) })
+      } else {
+        d.innerHTML = html(b)
+        d.onmousedown = (e) => { e.preventDefault(); S.block = i; draw() }
+      }
+      host.append(d)
+    })
+  } else {
+    page.innerHTML = `<div class="col"><div class="meta" id="meta"></div>${titleEl}<div class="md">${render(S.text)}</div></div>`
+  }
+  const t = document.getElementById('title'); if (t) t.oninput = () => { S.title = t.textContent; typed() }
+  head()
+
+  const cells = S.look === 'B'
+    ? ['<span class="dlab">document</span>', '<button class="cell">share</button>', '<button class="cell">download</button>', '<button class="cell">delete</button>', '<button class="cell main">unfocus</button>']
+    : S.editing
+      ? ['<span class="dlab">writing</span>', '<button class="cell" id="read">done</button>', '<button class="cell main">unfocus</button>']
+      : ['<span class="dlab">document</span>', '<button class="cell" id="edit">edit</button>', '<button class="cell">share</button>', '<button class="cell">download</button>', '<button class="cell">delete</button>', '<button class="cell main">unfocus</button>']
+  dock.innerHTML = cells.join('')
+  const ed = document.getElementById('edit'); if (ed) ed.onclick = () => { S.editing = true; draw() }
+  const rd = document.getElementById('read'); if (rd) rd.onclick = () => { S.editing = false; draw() }
+}
+draw()
+</script>
+</body>
+</html>
