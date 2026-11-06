@@ -40,3 +40,16 @@ _Q-032 (the kit's rules repeated in the live CSS) was answered by D-334._
 _Q-033 (the backdrop faint on some screens) was closed by D-348: background strength in Settings → display._
 
 _Q-034 (where the HUD's tools sit) was answered by D-343: the decks tool stays in the side nav._
+
+### Q-035 · soon · The surfaces on top of D-384: modals, dropdown panels, docked panels
+D-384 settled the small parts only; the user: "modal, dropdown ve panel için seninle ayrıca düşüncez". Still to decide, with
+the user, on a port: (1) modals: Window, Dialog, WizardShell, Settings, HazardConfirm: corners, shade or line; (2) dropdown
+panels and PromptPanel: corners, the L's, a row's look (corners, the band on a picked one, the `›`), Select's list and
+its `✓`; (3) docked panels: EdgeColumn, PanelHead, the agent's column, the threads dock; (4) the console and dock's own
+shape, its marks and drawer; (5) Toast, Tip, Popover; (6) Frame's boxes, Settings' sections, its side list's current item.
+What's known: the user likes modals and dropdowns round and wants no small radius beside them, and wants several shapes
+mixed, not one radius. Cards stay squircle, pieces square. Shown so far (controls-preview/demo.patch, `srf`): leaf (raised,
+a shade for the line, big squircle, panels square), touch (a corner touching something sharp, the free ones round: a
+dropdown at its trigger, a panel at the screen's edge, a dock at the floor; a modal all round), isle (panels and dock
+float off the edge, all round). A cut corner was dropped with the small-radius looks. None picked.
+**Recommendation:** touch; it's a rule for mixing shapes, not one more radius. Decide on a port with D-384's controls on.

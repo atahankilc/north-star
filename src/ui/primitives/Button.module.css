@@ -87,9 +87,11 @@
   color: var(--on-accent);
 }
 
-/* pressed: a switch that's on, a radio or a tab picked, a checkbox ticked: cyan on a cyan wash with a line under it;
-   `--button-on` gives it another colour (a status's own, a checklist's green). */
-:where(.sm[aria-pressed='true'], .sm[aria-checked='true'], .sm[aria-selected='true']) {
+/* pressed: a switch that's on, a radio or a tab picked, a checkbox ticked, a trigger narrowing what you see: cyan on a
+   cyan wash with a line under it; `--button-on` gives it another colour (a status's own, a checklist's green). The one
+   place this look is written: everything that can be on composes `sm` and takes it from here, what has no aria state (a
+   tick drawn inside a row that is the button) by `data-on`. check:kit refuses a copy. */
+:where(.sm[aria-pressed='true'], .sm[aria-checked='true'], .sm[aria-selected='true'], .sm[data-on], .sm[data-active='true']) {
   background: color-mix(in srgb, var(--button-on, var(--accent-cyan)) var(--mix-wash), transparent);
   color: var(--button-on, var(--accent-cyan));
   box-shadow: inset 0 calc(-1 * var(--line-w)) 0 var(--button-on, var(--accent-cyan));

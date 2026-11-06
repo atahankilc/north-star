@@ -137,6 +137,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
 ## 6. Components (ASCII-styled DOM)
 
 - Boxes drawn with box characters (`┌─┐│└┘`) or 1px lines that echo them
+- **Coming (D-384, [specs/controls.md](specs/controls.md), agreed, not built):** empty controls with a lamp replace the cells below.
 - Buttons are cells (D-344, `src/ui/primitives/Button.tsx`, lowercase, D-093): every button is the same cell, a faint
   shade (`--wash-2`) that says "you can press this", a step brighter on hover (`--wash-3`), a little smaller while pressed
   (`--press-scale`); its kind shows only in its fill and ink, never in its shape. No brackets, no key after it (keys live

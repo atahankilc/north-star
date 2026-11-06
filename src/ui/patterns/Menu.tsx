@@ -69,6 +69,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
         aria-haspopup="menu"
         aria-expanded={open}
         data-active={active || undefined}
+        data-on={(icon && !quiet && open) || undefined}
         data-quiet={quiet || undefined}
         data-hud={(icon && hud) || undefined}
         aria-controls={open ? id : undefined}

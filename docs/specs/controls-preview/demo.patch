@@ -1,0 +1,690 @@
+diff --git a/round.html b/round.html
+new file mode 100644
+index 0000000..f473356
+--- /dev/null
++++ b/round.html
+@@ -0,0 +1,65 @@
++<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Kontroller ve yüzeyler</title>
++<style>
++:root{color-scheme:dark}*{box-sizing:border-box}
++body{margin:0;background:#000;color:#e8e8e8;font:14px/1.45 -apple-system,Inter,sans-serif}
++body[data-t=light]{background:#f3f3f3;color:#111}
++aside{position:fixed;inset:0 auto 0 0;width:320px;overflow:auto;padding:18px 18px 24px;background:#0c0c0d;box-shadow:1px 0 0 #8884}
++body[data-t=light] aside{background:#fff}
++main{margin-left:320px;min-width:0}
++fieldset{all:unset;display:block;margin-bottom:20px}
++.h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
++.h b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#2fd9e0;color:#000;font-size:12px;flex:none}
++.what{margin:2px 0 8px 28px;font-size:12.5px;opacity:.65}
++button{all:unset;box-sizing:border-box;display:block;width:100%;padding:7px 10px 7px 28px;margin-top:2px;border-radius:12px;cursor:pointer;font-size:13.5px;position:relative}
++button::before{content:'';position:absolute;left:10px;top:12px;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1px #8889}
++button i{display:block;font-style:normal;font-size:12px;opacity:.65}
++button:hover{background:#8882}
++button[data-on=true]{background:#2fd9e022}
++button[data-on=true]::before{background:#2fd9e0;box-shadow:0 0 6px #2fd9e0}
++button:focus-visible{outline:2px solid #2fd9e0;outline-offset:-2px}
++a{color:inherit;opacity:.75;font-size:13px}
++h2{font:500 12px ui-monospace,Menlo,monospace;text-transform:uppercase;letter-spacing:.05em;margin:34px 24px 12px;color:#ff3d9a}
++.grid{display:grid;gap:16px;padding:0 24px 8px;grid-template-columns:repeat(auto-fit,minmax(480px,1fr))}
++figure{margin:0}figure.w{grid-column:1/-1}figcaption{opacity:.7;margin-bottom:6px;font-size:13px}
++iframe{display:block;width:100%;border:0;background:#0000}
++#kit{height:1500px}
++</style></head><body>
++<aside id="side"></aside>
++<main><iframe id="kit" title="kit"></iframe><div id="rest"></div></main>
++<script type="module">
++const KEY='round-demo'
++const st={ctl:'g-side',srf:'touch',chk:'lamp',theme:'dark',...JSON.parse(sessionStorage.ui6||'{}')}
++const GROUPS=[
++['ctl','1','Butonlar ve seçim','Değişen: butonlar, gruplar, sekmeler, tik kutuları',[
++ ['now','Bugün','Her butonun arkasında gri hücre'],
++ ['g-side','Seçilen','Boş + yan ışık, ikon kendisi yanıyor']]],
++['srf','2','Modal, dropdown, panel (henüz karar yok)','Değişen: bu yüzeylerin köşeleri ve gölgesi',[
++ ['now','Bugün','Köşeli, ince çizgi, L işaretleri'],
++ ['leaf','Yaprak','Gölgeli, büyük squircle, panel köşeli'],
++ ['touch','Değen köşe','Bir şeye değen köşe keskin, boştaki yuvarlak'],
++ ['isle','Ada','Paneller kenardan ayrılıp yüzüyor, hepsi yuvarlak']]],
++['theme','','Tema','',[['dark','Koyu',''],['light','Açık','']]],
++]
++const cur=()=>({ctl:st.ctl,srf:st.srf,chk:st.chk})
++const send=changed=>{localStorage.setItem(KEY,JSON.stringify(cur()));sessionStorage.ui6=JSON.stringify(st);document.querySelectorAll('iframe').forEach(f=>f.contentWindow?.postMessage({round:cur(),changed},'*'))}
++const side=document.getElementById('side')
++for(const[key,n,title,what,opts]of GROUPS){const fs=document.createElement('fieldset');fs.dataset.k=key;fs.innerHTML=`<div class="h">${n?`<b>${n}</b>`:''}${title}</div>${what?`<div class="what">${what}</div>`:''}`
++for(const[v,t,d]of opts){const b=document.createElement('button');b.dataset.v=v;b.innerHTML=t+(d?`<i>${d}</i>`:'');b.onclick=()=>pick(key,v);fs.append(b)}side.append(fs)}
++side.insertAdjacentHTML('beforeend','<a href="/" target="_blank">gerçek uygulama ↗</a>')
++const paint=()=>side.querySelectorAll('fieldset').forEach(fs=>fs.querySelectorAll('button').forEach(b=>b.dataset.on=b.dataset.v===st[fs.dataset.k]))
++function pick(key,v){st[key]=v;paint();if(key==='theme'){document.body.dataset.t=v;send();load()}else send(key)}
++document.body.dataset.t=st.theme;paint()
++const SEC=[
++['Modal',[['settings|open-display','Settings',720,1],['wizardshell','WizardShell',500],['hazardconfirm','Silme onayı',360]]],
++['Dropdown ve menü',[['menu|open','Menu',360],['select|open','Select',360],['right-click-menu|card','Sağ tık',420],['finder|typed','Finder',480]]],
++['Panel ve dock',[['sidepanel|default','Sağ panel',620],['focused-plane|filter-open','Alt dock, çekmecesi açık',620]]],
++['Uygulamanın içinde (kartlar ve parçalar değişmedi)',[['focused-plane|in-focus','Plane odakta',620,1]]],
++]
++const addr=c=>`/gallery.html?round=${encodeURIComponent(JSON.stringify(cur()))}#c=${c.split('|')[0]}${c.includes('|')?'&s='+c.split('|')[1]:''}&theme=${st.theme}&motion=reduced&alone`
++function load(){const kit=document.getElementById('kit');kit.dataset.c='roundkit';const q=[kit];const r=document.getElementById('rest');r.innerHTML=''
++for(const[t,items]of SEC){const h=document.createElement('h2');h.textContent=t;const g=document.createElement('div');g.className='grid';for(const[c,n,hh,w]of items){const f=document.createElement('figure');if(w)f.className='w';f.innerHTML=`<figcaption>${n}</figcaption><iframe title="${n}" style="height:${hh}px"></iframe>`;const i=f.querySelector('iframe');i.dataset.c=c;q.push(i);g.append(f)}r.append(h,g)}
++const tell=i=>i.contentWindow?.postMessage({round:cur()},'*')
++const next=()=>{const i=q.shift();if(!i)return;i.onload=()=>{tell(i);setTimeout(()=>tell(i),1500);setTimeout(()=>tell(i),4000);setTimeout(next,300)};i.src=addr(i.dataset.c)};next();setTimeout(next,1500)}
++addEventListener('message',e=>{if(e.data?.rkHeight)document.getElementById('kit').style.height=e.data.rkHeight+'px';if(e.data?.pick)pick('ctl',e.data.pick)})
++send();load()
++</script></body></html>
+diff --git a/src/gallery/RoundKit.gallery.tsx b/src/gallery/RoundKit.gallery.tsx
+new file mode 100644
+index 0000000..cb754a1
+--- /dev/null
++++ b/src/gallery/RoundKit.gallery.tsx
+@@ -0,0 +1,186 @@
++import { Component, useEffect, useRef, useState, type ReactNode } from 'react'
++import { example, specOf } from './example'
++import { entryById } from './registry'
++import { Button } from '../ui/primitives/Button'
++import { ButtonGroup } from '../ui/primitives/ButtonGroup'
++import { Window } from '../ui/patterns/Window'
++import { EdgeColumn } from '../ui/patterns/EdgeColumn'
++import { PanelHead } from '../ui/patterns/PanelHead'
++import { PromptPanel } from '../ui/patterns/PromptPanel'
++import type { PromptEntry } from '../ui/foundation/promptModel'
++
++class Safe extends Component<{ children: ReactNode }, { bad: boolean }> {
++  state = { bad: false }
++  static getDerivedStateFromError() {
++    return { bad: true }
++  }
++  render() {
++    return this.state.bad ? <small>—</small> : this.props.children
++  }
++}
++function One({ render }: { render: () => ReactNode }) {
++  return <>{render()}</>
++}
++const show = (id: string, state: string) => {
++  const s = entryById(id)?.states[state]
++  return s ? <Safe><One render={specOf(s).render as () => ReactNode} /></Safe> : <small>yok: {id} / {state}</small>
++}
++
++const none = () => {}
++const ADD: PromptEntry[] = [
++  { key: 'h1', heading: 'pieces' },
++  { key: 'plane', label: 'plane', glyph: '▦', hint: 'cards and links', onSelect: none },
++  { key: 'matrix', label: 'matrix…', glyph: '▤', onSelect: none },
++  { key: 'table', label: 'table…', glyph: '▥', onSelect: none },
++  { key: 'deck', label: 'deck…', glyph: '▧', onSelect: none },
++]
++const TICKS: PromptEntry[] = [
++  { key: 'a', label: 'customers', checked: true, tone: 'var(--type-customer)', onSelect: none },
++  { key: 'b', label: 'problems', checked: true, tone: 'var(--type-problem)', onSelect: none },
++  { key: 'c', label: 'competitors', checked: false, tone: 'var(--type-competitor)', onSelect: none },
++]
++const CTL: [string, string, string][] = [
++  ['now', 'Bugün', 'Her butonun arkasında gri bir hücre.'],
++  ['g-side', 'Seçilen: boş + yan ışık', 'Arka plan yok. Seçilinin yanında mavi ışık, ikon butonlarda ikonun kendisi yanıyor.'],
++]
++const KIT: [string, string, string[]][] = [
++  ['button', 'Button', ['sm tones', 'icons']],
++  ['buttongroup', 'ButtonGroup', []],
++  ['toolbutton', 'ToolButton', ['states']],
++  ['tabs', 'Tabs', []],
++  ['choice', 'Choice', ['picked']],
++  ['checkbox', 'Checkbox', ['on and off', 'checklist']],
++  ['chip', 'Chip', ['tags']],
++  ['field', 'Field', []],
++  ['select', 'Select', ['closed']],
++  ['options', 'Options', ['many of']],
++]
++const CSS = `.rk{position:fixed;inset:0;overflow:auto;background:var(--bg);padding:4px 24px 40px;box-sizing:border-box;color:var(--fg)}
++.rk-scene{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) 300px;grid-template-rows:auto auto;gap:14px;margin:10px 0 0}
++.rk-t{position:relative;min-width:0;padding:30px 16px 16px;box-shadow:inset 0 0 0 1px var(--line);transition:box-shadow .5s}
++.rk-t[data-flash]{box-shadow:inset 0 0 0 2px var(--accent-cyan);transition:none}
++.rk-t>small{position:absolute;top:8px;left:12px;font:500 12px var(--font-display);color:var(--fg-dim)}
++.rk-t>small b{display:inline-grid;place-items:center;width:17px;height:17px;margin-right:6px;border-radius:50%;background:var(--accent-cyan);color:var(--on-accent);font-weight:600}
++.rk-wide{grid-column:1/3;display:flex;flex-wrap:wrap;gap:14px 26px;align-items:center}
++.rk-panel{grid-column:3;grid-row:1/3;transform:translateZ(0);overflow:hidden;min-height:440px;padding:0}
++.rk-panel>small{z-index:9}
++.rk-panel [role=dialog]{position:absolute;right:0;width:280px;top:34px!important}
++.rk-modal{display:grid;place-items:center;min-height:330px;background:color-mix(in srgb,var(--wash-1) 60%,transparent)}
++.rk-drop{min-height:330px}
++.rk-drop>div{width:250px;margin-top:6px}
++.rk-body{padding:12px 24px;color:var(--fg-dim);font-size:13px}
++.rk-msg{padding:22px 24px 18px}
++.rk-msg h4{margin:0 0 6px;font:500 19px var(--font-display);color:var(--fg-strong)}
++.rk-msg p{margin:0 0 14px;font:13px/1.45 var(--font-display);color:var(--fg-dim)}
++.rk-msg *{max-width:100%;box-sizing:border-box}
++.rk-msg input{width:100%}
++.rk-msg>span{display:flex;justify-content:flex-end;margin-top:14px}
++.rk h2{font:500 12px var(--font-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--accent-magenta);margin:26px 0 8px}
++.rk-c{all:unset;box-sizing:border-box;display:grid;grid-template-columns:230px minmax(0,1fr);gap:24px;width:100%;padding:16px 12px;cursor:pointer;box-shadow:0 1px 0 var(--line)}
++.rk-c:hover{background:var(--wash-1)}
++.rk-c[data-on]{background:var(--wash-1);box-shadow:inset 3px 0 0 var(--accent-cyan),0 1px 0 var(--line)}
++.rk-c>div:first-child>b{display:block;font:500 15px var(--font-display);color:var(--fg-strong)}
++.rk-c>div:first-child>i{display:block;font:normal 13px/1.4 var(--font-display);color:var(--fg-dim);margin-top:3px}
++.rk-s{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;min-width:0}
++.rk-kit{columns:2;column-gap:40px}
++.rk-one{break-inside:avoid;padding:14px 0;border-top:1px solid var(--line);min-width:0}
++.rk-one h3{font:500 12px var(--font-mono);color:var(--fg-dim);margin:0 0 10px}
++.rk-st{display:flex;flex-wrap:wrap;gap:20px 32px;align-items:flex-start}
++.rk-st>div{min-width:0;max-width:100%;position:relative}`
++function Page() {
++  const ref = useRef<HTMLDivElement>(null)
++  const [ctl, setCtl] = useState('g-side')
++  const [srf, setSrf] = useState('touch')
++  const [flash, setFlash] = useState('')
++  useEffect(() => {
++    const t = setInterval(() => parent.postMessage({ rkHeight: ((ref.current?.firstElementChild as HTMLElement | null)?.offsetHeight ?? 0) + 64 }, '*'), 800)
++    let off = 0
++    const on = (e: MessageEvent) => {
++      if (!e.data?.round) return
++      setCtl(e.data.round.ctl)
++      setSrf(e.data.round.srf)
++      if (e.data.changed) {
++        setFlash(e.data.changed)
++        clearTimeout(off)
++        off = window.setTimeout(() => setFlash(''), 450)
++      }
++    }
++    addEventListener('message', on)
++    return () => {
++      clearInterval(t)
++      removeEventListener('message', on)
++    }
++  }, [])
++  return (
++    <div className="rk" ref={ref}><div>
++      <style>{CSS}</style>
++      <div className="rk-scene" data-ctl={ctl} data-srf={srf}>
++        <div className="rk-t rk-wide" data-flash={flash === 'ctl' || undefined}>
++          <small><b>1</b>Butonlar, gruplar, sekmeler</small>
++          <ButtonGroup><Button>filter</Button><Button>linked · 2</Button><Button pressed>setup</Button><Button tone="main">unfocus</Button></ButtonGroup>
++          {show('tabs', 'segments')}
++          <Button>edit</Button>
++          <Button tone="primary">save</Button>
++          {show('toolbutton', 'states')}
++        </div>
++        <div className="rk-t rk-panel" data-flash={flash === 'srf' || undefined}>
++          <small><b>2</b>Sağ panel</small>
++          <EdgeColumn portal={false} escape={false} label="panel" className="">
++            <PanelHead kind="problem" onClose={none} />
++            <div className="rk-msg"><h4>Lunch near the office is expensive</h4><p>6 of 8 interviewed spend over €10.</p></div>
++          </EdgeColumn>
++        </div>
++        <div className="rk-t rk-modal" data-flash={flash === 'srf' || flash === 'ctl' || undefined}>
++          <small><b>2</b>Modal</small>
++          <Window portal={false} modal={false} focus={false} entrance="none" escape={false} label="modal" style={{ width: 340 }}>
++            <div className="rk-msg">
++              <h4>New workspace</h4>
++              {show('field', 'filled')}
++              <span><ButtonGroup><Button>cancel</Button><Button tone="primary">create</Button></ButtonGroup></span>
++            </div>
++          </Window>
++        </div>
++        <div className="rk-t rk-drop" data-flash={flash === 'srf' || undefined}>
++          <small><b>2</b>Dropdown</small>
++          <Button pressed>add ▾</Button>
++          <div><PromptPanel items={ADD} ariaLabel="add" prompt="type to find…" onClose={none} /></div>
++        </div>
++        <div className="rk-t rk-wide" data-flash={flash === 'ctl' || undefined}>
++          <small><b>1</b>Checkbox ve filtre kutuları</small>
++          {show('checkbox', 'on and off')}
++          {show('checkbox', 'checklist')}
++          <div style={{ width: 240 }}><PromptPanel items={TICKS} ariaLabel="filter" prompt="filter…" onClose={none} /></div>
++        </div>
++      </div>
++      <h2>Bugün ve seçilen</h2>
++      {CTL.map(([k, n, d]) => (
++        <div className="rk-c" key={k} data-ctl={k} data-on={ctl === k || undefined} role="button" tabIndex={0} onClick={() => parent.postMessage({ pick: k }, '*')}>
++          <div><b>{n}</b><i>{d}</i></div>
++          <div className="rk-s">
++            {show('buttongroup', 'a dock')}
++            {show('buttongroup', 'a console in edit mode')}
++            {show('toolbutton', 'states')}
++            {show('tabs', 'segments')}
++            {show('choice', 'picked')}
++            {show('checkbox', 'on and off')}
++          </div>
++        </div>
++      ))}
++      <h2>Onaylanan: bütün küçük parçalar</h2>
++      <div className="rk-kit" data-ctl={ctl}>
++        {KIT.map(([id, name, want]) => {
++          const e = entryById(id)
++          if (!e) return <small key={id}>yok: {id}</small>
++          const names = want.length ? want : Object.keys(e.states).slice(0, 3)
++          return (
++            <section className="rk-one" key={id}>
++              <h3>{name}</h3>
++              <div className="rk-st">{names.map((n) => <div key={n}>{show(id, n)}</div>)}</div>
++            </section>
++          )
++        })}
++      </div>
++    </div></div>
++  )
++}
++export default example({ name: 'RoundKit', place: 'actions/buttons', file: 'src/ui/primitives/Button.tsx', note: 'throwaway', states: { all: () => <Page /> } })
+diff --git a/src/gallery/main.tsx b/src/gallery/main.tsx
+index d417fe1..796ad4d 100644
+--- a/src/gallery/main.tsx
++++ b/src/gallery/main.tsx
+@@ -4,6 +4,7 @@
+ import { StrictMode } from 'react'
+ import { createRoot } from 'react-dom/client'
+ import '../styles/global.css'
++import '../roundDemo'
+ import '../state/theme'
+ import { setReadOnly } from '../data/history'
+ import { useCurtain } from '../state/curtain'
+diff --git a/src/main.tsx b/src/main.tsx
+index f5cf839..d33e4b8 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
+ import { createRoot } from 'react-dom/client'
+ import { App } from './app/App'
+ import './styles/global.css'
++import './roundDemo'
+ import './state/theme'
+ import { takeSandboxParam } from './onboarding/devSandbox'
+ 
+diff --git a/src/roundDemo.ts b/src/roundDemo.ts
+new file mode 100644
+index 0000000..826853d
+--- /dev/null
++++ b/src/roundDemo.ts
+@@ -0,0 +1,384 @@
++// Throwaway preview: other ways to draw the controls and the surfaces, laid over the real CSS. Cards and pieces are
++// left alone. Never lands in the repo.
++import button from './ui/primitives/Button.module.css'
++import group from './ui/primitives/ButtonGroup.module.css'
++import tool from './ui/primitives/ToolButton.module.css'
++import field from './ui/primitives/Field.module.css'
++import promptField from './ui/primitives/PromptField.module.css'
++import chip from './ui/primitives/Chip.module.css'
++import check from './ui/primitives/Checkbox.module.css'
++import tabs from './ui/primitives/Tabs.module.css'
++import row from './ui/primitives/PromptRow.module.css'
++import win from './ui/patterns/Window.module.css'
++import menu from './ui/patterns/Menu.module.css'
++import popover from './ui/patterns/Popover.module.css'
++import toast from './ui/patterns/Toast.module.css'
++import tip from './ui/patterns/Tip.module.css'
++import panel from './ui/patterns/PromptPanel.module.css'
++import column from './ui/patterns/EdgeColumn.module.css'
++import consoleCss from './ui/patterns/Console.module.css'
++import frame from './ui/foundation/Frame.module.css'
++import options from './ui/patterns/Options.module.css'
++import avatar from './ui/primitives/Avatar.module.css'
++import badge from './ui/primitives/CountBadge.module.css'
++import settings from './ui/patterns/Settings.module.css'
++import hazard from './ui/patterns/HazardConfirm.module.css'
++import promptFrame from './ui/foundation/PromptFrame.module.css'
++
++export const KEY = 'round-demo'
++const dot = (x?: string) => '.' + (x ?? 'nope').split(' ')[0]
++const sm = dot(button.sm)
++const tl = dot(tool.tool)
++const grp = dot(group.group)
++const trow = dot(tabs.row)
++const tab = dot(tabs.option)
++const chk = dot(check.check)
++const f = dot(field.field)
++const pf = dot(promptField.prompt)
++const pin = dot(promptField.input)
++const ch = dot(chip.chip)
++const opt = dot(options.option)
++const md = dot(button.md)
++const av = `${dot(avatar.avatar)},${dot(settings.avatar)}`
++const bdg = `${dot(badge.badge)}`
++const nav = dot(settings.navItem)
++const ON = `:is([aria-pressed='true'],[aria-checked='true'],[aria-selected='true'],[data-active='true'])`
++const OFF = `:is([aria-pressed='false'],[aria-checked='false'],[aria-selected='false'])`
++const act = `${sm}:not([data-link])`
++const hov = `:is(:hover,:focus-visible):not(:disabled)`
++const tones = (S: string, pad: string) => `
++${S} ${act}{box-shadow:none;transition:background var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out),translate var(--dur-fast) var(--ease-out)}
++${S} ${act}:not([data-icon]){padding-inline:${pad}}
++${S} ${tl}[data-on='true']{box-shadow:none}
++`
++// A: nothing behind a button until the pointer's on it. Only the one go is filled. Pills.
++const ghost = (S: string) => `${tones(S, 'calc(var(--button-pad,var(--space-2))*1.3)')}
++${S} ${act}{background:none;color:var(--fg-dim);border-radius:999px}
++${S} ${act}[data-tone='main']{color:var(--fg-strong)}
++${S} ${act}[data-tone='danger']{color:var(--accent-magenta)}
++${S} ${act}${hov}{background:var(--wash-3);color:var(--fg-strong)}
++${S} ${act}[data-tone='primary']{background:var(--accent-cyan);color:var(--on-accent)}
++${S} ${act}[data-tone='hazard']{background:var(--accent-magenta);color:var(--on-accent)}
++${S} ${act}${ON}{background:var(--wash-cyan);color:var(--accent-cyan)}
++${S} ${grp},${S} ${trow}{gap:2px}
++${S} ${tl}{background:none;border-radius:999px}
++${S} ${tl}${hov}{background:var(--wash-3)}
++${S} ${tl}[data-on='true']{background:var(--wash-cyan)}
++${S} ${chk}[aria-checked='false']:not([data-icon])::before{content:'';flex:none;width:10px;height:10px;margin-right:6px;border-radius:3px;box-shadow:inset 0 0 0 1px var(--fg-faint)}
++${S} ${f}{border:0;border-radius:10px;padding:7px 10px;margin-inline:-10px;width:calc(100% + 20px);background:none}
++${S} ${f}:hover{background:var(--wash-1)}
++${S} ${f}:focus{background:var(--wash-2)}
++${S} ${ch}{border-radius:999px;background:none;box-shadow:inset 0 0 0 1px var(--line)}
++${S} ${opt}{border-radius:999px}
++`
++// B: the fill moves from each button to the tray that holds them; what's picked is a thumb on it. Pills in a pill.
++const tray = (S: string) => `${tones(S, 'calc(var(--button-pad,var(--space-2))*1.3)')}
++${S} ${act}{border-radius:999px;background:var(--wash-2)}
++${S} ${act}${hov}{background:var(--wash-3)}
++${S} ${grp},${S} ${trow}{gap:0;padding:3px;border-radius:999px;background:var(--wash-2)}
++${S} ${trow}[data-look='segments']{width:max-content}
++${S} ${grp}[data-vertical]{border-radius:20px}
++${S} ${grp}>${act},${S} ${trow} ${tab}{background:none;color:var(--fg-dim)}
++${S} ${grp}>${act}[data-tone='main']{color:var(--fg-strong)}
++${S} ${grp}>${act}${hov},${S} ${trow} ${tab}${hov}{background:var(--wash-2);color:var(--fg-strong)}
++${S} ${act}${ON},${S} ${grp}>${act}${ON},${S} ${trow} ${tab}${ON}{background:var(--wash-5);color:var(--fg-strong)}
++${S} ${act}[data-tone='primary'],${S} ${grp}>${act}[data-tone='primary']{background:var(--accent-cyan);color:var(--on-accent)}
++${S} ${act}[data-tone='hazard'],${S} ${grp}>${act}[data-tone='hazard']{background:var(--accent-magenta);color:var(--on-accent)}
++${S} ${tl}{border-radius:999px;background:var(--wash-2)}
++${S} ${tl}[data-on='true']{background:var(--wash-5);color:var(--fg-strong)}
++${S} ${chk}:not([data-icon]){border-radius:0;background:none;padding-inline:0;gap:8px}
++${S} ${chk}:not([data-icon])${hov}{background:none}
++${S} ${chk}:not([data-icon])${ON}{background:none;color:var(--fg-strong)}
++${S} ${chk}:not([data-icon]) ${dot(check.mark)}{display:none}
++${S} ${chk}:not([data-icon])::before{content:'';flex:none;width:24px;height:14px;margin-right:8px;border-radius:999px;background:radial-gradient(circle at 7px 50%,var(--fg-dim) 5px,transparent 5.5px),var(--wash-3)}
++${S} ${chk}:not([data-icon])${ON}::before{background:radial-gradient(circle at 17px 50%,var(--on-accent) 5px,transparent 5.5px),var(--button-on,var(--accent-cyan))}
++${S} ${f}{border:0;border-radius:999px;padding:7px 14px;background:var(--wash-2)}
++${S} textarea${f}{border-radius:14px}
++${S} ${f}:focus{box-shadow:inset 0 0 0 1px var(--accent-cyan)}
++${S} ${ch}{border-radius:999px}
++${S} ${opt}{border-radius:999px}
++`
++// C: a hairline ring instead of a fill, one ring round a group. Pills.
++const ring = (S: string) => `${tones(S, 'calc(var(--button-pad,var(--space-2))*1.5)')}
++${S} ${act}{background:none;color:var(--fg);border-radius:999px;box-shadow:inset 0 0 0 1px var(--line-hover)}
++${S} ${act}${hov}{background:none;color:var(--fg-strong);box-shadow:inset 0 0 0 1px var(--fg-dim)}
++${S} ${act}[data-tone='primary']{background:var(--accent-cyan);color:var(--on-accent);box-shadow:none}
++${S} ${act}[data-tone='hazard']{background:var(--accent-magenta);color:var(--on-accent);box-shadow:none}
++${S} ${act}[data-tone='danger']{color:var(--accent-magenta);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent-magenta) 50%,transparent)}
++${S} ${act}${ON}{color:var(--accent-cyan);background:none;box-shadow:inset 0 0 0 1px var(--accent-cyan)}
++${S} ${grp},${S} ${trow}{gap:0;border-radius:999px;box-shadow:inset 0 0 0 1px var(--line-hover)}
++${S} ${grp}[data-vertical]{border-radius:18px}
++${S} ${trow}[data-look='segments']{width:max-content}
++${S} ${grp}>${act},${S} ${trow} ${tab}{box-shadow:none}
++${S} ${grp}>${act}+${act},${S} ${trow} ${tab}+${tab}{border-left:1px solid var(--line)}
++${S} ${grp}>${act}${ON},${S} ${trow} ${tab}${ON}{background:var(--wash-cyan);box-shadow:none}
++${S} ${grp}>${act}[data-tone='primary']{box-shadow:none}
++${S} ${tl}{background:none;border-radius:999px;box-shadow:inset 0 0 0 1px var(--line-hover)}
++${S} ${tl}${hov}{background:none;box-shadow:inset 0 0 0 1px var(--fg-dim)}
++${S} ${tl}[data-on='true']{background:none;box-shadow:inset 0 0 0 1px var(--accent-cyan);color:var(--accent-cyan)}
++${S} ${f}{border:0;border-radius:999px;padding:7px 14px;background:none;box-shadow:inset 0 0 0 1px var(--line-hover)}
++${S} textarea${f}{border-radius:14px}
++${S} ${f}:focus{box-shadow:inset 0 0 0 1px var(--accent-cyan)}
++${S} ${ch}{border-radius:999px;background:none;box-shadow:inset 0 0 0 1px var(--line)}
++${S} ${opt}{border-radius:999px}
++`
++// D: no fill, a lamp says what's on. Words on the page, small squircles, the go a squircle key; fields keep their line.
++const lamp = (S: string) => `${tones(S, 'calc(var(--button-pad,var(--space-2))*1.1)')}
++${S} ${act}{background:none;color:var(--fg-dim);border-radius:.45em;corner-shape:squircle}
++${S} ${act}[data-tone='main']{color:var(--fg-strong)}
++${S} ${act}[data-tone='danger']{color:var(--accent-magenta)}
++${S} ${act}${hov}{background:var(--wash-2);color:var(--fg-strong)}
++${S} ${act}[data-tone='primary']{background:var(--accent-cyan);color:var(--on-accent);border-radius:.6em}
++${S} ${act}[data-tone='hazard']{background:var(--accent-magenta);color:var(--on-accent);border-radius:.6em}
++${S} ${act}:is(${ON},${OFF}):not([data-icon])::before{content:'';flex:none;width:.5em;height:.5em;margin-right:.55em;border-radius:50%;box-shadow:inset 0 0 0 1px var(--fg-faint)}
++${S} ${act}${ON}{background:none;color:var(--fg-strong)}
++${S} ${act}${ON}:not([data-icon])::before{background:var(--button-on,var(--accent-cyan));box-shadow:0 0 .55em var(--button-on,var(--accent-cyan))}
++${S} ${act}${ON}[data-icon]{color:var(--accent-cyan)}
++${S} ${chk}:not([data-icon]) ${dot(check.mark)}{display:none}
++${S} ${grp},${S} ${trow}{gap:0}
++${S} ${grp}>*+*,${S} ${trow} ${tab}+${tab}{position:relative}
++${S} ${tl}{background:none;border-radius:8px;corner-shape:squircle;position:relative}
++${S} ${tl}${hov}{background:var(--wash-2)}
++${S} ${tl}[data-on='true']{background:none;color:var(--accent-cyan)}
++${S} ${tl}[data-on='true']::after{content:'';position:absolute;left:50%;bottom:0;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--accent-cyan);box-shadow:0 0 7px var(--accent-cyan)}
++${S} ${ch}{border-radius:5px;corner-shape:squircle}
++${S} ${opt}{border-radius:8px;corner-shape:squircle}
++`
++// E: the opposite way: buttons keep a body, but it's a key with depth, pressed in when it's on. Squircles, apart.
++const key = (S: string) => {
++  const up = `inset 0 1px 0 color-mix(in srgb,var(--fg) 16%,transparent),0 2px 0 color-mix(in srgb,var(--fg) 7%,transparent),0 3px 6px rgb(0 0 0/.35)`
++  const down = `inset 0 1px 3px rgb(0 0 0/.45)`
++  return `${tones(S, 'calc(var(--button-pad,var(--space-2))*1.3)')}
++${S} ${act}{background:var(--wash-3);color:var(--fg);border-radius:.55em;corner-shape:squircle;box-shadow:${up}}
++${S} ${act}${hov}{background:var(--wash-4);color:var(--fg-strong);box-shadow:${up}}
++${S} ${act}:active{translate:0 2px;box-shadow:${down}}
++${S} ${act}[data-tone='primary']{background:var(--accent-cyan);color:var(--on-accent);box-shadow:inset 0 1px 0 rgb(255 255 255/.5),0 2px 0 color-mix(in srgb,var(--accent-cyan) 45%,#000),0 3px 8px rgb(0 0 0/.35)}
++${S} ${act}[data-tone='hazard']{background:var(--accent-magenta);color:var(--on-accent);box-shadow:inset 0 1px 0 rgb(255 255 255/.4),0 2px 0 color-mix(in srgb,var(--accent-magenta) 45%,#000),0 3px 8px rgb(0 0 0/.35)}
++${S} ${act}${ON}{background:var(--wash-1);color:var(--accent-cyan);translate:0 2px;box-shadow:${down}}
++${S} ${grp},${S} ${trow}{gap:4px}
++${S} ${tl}{background:var(--wash-3);border-radius:9px;corner-shape:squircle;box-shadow:${up}}
++${S} ${tl}${hov}{background:var(--wash-4);box-shadow:${up}}
++${S} ${tl}[data-on='true']{background:var(--wash-1);color:var(--accent-cyan);translate:0 2px;box-shadow:${down}}
++${S} ${f}{border:0;border-radius:9px;corner-shape:squircle;padding:7px 11px;background:var(--wash-1);box-shadow:inset 0 1px 3px rgb(0 0 0/.45)}
++${S} ${f}:focus{box-shadow:inset 0 1px 3px rgb(0 0 0/.45),0 0 0 1px var(--accent-cyan)}
++${S} ${ch}{border-radius:6px;corner-shape:squircle}
++${S} ${opt}{border-radius:9px;corner-shape:squircle}
++`
++}
++
++// The mix: always full round. Ghost (nothing behind a button) or a tray (the group's fill); what's on says so with a
++// small blue lamp, beside the word or under it.
++const lit = (c = 'var(--button-on,var(--accent-cyan))') => `background:${c};box-shadow:0 0 .55em ${c}`
++const mix = (S: string, isTray: boolean, under: boolean) => `${tones(S, 'calc(var(--button-pad,var(--space-2))*1.3)')}
++${S} ${act}{border-radius:999px;color:var(--fg-dim);background:none}
++${S} ${act}[data-tone='main']{color:var(--fg-strong)}
++${S} ${act}[data-tone='danger']{color:var(--accent-magenta)}
++${S} ${act}${hov}{background:var(--wash-3);color:var(--fg-strong)}
++${S} ${act}[data-tone='primary']{background:var(--accent-cyan);color:var(--on-accent)}
++${S} ${act}[data-tone='hazard']{background:var(--accent-magenta);color:var(--on-accent)}
++${S} ${grp},${S} ${trow}{gap:${isTray ? '0;padding:3px;border-radius:999px;background:var(--wash-2)' : '2px'}}
++${S} ${grp}[data-vertical]{border-radius:22px}
++${S} ${trow}[data-look='segments']{width:max-content}
++${isTray ? `${S} ${grp}>${act},${S} ${trow} ${tab}{background:none}
++${S} ${grp}>${act}${hov},${S} ${trow} ${tab}${hov}{background:var(--wash-2)}
++${S} ${grp}>${act}[data-tone='primary']{background:var(--accent-cyan)}` : ''}
++${S} ${act}${ON}{background:none;color:var(--fg-strong)}
++${S} ${grp}>${act}${ON},${S} ${trow} ${tab}${ON}{background:${isTray ? 'var(--wash-3)' : 'none'};color:var(--fg-strong)}
++${S} ${opt}{border-radius:999px}
++${S} ${opt}:is([aria-checked='true'],[aria-pressed='true']){background:none;border-color:var(--line);color:var(--fg-strong)}
++${
++  under
++    ? `${S} :is(${act},${opt}):is(${ON},[aria-checked='true'],[aria-pressed='true']){position:relative}
++${S} :is(${act},${opt}):is(${ON},[aria-checked='true'],[aria-pressed='true'])::after{content:'';position:absolute;left:50%;bottom:0;width:.3em;height:.3em;margin-left:-.15em;border-radius:50%;background:var(--button-on,var(--accent-cyan));box-shadow:0 0 .35em var(--button-on,var(--accent-cyan))}
++${S} ${chk}:not([data-icon])[aria-checked='false']::before{content:'';flex:none;width:.5em;height:.5em;margin-right:.55em;border-radius:50%;box-shadow:inset 0 0 0 1px var(--fg-faint)}
++${S} ${chk}:not([data-icon])${ON}::after{content:none}
++${S} ${chk}:not([data-icon]){position:static}
++${S} ${chk}:not([data-icon])${ON}::before{content:'';flex:none;width:.5em;height:.5em;margin-right:.55em;border-radius:50%;${lit()}}`
++    : `${S} :is(${act},${opt}):is(${ON},${OFF}):not([data-icon])::before{content:'';flex:none;width:.5em;height:.5em;margin-right:.55em;border-radius:50%;box-shadow:inset 0 0 0 1px var(--fg-faint)}
++${S} :is(${act},${opt}):is(${ON},[aria-checked='true'],[aria-pressed='true']):not([data-icon])::before{${lit()}}
++${S} ${act}${ON}[data-icon]{color:var(--button-on,var(--accent-cyan));filter:drop-shadow(0 0 .3em var(--button-on,var(--accent-cyan)))}
++${S} ${act}[data-icon]:not(${chk}){min-width:var(--control-sm);height:var(--button-h,var(--control-sm));font-size:var(--text-xs)}
++${S} ${act}[data-icon]:is([title='close' i],[title^='close (' i],[aria-label='close' i]){font-size:0}
++${S} ${act}[data-icon]:is([title='close' i],[title^='close (' i],[aria-label='close' i])::before{content:'';width:10px;height:10px;background:currentColor;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 1l8 8M9 1l-8 8' stroke='%23000' stroke-width='1.5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E") center/contain no-repeat}`
++}
++${S} ${chk}:not([data-icon]) ${dot(check.mark)}{display:none}
++${S} ${tl}{position:relative;border-radius:999px;background:none}
++${S} ${tl}${hov}{background:var(--wash-3)}
++${S} ${tl}[data-on='true']{background:none;color:var(--accent-cyan)}
++${S} ${tl}[data-on='true']>svg{filter:drop-shadow(0 0 3px var(--accent-cyan))}
++${S} ${dot(tool.dot)}{border-radius:50%}
++${S} ${f}{border:0;border-radius:999px;padding:7px 14px;background:var(--wash-1)}
++${S} textarea${f}{border-radius:16px}
++${S} ${f}:hover{background:var(--wash-2)}
++${S} ${f}:focus{background:var(--wash-2);box-shadow:inset 0 0 0 1px var(--accent-cyan)}
++${S} ${ch}{border-radius:999px}
++${S} ${dot(row.now)}{font-size:0}
++${S} ${dot(row.now)}::after{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;${lit('var(--accent-cyan)')}}
++${S} ${dot(settings.navLabel)}::before{content:'';display:inline-block;width:6px;height:6px;margin:0 9px 1px 0;border-radius:50%;background:none}
++${S} ${nav}[aria-current='page'] ${dot(settings.navLabel)}::before{${lit('var(--accent-cyan)')}}
++${S} ${nav}[aria-current='page']{background:${isTray ? 'var(--wash-3)' : 'none'}}
++${S} ${dot(consoleCss.console)}{flex-wrap:nowrap}
++`
++// B's switch for a checkbox, in place of a lamp, wherever a mix is on.
++const TICK = `:is(${dot(row.box)},${chk}[data-icon])`
++const TON = `:is([data-on],[aria-checked='true'])`
++const tickTone = 'var(--tone,var(--button-on,var(--accent-cyan)))'
++const ticks = (S: string) => `
++${S} ${TICK}{background:none!important;box-shadow:none!important;font-size:0;color:transparent;border-radius:0;translate:none}
++${S} ${TICK}::after{content:none!important}
++${S} ${TICK}::before{content:'';flex:none;width:8px;height:8px;margin:0;border-radius:50%;background:none;box-shadow:inset 0 0 0 1px var(--fg-faint)}
++${S} ${TICK}${TON}::before{background:${tickTone};box-shadow:0 0 6px ${tickTone}}
++`
++const swTicks = (S: string) => {
++  const off = `flex:none;width:24px;height:14px;margin:0;border-radius:999px;box-shadow:none;background:radial-gradient(circle at 7px 50%,var(--fg-dim) 5px,transparent 5.5px),var(--wash-3)`
++  const on = `box-shadow:none;background:radial-gradient(circle at 17px 50%,var(--on-accent) 5px,transparent 5.5px),${tickTone}`
++  return `
++:root[data-chk='switch'] ${S} ${TICK},:root[data-chk='switch']${S} ${TICK}{width:24px;min-width:24px}
++:root[data-chk='switch'] ${S} ${TICK}::before,:root[data-chk='switch']${S} ${TICK}::before{${off}}
++:root[data-chk='switch'] ${S} ${TICK}${TON}::before,:root[data-chk='switch']${S} ${TICK}${TON}::before{${on}}
++`
++}
++const sw = (S: string) => `
++:root[data-chk='switch'] ${S} ${chk}:not([data-icon]),:root[data-chk='switch']${S} ${chk}:not([data-icon]){background:none;padding-inline:0}
++:root[data-chk='switch'] ${S} ${chk}:not([data-icon])::before,:root[data-chk='switch']${S} ${chk}:not([data-icon])::before{content:'';flex:none;width:24px;height:14px;margin-right:8px;border-radius:999px;box-shadow:none;background:radial-gradient(circle at 7px 50%,var(--fg-dim) 5px,transparent 5.5px),var(--wash-3)}
++:root[data-chk='switch'] ${S} ${chk}:not([data-icon])${ON}::before,:root[data-chk='switch']${S} ${chk}:not([data-icon])${ON}::before{box-shadow:none;background:radial-gradient(circle at 17px 50%,var(--on-accent) 5px,transparent 5.5px),var(--button-on,var(--accent-cyan))}
++`
++
++const shade = `0 18px 48px rgb(0 0 0/.55),0 2px 8px rgb(0 0 0/.35)`
++const edge = `0 0 0 1px var(--line)`
++const W = `:is(${dot(win.window)},${dot(settings.dialog)})`
++const H = dot(promptFrame.frame)
++const HZ = dot(hazard.box)
++const SEC = dot(settings.section)
++const FL = dot(consoleCss.floor)
++const pan = dot(panel.panel)
++const POP = dot(popover.popover)
++const TOAST = dot(toast.toast)
++const TIP = dot(tip.tip)
++const COL = dot(column.column)
++const R = dot(row.row)
++const CON = dot(consoleCss.console)
++const FR = `${dot(frame.frame)},${dot(frame.dashed)},${dot(frame.interactive)}`
++const MP = dot(menu.panel)
++// What every new surface shares: a raised sheet with a real shade instead of a line and corner L's, rows lit by a fill.
++const sheet = (S: string) => `
++${S} ${W}{--bg:var(--bg-raised);border:0;background:var(--bg-raised);box-shadow:${edge},${shade}}
++${S} ${H},${S} ${POP},${S} ${TOAST},${S} ${TIP}{--bg:var(--bg-raised);background:var(--bg-raised);box-shadow:${edge},${shade}}
++${S} ${H}::after{content:none}
++${S} ${W}{overflow:hidden}
++${S} ${HZ}{border-top-width:var(--line-w)}
++${S} ${pan}{padding:4px}
++${S} ${COL}::before,${S} ${COL}::after{display:none}
++${S} ${CON}:has(${FL}:not(:empty)){border-top-left-radius:0!important;border-top-right-radius:0!important}
++${S} ${FL}{background:var(--bg-raised);border-bottom:0;box-shadow:${edge}}
++${S} ${FL}::before{content:none}
++${S} ${CON} ${grp}{flex-wrap:nowrap}
++${S} ${R}{box-shadow:none!important}
++${S} ${R}[data-picked]{background:color-mix(in srgb,var(--tone,var(--accent-cyan)) 22%,transparent)}
++${S} ${R}[data-danger][data-picked]{background:color-mix(in srgb,var(--diff-deleted) 24%,transparent)}
++${S} ${dot(row.box)}{border-radius:4px}
++`
++const leaf = (S: string) => `${sheet(S)}
++${S} :is(${W},${HZ}){border-radius:24px;corner-shape:squircle}
++${S} ${FL}{border-radius:16px 16px 0 0;corner-shape:squircle}
++${S} ${SEC}{border-radius:14px;corner-shape:squircle}
++${S} ${H},${S} ${POP}{border-radius:16px;corner-shape:squircle}
++${S} ${R}{border-radius:999px}
++${S} ${TOAST}{border-radius:999px}
++${S} ${TIP}{border-radius:10px;corner-shape:squircle}
++${S} ${COL}{--bg:var(--bg-raised);background:var(--bg-raised);border:0;box-shadow:${shade}}
++${S} ${FR}{border-radius:14px;corner-shape:squircle}
++${S} ${dot(settings.dialog)}{border-radius:24px}
++`
++const touch = (S: string) => `${sheet(S)}
++${S} :is(${W},${HZ}){border-radius:20px}
++${S} ${FL}{border-radius:14px 14px 0 0}
++${S} ${SEC}{border-radius:12px}
++${S} ${H},${S} ${POP}{border-radius:0 16px 16px 16px}
++${S} ${MP}[data-up='true'] ${H}{border-radius:16px 16px 16px 0}
++${S} :is(${MP}[data-right='true'],${MP}[data-end='true']) ${H}{border-radius:16px 0 16px 16px}
++${S} ${R}{border-radius:999px}
++${S} ${TOAST}{border-radius:999px}
++${S} ${TIP}{border-radius:0 10px 10px 10px}
++${S} ${COL}{--bg:var(--bg-raised);background:var(--bg-raised);border:0;box-shadow:${edge},${shade}}
++${S} ${COL}[data-side='right']{border-radius:22px 0 0 22px}
++${S} ${COL}[data-side='left']{border-radius:0 22px 22px 0}
++${S} ${CON}[data-at='foot']{border-radius:14px 14px 0 0;background:var(--bg-raised);box-shadow:${edge}}
++${S} ${CON}[data-at='foot']::before{content:none}
++${S} ${FR}{border-radius:12px}
++${S} ${dot(settings.dialog)}{border-radius:20px}
++`
++const isle = (S: string) => `${sheet(S)}
++${S} :is(${W},${HZ}){border-radius:28px}
++${S} ${FL}{border-radius:18px 18px 0 0}
++${S} ${CON}[data-at='foot']:has(${FL}:not(:empty)){border-radius:0 0 18px 18px}
++${S} ${SEC}{border-radius:16px}
++${S} ${H},${S} ${POP}{border-radius:18px}
++${S} ${R}{border-radius:999px}
++${S} ${TOAST}{border-radius:999px}
++${S} ${TIP}{border-radius:12px}
++${S} ${COL}{--bg:var(--bg-raised);top:10px;bottom:10px;background:var(--bg-raised);border:0;border-radius:24px;box-shadow:${edge},${shade};overflow:hidden}
++${S} ${COL}[data-side='right']{right:10px}
++${S} ${COL}[data-side='left']{left:10px}
++${S} ${CON}[data-at='foot']{bottom:10px;border-radius:999px;padding-inline:8px;background:var(--bg-raised);box-shadow:${edge},${shade}}
++${S} ${CON}[data-at='foot']::before{content:none}
++${S} ${FR}{border-radius:16px}
++${S} ${dot(settings.dialog)}{border-radius:28px}
++`
++const cut = (S: string) => `${sheet(S)}
++${S} :is(${W},${HZ}){border-radius:18px;corner-shape:bevel}
++${S} ${FL}{border-radius:12px 12px 0 0;corner-shape:bevel}
++${S} ${SEC}{border-radius:10px;corner-shape:bevel}
++${S} ${H},${S} ${POP}{border-radius:12px;corner-shape:bevel}
++${S} ${R}{border-radius:6px;corner-shape:bevel}
++${S} ${TOAST}{border-radius:10px;corner-shape:bevel}
++${S} ${TIP}{border-radius:8px;corner-shape:bevel}
++${S} ${COL}{--bg:var(--bg-raised);background:var(--bg-raised);border:0;box-shadow:${edge},${shade}}
++${S} ${COL}[data-side='right']{border-radius:24px 0 0 24px;corner-shape:bevel}
++${S} ${COL}[data-side='left']{border-radius:0 24px 24px 0;corner-shape:bevel}
++${S} ${CON}[data-at='foot']{border-radius:12px 12px 0 0;corner-shape:bevel;background:var(--bg-raised);box-shadow:${edge}}
++${S} ${CON}[data-at='foot']::before{content:none}
++${S} ${FR}{border-radius:10px;corner-shape:bevel}
++`
++// What each family shares: the page's big button, a person's square, the badges, Settings' list; the prompt's own line last.
++const family = (S: string, r: string, person: string, shape: string) => `
++${S} ${md}{border-radius:${r};${shape};overflow:hidden}
++${S} :is(${av}){border-radius:${person};${shape}}
++${S} ${bdg}{border-radius:999px}
++${S} ${nav}{border-radius:${r === '999px' ? '999px' : '8px'};${shape};box-shadow:none;outline:none;border:0}
++${S} ${nav}[aria-current='page']{background:var(--wash-3);box-shadow:none}
++${S} ${pf} ${f},${S} ${pin},${S} ${pin}:hover,${S} ${pin}:focus{padding:0;margin:0;width:100%;border:0;border-radius:0;background:none;box-shadow:none}
++`
++const c = (x: string) => `[data-ctl='${x}']`
++const s = (x: string) => `[data-srf='${x}']`
++const round = 'corner-shape:round'
++const sq = 'corner-shape:squircle'
++const MIX: [string, boolean, boolean][] = [['g-side', false, false], ['g-under', false, true], ['t-side', true, false], ['t-under', true, true]]
++const CSS = MIX.map(([k, t, u]) => mix(c(k), t, u) + family(c(k), '999px', '50%', round) + sw(c(k)) + ticks(c(k)) + swTicks(c(k))).join('') + leaf(s('leaf')) + touch(s('touch')) + isle(s('isle'))
++
++type Pick = { ctl: string; srf: string; chk: string }
++const START: Pick = { ctl: 'g-side', srf: 'touch', chk: 'lamp' }
++function read(): Pick {
++  const q = new URLSearchParams(location.search).get('round')
++  try {
++    return { ...START, ...JSON.parse(q ?? localStorage.getItem(KEY) ?? '{}') }
++  } catch {
++    return START
++  }
++}
++// The kit's frame shows every control side by side, each in its own box, so its root stays out of it.
++const sideBySide = location.hash.includes('c=roundkit')
++const apply = (p: Pick) => {
++  document.documentElement.dataset.chk = p.chk
++  if (sideBySide) return
++  document.documentElement.dataset.ctl = p.ctl
++  document.documentElement.dataset.srf = p.srf
++}
++const el = document.createElement('style')
++el.textContent = CSS
++document.head.appendChild(el)
++apply(read())
++// The new value itself: read() would go back to the address's first setting, undoing the message that just came.
++addEventListener('storage', (e) => e.key === KEY && e.newValue && apply(JSON.parse(e.newValue)))
++addEventListener('message', (e) => e.data?.round && apply(e.data.round))
++new MutationObserver(() => document.head.lastElementChild !== el && document.head.appendChild(el)).observe(document.head, { childList: true })
+diff --git a/vite.config.ts b/vite.config.ts
+index 5e1f3c2..c0bbf26 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -16,7 +16,7 @@ export default defineConfig({
+   customLogger: logger,
+   plugins: [react()],
+   // This app's own port, so it never lands on another project's 5173; strict, so it fails rather than moving.
+-  server: { port: 5288, strictPort: true },
++  server: { port: 5288, strictPort: true, fs: { strict: false } },
+   // The libraries every page needs at once in files of their own, named by what's in them: a deploy changes only the
+   // app's own files, so a visitor keeps the libraries from before (D-288). The rest stays with what imports it (the
+   // workspace's chunk, D-287).

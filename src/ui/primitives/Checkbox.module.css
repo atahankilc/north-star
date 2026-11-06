@@ -10,13 +10,6 @@
   flex: none;
 }
 
-/* CheckMark (a span inside a row that is the button): lit as a ticked one. */
-.check[data-on] {
-  background: color-mix(in srgb, var(--button-on, var(--accent-cyan)) var(--mix-wash), transparent);
-  color: var(--button-on, var(--accent-cyan));
-  box-shadow: inset 0 calc(-1 * var(--line-w)) 0 var(--button-on, var(--accent-cyan));
-}
-
 .label {
   min-width: 0;
   overflow: hidden;

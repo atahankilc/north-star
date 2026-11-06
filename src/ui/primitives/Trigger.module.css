@@ -10,15 +10,9 @@
   text-align: left;
 }
 
-.trigger[aria-expanded='true'] {
+.trigger[aria-expanded='true']:not([data-active='true']) {
   background: var(--wash-3);
   color: var(--fg-strong);
-}
-
-.trigger[data-active='true'] {
-  background: var(--wash-cyan);
-  color: var(--accent-cyan);
-  box-shadow: inset 0 calc(-1 * var(--line-w)) 0 var(--accent-cyan);
 }
 
 /* `FOR`: what it sets, caps, dim. */

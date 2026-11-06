@@ -7315,3 +7315,11 @@ shared canvas is everyone's.
 *Verified:* headless on the emulators with the dev stub: no note before create; after it, the note and the button;
 the button makes one documents list, the note goes, the list shows the document; a second document with the list
 there, no note. Unit 1082/1082.
+
+### D-384 · 2026-11-06 · Accepted (the user: "şimdi bu uyguladığımızın aynısını buttonlara ve başka şeylere uygulasak", "şu an her buttonun arkasında bir bg olması gibi. Bunu nasıl değiştirebiliriz", then of four mixes on a port "1 -> boş + yarı ışık, 2 -> ışık güzel baya beğendim", "icon buttonlarda direkt icon o ışık renginde yanabilir", "'seçili karışım, bütün küçük parçalarda' olan kısıma okay verdiğimi düşün"; will replace D-344's cells once built): controls are empty, a lamp says what's on
+Built from docs/specs/controls.md, not yet. Nothing behind a control at rest, a shade only under the pointer; only `primary` and `hazard` filled; what's on has a small round lamp beside its word, the others a hollow ring; an icon lights up itself (colour and glow), since a dot beside it is as big as the icon; every tick box is a lamp, filters in their own colours; fully round, pills and circles; Field a round well. A state is never a line on one side, which bends up at a round corner: the line under a pressed button goes. Cards stay squircle, pieces square.
+Why: a row of grey cells has no order; a small radius beside round modals looked wrong ("daha az yuvarlak bişi kullanmamız hiç doğru gelmedi").
+Alternatives shown: grey cells kept and rounded; a tray holding a group (kept apart here); hairline rings; keys with depth; the lamp under the word; a switch for a checkbox.
+Found while checking: `Button icon` is 14 px in a 28 px cell, not D-344's 24; `×` is a small drawing in the font. Both fixed by the spec.
+Verified: only as an overlay on the real components, in the gallery, dark and light.
+*Not yet:* built; ToolButton without its shade over the moving backdrop, and the rest of the spec's *To check first*. Modals, dropdown panels and docked panels are decided next (Q-035). Avatar a circle too (the user: "avatarın da yuvarlak olması okay").

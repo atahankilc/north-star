@@ -26,7 +26,6 @@ export function ToolButton({ label, pressed, dot, badge, badgeTone, children, cl
       className={[styles.tool, className].filter(Boolean).join(' ')}
       aria-label={label}
       aria-pressed={pressed}
-      data-on={pressed || undefined}
     >
       {children}
       {badge ? <CountBadge count={badge} tone={badgeTone} /> : dot && <span className={styles.dot} aria-hidden />}
