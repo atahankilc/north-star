@@ -68,7 +68,10 @@ void main() {
   vec2 local = fract(px / uCell);
   float glyph = texture2D(uGlyphs, vec2((idx + local.x) / uCount, local.y)).r;
 
-  vec3 col = mix(vec3(l), c, uSaturation) * uGain * uDim * glyph;
+  // uDim scales what the eye sees (D-385): the glyph is clipped to full first, then dimmed in display terms (the output
+  // is linear, turned to sRGB below, so x 2.2). Dimmed before the clip, the brightest glyphs (gain 1.4) hardly moved
+  // and half looked like full.
+  vec3 col = min(mix(vec3(l), c, uSaturation) * uGain * glyph, vec3(1.0)) * pow(uDim, 2.2);
   if (uLight > 0.5) {
     // Same glyphs, printed: brightness becomes ink coverage over the paper, and colour keeps its hue but darkens.
     float peak = max(c.r, max(c.g, c.b));

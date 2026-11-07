@@ -5,10 +5,11 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from '../data/auth'
 import { useHoldCurtain } from '../state/curtain'
-import { STRENGTH_FACTOR, useDisplay } from '../state/display'
+import { useBackdropPieces } from '../state/backdrop'
+import { useDisplay } from '../state/display'
 import { useMotion } from '../state/motion'
 import { Backdrop } from '../three/Backdrop'
-import { WORKSPACE_BACKDROP_DIM } from '../three/sceneClock'
+import { backdropLevel } from '../three/sceneClock'
 import { Curtain } from '../ui/patterns/Curtain'
 import { Landing } from '../views/landing/Landing'
 import { Workspaces } from '../views/workspaces/Workspaces'
@@ -45,8 +46,13 @@ function Shell() {
   // Switching the background off applies to signed-in pages only; the landing always flows (D-063). While auth
   // is still loading, assume the choice applies, so a signed-in user who turned it off never sees it flash in.
   const field = useDisplay((s) => s.background) === 'on' || (!isLoading && !user)
-  // Softer or stronger (D-348), on signed-in pages only, like the switch above; times the canvas's own dim (D-346).
-  const strength = STRENGTH_FACTOR[useDisplay((s) => s.strength)]
+  // The field is full on the landing and the workspaces page; on a canvas it steps back as pieces come (D-385).
+  // While a canvas loads (no count yet) it keeps the level it had, so going from one workspace to another never
+  // brings the field up for a moment between them.
+  const pieces = useBackdropPieces((s) => s.pieces)
+  const lastLevel = useRef(1)
+  const level = !user || !inWorkspace ? 1 : pieces === null ? lastLevel.current : backdropLevel(pieces)
+  lastLevel.current = level
   useHoldCurtain('auth', isLoading)
   useHoldCurtain('fonts', !fontsReady)
   // Signed in, a workspace is likely next: its code is fetched while the page is idle.
@@ -56,8 +62,8 @@ function Shell() {
 
   return (
     <>
-      {/* The canvas shows the field a step dimmer than the landing (D-346); its pieces carry their own backgrounds (D-176). */}
-      {field && <Backdrop dim={user ? (inWorkspace ? WORKSPACE_BACKDROP_DIM : 1) * strength : 1} />}
+      {/* Fades between levels, and once at 0 its canvas goes, so it costs nothing (D-385). */}
+      {field && <Backdrop level={level} />}
       {!isLoading && (
         // A page that throws, or whose code can't load, says so instead of leaving the screen blank.
         <Crash at={pathname}>

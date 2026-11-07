@@ -2,12 +2,11 @@
 // never tear down the WebGL context. <BackdropScene> is also reused by the loading curtain,
 // which draws an identical copy on top of the page (D-025).
 import { advance, Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useMemo } from 'react'
-import { MathUtils } from 'three'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePalette, useTheme } from '../state/theme'
 import { AmbientField } from './AmbientField'
 import { AsciiEffect } from './AsciiEffect'
-import { backdropDim, introNight, sceneTime } from './sceneClock'
+import { backdropDim, backdropSettled, introNight, sceneTime, setBackdropTarget, stepBackdropDim } from './sceneClock'
 
 // Dev-only: step frames manually, e.g. from automation in a background tab where rAF is paused.
 if (import.meta.env.DEV) {
@@ -53,7 +52,7 @@ export function BackdropScene({ onFrame, field = true }: SceneProps) {
   return field ? <AmbientField uvScale={effect.uvScale} /> : null
 }
 
-// Renders only when there is something new to show (D-063): a new step of the scene clock, or the dim easing.
+// Renders only when there is something new to show (D-063): a new step of the scene clock, or the level fading.
 // Under reduced motion the clock stands still, so the backdrop costs nothing between changes.
 function Pace() {
   const invalidate = useThree((s) => s.invalidate)
@@ -62,7 +61,7 @@ function Pace() {
     let last = -1
     const tick = () => {
       const t = sceneTime()
-      if (t !== last || Math.abs(backdropDim.current - backdropDim.target) > 0.001) {
+      if (t !== last || !backdropSettled()) {
         last = t
         invalidate()
       }
@@ -74,12 +73,18 @@ function Pace() {
   return null
 }
 
-export function Backdrop({ dim = 1 }: { dim?: number }) {
-  // The field steps back in a workspace so pieces stay legible (D-061, D-110); 1 = full strength.
+// `level` is how much of the field shows (D-385): 1 full, 0 none. A change fades over DUR.backdropFade; once it has
+// faded to 0 the canvas itself goes (its WebGL context, its frame loop, its rAF), so a full canvas of pieces pays nothing
+// for it, and it comes back, fading in from nothing, when the level rises again.
+export function Backdrop({ level = 1 }: { level?: number }) {
+  const [live, setLive] = useState(level > 0)
   useEffect(() => {
-    backdropDim.target = dim
-  }, [dim])
+    setBackdropTarget(level)
+    if (level > 0) setLive(true)
+  }, [level])
+  const going = useRef(false)
 
+  if (!live) return null
   return (
     <Canvas
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
@@ -90,14 +95,22 @@ export function Backdrop({ dim = 1 }: { dim?: number }) {
       gl={{ antialias: false, powerPreference: 'low-power' }}
       aria-hidden
       onCreated={(state) => {
+        going.current = false
         if (import.meta.env.DEV) (window as unknown as { __backdrop: typeof state }).__backdrop = state
       }}
     >
       <Pace />
       <BackdropScene
-        onFrame={(effect, dt) => {
-          backdropDim.current = MathUtils.damp(backdropDim.current, backdropDim.target, 5, dt)
-          effect.setDim(backdropDim.current)
+        onFrame={(effect) => {
+          effect.setDim(stepBackdropDim())
+          // Faded out: the canvas goes on the next tick, outside the render loop.
+          if (backdropDim.target === 0 && backdropSettled() && !going.current) {
+            going.current = true
+            window.setTimeout(() => {
+              if (backdropDim.target === 0) setLive(false)
+              else going.current = false
+            })
+          }
         }}
       />
     </Canvas>

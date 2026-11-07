@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { signOut, useAuth } from '../../data/auth'
 import { usePresence } from '../../data/presence'
-import { useDisplay, type BackgroundPref, type HudSizePref, type StrengthPref } from '../../state/display'
+import { useDisplay, type BackgroundPref, type HudSizePref } from '../../state/display'
 import { useMotion, type MotionPref } from '../../state/motion'
 import { themeAccent, useTheme, type ThemePref } from '../../state/theme'
 import { AgentSettings } from '../../agent/ui/AgentSettings'
@@ -18,7 +18,6 @@ import styles from './Settings.module.css'
 
 const MOTION: readonly MotionPref[] = ['full', 'reduced', 'system']
 const BACKGROUND: readonly BackgroundPref[] = ['on', 'off']
-const STRENGTH: readonly StrengthPref[] = ['soft', 'normal', 'strong']
 const HUD_SIZE: readonly HudSizePref[] = ['small', 'normal', 'large']
 const THEME: readonly ThemePref[] = ['dark', 'light', 'system']
 
@@ -153,7 +152,6 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
                   <ThemeChoice />
                   <MotionChoice />
                   <BackgroundChoice />
-                  <StrengthChoice />
                   <HudSizeChoice />
                 </Section>
               )}
@@ -222,28 +220,6 @@ function BackgroundChoice() {
       hint={background === 'on' ? 'The ASCII field flows behind your pages.' : "No background animation while you're signed in. Uses less power."}
     >
       <Choice label="background" bare options={BACKGROUND} value={background} onChange={setBackground} />
-    </Row>
-  )
-}
-
-// How bright the background is on your pages (D-348); only while it's on.
-function StrengthChoice() {
-  const background = useDisplay((s) => s.background)
-  const strength = useDisplay((s) => s.strength)
-  const setStrength = useDisplay((s) => s.setStrength)
-  if (background === 'off') return null
-  return (
-    <Row
-      label="background strength"
-      hint={
-        strength === 'soft'
-          ? 'The background is quieter behind your work.'
-          : strength === 'strong'
-            ? 'The background is brighter: use it if it looks faint on your screen.'
-            : 'The background as North Star draws it.'
-      }
-    >
-      <Choice label="background strength" bare options={STRENGTH} value={strength} onChange={setStrength} />
     </Row>
   )
 }

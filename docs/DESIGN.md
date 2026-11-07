@@ -133,6 +133,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Reduced motion (Settings, or the OS when motion is `system`): static ASCII, no flowing fields, crossfades only.
 - Performance (D-063): the field renders at one texel per cell, the backdrop at 30 fps on demand, the board only when
   something changes. Signed-in users can switch the background off in Settings; the landing always keeps it.
+- How much shows (D-385): full on the landing, the workspaces page and an empty canvas; about half with one piece on
+  the canvas; none from two. It fades over 1.2 s between levels (at once under reduced motion), and at none its canvas
+  is taken away, so it costs no GPU or CPU at all.
 
 ## 6. Components (ASCII-styled DOM)
 

@@ -9,7 +9,7 @@ import { useCurtain } from '../../state/curtain'
 import type { AsciiEffect, MaskMode } from '../../three/AsciiEffect'
 import { BACKDROP_CAMERA, BackdropScene } from '../../three/Backdrop'
 import { isReducedMotion } from '../../state/motion'
-import { backdropDim } from '../../three/sceneClock'
+import { stepBackdropDim } from '../../three/sceneClock'
 import styles from './Curtain.module.css'
 import { Spinner } from '../primitives/Spinner'
 
@@ -74,7 +74,7 @@ export function Curtain({ field = true }: { field?: boolean }) {
       drawn.current = true
       cover.current.style.background = 'transparent'
     }
-    effect.setDim(backdropDim.current)
+    effect.setDim(stepBackdropDim())
     const s = sweep.current
     const duration = isReducedMotion() ? 1 : SWEEP_MS
     const p = Math.min(1, (performance.now() - s.startedAt) / duration)

@@ -6635,7 +6635,8 @@ new one or a code is typed in the prompt, a .zip dropped anywhere. Why: with two
 to start reads as the page not knowing you. Alternative: none at all once you have one (the user chose one or none).
 Spec: docs/specs/workspaces-page.md.
 
-### D-346 · 2026-11-01 · Accepted (the user: "workspace içinde arkada oynayan ascii animasyonunun parlaklığı bi tık azalsın")
+### D-346 · 2026-11-01 · Superseded by D-385
+(The user: "workspace içinde arkada oynayan ascii animasyonunun parlaklığı bi tık azalsın".) Kept for the record:
 Inside a workspace (`/workspaces/<id>`) the backdrop runs at 70 % brightness (`WORKSPACE_BACKDROP_DIM` in
 src/three/sceneClock.ts, passed as `<Backdrop dim>` from App.tsx); the landing and the workspaces page stay at full.
 It eases there through the existing `backdropDim` (the curtain reads the same value). Replaces D-174's "full strength"
@@ -6683,7 +6684,7 @@ Settings → display gets two rows, saved in this browser like theme, motion and
   `--hud-tool` (24 / 30 / 36 px), `--tool-icon` (14 / 18 / 22), `--hud-plus` (16 / 20 / 24) and `--hud-text`
   (12 / 14 / 15) under `[data-hud]` on `<html>` (tokens.css); `--corner-h` follows. index.html sets it before the first
   paint. The side nav's and corner's lane stays 36 px. Panels, menus, consoles and pieces keep their size.
-- **background strength** `soft | normal | strong` (0.7 / 1 / 1.35, `STRENGTH_FACTOR` in src/state/display.ts), only
+- **background strength** (removed by D-385) `soft | normal | strong` (0.7 / 1 / 1.35, `STRENGTH_FACTOR` in src/state/display.ts), only
   while the background is on and only on signed-in pages, times the workspace's own dim (D-346); strong lifts the faint
   glyphs some screens crush (Q-033, from the user's side). The light-theme shader caps ink cover at 1.
 The settings lesson bumped to v2. No release entry: the first "what's new" is still the user's call (state.md).
@@ -7323,3 +7324,28 @@ Alternatives shown: grey cells kept and rounded; a tray holding a group (kept ap
 Found while checking: `Button icon` is 14 px in a 28 px cell, not D-344's 24; `×` is a small drawing in the font. Both fixed by the spec.
 Verified: only as an overlay on the real components, in the gallery, dark and light.
 *Not yet:* built; ToolButton without its shade over the moving backdrop, and the rest of the spec's *To check first*. Modals, dropdown panels and docked panels are decided next (Q-035). Avatar a circle too (the user: "avatarın da yuvarlak olması okay").
+
+### D-385 · 2026-11-06 · Accepted (the user: "bu animasyon landing ve workspaces sayfasında şu an olduğu gibi oynamaya devam edicek; bir workspace boş iken yine aynı şekilde oynamaya devam edicek; bir workspace e bir component konulunca nerdeyse yarı yarıya görünürlüğü düşecek; ve workspace de iki ve daha fazla component var ise hiç gözükmicek; … yoktan var olurken yavaş yavaş ortaya çıkıcak ve vardan yok olurken de yavaş yavaş yok olucak; settings->display sayfasındaki bg strength ayarı koddan kaldırılacak; ascii animasyonu oynamadığı sürece hiçbir şekilde gpu ve cpu resource u tüketmicek"; "bu yaptığımızın onboardinge ihtiyacı yok"; replaces D-346's 70 % and D-348's background strength): the backdrop steps back as a canvas fills
+- **Level:** full (1) on the landing, the workspaces page and a canvas with no pieces; 0.5 with one piece
+  (`BACKDROP_DIM_ONE_PIECE`); 0 from two pieces on. Pieces are the canvas's pieces (`piecesOn`: planes, matrix,
+  table, documents, deck, timeline…), not text or sticky notes. CanvasView writes the count to `useBackdropPieces`
+  (src/state/backdrop.ts), null when it goes; App.tsx turns it into `<Backdrop level>` (`backdropLevel()` in
+  sceneClock.ts). While a canvas loads (null) the level stays where it was, so going between workspaces never flashes it.
+- **Fade:** by time, not by frames: from where it is to the new level over `DUR.backdropFade` (1200 ms), eased in and
+  out (`setBackdropTarget`, `stepBackdropDim`, a function of the time alone, so the backdrop and the curtain's copy
+  agree); at once under reduced motion. Replaces the old `damp(…, 5)` ease, which was front-loaded.
+- **Nothing runs at 0:** once faded to 0 the backdrop's `<Canvas>` unmounts (its WebGL context, frame loop and the
+  Pace rAF go); a rising level mounts it again, fading in from 0.
+- **Settings:** the background strength row, `StrengthPref`, `STRENGTH_FACTOR` and its stored key are gone; the
+  background on/off switch stays. The settings lesson's words lose "and its strength" (not bumped, no release entry:
+  the user wanted no onboarding for this).
+Verified headless on emulators (2026-11-06): workspaces page 1; empty canvas 1; one plane fades 1 → 0.5 in ~1.2 s; a
+second 0.5 → 0 and the backdrop canvas is gone, 0 rAF calls a second on the page after; back to the workspaces page
+it mounts and fades 0 → 1; into the full workspace again 1 → 0 and gone. Screenshot of one piece: about half.
+Then the user: "bir canvas koyunca animasyonda bir değişim görmüyorum … BU önceden de bir sorundu" (D-346's 70 % never
+showed either). Cause: AsciiEffect's shader dimmed before clipping and in linear light; with gain 1.4 the brightest
+glyphs were still over 1 at half, and half linear is ~73 % on screen, so the glyphs one sees most hardly moved
+(measured: the top 0.1 % at 255 → 201 at 0.5). Now the glyph is clipped first and `uDim` scales display brightness
+(`× pow(uDim, 2.2)` before the sRGB output); screenshots at 1 and 0.5 (dpr 2) now read clearly half. Light theme
+already dimmed its ink cover in display terms.
+Seen by the user in the real app after the shader fix (2026-11-07): "oldu". Committed and pushed.

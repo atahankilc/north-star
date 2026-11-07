@@ -22,6 +22,7 @@ import { Field } from '../../../ui/primitives/Field'
 import { canEditIn } from '../../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, setFitter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../../state/canvasView'
 import { useWs, useWsNow } from './context'
+import { useBackdropPieces } from '../../../state/backdrop'
 import { FocusedPlane } from './FocusedPlane'
 import { ViewMenu } from './ViewMenu'
 import { planeCtx, planeItems } from './planeMenu'
@@ -110,6 +111,9 @@ export function CanvasView() {
   // A piece shared from another canvas is here at its spot (D-302's session 3); its moves write that spot.
   // Drawn oldest first, so the newest is on top (D-310): one added over another is never under it.
   const pieces = useMemo(() => piecesOn(canvas, everyPiece, spots).sort((a, b) => a.createdAt - b.createdAt || (a.id < b.id ? -1 : 1)), [everyPiece, canvas, spots])
+  // The backdrop steps back as the canvas fills (D-385): full when empty, about half with one piece, gone from two.
+  useEffect(() => useBackdropPieces.setState({ pieces: pieces.length }), [pieces.length])
+  useEffect(() => () => useBackdropPieces.setState({ pieces: null }), [])
   const labels = useMemo(() => everyLabel.filter((l) => l.pieceId !== CANVAS || canvasTextOn(canvas)(l)), [everyLabel, canvas])
   const { user } = useAuth()
   const editor = canEditIn(workspace, user?.id)

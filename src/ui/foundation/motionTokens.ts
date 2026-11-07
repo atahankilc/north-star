@@ -26,6 +26,8 @@ export const DUR = {
   // A plane spreading into focus like ink, and drawing back (D-185, D-297).
   focusIn: 820,
   focusOut: 700,
+  // The backdrop fading in or out as a page or a canvas's pieces ask (D-385): slow, so it never pops.
+  backdropFade: 1200,
 } as const
 
 // A CSS cubic-bezier as a function of progress, so script eases exactly as the tokens do.
