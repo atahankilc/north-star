@@ -38,7 +38,7 @@ export default example({
   place: 'forms/pickers',
   also: ['hud/navigation'],
   file: 'src/ui/primitives/Tabs.tsx',
-  note: 'one row, one current (D-326; cells, D-344): Button cells joined by a seam; tabs fill their row, segments (a switch, every Choice) fit their words; arrows move and pick; too many for the row: one row scrolling sideways, its hidden edge fading; lead + progress + even are a wizard’s Steps',
+  note: 'one row, one current (D-326; D-384): Buttons a small gap apart, a lamp each, the current one’s lit; tabs fill their row, segments (a switch, every Choice) fit their words; arrows move and pick; too many for the row: one row scrolling sideways, its hidden edge fading; lead + progress + even are a wizard’s Steps',
   states: {
     tabs: () => <Live label="setup" options={SETUP} start="rows" />,
     segments: () => <Live label="where" look="segments" options={WHERE} start="here" />,

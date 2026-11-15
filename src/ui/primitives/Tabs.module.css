@@ -1,9 +1,9 @@
-/* One row of options, one current (src/ui/primitives/Tabs.tsx, D-326; D-344): Button cells joined by a hairline seam,
-   the current one lit as a pressed Button. Tabs fill their row, caps; segments are as wide as their words; a wizard's Steps are tabs with a lead number. */
+/* One row of options, one current (src/ui/primitives/Tabs.tsx, D-326; D-384): Buttons a small gap apart, each with
+   Button's lamp, the current one's lit; no line under it. Tabs fill their row, caps; segments are as wide as their words; a wizard's Steps are tabs with a lead number. */
 .row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--seam, var(--line-w));
+  gap: var(--seam, var(--space-half));
   min-width: 0;
 }
 

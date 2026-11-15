@@ -8,7 +8,7 @@ export default example({
   name: 'ButtonGroup',
   place: 'actions/buttons',
   file: 'src/ui/primitives/ButtonGroup.tsx',
-  note: 'buttons that belong together joined into one strip, a hairline between their cells (D-344): docks, consoles, panel and wizard feet, a zoom, a deck column’s tools, a Choice',
+  note: 'buttons that belong together, a small gap apart, no strip and no line between them (D-344, D-384): docks, consoles, panel and wizard feet, a zoom, a deck column’s tools, a Choice',
   states: {
     'a dock': () => (
       <ButtonGroup label="focus">

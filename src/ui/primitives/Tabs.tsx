@@ -1,5 +1,5 @@
-// One row of options, one of them current (D-326; D-344's toggle cells): every option is a Button cell, the cells
-// joined by a hairline seam, the current one lit as a pressed Button. `tabs` (a setup's ROWS COLS CELLS, a side view's
+// One row of options, one of them current (D-326; D-384): every option is a Button a small gap from the next, with
+// Button's lamp before its word, the current one's lit; no line under it. `tabs` (a setup's ROWS COLS CELLS, a side view's
 // decks) are as wide as their row, caps, a tablist to the keyboard; `segments` (the finder's here | everywhere, a Choice's
 // P1 P2 P3) are as wide as their words, a radio group. A count after a label, faint. Arrows and Home/End move, and pick,
 // as the focus moves. `tones` lights an option in its own colour; `onReclick` is a click on the current one (a Choice

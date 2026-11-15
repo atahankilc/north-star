@@ -17,7 +17,7 @@ export default example({
   place: 'overlays/wizards',
   also: ['onboarding/welcome', 'forms/pickers'],
   file: 'src/ui/patterns/Steps.tsx',
-  note: 'a wizard’s numbered steps (D-326): WizardShell’s and the onboarding welcome’s, one part; built on Tabs (lead, progress, even; D-344); arrows move unless keyboard={false}',
+  note: 'a wizard’s numbered steps (D-326): WizardShell’s and the onboarding welcome’s, one part; built on Tabs (lead, progress, even; D-344), a lamp before each number, the current step’s lit (D-384); arrows move unless keyboard={false}',
   states: {
     'second step': () => <Live />,
     'first step': () => <Live start={0} />,

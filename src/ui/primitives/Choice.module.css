@@ -1,4 +1,4 @@
-/* `priority  P1 P2 P3`: a one-of choice row; the options are Button cells in a ButtonGroup (D-344). */
+/* `priority  P1 P2 P3`: a one-of choice row; the options are Tabs' segments (D-344), a lamp each (D-384). */
 .row {
   display: flex;
   align-items: center;

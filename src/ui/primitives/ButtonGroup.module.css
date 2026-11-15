@@ -1,12 +1,13 @@
-/* Buttons joined into one strip (src/ui/primitives/ButtonGroup.tsx, D-344): the cells touch, a hairline between them. */
+/* Buttons that belong together (src/ui/primitives/ButtonGroup.tsx, D-344; D-384): no strip behind them and no line
+   between them, only a small gap, closer than anything else beside them. */
 .group {
   display: inline-flex;
   flex: none;
   flex-wrap: wrap;
   align-items: stretch;
   /* `--seam`: a scaled place sets it (a console inside the zoomed canvas, so it doesn't shrink away as you zoom out). */
-  gap: var(--seam, var(--line-w));
-  /* Narrower than its cells (a confirm with three actions, a thin pane): it wraps, the same seam between its rows. */
+  gap: var(--seam, var(--space-half));
+  /* Narrower than its cells (a confirm with three actions, a thin pane): it wraps, the same gap between its rows. */
   max-width: 100%;
 }
 
@@ -15,13 +16,13 @@
   display: none;
 }
 
-/* Stacked (the HUD's columns): the seam between rows. */
+/* Stacked (the HUD's columns): the gap between rows. */
 .group[data-vertical] {
   flex-direction: column;
   flex-wrap: nowrap;
 }
 
-/* What isn't a button in the strip (a status, a number, a menu's root) lines up with the cells; a closed <dialog>
+/* What isn't a button in the strip (a status, a number, a menu's root) lines up with the buttons; a closed <dialog>
    rendered beside its button (Settings') stays hidden. */
 .group > :not(button, dialog) {
   display: inline-flex;
