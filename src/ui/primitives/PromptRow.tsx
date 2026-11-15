@@ -72,7 +72,7 @@ export const PromptRow = memo(function PromptRow({ item, id, picked, q, hitTone,
     >
       <span className={styles.gutter} aria-hidden />
       {tick && (
-        <span className={styles.box} data-on={item.checked || undefined} aria-hidden>
+        <span className={styles.box} data-icon data-on={item.checked || undefined} aria-hidden>
           {item.checked ? '✓' : ''}
         </span>
       )}

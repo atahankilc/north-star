@@ -1,6 +1,6 @@
 # Controls: empty buttons, a lamp for what's on (D-384)
 
-Status: **look agreed 2026-11-06 (D-384); not built.** This is the build plan for the small parts only. Modals, dropdown
+Status: **look agreed 2026-11-06 (D-384); step 1 built 2026-11-15, steps 2–8 not.** This is the build plan for the small parts only. Modals, dropdown
 panels and docked panels are decided next, on top of this (see [What this leaves out](#what-this-leaves-out)).
 
 Pictures of what was approved: [controls-preview/approved-dark.png](controls-preview/approved-dark.png),
@@ -122,6 +122,8 @@ Where a part truly can't take it, write down why. `PromptRow`'s `.box` keeps a l
 One commit each, gallery updated in the same commit (D-324). Rules first in the kit: most callers need nothing.
 
 1. **Tokens and the lamp.** The tokens above; the lamp in `Button.module.css`'s one "on" rule (see [One place](#one-place)).
+   *Done 2026-11-15.* A glyph alone says so with `data-icon` (ToolButton, Menu's `+`, a prompt row's tick box now too), which
+   is what keeps the lamp off it; a worded Checkbox's `✓` went here, not in step 5, so no commit shows both.
 2. **Button.** Rest, hover, tones, `on`, `icon`'s size. `:where()` stays, so a caller's class still wins (D-334). Add `close`
    to `hudIcons.tsx`; swap the `×`s.
 3. **ButtonGroup, Tabs, Choice, Steps.** The gap for the seam; `--seam` stays for what scales inside a console.

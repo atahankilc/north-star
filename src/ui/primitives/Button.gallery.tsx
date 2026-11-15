@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { example } from '../../gallery/example'
 import { Button } from './Button'
 
@@ -31,6 +31,8 @@ export default example({
         ['hazard (the confirm’s delete)', <Button tone="hazard" onClick={none}>delete plane</Button>],
         ['main', <Button tone="main" onClick={none}>unfocus</Button>],
         ['pressed', <Button pressed onClick={none}>⇆ table</Button>],
+        ['not pressed (a switch that’s off)', <Button pressed={false} onClick={none}>⇆ table</Button>],
+        ['pressed, its own colour', <Button pressed style={{ '--button-on': 'var(--accent-green)' } as CSSProperties} onClick={none}>done</Button>],
         ['disabled', <Button disabled onClick={none}>edit</Button>],
         ['primary disabled', <Button tone="primary" disabled onClick={none}>make matrix</Button>],
       ]),

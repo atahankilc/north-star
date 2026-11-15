@@ -26,6 +26,8 @@ export function ToolButton({ label, pressed, dot, badge, badgeTone, children, cl
       className={[styles.tool, className].filter(Boolean).join(' ')}
       aria-label={label}
       aria-pressed={pressed}
+      // A glyph alone: no lamp, the icon itself is what lights (D-384).
+      data-icon
     >
       {children}
       {badge ? <CountBadge count={badge} tone={badgeTone} /> : dot && <span className={styles.dot} aria-hidden />}

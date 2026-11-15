@@ -21,7 +21,7 @@ to the scale; what visibly changes is listed below (all agreed) and checked in b
 | Opacity | 69 | none | 10 distinct |
 | `color-mix` amounts | ~60 | `--card-tint` | 23 distinct (3 % → 96 %) |
 | Durations and eases | ~110 | `--dur-*`, `--ease-out` | 14 raw durations, 2 raw eases |
-| Radius | 0 | | nothing rounded but cards' squircle corners (D-380: `--w-card-radius`, `--w-card-radius-sm`) |
+| Radius | 0 | | cards' squircle corners (D-380: `--w-card-radius`, `--w-card-radius-sm`); controls fully round (D-384: `--radius-full`, a textarea's `--radius-well`); pieces square |
 
 Colour and spacing are in good shape. Sizes, type inside the world, line heights, layers, opacity and shadows are where
 the 940 raw px and the inconsistency really are.
@@ -149,6 +149,10 @@ up" may need to give way to "round down" in dense lists (kanban sheets, the tabl
   `--page-w` 1100, `--measure` 760. Small labels' and columns' widths are in `ch` (10ch–13ch).
 - **Marks on edges:** `--corner-mark` 7 (the magenta L's on panel, console and dock corners), `--lead` 12 (a numbered
   rule's magenta lead), `--underline-offset` 3 (2–4).
+- **Controls' shape and lamp** (D-384, [controls.md](controls.md)): `--radius-full` 999 px (every pill and circle),
+  `--radius-well` (`--space-4`, a `<textarea>`), `--pill-room` 1.3 (times `--button-pad` at a pill's sides); the lamp
+  `--lamp` 0.5em, `--lamp-gap` 0.55em, `--lamp-glow` 0.55em (in em: it grows with a console's text), `--tick-lamp` 8
+  (a tick row's).
 - **Breakpoints** can't be variables: `@media` lines are left to themselves, and they are 760 and 640 px only.
 - **World geometry** (`--w-*`, one source: `src/model/world.ts`, which TS reads and which writes these CSS vars at load): `--w-grid` 25 (GRID), `--w-card-pad` 7, `--w-card-edge` 4,
   `--w-chip-gap` 5, `--w-row-part` 15 / `--w-row-feature` 21 / `--w-row-category` 13 (cardInside.ts), `--w-sticky-h` 125

@@ -97,6 +97,25 @@
   box-shadow: inset 0 calc(-1 * var(--line-w)) 0 var(--button-on, var(--accent-cyan));
 }
 
+/* The lamp (D-384, docs/specs/controls.md): a small round light before the word of anything that can be on; a hollow
+   ring while it's off, filled and glowing in `--button-on` while on. Off and on take the same room, so a word never
+   shifts. Only what has a state gets one: an action (`edit`) has none of these attributes and stays plain. A glyph alone
+   (`data-icon`) has no room for it. Written here once, beside "on"; no part draws its own. */
+:where(.sm:is([aria-pressed], [aria-checked], [aria-selected], [data-on], [data-active]):not([data-icon], [data-link]))::before {
+  content: '';
+  flex: none;
+  width: var(--lamp);
+  height: var(--lamp);
+  margin-right: var(--lamp-gap);
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 0 0 var(--line-w) var(--fg-faint);
+}
+
+:where(.sm:is([aria-pressed='true'], [aria-checked='true'], [aria-selected='true'], [data-on], [data-active='true']):not([data-icon], [data-link]))::before {
+  background: var(--button-on, var(--accent-cyan));
+  box-shadow: 0 0 var(--lamp-glow) var(--button-on, var(--accent-cyan));
+}
+
 :where(.sm:disabled) {
   opacity: var(--o-faint);
   cursor: not-allowed;

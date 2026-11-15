@@ -1,5 +1,5 @@
-// The one checkbox (D-326; D-344's toggle cells): the whole label is a Button cell you switch on, `✓` before the word
-// and lit as a pressed Button while it's on. A real checkbox to the keyboard and screen readers (role, Space toggles).
+// The one checkbox (D-326; D-344's toggle cells): the whole label is a Button cell you switch on, Button's lamp before
+// the word (D-384), lit while it's on. A real checkbox to the keyboard and screen readers (role, Space toggles).
 // `hint` is a small line under the cell (a setup's options); `tone` lights it in another colour (a checklist's done);
 // `strike` crosses the label out while on. With no `label` it's a square glyph cell (a checklist's box beside text typed
 // in place; give it an `aria-label`). `CheckMark` is the same box drawn inside something that is itself the button (a
@@ -40,14 +40,7 @@ export function Checkbox({ checked, onChange, label, hint, disabled, tone, strik
       {label === undefined ? (
         <span aria-hidden>{checked ? '✓' : ''}</span>
       ) : (
-        <>
-          {checked && (
-            <span className={styles.mark} aria-hidden>
-              ✓
-            </span>
-          )}
-          <span className={styles.label}>{label}</span>
-        </>
+        <span className={styles.label}>{label}</span>
       )}
     </button>
   )

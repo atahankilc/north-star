@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-05 (pieces' names a step under sections' D-379; writing together D-374 built; documents written in the app D-373; light theme's colours D-368; the agent's web D-360 checked on the stub and pushed; windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-15 (controls D-384 step 1; pieces' names a step under sections' D-379; writing together D-374 built; documents written in the app D-373; light theme's colours D-368; the agent's web D-360 checked on the stub and pushed; windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -61,7 +61,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   loads `.claude/settings.json` after `/hooks` or a new session.
 - Landing (D-340, 2026-11-01, committed): full-screen backdrop, mono name, no HUD, Button; the user is working
   through more landing changes. AsciiButton deleted (e1b86de).
-- D-344 (pushed; + Steps on Tabs, tabs scroll in one row, 2026-11-02); its open item done by D-364 (2026-11-04, pushed): filters as columns of tick rows. Its cells to be replaced by D-384 (docs/specs/controls.md, 2026-11-06): look agreed on a port, not built; next with the user: modals, dropdown panels, docked panels.
+- D-344 (pushed; + Steps on Tabs, tabs scroll in one row, 2026-11-02); its open item done by D-364 (2026-11-04, pushed): filters as columns of tick rows. Its cells being replaced by D-384 (docs/specs/controls.md): step 1 of 8 built 2026-11-15 (tokens, the lamp in Button's one rule; a worded Checkbox's `✓` gone), committed, not pushed; steps 2–8 next, then with the user: modals, dropdown panels, docked panels (Q-035).
 - Light theme (D-342, 2026-11-01, committed): `--bg` #f3f3f3, bolder/darker glyphs in light. Q-033 closed by D-348. Stronger colours, cards' own, panels tinted: D-368 (2026-11-04, pushed 53f1077, deploy ok).
 - D-352–D-356 (2026-11-02, state-history): pushed (756bd67), firestore:rules deployed after (633/0); D-348 (Settings → display: hud size, background strength) pushed, the user checked it.
 - D-350 (2026-11-02, pushed): the prompt family on one set of parts, done (state-history); `@` and `/` checked on emulators.

@@ -1,13 +1,9 @@
 /* The one checkbox (src/ui/primitives/Checkbox.tsx, D-344): a Button cell you switch on; on, it's lit as a pressed
-   Button (Button.module.css's aria-checked) with `✓` before the word. */
+   Button (Button.module.css's aria-checked), Button's lamp before the word (D-384). */
 .check {
   composes: sm from './Button.module.css';
   justify-content: flex-start;
   text-align: left;
-}
-
-.mark {
-  flex: none;
 }
 
 .label {

@@ -169,6 +169,16 @@
   --corner-mark: 7px; /* the magenta L's on a panel's, console's or dock's corners */
   --lead: 12px; /* a numbered rule's magenta lead (D-277) */
 
+  /* Controls (D-384, docs/specs/controls.md): what's filled is fully round, and what's on says so with a lamp, a small
+     round light before its word. The lamp is in em, so it grows with a console's text as the canvas zooms (D-264). */
+  --radius-full: 999px; /* every pill and circle */
+  --radius-well: var(--space-4); /* a <textarea>'s well: too tall for a pill */
+  --pill-room: 1.3; /* times --button-pad at a pill's sides, so a word clears its round ends */
+  --lamp: 0.5em; /* its width and height */
+  --lamp-gap: 0.55em; /* lamp to word */
+  --lamp-glow: 0.55em; /* its glow while on */
+  --tick-lamp: 8px; /* a tick row's lamp */
+
   /* Scroll bars (D-105, D-377): the one place their look is set, for every scrolling area; drawn in global.css. */
   --scroll-size: var(--space-2); /* the bar's width, its track */
   --scroll-inset: var(--line-w-bold); /* the thumb's clear space each side, at rest */
