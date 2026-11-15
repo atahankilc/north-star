@@ -20,6 +20,7 @@ import { trapTab, useDialogFocus } from '../foundation/focus'
 import { useEscapeLayer } from '../foundation/useEscapeLayer'
 import enter from '../foundation/Enter.module.css'
 import styles from './Window.module.css'
+import { CloseIcon } from '../primitives/hudIcons'
 
 type Props = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
   children: ReactNode
@@ -99,7 +100,7 @@ export function Window({
       {close && onClose && (
         <span className={styles.close}>
           <Button icon aria-label="close" title="Close (Esc)" onClick={onClose}>
-            ×
+            <CloseIcon />
           </Button>
         </span>
       )}

@@ -68,6 +68,7 @@ import { PanelRow } from './PanelRow'
 import { usePicker } from './usePicker'
 import { useDismiss } from '../../../ui/foundation/useDismiss'
 import { CELL_SEL } from '../canvas/gridCursor'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 // Type = the panel's colour, as the card's edge (D-055).
 const TONE: Record<AnyType, string> = CARD_TONE
@@ -709,7 +710,7 @@ function EvidenceRow({ e, editor }: { e: Evidence; editor: boolean }) {
       </span>
       {editor && (
         <Button icon tone="danger" className={styles.x} title="Remove" onClick={() => void removeEvidence(wid, e.id)}>
-          ×
+          <CloseIcon />
         </Button>
       )}
       {(src || e.url) && (

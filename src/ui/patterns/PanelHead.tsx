@@ -5,6 +5,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { Button } from '../primitives/Button'
 import { ButtonGroup } from '../primitives/ButtonGroup'
 import styles from './PanelHead.module.css'
+import { CloseIcon } from '../primitives/hudIcons'
 
 type Props = {
   kind: ReactNode
@@ -30,7 +31,7 @@ export function PanelHead({ kind, tone, children, tools, onClose, closeLabel = '
           {tools}
           {onClose && (
             <Button icon onClick={onClose} title={closeTitle} aria-label={closeLabel}>
-              ×
+              <CloseIcon />
             </Button>
           )}
         </ButtonGroup>

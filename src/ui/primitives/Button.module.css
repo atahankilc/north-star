@@ -1,9 +1,11 @@
-/* The one button (src/ui/primitives/Button.tsx, D-326; D-344: cells). Every button is a cell: a faint shade at rest, a
-   step brighter on hover, a little smaller while pressed; its kind is its fill and ink, never its shape. Every rule is in
-   `:where()` (D-334): it weighs nothing, so a caller's class (a margin, `flex: 1`) always wins, even though files
-   composing this one bring these rules again after the caller's CSS. Callers only place it (D-344). */
+/* The one button (src/ui/primitives/Button.tsx, D-326; D-384: empty, round, a lamp for what's on;
+   docs/specs/controls.md). A button has nothing behind it at rest: its word is enough. A round shade comes under the
+   pointer or the keyboard, and it's a little smaller while pressed. Only the one that goes is filled (`primary`,
+   `hazard`). Its kind is its ink, never its shape. Every rule is in `:where()` (D-334): it weighs nothing, so a caller's
+   class (a margin, `flex: 1`) always wins, even though files composing this one bring these rules again after the
+   caller's CSS. Callers only place it (D-344). */
 
-/* ── sm: the 24 px cell ── */
+/* ── sm: the 24 px pill ── */
 :where(.sm) {
   display: inline-flex;
   align-items: center;
@@ -11,9 +13,11 @@
   gap: var(--space-1);
   /* 24 px at 12 px text; it grows with its text where that grows (a console as the canvas zooms out, D-264). */
   height: var(--button-h, max(var(--control-sm), 2em));
-  padding: 0 var(--button-pad, var(--space-2));
+  /* A little more room than a square cell had, so a word clears the round ends. */
+  padding: 0 calc(var(--button-pad, var(--space-2)) * var(--pill-room));
   border: 0;
-  background: var(--wash-2);
+  border-radius: var(--radius-full);
+  background: none;
   color: var(--fg-dim);
   font: inherit;
   font-family: var(--font-mono);
@@ -31,46 +35,40 @@
     transform var(--dur-press) var(--ease-out);
 }
 
-:where(.sm:hover),
+/* What can't be pressed takes no shade and keeps its ink (`:not(:disabled)`), so no rule has to undo a hover. */
+:where(.sm:hover:not(:disabled)),
 :where(.sm:focus-visible) {
   background: var(--wash-3);
   color: var(--fg-strong);
 }
 
-:where(.sm:active) {
-  background: var(--wash-1);
+:where(.sm:active:not(:disabled)) {
+  background: var(--wash-2);
   transform: scale(var(--press-scale));
 }
 
-/* main: a row's strong one (a dock's `unfocus`, a wizard's `next`): a clearly lighter grey than the others' (D-344). */
+/* main: a row's strong one (a dock's `unfocus`, a wizard's `next`): the strong ink at rest. */
 :where(.sm[data-tone='main']) {
-  background: var(--wash-4);
   color: var(--fg-strong);
 }
 
-:where(.sm[data-tone='main']:hover),
-:where(.sm[data-tone='main']:focus-visible) {
-  background: var(--wash-5);
-  color: var(--fg-strong);
-}
-
-/* primary: the one that goes, a solid cyan cell; at most one on a surface. */
+/* primary: the one that goes, a solid cyan pill; at most one on a surface. */
 :where(.sm[data-tone='primary']) {
   background: var(--accent-cyan);
   color: var(--on-accent);
   font-weight: var(--weight-medium);
 }
 
-:where(.sm[data-tone='primary']:hover),
+:where(.sm[data-tone='primary']:hover:not(:disabled)),
 :where(.sm[data-tone='primary']:focus-visible) {
   background: color-mix(in srgb, var(--accent-cyan) var(--mix-near), var(--fg-strong));
   color: var(--on-accent);
 }
 
-/* danger: quiet until pointed at, then magenta. */
-:where(.sm[data-tone='danger']:hover),
+/* danger: magenta ink at rest too; with no cell behind it, it has to read as danger before it's pointed at. */
+:where(.sm[data-tone='danger']),
+:where(.sm[data-tone='danger']:hover:not(:disabled)),
 :where(.sm[data-tone='danger']:focus-visible) {
-  background: var(--wash-magenta);
   color: var(--accent-magenta);
 }
 
@@ -81,20 +79,31 @@
   font-weight: var(--weight-medium);
 }
 
-:where(.sm[data-tone='hazard']:hover),
+:where(.sm[data-tone='hazard']:hover:not(:disabled)),
 :where(.sm[data-tone='hazard']:focus-visible) {
   background: color-mix(in srgb, var(--accent-magenta) var(--mix-near), var(--fg-strong));
   color: var(--on-accent);
 }
 
-/* pressed: a switch that's on, a radio or a tab picked, a checkbox ticked, a trigger narrowing what you see: cyan on a
-   cyan wash with a line under it; `--button-on` gives it another colour (a status's own, a checklist's green). The one
-   place this look is written: everything that can be on composes `sm` and takes it from here, what has no aria state (a
-   tick drawn inside a row that is the button) by `data-on`. check:kit refuses a copy. */
-:where(.sm[aria-pressed='true'], .sm[aria-checked='true'], .sm[aria-selected='true'], .sm[data-on], .sm[data-active='true']) {
-  background: color-mix(in srgb, var(--button-on, var(--accent-cyan)) var(--mix-wash), transparent);
+/* on: a switch that's on, a radio or a tab picked, a checkbox ticked, a trigger narrowing what you see. Its word goes
+   strong and the lamp below lights; no fill, and never a line on one side (on a round shape it bends up at the ends).
+   `--button-on` gives the light another colour (a status's own, a checklist's green). The one place this look is
+   written: everything that can be on composes `sm` and takes it from here, what has no aria state (a tick drawn inside
+   a row that is the button) by `data-on`. check:kit refuses a copy. */
+:where(.sm:is([aria-pressed='true'], [aria-checked='true'], [aria-selected='true'], [data-on], [data-active='true'])) {
+  color: var(--fg-strong);
+}
+
+/* A glyph alone has no room for a lamp, so the glyph is the light: its colour, and a soft glow. On a drawn icon the
+   glow goes on the drawing, so a badge on the button's corner doesn't glow with it. It's the one state shown mostly by
+   colour, so `aria-pressed` must stay on it. */
+:where(.sm[data-icon]:is([aria-pressed='true'], [aria-checked='true'], [aria-selected='true'], [data-on], [data-active='true'])) {
   color: var(--button-on, var(--accent-cyan));
-  box-shadow: inset 0 calc(-1 * var(--line-w)) 0 var(--button-on, var(--accent-cyan));
+}
+
+:where(.sm[data-icon]:is([aria-pressed='true'], [aria-checked='true'], [aria-selected='true'], [data-on], [data-active='true']):not(:has(svg))),
+:where(.sm[data-icon]:is([aria-pressed='true'], [aria-checked='true'], [aria-selected='true'], [data-on], [data-active='true']) svg) {
+  filter: drop-shadow(0 0 0.3em var(--button-on, var(--accent-cyan)));
 }
 
 /* The lamp (D-384, docs/specs/controls.md): a small round light before the word of anything that can be on; a hollow
@@ -121,25 +130,17 @@
   cursor: not-allowed;
 }
 
-:where(.sm:disabled:hover) {
-  background: var(--wash-2);
-  color: var(--fg-dim);
-}
-
-:where(.sm[data-tone='primary']:disabled:hover) {
-  background: var(--accent-cyan);
-  color: var(--on-accent);
-}
-
-:where(.sm:disabled:active) {
-  transform: none;
-}
-
-/* icon: a glyph alone in a square cell (wider when it holds more). */
+/* icon: a glyph alone in a circle (a pill when it holds more: `‹ back`, `100%`), the same text size as every button. */
 :where(.sm[data-icon]) {
   min-width: max(var(--control-sm), 2em);
-  padding: 0 var(--space-1);
-  font-size: var(--text-sm);
+  padding: 0 var(--space-2);
+}
+
+/* A drawn glyph (`CloseIcon`): as big as a letter, so it sits with the words beside it. */
+:where(.sm > svg) {
+  flex: none;
+  width: 0.84em;
+  height: 0.84em;
 }
 
 /* look: drawn inside something that is itself the button; it lights with its target. */
@@ -147,12 +148,13 @@
   cursor: inherit;
 }
 
-/* link: a name that goes somewhere, in the text around it: no cell. */
+/* link: a name that goes somewhere, in the text around it: no pill. */
 :where(.sm[data-link]) {
   /* Text, not a cell: laid out like the words around it (never centred in a row it fills). */
   display: inline-block;
   height: auto;
   padding: 0;
+  border-radius: 0;
   background: none;
   color: inherit;
   font-family: inherit;
@@ -161,7 +163,7 @@
   white-space: normal;
 }
 
-:where(.sm[data-link]:hover),
+:where(.sm[data-link]:hover:not(:disabled)),
 :where(.sm[data-link]:focus-visible) {
   background: none;
   color: var(--fg-strong);
@@ -170,12 +172,12 @@
   text-underline-offset: var(--underline-offset);
 }
 
-:where(.sm[data-link]:active) {
+:where(.sm[data-link]:active:not(:disabled)) {
   background: none;
   transform: none;
 }
 
-/* ── md: the page's button, a white cell; the accent wipes in from the left on hover ── */
+/* ── md: the page's button, a white pill; the accent wipes in from the left on hover, inside the pill ── */
 :where(.md) {
   position: relative;
   display: inline-flex;
@@ -184,6 +186,7 @@
   height: var(--control-lg);
   padding: 0 var(--space-4);
   border: 0;
+  border-radius: var(--radius-full);
   background: var(--fg-strong);
   color: var(--bg);
   font: inherit;

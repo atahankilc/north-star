@@ -47,6 +47,7 @@ import { Options } from '../../../ui/patterns/Options'
 import { UNIT_MAX, VALUE_MAX } from '../../../model/limits'
 import { cardName } from '../../../model/cardName'
 import { pageSizesWith } from '../../../model/paging'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 const TAB_NAME: Record<TableTab, string> = { rows: 'rows', cols: 'columns', view: 'view' }
 
@@ -144,7 +145,7 @@ export function RowsEditor({ setup, onChange, onRemoveItem, cardsOnly }: EditorP
                 <span className={m.pillMark} aria-hidden />
                 {c ? cardName(c) : item.name || 'name'}
                 <Button icon tone="danger" aria-label="Take it out" onClick={() => drop(item)}>
-                  ×
+                  <CloseIcon />
                 </Button>
               </span>
             )
@@ -200,7 +201,7 @@ function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: bool
           </span>
         )}
         <Button icon tone="danger" title="take the rule out" aria-label="Take the rule out" onClick={onRemove}>
-          ×
+          <CloseIcon />
         </Button>
       </span>
     </Row>
@@ -300,7 +301,7 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
                 </>
               )}
               <Button icon tone="danger" title="take the column out (its values go; you can undo it)" aria-label={`Take ${colName(c)} out`} onClick={() => drop(c)}>
-                ×
+                <CloseIcon />
               </Button>
             </li>
           ))}

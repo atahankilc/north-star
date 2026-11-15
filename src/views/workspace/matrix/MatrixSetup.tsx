@@ -54,6 +54,7 @@ import { Field } from '../../../ui/primitives/Field'
 import { Options } from '../../../ui/patterns/Options'
 import { AXIS_NOUN_MAX, UNIT_MAX } from '../../../model/limits'
 import { cardName } from '../../../model/cardName'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 const ANY = 'any'
 const TAB_NAME: Record<SetupTab, string> = { rows: 'rows', cols: 'columns', cells: 'cells', options: 'options' }
@@ -170,7 +171,7 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
                 <span className={styles.pillMark} aria-hidden />
                 {c ? cardName(c) : item.name || 'name'}
                 <Button icon tone="danger" aria-label="Take it out" onClick={() => drop(item)}>
-                  ×
+                  <CloseIcon />
                 </Button>
               </span>
             )
@@ -383,7 +384,7 @@ function StepsEditor({ steps, marks, onChange }: { steps: Step[]; marks: boolean
           </button>
           {steps.length > 1 && (
             <Button icon tone="danger" className={styles.remove} data-shown title="take the step out (cells set to it read as empty)" aria-label={`Take step ${i + 1} out`} onClick={() => onChange(steps.filter((x) => x !== s))}>
-              ×
+              <CloseIcon />
             </Button>
           )}
         </li>

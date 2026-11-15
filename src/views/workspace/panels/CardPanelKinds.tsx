@@ -42,6 +42,7 @@ import { cardName } from '../../../model/cardName'
 import { TagList } from './TagList'
 import { PanelRow } from './PanelRow'
 import { usePicker } from './usePicker'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 const MAX_CRITERIA = 8
 
@@ -405,7 +406,7 @@ export function Criteria({ n, card, editor }: P) {
             </span>
             {editor && (
               <Button icon tone="danger" className={styles.x} title="Remove with its cells" onClick={() => remove(c.id)}>
-                ×
+                <CloseIcon />
               </Button>
             )}
           </div>

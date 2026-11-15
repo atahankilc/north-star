@@ -4,6 +4,7 @@
 import type { ReactNode } from 'react'
 import { Button } from '../../../ui/primitives/Button'
 import styles from './CardPanel.module.css'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 type Props = {
   // A link row: the swatch's colour and the kind's words (`solves →`, `≈ theirs`); `faint` for one under another.
@@ -46,7 +47,7 @@ export function PanelRow({ tone, kind, faint, tree, card, name, onGo, goTitle, t
       {type !== undefined && type !== '' && <span className={styles.type}>{type}</span>}
       {onRemove && (
         <Button icon tone="danger" className={styles.x} title={removeTitle} onClick={onRemove}>
-          ×
+          <CloseIcon />
         </Button>
       )}
     </div>

@@ -47,7 +47,7 @@ const RULES = {
     ['scrollbar', /::-webkit-scrollbar|scrollbar-(?:width|color)\s*:/g],
     // D-384: "on" written again (the line under a pressed control): it's written once, in Button.module.css, and everything
     // that can be on composes it. InlineEdit's line is a field's underline, not a state. The kit too: see `everywhere`.
-    ['onLook', /inset 0 calc\(-1 \* var\(--line-w\)\) 0 var\(--(?:accent|button-on)/g, /^src\/ui\/primitives\/(?:Button|InlineEdit)\.module\.css$/],
+    ['onLook', /inset 0 calc\(-1 \* var\(--line-w\)\) 0 var\(--(?:accent|button-on)/g, /^src\/ui\/primitives\/InlineEdit\.module\.css$/],
   ],
 }
 

@@ -72,6 +72,7 @@ import { Rule } from '../../../ui/primitives/Rule'
 import styles from './Kanban.module.css'
 import { DECK_PX } from '../../../model/world'
 import { keysTaken } from '../../../ui/foundation/focus'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const K = DECK_PX
@@ -805,7 +806,7 @@ function ColumnHead({ col, n, count, holds, live, editor, naming, first, last, a
       </Button>
       {!alone && (
         <Button icon tone="danger" title={count ? `take it away: its ${count} task${count > 1 ? 's go' : ' goes'} to the column ${first ? 'after' : 'before'} it` : 'take it away'} aria-label="Delete the column" onClick={onDelete}>
-          ×
+          <CloseIcon />
         </Button>
       )}
     </ButtonGroup>

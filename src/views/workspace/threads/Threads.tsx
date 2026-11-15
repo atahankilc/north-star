@@ -39,6 +39,7 @@ import { Field } from '../../../ui/primitives/Field'
 import { PromptList } from '../../../ui/patterns/PromptList'
 import { PromptField } from '../../../ui/primitives/PromptField'
 import styles from './Threads.module.css'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 type ThreadView = {
   // Pins shown (`c`); only threads with something new (D-166); resolved ones too.
@@ -314,7 +315,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
             </Button>
           )}
           <Button icon aria-label="Close thread" title="close" onClick={closeThread}>
-            ×
+            <CloseIcon />
           </Button>
         </ButtonGroup>
       </header>

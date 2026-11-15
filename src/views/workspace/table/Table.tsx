@@ -32,6 +32,7 @@ import { pagesOf } from '../../../model/paging'
 import { cellSel, useGridCursor, type CellAt } from '../canvas/gridCursor'
 import { CellInput } from '../canvas/CellInput'
 import { PageArrows, PageSize } from '../canvas/Pager'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
 export const T = { head: 40, row: 32, name: 260, add: 40 }
@@ -659,7 +660,7 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
       )}
       {live && editor && !open && (
         <Button icon tone="danger" className={styles.remove} title={row.auto ? `take it out of the table (it stays a ${row.card!.type})` : 'take it out'} aria-label="Take it out" onClick={onRemove}>
-          ×
+          <CloseIcon />
         </Button>
       )}
       <Marks tier="s" tone={tone} live={live && !!onPick} peers={live ? peers : undefined} />

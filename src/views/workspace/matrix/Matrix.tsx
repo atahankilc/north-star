@@ -74,6 +74,7 @@ import { PromptList } from '../../../ui/patterns/PromptList'
 import { cardEntry } from '../plane/cardEntry'
 import { cellSel, useGridCursor, type CellAt } from '../canvas/gridCursor'
 import { CellInput } from '../canvas/CellInput'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 // The matrix's parts in its own px: model/world.ts (D-325).
 export const M = MATRIX_PX
@@ -601,7 +602,7 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
       )}
       {live && editor && !open && !sub && (
         <Button icon tone="danger" className={styles.remove} title={entry.auto ? `take it out (it stays a ${entry.card!.type})` : 'take it out'} aria-label="Take it out" onClick={onRemove}>
-          ×
+          <CloseIcon />
         </Button>
       )}
     </>

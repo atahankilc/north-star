@@ -1,6 +1,6 @@
 # Controls: empty buttons, a lamp for what's on (D-384)
 
-Status: **look agreed 2026-11-06 (D-384); step 1 built 2026-11-15, steps 2–8 not.** This is the build plan for the small parts only. Modals, dropdown
+Status: **look agreed 2026-11-06 (D-384); steps 1–2 built 2026-11-15, steps 3–8 not.** This is the build plan for the small parts only. Modals, dropdown
 panels and docked panels are decided next, on top of this (see [What this leaves out](#what-this-leaves-out)).
 
 Pictures of what was approved: [controls-preview/approved-dark.png](controls-preview/approved-dark.png),
@@ -126,6 +126,10 @@ One commit each, gallery updated in the same commit (D-324). Rules first in the 
    is what keeps the lamp off it; a worded Checkbox's `✓` went here, not in step 5, so no commit shows both.
 2. **Button.** Rest, hover, tones, `on`, `icon`'s size. `:where()` stays, so a caller's class still wins (D-334). Add `close`
    to `hudIcons.tsx`; swap the `×`s.
+   *Done 2026-11-15.* `CloseIcon`, in the 18 icon Buttons that typed `×`. Hover rules carry `:not(:disabled)`, so nothing
+   has to undo a hover on a disabled one. The lit glyph's glow goes on the drawing when there is one (`svg`), so
+   ToolButton's badge never glows. `onLook` allows only InlineEdit now. Still a cell after this step, each with its own
+   CSS: the side nav's tools and `+`, the `you` square (steps 4, 6, 7).
 3. **ButtonGroup, Tabs, Choice, Steps.** The gap for the seam; `--seam` stays for what scales inside a console.
 4. **ToolButton, Trigger, Menu's `+`.** They already take Button's look; what's left is their own size and any shade the
    real app needs. Menu's `+` lights in magenta through its `--button-on`.

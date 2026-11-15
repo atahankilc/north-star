@@ -15,6 +15,7 @@ import { Choice } from '../primitives/Choice'
 import { SettingsTool } from './SettingsTool'
 import { Window } from './Window'
 import styles from './Settings.module.css'
+import { CloseIcon } from '../primitives/hudIcons'
 
 const MOTION: readonly MotionPref[] = ['full', 'reduced', 'system']
 const BACKGROUND: readonly BackgroundPref[] = ['on', 'off']
@@ -162,7 +163,7 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
             </div>
 
             <Button icon className={styles.close} onClick={() => setOpen(false)} aria-label="Close settings" title="Close (Esc)">
-              ×
+              <CloseIcon />
             </Button>
           </div>
         </Window>

@@ -35,6 +35,7 @@ import { TagList } from './TagList'
 import { NotesSection } from './NotesSection'
 import { usePicker } from './usePicker'
 import { AddField } from '../../../ui/primitives/AddField'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 const TONE = 'var(--accent-cyan)'
 
@@ -462,7 +463,7 @@ function ForCard({ task, editor, n }: { task: Task; editor: boolean; n: number }
           )}
           {editor && (
             <Button icon tone="danger" className={styles.chipX} style={{ display: 'inline-flex' }} title="let go of it" onClick={() => void updateTask(wid, task, { cardId: undefined, cardType: undefined }, 'unlink a task')}>
-              ×
+              <CloseIcon />
             </Button>
           )}
         </div>
@@ -519,7 +520,7 @@ function Checklist({ task, editor, n }: { task: Task; editor: boolean; n: number
             )}
             {editor && (
               <Button icon tone="danger" className={styles.chipX} title="take it away" onClick={() => set(checks.filter((x) => x.id !== c.id))}>
-                ×
+                <CloseIcon />
               </Button>
             )}
           </li>

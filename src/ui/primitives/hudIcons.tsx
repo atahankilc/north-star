@@ -69,3 +69,12 @@ export const GearIcon = () => (
     ))}
   </Icon>
 )
+
+// Close, take away: a drawn `×` (D-384). Typed, JetBrains Mono's `×` is a small drawing that looks half the size of the
+// words beside it. Not on the HUD's grid: a small glyph for a Button `icon`, which sizes it like a letter (0.84em, 10 px
+// at a button's 12), round ends as the round controls have.
+export const CloseIcon = () => (
+  <svg viewBox="0 0 10 10" aria-hidden fill="none" stroke="currentColor" strokeWidth={S} strokeLinecap="round">
+    <path d="M1.25 1.25l7.5 7.5M8.75 1.25l-7.5 7.5" />
+  </svg>
+)

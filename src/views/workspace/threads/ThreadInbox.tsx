@@ -22,6 +22,7 @@ import { ResizeEdge } from '../../../ui/primitives/ResizeEdge'
 import { useEscapeLayer } from '../../../ui/foundation/useEscapeLayer'
 import styles from './Threads.module.css'
 import { keepLocal, readLocal } from '../../../state/local'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
 type Convo = { thread: WithId<Thread> | null; draft: NewThread | null }
@@ -196,7 +197,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
             </Button>
           )}
           <Button icon aria-label="Close threads" title="close" onClick={() => toggleInbox(false)}>
-            ×
+            <CloseIcon />
           </Button>
         </ButtonGroup>
       </header>
