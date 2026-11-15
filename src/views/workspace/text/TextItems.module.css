@@ -568,6 +568,7 @@
   height: var(--dot-lg);
   padding: 0;
   border: var(--line-w) solid var(--line-hover);
+  border-radius: var(--radius-full);
   cursor: pointer;
 }
 

@@ -1,7 +1,10 @@
 // A text field that saves itself: debounced while typing, immediately on blur or unmount.
 // Remote edits flow in, except while you're typing in it (last write wins per field).
+// It draws nothing of its own (a note typed where it reads brings its own class); `well` gives it Field's look, the
+// round well (D-384), for a setup's or the settings' fields, whose class then only places it.
 import { useEffect, useRef, useState, type InputHTMLAttributes } from 'react'
 import { useAutoGrow } from '../foundation/autoGrow'
+import field from './Field.module.css'
 
 const SAVE_AFTER_MS = 400
 
@@ -13,6 +16,7 @@ type Props = {
   /** One line of text, wrapped and as tall as it: Enter finishes it, line breaks become spaces. For titles. */
   wrap?: boolean
   rows?: number
+  well?: boolean
   className?: string
   placeholder?: string
   label: string
@@ -22,7 +26,7 @@ type Props = {
   inputMode?: InputHTMLAttributes<HTMLInputElement>['inputMode']
 }
 
-export function AutosaveField({ value, onSave, multiline, wrap, rows = 4, label, autoFocus, ...rest }: Props) {
+export function AutosaveField({ value, onSave, multiline, wrap, rows = 4, label, autoFocus, well, className, ...rest }: Props) {
   const [draft, setDraft] = useState(value)
   const el = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
   const focused = useRef(false)
@@ -51,6 +55,7 @@ export function AutosaveField({ value, onSave, multiline, wrap, rows = 4, label,
 
   const props = {
     ...rest,
+    className: [well ? field.field : undefined, className].filter(Boolean).join(' ') || undefined,
     ref: el,
     'aria-label': label,
     value: draft,

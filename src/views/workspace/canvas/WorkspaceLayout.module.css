@@ -67,32 +67,16 @@
   width: 100%;
 }
 
+/* The kit's Field (its round well, D-384); only its room is here. */
 .input {
   flex: 1;
   min-width: 0;
-  padding: var(--space-1) 0;
-  border: 0;
-  border-bottom: var(--line-w) solid var(--line);
-  background: none;
-  color: var(--fg-strong);
-  font: inherit;
-  font-size: var(--text-sm);
-  outline: none;
-  caret-color: var(--accent-cyan);
 }
 
 .about {
   resize: none;
   overflow: hidden;
   line-height: var(--lh-body);
-}
-
-.input::placeholder {
-  color: var(--placeholder);
-}
-
-.input:focus {
-  border-bottom-color: var(--accent-cyan);
 }
 
 .status {

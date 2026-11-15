@@ -702,53 +702,15 @@
   font-size: var(--text-sm);
 }
 
-/* A text field shaped like a pill. */
-.pillField {
-  min-height: var(--control-sm);
-  width: 22ch;
-  padding: 0 var(--space-2);
-  border: var(--line-w) solid var(--line);
-  outline: none;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-}
-
-.pillField:focus {
-  border-color: var(--fg-faint);
-}
-
-.pillField::placeholder {
-  color: var(--placeholder);
-}
-
-.field,
-.glyphField {
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  border-bottom: var(--line-w) solid var(--line);
-  outline: none;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-}
-
-.field::placeholder {
-  color: var(--placeholder);
-}
-
-.field:focus,
-.glyphField:focus {
-  border-bottom-color: var(--accent-cyan);
-}
-
+/* The setup's small fields: the kit's Field (its round well, D-384); only their widths are here. */
+.pillField,
 .field {
   width: 22ch;
 }
 
+/* A step's glyph: one or two characters, in the middle of its well. */
 .glyphField {
-  width: 4ch;
+  width: calc(4ch + 2 * var(--space-3));
   text-align: center;
 }
 

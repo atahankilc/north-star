@@ -16,12 +16,14 @@ export default example({
   name: 'AutosaveField',
   place: 'forms/fields',
   file: 'src/ui/primitives/AutosaveField.tsx',
-  note: 'saves as you type and on blur; the gallery keeps the value in the example only',
+  note: 'saves as you type and on blur; it draws nothing of its own unless `well` gives it Field’s round well (D-384); the gallery keeps the value in the example only',
   states: {
     'one line': () => <Field label="name" value="Pazar" />,
     empty: () => <Field label="name" placeholder="name this workspace" />,
     wrap: () => <Field label="title" wrap value="Office workers want a home-cooked lunch they can order the day before" />,
     multiline: () => <Field label="notes" multiline value={'Talked to 6 cooks.\nTwo already sell on Instagram.\nAll want pickup, not delivery.'} />,
     focused: { render: () => <Field label="name" value="Pazar" autoFocus /> },
+    'well (a setup’s field)': () => <Field well label="unit" placeholder="€, h, %…" value="€" />,
+    'well, multiline': () => <Field well label="what we’re building" multiline rows={3} value={'A lunch marketplace for office workers.'} />,
   },
 })

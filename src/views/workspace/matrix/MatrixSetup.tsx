@@ -186,7 +186,7 @@ export function AxisEditor({ which, axis, onChange, onRemoveItem }: AxisProps) {
       </Row>
       <Unfold axis={axis} onChange={onChange} />
       <Row label="called" hint="what one of them is, in the table's corner">
-        <AutosaveField className={styles.pillField} label="called" placeholder={axis.type ? `${axis.type}s` : 'names'} maxLength={AXIS_NOUN_MAX} value={axis.noun ?? ''} onSave={(n) => n.trim() !== (axis.noun ?? '') && onChange({ ...axis, noun: n.trim() || undefined }, 'noun')} />
+        <AutosaveField well className={styles.pillField} label="called" placeholder={axis.type ? `${axis.type}s` : 'names'} maxLength={AXIS_NOUN_MAX} value={axis.noun ?? ''} onSave={(n) => n.trim() !== (axis.noun ?? '') && onChange({ ...axis, noun: n.trim() || undefined }, 'noun')} />
       </Row>
     </>
   )
@@ -352,7 +352,7 @@ export function CellsEditor({ setup, onChange }: { setup: MatrixSetup; onChange:
       )}
       {setup.cell === 'number' && (
         <Row label="unit">
-          <AutosaveField className={styles.field} label="unit" placeholder="€, h, %…" maxLength={UNIT_MAX} value={setup.unit ?? ''} onSave={(u) => onChange('unit', u.trim() || undefined, 'unit')} />
+          <AutosaveField well className={styles.field} label="unit" placeholder="€, h, %…" maxLength={UNIT_MAX} value={setup.unit ?? ''} onSave={(u) => onChange('unit', u.trim() || undefined, 'unit')} />
         </Row>
       )}
     </>
@@ -371,8 +371,8 @@ function StepsEditor({ steps, marks, onChange }: { steps: Step[]; marks: boolean
           <span className={styles.stepLook} style={{ ['--tone' as string]: TONE_VAR[s.tone] }}>
             {marks ? s.glyph : <StepSquare steps={steps} step={s} />}
           </span>
-          <AutosaveField className={styles.glyphField} label={`step ${i + 1} glyph`} maxLength={GLYPH_MAX} value={s.glyph} onSave={(g) => g.trim() && edit(i, { glyph: g.trim() }, `glyph:${s.id}`)} />
-          <AutosaveField className={styles.field} label={`step ${i + 1} name`} maxLength={LABEL_MAX} value={s.label} onSave={(l) => l.trim() && edit(i, { label: l.trim() }, `label:${s.id}`)} />
+          <AutosaveField well className={styles.glyphField} label={`step ${i + 1} glyph`} maxLength={GLYPH_MAX} value={s.glyph} onSave={(g) => g.trim() && edit(i, { glyph: g.trim() }, `glyph:${s.id}`)} />
+          <AutosaveField well className={styles.field} label={`step ${i + 1} name`} maxLength={LABEL_MAX} value={s.label} onSave={(l) => l.trim() && edit(i, { label: l.trim() }, `label:${s.id}`)} />
           <button /* kit-ok: the step's colour swatch, stepping through the tones */
             className={styles.tone}
             style={{ ['--tone' as string]: TONE_VAR[s.tone] }}

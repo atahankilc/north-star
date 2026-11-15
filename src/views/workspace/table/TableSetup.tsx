@@ -183,7 +183,7 @@ function RuleLine({ rule, first, onChange, onRemove }: { rule: Rule; first: bool
           onPick={() => onChange({ ...rule, not: rule.not ? undefined : true })}
         />
         {rule.field === 'title' ? (
-          <AutosaveField className={m.pillField} label="the words" placeholder="words in the title" maxLength={VALUE_MAX} value={rule.values[0] ?? ''} onSave={(w) => onChange({ ...rule, values: w.trim() ? [w] : [] }, 'words')} />
+          <AutosaveField well className={m.pillField} label="the words" placeholder="words in the title" maxLength={VALUE_MAX} value={rule.values[0] ?? ''} onSave={(w) => onChange({ ...rule, values: w.trim() ? [w] : [] }, 'words')} />
         ) : choices.length ? (
           <Options
             pick="many"
@@ -273,7 +273,7 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
               {c.field ? (
                 <span className={styles.colFixed}>{colName(c)}</span>
               ) : (
-                <AutosaveField className={m.pillField} label="column name" maxLength={COL_NAME_MAX} value={c.name ?? ''} placeholder="name" onSave={(n) => edit(c, { name: n.trim() || undefined }, 'name')} />
+                <AutosaveField well className={m.pillField} label="column name" maxLength={COL_NAME_MAX} value={c.name ?? ''} placeholder="name" onSave={(n) => edit(c, { name: n.trim() || undefined }, 'name')} />
               )}
               {c.field ? (
                 <span className={m.checkHint}>the card's</span>
@@ -285,7 +285,7 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
                     onChange={(k) => edit(c, { kind: k, ...(k === 'scale' && !c.steps ? { steps: DEFAULT_STEPS } : {}) })}
                   />
                   {c.kind === 'number' && (
-                    <AutosaveField className={m.field} label="unit" placeholder="unit: €, h, %…" maxLength={UNIT_MAX} value={c.unit ?? ''} onSave={(u) => edit(c, { unit: u.trim() || undefined }, 'unit')} />
+                    <AutosaveField well className={m.field} label="unit" placeholder="unit: €, h, %…" maxLength={UNIT_MAX} value={c.unit ?? ''} onSave={(u) => edit(c, { unit: u.trim() || undefined }, 'unit')} />
                   )}
                   {c.kind === 'scale' && (
                     <Select<string>

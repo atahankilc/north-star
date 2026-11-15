@@ -485,25 +485,17 @@
   background: color-mix(in srgb, var(--accent-green) var(--mix-wash), transparent);
 }
 
+/* A box's name: the kit's Field (AutosaveField `well`, D-384); only its width is here. */
 .boxField {
-  width: 12ch;
-  padding: var(--space-1);
-  border: var(--line-w) solid var(--line);
-  background: transparent;
-  color: var(--fg);
-  font: inherit;
-  outline: none;
-}
-
-.boxField:focus-visible {
-  border-color: var(--accent-cyan);
+  width: calc(12ch + 2 * var(--space-3));
 }
 
 .boxTone {
   min-width: 5ch;
   margin-left: var(--space-half);
-  padding: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   border: var(--line-w) solid var(--line);
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--fg-dim);
   font: inherit;

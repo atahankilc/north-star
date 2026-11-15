@@ -200,6 +200,7 @@ function WorkspaceSettings({ page, wid, workspace, requests }: SettingsProps) {
         <Row label="what we're building" hint="A sentence or two. The assistant reads it first.">
           {editor ? (
             <AutosaveField
+              well
               multiline
               rows={3}
               className={`${styles.input} ${styles.about}`}

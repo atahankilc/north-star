@@ -278,7 +278,7 @@ function BoxesEditor({ setup, onChange }: { setup: KanbanSetup; onChange: SetKan
               const tone = TONES[(i + 1) % TONES.length]
               return (
                 <td key={c.id} data-tone={n?.tone}>
-                  <AutosaveField className={styles.boxField} label={`Name of ${c.name} × ${r.name}`} placeholder="name" maxLength={BOX_NAME_MAX} value={n?.name ?? ''} onSave={(v) => put(c.id, r.id, { name: v }, 'name a box', `box:${c.id}|${r.id}`)} />
+                  <AutosaveField well className={styles.boxField} label={`Name of ${c.name} × ${r.name}`} placeholder="name" maxLength={BOX_NAME_MAX} value={n?.name ?? ''} onSave={(v) => put(c.id, r.id, { name: v }, 'name a box', `box:${c.id}|${r.id}`)} />
                   <button /* kit-ok: the box's tone, cycling, in its colour (data-tone is the box's, not a Button's) */ className={styles.boxTone} data-tone={n?.tone} title={`${TONES[i < 0 ? 0 : i].hint}; click: ${tone.hint}`} onClick={() => put(c.id, r.id, { tone: tone.tone }, tone.tone ? `${tone.label} a box` : 'a plain box')}>
                     {TONES[i < 0 ? 0 : i].label}
                   </button>

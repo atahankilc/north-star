@@ -1,4 +1,5 @@
-/* A filter's summary (src/ui/primitives/Swatches.tsx): one square per kind in its colour; hidden ones go dark. */
+/* A filter's summary (src/ui/primitives/Swatches.tsx): one small lamp per kind in its colour; hidden ones are a hollow ring
+   (D-384). */
 .swatches {
   display: inline-flex;
   align-items: center;
@@ -9,6 +10,7 @@
   display: inline-block;
   width: var(--dot);
   height: var(--dot);
+  border-radius: var(--radius-full);
   background: var(--tone);
 }
 
