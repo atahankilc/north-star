@@ -140,25 +140,38 @@ Values will be tuned against contrast checks (WCAG AA for text).
 ## 6. Components (ASCII-styled DOM)
 
 - Boxes drawn with box characters (`┌─┐│└┘`) or 1px lines that echo them
-- **Coming (D-384, [specs/controls.md](specs/controls.md), agreed, not built):** empty controls with a lamp replace the cells below.
-- Buttons are cells (D-344, `src/ui/primitives/Button.tsx`, lowercase, D-093): every button is the same cell, a faint
-  shade (`--wash-2`) that says "you can press this", a step brighter on hover (`--wash-3`), a little smaller while pressed
-  (`--press-scale`); its kind shows only in its fill and ink, never in its shape. No brackets, no key after it (keys live
-  in its `title`; onboarding teaches them). `sm` is 24 px (`--control-sm`; a glyph's cell 24 × 24, `icon`), mono 12;
-  `tone="main"` a row's strong one (`--wash-3`, `--fg`), `"primary"` the one that goes, a solid cyan cell (save, add,
-  make, apply, done: **at most one on a surface**), `"danger"` magenta on hover (`--wash-magenta`), `"hazard"` the solid
-  magenta one where deleting is the point (the hazard confirm); `pressed` (a switch on, a Choice picked) cyan on
-  `--wash-cyan` with a line under it, `--button-on` another colour. `md` the page's: a white 36 px cell, its accent wiping
-  in on hover. `link` (a name that goes somewhere) has no cell. The HUD's ToolButton is the same cell at 30 px
-  (`--control`), cyan while what it opens is open. A caller's class only places a button (margin, flex, shown on hover),
-  never repaints, repads or resizes it.
-- **ButtonGroup** (D-344, `src/ui/primitives/ButtonGroup.tsx`): buttons that belong together join into one strip, a
-  hairline between their cells instead of a gap: a dock's or console's actions, a panel's or a wizard's foot, a zoom's
-  `− 100% +`, a Choice's options. Menu's triggers (`SHOW all ▾`, the side nav's `+`) are the same cell.
-- **Controls are toggle cells** (D-344), one kit component each: Checkbox (the label is the cell, `✓` before it while
-  on; no label, a square box cell; `CheckMark` inside a row), Tabs (cells joined by the seam, filling their row, one row that scrolls sideways when they don't fit; Choice
-  is its segments, Steps its tabs with a lead `01`, the passed ones brighter, all one width), one dropdown trigger (`Trigger.module.css`, Menu's and Select's). A menu's ticked
-  rows show `✓` on a wash. A person's square is `Avatar` (30 px in the HUD, 24 in rows).
+- Buttons are empty and round (D-384, [specs/controls.md](specs/controls.md); `src/ui/primitives/Button.tsx`, lowercase,
+  D-093): a button has nothing behind it at rest, its word is enough; a round shade (`--wash-3`, `--radius-full`) comes
+  under the pointer or the keyboard, and it's a little smaller while pressed (`--press-scale`). Its kind shows in its ink
+  and, for the one that goes, its fill; never in its shape. No brackets, no key after it (keys live in its `title`;
+  onboarding teaches them). `sm` is a 24 px pill (`--control-sm`), mono 12, a little more room at its sides
+  (`--pill-room`); `tone="main"` a row's strong one (`--fg-strong`), `"primary"` the one that goes, a solid cyan pill
+  (save, add, make, apply, done: **at most one on a surface**), `"danger"` magenta ink, `"hazard"` the solid magenta
+  one where deleting is the point (the hazard confirm). `icon` is a glyph alone in a 24 px circle (a pill when it holds
+  more); a close or take-away is the drawn `CloseIcon`, never a typed `×`. `md` is the page's: a white 36 px pill, its
+  accent wiping in on hover. `link` (a name that goes somewhere) has no pill. The HUD's ToolButton is an `icon` at
+  30 px (`--control`). A caller's class only places a button (margin, flex, shown on hover), never repaints, repads or
+  resizes it.
+- **The lamp says what's on** (D-384): anything that can be on (a switch, a tab, a choice, a checkbox, a trigger that
+  narrows) has a small round light before its word (`--lamp`, in em), a hollow ring while off, filled and glowing while
+  on, in `--button-on` (cyan, or its own: a status's, a checklist's green, a filter's card type). An action has none.
+  A glyph alone has no room for one, so the glyph itself lights: its colour and a soft glow. A tick with no word is
+  the lamp alone, 8 px (`--tick-lamp`). Written once, in `Button.module.css`; everything else composes it. A state is
+  never a fill behind the word nor a line on one side (on a round shape it bends up at the ends).
+- **ButtonGroup** (D-344, D-384, `src/ui/primitives/ButtonGroup.tsx`): buttons that belong together sit a small gap
+  apart (`--space-half`, `--seam`), no strip behind them and no line between them: a dock's or console's actions, a
+  panel's or a wizard's foot, a zoom's `− 100% +`, a Choice's options. Menu's triggers (`SHOW all ▾`, the side nav's
+  `+`) are Buttons too.
+- **Controls**, one kit component each (D-344, D-384): Checkbox (the lamp before its label; no label, the lamp alone;
+  `CheckMark` inside a row), Tabs (a lamp each, the current one's lit, filling their row, one row that scrolls sideways
+  when they don't fit; Choice is its segments, Steps its tabs with a lead `01` after the lamp, the passed ones brighter,
+  all one width), one dropdown trigger (`Trigger.module.css`, Menu's and Select's; a lamp while it narrows), Options
+  (pills with a line all the way round, a lamp on the ones that can be on, in the option's swatch colour). A menu's
+  ticked rows show the lamp in the row's tone. A person is `Avatar`, a circle (30 px in the HUD, 24 in rows), a photo
+  ringed in their colour. Chips and count badges are pills; on the canvas a card's tags and a link's kind stay square.
+- **Field** (D-384): a round well, a faint shade with no line (`--wash-1`), a step brighter under the pointer, a cyan
+  ring all the way round with the keyboard; `quiet` has no well until hover or focus; a textarea's corners
+  `--radius-well`. The prompt's `>` line keeps its own look. Cards (squircle) and pieces (square) don't change.
 - Inputs: underscore or caret cursor `▌`, mono text
 - Tags: `#tag` in an accent colour
 - **Marks** (D-265, `src/ui/primitives/Marks.tsx`, tokens `--mark-*`): hover and selection on everything selectable (cards, text,

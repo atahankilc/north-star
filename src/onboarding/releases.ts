@@ -21,6 +21,15 @@ export type Release = { id: string; date: string; title: string; items: readonly
 
 export const RELEASES: readonly Release[] = [
   {
+    id: '2026-11-15',
+    date: '2026-11-15',
+    title: 'A calmer look',
+    items: [
+      // D-384: a look, not a feature, so it arms no lesson.
+      { title: 'A light for what’s on', tab: 'look', line: 'Buttons lost their grey boxes. A small light before a word shows what’s on; an icon lights up itself.', lessons: [] },
+    ],
+  },
+  {
     id: '2026-11-05',
     date: '2026-11-05',
     title: 'Resize from any side',

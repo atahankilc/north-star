@@ -1,6 +1,6 @@
 # Controls: empty buttons, a lamp for what's on (D-384)
 
-Status: **look agreed 2026-11-06 (D-384); steps 1–6 built 2026-11-15, steps 7–8 not.** This is the build plan for the small parts only. Modals, dropdown
+Status: **look agreed 2026-11-06 (D-384); built 2026-11-15, all eight steps.** This is the build plan for the small parts only. Modals, dropdown
 panels and docked panels are decided next, on top of this (see [What this leaves out](#what-this-leaves-out)).
 
 Pictures of what was approved: [controls-preview/approved-dark.png](controls-preview/approved-dark.png),
@@ -151,8 +151,15 @@ One commit each, gallery updated in the same commit (D-324). Rules first in the 
    `PeopleHere.module.css`, `TextItems.module.css` (`.dot`), `TasksSide.module.css`, `Settings.module.css`, `Agent.module.css`,
    `Kanban.module.css`, `Timeline.module.css`, `Matrix.module.css`. Search for `--wash-2` on anything pressable and for
    `calc(-1 * var(--line-w))`. `CardPanel.module.css`'s use of that is a hairline between rows, not a state: leave it.
+   *Done 2026-11-15.* Found: the setups' and settings' fields drew their own underline or box over the kit's field
+   (Matrix's `.field`, `.pillField`, `.glyphField`, the deck setup's `.boxField`, WorkspaceLayout's and the agent
+   settings' `.input`): their classes now only place it, and `AutosaveField` takes Field's look with `well`. The text
+   bar's colour dots, a filter summary's swatches and the deck setup's tone button are round. Left as they are, for
+   Q-035: Settings' side list, the agent's rows, a prompt row's `▸ N inside`; a matrix or table cell typed in place and a
+   cell's note are on the canvas.
 8. **Docs.** `DESIGN.md` §6 (*Buttons are cells*, *ButtonGroup*, *Controls are toggle cells*), `tokens.md`,
    `decisions.md`'s D-344 line; shrink what D-384 replaces in D-344's log entry.
+   *Done 2026-11-15*, with a `2026-11-15` release in `releases.ts` (one page, no lesson armed).
 
 ## To check first
 

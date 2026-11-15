@@ -1601,3 +1601,13 @@ Offered, not asked for: a deck's column width, the document reader's window.
 - `NoList` under the agent's report: `no documents list on this canvas` + `+ add a list`; no picker.
 - Checked: headless on the emulators with the dev stub (scratchpad nolist.mjs; its two fails were the test's own: the
   title is the workspace's, nothing opens by itself on create); unit 1082/1082. Pushed.
+
+## Done (2026-11-15): controls empty and round, a lamp for what's on, D-384
+- All eight steps of docs/specs/controls.md, one commit each: tokens and the lamp in Button's one rule; Button (no cell,
+  round shade, the lit glyph, 24 px icons, `CloseIcon` for 18 typed `×`); ButtonGroup and Tabs a gap apart; ToolButton,
+  Trigger and Menu's `+`; tick boxes as lamps (`data-tick`); Options, Chip, CountBadge, Field, Avatar round; the sweep
+  (setups' and settings' fields on the kit's well, `AutosaveField well`); docs, D-344's entry fixed, a `2026-11-15` release.
+- Checked: each part in the gallery, dark and light, and the panels, setups, docks and workspace screen at full size
+  (headless Chrome, a fresh dev server each time: Vite keeps stale CSS in modules composing Button.module.css); tokens,
+  kit, gallery, lessons and memory checks 0; unit 1082/1082; build ok. Not pushed.
+- Not seen in the real app: the HUD's bare tools over an empty canvas's backdrop, a console at 25 % and 400 %, touch.

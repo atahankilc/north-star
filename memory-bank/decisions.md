@@ -45,7 +45,7 @@ feature comes back as a piece, and check them with the user then.
   state side by side, what it's built from and where it's used by area (D-336). Motion's numbers and the tween in src/ui/foundation/motionTokens.ts and motion.ts (held to tokens.css by a test), card
   colours in `--type-*` and src/ui/foundation/cardTone.ts; one Spinner, the small entrances in src/ui/foundation/Enter.module.css, one
   cell-path builder. The kit in src/ui: Button (`sm`, `md`, `icon`, `link`), ButtonGroup, ToolButton (the HUD's icon tools), Steps (a wizard's tabs), Label, Rule, Empty, Field, PromptField, CommitField (a value edited where it's shown), AddField (what a `+ tag` turns into; leaving it adds what's typed, Escape drops it, D-361), Checkbox, Tabs, Chip, CountBadge, ResizeEdge, SplitLine. The gallery's `[tree]` shows what each
-  component draws and where it's used. Two buttons only (D-343): Button and ToolButton, both cells (D-344); a feature wrapping ToolButton is a `*Tool`, its icon from `src/ui/primitives/hudIcons.tsx` (one 18 px set), the gear too. The side nav holds the canvas's tools (decks and days too), the corner people (threads, you, settings). Patterns: Options, Window, Dialog, WizardShell, PromptOverlay, EdgeColumn, PanelHead, InPlaceMenu, Tip (a word with its meaning on hover, D-355), FilterColumn (a filter as a column of tick rows, the default on top and what's picked under it once the pointer leaves, D-364; a drawer as wide as its columns, on a whole edge they share it; `reset` at the right end of its title). Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
+  component draws and where it's used. Two buttons only (D-343): Button and ToolButton, both D-384's empty round look; a feature wrapping ToolButton is a `*Tool`, its icon from `src/ui/primitives/hudIcons.tsx` (one 18 px set), the gear too. The side nav holds the canvas's tools (decks and days too), the corner people (threads, you, settings). Patterns: Options, Window, Dialog, WizardShell, PromptOverlay, EdgeColumn, PanelHead, InPlaceMenu, Tip (a word with its meaning on hover, D-355), FilterColumn (a filter as a column of tick rows, the default on top and what's picked under it once the pointer leaves, D-364; a drawer as wide as its columns, on a whole edge they share it; `reset` at the right end of its title). Button's and Label's rules in `:where()`, so a caller's class always wins (D-334). `npm run check:kit` (CI, a baseline that only shrinks) keeps hand-made UI
   from coming back. Everything is on it (check:kit 0, 2026-11-01): the agent's column an EdgeColumn (D-359), a prompt laid in the page an `InPlaceMenu`; folders by layer and area.
 - Cards on one face (D-358, docs/specs/cards.md): every card and task drawing stands on one `CardFace` (tone, tint, world/screen size, states, D-295's ink, Marks) with shared parts, squircle corners (16; 8 on a face a line tall; flat ones square) and its colour a bar inside its left edge (D-380), each card in `src/views/workspace/cards/` with its gallery; card colours only from `CARD_TONE`, a card's name from `cardName()`, task words from model/tasks.ts; one P1 (`PriorityChip`); one small row (`CardRow`); `check:kit` refuses a card face or edge by hand outside `cards/`; one move for everything on a plane (`startMove`, selection.ts). Done 2026-11-02.
 - Windows and docked panels are two families (D-359, DESIGN.md §6): over the page the one `Window` (Dialog, WizardShell,
@@ -104,23 +104,28 @@ feature comes back as a piece, and check them with the user then.
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063,
   D-069), which also holds the HUD's size (small / normal / large), normal by default (D-348); no background strength (D-385). Light theme via tokens under `[data-theme='light']` and `usePalette()` (three.js too;
   `Palette` only what WebGL reads, D-321), bg `#f3f3f3` (D-342), no-flash script (D-069); the backdrop prints bolder, darker glyphs in light (D-342). Light's accents the strongest of each hue that reads no worse on white; its cards have their own `--type-*` colours (idea violet); a card's colour tints its panel head and rows there (`--panel-tint`, none in dark) (D-368).
-- Buttons are cells (D-344, DESIGN.md §6): every button the same cell (`--wash-2`, a step brighter on hover), its kind
-  only fill and ink: `main`, `primary` the one go of a surface (solid cyan, at most one), `danger`, `hazard` (solid
-  magenta where deleting is the point), `pressed`; 24 px, glyphs 24 × 24, HUD tools 30, the page's 36 white; no brackets,
-  no keys beside them; a caller's class only places one. Buttons that belong together are one `ButtonGroup` strip
-  (docks, consoles, panel and wizard feet, zooms, Choice). Menu's triggers are the same cell. A person's square is one
-  `Avatar`, 30 px in the HUD like a ToolButton, 24 in rows like a Button. Controls are toggle cells, one component each
-  (D-344): Checkbox (✓ before the word), Tabs (Choice is its segments; Steps is Tabs with `lead`, `progress`, `even`), one dropdown trigger (Menu, Select).
-- Controls, next (D-384, docs/specs/controls.md; agreed, not built, D-344's cells hold until it is): nothing behind a control at rest, only `primary` and `hazard` filled; what's on a small round lamp beside its word, an icon lit itself; every tick box a lamp; fully round; a state never a line on one side. Cards and pieces unchanged; modals, dropdown panels and docked panels to decide.
+- Controls are empty and round, a lamp says what's on (D-384, docs/specs/controls.md, DESIGN.md §6; built 2026-11-15,
+  replacing D-344's cells): nothing behind a button at rest, a round shade under the pointer or the keyboard; its kind
+  only ink, and fill for the one go of a surface: `main` (strong ink), `primary` (solid cyan, at most one), `danger`
+  (magenta ink), `hazard` (solid magenta where deleting is the point); 24 px pills, a glyph alone a 24 px circle, HUD
+  tools 30, the page's 36 white; no brackets, no keys beside them; a caller's class only places one (D-344). What can
+  be on has a small round lamp before its word, a hollow ring off, lit in `--button-on` on; a glyph alone lights
+  itself; a tick with no word is the lamp alone; written once in Button.module.css. A state is never a fill behind the
+  word nor a line on one side. Buttons that belong together are one `ButtonGroup`, a small gap apart, no strip (docks,
+  consoles, panel and wizard feet, zooms, Choice). One component each (D-344): Checkbox, Tabs (Choice is its segments;
+  Steps is Tabs with `lead`, `progress`, `even`), one dropdown trigger (Menu, Select), Options (pills with a line
+  round them). A person is one `Avatar`, a circle, 30 px in the HUD, 24 in rows. Field a round well, a cyan ring with
+  the keyboard. Chips and badges pills. Cards (squircle), pieces and everything on the canvas (square) unchanged;
+  modals, dropdown panels and docked panels to decide (Q-035).
 - HUD (D-027): the breadcrumb top left, fixed margins; the rest becomes a left side nav. Bottom left, top to bottom:
   people here, threads button, a rule, your square, the gear, `--space-3` from the edges, other bottom-left tools
-  `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge, cells (D-344); its `+` a drawn
+  `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge, bare icons (D-384); its `+` a drawn
   20 px magenta `+`, its menu opening right (D-178).
 - Menus, pickers and right-click are a **prompt** (D-222; an empty heading is a plain rule, D-291), one set of parts
   (D-350: promptModel, usePromptNav, useDismiss, PromptRow, PromptList, PromptPanel): a `>` line narrowing the list,
   the keys staying in it, the first row lit and picked by Enter until the keys or the pointer move it; `# SECTION ──`
   heads; rows `› ▦ label  hint`, picked held by a band in its tone; a letter puts its item first (not shown, D-344);
-  tick rows a small box; the value now cyan with `✓` at its end; no foot, no keys; a console's look (no box, shade,
+  tick rows a lamp in the row's tone (D-384); the value now cyan with `✓` at its end; no foot, no keys; a console's look (no box, shade,
   corner L's, D-347); Select: the `>` line past 7 options.
 - One look and behaviour across the canvas (consistency.md; agreed D-263–D-267, built D-270, D-272–D-277):
   - Surface (D-263, D-274, D-289): pieces graphite (`--piece*`, white in light) with a 2 px band in their kind's colour
