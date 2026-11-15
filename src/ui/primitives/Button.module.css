@@ -13,8 +13,9 @@
   gap: var(--space-1);
   /* 24 px at 12 px text; it grows with its text where that grows (a console as the canvas zooms out, D-264). */
   height: var(--button-h, max(var(--control-sm), 2em));
-  /* A little more room than a square cell had, so a word clears the round ends. */
-  padding: 0 calc(var(--button-pad, var(--space-2)) * var(--pill-room));
+  /* One side padding for every worded button, tab, trigger and option, so words in a row sit the same distance
+     apart everywhere; enough for a word to clear the round ends. Nothing composing this sets its own. */
+  padding: 0 var(--button-pad, var(--space-3));
   border: 0;
   border-radius: var(--radius-full);
   background: none;

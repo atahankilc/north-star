@@ -16,9 +16,6 @@
 
 .option {
   composes: sm from '../primitives/Button.module.css';
-  /* In the words' own face and size, as the text around it. */
-  font-family: inherit;
-  font-size: inherit;
   box-shadow: inset 0 0 0 var(--line-w) var(--line);
   transition:
     color var(--dur-fast) var(--ease-out),
@@ -62,6 +59,9 @@
   height: auto;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--space-3);
+  /* A card's sample, label and line are reading text, in the page's face. */
+  font-family: inherit;
+  font-size: inherit;
   color: var(--fg);
   text-align: left;
   white-space: normal;

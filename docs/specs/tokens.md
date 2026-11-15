@@ -150,7 +150,7 @@ up" may need to give way to "round down" in dense lists (kanban sheets, the tabl
 - **Marks on edges:** `--corner-mark` 7 (the magenta L's on panel, console and dock corners), `--lead` 12 (a numbered
   rule's magenta lead), `--underline-offset` 3 (2–4).
 - **Controls' shape and lamp** (D-384, [controls.md](controls.md)): `--radius-full` 999 px (every pill and circle),
-  `--radius-well` (`--space-4`, a `<textarea>`), `--pill-room` 1.3 (times `--button-pad` at a pill's sides); the lamp
+  `--radius-well` (`--space-4`, a `<textarea>`); a worded control's side padding is `--space-3` (`--button-pad`); the lamp
   `--lamp` 0.5em, `--lamp-gap` 0.55em, `--lamp-glow` 0.55em (in em: it grows with a console's text), `--tick-lamp` 8
   (a tick row's).
 - **Breakpoints** can't be variables: `@media` lines are left to themselves, and they are 760 and 640 px only.

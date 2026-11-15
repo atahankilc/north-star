@@ -173,7 +173,6 @@
      round light before its word. The lamp is in em, so it grows with a console's text as the canvas zooms (D-264). */
   --radius-full: 999px; /* every pill and circle */
   --radius-well: var(--space-4); /* a <textarea>'s well: too tall for a pill */
-  --pill-room: 1.3; /* times --button-pad at a pill's sides, so a word clears its round ends */
   --lamp: 0.5em; /* its width and height */
   --lamp-gap: 0.55em; /* lamp to word */
   --lamp-glow: 0.55em; /* its glow while on */

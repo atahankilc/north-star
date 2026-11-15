@@ -36,7 +36,7 @@
 .switches {
   display: inline-flex;
   flex: none;
-  gap: var(--space-1);
+  gap: var(--space-half);
 }
 
 /* The matches, grouped (a PromptList, D-350): this box is sized and scrolls; the list inside is as tall as its rows. */

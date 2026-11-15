@@ -144,8 +144,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   D-093): a button has nothing behind it at rest, its word is enough; a round shade (`--wash-3`, `--radius-full`) comes
   under the pointer or the keyboard, and it's a little smaller while pressed (`--press-scale`). Its kind shows in its ink
   and, for the one that goes, its fill; never in its shape. No brackets, no key after it (keys live in its `title`;
-  onboarding teaches them). `sm` is a 24 px pill (`--control-sm`), mono 12, a little more room at its sides
-  (`--pill-room`); `tone="main"` a row's strong one (`--fg-strong`), `"primary"` the one that goes, a solid cyan pill
+  onboarding teaches them). `sm` is a 24 px pill (`--control-sm`), mono 12, `--space-3` at its sides; `tone="main"` a row's strong one (`--fg-strong`), `"primary"` the one that goes, a solid cyan pill
   (save, add, make, apply, done: **at most one on a surface**), `"danger"` magenta ink, `"hazard"` the solid magenta
   one where deleting is the point (the hazard confirm). `icon` is a glyph alone in a 24 px circle (a pill when it holds
   more); a close or take-away is the drawn `CloseIcon`, never a typed `×`. `md` is the page's: a white 36 px pill, its

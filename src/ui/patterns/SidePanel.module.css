@@ -47,8 +47,8 @@
 
 .foot {
   display: flex;
-  /* The foot's actions joined, a hairline between their cells (as a ButtonGroup, D-344); a danger one apart. */
-  gap: var(--line-w);
+  /* The foot's actions the same small gap apart as a ButtonGroup's (D-384); a danger one apart. */
+  gap: var(--space-half);
   padding: var(--space-3) var(--space-6) var(--space-3);
   border-top: var(--line-w) solid var(--line);
 }

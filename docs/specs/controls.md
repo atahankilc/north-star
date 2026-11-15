@@ -28,7 +28,7 @@ out. The new rules:
 
 | Part | At rest | Hover, keyboard focus | On | Notes |
 |---|---|---|---|---|
-| **Button `sm`** | no fill, `--fg-dim` | pill `--wash-3`, `--fg-strong` | lamp, `--fg-strong`, no fill | 24 px high, a little more room at the sides (`--pill-room`) |
+| **Button `sm`** | no fill, `--fg-dim` | pill `--wash-3`, `--fg-strong` | lamp, `--fg-strong`, no fill | 24 px high, `--space-3` at the sides (one padding for every worded control, 2026-11-15) |
 | `tone="main"` | no fill, `--fg-strong` | as above | as above | was `--wash-4` |
 | `tone="danger"` | no fill, **magenta ink** | pill `--wash-3` | | was dim until hover: with no cell it needs to read as danger at rest |
 | `tone="primary"`, `"hazard"` | solid pill | as today | | |
@@ -92,7 +92,6 @@ Add to `src/styles/tokens.css`, with a line in [tokens.md](tokens.md). Its "noth
 |---|---|---|
 | `--radius-full` | `999px` | every pill and circle |
 | `--radius-well` | `var(--space-4)` | a `<textarea>` |
-| `--pill-room` | `1.3` | times `--button-pad` at a pill's sides; 8 px would touch its ends |
 | `--lamp` | `0.5em` | its width and height |
 | `--lamp-gap` | `0.55em` | lamp to word |
 | `--lamp-glow` | `0.55em` | its glow |
