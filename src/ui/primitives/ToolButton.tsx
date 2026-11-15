@@ -1,5 +1,5 @@
-// The HUD's tool (D-326, the kit): an icon alone, a control square, dim, strong on hover, cyan while what it opens is
-// open (`pressed`). The side nav's fit, compass and `?`, the decks-and-days button and the threads button drew it five
+// The HUD's tool (D-326, the kit; D-384): an icon alone, nothing behind it, dim, strong on a round shade when pointed
+// at, and lit cyan with a soft glow while what it opens is open (`pressed`). The side nav's fit, compass and `?`, the decks-and-days button and the threads button drew it five
 // times by hand, the settings gear a sixth. `dot` is a magenta mark on its corner (something new, unread); `badge` a count
 // there (CountBadge), magenta for what's new, `badgeTone` cyan for people waiting (the gear).
 import type { ButtonHTMLAttributes, ReactNode } from 'react'

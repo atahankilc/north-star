@@ -1,6 +1,6 @@
 /* The one dropdown trigger (D-344): what opens a list, Menu's (`FOR all ▾`, `lanes none ▾`) and Select's (`viewer ▾`),
-   a Button cell with a caps label, a value after a faint rule, `▾`. Open it brightens as a hover does; narrowing what
-   you see (`data-active`, a filter) it's lit as a pressed Button. Menu.module.css and Select.module.css compose these;
+   a Button with a caps label, a value after a faint rule, `▾` (D-384: nothing behind it at rest). Open it keeps the
+   round shade a hover gives; narrowing what you see (`data-active`, a filter) Button's lamp lights before it. Menu.module.css and Select.module.css compose these;
    neither draws its own. */
 .trigger {
   composes: sm from './Button.module.css';
@@ -10,7 +10,7 @@
   text-align: left;
 }
 
-.trigger[aria-expanded='true']:not([data-active='true']) {
+.trigger[aria-expanded='true'] {
   background: var(--wash-3);
   color: var(--fg-strong);
 }
@@ -36,10 +36,6 @@
 .label + .value {
   padding-left: var(--space-2);
   border-left: var(--line-w) solid var(--line-hover);
-}
-
-.trigger[data-active='true'] .value {
-  color: var(--accent-cyan);
 }
 
 .caret {

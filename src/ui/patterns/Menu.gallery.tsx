@@ -28,7 +28,7 @@ export default example({
   place: 'overlays/menus',
   also: ['forms/pickers'],
   file: 'src/ui/patterns/Menu.tsx',
-  note: 'a trigger (the one dropdown trigger, D-344) opening the prompt (PromptPanel, D-222) under it, above it or beside it; ticked rows keep it open',
+  note: 'a trigger (the one dropdown trigger, D-344; nothing behind it at rest, a lamp while it narrows, D-384) opening the prompt (PromptPanel, D-222) under it, above it or beside it; ticked rows keep it open',
   states: {
     closed: () => <Menu label="+" items={ADD} ariaLabel="add" />,
     open: { render: () => <div style={{ height: 420 }}><Menu label="+" items={ADD} ariaLabel="add" /></div>, setup: (c) => c.click('[aria-haspopup="menu"]') },

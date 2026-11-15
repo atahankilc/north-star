@@ -1,6 +1,6 @@
 # Controls: empty buttons, a lamp for what's on (D-384)
 
-Status: **look agreed 2026-11-06 (D-384); steps 1–3 built 2026-11-15, steps 4–8 not.** This is the build plan for the small parts only. Modals, dropdown
+Status: **look agreed 2026-11-06 (D-384); steps 1–4 built 2026-11-15, steps 5–8 not.** This is the build plan for the small parts only. Modals, dropdown
 panels and docked panels are decided next, on top of this (see [What this leaves out](#what-this-leaves-out)).
 
 Pictures of what was approved: [controls-preview/approved-dark.png](controls-preview/approved-dark.png),
@@ -134,6 +134,9 @@ One commit each, gallery updated in the same commit (D-324). Rules first in the 
    *Done 2026-11-15.* Steps keep their off rings: a wizard's real width fits its names (`START FROM` whole at 900 px).
 4. **ToolButton, Trigger, Menu's `+`.** They already take Button's look; what's left is their own size and any shade the
    real app needs. Menu's `+` lights in magenta through its `--button-on`.
+   *Done 2026-11-15.* ToolButton's `dot` a circle. A trigger that narrows keeps its value's ink: the lamp says it, not
+   a cyan value. No shade added on the HUD's tools: bare, they read on the page and beside pieces in both themes
+   (gallery's workspace screen); over the full backdrop of an empty canvas is still to see in the real app.
 5. **Checkbox, CheckMark, the tick box in `PromptRow.module.css`.** Delete `.mark` and the `✓` in `Checkbox.tsx`. The tick
    box's `✓` goes with it; the rest of the row stays until the surfaces are decided.
 6. **Options, Chip, CountBadge, Field.**

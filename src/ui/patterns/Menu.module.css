@@ -34,7 +34,7 @@
   text-transform: none;
 }
 
-/* The create button: a solid magenta cell, `+` (D-344's cell, the create's own colour). */
+/* The create button: a solid magenta pill, `+` (Button's shape, the create's own colour). */
 .primary {
   composes: sm from '../primitives/Button.module.css';
   height: var(--control-lg);
@@ -58,7 +58,7 @@
   color: var(--on-accent);
 }
 
-/* The side nav's `+` (D-178): a HUD tool's cell (ToolButton's, D-344), its glyph magenta; open, lit like a tool that's
+/* The side nav's `+` (D-178): a HUD tool (ToolButton's look, D-384), its glyph magenta; open, lit like a tool that's
    on, in magenta. */
 .icon {
   composes: sm from '../primitives/Button.module.css';

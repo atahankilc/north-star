@@ -1,5 +1,5 @@
-/* The HUD's tool (src/ui/primitives/ToolButton.tsx, D-326): an icon in a control square, a Button's cell (D-344), so its
-   shade at rest (it keeps the icon readable over the moving backdrop), hover, press and on are Button's. */
+/* The HUD's tool (src/ui/primitives/ToolButton.tsx, D-326): an icon alone, a Button `icon` at the HUD's size (D-384),
+   so nothing behind it at rest, a round shade when pointed at, and on, the icon itself lit: all Button's. */
 .tool {
   composes: sm from './Button.module.css';
   position: relative;
@@ -24,6 +24,7 @@
   right: calc(-1 * var(--space-1));
   width: var(--dot);
   height: var(--dot);
+  border-radius: var(--radius-full);
   background: var(--accent-magenta);
   box-shadow: 0 0 0 var(--line-w-bold) var(--bg);
   pointer-events: none;
