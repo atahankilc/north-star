@@ -37,7 +37,7 @@ export default example({
   place: 'text/chips',
   also: ['forms/pickers'],
   file: 'src/ui/primitives/Chip.tsx',
-  note: 'the small inline token (D-326): tag (a #tag), pill (a value in colour), kind (caps, framed in its colour)',
+  note: 'the small inline token (D-326): tag (a #tag, a framed pill), pill (a value in colour), kind (caps, a pill framed in its colour); on the canvas (`world`) square as before (D-384)',
   states: {
     tags: () => wrap(['#b2c', '#supply', '#berlin', '#pilot'].map((t) => <Chip key={t}>{t}</Chip>)),
     removable: { render: () => <Removable />, note: 'point at a tag: its × shows; Tab reaches it too' },

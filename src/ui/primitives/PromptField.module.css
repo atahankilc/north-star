@@ -17,12 +17,14 @@
   font-family: var(--font-mono);
 }
 
-/* The field inside has no line of its own: the prompt's row is the line. */
+/* The field inside has no well of its own (D-384) and no room round it: the prompt's row is the line. */
 .input,
 .input:hover,
 .input:focus {
   padding: 0;
-  border-bottom-color: transparent;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
 }
 
 .prompt[data-running] .input {

@@ -1,10 +1,11 @@
-// Framed options (D-326, the kit's patterns): a few choices side by side, each in its own frame, the picked ones lit
-// cyan (a matrix's `customers 0 | problems 0 | …`, a table's fields, a deck's `tasks | cards`). Where Choice is a line
+// Framed options (D-326, the kit's patterns; D-384): a few choices side by side, each a pill with a line round it,
+// the picked ones showing Button's lamp (a matrix's `customers 0 | problems 0 | …`, a table's fields, a deck's `tasks | cards`). Where Choice is a line
 // of brackets and Tabs a row of labels, these are boxes: for picking among a few things that each say something.
 // - `pick="one"`: one of them (a radio group; arrows move and pick; `clearable` lets the picked one be clicked off).
 // - `pick="many"`: any of them (toggle buttons, each pressed or not).
 // - `pick="act"`: each one does something when clicked (`+ status`, `+ a scale`); nothing stays lit.
-// An option may carry a swatch (a card type's colour, src/ui/foundation/cardTone.ts), a count after its label, a title on hover;
+// An option may carry a swatch (a card type's colour, src/ui/foundation/cardTone.ts: its lamp lights in it; on an `act`
+// option, which has no lamp, a small dot before the label), a count after its label, a title on hover;
 // with `cards`, each is a small card: a sample of what it makes, its label, a line under it, three to a row.
 import { useRef, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
 import styles from './Options.module.css'
@@ -82,7 +83,8 @@ export function Options<T extends string>(props: One<T> | Many<T> | Act<T>) {
             tabIndex={one ? (i === (current >= 0 ? current : first) ? 0 : -1) : undefined}
             disabled={o.disabled}
             title={o.title}
-            style={o.swatch ? ({ '--swatch': o.swatch } as CSSProperties) : undefined}
+            // One dot, not two: where the option can be on, its lamp lights in the swatch's colour and stands for it.
+            style={o.swatch ? ({ '--swatch': o.swatch, '--button-on': o.swatch } as CSSProperties) : undefined}
             onClick={() => click(o.value)}
           >
             {cards && o.sample !== undefined && (
@@ -91,7 +93,7 @@ export function Options<T extends string>(props: One<T> | Many<T> | Act<T>) {
               </span>
             )}
             <span className={styles.head}>
-              {o.swatch && <span className={styles.swatch} aria-hidden />}
+              {o.swatch && props.pick === 'act' && <span className={styles.swatch} aria-hidden />}
               {o.label}
               {o.count !== undefined && <span className={styles.count}>{o.count}</span>}
             </span>

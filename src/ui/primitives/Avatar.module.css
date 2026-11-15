@@ -1,4 +1,4 @@
-/* A person's square (src/ui/primitives/Avatar.tsx, D-344): as big as the buttons beside it. */
+/* A person (src/ui/primitives/Avatar.tsx, D-344; a circle, D-384): as big as the buttons beside it. */
 .avatar {
   display: inline-grid;
   flex-shrink: 0;
@@ -7,6 +7,7 @@
   width: var(--hud-tool);
   height: var(--hud-tool);
   overflow: hidden;
+  border-radius: var(--radius-full);
   background: var(--peer);
   color: var(--on-accent);
   font-family: var(--font-mono);
@@ -20,18 +21,20 @@
   font-size: var(--text-xs);
 }
 
-/* Someone not here: a framed square in the page's ink. */
+/* Someone not here: a framed circle in the page's ink. */
 .avatar[data-quiet] {
   background: var(--wash-2);
   box-shadow: inset 0 0 0 var(--line-w) var(--line-hover);
   color: var(--fg);
 }
 
-/* A photo keeps a band of their colour underneath, so the colour still reads. */
+/* A photo keeps a ring of their colour round it, so the colour still reads (a band under it would be a line on one
+   side of a round shape). */
 .avatar img {
   width: 100%;
   height: 100%;
-  border-bottom: var(--line-w-bold) solid var(--peer);
+  border: var(--line-w-bold) solid var(--peer);
+  border-radius: var(--radius-full);
   object-fit: cover;
 }
 

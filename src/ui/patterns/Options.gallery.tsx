@@ -52,7 +52,7 @@ export default example({
   name: 'Options',
   place: 'forms/pickers',
   file: 'src/ui/patterns/Options.tsx',
-  note: 'framed options (D-326): one-of (arrows pick), many-of, or actions; a swatch, a count, or cards with a sample and a line',
+  note: 'framed options (D-326; D-384): pills with a line round them, a lamp on the ones that can be on, lit in the option’s swatch colour; one-of (arrows pick), many-of, or actions; a swatch, a count, or cards with a sample and a line',
   states: {
     'one of': () => <OneOf start="feature" />,
     'one of, none picked': () => <OneOf clearable />,

@@ -1,6 +1,6 @@
 // The one text field (D-326, the kit; the audit's 40 raw <input> and 15 <textarea> under ~35 local names): an
-// underlined line in the house style, the line cyan while it has the keyboard. `multiline` is a textarea as tall as
-// its text (autoGrow.ts). `quiet` shows its line only on hover and focus (a value that reads as text until touched,
+// round well (D-384), a faint shade with no line, a cyan ring round it while it has the keyboard. `multiline` is a
+// textarea as tall as its text (autoGrow.ts). `quiet` shows its well only on hover and focus (a value that reads as text until touched,
 // the card panel's fields). Enter and Escape have their own callbacks (Enter in a textarea only with ⌘ or Ctrl); keys
 // stay inside it unless `passKeys`, so the canvas's shortcuts never fire while typing. Every other input prop passes on.
 import { forwardRef, useImperativeHandle, useRef, type InputHTMLAttributes, type KeyboardEvent } from 'react'

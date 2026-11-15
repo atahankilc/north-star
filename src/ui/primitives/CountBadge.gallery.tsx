@@ -24,7 +24,7 @@ export default example({
   place: 'feedback/badges',
   also: ['hud/corner'],
   file: 'src/ui/primitives/CountBadge.tsx',
-  note: 'a count on something (D-326): magenta new since you looked, cyan something to see to; 9+ past nine, gone at 0',
+  note: 'a count on something, a pill (D-326, D-384): magenta new since you looked, cyan something to see to; 9+ past nine, gone at 0',
   states: {
     counts: () => row([0, 1, 9, 12].map((n) => [String(n), <OnButton key={n}><CountBadge count={n} /></OnButton>])),
     cyan: () => row([1, 3, 24].map((n) => [String(n), <OnButton key={n}><CountBadge count={n} tone="cyan" /></OnButton>])),

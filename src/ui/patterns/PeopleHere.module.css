@@ -13,7 +13,7 @@
   list-style: none;
 }
 
-/* A chip like the account chip, in the person's colour: a filled square, then their name. */
+/* A chip like the account chip, in the person's colour: a filled circle, then their name. */
 .person {
   display: inline-flex;
   align-items: center;
@@ -22,6 +22,7 @@
   height: var(--control-sm);
   padding: 0 var(--space-2) 0 0;
   border: var(--line-w) solid transparent;
+  border-radius: var(--radius-full);
   background: none;
   color: var(--peer);
   font: inherit;
@@ -44,7 +45,7 @@
   background: color-mix(in srgb, var(--peer) var(--card-tint), transparent);
 }
 
-/* Squares only, overlapping, each edged in the page colour so they read apart. */
+/* Circles only, overlapping, each edged in the page colour so they read apart. */
 .stack {
   gap: 0;
 }
@@ -89,6 +90,7 @@
   left: calc(100% + var(--space-2));
   transform: translateY(-50%);
   padding: var(--space-half) var(--space-2);
+  border-radius: var(--radius-full);
   background: var(--peer);
   color: var(--on-accent);
   font-family: var(--font-mono);
@@ -122,13 +124,14 @@
 .more {
   display: grid;
   place-items: center;
-  /* As big as the squares and the HUD's tools (D-344), a cell like theirs. */
+  /* As big as the circles and the HUD's tools (D-344), empty and round like them (D-384). */
   min-width: var(--hud-tool);
   height: var(--hud-tool);
   margin-top: var(--space-1);
   padding: 0 var(--space-1);
   border: 0;
-  background: var(--wash-2);
+  border-radius: var(--radius-full);
+  background: none;
   color: var(--fg-dim);
   font: inherit;
   font-size: var(--text-xs);

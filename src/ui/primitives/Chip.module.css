@@ -25,9 +25,10 @@
   cursor: pointer;
 }
 
-/* tag: framed on the chip shade (a card's or task's #tags). */
+/* tag: a framed pill on the chip shade (a card's or task's #tags). */
 .chip[data-variant='tag'] {
-  padding: 0 var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
   border: var(--line-w) solid var(--line);
   background: var(--chip);
   color: var(--fg);
@@ -53,9 +54,10 @@
   color: var(--chip-tone);
 }
 
-/* kind: caps, framed in its colour (a link's kind). */
+/* kind: caps, a pill framed in its colour (a link's kind). */
 .chip[data-variant='kind'] {
-  padding: 0 var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
   border: var(--line-w) solid var(--chip-tone, var(--line-hover));
   background: var(--bg);
   color: var(--chip-tone, var(--fg-dim));
@@ -66,9 +68,15 @@
 
 /* world: sized in the world's tokens, so it zooms with what it sits on (a card face's #tags; a link's kind a step
    bigger). */
+/* On the canvas nothing changes with the controls (D-384): a card's tags and a link's kind stay square and tight. */
 .chip[data-scale='world'] {
   font-size: var(--w-text-2xs);
   line-height: var(--lh-body);
+}
+
+.chip[data-scale='world']:is([data-variant='tag'], [data-variant='kind']) {
+  padding: 0 var(--space-1);
+  border-radius: 0;
 }
 
 .chip[data-scale='world'][data-variant='kind'] {

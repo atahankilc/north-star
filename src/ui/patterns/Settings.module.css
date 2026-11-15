@@ -192,6 +192,7 @@
   place-items: center;
   width: var(--control-xl);
   height: var(--control-xl);
+  border-radius: var(--radius-full);
   background: var(--accent-cyan);
   color: var(--on-accent);
   font-size: var(--text-lg);

@@ -13,7 +13,7 @@ export default example({
   name: 'PeopleHere',
   place: 'hud/presence',
   file: 'src/ui/patterns/PeopleHere.tsx',
-  note: 'squares, never names (D-169); hover shows who and where; away faint and last (D-331)',
+  note: 'circles (D-384), never names (D-169); hover shows who and where; away faint and last (D-331)',
   states: {
     one: { render: () => <PeopleHere />, setup: withPeers(1) },
     three: { render: () => <PeopleHere />, setup: withPeers(3) },

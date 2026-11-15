@@ -11,7 +11,7 @@ export default example({
   name: 'Avatar',
   place: 'hud/presence',
   file: 'src/ui/primitives/Avatar.tsx',
-  note: 'a person’s square (D-344): hud like a ToolButton (30 px; 24 or 36 with the HUD’s size, D-348), sm 24 px like a Button; framed when not here; grey when away',
+  note: 'a person, a circle (D-344, D-384): hud like a ToolButton (30 px; 24 or 36 with the HUD’s size, D-348), sm 24 px like a Button; framed when not here; grey when away',
   states: {
     sizes: () => (
       <div style={{ display: 'grid', gap: 'var(--space-4)' }}>

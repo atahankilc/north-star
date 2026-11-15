@@ -1,14 +1,15 @@
-/* The one text field (src/ui/primitives/Field.tsx, D-326): an underline, cyan with the keyboard; `quiet` shows it on hover and
-   focus only. Mono at the page's small size; `sm` a step down for rows and cells. */
+/* The one text field (src/ui/primitives/Field.tsx, D-326; D-384): a round well, a faint shade with no line, a step
+   brighter under the pointer, and with the keyboard a cyan ring all the way round (never a line on one side). Its
+   padding is the same in every state, so nothing jumps. `quiet` has no well until hover or focus. In the page's face
+   at its small size; `sm` a step down for rows and cells. */
 .field {
   display: block;
   width: 100%;
   min-width: 0;
-  padding: var(--space-half) 0;
+  padding: var(--space-2) var(--space-3);
   border: 0;
-  border-bottom: var(--line-w) solid var(--line);
-  border-radius: 0;
-  background: none;
+  border-radius: var(--radius-full);
+  background: var(--wash-1);
   color: var(--fg-strong);
   font: inherit;
   font-family: var(--font-display);
@@ -16,7 +17,9 @@
   caret-color: var(--accent-magenta);
   outline: none;
   resize: none;
-  transition: border-color var(--dur-fast) var(--ease-out);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .field[data-size='sm'] {
@@ -28,37 +31,34 @@
 }
 
 .field:hover {
-  border-bottom-color: var(--line-hover);
+  background: var(--wash-2);
 }
 
 .field:focus {
-  border-bottom-color: var(--accent-cyan);
+  background: var(--wash-2);
+  box-shadow: inset 0 0 0 var(--line-w) var(--accent-cyan);
 }
 
-/* Its line is the focus ring: not the page's outline too. */
+/* Its ring is the focus ring: not the page's outline too. */
 .field:focus-visible {
   outline: none;
 }
 
-.field[data-quiet] {
-  border-bottom-color: transparent;
+.field[data-quiet]:not(:hover, :focus) {
+  background: none;
 }
 
-.field[data-quiet]:hover {
-  border-bottom-color: var(--line);
-}
-
-.field[data-quiet]:focus {
-  border-bottom-color: var(--accent-cyan);
-}
-
+/* Nothing to draw a dashed line on now: it dims. */
 .field:disabled {
-  border-bottom-style: dashed;
+  background: none;
   color: var(--fg-dim);
+  opacity: var(--o-dim);
   cursor: not-allowed;
 }
 
+/* Too tall for a pill. */
 textarea.field {
   overflow: hidden;
+  border-radius: var(--radius-well);
   line-height: var(--lh-body);
 }

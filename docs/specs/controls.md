@@ -1,6 +1,6 @@
 # Controls: empty buttons, a lamp for what's on (D-384)
 
-Status: **look agreed 2026-11-06 (D-384); steps 1–5 built 2026-11-15, steps 6–8 not.** This is the build plan for the small parts only. Modals, dropdown
+Status: **look agreed 2026-11-06 (D-384); steps 1–6 built 2026-11-15, steps 7–8 not.** This is the build plan for the small parts only. Modals, dropdown
 panels and docked panels are decided next, on top of this (see [What this leaves out](#what-this-leaves-out)).
 
 Pictures of what was approved: [controls-preview/approved-dark.png](controls-preview/approved-dark.png),
@@ -142,6 +142,11 @@ One commit each, gallery updated in the same commit (D-324). Rules first in the 
    *Done 2026-11-15.* A lamp with no word is `data-tick`, in Button's lamp rule: a bare Checkbox, `CheckMark` and a prompt
    row's box set it and draw nothing of their own. `.mark` went in step 1.
 6. **Options, Chip, CountBadge, Field.**
+   *Done 2026-11-15, with Avatar and PeopleHere.* Options compose Button's `sm` for the lamp; an option with a swatch
+   lights its lamp in that colour and drops the dot (two dots side by side read as two lamps; an `act` option, which has
+   no lamp, keeps its dot); a card option's lamp sits in its top right corner. Chips on the canvas (`scale="world"`:
+   a card's tags, a link's kind) stay square. A photo's band of colour under it became a ring round it. Field is
+   `--space-2 --space-3`, 32 px high beside 24 px buttons.
 7. **Sweep.** Go through what styles these parts from outside, or repeats their look:
    `PeopleHere.module.css`, `TextItems.module.css` (`.dot`), `TasksSide.module.css`, `Settings.module.css`, `Agent.module.css`,
    `Kanban.module.css`, `Timeline.module.css`, `Matrix.module.css`. Search for `--wash-2` on anything pressable and for

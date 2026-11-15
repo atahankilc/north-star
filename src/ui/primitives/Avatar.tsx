@@ -1,6 +1,6 @@
-// A person's square (D-344): their initial (or their Google photo, with a band of their colour under it) on their
-// colour. One size per neighbour so it lines up with the buttons beside it: `hud` a ToolButton's cell (30 px, or the HUD's size, D-348) (people
-// here, your square), `sm` 24 px, a Button's (a row in a list). Without a colour it's the quiet framed square of
+// A person (D-344; a circle, D-384): their initial (or their Google photo, with a ring of their colour round it) on
+// their colour. One size per neighbour so it lines up with the buttons beside it: `hud` a ToolButton's cell (30 px, or the HUD's size, D-348) (people
+// here, your square), `sm` 24 px, a Button's (a row in a list). Without a colour it's the quiet framed circle of
 // someone not here (a workspace's people). `away` greys it (D-331). PeopleHere, Settings and the people settings drew it
 // three times by hand.
 import type { CSSProperties } from 'react'
