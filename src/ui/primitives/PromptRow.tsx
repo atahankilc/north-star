@@ -1,6 +1,6 @@
 // The prompt's parts (D-222), one of each for every list in the prompt family:
 //   Hit         the typed text lit inside a label (magenta; `found`: the finder's yellow, what it lights on the canvas)
-//   PromptRow   one row: `›` while picked · its glyph or tick box · label (+ dim meta) · NEW · `▸ N inside` · hint · `✓`
+//   PromptRow   one row: `›` while picked · its glyph or tick lamp · label (+ dim meta) · NEW · `▸ N inside` · hint · `✓`
 //               if it's the value now
 //   PromptHead  `# section ──── count`, or a plain rule
 // A row is never focused: the keys stay in the `>` line (usePromptNav), which points at the picked row
@@ -72,9 +72,7 @@ export const PromptRow = memo(function PromptRow({ item, id, picked, q, hitTone,
     >
       <span className={styles.gutter} aria-hidden />
       {tick && (
-        <span className={styles.box} data-icon data-on={item.checked || undefined} aria-hidden>
-          {item.checked ? '✓' : ''}
-        </span>
+        <span className={styles.box} data-tick data-on={item.checked || undefined} aria-hidden />
       )}
       {item.glyph !== undefined && (
         <span className={styles.glyph} data-part="glyph" aria-hidden>

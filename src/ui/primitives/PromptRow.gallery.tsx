@@ -24,7 +24,7 @@ export default example({
   place: 'overlays/menus',
   also: ['forms/pickers'],
   file: 'src/ui/primitives/PromptRow.tsx',
-  note: 'one row for every prompt (D-222): `›` and a band while picked, its glyph or tick box, the label, `▸ N inside`, a hint, `✓` for the value now; `# SECTION ──` heads',
+  note: 'one row for every prompt (D-222): `›` and a band while picked, its glyph or tick lamp (Button’s, D-384), the label, `▸ N inside`, a hint, `✓` for the value now; `# SECTION ──` heads',
   states: {
     rows: () =>
       box(

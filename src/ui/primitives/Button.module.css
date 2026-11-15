@@ -109,8 +109,10 @@
 /* The lamp (D-384, docs/specs/controls.md): a small round light before the word of anything that can be on; a hollow
    ring while it's off, filled and glowing in `--button-on` while on. Off and on take the same room, so a word never
    shifts. Only what has a state gets one: an action (`edit`) has none of these attributes and stays plain. A glyph alone
-   (`data-icon`) has no room for it. Written here once, beside "on"; no part draws its own. */
-:where(.sm:is([aria-pressed], [aria-checked], [aria-selected], [data-on], [data-active]):not([data-icon], [data-link]))::before {
+   (`data-icon`) has no room for it. Written here once, beside "on"; no part draws its own.
+   `data-tick` is a lamp with no word: a tick box (a checklist's box beside typed text, a prompt row's). Always there,
+   on or off, at the one size a row of them shares. */
+:where(.sm:is([aria-pressed], [aria-checked], [aria-selected], [data-on], [data-active], [data-tick]):not([data-icon], [data-link]))::before {
   content: '';
   flex: none;
   width: var(--lamp);
@@ -128,6 +130,18 @@
 :where(.sm:disabled) {
   opacity: var(--o-faint);
   cursor: not-allowed;
+}
+
+/* tick: only the lamp, in a button's room. */
+:where(.sm[data-tick]) {
+  min-width: max(var(--control-sm), 2em);
+  padding: 0;
+}
+
+:where(.sm[data-tick])::before {
+  width: var(--tick-lamp);
+  height: var(--tick-lamp);
+  margin-right: 0;
 }
 
 /* icon: a glyph alone in a circle (a pill when it holds more: `‹ back`, `100%`), the same text size as every button. */

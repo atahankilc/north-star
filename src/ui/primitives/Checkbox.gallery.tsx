@@ -12,7 +12,7 @@ export default example({
   name: 'Checkbox',
   place: 'forms/pickers',
   file: 'src/ui/primitives/Checkbox.tsx',
-  note: 'a toggle cell (D-344): the label is the cell, Button’s lamp before it, lit while on (D-384); Space or a click toggles; no label: a square box cell',
+  note: 'a toggle cell (D-344): the label is the cell, Button’s lamp before it, lit while on (D-384); Space or a click toggles; no label: the lamp alone, 8 px',
   states: {
     'on and off': () => (
       <div style={col}>

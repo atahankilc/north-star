@@ -45,9 +45,9 @@
   color: var(--tone, var(--fg-dim));
 }
 
-/* A row you tick: a small box, empty while off (so an unticked row still says it can be ticked), lit in the row's tone
-   with `✓` while on: the kit's Checkbox at a row's size (D-344), so its fill and ink are Button's; here only its size
-   and a line all the way round. The row is the button: this one is only drawn, and takes no pointer of its own. */
+/* A row you tick: Button's tick lamp (D-384), a hollow ring while off (so an unticked row still says it can be
+   ticked), lit in the row's tone while on. Only its room and its colour are here. The row is the button: this one is
+   only drawn, and takes no pointer of its own. */
 .box {
   composes: sm from './Button.module.css';
   --button-on: var(--tone, var(--accent-cyan));
@@ -55,14 +55,7 @@
   width: var(--control-xs);
   min-width: 0;
   height: var(--control-xs);
-  padding: 0;
-  font-size: var(--text-xs);
-  box-shadow: inset 0 0 0 var(--line-w) var(--line);
   pointer-events: none;
-}
-
-.box[data-on] {
-  box-shadow: inset 0 0 0 var(--line-w) var(--button-on);
 }
 
 .label {
