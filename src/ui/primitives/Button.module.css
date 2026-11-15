@@ -151,11 +151,12 @@
   padding: 0 var(--space-2);
 }
 
-/* A drawn glyph (`CloseIcon`): as big as a letter, so it sits with the words beside it. */
+/* A drawn glyph (hudIcons.tsx's `CloseIcon`, `PrevIcon`…): one box for all of them, so every icon button's drawing is the
+   same size and sits at the same height; 1.25em, which makes its ink as tall as a capital letter beside it. */
 :where(.sm > svg) {
   flex: none;
-  width: 0.84em;
-  height: 0.84em;
+  width: 1.25em;
+  height: 1.25em;
 }
 
 /* look: drawn inside something that is itself the button; it lights with its target. */

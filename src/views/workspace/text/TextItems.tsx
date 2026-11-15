@@ -65,6 +65,7 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Console } from '../../../ui/patterns/Console'
 import { pressDrag } from '../../../ui/foundation/dragPointer'
+import { TurnLeftIcon, TurnRightIcon } from '../../../ui/primitives/hudIcons'
 export { labelBox } from '../../../model/labelBox'
 
 // Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
@@ -868,9 +869,9 @@ function TitleFields({ wid, id, name, description }: { wid: string; id: string; 
 const SCALES: [TextScale, string][] = [['small', 'S'], ['medium', 'M'], ['large', 'L']]
 const SIZES: [HeadingSize, string][] = [['heading', 'H1'], ['subheading', 'H2'], ['minor', 'H3']]
 // A quarter turn either way (D-156): ↺ reads upwards, ↻ downwards; pressed again, it's level again.
-const TURNS: [90 | -90, string, string][] = [
-  [90, '↺', 'turn left: reads upwards'],
-  [-90, '↻', 'turn right: reads downwards'],
+const TURNS: [90 | -90, ReactNode, string][] = [
+  [90, <TurnLeftIcon key="l" />, 'turn left: reads upwards'],
+  [-90, <TurnRightIcon key="r" />, 'turn right: reads downwards'],
 ]
 // Where a section's name sits (D-157): in the top edge, or up the left one.
 const SIDES: ['top' | 'left', string, string][] = [

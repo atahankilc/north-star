@@ -15,12 +15,13 @@ import type { ChangeKind } from '../../model/changeLog'
 import { WorkspacePicture } from './WorkspacePicture'
 import styles from './Workspaces.module.css'
 import { people, plural } from '../../model/words'
+import { MoreIcon } from '../../ui/primitives/hudIcons'
 
 // The workspace's menu (open, rename, invite code, leave, delete), under its `⋯`: right-click opens the same.
 export function More({ name, onMenu }: { name: string; onMenu: (at: [number, number]) => void }) {
   return (
     <Button icon aria-label={`more for ${name}`} title="more: rename, invite code, leave, delete" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); onMenu([r.left, r.bottom]) }}>
-      ⋯
+      <MoreIcon />
     </Button>
   )
 }

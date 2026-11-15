@@ -40,6 +40,7 @@ import { Empty } from '../../../ui/primitives/Empty'
 import { PromptField } from '../../../ui/primitives/PromptField'
 import { Tabs } from '../../../ui/primitives/Tabs'
 import { PromptOverlay } from '../../../ui/patterns/PromptOverlay'
+import { MinusIcon, PlusIcon } from '../../../ui/primitives/hudIcons'
 
 const SWITCHES: { k: keyof FindOpts; label: string; title: string; code: string }[] = [
   { k: 'caseSensitive', label: 'Aa', title: 'match case', code: 'KeyC' },
@@ -453,13 +454,13 @@ function PreviewHead({ dest, zoom, onZoom, drawing }: { dest: Dest | null; zoom:
       <span className={styles.previewWhere}>{where}</span>
       <ButtonGroup className={styles.zoom} label="Preview zoom">
         <Button icon disabled={zoom <= ZOOM.min} title="zoom out (wheel)" aria-label="Zoom out" onClick={() => onZoom(zoom / ZOOM.step)}>
-          −
+          <MinusIcon />
         </Button>
         <Button icon title="back to 100 %" onClick={() => onZoom(1)}>
           {Math.round(zoom * 100)}%
         </Button>
         <Button icon disabled={zoom >= ZOOM.max} title="zoom in (wheel)" aria-label="Zoom in" onClick={() => onZoom(zoom * ZOOM.step)}>
-          +
+          <PlusIcon />
         </Button>
       </ButtonGroup>
     </div>

@@ -72,7 +72,7 @@ import { Rule } from '../../../ui/primitives/Rule'
 import styles from './Kanban.module.css'
 import { DECK_PX } from '../../../model/world'
 import { keysTaken } from '../../../ui/foundation/focus'
-import { CloseIcon } from '../../../ui/primitives/hudIcons'
+import { CheckIcon, CloseIcon, LimitIcon, NextIcon, PrevIcon } from '../../../ui/primitives/hudIcons'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const K = DECK_PX
@@ -789,20 +789,20 @@ function ColumnHead({ col, n, count, holds, live, editor, naming, first, last, a
   const toolRow = tools && (
     <ButtonGroup className={styles.tools}>
       <Button icon pressed={!!col.limit} title={col.limit ? `at most ${col.limit}: change or take away` : 'how many it should hold at most'} aria-label="Column limit" onClick={() => setLimiting(col.limit ? String(col.limit) : '')}>
-        ≤
+        <LimitIcon />
       </Button>
       {!first && (
         <Button icon title="move it left" aria-label="Move the column left" onClick={() => onMove(-1)}>
-          ‹
+          <PrevIcon />
         </Button>
       )}
       {!last && (
         <Button icon title="move it right" aria-label="Move the column right" onClick={() => onMove(1)}>
-          ›
+          <NextIcon />
         </Button>
       )}
       <Button icon pressed={!!col.done} style={{ ['--button-on' as string]: 'var(--accent-green)' }} title={col.done ? 'not the finished column' : 'its tasks are finished: their due days stop warning'} aria-label="Finished column" onClick={onDone}>
-        ✓
+        <CheckIcon />
       </Button>
       {!alone && (
         <Button icon tone="danger" title={count ? `take it away: its ${count} task${count > 1 ? 's go' : ' goes'} to the column ${first ? 'after' : 'before'} it` : 'take it away'} aria-label="Delete the column" onClick={onDelete}>

@@ -30,6 +30,7 @@ import { Field } from '../../../ui/primitives/Field'
 import { Empty } from '../../../ui/primitives/Empty'
 import { pagesOf } from '../../../model/paging'
 import { PageArrows, PageSize } from '../canvas/Pager'
+import { BinIcon, DownloadIcon, EditIcon, PlaceIcon, ShareIcon, WriteIcon } from '../../../ui/primitives/hudIcons'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const D = DOCS_PX
@@ -362,30 +363,30 @@ function RowActions({ d, list, editor, onCanvas }: { d: WithId<Doc>; list: WithI
     <ButtonGroup className={styles.actions} label={`${d.title}: actions`}>
       {mine && (
         <Button icon title="rename" aria-label="Rename" onClick={act(() => useDocUi.setState({ renaming: d.id }))}>
-          ✎
+          <EditIcon />
         </Button>
       )}
       {mine && d.id !== 'agent-notes' && (
         <Button icon pressed={!!d.shared} title={d.shared ? 'unshare: only you see it again' : 'share with everyone'} aria-label={d.shared ? 'Unshare' : 'Share'} onClick={act(() => shareOrAsk(wid, d, pieces))}>
-          ◐
+          <ShareIcon />
         </Button>
       )}
       {mayWriteDoc(d, user?.id, workspace.roles[user?.id ?? '']) && (
         <Button icon title="write in it" aria-label="Write in it" onClick={act(() => readDoc(d.id, true))}>
-          ¶
+          <WriteIcon />
         </Button>
       )}
       {editor && (
         <Button icon title={`place it on the canvas where you're looking${onCanvas ? ', or drag it where you want it' : ''}${d.shared ? '' : ' (shares it; asks first)'}`} aria-label="Place on the canvas" onPointerDown={onCanvas ? dragOut(d.id) : undefined} onClick={act(() => useDocUi.setState({ placing: { docId: d.id, near: list.id } }))}>
-          ↗
+          <PlaceIcon />
         </Button>
       )}
       <Button icon title="download .md" aria-label="Download" onClick={act(() => void downloadDocument(wid, d))}>
-        ↓
+        <DownloadIcon />
       </Button>
       {(mine || (d.shared && owner)) && (
         <Button icon tone="danger" title="delete (asks first)" aria-label="Delete" onClick={act(() => useDocUi.setState({ deleting: d.id }))}>
-          ⌫
+          <BinIcon />
         </Button>
       )}
     </ButtonGroup>

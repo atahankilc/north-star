@@ -29,6 +29,7 @@ import { Label } from '../../../ui/primitives/Label'
 import { Window } from '../../../ui/patterns/Window'
 import { SplitLine } from '../../../ui/primitives/SplitLine'
 import { people as peopleWord } from '../../../model/words'
+import { MinusIcon, PlusIcon } from '../../../ui/primitives/hudIcons'
 
 // The margin round its text, in its px.
 const PAD = WORLD.docPad
@@ -57,13 +58,13 @@ function DocZoom({ reader }: { reader: string }) {
   return (
     <ButtonGroup label="Zoom">
       <Button icon title="zoom out" aria-label="Zoom out" onClick={() => set(stepZoom(zoom, -1))}>
-        −
+        <MinusIcon />
       </Button>
       <Button icon title="back to 100 %" onClick={() => set(1)}>
         {Math.round(zoom * 100)}%
       </Button>
       <Button icon title="zoom in" aria-label="Zoom in" onClick={() => set(stepZoom(zoom, 1))}>
-        +
+        <PlusIcon />
       </Button>
     </ButtonGroup>
   )

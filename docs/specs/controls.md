@@ -129,6 +129,9 @@ One commit each, gallery updated in the same commit (D-324). Rules first in the 
    has to undo a hover on a disabled one. The lit glyph's glow goes on the drawing when there is one (`svg`), so
    ToolButton's badge never glows. `onLook` allows only InlineEdit now. Still a cell after this step, each with its own
    CSS: the side nav's tools and `+`, the `you` square (steps 4, 6, 7).
+   *After (2026-11-15, the user: "3 nokta ya da kapama icon buttonunun büyüklükleri hiç eşit değil"):* every symbol an
+   icon Button holds is drawn, on one 12-unit box at 1.25em: close, before/after, minus/plus, check, at most, rename,
+   write, place, download, bin, the two turns, more, shared. 24 typed glyphs in 10 files swapped.
 3. **ButtonGroup, Tabs, Choice, Steps.** The gap for the seam; `--seam` stays for what scales inside a console.
    *Done 2026-11-15.* Steps keep their off rings: a wizard's real width fits its names (`START FROM` whole at 900 px).
 4. **ToolButton, Trigger, Menu's `+`.** They already take Button's look; what's left is their own size and any shade the

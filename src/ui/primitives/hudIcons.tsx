@@ -70,11 +70,62 @@ export const GearIcon = () => (
   </Icon>
 )
 
-// Close, take away: a drawn `×` (D-384). Typed, JetBrains Mono's `×` is a small drawing that looks half the size of the
-// words beside it. Not on the HUD's grid: a small glyph for a Button `icon`, which sizes it like a letter (0.84em, 10 px
-// at a button's 12), round ends as the round controls have.
-export const CloseIcon = () => (
-  <svg viewBox="0 0 10 10" aria-hidden fill="none" stroke="currentColor" strokeWidth={S} strokeLinecap="round">
-    <path d="M1.25 1.25l7.5 7.5M8.75 1.25l-7.5 7.5" />
-  </svg>
+// ── A Button's glyphs (D-384) ──
+// What an `icon` Button holds when it holds a symbol: drawn, never typed. Typed, each came from whatever font had it
+// (`×` and `‹` JetBrains Mono's, `✎` `⌫` `⋯` a system font's), so every one was its own size and weight and sat at its
+// own height. Here they share one 12-unit box, the same ink (about 7 units across, in the middle), 1.25 strokes with
+// round ends, as the round controls have. Button sizes them at 1.25em (15 px at its text, growing with a console's),
+// so their ink is as tall as a capital letter beside them and their stroke as heavy as the text's.
+// Letters stay letters (`B`, `H1`, `100%`). A new symbol on a button is drawn here.
+const G = 1.25
+function Glyph({ children }: { children: ReactNode }) {
+  return (
+    <svg viewBox="0 0 12 12" aria-hidden fill="none" stroke="currentColor" strokeWidth={G} strokeLinecap="round" strokeLinejoin="round">
+      {children}
+    </svg>
+  )
+}
+const path = (d: string) => () => (
+  <Glyph>
+    <path d={d} />
+  </Glyph>
+)
+
+// Close, take away.
+export const CloseIcon = path('M2.75 2.75l6.5 6.5M9.25 2.75l-6.5 6.5')
+// Before and after: a page, a week, a column's place.
+export const PrevIcon = path('M7.5 2.5 4 6l3.5 3.5')
+export const NextIcon = path('M4.5 2.5 8 6 4.5 9.5')
+// A zoom's steps, an add.
+export const MinusIcon = path('M2.5 6h7')
+export const PlusIcon = path('M2.5 6h7M6 2.5v7')
+// Finished, done.
+export const CheckIcon = path('M2.5 6.5 5 9l4.5-6')
+// At most: a column's limit.
+export const LimitIcon = path('M8.5 2.25 3.5 4.75l5 2.5M3.5 9.75h5')
+// Rename: a pencil.
+export const EditIcon = path('M2.5 9.5l.55-2.35 5.1-5.1 1.8 1.8-5.1 5.1zM6.9 3.3l1.8 1.8')
+// Write in it: a pilcrow.
+export const WriteIcon = path('M9.5 2.5H5.5a2.25 2.25 0 0 0 0 4.5h1.25M6.75 2.5v7.25M8.75 2.5v7.25')
+// Put it somewhere, go there.
+export const PlaceIcon = path('M3 9l5.75-5.75M4.5 3.25h4.25V7.5')
+// Download.
+export const DownloadIcon = path('M6 2.25v5M3.5 5.25 6 7.75l2.5-2.5M2.75 9.75h6.5')
+// Delete: a bin.
+export const BinIcon = path('M2.5 3.75h7M4.75 3.75V2.5h2.5v1.25M3.5 3.75l.45 5.75h4.1l.45-5.75')
+// A quarter turn either way.
+export const TurnLeftIcon = path('M3 6.5a3.25 3.25 0 1 0 1-2.75L2.75 5M2.75 2.5V5h2.5')
+export const TurnRightIcon = path('M9 6.5a3.25 3.25 0 1 1-1-2.75L9.25 5M9.25 2.5V5h-2.5')
+// More: three dots.
+export const MoreIcon = () => (
+  <Glyph>
+    <path d="M2.5 6h.01M6 6h.01M9.5 6h.01" strokeWidth="1.75" />
+  </Glyph>
+)
+// Shared or only yours: a disc, half filled.
+export const ShareIcon = () => (
+  <Glyph>
+    <circle cx="6" cy="6" r="3.5" />
+    <path d="M6 2.5a3.5 3.5 0 0 0 0 7z" fill="currentColor" stroke="none" />
+  </Glyph>
 )

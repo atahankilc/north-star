@@ -48,6 +48,7 @@ import { Empty } from '../../../ui/primitives/Empty'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { cardName } from '../../../model/cardName'
+import { NextIcon, PrevIcon } from '../../../ui/primitives/hudIcons'
 
 // A press that only picks (a viewer's, a finished task's): on its release, never on a cancel.
 const released = (then: () => void) => pressDrag(() => undefined, (ev) => void (ev.type === 'pointerup' && then()))
@@ -1012,13 +1013,13 @@ export function TimelineWeeks({ piece, toolClass }: { piece: WithId<Piece>; tool
   return (
     <ButtonGroup label="Weeks">
       <Button icon className={toolClass} title="a week back" aria-label="A week back" onClick={() => step(-1)}>
-        ‹
+        <PrevIcon />
       </Button>
       <Button className={toolClass} pressed={onToday} title="back to today" onClick={() => toToday(piece.id)}>
         today
       </Button>
       <Button icon className={toolClass} title="a week on" aria-label="A week on" onClick={() => step(1)}>
-        ›
+        <NextIcon />
       </Button>
     </ButtonGroup>
   )

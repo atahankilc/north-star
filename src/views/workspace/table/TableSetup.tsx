@@ -47,7 +47,7 @@ import { Options } from '../../../ui/patterns/Options'
 import { UNIT_MAX, VALUE_MAX } from '../../../model/limits'
 import { cardName } from '../../../model/cardName'
 import { pageSizesWith } from '../../../model/paging'
-import { CloseIcon } from '../../../ui/primitives/hudIcons'
+import { CloseIcon, NextIcon, PrevIcon } from '../../../ui/primitives/hudIcons'
 
 const TAB_NAME: Record<TableTab, string> = { rows: 'rows', cols: 'columns', view: 'view' }
 
@@ -264,10 +264,10 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
             <li key={c.id} className={styles.colItem}>
               <ButtonGroup label="Move it">
                 <Button icon disabled={i === 0} title="move it left" aria-label="Move left" onClick={() => move(i, -1)}>
-                  ‹
+                  <PrevIcon />
                 </Button>
                 <Button icon disabled={i === cols.length - 1} title="move it right" aria-label="Move right" onClick={() => move(i, 1)}>
-                  ›
+                  <NextIcon />
                 </Button>
               </ButtonGroup>
               {c.field ? (

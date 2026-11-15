@@ -147,7 +147,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   onboarding teaches them). `sm` is a 24 px pill (`--control-sm`), mono 12, `--space-3` at its sides; `tone="main"` a row's strong one (`--fg-strong`), `"primary"` the one that goes, a solid cyan pill
   (save, add, make, apply, done: **at most one on a surface**), `"danger"` magenta ink, `"hazard"` the solid magenta
   one where deleting is the point (the hazard confirm). `icon` is a glyph alone in a 24 px circle (a pill when it holds
-  more); a close or take-away is the drawn `CloseIcon`, never a typed `×`. `md` is the page's: a white 36 px pill, its
+  more); a symbol on it is drawn, never typed (`CloseIcon`, `PrevIcon`, `MoreIcon`… in `hudIcons.tsx`: one 12-unit box, 1.25em in the
+  button, so every icon button's drawing is the same size); letters stay letters (`B`, `100%`). `md` is the page's: a white 36 px pill, its
   accent wiping in on hover. `link` (a name that goes somewhere) has no pill. The HUD's ToolButton is an `icon` at
   30 px (`--control`). A caller's class only places a button (margin, flex, shown on hover), never repaints, repads or
   resizes it.

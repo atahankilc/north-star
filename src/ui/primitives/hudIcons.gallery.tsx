@@ -1,9 +1,14 @@
 import { example } from '../../gallery/example'
 import { ToolButton } from './ToolButton'
 import { Button } from './Button'
-import { CloseIcon, CompassIcon, DeckIcon, FitIcon, GearIcon, GuideIcon, ThreadsIcon } from './hudIcons'
+import { BinIcon, CheckIcon, CloseIcon, CompassIcon, DeckIcon, DownloadIcon, EditIcon, FitIcon, GearIcon, GuideIcon, LimitIcon, MinusIcon, MoreIcon, NextIcon, PlaceIcon, PlusIcon, PrevIcon, ShareIcon, ThreadsIcon, TurnLeftIcon, TurnRightIcon, WriteIcon } from './hudIcons'
 
 const none = () => {}
+const GLYPHS = [
+  ['close', CloseIcon], ['before', PrevIcon], ['after', NextIcon], ['less', MinusIcon], ['more of it', PlusIcon], ['done', CheckIcon],
+  ['at most', LimitIcon], ['rename', EditIcon], ['write', WriteIcon], ['place', PlaceIcon], ['download', DownloadIcon], ['delete', BinIcon],
+  ['turn left', TurnLeftIcon], ['turn right', TurnRightIcon], ['more', MoreIcon], ['shared', ShareIcon],
+] as const
 const SET = [
   ['fit', FitIcon],
   ['find', CompassIcon],
@@ -20,13 +25,21 @@ export default example({
   file: 'src/ui/primitives/hudIcons.tsx',
   note: 'the HUD’s icons (D-343): one 18-unit grid, 1.5 strokes, sized by ToolButton; top to bottom as on the screen',
   states: {
-    'close, in a Button (D-384)': () => (
-      <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'center' }}>
-        <Button icon title="close" onClick={none}><CloseIcon /></Button>
-        <Button icon tone="danger" title="take it out" onClick={none}><CloseIcon /></Button>
-        <Button icon onClick={none}>‹ back</Button>
-      </div>
-    ),
+    'a Button’s glyphs (D-384)': {
+      render: () => (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', alignItems: 'center', maxWidth: 'var(--size-md)' }}>
+          {GLYPHS.map(([k, I]) => (
+            <Button key={k} icon title={k} onClick={none}>
+              <I />
+            </Button>
+          ))}
+          <Button icon onClick={none}>100%</Button>
+          <Button icon pressed onClick={none}><CheckIcon /></Button>
+          <Button icon tone="danger" title="take it out" onClick={none}><CloseIcon /></Button>
+        </div>
+      ),
+      note: 'drawn, never typed: one 12-unit box, the same ink and stroke, 1em in the button',
+    },
     set: () => (
       <div style={{ display: 'flex', gap: 'var(--space-6)', alignItems: 'center' }}>
         {SET.map(([k, I]) => (

@@ -32,7 +32,7 @@ import { pagesOf } from '../../../model/paging'
 import { cellSel, useGridCursor, type CellAt } from '../canvas/gridCursor'
 import { CellInput } from '../canvas/CellInput'
 import { PageArrows, PageSize } from '../canvas/Pager'
-import { CloseIcon } from '../../../ui/primitives/hudIcons'
+import { CloseIcon, PlusIcon } from '../../../ui/primitives/hudIcons'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
 export const T = { head: 40, row: 32, name: 260, add: 40 }
@@ -415,7 +415,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
         {live && editor && (
           <>
             <Button icon data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: piece.id, tab: 'cols' })}>
-              +
+              <PlusIcon />
             </Button>
             <Button
               icon

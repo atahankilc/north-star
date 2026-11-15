@@ -7,7 +7,7 @@
 //   word, a hollow ring while `false`, lit while `true`; leave it unset on an action, which gets no lamp.
 // - `md`: the page's button, a white pill (36 px), the accent wiping in from the left on hover (`accent`).
 // - `icon`: a glyph alone in a circle (24 × 24; a pill when it holds more, `‹ back`, `100%`); `pressed`, the glyph
-//   itself lights. A close or take-away is the drawn `CloseIcon` (hudIcons.tsx), never a typed `×`.
+//   itself lights. A symbol on it is drawn, never typed: `CloseIcon`, `PrevIcon`, `MoreIcon`… (hudIcons.tsx), one size.
 // - `link`: no pill, in the row's own colour and size, wrapping, underlined faint on hover: a name that goes somewhere
 //   (a card's links, parts and planes in its panel).
 // - `look`: the same button drawn as a span, for inside something that is itself the button (a card that's one target).

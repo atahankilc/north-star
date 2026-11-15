@@ -51,6 +51,7 @@ import { Spinner } from '../../ui/primitives/Spinner'
 import { PromptField } from '../../ui/primitives/PromptField'
 import { Num, Rule } from '../../ui/primitives/Rule'
 import { Label } from '../../ui/primitives/Label'
+import { NextIcon, PrevIcon } from '../../ui/primitives/hudIcons'
 
 const WIDTH_STORE = 'northstar.agent.width'
 const W_MIN = 340
@@ -1003,13 +1004,13 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
           <div className={styles.stepper}>
             <ButtonGroup label="each change">
               <Button icon onClick={() => go(at < 0 ? on.length - 1 : at - 1)} disabled={!on.length} aria-label="The change before">
-                ‹
+                <PrevIcon />
               </Button>
               <span className={styles.stepAt} aria-live="polite">
                 <Num n={at >= 0 ? String(at + 1) : '–'} /> / {on.length}
               </span>
               <Button icon onClick={() => go(at + 1)} disabled={!on.length} aria-label="The next change">
-                ›
+                <NextIcon />
               </Button>
             </ButtonGroup>
             <span className={styles.changesHint}>{at >= 0 && on[at] ? on[at].where : '← → goes to each one'}</span>

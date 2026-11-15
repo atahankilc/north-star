@@ -6,6 +6,7 @@ import { Button } from '../../../ui/primitives/Button'
 import { Select } from '../../../ui/patterns/Select'
 import { pageSizesWith, type pagesOf } from '../../../model/paging'
 import styles from './Pager.module.css'
+import { NextIcon, PrevIcon } from '../../../ui/primitives/hudIcons'
 
 const ALL = 'all'
 type Pages = ReturnType<typeof pagesOf>
@@ -15,13 +16,13 @@ export function PageArrows({ p, go, toolClass }: { p: Pages; go: (at: number) =>
   return (
     <ButtonGroup label="Pages">
       <Button icon className={toolClass} disabled={p.at === 0} title="the page before" aria-label="Page before" onClick={() => go(p.at - 1)}>
-        ‹
+        <PrevIcon />
       </Button>
       <span className={styles.pageAt}>
         {p.at + 1} / {p.pages}
       </span>
       <Button icon className={toolClass} disabled={p.at >= p.pages - 1} title="the page after" aria-label="Page after" onClick={() => go(p.at + 1)}>
-        ›
+        <NextIcon />
       </Button>
     </ButtonGroup>
   )
