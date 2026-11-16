@@ -73,12 +73,40 @@
 
 /* `under`: hanging under what it belongs to; the caller places it. */
 
-/* On the screen's foot, in the middle: its bottom corners would sit on the screen's edge, so only the top two. */
+/* On the screen's foot, in the middle. */
 .console[data-at='foot'] {
   --mkb: transparent;
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);
+}
+
+/* There it's a tab rising from the floor (D-387): its top corners round, a line round it (its foot's is under the
+   screen's edge), cyan while it's pointed at or the keyboard is in it; no corner L's. Its drawer is the same tab over
+   it, and while that's open the rail under it is square. A console on a piece keeps its L's: a piece is square. */
+.console[data-at='foot']:not([data-full]) {
+  --tab-line: var(--line-hover);
+  border-radius: var(--radius-box) var(--radius-box) 0 0;
+  box-shadow: 0 0 0 var(--line-w) var(--tab-line);
+}
+
+.console[data-at='foot']:not([data-full]):is(:hover, :focus-within, [data-editing]) {
+  --tab-line: var(--accent-cyan);
+}
+
+.console[data-at='foot']:not([data-full])::before,
+.console[data-at='foot']:not([data-full]) .floor::before {
+  content: none;
+}
+
+.console[data-at='foot']:not([data-full]) .floor {
+  border-bottom: 0;
+  border-radius: var(--radius-box) var(--radius-box) 0 0;
+  box-shadow: 0 0 0 var(--line-w) var(--tab-line);
+}
+
+.console[data-at='foot']:not([data-full]):has(.floor:not(:empty)) {
+  border-radius: 0;
 }
 
 /* A drawer open: its marks go to the floor's top. */

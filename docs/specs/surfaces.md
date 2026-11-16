@@ -1,6 +1,6 @@
 # Surfaces: round with a line, marks that take the corner, panels under the screen (D-387)
 
-Status: **look agreed 2026-11-16 (D-387); steps 1–4 built 2026-11-16, steps 5–8 not.** This is the build plan for what sits on top of D-384's controls
+Status: **look agreed 2026-11-16 (D-387); steps 1–5 built 2026-11-16, steps 6–8 not.** This is the build plan for what sits on top of D-384's controls
 ([controls.md](controls.md)): modals, the hazard confirm, the selection marks, menus, the foot dock, the threads dock,
 the side panel, Settings' inside, the toast and the tip. Cards (squircle) and pieces (square) don't change.
 
@@ -106,6 +106,10 @@ the build green before the next.
    keeps its left corners, the guide takes the right ones.
 5. **The foot dock and the threads dock.** Console `foot` and its drawer as tabs with a line; the whole-edge case
    (`data-full`) keeps its top line; Corners.module.css's `top` pair goes with the threads dock's L's.
+   *Built 2026-11-16:* Console `foot` (not `data-full`) and its drawer: `--radius-box` on top, a line (`--tab-line`,
+   cyan while pointed at, the keyboard in it or editing), no L's; the rail square under an open drawer. The threads
+   dock the same; Corners' `top` pair deleted. A matrix's, table's and deck's setup panel is the dock's upper floor,
+   so it's the same tab too (its own L's gone).
 6. **The side panel under the screen.** The sheet (WorkspaceLayout/CanvasView's root), the ground, EdgeColumn bare on it;
    the travel in and out, reduced motion; the dock and the HUD on the sheet; the agent's column, a document beside it
    (D-382), a left column; the split with a pane beside (D-211) and the decks side view (D-300) checked, since they

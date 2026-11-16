@@ -171,7 +171,6 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
     <section
       ref={tab}
       className={styles.inbox}
-      data-corners="top"
       aria-label="Threads"
       data-learn="threads"
       data-off-space
