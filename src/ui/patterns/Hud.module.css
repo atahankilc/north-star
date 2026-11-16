@@ -67,15 +67,19 @@ a.link:hover {
   text-overflow: ellipsis;
 }
 
-/* The ground under the tools on the left edge while a column is docked (D-389): as wide as the sheet has drawn back
-   (`--sheet-rail`, 0 otherwise), under the tools, over the canvas. */
+/* The ground under the tools on the left edge while a column is docked (D-389), under the tools, over the canvas. Its
+   edge is the sheet's own edge on its way (`--sheet-x0`, the sheet's time and ease), and stops at the rail's width
+   (`--sheet-cut`: the rail while the tools stand on it, kept until the sheet is home; 0 when a column covers them). A
+   width of its own, growing to 60 while the sheet's edge went on to a column's far side, left the canvas showing
+   between the two for most of the way. */
 .rail {
   position: fixed;
   top: 0;
   bottom: 0;
   left: 0;
   z-index: var(--z-under);
-  width: var(--sheet-rail, 0px);
+  width: var(--sheet-x0, 0px);
+  max-width: var(--sheet-cut, 0px);
   background: var(--ground);
   pointer-events: none;
   transition: width var(--dur-slow) var(--ease-out);
