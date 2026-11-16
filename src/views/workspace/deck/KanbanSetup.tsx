@@ -15,16 +15,16 @@ import { setEditing } from '../../../state/canvasView'
 import { findGo } from '../find/find'
 import type { Source } from '../../../data/source'
 import type { TableSetup } from '../../../data/table'
-import { Choices, Row } from '../matrix/MatrixSetup'
+import { Choices } from '../matrix/MatrixSetup'
+import { SetupRow as Row, SetupShell } from '../canvas/SetupShell'
+import { openSetup } from '../canvas/setupStore'
 import { RowsEditor } from '../table/TableSetup'
-import { kanbanOf, KANBAN_TABS, useKanbanUi, type KanbanTab } from './Kanban'
+import { kanbanOf, KANBAN_TABS, type KanbanTab } from './Kanban'
 import { columnsOf, FIELD_NAME, heldCards, KANBAN_TEMPLATES, NO_VALUE, rowFieldOf, rowsOfField } from './kanbanCards'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import styles from './Kanban.module.css'
 import { useWs } from '../canvas/context'
-import { useSetupOnDock } from '../canvas/FocusDock'
 import m from '../matrix/Matrix.module.css'
-import { Tabs } from '../../../ui/primitives/Tabs'
 import { Button } from '../../../ui/primitives/Button'
 
 const TAB_NAME: Record<KanbanTab, string> = { holds: 'holds', cards: 'cards', cols: 'columns', boxes: 'boxes' }
@@ -37,14 +37,11 @@ export type SetKanban = (patch: KanbanPatch, what: string, key?: string) => void
 export const CARDS_START = KANBAN_TEMPLATES[1].setup() as Required<Pick<KanbanPatch, 'colField' | 'source'>>
 
 export function KanbanSetupPanel({ piece }: { piece: WithId<Piece> }) {
-  useSetupOnDock()
   const { wid, cards, tasks } = useWs()
   const held = tasks.filter((t) => t.pieceId === piece.id)
   // Cards picked while it holds tasks: where they go is asked first (D-300).
   const [asking, setAsking] = useState(false)
   const setup = kanbanOf(piece)
-  const tab = useKanbanUi((s) => s.tab)
-  const close = () => useKanbanUi.setState({ setup: null })
   const set: SetKanban = (patch, what, key) => void setKanbanSetup(wid, piece.id, patch, what, key)
   const cardsHere = setup.holds === 'cards'
   const count = {
@@ -54,20 +51,14 @@ export function KanbanSetupPanel({ piece }: { piece: WithId<Piece> }) {
     boxes: cardsHere && rowFieldOf(setup) ? (setup.names?.length ?? 0) : undefined,
   }
   return (
-    <section className={m.setup} data-learn="setup" aria-label="Set up the deck" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
-      <header className={m.setupHead}>
-        <Tabs<KanbanTab> label="Setup" value={tab} onChange={(t) => useKanbanUi.setState({ tab: t })} options={KANBAN_TABS.map((t) => ({ value: t, label: TAB_NAME[t], count: count[t] }))} />
-        <span className={m.setupEnd}>
-          <Button title="close (Esc)" onClick={close}>
-            done
-          </Button>
-        </span>
-      </header>
-      <div className={m.setupBody} role="tabpanel">
-        <KanbanEditor tab={tab} setup={setup} onChange={set} onHoldCards={held.length ? () => setAsking(true) : undefined} />
-        {tab === 'holds' && held.length > 0 && (asking || cardsHere) && <HeldTasks piece={piece} held={held} onDone={() => setAsking(false)} />}
-      </div>
-    </section>
+    <SetupShell label="Set up the deck" tabs={KANBAN_TABS} names={TAB_NAME} count={count}>
+      {(tab) => (
+        <>
+          <KanbanEditor tab={tab} setup={setup} onChange={set} onHoldCards={held.length ? () => setAsking(true) : undefined} />
+          {tab === 'holds' && held.length > 0 && (asking || cardsHere) && <HeldTasks piece={piece} held={held} onDone={() => setAsking(false)} />}
+        </>
+      )}
+    </SetupShell>
   )
 }
 
@@ -168,7 +159,7 @@ function HeldTasks({ piece, held, onDone }: { piece: WithId<Piece>; held: Task[]
     onDone()
     const { w, h } = PIECE_SIZE.kanban
     const id = await addPiece(wid, 'kanban', [piece.x + piece.w + GRID + w / 2, piece.y + h / 2], pieces, { ...emptyKanban(), ...toCards }, `${piece.name || 'deck'} · cards`)
-    useKanbanUi.setState({ setup: id, tab: 'cards' })
+    openSetup(id, 'cards' satisfies KanbanTab)
     if (new URLSearchParams(location.search).get('focus') === piece.id) findGo({ kind: 'lens', space: id, k: 0, focus: id })
     else setEditing(id, true)
   }

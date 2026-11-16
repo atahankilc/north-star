@@ -19,7 +19,7 @@ import { deleteLive } from './liveTransport'
 export { DOC_KINDS, DOC_COLS, DOC_LIMITS } from '../model/shapes'
 export type { DocKind, DocCol } from '../model/shapes'
 import { DOC_LIMITS, type DocCol, type DocKind } from '../model/shapes'
-import { bytesOf, excerptOf, markdownSummary, wordsOf } from '../model/notes'
+import { bytesOf, excerptOf, markdownSummary, NOTES_ID, wordsOf } from '../model/notes'
 
 // Where it came from: uploaded by someone, or written by the assistant.
 export type DocOrigin = 'upload' | 'assistant'
@@ -189,9 +189,25 @@ export async function uploadMarkdown(wid: string, who: { uid: string; name: stri
 
 // Who may write a .md's text (firestore.rules' `mayWrite`): its author, or any owner or editor once it's shared. Never
 // the agent notes (their own preview), a report or a file.
-export function mayWriteDoc(d: Pick<Doc, 'kind' | 'uid' | 'shared'> & { id: string }, me: string | undefined, role: string | undefined) {
-  if (!me || d.kind !== 'markdown' || d.id === 'agent-notes') return false
+function mayWriteDoc(d: Pick<Doc, 'kind' | 'uid' | 'shared'> & { id: string }, me: string | undefined, role: string | undefined) {
+  if (!me || d.kind !== 'markdown' || d.id === NOTES_ID) return false
   return d.uid === me || (d.shared && (role === 'owner' || role === 'editor'))
+}
+
+// What someone may do with a document (D-232, D-373), one rule for everywhere it's offered (D-392: its row, its page
+// beside the list, its window and the right-click each had their own, and they'd drifted). `rename`, `share`: its
+// author's (the agent notes stay shared); `write`: mayWriteDoc; `place`: who can change the canvas; `remove`: its
+// author, or an owner once it's shared.
+export type DocRights = { rename: boolean; share: boolean; write: boolean; place: boolean; remove: boolean }
+export function docRights(d: Pick<Doc, 'kind' | 'uid' | 'shared'> & { id: string }, me: string | undefined, role: string | undefined): DocRights {
+  const mine = !!me && d.uid === me
+  return {
+    rename: mine,
+    share: mine && d.id !== NOTES_ID,
+    write: mayWriteDoc(d, me, role),
+    place: role === 'owner' || role === 'editor',
+    remove: mine || (!!d.shared && role === 'owner'),
+  }
 }
 
 // A new empty .md of yours, private until shared, titled `untitled` until it's named; one undo step (making it: what's

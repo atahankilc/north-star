@@ -6,15 +6,13 @@ import { memo, useEffect, useLayoutEffect, useRef, useState, type CSSProperties 
 import { cardsOn } from '../../../data/places'
 import { CANVAS } from '../../../data/labels'
 import { useAuth } from '../../../data/auth'
-import { useDocBody } from '../../../data/documents'
 import { useCanvasView, type PlaneCam } from '../../../state/canvasView'
 import { useWs } from '../canvas/context'
 import { docScrolledTo, paintIn, unpaint, watch } from './find'
 import type { Dest } from './findIndex'
 import { aim } from '../canvas/goTo'
 import { DocumentsView, documentsBounds, documentsOf, listed, pinnedView, readerLeft, useDocUi } from '../documents/Documents'
-import { DocumentPieceView, documentHome } from '../documents/DocumentPiece'
-import { DocContent } from '../documents/DocContent'
+import { DocRead, DocumentPieceView, documentHome } from '../documents/DocumentPiece'
 import { PlaneCards } from '../plane/PlaneCards'
 import { kindRecord } from '../canvas/pieceKinds'
 import { Still } from '../canvas/still'
@@ -179,26 +177,16 @@ function DocPage({ dest, lens, scale, refocus }: { dest: Extract<Dest, { kind: '
 
 // A document in no list: its page, as its own window reads it.
 function AlonePage({ doc }: { doc: Extract<Dest, { kind: 'alone' }>['doc'] }) {
-  const { wid } = useWs()
-  const { user } = useAuth()
-  const body = useDocBody(wid, doc)
-  return (
-    <div className={paper.readerBody}>
-      <div className={paper.readerColumn}>
-        <DocContent d={doc} body={body.data} loading={body.isLoading} failed={!!body.error} me={user?.id} />
-      </div>
-    </div>
-  )
+  return <DocRead d={doc} />
 }
 
 // A document open beside its list: the list pinned on the left, the document on the right scrolled to the match.
 function ReaderPage({ dest, lens, scale, refocus }: { dest: Extract<Dest, { kind: 'reader' }> } & Measure) {
-  const { wid, documents } = useWs()
+  const { documents } = useWs()
   const { user } = useAuth()
   const size = useCanvasView((s) => s.size)
   const content = documentsBounds(dest.list, listed(documents, documentsOf(dest.list), user?.id).length)
   const left = readerLeft(content, size.w, null)
-  const body = useDocBody(wid, dest.doc)
   const pane = useRef<HTMLDivElement>(null)
   const zoom = useDocUi((s) => s.readerZooms[dest.doc.id] ?? 1)
   useScrolledTo(lens, scale, refocus, dest.target.k, (top, _bottom, h) => {
@@ -212,11 +200,7 @@ function ReaderPage({ dest, lens, scale, refocus }: { dest: Extract<Dest, { kind
       <DocumentsView piece={dest.list} view={pinnedView(content, left)} live={false} editor={false} />
       <div className={`${beside.pane} ${paper.reader}`} style={paneStyle}>
         <div ref={pane} className={paper.readerScroll}>
-          <div className={paper.readerBody}>
-            <div className={paper.readerColumn} style={{ zoom }}>
-              <DocContent d={dest.doc} body={body.data} loading={body.isLoading} me={user?.id} />
-            </div>
-          </div>
+          <DocRead d={dest.doc} zoom={zoom} />
         </div>
       </div>
     </div>

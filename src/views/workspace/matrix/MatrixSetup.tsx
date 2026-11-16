@@ -35,18 +35,16 @@ import {
   type MatrixSetup,
   type Step,
 } from '../../../data/matrix'
-import { Menu } from '../../../ui/patterns/Menu'
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { Select } from '../../../ui/patterns/Select'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { useWs } from '../canvas/context'
-import { useSetupOnDock } from '../canvas/FocusDock'
-import { closeMatrixSetup, setMatrixTab, setupOf, SETUP_TABS, StepSquare, useMatrixUi, type SetupTab } from './Matrix'
+import { SetupRow as Row, SetupShell } from '../canvas/SetupShell'
+import { setupOf, SETUP_TABS, StepSquare, type SetupTab } from './Matrix'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { PromptList } from '../../../ui/patterns/PromptList'
 import { cardEntry } from '../plane/cardEntry'
 import styles from './Matrix.module.css'
-import { Tabs } from '../../../ui/primitives/Tabs'
 import { Checkbox } from '../../../ui/primitives/Checkbox'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
@@ -63,10 +61,8 @@ const TAB_NAME: Record<SetupTab, string> = { rows: 'rows', cols: 'columns', cell
 export type SetPart = <K extends keyof MatrixSetup>(part: K, value: MatrixSetup[K] | undefined, key?: string) => void
 
 export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
-  useSetupOnDock()
   const { wid, cards, cells } = useWs()
   const setup = setupOf(piece)
-  const tab = useMatrixUi((s) => s.tab)
   const part: SetPart = (k, v, key) => void setPart(wid, piece.id, k, v, key)
   const count = { rows: tops(entriesOf(setup.rows, cards)).length, cols: tops(entriesOf(setup.cols, cards)).length }
   // Taking a typed entry out takes its cells too, as its `×` on the table does.
@@ -74,35 +70,17 @@ export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
     void removeEntry(wid, piece.id, setup, which, { key: item.cardId ?? item.id, name: item.name ?? '', item, auto: false }, cells)
   const restart: PromptEntry[] = TEMPLATES.map((t) => ({ key: t.key, label: t.name, hint: t.hint, onSelect: () => void setSetup(wid, piece.id, t.setup(), piece.name ? undefined : t.name) }))
   return (
-    <section className={styles.setup} data-learn="setup" aria-label="Set up the matrix" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), closeMatrixSetup())}>
-      <header className={styles.setupHead}>
-        <Tabs<SetupTab> label="Setup" value={tab} onChange={setMatrixTab} options={SETUP_TABS.map((t) => ({ value: t, label: TAB_NAME[t], count: t === 'rows' || t === 'cols' ? count[t] : undefined }))} />
-        <span className={styles.setupEnd}>
-          <Menu label="start over from" up quiet prompt="a template…" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows, columns and cells' }, ...restart]} />
-          <Button title="close (Esc)" onClick={closeMatrixSetup}>
-            done
-          </Button>
-        </span>
-      </header>
-      <div className={styles.setupBody} role="tabpanel">
-        {(tab === 'rows' || tab === 'cols') && (
+    <SetupShell label="Set up the matrix" tabs={SETUP_TABS} names={TAB_NAME} count={count} startOver={{ what: 'rows, columns and cells', items: restart }}>
+      {(tab) =>
+        tab === 'rows' || tab === 'cols' ? (
           <AxisEditor key={tab} which={tab} axis={setup[tab]} onChange={(a, key) => part(tab, a, key)} onRemoveItem={(item) => removeItem(tab, item)} />
-        )}
-        {tab === 'cells' && <CellsEditor setup={setup} onChange={part} />}
-        {tab === 'options' && <OptionsEditor setup={setup} onChange={part} />}
-      </div>
-    </section>
-  )
-}
-
-export function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <div className={styles.setupRow}>
-      <span className={styles.setupLabel} title={hint}>
-        {label}
-      </span>
-      <div className={styles.setupValue}>{children}</div>
-    </div>
+        ) : tab === 'cells' ? (
+          <CellsEditor setup={setup} onChange={part} />
+        ) : (
+          <OptionsEditor setup={setup} onChange={part} />
+        )
+      }
+    </SetupShell>
   )
 }
 

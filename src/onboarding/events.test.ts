@@ -44,9 +44,10 @@ function fakes() {
     threads: store({ inbox: false, openId: null, draft: null }),
     planeFilter: store({ byPlane: {} }),
     shelf: store({ filter: false }),
-    matrixUi: store({ wizard: false, setup: false }),
-    tableUi: store({ wizard: false, setup: null }),
-    kanbanUi: store({ wizard: false, setup: null }),
+    matrixUi: store({ wizard: false }),
+    tableUi: store({ wizard: false }),
+    kanbanUi: store({ wizard: false }),
+    setup: store<{ piece: string | null }>({ piece: null }),
     docUi: store({ readers: [] as string[] }),
     search: () => search,
     onPopState: () => () => {},
@@ -200,6 +201,21 @@ describe('events', () => {
     expect(f.log).toEqual([
       { event: 'card-made', payload: { kind: 'customer' }, target: 'card:c1' },
       { event: 'link-made', payload: { kind: 'for' }, target: 'link:e1' },
+    ])
+  })
+
+  it("setup-open says the kind of the piece whose setup opened (one store for every kind, D-392)", () => {
+    const f = started()
+    f.setWs(W({ pieces: [{ id: 'm1', kind: 'matrix' }, { id: 'k1', kind: 'kanban' }] }))
+    const setup = f.s.setup as unknown as { set: (v: { piece: string | null }) => void }
+    setup.set({ piece: 'm1' })
+    setup.set({ piece: 'm1' })
+    // Another piece's in its place counts; closing doesn't.
+    setup.set({ piece: 'k1' })
+    setup.set({ piece: null })
+    expect(f.log.filter((e) => e.event === 'setup-open')).toEqual([
+      { event: 'setup-open', payload: { kind: 'matrix' } },
+      { event: 'setup-open', payload: { kind: 'kanban' } },
     ])
   })
 

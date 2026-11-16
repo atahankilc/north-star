@@ -19,6 +19,7 @@ import { finished, overdue, shownTasks, timelineOf, type Task } from '../../../d
 import { heldCards } from './kanbanCards'
 import { markTasksSeen, useReads } from '../../../data/threads'
 import { setSplit, useCanvasView, type Bounds } from '../../../state/canvasView'
+import { toggleSetup, useSetupOn } from '../canvas/setupStore'
 import { useWs, useWsNow } from '../canvas/context'
 import { glidePlaneTo, usePaneView } from '../canvas/Beside'
 import { kanbanBounds,
@@ -243,7 +244,7 @@ type PartProps = { box: Bounds; editor: boolean; onTask: (t: Task) => void; dock
 function Board({ box, deck, editor, onTask, onCard, dock, close }: PartProps & { deck: WithId<Piece>; onCard: (c: Card) => void; close: ReactNode }) {
   const { tasks } = useWs()
   const { el, view, pan } = usePaneView(kanbanBounds(deck, tasks), box, true, 0.85)
-  const setupOpen = useKanbanUi((s) => s.setup === deck.id)
+  const setupOpen = useSetupOn(deck.id)
   return (
     <div ref={el} className={styles.part} style={{ left: box.x, top: box.y, width: box.w, height: box.h }} onPointerDown={pan}>
       <KanbanView piece={deck} view={view} live editor={editor} onTask={onTask} onCard={onCard} />
@@ -258,7 +259,7 @@ function Board({ box, deck, editor, onTask, onCard, dock, close }: PartProps & {
             label="setup"
             pressed={setupOpen}
             title="what it holds: tasks, or cards by a field"
-            onClick={() => useKanbanUi.setState((s) => ({ setup: s.setup === deck.id ? null : deck.id }))}
+            onClick={() => toggleSetup(deck.id)}
           />
         )}
         {close}

@@ -28,18 +28,16 @@ import {
   type OwnKind,
   type TableSetup,
 } from '../../../data/table'
-import { Menu } from '../../../ui/patterns/Menu'
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { Select } from '../../../ui/patterns/Select'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { useWs } from '../canvas/context'
-import { useSetupOnDock } from '../canvas/FocusDock'
-import { AddPill, Choices, Row, Toggle } from '../matrix/MatrixSetup'
-import { followTable, tableOf, useTableUi, TABLE_TABS, type TableTab } from './Table'
+import { AddPill, Choices, Toggle } from '../matrix/MatrixSetup'
+import { SetupRow as Row, SetupShell } from '../canvas/SetupShell'
+import { followTable, tableOf, TABLE_TABS, type TableTab } from './Table'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import m from '../matrix/Matrix.module.css'
 import styles from './Table.module.css'
-import { Tabs } from '../../../ui/primitives/Tabs'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
@@ -55,10 +53,8 @@ const TAB_NAME: Record<TableTab, string> = { rows: 'rows', cols: 'columns', view
 export type SetTable = <K extends keyof TableSetup>(part: K, value: TableSetup[K] | undefined, key?: string) => void
 
 export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
-  useSetupOnDock()
   const { wid, cards, cells } = useWs()
   const setup = tableOf(piece)
-  const tab = useTableUi((s) => s.tab)
   const part: SetTable = (k, v, key) => {
     // A row or column added here: the table's view follows it in (D-214's way).
     const r = k === 'rows' ? (v as Source | undefined) : undefined
@@ -66,33 +62,25 @@ export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
     if (k === 'cols' && ((v as Column[] | undefined)?.length ?? 0) > setup.cols.length) followTable(piece.id)
     void setTablePart(wid, piece.id, k, v, key)
   }
-  const close = () => useTableUi.setState({ setup: null })
   const count = { rows: rowsOf(setup.rows, cards, !setup.manual).length, cols: setup.cols.length + 1 }
   const restart: PromptEntry[] = TEMPLATES.map((t) => ({ key: t.key, label: t.name, hint: t.hint, onSelect: () => void setTable(wid, piece.id, t.setup(), piece.name ? undefined : t.name) }))
   return (
-    <section className={m.setup} data-learn="setup" aria-label="Set up the table" onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), close())}>
-      <header className={m.setupHead}>
-        <Tabs<TableTab> label="Setup" value={tab} onChange={(t) => useTableUi.setState({ tab: t })} options={TABLE_TABS.map((t) => ({ value: t, label: TAB_NAME[t], count: t !== 'view' ? count[t] : undefined }))} />
-        <span className={m.setupEnd}>
-          <Menu label="start over from" up quiet prompt="a template…" ariaLabel="Start over from a template (⌘Z brings back what it replaces)" items={[{ key: 'h', heading: 'replaces rows and columns' }, ...restart]} />
-          <Button title="close (Esc)" onClick={close}>
-            done
-          </Button>
-        </span>
-      </header>
-      <div className={m.setupBody} role="tabpanel">
-        {tab === 'rows' && (
+    <SetupShell label="Set up the table" tabs={TABLE_TABS} names={TAB_NAME} count={count} startOver={{ what: 'rows and columns', items: restart }}>
+      {(tab) =>
+        tab === 'rows' ? (
           <RowsEditor
             setup={setup}
             onChange={part}
             // On the piece a typed row goes with its values, as its `×` on the table does.
             onRemoveItem={(item) => void removeRow(wid, piece.id, setup, { key: item.cardId ?? item.id, name: item.name ?? '', item, auto: false }, cells)}
           />
-        )}
-        {tab === 'cols' && <ColumnsEditor setup={setup} onChange={part} onRemoveCol={(c) => void removeColumn(wid, piece.id, setup, c.id, cells)} />}
-        {tab === 'view' && <ViewEditor setup={setup} onChange={part} />}
-      </div>
-    </section>
+        ) : tab === 'cols' ? (
+          <ColumnsEditor setup={setup} onChange={part} onRemoveCol={(c) => void removeColumn(wid, piece.id, setup, c.id, cells)} />
+        ) : (
+          <ViewEditor setup={setup} onChange={part} />
+        )
+      }
+    </SetupShell>
   )
 }
 

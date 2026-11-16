@@ -12,13 +12,14 @@ import { usePlaneFilter } from '../views/workspace/canvas/planeFilter'
 import { useThreadView } from '../views/workspace/threads/Threads'
 import { useDocUi } from '../views/workspace/documents/Documents'
 import { useShelf } from '../views/workspace/canvas/FilterDock'
+import { useSetup } from '../views/workspace/canvas/setupStore'
 import { useGoTo } from '../views/workspace/canvas/goTo'
 import { useGuides } from '../views/workspace/canvas/guides'
 import { useKanbanSizes, useOpenSize } from '../views/workspace/canvas/sizes'
 import { usePresence } from '../data/presence'
 import { useHistory } from '../data/history'
 
-const stores = [useCanvasView, useKanbanUi, useMatrixUi, useTableUi, useFind, useTasksSide, usePlaneFilter, useThreadView, useDocUi, useShelf, useGoTo, useGuides, useOpenSize, useKanbanSizes, usePresence]
+const stores = [useCanvasView, useKanbanUi, useMatrixUi, useTableUi, useSetup, useFind, useTasksSide, usePlaneFilter, useThreadView, useDocUi, useShelf, useGoTo, useGuides, useOpenSize, useKanbanSizes, usePresence]
 const KEEP = ['north-star.theme', 'north-star.motion']
 
 export function fresh() {

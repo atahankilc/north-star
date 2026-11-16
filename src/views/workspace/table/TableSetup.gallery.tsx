@@ -1,6 +1,7 @@
 import { example } from '../../../gallery/example'
 import { onCanvas, P } from '../../../gallery/canvas'
-import { useTableUi, TABLE_TABS } from './Table'
+import { TABLE_TABS } from './Table'
+import { openSetup } from '../canvas/setupStore'
 
 export default example({
   name: 'Table setup',
@@ -8,5 +9,5 @@ export default example({
   also: ['forms/layout'],
   file: 'src/views/workspace/table/TableSetup.tsx',
   note: 'a table’s `[setup]` in focus: rows (rules), columns, view',
-  states: Object.fromEntries(TABLE_TABS.map((tab) => [tab, onCanvas({ only: [P.table], focus: P.table, then: () => useTableUi.setState({ setup: P.table, tab }) })])),
+  states: Object.fromEntries(TABLE_TABS.map((tab) => [tab, onCanvas({ only: [P.table], focus: P.table, then: () => openSetup(P.table, tab) })])),
 })

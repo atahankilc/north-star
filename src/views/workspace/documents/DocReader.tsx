@@ -8,7 +8,7 @@
 // preview's `create` makes it and the same page goes on to the document made, nothing more to press.
 import { lazy, Suspense, useEffect, useMemo } from 'react'
 import type { WithId } from '../../../data/hooks'
-import { downloadDocument, mayWriteDoc, renameDocument, useDocBody, writeDocumentText, type Doc, type DocBody } from '../../../data/documents'
+import { downloadDocument, renameDocument, useDocBody, writeDocumentText, type Doc, type DocBody } from '../../../data/documents'
 import { useAuth } from '../../../data/auth'
 import { caretsIn, onCarets, presenceColor, setPresenceDoc, usePresence, type Peer } from '../../../data/presence'
 import { firestoreLive } from '../../../data/liveTransport'
@@ -24,7 +24,7 @@ import { EdgeColumn } from '../../../ui/patterns/EdgeColumn'
 import { PanelHead } from '../../../ui/patterns/PanelHead'
 import { useWs } from '../canvas/context'
 import { DocContent, splitTitle } from './DocContent'
-import { useDocUi, type DocDraft } from './Documents'
+import { useDocActions, useDocUi, type DocAct, type DocDraft } from './Documents'
 import { wordsOf } from '../../../model/notes'
 import styles from './DocReader.module.css'
 import content from './DocContent.module.css'
@@ -47,6 +47,10 @@ type ViewProps = {
   onSave?: (text: string) => void
   // Its author renames it there.
   onRename?: (title: string) => void
+  // What else this person may do with it, as in its row and beside its list (useDocActions, D-392): share or unshare
+  // (its author), delete (its author, an owner a shared one; asks first).
+  share?: DocAct
+  remove?: DocAct
   // Written together (D-374): the shared text while editing, and who else is writing in it now.
   live?: LiveSetup
   writers?: Peer[]
@@ -56,7 +60,7 @@ type ViewProps = {
   docked?: boolean
 }
 
-export function DocReaderView({ d, body, loading, failed, me, onClose, onDownload, onPlace, editing = false, onEdit, onSave, onRename, live, writers = [], draft = false, docked = false }: ViewProps) {
+export function DocReaderView({ d, body, loading, failed, me, onClose, onDownload, onPlace, editing = false, onEdit, onSave, onRename, share, remove, live, writers = [], draft = false, docked = false }: ViewProps) {
   // Only on its own text, once it's read: what the page opens with seeds the shared text (D-374).
   const writing = editing && !!onSave && !!body
   const { head, rest } = splitTitle(body?.text ?? '', d.title)
@@ -106,6 +110,16 @@ export function DocReaderView({ d, body, loading, failed, me, onClose, onDownloa
           <Button title="save it as a .md file" onClick={onDownload}>
             download
           </Button>
+          {share && (
+            <Button title={share.title} onClick={share.run}>
+              {share.label}
+            </Button>
+          )}
+          {remove && (
+            <Button tone="danger" title={remove.title} onClick={remove.run}>
+              {remove.label}
+            </Button>
+          )}
         </>
       )}
     </ButtonGroup>
@@ -172,14 +186,17 @@ function DraftReader({ draft }: { draft: DocDraft }) {
 
 function Reading({ d, docked }: { d: WithId<Doc>; docked: boolean }) {
   const editing = useDocUi((s) => s.editing)
-  const { wid, workspace } = useWs()
+  const { wid } = useWs()
   const { user } = useAuth()
   const body = useDocBody(wid, d)
   const peers = usePresence((s) => s.peers)
   const myColor = usePresence((s) => s.myColor)
   const id = d.id
   const uid = user?.id
-  const writing = !!uid && editing && mayWriteDoc(d, uid, user ? workspace.roles[user.id] : undefined)
+  // What this person may do with it: the one rule, as in its row and beside its list (D-392).
+  const acts = useDocActions(d)
+  const writes = !!acts.write
+  const writing = !!uid && editing && writes
   const name = user?.name || user?.email || 'Someone'
   // The shared text and the carets, made once per document opened for writing.
   const live = useMemo<LiveSetup | undefined>(() => {
@@ -202,9 +219,6 @@ function Reading({ d, docked }: { d: WithId<Doc>; docked: boolean }) {
     setPresenceDoc({ id })
     return () => setPresenceDoc(null)
   }, [writing, id])
-  const role = user ? workspace.roles[user.id] : undefined
-  const editor = role === 'owner' || role === 'editor'
-  const writes = mayWriteDoc(d, user?.id, role)
   return (
     <DocReaderView
       d={d}
@@ -214,11 +228,14 @@ function Reading({ d, docked }: { d: WithId<Doc>; docked: boolean }) {
       me={user?.id}
       onClose={() => useDocUi.setState({ reading: null, editing: false, beside: false })}
       onDownload={() => void downloadDocument(wid, d)}
-      onPlace={editor ? () => useDocUi.setState({ reading: null, editing: false, beside: false, placing: { docId: d.id } }) : undefined}
+      // Placing it closes the window first: it's asked on the canvas.
+      onPlace={acts.place ? () => (useDocUi.setState({ reading: null, editing: false, beside: false }), acts.place!.run()) : undefined}
       editing={writes && editing}
       onEdit={writes ? (on) => useDocUi.setState({ editing: on }) : undefined}
       onSave={writes ? (text) => void writeDocumentText(wid, d.id, text) : undefined}
-      onRename={d.uid === user?.id ? (title) => void renameDocument(wid, d.id, title) : undefined}
+      onRename={acts.rename ? (title) => void renameDocument(wid, d.id, title) : undefined}
+      share={acts.share}
+      remove={acts.remove}
       live={live}
       writers={peers.filter((p) => p.doc?.id === d.id)}
       docked={docked}

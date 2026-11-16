@@ -16,6 +16,7 @@ import { useShelf } from '../views/workspace/canvas/FilterDock'
 import { useMatrixUi } from '../views/workspace/matrix/Matrix'
 import { useTableUi } from '../views/workspace/table/Table'
 import { useKanbanUi } from '../views/workspace/deck/Kanban'
+import { useSetup } from '../views/workspace/canvas/setupStore'
 import { useDocUi } from '../views/workspace/documents/Documents'
 import { useProgress } from './progress'
 import type { PieceLike, Sources, StoreLike, WsLike, CanvasViewLike, HistoryLike } from './events'
@@ -98,7 +99,7 @@ export function readBusy(extra: Busy = {}): Busy {
     typing: editable(document.activeElement),
     menu: menuOpen() || !!cv.bringing || !!cv.toCanvas,
     wizard: matrix.wizard || useTableUi.getState().wizard || useKanbanUi.getState().wizard,
-    setup: !!matrix.setup || !!useTableUi.getState().setup || !!useKanbanUi.getState().setup,
+    setup: !!useSetup.getState().piece,
     hazard: !!cv.confirming || !!cv.deleting || !!document.querySelector('[role="alertdialog"]'),
     settings: settingsPage() !== null,
     finder: useFind.getState().open,
@@ -139,6 +140,7 @@ export function realSources(): Sources {
     matrixUi: useMatrixUi,
     tableUi: useTableUi,
     kanbanUi: useKanbanUi,
+    setup: useSetup,
     docUi: useDocUi,
     search: () => location.search,
     onPopState: pop,

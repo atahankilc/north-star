@@ -505,13 +505,21 @@ function Checklist({ task, editor, n }: { task: Task; editor: boolean; n: number
             {/* The box alone (no label): its text beside it is typed in place, so a click there must not tick it. */}
             <Checkbox checked={!!c.done} disabled={!editor} tone="var(--accent-green)" aria-label={c.done ? 'untick' : 'tick'} onChange={() => set(checks.map((x) => (x.id === c.id ? { ...x, done: !x.done || undefined } : x)))} />
             {typing === c.id ? (
-              <CheckField
+              // The step's text typed over (kit: CommitField): Enter or leaving keeps it (empty takes the step away), Escape
+              // puts it back.
+              <CommitField
+                line
+                size="sm"
+                autoFocus
+                label="Step"
                 value={c.text}
-                onDone={(text) => {
-                  setTyping(null)
-                  if (text === null || text === c.text) return
+                maxLength={CHECK_MAX}
+                onSave={(typed) => {
+                  const text = typed.trim()
+                  if (text === c.text) return
                   set(text ? checks.map((x) => (x.id === c.id ? { ...x, text } : x)) : checks.filter((x) => x.id !== c.id), `check:${task.id}:${c.id}`)
                 }}
+                onEnd={() => setTyping(null)}
               />
             ) : (
               <span className={own.checkText} onClick={editor ? () => setTyping(c.id) : undefined}>
@@ -538,33 +546,6 @@ function Checklist({ task, editor, n }: { task: Task; editor: boolean; n: number
         />
       )}
     </PanelSection>
-  )
-}
-
-// One step's text typed over: Enter or leaving keeps it (empty takes the step away), Escape puts it back (`null`).
-function CheckField({ value, onDone }: { value: string; onDone: (text: string | null) => void }) {
-  const [draft, setDraft] = useState(value)
-  const over = useRef(false)
-  const done = (v: string | null) => {
-    if (over.current) return
-    over.current = true
-    onDone(v === null ? null : v.trim())
-  }
-  return (
-    <Field
-      size="sm"
-      autoFocus
-      value={draft}
-      maxLength={CHECK_MAX}
-      label="Step"
-      onChange={setDraft}
-      onBlur={() => done(draft)}
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Enter') done(draft)
-        if (e.key === 'Escape') done(null)
-      }}
-    />
   )
 }
 

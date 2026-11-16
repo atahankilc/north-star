@@ -8,7 +8,7 @@ import { base, byText } from '../fixtures/kit'
 import { view } from '../fixtures/o10'
 import { NO_HUD, fresh, glideToShow, pageStyle, pieceSet } from '../fixtures/o11'
 import { P } from '../fixtures/pazar'
-import { useTableUi } from '../../views/workspace/table/Table'
+import { closeSetup } from '../../views/workspace/canvas/setupStore'
 
 const ID = 'table-setup'
 const SETUP = byText('button', 'setup', 0.5, 0.5)
@@ -37,7 +37,7 @@ const scene: Scene = {
   poster: 7800,
   cursor: onStage(440, 200),
   // The setup shut and on its first tab, as a fresh focus has it (a module store outlives the stage).
-  setup: [fresh(), pageStyle(ID, `${NO_HUD} ${fit}`), run(() => useTableUi.setState({ setup: null, tab: 'rows' }), 'setup shut'), view(0.78, 24, 30)],
+  setup: [fresh(), pageStyle(ID, `${NO_HUD} ${fit}`), run(() => closeSetup(), 'setup shut'), view(0.78, 24, 30)],
   steps: [
     { at: 300, do: cursor.to(SETUP, 800) },
     { do: wait(300) },

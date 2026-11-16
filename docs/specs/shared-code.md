@@ -241,8 +241,8 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
 # Round 2: what a second read found (2026-11-16)
 
 A list of findings and of ways to keep repeats from coming back, for the user to pick from. Built so far: R1.1–R1.4
-and R1.10 (D-388) and the checks R4.1–R4.4 (D-391), both under *Done, round 2* at the end; the rest is not started or
-decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
+and R1.10 (D-388), the checks R4.1–R4.4 (D-391) and R1.5–R1.7 (D-392), under *Done, round 2* at the end; the rest is
+not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
 finder (knip) and four full reads (the kit, the workspace views, the logic layers, demo/onboarding/gallery/scripts).
 Line numbers are from that day. *Checked* = the drift was looked at again by hand after the read.
 
@@ -434,4 +434,26 @@ merges (R1.5–R1.7, the demo) and R3.
   - Left: R4.5 (scripts/lib.mjs: check-repeats has its own `walk` and baseline code, the sixth and third copy; demo and
     gallery still outside check:kit), R4.6, R4.7. The 474 unused exports are mostly a needless `export` on something
     used in its own file: a sweep would shrink the baseline a lot. The three unused files are R3's.
+- **R1.5, R1.6, R1.7 (2026-11-17, D-392).**
+  - R1.5: canvas/SetupShell.tsx (`SetupShell`, `SetupRow`, with its gallery) and canvas/setupStore.ts; the three
+    setup panels keep only their editors; `setup` and `tab` left `useMatrixUi`, `useTableUi`, `useKanbanUi`; the kind
+    record's `setup` is a title and a panel (no store, no toggle), `SETUP_STORES` and three-store readers are gone
+    from pieceKinds.tsx; TasksSide's deck reads the same store. Settled drift: one setup open at a time; it opens on
+    its first tab; a view leaving focus closes only its own (a deck's now closes). Left: `Toggle` and `Choices`
+    (MatrixSetup) only rename Checkbox and Options; R2's `<LensPane>` (Beside and TasksSide still list a kind's dock
+    tools by hand).
+  - R1.6: `CommitField`'s `line` mode (+ `autoFocus`, `select`, `clean`, `onEnd`); TaskPanel's `CheckField`,
+    Documents' `RenameField`/`RenameInput`, Kanban's column name and limit are it; CanvasView's `NameField` is on
+    `useCommit`. Settled drift: one way to undo (Escape puts back, nothing saved), an empty name put back, ended
+    once. tests/unit/commitField.test.ts. Left, on purpose for now: `InlineEdit`/`InlineField` (a bare name at the
+    world's size), `AutosaveField` (saved as typed), `AddField`: three more field components, so the "five to two" of
+    R4.6 is still open.
+  - R1.7: data/documents.ts `docRights`; Documents.tsx `useDocActions`; DocumentPiece.tsx `DocRead`. The row, the
+    page beside the list, a document's focus, the window and the right-click read the one rule. Settled drift: `edit`
+    in the page's dock and the right-click, `share` and `delete` in the window, the finder's preview of a document
+    beside its list says when it couldn't be read. Left apart: the window's own page (it writes) and a document piece
+    on the canvas (the piece's box).
+  - Checked: tsc; vitest; every check; old and new from frozen worktrees at one commit in headless Chrome (the setup
+    panels' own box pixel-identical in 21 of 22 shots, one pixel in the last; the same tries give the same answers in
+    both). The gallery's workspace takes no writes, so saving is held by the unit test and CommitField's example.
 

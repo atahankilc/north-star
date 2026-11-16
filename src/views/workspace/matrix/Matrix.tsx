@@ -73,6 +73,7 @@ import { Empty } from '../../../ui/primitives/Empty'
 import { PromptList } from '../../../ui/patterns/PromptList'
 import { cardEntry } from '../plane/cardEntry'
 import { cellSel, useGridCursor, type CellAt } from '../canvas/gridCursor'
+import { useSetupClosesOnLeave } from '../canvas/setupStore'
 import { CellInput } from '../canvas/CellInput'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
@@ -136,17 +137,12 @@ export function matrixFindItems(piece: WithId<Piece>, cards: Card[], cells: Cell
   return out
 }
 
-// The setup (D-212): closed (`false`), or open on one of its tabs (`true` is the first); `canvas`: the matrix it's for when
-// it's opened from one open on the canvas (D-228), not in focus. The wizard makes a new matrix.
+// The setup's tabs (D-212); whose setup is open and on which is canvas/setupStore.ts' (D-392). The wizard makes a new
+// matrix.
 export const SETUP_TABS = ['rows', 'cols', 'cells', 'options'] as const
 export type SetupTab = (typeof SETUP_TABS)[number]
-// Whose setup is open (a matrix's id, in focus, beside a plane or open on the canvas) and on which tab: the table's and
-// the deck's shape (D-361).
-export const useMatrixUi = create<{ setup: string | null; tab: SetupTab; naming: string | null; wizard: boolean }>(() => ({ setup: null, tab: 'rows', naming: null, wizard: false }))
-export const setMatrixTab = (tab: SetupTab) => useMatrixUi.setState({ tab })
-export const closeMatrixSetup = () => useMatrixUi.setState({ setup: null })
-// Opened on its first tab (or `tab`), closed when it's this one's.
-export const toggleMatrixSetup = (id: string, tab: SetupTab = 'rows') => useMatrixUi.setState((s) => (s.setup === id ? { setup: null } : { setup: id, tab }))
+// A typed head being named; the new matrix's wizard open.
+export const useMatrixUi = create<{ naming: string | null; wizard: boolean }>(() => ({ naming: null, wizard: false }))
 
 // The selected cell (canvas/gridCursor.ts): `cell|<matrix>|<row>|<col>`.
 const SEL = cellSel('cell')
@@ -227,10 +223,11 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
     // When one comes in.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows.length, cols.length])
-  // Leaving focus closes the setup.
+  // Leaving focus closes its setup (its own, never another piece's: D-392) and ends a naming.
+  useSetupClosesOnLeave(piece.id, live)
   useEffect(() => {
     if (!live) return
-    return () => useMatrixUi.setState({ setup: null, naming: null })
+    return () => useMatrixUi.setState({ naming: null })
   }, [live])
 
   // The selected cell and the arrows (gridCursor); the other keys on it are the matrix's.

@@ -30,6 +30,7 @@ import { Empty } from '../../../ui/primitives/Empty'
 import { Label } from '../../../ui/primitives/Label'
 import { pagesOf } from '../../../model/paging'
 import { cellSel, useGridCursor, type CellAt } from '../canvas/gridCursor'
+import { openSetup, useSetupClosesOnLeave } from '../canvas/setupStore'
 import { CellInput } from '../canvas/CellInput'
 import { PageArrows, PageSize } from '../canvas/Pager'
 import { CloseIcon, PlusIcon } from '../../../ui/primitives/hudIcons'
@@ -55,18 +56,14 @@ export function tableBounds(piece: Pick<Piece, 'table'>, cards: Card[]): Bounds 
   return { x: 0, y: 0, w, h: T.head + (setup.pageSize ? Math.min(n, setup.pageSize) : n) * T.row + T.add }
 }
 
-// The table whose setup is open (from the focus dock's or its pane's `[setup]`, D-211); a typed row being named; the page
-// each table is on here (D-213: yours, not shared); a table you just added a row or column to, which its view follows.
+// A typed row being named; the page each table is on here (D-213: yours, not shared); a table you just added a row or
+// column to, which its view follows. Whose setup is open and on which tab is canvas/setupStore.ts' (D-392).
 export const useTableUi = create<{
-  setup: string | null
-  tab: TableTab
   naming: string | null
   pages: Record<string, number>
   wizard: boolean
   follow: { piece: string; at: number } | null
 }>(() => ({
-  setup: null,
-  tab: 'rows',
   naming: null,
   pages: {},
   wizard: false,
@@ -199,8 +196,9 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   // Leaving focus closes the setup.
   useEffect(() => {
     if (!live) return
-    return () => useTableUi.setState((s) => ({ setup: s.setup === piece.id ? null : s.setup, naming: null }))
+    return () => useTableUi.setState({ naming: null })
   }, [live])
+  useSetupClosesOnLeave(piece.id, live)
   // A row or column you just added (followTable): the view glides to bring it to the middle, a row up or down (its page
   // turned to if it's on another), a column across. Others' adds don't move you.
   const seen = useRef<{ rows: Set<string>; cols: Set<string> } | null>(null)
@@ -373,7 +371,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
 
         {live && editor && (
           <>
-            <Button icon data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => useTableUi.setState({ setup: piece.id, tab: 'cols' })}>
+            <Button icon data-col style={box(width, 0, T.add, T.head)} title="add a column" aria-label="Add a column" onPointerDown={own} onClick={() => openSetup(piece.id, 'cols' satisfies TableTab)}>
               <PlusIcon />
             </Button>
             <Button

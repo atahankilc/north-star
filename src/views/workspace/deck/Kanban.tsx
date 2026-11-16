@@ -39,6 +39,7 @@ import { addTask, CARD_FIELDS, setKanbanSetup, COL_NAME_MAX, LIMIT_MAX, deleteCo
 import { newId } from '../../../data/matrix'
 import { useAuth } from '../../../data/auth'
 import { useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
+import { openSetup, useSetupClosesOnLeave } from '../canvas/setupStore'
 import { timelineKanbans } from '../../../data/tasks'
 import { revealOnStrip } from './stripReveal'
 import { closeFinder, findGo, landing } from '../find/find'
@@ -66,7 +67,7 @@ import { keepLocal, readLocal } from '../../../state/local'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
-import { Field } from '../../../ui/primitives/Field'
+import { CommitField } from '../../../ui/primitives/CommitField'
 import { PromptField } from '../../../ui/primitives/PromptField'
 import { Rule } from '../../../ui/primitives/Rule'
 import styles from './Kanban.module.css'
@@ -158,12 +159,10 @@ function showOnTimeline(kanban: string, task: string): boolean {
 // `pending`: a task to pick once its kanban is live (a thread's go there, D-260).
 type Many = { piece: string; tasks: string[] }
 type One = { piece: string; task: string }
-// `setup`: the kanban whose setup is open (D-268), on its `tab`; `wizard`: a new kanban's wizard is open.
+// The setup's tabs (D-268; whose is open and on which: canvas/setupStore.ts, D-392); `wizard`: a new kanban's wizard is open.
 export const KANBAN_TABS = ['holds', 'cards', 'cols', 'boxes'] as const
 export type KanbanTab = (typeof KANBAN_TABS)[number]
-export const useKanbanUi = create<{ selected: One | null; adding: string | null; naming: string | null; learning: string | null; many: Many | null; pending: One | null; setup: string | null; tab: KanbanTab; wizard: boolean }>(() => ({
-  setup: null,
-  tab: 'holds',
+export const useKanbanUi = create<{ selected: One | null; adding: string | null; naming: string | null; learning: string | null; many: Many | null; pending: One | null; wizard: boolean }>(() => ({
   wizard: false,
   pending: null,
   selected: null,
@@ -301,6 +300,8 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
     return () =>
       useKanbanUi.setState((s) => ({ selected: s.selected?.piece === piece.id ? null : s.selected, many: s.many?.piece === piece.id ? null : s.many, adding: null, naming: null }))
   }, [live, piece.id])
+  // Leaving focus closes its setup too (a deck's stayed open before D-392).
+  useSetupClosesOnLeave(piece.id, live)
 
   // Delete takes the selected task (or tasks) away, Escape lets go; heard before the canvas's own keys (Escape would
   // leave focus).
@@ -482,8 +483,8 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
               alone={cols.length < 2}
               onPress={own}
               onName={() => useKanbanUi.setState({ naming: c.id })}
+              onNamed={() => useKanbanUi.setState({ naming: null })}
               onRename={(name) => {
-                useKanbanUi.setState({ naming: null })
                 const next = name.trim().slice(0, COL_NAME_MAX)
                 if (next && next !== c.name) setCols(cols.map((x) => (x.id === c.id ? { ...x, name: next } : x)), 'rename a column')
               }}
@@ -719,6 +720,8 @@ type HeadProps = {
   onPress?: (e: ReactPointerEvent) => void
   onName: () => void
   onRename: (name: string) => void
+  // Naming is over (kept or not).
+  onNamed: () => void
   onMove: (by: -1 | 1) => void
   onDone: () => void
   onDelete: () => void
@@ -730,65 +733,51 @@ type HeadProps = {
 // one's name green. Live, a double-click renames it, and on hover its tools come in after the count. With a limit
 // (D-256), the count reads `4/3` (every task in it, shown or not, over the limit), the head magenta once over; `≤` types
 // the limit (Enter keeps it, empty takes it away, Escape leaves it).
-function ColumnHead({ col, n, count, holds, live, editor, naming, first, last, alone, onPress, onName, onRename, onMove, onDone, onDelete, onLimit }: HeadProps) {
-  const [draft, setDraft] = useState(col.name)
-  useEffect(() => setDraft(col.name), [col.name, naming])
-  const [limiting, setLimiting] = useState<string | null>(null)
-  const tools = live && editor && !naming && limiting === null
+function ColumnHead({ col, n, count, holds, live, editor, naming, first, last, alone, onPress, onName, onRename, onNamed, onMove, onDone, onDelete, onLimit }: HeadProps) {
+  const [limiting, setLimiting] = useState(false)
+  const tools = live && editor && !naming && !limiting
   const over = !!col.limit && holds > col.limit
   const keepLimit = (v: string) => {
-    setLimiting(null)
     const k = Math.round(Number(v))
     const next = v.trim() && k >= 1 ? Math.min(LIMIT_MAX, k) : undefined
     if (next !== col.limit) onLimit(next)
   }
+  // The name and the limit typed over where they're shown (kit: CommitField): Enter or leaving keeps it, Escape puts
+  // it back.
   const name = naming ? (
-    <Field
-      className={styles.headField}
-      value={draft}
-      autoFocus
-      maxLength={COL_NAME_MAX}
-      label="Column name"
-      size="sm"
-      onFocus={(e) => e.currentTarget.select()}
-      onChange={setDraft}
-      onBlur={() => onRename(draft)}
-      onEnter={() => (document.activeElement as HTMLElement | null)?.blur()}
-      onEscape={() => (setDraft(col.name), requestAnimationFrame(() => onRename(col.name)))}
-    />
+    <CommitField line className={styles.headField} value={col.name} autoFocus select empty="undo" maxLength={COL_NAME_MAX} label="Column name" size="sm" onSave={onRename} onEnd={onNamed} />
   ) : (
     <span className={styles.name} onDoubleClick={tools ? onName : undefined} title={tools ? 'double-click to rename' : undefined}>
       {col.name}
     </span>
   )
-  const countEl =
-    limiting !== null ? (
-      <span className={styles.count}>
-        {holds}/
-        <Field
-          className={styles.limitField}
-          value={limiting}
-          autoFocus
-          inputMode="numeric"
-          label="Limit"
-          placeholder="–"
-          size="sm"
-          onFocus={(e) => e.currentTarget.select()}
-          onChange={(v) => setLimiting(v.replace(/\D/g, '').slice(0, 2))}
-          onBlur={() => keepLimit(limiting)}
-          onEnter={() => (document.activeElement as HTMLElement | null)?.blur()}
-          onEscape={() => setLimiting(null)}
-        />
-      </span>
-    ) : (
-      <span className={styles.count} title={col.limit ? `${holds} of at most ${col.limit}${over ? ': over its limit' : ''}` : undefined}>
-        {col.limit ? `${holds}/${col.limit}` : count}
-      </span>
-    )
+  const countEl = limiting ? (
+    <span className={styles.count}>
+      {holds}/
+      <CommitField
+        line
+        className={styles.limitField}
+        value={col.limit ? String(col.limit) : ''}
+        autoFocus
+        select
+        inputMode="numeric"
+        label="Limit"
+        placeholder="–"
+        size="sm"
+        clean={(v) => v.replace(/\D/g, '').slice(0, String(LIMIT_MAX).length)}
+        onSave={keepLimit}
+        onEnd={() => setLimiting(false)}
+      />
+    </span>
+  ) : (
+    <span className={styles.count} title={col.limit ? `${holds} of at most ${col.limit}${over ? ': over its limit' : ''}` : undefined}>
+      {col.limit ? `${holds}/${col.limit}` : count}
+    </span>
+  )
   // Its tools, after the count while it's hovered (D-252): `≤` the limit, `‹ ›` move it, `✓` the finished one, `×`.
   const toolRow = tools && (
     <ButtonGroup className={styles.tools}>
-      <Button icon pressed={!!col.limit} title={col.limit ? `at most ${col.limit}: change or take away` : 'how many it should hold at most'} aria-label="Column limit" onClick={() => setLimiting(col.limit ? String(col.limit) : '')}>
+      <Button icon pressed={!!col.limit} title={col.limit ? `at most ${col.limit}: change or take away` : 'how many it should hold at most'} aria-label="Column limit" onClick={() => setLimiting(true)}>
         <LimitIcon />
       </Button>
       {!first && (
@@ -814,7 +803,7 @@ function ColumnHead({ col, n, count, holds, live, editor, naming, first, last, a
   // The kit's rule (D-326): `01 TODO ──── 5`, the tools after it (beside the rule, so hidden they take no room); the head
   // keeps its own presses and its over state.
   return (
-    <div className={styles.head} data-over={over || undefined} onPointerDown={naming || tools || limiting !== null ? onPress : undefined}>
+    <div className={styles.head} data-over={over || undefined} onPointerDown={naming || tools || limiting ? onPress : undefined}>
       <Rule as="div" className={styles.headRule} n={n} name={name} count={countEl} countAt="end" />
       {toolRow}
     </div>
@@ -889,7 +878,7 @@ function HiddenTasks({ piece, editor }: { piece: WithId<Piece>; editor: boolean 
       label={`☐ ${n} task${n === 1 ? '' : 's'} from before`}
       tone="var(--accent-magenta)"
       title={editor ? 'tasks from before it held cards, not shown on it: move them, or let it hold tasks again' : 'tasks from before it held cards, not shown on it'}
-      onClick={() => editor && useKanbanUi.setState({ setup: piece.id, tab: 'holds' })}
+      onClick={() => editor && openSetup(piece.id, 'holds' satisfies KanbanTab)}
     />
   )
 }

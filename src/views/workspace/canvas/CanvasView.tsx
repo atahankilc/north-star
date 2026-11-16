@@ -19,6 +19,7 @@ import { Button } from '../../../ui/primitives/Button'
 import { Console } from '../../../ui/patterns/Console'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
+import { useCommit } from '../../../ui/foundation/useCommit'
 import { canEditIn } from '../../../data/workspaces'
 import { camOf, fitCanvas, fitInto, fitPlane, setCam, setEditing, setFitter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../../state/canvasView'
 import { useWs, useWsNow } from './context'
@@ -36,7 +37,7 @@ import { ThreadInbox } from '../threads/ThreadInbox'
 import { CARD } from '../../../data/cards'
 import { glide, planeArea, stopGlide } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
-import { isOwnerOf } from '../../../data/workspaces'
+import { isOwnerOf, roleOf } from '../../../data/workspaces'
 import type { Thread } from '../../../data/model'
 import { Follow, PeerCursors, stopFollowing, useCursorReport, usePeersOn, usePresenceReport } from './collab'
 import { usePresenceMembers } from '../../../data/presence'
@@ -54,7 +55,8 @@ import { canvasParams } from '../../../app/paths'
 import { PlaneCards } from '../plane/PlaneCards'
 import { LensCardPanel } from '../panels/CardPanel'
 import { DockAction, FocusDock } from './FocusDock'
-import { closeOneSetup, closeSetups, kindRecord, LensLive, useOpenSetups, useSetupOn, type BoundsCtx } from './pieceKinds'
+import { kindRecord, LensLive, type BoundsCtx } from './pieceKinds'
+import { closeOneSetup, closeSetup, toggleSetup, useOpenSetup, useSetupOn } from './setupStore'
 import { deleteCards, isOnPlane, type Card } from '../../../data/cards'
 import { deleteEdge } from '../../../data/edges'
 import { GRID } from '../../../data/grid'
@@ -63,8 +65,8 @@ import { Beside } from './Beside'
 import { TasksSide } from '../deck/TasksSide'
 import { closeTasksSide, escapeTasksSide, toggleDaysOf, toggleFromPlane, toggleTasksSide, useTasksSide } from '../deck/sideState'
 import { isOpen, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
-import { deleteDocument, downloadDocument, unshareDocument, type Doc } from '../../../data/documents'
-import { closeDocs, shareOrAsk, openDoc, pinnedView, readerLeft, uploadFiles, useDocUi } from '../documents/Documents'
+import { deleteDocument, docRights, downloadDocument, unshareDocument, type Doc } from '../../../data/documents'
+import { closeDocs, shareOrAsk, openDoc, pinnedView, readDoc, readerLeft, uploadFiles, useDocUi } from '../documents/Documents'
 import { DocPlace, DocReaders, documentHome, membersOf, piecesOfDoc } from '../documents/DocumentPiece'
 import { clearFound, useFind } from '../find/find'
 import { selectTask, useKanbanSizes, useKanbanUi } from '../deck/Kanban'
@@ -196,9 +198,9 @@ export function CanvasView() {
   const sideAt = useTasksSide((s) => (s.open ? `${s.linked ?? ''}|${s.tab}|${s.days ? 'days' : ''}` : ''))
   const setBesideRef = useRef(setBeside)
   setBesideRef.current = setBeside
-  // Whose setups are open (a matrix's, a table's, a deck's, D-268; pieceKinds.tsx).
-  const openSetups = useOpenSetups()
-  const canvasSetup = pieces.find((p) => isOpen(p) && openSetups.includes(p.id)) ?? null
+  // Whose setup is open (a matrix's, a table's, a deck's, D-268; setupStore.ts).
+  const openSetup = useOpenSetup()
+  const canvasSetup = pieces.find((p) => isOpen(p) && p.id === openSetup) ?? null
   // What Escape closes next, after a selection (D-211): a setup, then what's beside (the last opened), then focus (the
   // key handler below; no key is shown on the docks, D-344).
   // Documents beside their list (D-232): Escape closes the last one; with the list put away, a framed list comes back,
@@ -540,17 +542,19 @@ export function CanvasView() {
   }
   // What can be done with a document from its list's right-click (D-232).
   const docMenu = (d: WithId<Doc>): PromptEntry[] => {
-    const mine = d.uid === user?.id
+    // What this person may do with it: the one rule (docRights, D-392), as its row's marks.
+    const may = docRights(d, user?.id, roleOf(workspace, user?.id) ?? undefined)
     return [
       { key: 'open', label: 'open beside', glyph: '›', letter: 'o', onSelect: () => openDoc(d.id, false) },
       ...(useDocUi.getState().readers.length && !useDocUi.getState().readers.includes(d.id)
         ? [{ key: 'alongside', label: 'open next to the others', glyph: '⧉', letter: 'n', onSelect: () => openDoc(d.id, true) }]
         : []),
-      ...(editor ? [{ key: 'place', label: 'place on the canvas', glyph: '⇱', letter: 'p', hint: d.shared ? undefined : 'shares it', onSelect: () => useDocUi.setState({ placing: { docId: d.id, near: focusId ?? undefined } }) }] : []),
-      ...(mine ? [{ key: 'rename', label: 'rename', glyph: '✎', letter: 'r', onSelect: () => useDocUi.setState({ renaming: d.id }) }] : []),
-      ...(mine && d.id !== 'agent-notes' ? [{ key: 'share', label: d.shared ? 'unshare' : 'share with everyone', glyph: '◐', letter: 's', onSelect: () => shareOrAsk(wid, d, pieces) }] : []),
+      ...(editor && may.place ? [{ key: 'place', label: 'place on the canvas', glyph: '⇱', letter: 'p', hint: d.shared ? undefined : 'shares it', onSelect: () => useDocUi.setState({ placing: { docId: d.id, near: focusId ?? undefined } }) }] : []),
+      ...(may.rename ? [{ key: 'rename', label: 'rename', glyph: '✎', letter: 'r', onSelect: () => useDocUi.setState({ renaming: d.id }) }] : []),
+      ...(may.share ? [{ key: 'share', label: d.shared ? 'unshare' : 'share with everyone', glyph: '◐', letter: 's', onSelect: () => shareOrAsk(wid, d, pieces) }] : []),
+      ...(may.write ? [{ key: 'write', label: 'write in it', glyph: '¶', letter: 'w', onSelect: () => readDoc(d.id, true) }] : []),
       { key: 'download', label: 'download .md', glyph: '↓', letter: 'd', onSelect: () => void downloadDocument(wid, d) },
-      ...(mine || (d.shared && isOwnerOf(workspace, user?.id)) ? [{ key: 'delete', label: 'delete', glyph: '×', letter: 'x', danger: true, onSelect: () => useDocUi.setState({ deleting: d.id }) }] : []),
+      ...(may.remove ? [{ key: 'delete', label: 'delete', glyph: '×', letter: 'x', danger: true, onSelect: () => useDocUi.setState({ deleting: d.id }) }] : []),
     ]
   }
   // Delete asks in the hazard confirm (D-182); on a piece also on other canvases it asks which (D-313): `only from here`
@@ -673,7 +677,7 @@ export function CanvasView() {
     useCanvasView.setState({ focusSpread: true, focusArrived: false, focusLeaving: false, selected: null, cardSelected: null })
     // A task picked (D-251, D-254) stays in the space it was picked in; a thread's go there picks after (`pending`).
     selectTask('', null)
-    closeSetups()
+    closeSetup()
     closeDocs()
     setParams(canvasParams(p.spot ?? canvasOf(p), { focus: p.id }))
   }
@@ -1011,7 +1015,7 @@ export function CanvasView() {
           {focusArrived && !focusLeaving && (
             <Beside plane={focused} open={besideOpen} editor={editor} onClose={(id) => setBeside(besideIds.filter((x) => x !== id))} />
           )}
-          {focusedRec?.setup && editor && openSetups.includes(focused.id) && focusArrived && !focusLeaving && <focusedRec.setup.Panel piece={focused} />}
+          {focusedRec?.setup && editor && openSetup === focused.id && focusArrived && !focusLeaving && <focusedRec.setup.Panel piece={focused} />}
           {/* A card picked from a matrix's or a table's head, in its focus or beside the plane: its panel. */}
           {focusArrived && !focusLeaving && <LensCardPanel space={focused.id} editor={editor} />}
           {/* A kanban's task picked (D-251), or a task from a card's panel (D-254): its panel. */}
@@ -1025,7 +1029,7 @@ export function CanvasView() {
               {/* Its kind's own tools, then its setup (pieceKinds.tsx). */}
               {focusedRec?.dock && <focusedRec.dock piece={focused} editor={editor} />}
               {focusedRec?.setup && editor && (
-                <DockAction label="setup" pressed={openSetups.includes(focused.id)} title={focusedRec.setup.title} onClick={() => focusedRec.setup!.toggle(focused.id)} />
+                <DockAction label="setup" pressed={openSetup === focused.id} title={focusedRec.setup.title} onClick={() => toggleSetup(focused.id)} />
               )}
               {/* A timeline stuck to the deck (D-262): its days in the tasks side view, the deck on the left (D-300). */}
               {focusedKanban &&
@@ -1778,12 +1782,8 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
 // what's typed against the most (`17/80`) after it; as wide as what's typed. Enter or leaving it keeps it, Escape puts
 // back what it was.
 function NameField({ value, placeholder, onSave }: { value: string; placeholder: string; onSave: (name: string) => void }) {
-  const [draft, setDraft] = useState(value)
-  const [focused, setFocused] = useState(false)
-  // Someone else renaming it shows here unless you're typing.
-  useEffect(() => {
-    if (!focused) setDraft(value)
-  }, [value, focused])
+  // Kept apart until Enter or leaving it; someone else renaming it shows here unless you're typing (kit: useCommit).
+  const { draft, setDraft, commit, revert } = useCommit(value, (typed) => onSave(typed.trim()))
   return (
     // A press anywhere on the frame types into it, never moves the piece.
     <label className={`${styles.name} ${styles.nameEdit}`} onPointerDown={(e) => e.stopPropagation()}>
@@ -1799,20 +1799,10 @@ function NameField({ value, placeholder, onSave }: { value: string; placeholder:
         // As wide as what's typed (or the placeholder), plus room for the caret.
         style={{ width: `${Math.max(draft.length, placeholder.length + 10) + 1}ch` }}
         onChange={setDraft}
-        onFocus={() => setFocused(true)}
-        onBlur={() => {
-          setFocused(false)
-          onSave(draft.trim())
-        }}
-        onKeyDown={(e) => {
-          e.stopPropagation()
-          if (e.key === 'Enter') e.currentTarget.blur()
-          if (e.key === 'Escape') {
-            setDraft(value)
-            // Blurs after the draft is back, so nothing changes.
-            requestAnimationFrame(() => (document.activeElement as HTMLElement | null)?.blur())
-          }
-        }}
+        onBlur={commit}
+        onEnter={() => (document.activeElement as HTMLElement | null)?.blur()}
+        // Blurs after the draft is back, so nothing changes.
+        onEscape={() => (revert(), requestAnimationFrame(() => (document.activeElement as HTMLElement | null)?.blur()))}
       />
       <span className={styles.nameCount}>
         {draft.length}/{PIECE_NAME_MAX}
@@ -2039,7 +2029,7 @@ function OpenTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean })
     <>
       {Tools && <Tools piece={piece} editor={editor} toolClass={styles.tool} />}
       {setup && editor && (
-        <Button className={styles.tool} pressed={on} title={setup.title} onClick={() => setup.toggle(piece.id)}>
+        <Button className={styles.tool} pressed={on} title={setup.title} onClick={() => toggleSetup(piece.id)}>
           setup
         </Button>
       )}

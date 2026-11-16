@@ -1,9 +1,8 @@
 // One record per piece kind (D-361): what each kind that isn't a plane draws (in its window, open on the canvas, in
-// focus), how big its contents are, how its focus fits them, its setup panel (and the store saying whose is open), and
+// focus), how big its contents are, how its focus fits them, its setup panel (whose is open: setupStore.ts), and
 // its tools in the focus dock and on its console. CanvasView and Beside read the record; a new kind is one more entry
 // here, and TypeScript refuses it until every part is given. A plane is the canvas's own (its cards and text), not here.
 import { memo, type ComponentType, type ReactNode } from 'react'
-import type { StoreApi, UseBoundStore } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece, PieceKind } from '../../../data/model'
 import type { Doc } from '../../../data/documents'
@@ -13,11 +12,11 @@ import { kindOfPiece } from '../../../data/pieces'
 import type { Bounds, PlaneCam } from '../../../state/canvasView'
 import type { Cell } from '../../../data/matrix'
 import type { FindItem } from '../find/find'
-import { M, matrixBounds, matrixFindItems, MatrixView, toggleMatrixSetup, useMatrixUi } from '../matrix/Matrix'
+import { M, matrixBounds, matrixFindItems, MatrixView } from '../matrix/Matrix'
 import { MatrixSetupPanel } from '../matrix/MatrixSetup'
-import { tableBounds, tableFindItems, TablePager, TableView, useTableUi, type FieldText } from '../table/Table'
+import { tableBounds, tableFindItems, TablePager, TableView, type FieldText } from '../table/Table'
 import { TableSetupPanel } from '../table/TableSetup'
-import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView, useKanbanUi } from '../deck/Kanban'
+import { kanbanBounds, KanbanDockTools, KanbanLanes, KanbanView } from '../deck/Kanban'
 import { KanbanSetupPanel } from '../deck/KanbanSetup'
 import { KanbanFilterDock } from '../deck/KanbanFilterDock'
 import { timelineBounds, TimelineDockTools, TimelineView, TimelineWeeks } from '../deck/Timeline'
@@ -37,7 +36,6 @@ export type BoundsCtx = { cards: Card[]; tasks: Task[]; pieces: WithId<Piece>[];
 // And what the finder reads its matches from.
 export type FindCtx = BoundsCtx & { cells: Cell[]; fieldText: FieldText }
 
-type SetupStore = UseBoundStore<StoreApi<{ setup: string | null }>>
 type PieceProps = { piece: WithId<Piece>; editor: boolean }
 
 export type KindRecord = {
@@ -48,7 +46,8 @@ export type KindRecord = {
   // Fitted whole in its window, a little room round it (a matrix, a timeline: two weeks are wider than any window), or at
   // its own size from the top-left (D-208, D-214).
   fitted: boolean
-  setup?: { store: SetupStore; toggle: (id: string) => void; title: string; Panel: ComponentType<{ piece: WithId<Piece> }> }
+  // Its setup panel (SetupShell round its editors); whose is open is setupStore.ts'.
+  setup?: { title: string; Panel: ComponentType<{ piece: WithId<Piece> }> }
   // Its tools in the focus dock (and beside a plane), before its setup.
   dock?: ComponentType<PieceProps>
   // Open on the canvas (D-228): its tools on its console, before its setup.
@@ -59,8 +58,6 @@ export type KindRecord = {
 }
 
 const pageOf = (it: FindItem) => (it.page !== undefined ? ` · page ${it.page + 1}` : '')
-
-const toggleIn = (store: SetupStore) => (id: string) => store.setState((s) => ({ setup: s.setup === id ? null : id }))
 
 // Drawn again only when what it shows changes, not as the camera moves (its view is the same object meanwhile).
 const MatrixShown = memo(({ piece, view, live, editor, onCanvas }: ShownProps) => <MatrixView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} />)
@@ -102,7 +99,7 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
     Shown: MatrixShown,
     bounds: (p, c) => matrixBounds(p, c.cards),
     fitted: true,
-    setup: { store: useMatrixUi, toggle: toggleMatrixSetup, title: 'its rows, columns and cells', Panel: MatrixSetupPanel },
+    setup: { title: 'its rows, columns and cells', Panel: MatrixSetupPanel },
     find: {
       items: (p, c) => matrixFindItems(p, c.cards, c.cells),
       hint: (it) => (it.key.startsWith('cols|') ? 'column' : it.key.startsWith('rows|') ? 'row' : `cell${pageOf(it)}`),
@@ -113,7 +110,7 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
     Shown: TableShown,
     bounds: (p, c) => tableBounds(p, c.cards),
     fitted: false,
-    setup: { store: useTableUi, toggle: toggleIn(useTableUi), title: 'where its rows come from, its columns', Panel: TableSetupPanel },
+    setup: { title: 'where its rows come from, its columns', Panel: TableSetupPanel },
     dock: pager,
     console: pager,
     find: {
@@ -143,7 +140,7 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
     Shown: KanbanShown,
     bounds: (p, c) => kanbanBounds(p, c.tasks),
     fitted: false,
-    setup: { store: useKanbanUi, toggle: toggleIn(useKanbanUi), title: 'what it holds: tasks, or cards by a field', Panel: KanbanSetupPanel },
+    setup: { title: 'what it holds: tasks, or cards by a field', Panel: KanbanSetupPanel },
     dock: KanbanDock,
   },
   timeline: {
@@ -160,36 +157,6 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
 export function kindRecord(p: Pick<Piece, 'kind'>): KindRecord | null {
   const kind = kindOfPiece(p as Piece)
   return kind === 'plane' ? null : PIECE_KINDS[kind]
-}
-
-// ---- Setups (a matrix's, a table's, a deck's): one open per kind, each store naming whose.
-
-// What Escape closes first, in this order.
-const SETUP_STORES: SetupStore[] = [useMatrixUi, useTableUi, useKanbanUi]
-
-// Whether this piece's setup is open.
-export function useSetupOn(id: string): boolean {
-  const matrix = useMatrixUi((s) => s.setup === id)
-  const table = useTableUi((s) => s.setup === id)
-  const deck = useKanbanUi((s) => s.setup === id)
-  return matrix || table || deck
-}
-
-// The pieces whose setups are open.
-export function useOpenSetups(): string[] {
-  const matrix = useMatrixUi((s) => s.setup)
-  const table = useTableUi((s) => s.setup)
-  const deck = useKanbanUi((s) => s.setup)
-  return [matrix, table, deck].filter((x): x is string => !!x)
-}
-
-export const closeSetups = () => SETUP_STORES.forEach((s) => s.setState({ setup: null }))
-
-// The first open setup closes (Escape); false when none was.
-export function closeOneSetup(): boolean {
-  const open = SETUP_STORES.find((s) => s.getState().setup)
-  open?.setState({ setup: null })
-  return !!open
 }
 
 // A focus's (or a pane's) own view of a kind, live.

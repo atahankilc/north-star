@@ -4,14 +4,15 @@
 // canvas a picture; unframed, live there, a row's `↗` places it (or drags it out onto the canvas on its own, DocPlace); in
 // focus live: a click opens the document beside the list (DocReader), a right-click has the rest (open, place on the
 // canvas, share, download, delete). Paged like a table (D-213); which page is yours. Files dropped on it are uploaded.
-import { memo, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
-import { DOC_LIMITS, DocumentError, downloadDocument, emptyDocuments, mayWriteDoc, newDocument, refusal, renameDocument, shareDocument, typeOfFile, uploadMarkdown, type Doc, type DocCol, type DocKind, type DocumentsSetup } from '../../../data/documents'
+import { DOC_LIMITS, DocumentError, docRights, downloadDocument, emptyDocuments, newDocument, refusal, renameDocument, shareDocument, typeOfFile, uploadMarkdown, type Doc, type DocCol, type DocKind, type DocumentsSetup } from '../../../data/documents'
 import { setDocumentsSetup } from '../../../data/pieces'
 import { useHistory } from '../../../data/history'
 import { useAuth } from '../../../data/auth'
+import { roleOf } from '../../../data/workspaces'
 import { type Bounds, type PlaneCam } from '../../../state/canvasView'
 import { Select } from '../../../ui/patterns/Select'
 import { ago } from '../../../ui/foundation/ago'
@@ -26,7 +27,7 @@ import { DOCS_PX } from '../../../model/world'
 import { Button } from '../../../ui/primitives/Button'
 import { Choice } from '../../../ui/primitives/Choice'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
-import { Field } from '../../../ui/primitives/Field'
+import { CommitField } from '../../../ui/primitives/CommitField'
 import { Empty } from '../../../ui/primitives/Empty'
 import { pagesOf } from '../../../model/paging'
 import { PageArrows, PageSize } from '../canvas/Pager'
@@ -113,6 +114,26 @@ export function shareOrAsk(wid: string, d: Pick<Doc, 'shared'> & { id: string },
 }
 
 export const closeDocs = () => useDocUi.setState({ readers: [], listHidden: false })
+
+// What can be done with a document, for everywhere it's offered (D-392): its row, its page beside the list, its window.
+// Only what this person may do is there (data/documents.ts' docRights); each place draws them its own way (marks in a
+// row, words in a dock or a window's foot). `near`: the piece a placed one goes beside.
+export type DocAct = { label: string; title: string; run: () => void; on?: boolean }
+export function useDocActions(d: WithId<Doc>, near?: string) {
+  const { wid, workspace, pieces } = useWs()
+  const { user } = useAuth()
+  const may = docRights(d, user?.id, roleOf(workspace, user?.id) ?? undefined)
+  const act = (on: boolean, a: DocAct): DocAct | undefined => (on ? a : undefined)
+  return {
+    rename: act(may.rename, { label: 'rename', title: 'rename', run: () => useDocUi.setState({ renaming: d.id }) }),
+    share: act(may.share, { label: d.shared ? 'unshare' : 'share', title: d.shared ? 'unshare: only you see it again' : 'share: everyone in the workspace sees it', on: !!d.shared, run: () => shareOrAsk(wid, d, pieces) }),
+    // `edit`, as the window's own button: `write` in a list's dock starts a new one.
+    write: act(may.write, { label: 'edit', title: 'edit: write in it, on the page as it reads', run: () => readDoc(d.id, true) }),
+    place: act(may.place, { label: 'place ↗', title: `place: put it on the canvas on its own${d.shared ? '' : ' (shares it; asks first)'}`, run: () => useDocUi.setState({ placing: { docId: d.id, near } }) }),
+    download: { label: 'download', title: 'download: save it as a .md file', run: () => void downloadDocument(wid, d) } as DocAct,
+    remove: act(may.remove, { label: 'delete', title: 'delete the document (asks first)', run: () => useDocUi.setState({ deleting: d.id }) }),
+  }
+}
 
 // With a document open beside it (D-232), the list sits pinned to the top-left of its part, fitted to its width
 // (never over 100 %), so it's never under the document or off the screen; the document takes what's left.
@@ -351,41 +372,38 @@ const DocumentsBoard = memo(function DocumentsBoard({ piece, live, editor, onCan
 // `↗`: a click places it where you're looking; on the canvas (unframed) a press that moves drags it out to where it's
 // let go.
 function RowActions({ d, list, editor, onCanvas }: { d: WithId<Doc>; list: WithId<Piece>; editor: boolean; onCanvas: boolean }) {
-  const { wid, workspace, pieces } = useWs()
-  const { user } = useAuth()
-  const mine = d.uid === user?.id
-  const owner = workspace.roles[user?.id ?? ''] === 'owner'
-  const act = (fn: () => void) => (e: React.MouseEvent) => {
+  const a = useDocActions(d, list.id)
+  const press = (fn: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation()
     fn()
   }
   return (
     <ButtonGroup className={styles.actions} label={`${d.title}: actions`}>
-      {mine && (
-        <Button icon title="rename" aria-label="Rename" onClick={act(() => useDocUi.setState({ renaming: d.id }))}>
+      {a.rename && (
+        <Button icon title={a.rename.title} aria-label="Rename" onClick={press(a.rename.run)}>
           <EditIcon />
         </Button>
       )}
-      {mine && d.id !== 'agent-notes' && (
-        <Button icon pressed={!!d.shared} title={d.shared ? 'unshare: only you see it again' : 'share with everyone'} aria-label={d.shared ? 'Unshare' : 'Share'} onClick={act(() => shareOrAsk(wid, d, pieces))}>
+      {a.share && (
+        <Button icon pressed={a.share.on} title={a.share.title} aria-label={d.shared ? 'Unshare' : 'Share'} onClick={press(a.share.run)}>
           <ShareIcon />
         </Button>
       )}
-      {mayWriteDoc(d, user?.id, workspace.roles[user?.id ?? '']) && (
-        <Button icon title="write in it" aria-label="Write in it" onClick={act(() => readDoc(d.id, true))}>
+      {a.write && (
+        <Button icon title={a.write.title} aria-label="Write in it" onClick={press(a.write.run)}>
           <WriteIcon />
         </Button>
       )}
-      {editor && (
-        <Button icon title={`place it on the canvas where you're looking${onCanvas ? ', or drag it where you want it' : ''}${d.shared ? '' : ' (shares it; asks first)'}`} aria-label="Place on the canvas" onPointerDown={onCanvas ? dragOut(d.id) : undefined} onClick={act(() => useDocUi.setState({ placing: { docId: d.id, near: list.id } }))}>
+      {editor && a.place && (
+        <Button icon title={`${a.place.title}${onCanvas ? '; or drag it where you want it' : ''}`} aria-label="Place on the canvas" onPointerDown={onCanvas ? dragOut(d.id) : undefined} onClick={press(a.place.run)}>
           <PlaceIcon />
         </Button>
       )}
-      <Button icon title="download .md" aria-label="Download" onClick={act(() => void downloadDocument(wid, d))}>
+      <Button icon title={a.download.title} aria-label="Download" onClick={press(a.download.run)}>
         <DownloadIcon />
       </Button>
-      {(mine || (d.shared && owner)) && (
-        <Button icon tone="danger" title="delete (asks first)" aria-label="Delete" onClick={act(() => useDocUi.setState({ deleting: d.id }))}>
+      {a.remove && (
+        <Button icon tone="danger" title={a.remove.title} aria-label="Delete" onClick={press(a.remove.run)}>
           <BinIcon />
         </Button>
       )}
@@ -393,35 +411,24 @@ function RowActions({ d, list, editor, onCanvas }: { d: WithId<Doc>; list: WithI
   )
 }
 
-// A document's title typed over in its row (its author's): Enter or leaving keeps it, Escape puts it back.
+// A document's title typed over in its row (its author's; kit: CommitField): Enter or leaving keeps it, Escape or
+// nothing typed puts it back.
 function RenameField({ d }: { d: WithId<Doc> }) {
   const { wid } = useWs()
-  const done = (save: boolean, value: string) => {
-    useDocUi.setState({ renaming: null })
-    if (save && value.trim() && value.trim() !== d.title) void renameDocument(wid, d.id, value)
-  }
-  return <RenameInput d={d} done={done} />
-}
-
-function RenameInput({ d, done }: { d: WithId<Doc>; done: (save: boolean, value: string) => void }) {
-  const [value, setValue] = useState(d.title)
   return (
-    <Field
+    <CommitField
+      line
       className={styles.rename}
-      value={value}
-      onChange={setValue}
+      value={d.title}
       maxLength={DOC_LIMITS.title}
       label="Document title"
       autoFocus
-      onFocus={(e) => e.currentTarget.select()}
+      select
+      empty="undo"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Enter') done(true, value)
-        if (e.key === 'Escape') done(false, '')
-      }}
-      onBlur={() => useDocUi.getState().renaming === d.id && done(true, value)}
+      onSave={(typed) => typed.trim() !== d.title && void renameDocument(wid, d.id, typed)}
+      onEnd={() => useDocUi.setState({ renaming: null })}
     />
   )
 }

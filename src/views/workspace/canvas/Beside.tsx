@@ -19,7 +19,8 @@ import { SplitLine } from '../../../ui/primitives/SplitLine'
 import { useWs } from './context'
 import { MatrixView } from '../matrix/Matrix'
 import { TableView } from '../table/Table'
-import { PIECE_KINDS, useSetupOn } from './pieceKinds'
+import { PIECE_KINDS } from './pieceKinds'
+import { toggleSetup, useSetupOn } from './setupStore'
 import { DockAction, FocusDock } from './FocusDock'
 import styles from './Beside.module.css'
 import { DUR } from '../../../ui/foundation/motion'
@@ -194,7 +195,7 @@ function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
         }
       >
         {Tools && <Tools piece={piece} editor={editor} />}
-        {setup && editor && <DockAction label="setup" pressed={setupOpen} title={setup.title} onClick={() => setup.toggle(piece.id)} />}
+        {setup && editor && <DockAction label="setup" pressed={setupOpen} title={setup.title} onClick={() => toggleSetup(piece.id)} />}
         <DockAction label="close" main title="close it; it stays stuck to the plane" onClick={onClose} />
       </FocusDock>
     </div>

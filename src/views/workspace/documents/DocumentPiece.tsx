@@ -9,7 +9,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
-import { downloadDocument, useDocBody } from '../../../data/documents'
+import { useDocBody, type Doc } from '../../../data/documents'
 import { placeDocument, pieceRef } from '../../../data/pieces'
 import { useAuth } from '../../../data/auth'
 import { canvasCenter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../../state/canvasView'
@@ -17,7 +17,7 @@ import { isReducedMotion } from '../../../state/motion'
 import { WORLD } from '../../../model/world'
 import { useWs } from '../canvas/context'
 import { DocContent } from './DocContent'
-import { closeDoc, documentsBounds, shareOrAsk, documentsOf, listed, readerLeft, useDocUi } from './Documents'
+import { closeDoc, documentsBounds, documentsOf, listed, readerLeft, useDocActions, useDocUi } from './Documents'
 import { DockAction, FocusDock } from '../canvas/FocusDock'
 import { useOpenSize } from '../canvas/shownBox'
 import { docScope, scrollTo, useLandOnPage } from '../find/find'
@@ -214,19 +214,15 @@ const PANE_MIN = 280
 type PaneProps = { id: string; box: Bounds; first: boolean } & ({ list: WithId<Piece>; focus?: undefined } | { list?: undefined; focus: { piece: WithId<Piece>; onUnfocus: () => void } })
 
 function DocPane({ id, list, box, first, focus }: PaneProps) {
-  const { wid, documents, workspace, pieces } = useWs()
-  const { user } = useAuth()
+  const { documents } = useWs()
   const d = documents.find((x) => x.id === id)!
-  const body = useDocBody(wid, d)
+  const acts = useDocActions(d, list?.id)
   const zoom = useDocUi((s) => s.readerZooms[id] ?? 1)
   const hidden = useDocUi((s) => s.listHidden)
   const el = useRef<HTMLDivElement>(null)
   // The finder's pick in it (D-236): its page scrolls to the match.
   const column = useRef<HTMLDivElement>(null)
   useLandOnPage(focus ? focus.piece.id : docScope(id), column, true, (r) => scrollTo(el.current, r))
-  const editor = !!user && ['owner', 'editor'].includes(workspace.roles[user.id] ?? '')
-  const mine = d.uid === user?.id
-  const mayDelete = mine || (d.shared && workspace.roles[user?.id ?? ''] === 'owner')
 
   // The wheel scrolls it as a page, kept from the list's view; ctrl (or a pinch) zooms its text.
   useEffect(() => {
@@ -246,21 +242,18 @@ function DocPane({ id, list, box, first, focus }: PaneProps) {
   return (
     <div className={`${beside.pane} ${styles.reader}`} data-alone={((hidden || focus) && first) || undefined} style={{ left: box.x, top: 0, width: box.w, height: box.h }} onPointerDown={(e) => e.stopPropagation()} aria-label={focus ? d.title : `${d.title}, beside the list`}>
       <div ref={el} className={styles.readerScroll} data-scrolls>
-        <div className={styles.readerBody}>
-          <div ref={column} className={styles.readerColumn} style={{ zoom }}>
-            <DocContent d={d} body={body.data} loading={body.isLoading} failed={!!body.error} me={user?.id} links />
-          </div>
-          <PageOutline scroller={el} at={`${d.id}:${body.data ? 1 : 0}:${zoom}`} />
-        </div>
+        <DocRead d={d} zoom={zoom} links column={column} outline={el} />
       </div>
       {/* Its title is on the page already: the dock only says what it is, so it fits a narrow part. */}
       <FocusDock label={focus ? 'Focus' : 'document beside'} name={<span className={beside.kind}>document</span>}>
         {/* The list put away: its button here, in the first one's dock (D-232). */}
         {!focus && hidden && first && <DockAction label="≡ list" title="show the documents list beside them" onClick={() => useDocUi.setState({ listHidden: false })} />}
-        {mine && d.id !== 'agent-notes' && <DockAction label={d.shared ? 'unshare' : 'share'} title={d.shared ? 'unshare: only you see it again' : 'share: everyone in the workspace sees it'} onClick={() => shareOrAsk(wid, d, pieces)} />}
-        {editor && list && <DockAction label="place ↗" title="place: put it on the canvas on its own, beside the list" onClick={() => useDocUi.setState({ placing: { docId: d.id, near: list.id } })} />}
-        <DockAction label="download" title="download: save it as a .md file" onClick={() => void downloadDocument(wid, d)} />
-        {mayDelete && <DockAction label="delete" title="delete the document (asks first)" onClick={() => useDocUi.setState({ deleting: d.id })} />}
+        {/* What this person may do with it (useDocActions): the same as in its row, but renaming (its title is typed there). */}
+        {acts.share && <DockAction label={acts.share.label} title={acts.share.title} onClick={acts.share.run} />}
+        {acts.write && <DockAction label={acts.write.label} title={acts.write.title} onClick={acts.write.run} />}
+        {acts.place && list && <DockAction label={acts.place.label} title={acts.place.title} onClick={acts.place.run} />}
+        <DockAction label={acts.download.label} title={acts.download.title} onClick={acts.download.run} />
+        {acts.remove && <DockAction label={acts.remove.label} title={acts.remove.title} onClick={acts.remove.run} />}
         <DocZoom reader={id} />
         {/* With the list put away Escape goes straight to the canvas: no `esc` on a close then. */}
         {focus ? (
@@ -269,6 +262,24 @@ function DocPane({ id, list, box, first, focus }: PaneProps) {
           <DockAction label="close" main title="close it" onClick={() => closeDoc(id)} />
         )}
       </FocusDock>
+    </div>
+  )
+}
+
+// A document's page as it's read (D-392): its text in the reading column, with what's still loading or couldn't be
+// read said on it. The page beside the list, a document piece's focus and the finder's two previews of one are this;
+// whoever holds it gives the scroll. `outline`: "on this page" beside it, following that scroller. Kept apart on
+// purpose: a document piece on the canvas (its box is the piece's, at the world's size) and the window (it writes).
+export function DocRead({ d, zoom, links, column, outline }: { d: WithId<Doc>; zoom?: number; links?: boolean; column?: React.RefObject<HTMLDivElement | null>; outline?: React.RefObject<HTMLDivElement | null> }) {
+  const { wid } = useWs()
+  const { user } = useAuth()
+  const body = useDocBody(wid, d)
+  return (
+    <div className={styles.readerBody}>
+      <div ref={column} className={styles.readerColumn} style={zoom === undefined ? undefined : { zoom }}>
+        <DocContent d={d} body={body.data} loading={body.isLoading} failed={!!body.error} me={user?.id} links={links} />
+      </div>
+      {outline && <PageOutline scroller={outline} at={`${d.id}:${body.data ? 1 : 0}:${zoom ?? 1}`} />}
     </div>
   )
 }

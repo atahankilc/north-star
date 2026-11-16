@@ -99,9 +99,11 @@ export type Sources = {
   threads: StoreLike<{ inbox: boolean; openId: string | null; draft: { on: string } | null }>
   planeFilter: StoreLike<{ byPlane: Record<string, FilterLike> }>
   shelf: StoreLike<{ filter: boolean }>
-  matrixUi: StoreLike<{ wizard: boolean; setup: unknown }>
-  tableUi: StoreLike<{ wizard: boolean; setup: string | null }>
-  kanbanUi: StoreLike<{ wizard: boolean; setup: string | null }>
+  matrixUi: StoreLike<{ wizard: boolean }>
+  tableUi: StoreLike<{ wizard: boolean }>
+  kanbanUi: StoreLike<{ wizard: boolean }>
+  // Whose setup is open (canvas/setupStore.ts): its piece says which kind's.
+  setup: StoreLike<{ piece: string | null }>
   docUi: StoreLike<{ readers: string[] }>
   // The address's query (`?focus=`, `?beside=`), and a way to hear back/forward.
   search(): string
@@ -470,15 +472,17 @@ export function attach(s: Sources): () => void {
     }),
     s.matrixUi.subscribe((n, p) => {
       if (n.wizard && !p.wizard) learn('wizard', { kind: 'matrix' })
-      if (n.setup && !p.setup) learn('setup-open', { kind: 'matrix' })
     }),
     s.tableUi.subscribe((n, p) => {
       if (n.wizard && !p.wizard) learn('wizard', { kind: 'table' })
-      if (n.setup && !p.setup) learn('setup-open', { kind: 'table' })
     }),
     s.kanbanUi.subscribe((n, p) => {
       if (n.wizard && !p.wizard) learn('wizard', { kind: 'kanban' })
-      if (n.setup && !p.setup) learn('setup-open', { kind: 'kanban' })
+    }),
+    // A setup opened, or another piece's in its place: the kind is the piece's.
+    s.setup.subscribe((n, p) => {
+      const kind = n.piece && n.piece !== p.piece ? pieceOf(ws(), n.piece)?.kind : undefined
+      if (kind) learn('setup-open', { kind })
     }),
     s.docUi.subscribe((n, p) => void (n.readers.length > p.readers.length && learn('doc-reader'))),
   )

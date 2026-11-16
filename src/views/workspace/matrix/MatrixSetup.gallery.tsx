@@ -1,6 +1,7 @@
 import { example } from '../../../gallery/example'
 import { onCanvas, P } from '../../../gallery/canvas'
-import { useMatrixUi, SETUP_TABS } from './Matrix'
+import { SETUP_TABS } from './Matrix'
+import { openSetup } from '../canvas/setupStore'
 
 export default example({
   name: 'Matrix setup',
@@ -9,6 +10,6 @@ export default example({
   file: 'src/views/workspace/matrix/MatrixSetup.tsx',
   note: 'a matrix’s `[setup]` in focus: rows, columns, cells, options',
   states: Object.fromEntries(
-    SETUP_TABS.map((tab) => [tab, onCanvas({ only: [P.matrix], focus: P.matrix, then: () => useMatrixUi.setState({ setup: P.matrix, tab }) })]),
+    SETUP_TABS.map((tab) => [tab, onCanvas({ only: [P.matrix], focus: P.matrix, then: () => openSetup(P.matrix, tab) })]),
   ),
 })
