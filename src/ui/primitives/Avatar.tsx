@@ -12,7 +12,7 @@ type Props = {
   color?: string
   // Only from googleusercontent.com (D-317): the caller passes what it checked.
   photo?: string
-  size?: 'hud' | 'sm'
+  size?: 'hud' | 'sm' | 'lg'
   away?: boolean
   className?: string
 }

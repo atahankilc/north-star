@@ -1636,6 +1636,12 @@ Offered, not asked for: a deck's column width, the document reader's window.
 - Checked: tsc, vitest 1175, check:tokens/kit/gallery/lessons/repeats/memory, check:gallery:live (threads), build; headless shots of the gallery in dark and light and of the lesson's scene. Not committed (the user to say).
 - After the push: one writer's messages in a row as one run; `thread` leaves the head's row while `all threads` is on it; the scope says `everywhere` / `this canvas` (`whole workspace` was cut beside `mark all read`, seen only with two canvases); an edited message's field as wide as a bubble. Seen in the real app on the emulators (a workspace seeded through the Firestore emulator's REST with `Authorization: Bearer owner`, the test users' real ids read from the auth emulator; Alice with Bob in it, a 26-message thread, a second canvas, a deleted card's thread), dark and light.
 
+
+## Done (Settings laid out anew, D-404, 2026-11-17)
+- Read every page of the modal in the gallery headless and listed the faults (the close over scrolling rows, controls beside a 260 px column, long hints, mixed buttons, a cut model name, heavy boxes). A port preview on the real kit in a scratch worktree (`settings.html`, port 5179: menu side / tabs / one sheet, groups line / box / numbered, control right / under); every option clicked headless. The user picked side menu, numbered, right.
+- Built: Settings.tsx and its CSS (a fixed head, `Section` with `n`, `count`, `Row` with `wide`), PeopleSettings, AgentSettings, the general and export pages in WorkspaceLayout; `Avatar` `lg`, `Select` `wide`; the gallery's examples.
+- Checked: tsc, check:tokens/kit/gallery/lessons/repeats (names); the gallery headless: account, display, the agent (top and foot), parts, people as owner (dark) and as editor (light), 560 px wide; 706 icon buttons with a drawn glyph measured across the gallery, all square. Then members' and your own pictures. Committed, not pushed.
+
 ## Done (the threads' button in the HUD's corner, the HUD's gaps from one place, D-402, 2026-11-17)
 - `ThreadsTool` back on `ToolButton` in the bottom-left corner (the foot tab and its CSS gone); the `comment` lesson v 5, the 2026-11-16 release's line, DESIGN.md, surfaces.md.
 - The corner is one `ButtonGroup vertical` like the side nav; a filled cell (`data-filled`: the people's squares, yours) gets an icon's air outside, so no gap is set in the HUD; the side nav's `+` at `--tool-icon` (`--hud-plus` deleted).

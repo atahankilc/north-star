@@ -1,8 +1,11 @@
 // Settings → workspace → people (D-062, D-098): who is in the workspace and their roles, who's asking to join, email
 // invites and the invite code. Owners change anyone's role (several owners are fine, never none) and remove people;
 // everyone else sees the list. The list loads only on this page, a page at a time.
+// Laid out by D-404: who's asking on top (drawn only while someone is), then the members, then the ways in.
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../../../data/auth'
+import { safePhoto } from '../../../data/presence'
+import { usePersonColor } from '../threads/Threads'
 import type { WithId } from '../../../data/hooks'
 import { ROLES, type JoinRequest, type Role } from '../../../data/model'
 import {
@@ -32,12 +35,6 @@ import { Field } from '../../../ui/primitives/Field'
 import styles from './PeopleSettings.module.css'
 import { codeText, firstName } from '../../../model/words'
 
-const ROLE_HINT: Record<Role, string> = {
-  owner: 'manages people and the invite code; can delete it',
-  editor: 'changes everything on the canvas',
-  viewer: 'reads everything, keeps their own documents, changes nothing',
-}
-
 type Props = { wid: string; workspace: WorkspaceCtx['workspace']; requests: WithId<JoinRequest>[] }
 
 export function PeopleSettings({ wid, workspace, requests }: Props) {
@@ -49,45 +46,40 @@ export function PeopleSettings({ wid, workspace, requests }: Props) {
     p.catch((e: Error) => setError(e.message))
   }
 
+  // Numbered as drawn: `asking to join` is there only for an owner with someone waiting.
+  const asking = isOwner && requests.length > 0
+  const from = asking ? 1 : 0
   return (
     <>
-      <Members wid={wid} workspace={workspace} run={run} />
-      {isOwner && (
-        <Section label="asking to join">
-          <Row label="requests" hint="People who entered the invite code. They join as editors.">
-            {requests.length === 0 ? (
-              <span className={styles.dim}>no one is waiting</span>
-            ) : (
-              <ul className={styles.list}>
-                {requests.map((r) => (
-                  <li key={r.id} className={styles.request}>
-                    <span className={styles.who}>
-                      {r.name}
-                      {r.email && r.email !== r.name && <span className={styles.dim}> {r.email}</span>}
-                    </span>
-                    <ButtonGroup>
-                      <Button tone="primary" onClick={() => run(approveJoinRequest(wid, r))}>
-                        let in
-                      </Button>
-                      <Button tone="danger" onClick={() => run(denyJoinRequest(wid, r.uid))}>
-                        deny
-                      </Button>
-                    </ButtonGroup>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Row>
-          <EmailInvites workspace={workspace} onError={setError} />
+      {asking && (
+        <Section n={1} label="asking to join" count={requests.length}>
+          {requests.map((r) => (
+            <div key={r.id} className={styles.person}>
+              <Avatar name={r.name} size="sm" />
+              <span className={styles.who}>
+                <span className={styles.name}>{r.name}</span>
+                {r.email && r.email !== r.name && <span className={styles.email}>{r.email}</span>}
+              </span>
+              <ButtonGroup>
+                <Button tone="main" onClick={() => run(approveJoinRequest(wid, r))}>
+                  let in
+                </Button>
+                <Button tone="danger" onClick={() => run(denyJoinRequest(wid, r.uid))}>
+                  deny
+                </Button>
+              </ButtonGroup>
+            </div>
+          ))}
         </Section>
       )}
-      <InviteCode wid={wid} workspace={workspace} isOwner={isOwner} run={run} />
+      <Members n={from + 1} wid={wid} workspace={workspace} run={run} />
+      <Inviting n={from + 2} wid={wid} workspace={workspace} isOwner={isOwner} run={run} onError={setError} />
       {error && <Note tone="error">! {error}</Note>}
     </>
   )
 }
 
-function Members({ wid, workspace, run }: { wid: string; workspace: WorkspaceCtx['workspace']; run: (p: Promise<unknown>) => void }) {
+function Members({ n, wid, workspace, run }: { n: number; wid: string; workspace: WorkspaceCtx['workspace']; run: (p: Promise<unknown>) => void }) {
   const { user } = useAuth()
   const members = useMembers(wid)
   const isOwner = isOwnerOf(workspace, user?.id)
@@ -98,14 +90,17 @@ function Members({ wid, workspace, run }: { wid: string; workspace: WorkspaceCtx
   const unlisted = members.hasMore || members.isLoading ? [] : workspace.memberIds.filter((uid) => !members.data.some((m) => m.id === uid))
   const total = workspace.memberIds.length
 
-  const row = (uid: string, name: string, email?: string) => {
+  // Each in their colour (the one they have here, else their own, D-398), with their Google picture when the entry
+  // holds one (only from Google's own host, D-317).
+  const colorOf = usePersonColor()
+  const row = (uid: string, name: string, email?: string, photo?: string, known = true) => {
     const role = roleOf(workspace, uid) ?? 'editor'
     const me = uid === user?.id
     // The rules keep someone owning it: the last owner can't step down or be removed.
     const lastOwner = role === 'owner' && owners <= 1
     return (
-      <li key={uid} className={styles.member}>
-        <Avatar name={name} size="sm" />
+      <div key={uid} className={styles.person}>
+        <Avatar name={name} size="sm" photo={safePhoto(photo)} color={known ? colorOf(uid) : undefined} />
         <span className={styles.who}>
           <span className={styles.name}>
             {name}
@@ -151,31 +146,21 @@ function Members({ wid, workspace, run }: { wid: string; workspace: WorkspaceCtx
             )
           )}
         </span>
-      </li>
+      </div>
     )
   }
 
   return (
-    <Section
-      label={`members · ${total}`}
-      note={
-        <>
-          <p>
-            <b>owner</b> {ROLE_HINT.owner}. <b>editor</b> {ROLE_HINT.editor}. <b>viewer</b> {ROLE_HINT.viewer}.
-          </p>
-          {isOwner && <p>A workspace can have several owners; there's always at least one.</p>}
-        </>
-      }
-    >
+    <Section n={n} label="members" count={total} note="An owner manages people and the invite code and can delete the workspace; there is always at least one. An editor changes everything on the canvas. A viewer reads everything and keeps their own documents.">
       {members.isLoading ? (
         <Loading label="loading people…" />
       ) : members.error ? (
         <Note tone="error">! Couldn&apos;t load the people list.</Note>
       ) : (
-        <ul className={styles.list}>
-          {listed.map((m) => row(m.id, m.name, m.email))}
-          {unlisted.map((uid) => row(uid, 'someone who hasn’t opened it lately', undefined))}
-        </ul>
+        <>
+          {listed.map((m) => row(m.id, m.name, m.email, m.photo))}
+          {unlisted.map((uid) => row(uid, 'someone who hasn’t opened it lately', undefined, undefined, false))}
+        </>
       )}
       {members.hasMore && (
         <div className={styles.more}>
@@ -191,7 +176,8 @@ function Members({ wid, workspace, run }: { wid: string; workspace: WorkspaceCtx
   )
 }
 
-function InviteCode({ wid, workspace, isOwner, run }: { wid: string; workspace: WorkspaceCtx['workspace']; isOwner: boolean; run: (p: Promise<unknown>) => void }) {
+// The ways in: the code anyone can pass on, and for an owner an address invited by hand.
+function Inviting({ n, wid, workspace, isOwner, run, onError }: { n: number; wid: string; workspace: WorkspaceCtx['workspace']; isOwner: boolean; run: (p: Promise<unknown>) => void; onError: (e: string | null) => void }) {
   const { user } = useAuth()
   const [copied, setCopied] = useState(false)
   const code = workspace.inviteCode
@@ -201,25 +187,18 @@ function InviteCode({ wid, workspace, isOwner, run }: { wid: string; workspace: 
     window.setTimeout(() => setCopied(false), 1500)
   }
   return (
-    <Section
-      label="invite code"
-      note={
-        isOwner
-          ? 'People who enter the code ask to join, and an owner lets them in above. A new code stops the old one; invited addresses join without one.'
-          : 'People who enter the code ask to join; an owner lets them in.'
-      }
-    >
-      <Row label="code" hint="Share it with the people you want in.">
+    <Section n={n} label="inviting">
+      <Row
+        label="invite code"
+        hint={isOwner ? 'Whoever enters it asks to join, and an owner lets them in here. A new code stops the old one.' : 'Whoever enters it asks to join, and an owner lets them in.'}
+      >
         <span className={styles.code}>{codeText(code)}</span>
-        <Button size="md" accent="cyan" onClick={copy}>
-          {copied ? 'copied' : 'copy'}
-        </Button>
-        {isOwner && user && (
-          <Button onClick={() => run(renewInviteCode(wid, code, user.id))}>
-            new code
-          </Button>
-        )}
+        <ButtonGroup>
+          <Button onClick={copy}>{copied ? 'copied' : 'copy'}</Button>
+          {isOwner && user && <Button onClick={() => run(renewInviteCode(wid, code, user.id))}>new code</Button>}
+        </ButtonGroup>
       </Row>
+      {isOwner && <EmailInvites workspace={workspace} onError={onError} />}
     </Section>
   )
 }
@@ -247,34 +226,26 @@ function EmailInvites({ workspace, onError }: { workspace: WorkspaceCtx['workspa
   }
 
   return (
-    <Row label="invite by email" hint="No mail is sent: they find the invite when they sign in with that Google address.">
-      <form className={styles.inviteForm} onSubmit={submit}>
-        <Field
-          className={styles.input}
-          type="email"
-          placeholder="name@gmail.com"
-          label="Email to invite"
-          value={draft}
-          onChange={setDraft}
-        />
-        <Button size="md" type="submit" accent="cyan" disabled={!valid || invited.includes(email)}>
-          invite
-        </Button>
-      </form>
-      {invited.length > 0 && (
-        <ul className={styles.list}>
-          {invited.map((address) => (
-            <li key={address} className={styles.request}>
-              <span className={styles.who}>
-                {address} <span className={styles.dim}>invited</span>
-              </span>
-              <Button tone="danger" onClick={() => uninviteEmail(wid, address).catch((e: Error) => onError(e.message))}>
-                remove
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Row>
+    <>
+      <Row wide label="invite by email" hint="No mail is sent: they find the invite when they sign in with that Google address.">
+        <form className={styles.inviteForm} onSubmit={submit}>
+          <Field className={styles.input} type="email" placeholder="name@gmail.com" label="Email to invite" value={draft} onChange={setDraft} />
+          <Button tone="main" type="submit" disabled={!valid || invited.includes(email)}>
+            invite
+          </Button>
+        </form>
+      </Row>
+      {invited.map((address) => (
+        <div key={address} className={styles.person}>
+          <span className={styles.who}>
+            <span className={styles.name}>{address}</span>
+            <span className={styles.email}>invited, not signed in yet</span>
+          </span>
+          <Button tone="danger" onClick={() => uninviteEmail(wid, address).catch((e: Error) => onError(e.message))}>
+            remove
+          </Button>
+        </div>
+      ))}
+    </>
   )
 }

@@ -26,6 +26,10 @@ export default example({
           <Avatar name="Ayla" color="var(--accent-cyan)" size="sm" />
           <Button onClick={none}>follow</Button>
         </div>
+        <div style={row}>
+          <Avatar name="Ayla" color="var(--accent-cyan)" size="lg" />
+          <span>lg, 48 px: you, on Settings’ account page</span>
+        </div>
       </div>
     ),
     'hud sizes': () => (

@@ -23,9 +23,11 @@ type Props<T extends string> = {
   // The trigger's look in its context (a table cell, an underlined field).
   className?: string
   disabled?: boolean
+  // The value is never cut with `…` (a model's name with what's known of it, D-404).
+  wide?: boolean
 }
 
-export function Select<T extends string>({ value, options, onChange, ariaLabel, className, disabled }: Props<T>) {
+export function Select<T extends string>({ value, options, onChange, ariaLabel, className, disabled, wide }: Props<T>) {
   const [open, setOpen] = useState(false)
   const trigger = useRef<HTMLButtonElement>(null)
   const id = useId()
@@ -60,6 +62,7 @@ export function Select<T extends string>({ value, options, onChange, ariaLabel, 
         aria-label={ariaLabel}
         disabled={disabled}
         data-edit
+        data-wide={wide || undefined}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={(e) => {
           if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !open) (e.preventDefault(), setOpen(true))

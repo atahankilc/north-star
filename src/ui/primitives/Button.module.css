@@ -159,6 +159,12 @@
   height: 1.25em;
 }
 
+/* A drawn glyph alone is wider than a typed one (1.25em against a letter), and with the icon's side padding it made an
+   oval, 31 × 24. It gives the difference back, so the button is the same 24 px circle a typed `×` gets. */
+:where(.sm[data-icon] > svg:only-child) {
+  margin-inline: calc((var(--control-sm) - 1.25em) / 2 - var(--space-2));
+}
+
 /* look: drawn inside something that is itself the button; it lights with its target. */
 :where(.sm[data-look]) {
   cursor: inherit;

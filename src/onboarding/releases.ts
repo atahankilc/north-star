@@ -29,6 +29,8 @@ export const RELEASES: readonly Release[] = [
       { title: 'Panels under the canvas', tab: 'look', line: 'Windows and menus are round now. A side panel opens under the canvas, which lifts and draws back for it.', lessons: [] },
       // D-393: the threads on the ground. D-398: the list by place, a conversation in bubbles. D-402: their button in the HUD's corner.
       { title: 'Threads beside the canvas', tab: 'threads', line: 'The threads button is bottom left, above your square. The list opens left, grouped by place; a conversation right, your messages on your side.', scene: 'threads-panel', lessons: ['comment'] },
+      // D-404: a look, not a feature, so it arms no lesson.
+      { title: 'Settings, tidied', tab: 'settings', line: 'In Settings every control sits at the right edge of its row, and the close stays put while the page scrolls.', lessons: [] },
       // D-390: the workspaces page.
       { title: 'What changed, everywhere', tab: 'workspaces', line: 'Every workspace that changed while you were away says who changed what. New tasks and people asking to join are written on its card.', lessons: ['workspaces'] },
     ],

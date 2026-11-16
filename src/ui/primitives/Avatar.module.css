@@ -21,6 +21,13 @@
   font-size: var(--text-xs);
 }
 
+/* `lg`: you, on your own page in Settings (D-404). */
+.avatar[data-size='lg'] {
+  width: var(--control-xl);
+  height: var(--control-xl);
+  font-size: var(--text-lg);
+}
+
 /* Someone not here: a framed circle in the page's ink. */
 .avatar[data-quiet] {
   background: var(--wash-2);

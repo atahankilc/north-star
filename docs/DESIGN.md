@@ -305,9 +305,13 @@ Values will be tuned against contrast checks (WCAG AA for text).
   pieces keep their size.
 - Settings (D-064, D-097): your square opens it on the account page, the gear on the last page used. A modal with a side
   menu in groups, `YOU` (account, display) and `WORKSPACE <name>` (general, people, export; only inside a workspace),
-  the current page with a cyan left bar; on the right a title, a one-line description and framed sections (label in the
-  top edge, rows split by hairlines, a note at the foot). Below 640 px the menu becomes tabs. 1.0's `ASSISTANT` (keys,
-  usage) comes back with the assistant. Signed out there are no controls (D-069).
+  the current page a filled pill; on the right a head that never scrolls (the page's title, one line about it, the
+  close) and under it the page, which scrolls alone, so nothing passes under the close (D-404). A page's groups have no
+  box: a numbered rule over each (`01 KEYS ──`, the kit's `Rule`), dashed lines between its rows, a small note under
+  them; a page with one group has no rule. Buttons are all the small pill; filled only for a page's one go
+  (`download .zip`), magenta ink for what takes away (`remove`, `deny`). Below 640 px the menu becomes tabs and every
+  control goes under its words. The agent's page (keys, model, usage) is under `YOU`. Signed out there are no controls
+  (D-069).
 - Dropdowns (`src/ui/patterns/Menu.tsx`) are a **prompt** (D-222, D-350): a trigger cell `SHOW all ▾` (D-344) (or a side
   nav icon) opening `PromptPanel` (`src/ui/patterns/`), built cell by cell. Its look (D-387): round with a line on a
   hugging shade, the line cyan while the keyboard is in it; no corner L's. On top a `>` line
@@ -358,8 +362,9 @@ Every 1.0 workspace view except the board composed `src/ui/foundation/Page.modul
 - Column headers (D-107): every table-like view composes `head` from `src/ui/TableHead.module.css` (40 px, `--bg-raised`,
   mono `--text-xs` uppercase, `--fg-dim`) and sets only its side padding; a column may add its own mark or colour.
 - `title`: Inter at `--text-heading`, for Settings pages, side panels, the competitor profile, the matrix panel and the report screen.
-Settings rows (D-097) are two columns: on the left the setting's name (mono, `--fg-strong`) with what it does under it (Inter,
-`--fg-muted`), on the right the control (`--label-w`, 260 px; stacked on phones). Help text is never `--fg-faint` there:
+Settings rows (D-097, D-404): on the left the setting's name (`--fg-strong`, medium) with what it does under it
+(`--fg-muted`, at most `--size-lg` wide, two lines), the control at the row's right edge; a control that needs the width
+(a field, a text) goes under them, as wide as the row (`wide`; all of them on phones). Help text is never `--fg-faint` there:
 `--fg-muted` is the readable grey for explanations. On phones a side panel covers the filter row.
 
 ### Scroll bars (D-105)

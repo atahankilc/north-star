@@ -9,7 +9,7 @@ const REQUESTS: WithId<JoinRequest>[] = [
   { id: 'rq-1', workspaceId: PAZAR.wid, uid: 'u-mert', name: 'Mert Yılmaz', email: 'mert@example.com', code: 'ABC123', createdAt: AT },
   { id: 'rq-2', workspaceId: PAZAR.wid, uid: 'u-sofia', name: 'Sofia Rossi', email: 'sofia@example.com', code: 'ABC123', createdAt: AT - 3600_000 },
 ]
-const box = { width: 720, maxHeight: '78vh', overflow: 'auto' }
+const box = { width: 720, maxHeight: '78vh', overflow: 'auto', display: 'grid', gap: 'var(--space-8)' }
 
 export default example({
   name: 'People settings',

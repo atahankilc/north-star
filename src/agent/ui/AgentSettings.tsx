@@ -1,7 +1,8 @@
 // Settings → the agent (S14, D-312, D-329; agent.md §4.2, §4.8; CLAUDE.md's hard rule on keys): the person's own keys,
 // OpenAI's and Anthropic's, either or both (each kept only in this browser, never shown again after saving: `sk-…abcd`),
 // `[check]` (each key's model list, which fills the picker), the model (works well / not tried yet; the suggested one only pre-selected), its reasoning effort, and
-// this month's usage in tokens (counts only, from this browser's usage log).
+// this month's usage in tokens (counts only, from this browser's usage log). Three groups (D-404): keys, model, usage;
+// the agent's keys (⌘J, /) are told in its lesson and `?`, not here (D-344).
 import { useState } from 'react'
 import { Choice } from '../../ui/primitives/Choice'
 import { Note, Row, Section } from '../../ui/patterns/Settings'
@@ -37,11 +38,11 @@ export function AgentSettings() {
 // One provider's key: pasted once, kept in this browser, shown only as `sk-…abcd`; [check] asks that provider which
 // models the key can use (they fill the picker).
 const PROVIDERS = {
-  openai: { label: 'openai key', name: 'OpenAI', where: 'Paste a key from platform.openai.com → API keys.', placeholder: 'sk-…' },
+  openai: { label: 'OpenAI key', name: 'OpenAI', where: 'From platform.openai.com → API keys.', placeholder: 'sk-…' },
   anthropic: {
-    label: 'claude key',
+    label: 'Claude key',
     name: 'Anthropic',
-    where: 'Paste a key from platform.claude.com → API keys.',
+    where: 'From platform.claude.com → API keys.',
     placeholder: 'sk-ant-…',
   },
 } as const
@@ -95,14 +96,14 @@ function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text
 
   return (
     <Row
+      wide={!has}
       label={p.label}
       hint={
         has ? (
           'Saved in this browser.'
         ) : provider === 'anthropic' ? (
           <>
-            {p.where} A Max, Ultra or Team plan&apos;s monthly API credits pay for it when the key comes from the Console organisation linked to
-            the plan (
+            {p.where} A Max, Ultra or Team plan can pay for it (
             <a href={CLAUDE_CREDITS} target="_blank" rel="noreferrer">
               how
             </a>
@@ -145,7 +146,7 @@ function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text
             value={draft}
             onChange={setDraft}
           />
-          <Button tone="primary" type="submit" disabled={!draft.trim()}>
+          <Button tone="main" type="submit" disabled={!draft.trim()}>
             save
           </Button>
         </form>
@@ -162,41 +163,38 @@ function KeySection() {
   const shown = s.model || suggest
 
   return (
-    <Section
-      label="your keys"
-      note={
-        <p>
-          Your keys are stored only in this browser (its local storage). Each goes only to its own provider (OpenAI or Anthropic), with each request
-          the agent makes on one of its models. They are never saved in the workspace, never sent to North Star or anyone else, and never shown
-          again here. You pay the provider for what you use; the chat shows the tokens of each answer. One key is enough.
-        </p>
-      }
-    >
-      <KeyRow provider="openai" onSaid={setSaid} />
-      <KeyRow provider="anthropic" onSaid={setSaid} />
-      {said && (
-        <p className={styles.said} data-tone={said.tone}>
-          {said.tone === 'error' ? '! ' : ''}
-          {said.text}
-        </p>
-      )}
-      <Row label="model" hint={s.model ? `${FIT_WORDS[rows.find((r) => r.id === s.model)?.fit ?? 'unknown']}. Each chat can switch it in its header.` : `Suggested: ${suggest}. Pick one to keep it; each chat can switch it.`}>
-        <Select
-          ariaLabel="model"
-          value={shown}
-          options={rows.map((r) => ({ value: r.id, label: <ModelRow id={r.id} words={r.fitWords} suggested={!s.model && r.id === suggest} /> }))}
-          onChange={(v) => s.setModel(v)}
-        />
-      </Row>
-      {reasons(shown) && (
-        <Row label="reasoning" hint="How hard the model thinks before answering. Medium is a good start; high is slower and uses more tokens.">
-          <Choice label="reasoning" bare options={EFFORTS} value={s.effort} onChange={(e: Effort) => s.setEffort(e)} />
+    <>
+      <Section
+        n={1}
+        label="keys"
+        note="Keys stay in this browser and go only to their own provider, never to the workspace or to North Star. You pay the provider for what you use. One key is enough."
+      >
+        <KeyRow provider="openai" onSaid={setSaid} />
+        <KeyRow provider="anthropic" onSaid={setSaid} />
+        {said && (
+          <p className={styles.said} data-tone={said.tone}>
+            {said.tone === 'error' ? '! ' : ''}
+            {said.text}
+          </p>
+        )}
+      </Section>
+      <Section n={2} label="model">
+        <Row label="model" hint={s.model ? `${FIT_WORDS[rows.find((r) => r.id === s.model)?.fit ?? 'unknown']}. Each chat can switch it in its header.` : `Suggested: ${suggest}. Pick one to keep it; each chat can switch it.`}>
+          <Select
+            wide
+            ariaLabel="model"
+            value={shown}
+            options={rows.map((r) => ({ value: r.id, label: <ModelRow id={r.id} words={r.fitWords} suggested={!s.model && r.id === suggest} /> }))}
+            onChange={(v) => s.setModel(v)}
+          />
         </Row>
-      )}
-      <Row label="keys" hint="⌘J opens or folds the agent; / opens it when nothing has the keyboard. On Windows and Linux it's Ctrl+J, which in a workspace takes the place of the browser's Downloads shortcut.">
-        <span className={styles.usage}>⌘J · /</span>
-      </Row>
-    </Section>
+        {reasons(shown) && (
+          <Row label="reasoning" hint="How hard the model thinks before answering. High is slower and uses more tokens.">
+            <Choice label="reasoning" bare options={EFFORTS} value={s.effort} onChange={(e: Effort) => s.setEffort(e)} />
+          </Row>
+        )}
+      </Section>
+    </>
   )
 }
 
@@ -218,8 +216,8 @@ function UsageSection() {
   const since = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
   const u = sumUsage(readUsage(), since)
   return (
-    <Section label="usage" note="Counts only, kept in this browser: never your messages, the workspace's content or your key.">
-      <Row label="this month" hint={`Since ${new Date(since).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}.`}>
+    <Section n={3} label="usage">
+      <Row label="this month" hint={`Since ${new Date(since).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}. Counts only, kept in this browser: never your messages or your key.`}>
         <span className={styles.usage}>
           {plural(u.answers, 'answer')} · {k(u.input)} in{u.cached ? ` (${k(u.cached)} cached)` : ''} · {k(u.output)} out
         </span>

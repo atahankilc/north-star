@@ -1,28 +1,15 @@
-/* Settings → workspace → people (D-098). */
-.list {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
+/* Settings → workspace → people (D-098; laid out by D-404). */
 
-/* One person: initial, name and email, their role and what an owner can do. */
-.member {
-  display: grid;
-  grid-template-columns: var(--control) minmax(0, 1fr) auto;
+/* One person, a row of its group: circle, name over address, their role and what an owner can do at the right edge. */
+.person {
+  display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2) 0;
-}
-
-.member + .member {
-  border-top: var(--line-w) solid var(--line);
 }
 
 .who {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-width: 0;
 }
@@ -45,29 +32,23 @@
 
 .controls {
   display: flex;
+  flex: none;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
 .role {
-  min-width: 13ch;
+  min-width: 0;
 }
 
 .roleText {
   color: var(--fg-muted);
-  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
 }
 
 .roleText[data-role='owner'] {
   color: var(--accent-cyan);
-}
-
-.request {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--space-3);
-  padding: var(--space-1) 0;
 }
 
 .more {
@@ -83,6 +64,8 @@
 
 .code {
   color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
   letter-spacing: var(--track-label);
 }
 
@@ -96,14 +79,11 @@
 /* The email Field, the row's width. */
 .input {
   flex: 1;
+  min-width: 0;
 }
 
 @media (max-width: 640px) {
-  .member {
-    grid-template-columns: var(--control) minmax(0, 1fr);
-  }
-
-  .controls {
-    grid-column: 2;
+  .person {
+    flex-wrap: wrap;
   }
 }

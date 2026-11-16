@@ -25,6 +25,7 @@ export default example({
   note: 'never a native <select> (D-093): the one dropdown trigger (D-344) opening the prompt (PromptPanel) in a Popover; the value now cyan with ✓; the `>` line past 7 options, else a letter jumps',
   states: {
     closed: () => <Pick />,
+    wide: () => <Select wide value="a" options={[{ value: 'a', label: 'gpt-5.6-terra · not tried yet · suggested' }]} onChange={() => {}} ariaLabel="model" />,
     open: { render: () => <div style={{ height: 240 }}><Pick /></div>, setup: (c) => c.click('[aria-haspopup]') },
     'many options': { render: () => <div style={{ height: 460 }}><Pick options={MANY} start="o3" /></div>, setup: (c) => c.click('[aria-haspopup]') },
     'a letter': {

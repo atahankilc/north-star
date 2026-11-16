@@ -1,10 +1,12 @@
 // Settings (D-054, D-064, D-097): your square and the gear, bottom left (D-175); either opens a modal with a grouped side
 // menu on the left and the chosen page on the right: you (account, display) and the current workspace (general, people,
 // export, D-246). The agent's page (your own key, the model, usage: S14, D-312) is under you.
+// Its layout (D-404): the page's title and the close stay in a head that never scrolls, only what's under it moves; a
+// page's groups are numbered rules (`01 KEYS ──`), a setting's control sits at the row's right edge.
 // On the one Window (D-359): focus kept inside and given back, Escape (a menu in it first) and the scrim close it.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { signOut, useAuth } from '../../data/auth'
-import { usePresence } from '../../data/presence'
+import { safePhoto, usePresence } from '../../data/presence'
 import { useDisplay, type BackgroundPref, type HudSizePref } from '../../state/display'
 import { useMotion, type MotionPref } from '../../state/motion'
 import { themeAccent, useTheme, type ThemePref } from '../../state/theme'
@@ -12,6 +14,8 @@ import { AgentSettings } from '../../agent/ui/AgentSettings'
 import { Button } from '../primitives/Button'
 import { Avatar } from '../primitives/Avatar'
 import { Choice } from '../primitives/Choice'
+import { CountBadge } from '../primitives/CountBadge'
+import { Rule } from '../primitives/Rule'
 import { SettingsTool } from './SettingsTool'
 import { Window } from './Window'
 import styles from './Settings.module.css'
@@ -31,7 +35,7 @@ type Group = 'you' | 'workspace'
 const PAGES: { id: Page; label: string; title: string; about: string; group: Group }[] = [
   { id: 'account', label: 'account', title: 'Account', about: 'Who you are signed in as.', group: 'you' },
   { id: 'display', label: 'display', title: 'Display', about: 'How North Star looks and moves in this browser.', group: 'you' },
-  { id: 'agent', label: 'the agent', title: 'The agent', about: 'Your own OpenAI key and the model the agent uses, in this browser.', group: 'you' },
+  { id: 'agent', label: 'the agent', title: 'The agent', about: 'Your own key and the model the agent uses, in this browser.', group: 'you' },
   { id: 'general', label: 'general', title: 'Workspace', about: 'Its name and what the team is building.', group: 'workspace' },
   { id: 'people', label: 'people', title: 'People', about: 'Who is in this workspace and how others get in.', group: 'workspace' },
   { id: 'export', label: 'export', title: 'Export', about: 'Take the workspace with you as a file.', group: 'workspace' },
@@ -91,7 +95,7 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
     <>
       <button className={styles.account} data-filled onClick={() => show('account')} aria-haspopup="dialog" aria-label={`Account: ${who}`} title={who}>
         {/* In a workspace, your square is in the colour the others see you in (D-067). */}
-        <Avatar name={who} color={myColor ? themeAccent(myColor, theme) : 'var(--accent-cyan)'} />
+        <Avatar name={who} photo={safePhoto(user.photoURL)} color={myColor ? themeAccent(myColor, theme) : 'var(--accent-cyan)'} />
       </button>
       <SettingsTool open={open} waiting={badge} onClick={() => show()} />
       {open && (
@@ -111,8 +115,8 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
                       {items.map((p) => (
                         <li key={p.id}>
                           <button className={styles.navItem} aria-current={p.id === current.id ? 'page' : undefined} onClick={() => setPage(p.id)}>
-                            <span className={styles.navLabel}>{p.label}</span>
-                            {p.id === 'people' && badge > 0 && <span className={styles.navBadge}>{badge}</span>}
+                            {p.label}
+                            {p.id === 'people' && badge > 0 && <CountBadge count={badge} tone="cyan" placement="inline" />}
                           </button>
                         </li>
                       ))}
@@ -122,49 +126,46 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
               })}
             </nav>
 
-            <div className={styles.page} key={current.id}>
+            <div className={styles.main}>
+              {/* The head never scrolls: nothing passes under the title or the close. */}
               <header className={styles.head} {...(current.id === 'people' && { 'data-learn': 'settings-people' })}>
-                <h3 className={styles.title}>{current.title}</h3>
-                <p className={styles.about}>{current.about}</p>
+                <div className={styles.headText}>
+                  <h3 className={styles.title}>{current.title}</h3>
+                  <p className={styles.about}>{current.about}</p>
+                </div>
+                <Button icon onClick={() => setOpen(false)} aria-label="Close settings" title="Close (Esc)">
+                  <CloseIcon />
+                </Button>
               </header>
 
-              {current.id === 'account' && (
-                <Section label="signed in">
-                  <div className={styles.profile}>
-                    <span className={styles.avatar} aria-hidden>
-                      {who.trim()[0]?.toUpperCase()}
-                    </span>
-                    <span className={styles.profileText}>
-                      <span className={styles.profileName}>{user.name ?? who}</span>
-                      {user.email && <span className={styles.profileEmail}>{user.email}</span>}
-                    </span>
-                  </div>
-                  <Row label="method" hint="North Star signs in with Google only.">
-                    <span>Google</span>
-                    <Button size="md" accent="cyan" onClick={() => signOut()}>
-                      sign out
-                    </Button>
-                  </Row>
-                </Section>
-              )}
+              <div className={styles.page} key={current.id}>
+                {current.id === 'account' && (
+                  <Section>
+                    <div className={styles.profile}>
+                      <Avatar name={who} size="lg" photo={safePhoto(user.photoURL)} color={myColor ? themeAccent(myColor, theme) : 'var(--accent-cyan)'} />
+                      <span className={styles.profileText}>
+                        <span className={styles.profileName}>{user.name ?? who}</span>
+                        <span className={styles.profileEmail}>{user.email ? `${user.email} · signed in with Google` : 'signed in with Google'}</span>
+                      </span>
+                      <Button onClick={() => signOut()}>sign out</Button>
+                    </div>
+                  </Section>
+                )}
 
-              {current.id === 'display' && (
-                <Section label="appearance" note="Saved in this browser only.">
-                  <ThemeChoice />
-                  <MotionChoice />
-                  <BackgroundChoice />
-                  <HudSizeChoice />
-                </Section>
-              )}
+                {current.id === 'display' && (
+                  <Section>
+                    <ThemeChoice />
+                    <MotionChoice />
+                    <BackgroundChoice />
+                    <HudSizeChoice />
+                  </Section>
+                )}
 
-              {current.id === 'agent' && <AgentSettings />}
+                {current.id === 'agent' && <AgentSettings />}
 
-              {workspace && WORKSPACE_PAGES.includes(current.id) && workspace(current.id as WorkspacePage)}
+                {workspace && WORKSPACE_PAGES.includes(current.id) && workspace(current.id as WorkspacePage)}
+              </div>
             </div>
-
-            <Button icon className={styles.close} onClick={() => setOpen(false)} aria-label="Close settings" title="Close (Esc)">
-              <CloseIcon />
-            </Button>
           </div>
         </Window>
       )}
@@ -236,21 +237,23 @@ function HudSizeChoice() {
   )
 }
 
-// A framed group of rows (D-097): its label in the top edge, rows split by hairlines, an optional note at the foot.
-export function Section({ label, note, children }: { label: string; note?: ReactNode; children?: ReactNode }) {
+// A group of rows (D-404): a numbered rule over it (`01 MEMBERS ── 4`), dashed lines between its rows, an optional
+// note under them. A page with one group gives no label: the page's title already names it.
+export function Section({ n, label, count, note, children }: { n?: number; label?: string; count?: number; note?: ReactNode; children?: ReactNode }) {
   return (
     <section className={styles.section}>
-      <h4 className={styles.label}>{label}</h4>
+      {label && <Rule as="h4" n={n} name={label} count={count} countAt="end" />}
       {children && <div className={styles.body}>{children}</div>}
       {note && <div className={styles.foot}>{note}</div>}
     </section>
   )
 }
 
-// A setting: its name and what it does on the left, the control on the right.
-export function Row({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
+// A setting: its name and what it does on the left, the control at the right edge; `wide`: the control under them,
+// as wide as the row (a field, a text).
+export function Row({ label, hint, wide, children }: { label: string; hint?: ReactNode; wide?: boolean; children: ReactNode }) {
   return (
-    <div className={styles.row}>
+    <div className={styles.row} data-wide={wide || undefined}>
       <div className={styles.rowText}>
         <span className={styles.rowLabel}>{label}</span>
         {hint && <span className={styles.hint}>{hint}</span>}

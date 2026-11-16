@@ -140,11 +140,11 @@ function WorkspaceSettings({ page, wid, workspace, requests }: SettingsProps) {
   }
   return (
     <>
-      <Section label="about" note={editor ? undefined : "You're a viewer here: an owner can make you an editor."}>
+      <Section note={editor ? undefined : "You're a viewer here: an owner can make you an editor."}>
         <Row label="name" hint="Shown in the breadcrumb and on the workspaces page.">
           {editor ? <InlineEdit label="workspace" value={workspace.name} onSave={(n) => renameWorkspace(wid, n)} /> : <span>{workspace.name}</span>}
         </Row>
-        <Row label="what we're building" hint="A sentence or two. The assistant reads it first.">
+        <Row wide label="what we're building" hint="A sentence or two. The agent reads it first.">
           {editor ? (
             <AutosaveField
               well
@@ -198,25 +198,17 @@ function ExportSection({ wid, workspace }: { wid: string; workspace: WorkspaceCt
 
   return (
     <>
-      <Section
-        label="files"
-        note={
-          <>
-            <p>
-              The .zip holds everything on every canvas (and the canvases themselves): planes and their cards, links,
-              evidence, competitor features, packages, text, matrices and tables with their cells, and the documents you can see. Import it from the workspaces page to
-              make a copy you own. Members, invite codes and comment threads stay here.
-            </p>
-            {packed && <p>{packed}</p>}
-          </>
-        }
-      >
-        <Row label="workspace" hint="Everything, to import again later.">
-          <Button size="md" accent="cyan" onClick={() => void run()} disabled={busy}>
+      <Section>
+        <Row
+          label="the workspace as a .zip"
+          hint="Everything on every canvas and the documents you can see, to import again from the workspaces page. Members, invite codes and threads stay here."
+        >
+          <Button tone="primary" onClick={() => void run()} disabled={busy}>
             {busy ? 'packing' : 'download .zip'}
           </Button>
         </Row>
       </Section>
+      {packed && <Note>{packed}</Note>}
       {error && <Note tone="error">! {error}</Note>}
     </>
   )

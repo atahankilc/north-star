@@ -32,7 +32,7 @@ written fast, and its numbers aren't tokens.
 | **Console on a piece** | square, L's | unchanged: a piece is square, so its console and marks are too |
 | **Threads dock** | square, L's on its top corners | the same tab: top corners round (14), a line; no L's |
 | **Side panel** (EdgeColumn: SidePanel, the agent's column) | over the screen, its edge a line, L's | under the screen: see [The sheet](#the-sheet) |
-| **Settings' sections, Frame's boxes** | square line | the line stays, corners round (14) |
+| **Settings' sections, Frame's boxes** | square line | the line stays, corners round (14); Settings' sections lost their box later (D-404: a numbered rule, dashed rows) |
 | **Settings' side list** | the current one framed | the current one a filled pill (`--wash-3`), no frame |
 | **Toast** | square | a pill with a line; its action a plain Button word, no `[ ]` round it |
 | **Tip** | square | round (14), a line |

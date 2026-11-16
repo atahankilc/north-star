@@ -1,4 +1,4 @@
-/* Settings button in the HUD and its modal (D-054, D-064). */
+/* Settings button in the HUD and its modal (D-054, D-064; its layout D-404). */
 
 /* Who's signed in, always beside the gear; opens settings on the account page. */
 .account {
@@ -43,7 +43,6 @@
 
 /* Grouped side menu on the left, the chosen page on the right (D-097). */
 .inner {
-  position: relative;
   display: grid;
   grid-template-columns: var(--modal-nav-w) minmax(0, 1fr);
   height: 100%;
@@ -55,7 +54,7 @@
   gap: var(--space-6);
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-6) var(--space-3) var(--space-6) var(--space-4);
+  padding: var(--space-6) var(--space-3);
   border-right: var(--line-w) solid var(--line);
   /* It paints up to the window's left corners (D-387). */
   border-radius: var(--window-inner) 0 0 var(--window-inner);
@@ -68,18 +67,19 @@
   gap: var(--space-1);
 }
 
-/* YOU · WORKSPACE · ASSISTANT; the workspace group also names the workspace. */
+/* YOU · WORKSPACE; the workspace group also names the workspace, after it. */
 .navGroupLabel {
   composes: fieldLabel from '../foundation/Frame.module.css';
   display: flex;
-  flex-direction: column;
-  gap: var(--space-half);
+  align-items: baseline;
+  gap: var(--space-2);
   padding: 0 var(--space-3) var(--space-1);
 }
 
 .navGroupName {
   overflow: hidden;
   color: var(--fg-muted);
+  font-family: var(--font-display);
   font-size: var(--text-xs);
   letter-spacing: normal;
   text-overflow: ellipsis;
@@ -90,7 +90,7 @@
 .navList {
   display: flex;
   flex-direction: column;
-  gap: var(--line-w);
+  gap: var(--space-half);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -102,9 +102,10 @@
   align-items: center;
   gap: var(--space-2);
   width: 100%;
-  padding: var(--space-2) var(--space-3);
+  height: var(--control);
+  padding: 0 var(--space-3);
   border: 0;
-  /* A pill, as every row that's picked from (D-387); the one you're on is filled, no line on its side. */
+  /* A pill, as every row that's picked from (D-387); the one you're on is filled, nothing else marks it. */
   border-radius: var(--radius-full);
   background: none;
   color: var(--fg-muted);
@@ -127,44 +128,34 @@
   color: var(--fg-strong);
 }
 
-.navLabel::before {
-  content: '> ';
-  color: transparent;
+/* The keyboard's ring hugs the pill. */
+.navItem:focus-visible {
+  outline: var(--line-w) solid var(--accent-cyan);
+  outline-offset: 0;
 }
 
-.navItem[aria-current='page'] .navLabel::before {
-  color: var(--accent-cyan);
-}
-
-.navBadge {
-  min-width: var(--control-xs);
-  padding: 0 var(--space-1);
-  background: var(--accent-cyan);
-  color: var(--on-accent);
-  font-size: var(--text-xs);
-  letter-spacing: 0;
-  text-align: center;
-}
-
-.page {
-  /* The text column of every row (name + what it does); Choice outside a Row reads it too (D-093). */
-  --label-w: var(--menu-w);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
+/* The right side: a head that stays, and the page scrolling under it. */
+.main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
   min-height: 0;
-  overflow-y: auto;
-  padding: var(--space-6) var(--space-8) var(--space-8);
-  /* Its scroll bar stays inside the window's right corners (D-387). */
-  border-radius: 0 var(--window-inner) var(--window-inner) 0;
 }
 
 .head {
   display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-6) var(--space-4) var(--space-8);
+  border-bottom: var(--line-w) solid var(--line);
+}
+
+.headText {
+  display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-1);
-  /* Room for the close button in the corner. */
-  padding-right: var(--space-8);
+  min-width: 0;
 }
 
 .title {
@@ -176,36 +167,30 @@
   color: var(--fg-muted);
   font-family: var(--font-display);
   font-size: var(--text-sm);
+  line-height: var(--lh-body);
 }
 
-.close {
-  position: absolute;
-  top: var(--space-6);
-  right: var(--space-6);
-  z-index: var(--z-2);
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-8) var(--space-8);
+  /* Its scroll bar stays inside the window's bottom right corner (D-387). */
+  border-radius: 0 0 var(--window-inner) 0;
 }
 
-/* Account: who you are, large. */
+/* Account: who you are, large, and the way out at the right edge. */
 .profile {
   display: flex;
   align-items: center;
   gap: var(--space-4);
 }
 
-.avatar {
-  display: inline-grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: var(--control-xl);
-  height: var(--control-xl);
-  border-radius: var(--radius-full);
-  background: var(--accent-cyan);
-  color: var(--on-accent);
-  font-size: var(--text-lg);
-}
-
 .profileText {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-half);
   min-width: 0;
@@ -213,44 +198,28 @@
 
 .profileName {
   color: var(--fg-strong);
-  font-size: var(--text-md);
+  font-size: var(--text-lg);
   overflow-wrap: anywhere;
 }
 
 .profileEmail {
   color: var(--fg-muted);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   overflow-wrap: anywhere;
 }
 
-/* A section is a framed box, round with a line (D-387): label in its top edge, rows split by hairlines, a note at
-   the foot. */
+/* A group of rows (D-404): its numbered rule, the rows parted by dashed lines (D-277: dashed separates rows), a note
+   under them. No box. */
 .section {
-  position: relative;
+  display: flex;
   flex-shrink: 0;
-  border: var(--line-w) solid var(--line);
-  border-radius: var(--radius-box);
-}
-
-/* The box draws its own corner, so this is the plain field label, set into the top edge. */
-.label {
-  composes: fieldLabel from '../foundation/Frame.module.css';
-  position: absolute;
-  top: 0;
-  left: var(--space-3);
-  margin: 0;
-  padding: 0 var(--space-2);
-  background: var(--bg-raised);
-  color: var(--fg-muted);
-  font-weight: var(--weight-regular);
-  line-height: var(--lh-none);
-  transform: translateY(-50%);
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .body {
   display: flex;
   flex-direction: column;
-  padding: var(--space-2) var(--space-4);
 }
 
 .body > * {
@@ -258,18 +227,13 @@
 }
 
 .body > * + * {
-  border-top: var(--line-w) solid var(--line);
+  border-top: var(--line-w) dashed var(--line);
 }
 
 .foot {
-  padding: var(--space-3) var(--space-4);
-  border-top: var(--line-w) solid var(--line);
-  /* It paints down to the section's round foot. */
-  border-radius: 0 0 calc(var(--radius-box) - var(--line-w)) calc(var(--radius-box) - var(--line-w));
-  background: var(--wash-1);
-  color: var(--fg-muted);
+  color: var(--fg-dim);
   font-family: var(--font-display);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   line-height: var(--lh-body);
 }
 
@@ -293,28 +257,34 @@
   margin-top: var(--space-2);
 }
 
+/* A setting: the words take the room, the control keeps its own width at the right edge. */
 .row {
   display: grid;
-  grid-template-columns: var(--label-w) minmax(0, 1fr);
-  align-items: start;
-  gap: var(--space-6);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-8);
   font-size: var(--text-sm);
+}
+
+.row[data-wide] {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .rowText {
   display: flex;
   flex-direction: column;
+  gap: var(--space-half);
   min-width: 0;
+  max-width: var(--size-lg);
 }
 
-/* As tall as a control, so the name lines up with what's beside it. */
 .rowLabel {
   color: var(--fg-strong);
   font-size: var(--text-sm);
-  line-height: var(--control);
+  font-weight: var(--weight-medium);
 }
 
-/* What a setting does, in readable text beside it. */
+/* What a setting does, in readable text under its name. */
 .hint {
   color: var(--fg-muted);
   font-family: var(--font-display);
@@ -324,13 +294,17 @@
 
 .rowValue {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
-  gap: var(--space-2) var(--space-3);
+  gap: var(--space-3);
   min-width: 0;
-  min-height: var(--control);
+  min-height: var(--control-sm);
   color: var(--fg);
   overflow-wrap: anywhere;
+}
+
+.row[data-wide] .rowValue {
+  justify-content: flex-start;
 }
 
 .note {
@@ -345,14 +319,14 @@
   color: var(--accent-yellow);
 }
 
-/* Narrow screens: the side menu becomes a row of tabs above the page. */
+/* Narrow screens: the side menu becomes a row of tabs above the page, and every control goes under its words. */
 @media (max-width: 640px) {
   .dialog {
     height: calc(100vh - 2 * var(--space-4));
   }
 
   .inner {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
   }
 
@@ -360,9 +334,10 @@
     flex-direction: row;
     gap: var(--space-2);
     overflow-x: auto;
-    padding: var(--space-3) var(--space-4) 0;
+    padding: var(--space-2) var(--space-3);
     border-right: 0;
     border-bottom: var(--line-w) solid var(--line);
+    border-radius: var(--window-inner) var(--window-inner) 0 0;
   }
 
   /* Tabs have no room for the group names. */
@@ -377,35 +352,23 @@
   .navItem {
     width: auto;
     white-space: nowrap;
-    border-left: 0;
-    border-bottom: var(--line-w-bold) solid transparent;
   }
 
-  .navItem[aria-current='page'] {
-    border-bottom-color: var(--accent-cyan);
-  }
-
-  .navLabel::before {
-    content: none;
+  .head {
+    padding: var(--space-4) var(--space-3) var(--space-3) var(--space-4);
   }
 
   .page {
-    --label-w: 12ch;
     padding: var(--space-4) var(--space-4) var(--space-6);
-  }
-
-  /* The tabs scroll sideways; they stop short of the close button. */
-  .nav {
-    margin-right: var(--space-12);
-  }
-
-  .close {
-    top: var(--space-3);
-    right: var(--space-3);
+    border-radius: 0 0 var(--window-inner) var(--window-inner);
   }
 
   .row {
-    grid-template-columns: 1fr;
-    gap: var(--space-2);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rowValue {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
