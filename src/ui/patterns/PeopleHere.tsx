@@ -10,6 +10,8 @@ import { useThemeAccent } from '../../state/theme'
 import { useWs } from '../../views/workspace/canvas/context'
 import styles from './PeopleHere.module.css'
 import { Avatar } from '../primitives/Avatar'
+import { useDismiss } from '../foundation/useDismiss'
+import { useEscapeLayer } from '../foundation/useEscapeLayer'
 
 // Squares shown before `+N`.
 const MAX = 4
@@ -30,37 +32,12 @@ export function PeopleHere() {
     if (following === p.uid) follow(null)
     else if (!p.away) follow(p.uid)
   }
-  // Escape stops following, before anything else hears it.
-  useEffect(() => {
-    if (!following) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || (e.target as Element | null)?.closest?.('[data-coach]')) return
-      e.stopPropagation()
-      follow(null)
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [following, follow])
-
   const [listOpen, setListOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
-  // The list closes on a click outside it or Escape (before Escape stops following).
-  useEffect(() => {
-    if (!listOpen) return
-    const onDown = (e: PointerEvent) => !root.current?.contains(e.target as Node) && setListOpen(false)
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || (e.target as Element | null)?.closest?.('[data-coach]')) return
-      e.stopPropagation()
-      setListOpen(false)
-    }
-    // Capture: the canvas stops its own pointerdown from reaching the window.
-    window.addEventListener('pointerdown', onDown, true)
-    window.addEventListener('keydown', onKey, true)
-    return () => {
-      window.removeEventListener('pointerdown', onDown, true)
-      window.removeEventListener('keydown', onKey, true)
-    }
-  }, [listOpen])
+  // The list closes on a press outside it or Escape (useDismiss, the Escape stack), before Escape stops following.
+  useDismiss(root, () => setListOpen(false), { escape: true, on: listOpen })
+  // Escape stops following, before anything else hears it (D-191).
+  useEscapeLayer(() => follow(null), { on: !!following && !listOpen, first: true })
   useEffect(() => {
     if (peers.length <= MAX) setListOpen(false)
   }, [peers.length])

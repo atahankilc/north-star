@@ -10,8 +10,8 @@ import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import { retitleCard, TITLE_MAX, type Card } from '../../../data/cards'
 import { setCell, TEXT_MAX, TONE_VAR, type Cell } from '../../../data/matrix'
-import { rowsOf, statusOf, type Row } from '../../../data/source'
-import { addNamedRow, CHECKED, COL_W, colName, DEFAULT_STEPS, emptyTable, NAME_COL, readOwn, removeRow, renameRow, setColumnWidth, setTablePart, type Column, type TableSetup } from '../../../data/table'
+import { rowsOf, type Row } from '../../../data/source'
+import { addNamedRow, cellsByKey, CHECKED, COL_W, colName, DEFAULT_STEPS, emptyTable, fieldText, NAME_COL, readOwn, sortedRows, type FieldCtx, removeRow, renameRow, setColumnWidth, setTablePart, type Column, type TableSetup } from '../../../data/table'
 import { kindOfPiece } from '../../../data/pieces'
 import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
 import { useWs } from '../canvas/context'
@@ -96,68 +96,27 @@ export function useFieldText(): FieldText {
   const { pieces, evidence } = useWs()
   return useMemo(() => {
     const planeName = new Map(pieces.filter((p) => kindOfPiece(p) === 'plane').map((p) => [p.id, p.name || 'unnamed plane']))
-    const learned = new Map<string, [number, number]>()
+    const learned = new Map<string, { supports: number; contradicts: number }>()
     for (const e of evidence) {
-      const t = learned.get(e.nodeId) ?? [0, 0]
-      t[e.stance === 'supports' ? 0 : 1]++
+      const t = learned.get(e.nodeId) ?? { supports: 0, contradicts: 0 }
+      t[e.stance === 'supports' ? 'supports' : 'contradicts']++
       learned.set(e.nodeId, t)
     }
-    return (row: Row, field: NonNullable<Column['field']>): string => {
-      const c = row.card
-      if (!c) return ''
-      switch (field) {
-        case 'type':
-          return c.type
-        case 'plane':
-          // Every plane it's on, its home first (D-281).
-          return (c.planes ?? [c.pieceId]).map((p) => planeName.get(p) ?? '').filter(Boolean).join(', ')
-        case 'status':
-          return statusOf(c) ?? ''
-        case 'tags':
-          return (c.tags ?? []).map((t) => `#${t}`).join(' ')
-        case 'regions':
-          return (c.regions ?? []).join(' · ')
-        case 'evidence': {
-          const t = learned.get(c.id)
-          return t ? [t[0] && `+${t[0]}`, t[1] && `−${t[1]}`].filter(Boolean).join(' ') : ''
-        }
-        default:
-          return c[field] ?? ''
-      }
-    }
+    // Every plane it's on, its home first (D-281).
+    const ctx: FieldCtx = { planes: (c) => (c.planes ?? [c.pieceId]).map((p) => planeName.get(p) ?? ''), proof: (c) => learned.get(c.id) }
+    return (row: Row, field: NonNullable<Column['field']>): string => fieldText(ctx, row.card, field)
   }, [pieces, evidence])
 }
 
-// A table's rows, in its source's order or sorted by a column (empty ones last, whichever way).
-export function tableRows(setup: TableSetup, cards: Card[], fieldText: FieldText, byKey: Map<string, Cell>): Row[] {
-  const out = rowsOf(setup.rows, cards, !setup.manual)
-  const s = setup.sort
-  const col = s && (s.col === NAME_COL ? NAME_COL : setup.cols.find((c) => c.id === s.col))
-  if (!s || !col) return out
-  const key = (r: Row): string | number => {
-    if (col === NAME_COL) return r.name.toLowerCase()
-    if (col.field) return fieldText(r, col.field).toLowerCase()
-    const v = readOwn(col, byKey.get(`${r.key}|${col.id}`))
-    if (v.step) return (col.steps ?? DEFAULT_STEPS).indexOf(v.step)
-    if (v.number !== undefined) return v.number
-    if (v.checked) return 1
-    return v.text?.toLowerCase() ?? ''
-  }
-  const empty = (k: string | number) => k === ''
-  // Empty ones last, whichever way.
-  return [...out].sort((a, b) => {
-    const [x, y] = [key(a), key(b)]
-    if (empty(x) !== empty(y)) return empty(x) ? 1 : -1
-    const d = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y))
-    return s.desc ? -d : d
-  })
-}
+// A table's rows, in its source's order or sorted by a column (model/table.ts' sortedRows, the agent's reading too).
+export const tableRows = (setup: TableSetup, cards: Card[], fieldText: FieldText, byKey: Map<string, Cell>): Row[] =>
+  sortedRows(setup, rowsOf(setup.rows, cards, !setup.manual), fieldText, byKey)
 
 // What find looks through in a table (D-236): its heads, then each row's name and cells, on every page, in reading
 // order, each with its box in the table's px and its page.
 export function tableFindItems(piece: WithId<Piece>, cards: Card[], cells: Cell[], fieldText: FieldText): FindItem[] {
   const setup = tableOf(piece)
-  const byKey = new Map(cells.filter((c) => c.matrixId === piece.id).map((c) => [`${c.row}|${c.col}`, c]))
+  const byKey = cellsByKey(cells, piece.id)
   const cols = setup.cols
   const nameW = nameWidth(setup)
   const ws = cols.map(widthOf)

@@ -235,3 +235,178 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
   thread (`STICK_PX` in feel.ts). Settled drift: a thread no longer pulls you down to a new message while you read
   further up; it opens at its newest and sending takes you back down, as the agent's chat did.
   tests/unit/stickToBottom.test.ts.
+
+---
+
+# Round 2: what a second read found (2026-11-16)
+
+A list of findings and of ways to keep repeats from coming back, for the user to pick from. Built so far: R1.1–R1.4
+and R1.10 (D-388, under *Done, round 2* at the end); the rest is not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
+finder (knip) and four full reads (the kit, the workspace views, the logic layers, demo/onboarding/gallery/scripts).
+Line numbers are from that day. *Checked* = the drift was looked at again by hand after the read.
+
+Where the repeats are now: not in what is drawn (the kit holds), but in behaviour, between layers, and in the folders
+the checks skip. About 1,500–2,000 lines could go; what matters more is that several copies no longer agree.
+
+**Not read, so unknown, not clean:** `src/three`, threads (Threads.tsx, ThreadInbox.tsx), most of CardPanel.tsx and
+CanvasView.tsx, Agent.module.css (1,112 lines), presence, `database.rules.json`, most gallery and scene files (seen
+only by grep).
+
+## R1: copies that have drifted (do first)
+
+| # | What | Where | Drift | Home |
+|---|------|-------|-------|------|
+| R1.1 | Limits kept by hand in four layers | firestore.rules, model/clean.ts, ops/*, data/* | A tag's length: `TAG_MAX` 40, clean.ts:38 takes 60. Tags a card: the rules 30, ops/merge.ts:105 keeps 20. A workspace's name is cut at a raw 200 in data/workspaces.ts and ops/validate.ts: not a drift (the fields cap at 80 on purpose, the rules keep older names up to 200), only an unnamed number. Raw copies of named limits in ops/table.ts, matrix.ts, lens.ts, text.ts, tasks.ts, validate.ts; agent/chats.ts:63 beside job.ts:46-47 | model/limits.ts for every number; the test in R4.2 |
+| R1.2 | A table's sort and a field's text, twice | table/Table.tsx:95-155; agent/read/view.ts:205-263 | The agent reads another order than the person sees (step, number, check vs number, step, text, check); evidence `+2` vs `+2 −0`; regions joined ` · ` vs `, `; the agent cuts plane names at 20 before sorting | model/table.ts: `fieldText`, `sortedRows`, `cellsByKey` (the cell map is built five times); one fixture test for both readers |
+| R1.3 | Saving while typing, three times | text/TextItems.tsx:630-652 (`useWhilePaused`); documents/DocEditor.tsx:205-233; ui/primitives/AutosaveField.tsx | AutosaveField's own `SAVE_AFTER_MS = 400` beside feel.ts `AUTOSAVE_MS = 500` (*checked*), and it doesn't save on a hidden tab (D-330 says it does) | `useWhilePaused` in ui/foundation, all three on it |
+| R1.4 | Escape outside the one Escape stack | ui/patterns/Console.tsx:139 (`useEscapeCloses`, used by useDrawer, FilterDock, KanbanFilterDock); PeopleHere.tsx:34-63; WizardShell.tsx:47-54 | Who wins is who registered first, not what opened last (*checked*: an own capture listener) | `useEscapeLayer({ fields: false })` |
+| R1.5 | The setup panel's shell, three times, its state in three stores | matrix/MatrixSetup.tsx:77-94; table/TableSetup.tsx:73-95; deck/KanbanSetup.tsx:57-70; `useMatrixUi`, `useTableUi`, `useKanbanUi` | Leaving focus closes any matrix's setup, a table's own only, a deck's never; the matrix's toggle resets the tab, the others don't. Round 1's `<SetupShell>` was never built | canvas/SetupShell.tsx + canvas/setupStore.ts (`{ piece, tab }`) |
+| R1.6 | A value typed over where it's shown | Kit: InlineEdit, InlineField, CommitField (+ useCommit), AutosaveField, AddField. By hand: panels/TaskPanel.tsx:545 (`CheckField`), documents/Documents.tsx:397, deck/Kanban.tsx:733 and :768, canvas/CanvasView.tsx:1780 | Escape undoes four ways (a ref guard, a store check on blur, two kinds of rAF); none of the hand ones keeps what's typed on unmount | CommitField with a `bare` look and select-on-focus; InlineEdit and InlineField become it; AutosaveField draws `Field` |
+| R1.7 | A document's page and its actions | Page: DocumentPiece.tsx:93-131 and :216-255, DocReader.tsx:81-85, find/FindPreview.tsx:181-221. Actions: Documents.tsx:353-394, DocumentPiece.tsx:257-271, DocReader.tsx:86-112 | `edit` is in the row and the window, not in the page beside the list nor a document's focus; share and delete are missing from the window; "is editor" three ways | documents/docActions.ts (`useDocActions(d)`), one `<DocPage>` |
+| R1.8 | A piece kind's colour, three places | canvas/CanvasView.tsx:1430-1438; CanvasView.module.css:114-119; views/workspaces/WorkspacePicture.tsx:16-24 | A timeline is `--link-competes` on the canvas, `--link-draws` in the workspaces page's picture (*checked*) | `PIECE_TONE` beside `CARD_TONE` in ui/foundation |
+| R1.9 | tokens.ts mirrors tokens.css by hand | styles/tokens.ts:4-5 | `fgDim #6b6b6b`, `fg #e8e8e8` vs `#8a8a8a`, `#ededed` (*checked*): D-337's greys never reached it; read only by agent/picture.ts | the test in R4.2 |
+| R1.10 | Two drivers run a big job | agent/ui/agentStore.ts:212-232, :600-625; evals/run.ts:174-233 | The eval never handles a `pause` move and decides "a preview per step" itself; weakens D-341's "what is measured is what ships" | `afterTurn`, `afterApply` in agent/job.ts |
+| R1.11 | Window drags by hand beside `pressDrag` | deck/Kanban.tsx:403-425; deck/Timeline.tsx:463-491; documents/Documents.tsx:465-493 | Thresholds 4, 4.5 and 5 px beside `DRAG_PX`; the deck's box select selects on a cancel and lets Escape through, the plane's drops it | `pressDrag` + `DRAG_PX`; one `boxDrag` in canvas/selection.ts |
+| R1.12 | Link kinds listed six ways | model/edges.ts:7; ops/edges.ts:7; agent/read/lines.ts:21; model/planeFilter.ts:17; plane/PlaneLinks.tsx:34; panels/CardPanel.tsx:94 | The panel says `inspired`, the others `inspired by` (*checked*) | one record in model/edges.ts (kind, label, group, order), the type from it |
+| R1.13 | "Follow what was just added" | matrix/Matrix.tsx:205-230; table/Table.tsx:77, :246-262 | A row added to a matrix from its setup, or beside a plane, isn't glided to; a table's is | `useFollowAdded` beside gridCursor.ts |
+| R1.14 | Canvases and spots have no cleaner | data/importWorkspace.ts:63-107; ops/validate.ts:244-248; firestore.rules:355-366 | Import fills a missing `order` with 0, validate refuses it | `cleanCanvas`, `cleanSpot` in model/clean.ts |
+| R1.15 | The agent's dates beside the model's | agent/read/lines.ts:93, :195, view.ts:348, tools.ts:433, :718, :306, :822; agent/ui/suggest.ts:19 | `due_before: 2026-13-45` passes the query (`isDay` checks the calendar); suggest.ts takes today in UTC and calls a finished task late | `overdue(t, finished, today)`, `isDay` in model/tasks.ts |
+| R1.16 | Storage read outside state/local.ts | agent/ui/Agent.tsx:88 (no guard, in a layout effect; *checked*), agent/ui/settings.ts, agent/usage.ts, data/onboarding.ts, ui/patterns/panelWidth.ts | A browser refusing storage: the crash round 1 fixed for the change log | `readLocal`, `keepLocal` |
+
+## R2: repeats that still agree
+
+**Views**
+- A piece in a pane (view + setup + dock tools) four times beside the kind record: CanvasView.tsx:1024 and :2033,
+  Beside.tsx:153-200 (still `kind === 'matrix' ? … : …`), deck/TasksSide.tsx:243-268. Home: `<LensPane>` reading
+  `PIECE_KINDS`.
+- Kanban vs CardKanban: the view wrapper, `dist()`, folds, `vars`, the ghost (Kanban.tsx:206-260, :335, :459, :570 vs
+  CardKanban.tsx:49-106, :138, :227). Home: deck/boardDrag.ts, `useFolds`. The `.layer > .world` JSX is also in Matrix,
+  Table, Timeline and Documents: a `<PieceLayer>` component (round 1 shared only its CSS).
+- A name typed or a card picked for an axis: matrix/MatrixSetup.tsx:231-301 (`AddPill`, arrow keys) vs
+  Matrix.tsx:684-751 (`AddEntry`, none). Home: `usePromptPick`.
+- `entriesOf` (model/matrix.ts:146) and `rowsOf` (model/source.ts:86) share their merge; their UI twin, the "added by
+  hand" pills, MatrixSetup.tsx:164-186 vs TableSetup.tsx:138-159.
+- Small: a textarea as tall as its text by hand (TextItems.tsx:584, :811) beside `useAutoGrow`; a name's leading number
+  regex three times (TextItems.tsx:94, CanvasView.tsx:1424, CardPanel.tsx:932); table/rows.ts:61 `ORDER` is
+  model/graph.ts `CHAIN`; the last order in a column five times; `Toggle` and `Choices` (MatrixSetup.tsx:110-117) only
+  rename Checkbox and Options.
+- CSS: a cell's inside, Matrix.module.css:303-346 vs Table.module.css:218-262; a peer's name tag,
+  collab.module.css:28 vs DocEditor.module.css:167; Crash.module.css:3 vs WorkspaceLayout.module.css:82.
+
+**Kit**
+- `ResizeEdge` and `SplitLine` are one component twice (a line at rest or not). Home: one `DragLine`.
+- `PeopleHere` rebuilds a menu, a tip, Button's hover and outside-press by hand, and reads a view's context; it belongs
+  in views/workspace on Menu, Avatar and `useDismiss`.
+- `Tip` re-does `Popover`'s measure-then-place (and doesn't follow a scroll); `Menu` hangs by CSS, so it can be clipped
+  where a Select isn't.
+- The round surface with a line in about six CSS files (PromptFrame, Window, HazardConfirm, Tip; Toast, PeopleHere and
+  Settings compose the old square Frame and override it). Home: one `surface` class.
+- `NAME ──── count` by hand in FilterColumn.tsx:74 and PromptRow.tsx:111 beside `Rule`; Label's five declarations
+  repeated in five modules.
+- The close button, the window title's style, and Settings' avatar by hand (Settings.tsx:134) though `Avatar` exists.
+- "Is this a text field" three ways (focus.ts:42, useEscapeLayer.ts:14, WizardShell.tsx:20) plus CanvasView.tsx:453.
+- Arrow keys round a group twice (Tabs.tsx:40, Options.tsx:47); `usePromptNav` and `usePromptPick` overlap.
+- Three rAF loops beside `tween()` (Appear.tsx:27, DecodeText.tsx:20, HazardConfirm.tsx:105) with raw durations.
+- The agent's answer is a third light Markdown (agent/ui/Agent.tsx:815-927 beside LightMarkdown and Markdown).
+
+**Logic**
+- Text cut to n with `…`: about 14 local copies (agent/loop.ts:147, picture.ts:36, chats.ts:74, changeset.ts:740,
+  preview.ts:166, ops/document.ts:22, ops/merge.ts:35…). Home: `cut`, `flat` in model/words.ts.
+- Twins of helpers that have a home: agent/read/text.ts `count` is `plural`, its `norm` is model/lens.ts'; ops/arrange.ts
+  `snapTo` is model/grid.ts `snap`; `clone` six times; deep equal five; slug four. Home: model/words.ts, a small
+  model/util.ts.
+- The two provider adapters: the same error class, `abortError` (`'Stopped.'` vs `'stopped'`), tool shape, sources,
+  `respond()`; anthropic.ts:334 sums usage by hand and drops `reasoning`; the model regexes in three files. Home:
+  agent/provider.ts. Retry and usage counting stay per provider.
+- Value lists re-declared in clean.ts (:134–:450) and ops/registry.ts though named in ops/text.ts, ops/deck.ts,
+  data/tasks.ts, model/pieces.ts; lanes four times. Home: model/shapes.ts.
+- Import's batching (data/importWorkspace.ts:265-283) is now `wholeBatches` (round 1's reason to keep it went with
+  D-369); data/liveTransport.ts:87-104 hand-rolls `inBatches`.
+- A markdown document made three ways (data/documents.ts:176, :203; ops/document.ts:30); `'agent-notes'` for `NOTES_ID`.
+- Collection maps: agent/changeset.ts:479 and preview.ts:200 the same; io/bundle.ts `BUNDLE_COLLECTIONS` is
+  `WS_COLLECTIONS` less threads by hand.
+- "Who am I" as a name about 12 times, `'Someone'` and `'someone'`. Home: `authorName(user)`.
+- Renaming a piece three times in ops (pieces.ts, table.ts:192, matrix.ts:306).
+- 37 inline `=== 1 ? '' : 's'` left; new ones since round 1.
+- functions/src/index.ts: a second SSE parser, `scrub` covering only `sk-`, and 1.0's request shape (today's agent
+  request would not pass `cleanBody`). Parked until Blaze; then test `cleanBody` against `requestBody()`.
+
+**Demo, gallery, scripts**
+- demo/fixtures kit.ts and o10–o13.ts, split by build step: the scene's CSS injector five times, `NO_HUD` twice,
+  `wizardCss` twice, `glideTo` twice, a cubic ease seven times (motionTokens has `easeInOut`). Home: one demo/stage.ts.
+- scenes/peers-comment.ts keeps its own copy of o13.ts's and kit.ts's helpers (~90 lines).
+- The same made-up threads in demo/scenes/threads-panel.ts:18-45 and gallery/panels.tsx:15-48.
+- The real screen's arrangement copied by hand: WorkspaceLayout.tsx:108-176 into demo/views.tsx:35-92 (gallery reuses
+  the copy), so a HUD change doesn't reach lessons or the gallery. Home: a pure `WorkspaceScreen` all three mount.
+- Stage (demo) and Mount (gallery) share the provider stack and a `Boundary`; made-up pointer input five times; a
+  document's text filled by two copies (o12.ts:43, gallery/canvas.tsx:96).
+- Gallery files: `none` in 20 files, `TITLE`, `day(n)`, a base task, `wizard(then)`, a `Live` holder. Home:
+  gallery/samples.ts.
+- scripts: `walk()` five times, the baseline code twice, the list of checks twice, covered folders in three places.
+  Home: scripts/lib.mjs. check-tokens.mjs:16 `sources` names src/ui/cardTone.ts and src/ui/motionTokens.ts, which moved
+  to foundation/ (*checked*); check-scenes.mjs has no npm script and isn't in CI.
+
+## R3: unused
+
+- `ui/primitives/Swatches.tsx`: only its own gallery uses it (*checked*).
+- Reported unused, to confirm before deleting: Frame.module.css `.dashed`, `.interactive`, `.label`; `Empty`'s
+  `tone="dim"` (both tones are one colour); exports named nowhere else: `labelClass`, `countText`, `initialOf`,
+  `turnUsage`, `byReading`, `canvasOfLabel`, `hasChecks`, `matrixAxes`, `DOC_FIELDS`, `canvasRef`, `posRef`,
+  `changeLogOn`, `removeComparison`, `kindOfType`, `edgeRef`, `snapshotWith`, `snapPoint`.
+- data/regions.ts: a re-export nothing imports. plane/cardInside.ts, deck/kanbanCards.ts: two-line re-exports of model/.
+- onboarding/devMount.tsx, devGuides.tsx: imported by nothing, driven from the console; ask the user before deleting.
+- Not a real repeat: jscpd's 100-line clone inside TextItems.tsx (its line ranges don't hold; only ~8 lines of the
+  title's layout are alike, on purpose).
+
+## R4: keeping repeats from coming back (ideas, none decided)
+
+Why they got in: the checks see what is drawn, not behaviour; they skip `src/demo`, `src/gallery`, `*.gallery.tsx`,
+`scripts` and the inside of `src/ui`; the rules file can't import and only ~30 numbers are tested against it; a new
+kind is made by copying its nearest sibling; the gallery shows components, not hooks or helpers; "left, another
+session was in it" notes stay left.
+
+1. **Checks for behaviour**, in check:kit with the same baseline that only shrinks: a `window.addEventListener` for
+   keys or the pointer outside ui/foundation; a `requestAnimationFrame` loop outside `tween()`; `localStorage` outside
+   state/local.ts; a bare `.slice(0, n)` or `length > n` in model/, ops/, data/; a raw `<button>`/`<input>` inside
+   src/ui.
+2. **Tests where copies can't merge** (as limits.test.ts): the rules' `onlyKeys` and `in [...]` lists against clean.ts
+   and shapes.ts; tokens.ts against tokens.css; `BUNDLE_COLLECTIONS` against `WS_COLLECTIONS`; the app's and the
+   agent's reading of one table fixture.
+3. **Two ready tools in CI**: jscpd failing above today's share; knip failing on a new unused export or file.
+4. **A same-name check**: the hook warns when a new export's name already exists in another file with another body
+   (`norm`, `clone`, `usageOf`, `tableRows`, `effortFor` got in this way).
+5. **The skipped folders covered**: scripts/lib.mjs, demo/stage.ts, and check:kit reading demo and gallery.
+6. **Fewer near-twins in the kit** (five in-place fields to two), a "which one when" page in the gallery, and an index
+   page for foundation's hooks and model's helpers.
+7. **A new piece kind only through `PIECE_KINDS`**, once `SetupShell` and `LensPane` exist: nothing left to copy.
+
+Suggested order: R1.1–R1.4 and R1.10 (they change behaviour), then R4.1–R4.4 so nothing new gets in, then the big
+merges (R1.5–R1.7, the demo) and R3.
+
+## Done, round 2
+
+- **R1.1, R1.2, R1.3, R1.4, R1.10 (2026-11-16, D-388).**
+  - R1.1: `TAGS_MAX`, `REGIONS_MAX`, `WORKSPACE_NAME_KEPT_MAX` in model/limits.ts, tested against the rules; clean.ts
+    cuts a tag at `TAG_MAX` and a region at `REGION_MAX` (one helper cut both at 60), a label's text by `textMax`, a
+    column's limit by `LIMIT_MAX`; the raw copies of named limits in ops/{table,matrix,lens,text,tasks,validate,merge}.ts
+    and data/workspaces.ts import them; agent/chats.ts reads job.ts' `JOB_TITLE_MAX`, `MAX_STEPS`, `JOB_PAUSED_MAX`.
+    Settled drift: a tag is at most 40 for import and the agent too (was 60); a merge keeps 30 tags (was 20).
+    Left: the numbers with no name yet (a package's 60 members, ids' 128, a member's email 320 and photo 2000, a
+    thread's preview, clean.ts' list sizes, rules, box ids and report sizes), and R4.2's test of field and value lists.
+  - R1.2: model/table.ts `fieldText(ctx, card, field)`, `sortKey`, `sortedRows`, `cellsByKey`; Table.tsx' `useFieldText`
+    and `tableRows` and the agent's `tableValues` stand on them. Settled drift: the agent's order is the person's; it
+    reads evidence as `+2` and regions with ` · `. tests/unit/tableRead.test.ts holds the two orders equal on every
+    fixture table. Left: Matrix.tsx' two cell maps (built from a list already filtered).
+  - R1.3: ui/foundation/pausedSave.ts; TextItems' own `useWhilePaused` deleted, DocEditor's timer and AutosaveField's
+    `SAVE_AFTER_MS` gone. Settled drift: AutosaveField waits 500 ms (was 400) and saves on a hidden tab.
+    tests/unit/pausedSave.test.ts. Left: `TitleFields`' own `saved` ref (TextItems.tsx), R2's textarea height.
+  - R1.4: `useEscapeCloses` is `useEscapeLayer(close, { on: open })`; PeopleHere's list on `useDismiss`, its
+    stop-following on a `first` layer. The stack gained: a rootless layer steps aside only for a menu, a list or a
+    modal; `first`. Settled drift: what opened last closes first, whatever registered first. Left: WizardShell's Enter
+    listener (not Escape), the three "is this a text field" selectors (R2, kit), the rest of PeopleHere (R2, kit).
+  - R1.10: agent/job.ts `takeMove`, `moveAfterTurn`; agentStore.ts' `moveJob` and `afterTurn` and evals/run.ts' two
+    spots call them. Settled drift: the eval takes a pause as the app does (the job goes `paused` with why).
+  - Checked: tsc; vitest 1099/0; the stub evals 59/59; check:tokens, kit, gallery, lessons 0; build; headless Chrome on
+    the gallery (Escape on both filter docks' drawers, the people list, stopping a follow, a self-saving field; the
+    acting examples of the filter docks and the table). Not seen in the real app; no paid eval run.
+

@@ -135,7 +135,7 @@ Columns 1–8 of 9 (col_page 1/2). Next: col_page 2.
 |---|---|---|---|---|
 | c435 Accbase | EU |  |  |  |
 | c477 Accbuddy | Germany |  | 8 €/mo |  |
-| c475 Accio | Netherlands, US |  |  |  |
+| c475 Accio | Netherlands · US |  |  |  |
 | c596 Accpad | EU |  |  |  |
 | c497 Accpilot | Europe |  | 45 €/mo |  |
 | c474 Accster | EU |  |  |  |
@@ -143,21 +143,21 @@ Columns 1–8 of 9 (col_page 1/2). Next: col_page 2.
 | c437 Accwise | Europe |  |  |  |
 | c431 Bookbuddy | DACH |  |  |  |
 | c491 Bookflow | DACH |  |  |  |
-| c442 Bookly | US, DACH | #accountants | 16 €/mo |  |
+| c442 Bookly | US · DACH | #accountants | 16 €/mo |  |
 | c1218 Bookster | Global |  |  |  |
 | c480 Bookware | EU |  | 10 €/mo |  |
-| c450 Bookwise | UK, Germany |  | 60 €/mo |  |
-| c1207 Cashbase | Spain, US |  |  |  |
+| c450 Bookwise | UK · Germany |  | 60 €/mo |  |
+| c1207 Cashbase | Spain · US |  |  |  |
 | c443 Cashdesk | US |  | 20 €/mo |  |
 | c488 Cashflow | France | #banking #accountants | 53 €/mo |  |
-| c440 Cashify | EU, UK |  | 17 €/mo |  |
+| c440 Cashify | EU · UK |  | 17 €/mo |  |
 | c432 Cashly | Global | #growth | 12 €/mo |  |
 | c439 Cashpad | Global |  | 54 €/mo |  |
-| c460 Cashster | Europe, Netherlands |  | 14 €/mo |  |
-| c582 Cashwise | US, France |  | 37 €/mo |  |
-| c459 Countbuddy | Spain, France |  |  |  |
+| c460 Cashster | Europe · Netherlands |  | 14 €/mo |  |
+| c582 Cashwise | US · France |  | 37 €/mo |  |
+| c459 Countbuddy | Spain · France |  |  |  |
 | c499 Countdesk | DACH |  | 22 €/mo |  |
-| c462 Countflow | Netherlands, DACH | #germany #onboarding |  |  |
+| c462 Countflow | Netherlands · DACH | #germany #onboarding |  |  |
 </workspace_content>
 Rows 1–25 of 110 (page 1/5). Next: page 2.
 [more: Rows 1–25 of 110 (page 1/5). Next: page 2.]

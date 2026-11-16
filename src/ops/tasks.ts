@@ -10,7 +10,7 @@ import type { Piece } from '../data/model'
 import type { Check, KanbanCol, KanbanSetup, Task, TaskPriority } from '../data/tasks'
 import { DELETE, type OpCtx, type Plan, type Write } from './types'
 import { cardIn, find, handleOf, refuse } from './util'
-import { TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, TASK_NOTES_MAX as NOTES_MAX } from '../model/limits'
+import { AUTHOR_NAME_MAX, TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, TASK_NOTES_MAX as NOTES_MAX } from '../model/limits'
 import { PRIORITIES } from '../model/cards'
 export { TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, NOTES_MAX }
 
@@ -135,7 +135,7 @@ function taskFields(ctx: OpCtx, op: string, input: TaskInput, patch: boolean, wa
   if (has('assigneeName')) {
     if (gone(input.assigneeName) || input.assigneeName === '') clear('assigneeName')
     else if (typeof input.assigneeName !== 'string') refuse(op, 'assigneeName is text', 'give their name, or leave it out')
-    else out.assigneeName = input.assigneeName.slice(0, 200)
+    else out.assigneeName = input.assigneeName.slice(0, AUTHOR_NAME_MAX)
   }
   for (const k of ['start', 'due'] as const) {
     if (!has(k)) continue

@@ -55,7 +55,10 @@ feature comes back as a piece, and check them with the user then.
   the canvas guard, `dragPointer`, the sheet a docked column lies under (D-387).
 - Shared code above the kit (D-361, docs/specs/shared-code.md): behaviour and logic written twice get one home (pure
   helpers in model/, checks in ui/foundation, panel sections in panels/); drifted copies settle on one behaviour; four
-  groups, small pure ones first, the drag/pan maths after the drag work.
+  groups, small pure ones first, the drag/pan maths after the drag work. Round 2 (D-388): limits by name everywhere (a tag 40, 30 a card), a table's
+  text and sort in model/table.ts for the app and the agent, saving while typing in foundation/pausedSave.ts, drawers and
+  the people list on the Escape stack (a rootless layer; `first` for stopping a follow), one job step (`takeMove`) for the
+  app and the evals.
 - The UI rules are enforced, not asked for (D-339): a Claude Code hook on every write (`scripts/ui-rules-hook.mjs`) and git
   hooks on commit (`scripts/commit-rules.mjs`; a component without its gallery or lesson needs `Gallery:`/`Lessons:` in the
   message); check:kit also refuses `menuHost`, `bracketSpan`, `rawLimit`, CSS `counter`, `pieceSurface`.

@@ -29,7 +29,7 @@ import { systemPrompt } from '../src/agent/prompt'
 import { openaiModel } from '../src/agent/openai'
 import { anthropicModel } from '../src/agent/anthropic'
 import { effortFor } from '../src/agent/models'
-import { chooseAt, nextMove, previewOf, settled, type Job } from '../src/agent/job'
+import { chooseAt, moveAfterTurn, nextMove, previewOf, takeMove, type Job } from '../src/agent/job'
 import { modelFor, pipelineProblems, planThenCheap, roleOf, routed, single, type Pipeline, type Role as TurnRole } from '../src/agent/pipeline'
 import { gitState, hashOf, recordRun } from './records'
 import { compareRuns, readRun } from './compare'
@@ -185,10 +185,11 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
           }
         }
         const job = env.job?.get() ?? null
-        const move = nextMove(job, applied !== undefined ? { applied } : {})
-        if (move && 'go' in move && job) {
-          env.job!.set({ ...job, settledAt: settled(job) })
-          asks.splice(i + 1, 0, move.go)
+        // The app's own step (job.ts' takeMove): a go-on is the next message, a pause leaves the job waiting.
+        const taken = takeMove(job, nextMove(job, applied !== undefined ? { applied } : {}))
+        if (taken) {
+          env.job!.set(taken.job)
+          if (taken.send !== undefined) asks.splice(i + 1, 0, taken.send)
         }
         continue
       }
@@ -224,12 +225,14 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
           asks.push({ goOn: true })
           continue
         }
-        const move = nextMove(job, env.changes?.items.length ? { pending: true } : { waits: true })
-        if (move && 'go' in move) {
-          jobGoOns++
-          env.job!.set({ ...job, settledAt: settled(job) })
-          asks.push(move.go)
-          continue
+        const taken = takeMove(job, moveAfterTurn(job, { pending: !!env.changes?.items.length }))
+        if (taken) {
+          env.job!.set(taken.job)
+          if (taken.send !== undefined) {
+            jobGoOns++
+            asks.push(taken.send)
+            continue
+          }
         }
       }
       // The last turn planned and wrote nothing: say go, once (unless the task keeps plans as plans).

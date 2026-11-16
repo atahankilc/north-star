@@ -6,9 +6,9 @@
 import { kindOf } from '../../model/labels'
 import { kindOfPiece, KIND_NAME } from '../../model/pieces'
 import { cellView, entriesOf, isOpen, nounOf, readCell, readingOf, tops, CONFIDENCE_MARK, type Cell, type Entry, type MatrixSetup } from '../../model/matrix'
-import { colName, readOwn, DEFAULT_STEPS, type Column, type TableSetup } from '../../model/table'
+import { cellsByKey, colName, fieldText, readOwn, sortedRows, type Column, type FieldCtx, type TableSetup } from '../../model/table'
 import { axisEntries, tableRows } from '../../model/lens'
-import { statusOf, type Row } from '../../model/source'
+import type { Row } from '../../model/source'
 import { axisOf, byBox, byColumn, heldCards, rowFieldOf, scorer, boxKey } from '../../model/kanbanCards'
 import { pageText } from '../../model/findIndex'
 import type { KanbanSetup } from '../../data/tasks'
@@ -199,28 +199,12 @@ function matrixView(ws: ReadWs, ids: Ids, d: Derived, p: P, page = 1, colPage = 
 
 // ---- Table
 
-// A card's field as its column shows it.
-function fieldText(d: Derived, c: Card | undefined, f: string): string {
-  if (!c) return ''
-  switch (f) {
-    case 'type':
-      return c.type
-    case 'plane':
-      return (d.planesOf.get(c.id) ?? []).map((x) => oneLine(d.nameById(x), 20)).join(', ')
-    case 'status':
-      return statusOf(c) ?? ''
-    case 'tags':
-      return (c.tags ?? []).map((t) => `#${t}`).join(' ')
-    case 'regions':
-      return (c.regions ?? []).join(', ')
-    case 'evidence': {
-      const p = d.facts.get(c.id)?.proof
-      return p ? `+${p.supports} −${p.contradicts}` : ''
-    }
-    default:
-      return String((c as Record<string, unknown>)[f] ?? '')
-  }
-}
+// A card's field as its column shows it (model/table.ts' fieldText, the app's own): `plain` is what the rows sort by,
+// the same text the person's table sorts by; shown, a plane's name is cut to a few words.
+const fieldCtx = (d: Derived, plain: boolean): FieldCtx => ({
+  planes: (c) => (d.planesOf.get(c.id) ?? []).map((x) => (plain ? d.nameById(x) : oneLine(d.nameById(x), 20))),
+  proof: (c) => d.facts.get(c.id)?.proof,
+})
 
 function ownText(col: Column, c: Cell | undefined): string {
   const r = readOwn(col, c)
@@ -228,40 +212,18 @@ function ownText(col: Column, c: Cell | undefined): string {
   return c?.notes ? `${v} (note: ${oneLine(c.notes, 40)})` : v
 }
 
-export function tableValues(ws: ReadWs, ids: Ids, p: P): { cols: string[]; rows: { row: Row; values: string[]; raw: (string | number)[] }[] } {
+export function tableValues(ws: ReadWs, ids: Ids, p: P): { cols: string[]; rows: { row: Row; values: string[] }[] } {
   ws = clean(ws)
   const d = derive(ws)
   const t = p.table as TableSetup
-  const at = new Map(ws.cells.filter((c) => c.matrixId === p.id).map((c) => [`${c.row}|${c.col}`, c]))
-  const rows = tableRows(t, ws.cards).map((row) => {
-    const raw: (string | number)[] = [row.name.toLowerCase()]
+  const at = cellsByKey(ws.cells, p.id)
+  const [shown, plain] = [fieldCtx(d, false), fieldCtx(d, true)]
+  // In the order the person sees (sortedRows, the app's own).
+  const rows = sortedRows(t, tableRows(t, ws.cards), (r, f) => fieldText(plain, r.card, f), at).map((row) => {
     const values = [row.card ? `${ids.short('card', row.card.id)} ${oneLine(row.name, 40)}` : oneLine(row.name, 40) || '(unnamed)']
-    for (const col of t.cols) {
-      if (col.field) {
-        const v = fieldText(d, row.card, col.field)
-        values.push(v)
-        raw.push(v.toLowerCase())
-      } else {
-        const c = at.get(`${row.key}|${col.id}`)
-        values.push(ownText(col, c))
-        const r = readOwn(col, c)
-        raw.push(r.number ?? (r.step ? (col.steps ?? DEFAULT_STEPS).indexOf(r.step) : (r.text?.toLowerCase() ?? (r.checked ? 1 : ''))))
-      }
-    }
-    return { row, values, raw }
+    for (const col of t.cols) values.push(col.field ? fieldText(shown, row.card, col.field) : ownText(col, at.get(`${row.key}|${col.id}`)))
+    return { row, values }
   })
-  if (t.sort) {
-    const i = t.sort.col === 'name' ? 0 : t.cols.findIndex((c) => c.id === t.sort!.col) + 1
-    if (i >= 0) {
-      const dir = t.sort.desc ? -1 : 1
-      rows.sort((a, b) => {
-        const [x, y] = [a.raw[i], b.raw[i]]
-        if (x === '' && y !== '') return 1
-        if (y === '' && x !== '') return -1
-        return dir * (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y)))
-      })
-    }
-  }
   return { cols: ['name', ...t.cols.map((c) => colName(c) + (c.unit ? ` (${c.unit})` : '') + (c.field ? '' : ''))], rows }
 }
 

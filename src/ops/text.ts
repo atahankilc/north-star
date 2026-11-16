@@ -15,6 +15,7 @@ import { hostKinds, KIND_NAME, kindOfPiece, sticks } from '../model/pieces'
 import { boundTo } from './stick'
 import { DELETE, type OpCtx, type Plan, type Write } from './types'
 import { a, cardColl, find, handleOf, refuse } from './util'
+import { AUTHOR_NAME_MAX, KICKER_MAX } from '../model/limits'
 
 export const TEXT_KINDS = ['heading', 'paragraph', 'sticky', 'section', 'title'] as const
 export const HEADING_SIZES = ['heading', 'subheading', 'minor'] as const
@@ -95,7 +96,7 @@ function styleOf(op: string, kind: TextKind, args: TextStyle, patch: boolean): R
     } else if (k === 'w' || k === 'h') {
       if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) refuse(op, `${k} must be a number above 0`, `give ${k} in its space's px`)
     } else if (typeof v !== 'string') refuse(op, `${k} must be text`, `give ${k} as a string`)
-    out[k] = k === 'text' ? String(v).slice(0, textMax(kind === 'paragraph' ? { size: 'note' } : kind === 'sticky' ? { kind: 'sticky' } : {})) : k === 'kicker' ? String(v).slice(0, 60) : v
+    out[k] = k === 'text' ? String(v).slice(0, textMax(kind === 'paragraph' ? { size: 'note' } : kind === 'sticky' ? { kind: 'sticky' } : {})) : k === 'kicker' ? String(v).slice(0, KICKER_MAX) : v
   }
   return out
 }
@@ -176,7 +177,7 @@ export function createText(ctx: OpCtx, args: CreateTextArgs): Plan {
     fields.color ??= 'yellow'
     fields.uid = args.uid ?? ctx.actor.uid
     const author = args.author ?? ctx.actor.name
-    if (author) fields.author = String(author).slice(0, 200)
+    if (author) fields.author = String(author).slice(0, AUTHOR_NAME_MAX)
   } else if (kind === 'section') fields.kind = 'section'
   else ((fields.kind = 'title'), (fields.w ??= TITLE_W.initial))
   fields.text = kind === 'title' ? '' : ((style.text as string | undefined) ?? '')

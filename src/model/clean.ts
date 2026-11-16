@@ -3,8 +3,9 @@
 import { CARD_TYPES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, PRIORITIES, VALIDATIONS, type AnyType } from './cards'
 import { AVAILABILITIES, CARD_FIELDS, CELL_KINDS, COL_W, CONFIDENCES, CRITERION_SCORES, DOC_COLS, DOC_KINDS, DOC_LIMITS, EVIDENCE_KINDS, FIELDS, OWN_KINDS, TONES, TOTALS_AS, TOTALS_AT, UNFOLDS } from './shapes'
 import { bytesOf as bytes } from './notes'
-import { AUTHOR_NAME_MAX, AXIS_NOUN_MAX, BOX_NAMES_MAX, BOX_NAME_MAX, CATEGORY_MAX, CELL_NOTES_MAX, CELL_TEXT_MAX, CHECKS_MAX, CHECK_MAX, COL_NAME_MAX, CRITERION_MAX, EVIDENCE_TEXT_MAX, FACT_MAX, GLYPH_MAX, KANBAN_COLS_MAX, KICKER_MAX, LABELS_MAX, LABEL_MAX, LINK_LABEL_MAX, LONG_TEXT_MAX, MATRIX_NAME_MAX, PIECE_NAME_MAX, SOURCE_MAX, STEP_LABEL_MAX, TABLE_COL_NAME_MAX, TASK_NOTES_MAX, TASK_TITLE_MAX, TITLE_MAX, UNIT_MAX, URL_MAX } from './limits'
+import { AUTHOR_NAME_MAX, AXIS_NOUN_MAX, BOX_NAMES_MAX, BOX_NAME_MAX, CATEGORY_MAX, CELL_NOTES_MAX, CELL_TEXT_MAX, CHECKS_MAX, CHECK_MAX, COL_NAME_MAX, CRITERION_MAX, EVIDENCE_TEXT_MAX, FACT_MAX, GLYPH_MAX, KANBAN_COLS_MAX, KICKER_MAX, LABELS_MAX, LIMIT_MAX, REGIONS_MAX, REGION_MAX, TAGS_MAX, TAG_MAX, LABEL_MAX, LINK_LABEL_MAX, LONG_TEXT_MAX, MATRIX_NAME_MAX, PIECE_NAME_MAX, SOURCE_MAX, STEP_LABEL_MAX, TABLE_COL_NAME_MAX, TASK_NOTES_MAX, TASK_TITLE_MAX, TITLE_MAX, UNIT_MAX, URL_MAX } from './limits'
 import { newId } from './scales'
+import { textMax } from './labels'
 import { RULE_FIELDS } from './source'
 import type { DocBody } from '../data/documents'
 
@@ -34,8 +35,9 @@ const yes = (v: unknown) => (v === true ? true : undefined)
 const bool = (v: unknown) => (typeof v === 'boolean' ? v : undefined)
 const list = (v: unknown, max: number): unknown[] => (Array.isArray(v) ? v.slice(0, max) : [])
 const strings = (v: unknown, max: number, len: number) => list(v, max).filter((t): t is string => typeof t === 'string').map((t) => t.slice(0, len))
-const tags = (v: unknown, max = 30) => {
-  const t = strings(v, max, 60)
+// A card's tags, or a competitor's regions: each list and its items by their own limits.
+const tags = (v: unknown, max = TAGS_MAX, len = TAG_MAX) => {
+  const t = strings(v, max, len)
   return t.length ? t : undefined
 }
 // A size the rules take (> 0, ≤ 100000).
@@ -77,7 +79,7 @@ export function cleanCard(type: AnyType, d: Raw, now: number) {
           description: str(d.description, LONG_TEXT_MAX),
           pricing: str(d.pricing, FACT_MAX),
           audience: str(d.audience, FACT_MAX),
-          regions: tags(d.regions, 20),
+          regions: tags(d.regions, REGIONS_MAX, REGION_MAX),
         }
       : { body: str(d.body, LONG_TEXT_MAX), validation: oneOf(d.validation, VALIDATIONS) }),
     ...(type === 'feature' && {
@@ -156,9 +158,8 @@ export function cleanLabel(d: Raw, now: number) {
   // A section without a size isn't one (rules).
   if (kind === 'section' && (!w || !h)) return null
   const sizeName = oneOf(d.size, ['heading', 'subheading', 'minor', 'note'] as const)
-  const long = sizeName === 'note' || kind === 'sticky'
   return compact({
-    text: kind === 'title' ? '' : (str(d.text, long ? 4000 : 200) ?? ''),
+    text: kind === 'title' ? '' : (str(d.text, textMax({ kind, size: sizeName })) ?? ''),
     x,
     y,
     kind,
@@ -355,7 +356,7 @@ export function cleanKanban(v: unknown, ids: Ids) {
     if (!c || !name || seen.has(id)) return []
     seen.add(id)
     const limit = num(c.limit)
-    return [compact({ id, name, done: yes(c.done), limit: limit && limit >= 1 ? Math.min(99, Math.round(limit)) : undefined })]
+    return [compact({ id, name, done: yes(c.done), limit: limit && limit >= 1 ? Math.min(LIMIT_MAX, Math.round(limit)) : undefined })]
   })
   const cards = oneOf(obj(v)?.holds, ['cards'] as const)
   return compact({

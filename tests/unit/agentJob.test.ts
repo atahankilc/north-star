@@ -2,7 +2,7 @@
 // that decides whether the app goes on; the plan and progress tools on an env; the workflow turning a message sent while
 // a turn runs into steering; the loop handing it to the model between steps; the job's checklist in the context.
 import { describe, expect, it } from 'vitest'
-import { chooseAt, finished, JOB_BUDGET, jobText, MAX_STEPS, nextMove, nextStep, planJob, PREVIEW_NOTE, previewOf, progressJob, settled, type Job } from '../../src/agent/job'
+import { chooseAt, finished, JOB_BUDGET, jobText, MAX_STEPS, moveAfterTurn, nextMove, takeMove, nextStep, planJob, PREVIEW_NOTE, previewOf, progressJob, settled, type Job } from '../../src/agent/job'
 import { step as wfStep, initialWorkflow } from '../../src/agent/workflow'
 import { runTurn, STEER } from '../../src/agent/loop'
 import { stubModel } from '../../src/agent/stubModel'
@@ -78,6 +78,31 @@ describe('whether the app goes on', () => {
     expect(nextMove(plan(), { applied: 1 })).toBeNull()
     expect(nextMove({ ...running(), status: 'paused' }, {})).toBeNull()
     expect(nextMove({ ...running(), status: 'done' }, {})).toBeNull()
+  })
+})
+
+describe('a move taken, the same for the app and the evals (D-388)', () => {
+  // Step 1 of 3 done, nothing gone on from yet.
+  const running = () => progressJob(progressJob(plan(), { step: 1, state: 'doing' }) as Job, { step: 1, state: 'done' }) as Job
+  it('a go-on settles the count and gives the words to send', () => {
+    const j = running()
+    const move = nextMove(j, { applied: 2 })
+    const taken = takeMove(j, move)
+    expect(taken?.send).toMatch(/^The changes were applied \(2\)\. Go on with step 2/)
+    expect(taken?.job.settledAt).toBe(settled(j))
+    expect(taken?.job.status).toBe('running')
+  })
+  it('a pause leaves the job waiting with why, and sends nothing', () => {
+    const j = running()
+    const taken = takeMove(j, moveAfterTurn({ ...j, settledAt: settled(j) }, { pending: false }))
+    expect(taken).toEqual({ job: { ...j, status: 'paused', paused: "waiting for the person's answer" } })
+    expect(takeMove(j, moveAfterTurn(j, { pending: false, stopped: true }))?.job.paused).toBe('stopped by the person')
+  })
+  it('no job or no move: nothing', () => {
+    expect(takeMove(null, { go: 'x' })).toBeNull()
+    expect(takeMove(running(), null)).toBeNull()
+    // One preview per step: a waiting preview is the person's.
+    expect(moveAfterTurn(chooseAt(running(), 'each'), { pending: true })).toBeNull()
   })
 })
 

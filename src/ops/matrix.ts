@@ -10,6 +10,7 @@ import { candidates, findNamed } from '../model/lens'
 import type { Piece } from '../data/model'
 import { DELETE, type OpCtx, type Plan } from './types'
 import { a, find, refuse } from './util'
+import { AXIS_NOUN_MAX, PIECE_NAME_MAX, UNIT_MAX } from '../model/limits'
 
 type P = Piece & { id: string }
 
@@ -120,7 +121,7 @@ export function axisFrom(ctx: OpCtx, op: string, spec: unknown, which: 'rows' | 
     ...(s.type ? { type: s.type } : {}),
     ...(s.plane !== undefined ? { plane: planeRef(ctx, op, s.plane) } : {}),
     items,
-    ...(typeof s.noun === 'string' && s.noun.trim() ? { noun: s.noun.trim().slice(0, 40) } : {}),
+    ...(typeof s.noun === 'string' && s.noun.trim() ? { noun: s.noun.trim().slice(0, AXIS_NOUN_MAX) } : {}),
     ...(s.unfold ? { unfold: 'criteria' as const } : {}),
   }
 }
@@ -168,7 +169,7 @@ function optionsFrom(op: string, s: MatrixOptions & Record<string, unknown>): Pa
   if (s.steps !== undefined) out.steps = stepsFrom(op, s.steps)
   if ('unit' in s) {
     if (s.unit !== null && typeof s.unit !== 'string') refuse(op, 'unit is text', 'give the unit (€, h, %…), or null to take it away')
-    out.unit = typeof s.unit === 'string' && s.unit.trim() ? s.unit.trim().slice(0, 20) : DELETE
+    out.unit = typeof s.unit === 'string' && s.unit.trim() ? s.unit.trim().slice(0, UNIT_MAX) : DELETE
   }
   flag('not_relevant', 'notRelevant')
   flag('confidence', 'confidence')
@@ -250,7 +251,7 @@ function axisPatch(ctx: OpCtx, op: string, a: Axis, p: AxisPatch, which: 'rows' 
     if (p.plane !== null && !type) refuse(op, `${which}: a plane narrows a type's cards`, 'give the axis a type first')
     out[at('plane')] = p.plane === null ? DELETE : planeRef(ctx, op, p.plane)
   }
-  if ('noun' in p) out[at('noun')] = typeof p.noun === 'string' && p.noun.trim() ? p.noun.trim().slice(0, 40) : DELETE
+  if ('noun' in p) out[at('noun')] = typeof p.noun === 'string' && p.noun.trim() ? p.noun.trim().slice(0, AXIS_NOUN_MAX) : DELETE
   if (p.unfold !== undefined) {
     if (p.unfold && type !== 'feature') refuse(op, `${which}: only features unfold (into what they're judged on)`, 'give the axis type feature first')
     out[at('unfold')] = p.unfold ? 'criteria' : DELETE
@@ -305,7 +306,7 @@ export function updateMatrix(ctx: OpCtx, args: UpdateMatrixArgs): Plan {
   }
   if (args.name !== undefined) {
     if (typeof args.name !== 'string') refuse(op, 'name is text', 'give the name as a string')
-    if (args.name.trim()) patch.name = args.name.trim().slice(0, 80)
+    if (args.name.trim()) patch.name = args.name.trim().slice(0, PIECE_NAME_MAX)
   }
   if (!Object.keys(patch).length) return { op, label, writes: [], ids: {}, meta: { kind: 'matrix' } }
   return { op, label, writes: [{ coll: 'pieces', id: p.id, patch: { ...patch, updatedAt: ctx.now } }], ids: {}, meta: { kind: 'matrix' } }

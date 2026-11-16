@@ -30,7 +30,8 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
 import { Select } from '../../../ui/patterns/Select'
-import { AUTOSAVE_MS, LIVE_TEXT_PAUSE_MS } from '../../../ui/foundation/feel'
+import { LIVE_TEXT_PAUSE_MS } from '../../../ui/foundation/feel'
+import { pausedSave } from '../../../ui/foundation/pausedSave'
 import { decodePosition, encodePosition, openLiveText, REMOTE, type LiveText, type LiveTransport } from '../../../data/liveText'
 import md from '../../../ui/primitives/Markdown.module.css'
 import styles from './DocEditor.module.css'
@@ -201,17 +202,17 @@ export function DocEditor({ text, onSave, label, autoFocus = false, live }: Prop
   const [, redraw] = useReducer((n: number) => n + 1, 0)
   // What's on the server as far as this page knows: what came in, or what it last wrote.
   const known = useRef(text)
+  // Typed and not yet written: a text coming in waits (below).
   const dirty = useRef(false)
-  const timer = useRef<number | undefined>(undefined)
   const save = useRef(onSave)
   save.current = onSave
   const [linking, setLinking] = useState<string | null>(null)
   const [opening, setOpening] = useState<'open' | 'opening' | 'failed'>(live ? 'opening' : 'open')
 
-  const flush = (e: Editor | null) => {
-    window.clearTimeout(timer.current)
-    if (!e || !dirty.current) return
+  // The page's Markdown written down, when it differs from what's known.
+  const write = (e: Editor | null) => {
     dirty.current = false
+    if (!e) return
     const out = tidy(e.getMarkdown())
     if (out === known.current) return
     known.current = out
@@ -225,12 +226,10 @@ export function DocEditor({ text, onSave, label, autoFocus = false, live }: Prop
     let closed = false
     let shared: LiveText | null = null
     let carets: ReturnType<typeof caretAwareness> | null = null
-    const hidden = () => document.visibilityState === 'hidden' && (shared?.flush(), flush(e))
-    const later = (ms: number) => {
-      dirty.current = true
-      window.clearTimeout(timer.current)
-      timer.current = window.setTimeout(() => flush(e), ms)
-    }
+    // Kept as it's typed (foundation/pausedSave.ts: a pause, a hidden tab, leaving); the shared text's packets too.
+    const pause = pausedSave(() => write(e))
+    const later = (ms?: number) => ((dirty.current = true), pause.later(ms))
+    const hidden = () => document.visibilityState === 'hidden' && shared?.flush()
     const make = (more: AnyExtension[]) => {
       e = new Editor({
         element: el,
@@ -249,8 +248,8 @@ export function DocEditor({ text, onSave, label, autoFocus = false, live }: Prop
       const made = e
       made.on('transaction', redraw)
       // Written together, only your own changes (and undos) write the Markdown; theirs is written by them.
-      if (!live) made.on('update', () => later(AUTOSAVE_MS))
-      made.on('blur', () => (shared?.flush(), flush(made)))
+      if (!live) made.on('update', () => later())
+      made.on('blur', () => (shared?.flush(), pause.flush()))
       setEditor(made)
     }
     document.addEventListener('visibilitychange', hidden)
@@ -277,7 +276,7 @@ export function DocEditor({ text, onSave, label, autoFocus = false, live }: Prop
     return () => {
       closed = true
       document.removeEventListener('visibilitychange', hidden)
-      flush(e)
+      pause.close()
       e?.destroy()
       carets?.destroy()
       shared?.close()

@@ -44,7 +44,9 @@ export type JobHost = { get: () => Job | null; set: (job: Job | null) => void }
 
 export const JOB_BUDGET = 2_000_000
 export const MAX_STEPS = 12
-const TITLE = 120
+export const JOB_TITLE_MAX = 120
+// Why a job waits, as saved with the chat (firestore.rules' job).
+export const JOB_PAUSED_MAX = 200
 const LINE = 300
 
 const cut = (s: unknown, n: number) => (typeof s === 'string' ? s.replace(/\s+/g, ' ').trim().slice(0, n) : '')
@@ -57,7 +59,7 @@ type Fail = { error: string }
 
 // `plan`: a new plan, or the plan changed (a step already done keeps its state when its title stays).
 export function planJob(args: Record<string, unknown>, prev: Job | null): Job | Fail {
-  const title = cut(args.title, TITLE)
+  const title = cut(args.title, JOB_TITLE_MAX)
   const raw = Array.isArray(args.steps) ? args.steps : []
   if (!title) return { error: 'plan needs a title: what the job is, in a few words' }
   if (raw.length < 2) return { error: 'plan needs at least two steps; a job of one step needs no plan: just do it' }
@@ -66,7 +68,7 @@ export function planJob(args: Record<string, unknown>, prev: Job | null): Job | 
   const steps: JobStep[] = []
   for (const [i, x] of raw.entries()) {
     const o = (x && typeof x === 'object' ? x : { title: x }) as Record<string, unknown>
-    const t = cut(o.title, TITLE)
+    const t = cut(o.title, JOB_TITLE_MAX)
     if (!t) return { error: `step ${i + 1} has no title` }
     const kept = was.get(t.toLowerCase())
     const scope = cut(o.scope, LINE)
@@ -144,4 +146,20 @@ export function nextMove(j: Job | null, o: { applied?: number; waits?: boolean; 
   if (o.pending) return { go: `The preview holds the steps so far and waits until every step is done. Go on with step ${nx.n} of ${j.steps.length}: ${nx.title}.` }
   const done = o.applied !== undefined ? `The changes were applied (${o.applied}). ` : ''
   return { go: `${done}Go on with step ${nx.n} of ${j.steps.length}: ${nx.title}.` }
+}
+
+// ---- One driver for the app and the evals (D-388): what a move does to the job is written once, so what the evals
+// measure is what ships (D-341). The app (agent/ui/agentStore.ts) and evals/run.ts each only set the job and send the
+// words.
+
+// After a turn that ended by itself: its changes wait in the preview (`pending`), or it proposed nothing.
+export const moveAfterTurn = (j: Job | null, o: { pending: boolean; stopped?: boolean }): Move =>
+  nextMove(j, o.pending ? { pending: true, stopped: o.stopped } : { waits: true, stopped: o.stopped })
+
+// A move taken: the job as it stands after it, and for a go-on the words to send as the person's next message. A
+// pause sends nothing: the job waits, saying why.
+export function takeMove(j: Job | null, move: Move): { job: Job; send?: string } | null {
+  if (!j || !move) return null
+  if ('pause' in move) return { job: { ...j, status: 'paused', paused: move.pause } }
+  return { job: { ...j, settledAt: settled(j) }, send: move.go }
 }

@@ -17,7 +17,7 @@ import { Choice } from '../primitives/Choice'
 import { Appear } from '../primitives/Appear'
 import { AnimatePresence } from 'motion/react'
 import styles from './Console.module.css'
-import { keysTaken } from '../foundation/focus'
+import { useEscapeLayer } from '../foundation/useEscapeLayer'
 
 type Props = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & {
   at: 'edge' | 'under' | 'foot'
@@ -135,22 +135,9 @@ export function FloorTitle({ children, summary, action }: { children: ReactNode;
   )
 }
 
-// Escape closes an open drawer, once nothing in it holds the key (a field, a menu, a window, a lesson).
-export function useEscapeCloses(open: boolean, close: () => void) {
-  const shut = useRef(close)
-  shut.current = close
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      if (keysTaken(e.target)) return
-      e.stopImmediatePropagation()
-      shut.current()
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [open])
-}
+// Escape closes an open drawer, once nothing in it holds the key (a field, a menu, a window, a lesson): on the one
+// Escape stack (useEscapeLayer, D-388), so what opened after it closes before it.
+export const useEscapeCloses = (open: boolean, close: () => void) => useEscapeLayer(close, { on: open })
 
 // Which drawer is open (D-347): one in the whole screen at a time, keyed by its owner (`lanes:<deck id>`). A drawer
 // with a store of its own (a plane's, FilterDock's useShelf) needn't use it.

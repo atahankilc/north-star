@@ -10,12 +10,13 @@ import { useEscapeLayer } from '../../src/ui/foundation/useEscapeLayer'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-type L = { name: string; on?: boolean; fields?: boolean }
+type L = { name: string; on?: boolean; fields?: boolean; first?: boolean; bare?: boolean }
 const heard: string[] = []
 
-function Layer({ name, on = true, fields = false }: L) {
+// `bare`: a layer with no root (a console's drawer).
+function Layer({ name, on = true, fields = false, first = false, bare = false }: L) {
   const root = useRef<HTMLDivElement>(null)
-  useEscapeLayer(() => heard.push(name), { on, fields, root: root as RefObject<HTMLElement | null> })
+  useEscapeLayer(() => heard.push(name), { on, fields, first, root: bare ? undefined : (root as RefObject<HTMLElement | null>) })
   return h('div', { ref: root, id: name }, h('input', { id: `${name}-field` }), h('button', { id: `${name}-btn` }))
 }
 
@@ -98,5 +99,33 @@ describe('useEscapeLayer', () => {
     e.preventDefault()
     document.body.dispatchEvent(e)
     expect(heard).toEqual([])
+  })
+
+  it('a drawer (no root) closes from inside the docked panel that holds it, after what opened later', () => {
+    draw([{ name: 'drawer', bare: true }])
+    const dock = document.createElement('div')
+    dock.setAttribute('role', 'dialog')
+    const btn = document.createElement('button')
+    dock.appendChild(btn)
+    document.body.appendChild(dock)
+    esc(btn)
+    expect(heard).toEqual(['drawer'])
+    // A modal window is someone else's.
+    dock.setAttribute('aria-modal', 'true')
+    esc(btn)
+    expect(heard).toEqual(['drawer'])
+    // What opened after the drawer closes first.
+    draw([{ name: 'drawer', bare: true }, { name: 'panel' }])
+    esc()
+    expect(heard).toEqual(['drawer', 'panel'])
+  })
+
+  it('a first layer hears it before the others, in a field too', () => {
+    draw([{ name: 'following', first: true }, { name: 'panel' }])
+    esc(document.getElementById('panel-field'))
+    expect(heard).toEqual(['following'])
+    draw([{ name: 'following', first: true, on: false }, { name: 'panel' }])
+    esc()
+    expect(heard).toEqual(['following', 'panel'])
   })
 })

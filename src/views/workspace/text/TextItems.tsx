@@ -60,7 +60,7 @@ import { carriedStyle, Landing, Marks, zsOf, type Handle } from '../../../ui/pri
 import { ThreadChip, useThreadOn } from '../threads/Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 import { headingSize, kickPx, labelBox, STICKY_TEXT_TOP, type HeadingSize } from '../../../model/labelBox'
-import { AUTOSAVE_MS } from '../../../ui/foundation/feel'
+import { useWhilePaused } from '../../../ui/foundation/pausedSave'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Console } from '../../../ui/patterns/Console'
@@ -623,32 +623,6 @@ function endFresh(id: string) {
   const fresh = useCanvasView.getState().fresh === id
   if (fresh) useCanvasView.setState({ fresh: null })
   return fresh
-}
-
-// `save` runs AUTOSAVE_MS after `deps` last changed, when the tab is hidden and when the component goes; the latest
-// `save` each time.
-function useWhilePaused(save: () => void, deps: unknown[]) {
-  const latest = useRef(save)
-  latest.current = save
-  const timer = useRef<number | undefined>(undefined)
-  const flush = useCallback(() => {
-    window.clearTimeout(timer.current)
-    timer.current = undefined
-    latest.current()
-  }, [])
-  useEffect(() => {
-    window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(flush, AUTOSAVE_MS)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
-  useEffect(() => {
-    const hide = () => document.visibilityState === 'hidden' && flush()
-    document.addEventListener('visibilitychange', hide)
-    return () => {
-      document.removeEventListener('visibilitychange', hide)
-      flush()
-    }
-  }, [flush])
 }
 
 type Typed = Partial<Pick<Label, 'text' | 'kicker'>>

@@ -19,6 +19,7 @@ import { a } from './util'
 import { DOC_COLLS, isDelete, type Coll, type OpActor, type OpError, type Plan, type Verdict, type Write } from './types'
 import { NOTES_ID, NOTES_MAX, NOTES_ROLE } from '../model/notes'
 import { DOC_LIMITS } from '../model/shapes'
+import { AUTHOR_NAME_MAX, CANVAS_NAME_MAX, DESCRIPTION_MAX, WORKSPACE_NAME_KEPT_MAX } from '../model/limits'
 
 const COLLS = new Set<string>([...WS_COLLECTIONS, 'workspace', ...DOC_COLLS])
 
@@ -30,7 +31,7 @@ const NOTES_FIELDS: Record<string, (v: unknown) => boolean> = {
   excerpt: (v) => typeof v === 'string' && v.length <= DOC_LIMITS.excerpt,
   origin: (v) => v === 'assistant' || v === 'upload',
   uid: (v) => typeof v === 'string' && !!v && v.length <= 128,
-  name: (v) => typeof v === 'string' && v.length <= 200,
+  name: (v) => typeof v === 'string' && v.length <= AUTHOR_NAME_MAX,
   shared: (v) => v === true,
   contentType: (v) => v === 'text/markdown',
   size: (v) => Number.isInteger(v) && (v as number) >= 0,
@@ -242,7 +243,7 @@ function checkDoc(coll: Coll, d: RawDoc, store: DocStore, ws: WorkspaceCtx): { p
   else if (coll === 'tasks') ((cleaned = cleanTask(raw, now)), (kept = KEPT.tasks))
   else if (coll === 'cells') ((cleaned = cleanCell(raw, now)), (kept = KEPT.cells))
   else if (coll === 'canvases') {
-    if (typeof d.name !== 'string' || !d.name.trim() || d.name.length > 60) problems.push({ field: 'name', message: 'a canvas needs a name (1–60 characters)', fix: 'give it a name' })
+    if (typeof d.name !== 'string' || !d.name.trim() || d.name.length > CANVAS_NAME_MAX) problems.push({ field: 'name', message: `a canvas needs a name (1–${CANVAS_NAME_MAX} characters)`, fix: 'give it a name' })
     if (typeof d.order !== 'number') problems.push({ field: 'order', message: 'a canvas needs an order (a number)', fix: 'put it after the others: the largest order + 1' })
   } else if (coll === 'pieceSpots') {
     for (const k of ['x', 'y'] as const) if (typeof d[k] !== 'number' || !Number.isFinite(d[k])) problems.push({ field: k, message: `${k} must be a number`, fix: 'give the spot x and y in canvas px' })
@@ -274,9 +275,9 @@ function checkDoc(coll: Coll, d: RawDoc, store: DocStore, ws: WorkspaceCtx): { p
     if (typeof d.text !== 'string' || d.text.length > NOTES_MAX) problems.push({ field: 'text', message: `the agent notes are text of at most ${NOTES_MAX} characters`, fix: 'shorten them: keep what matters for later chats' })
     if (!docAt(store, 'documents', String(d.id))) ref('the notes have no summary document', 'write the documents/ summary in the same batch (update_notes does)')
   } else if (coll === 'workspace') {
-    if (typeof d.name !== 'string' || !d.name.trim() || d.name.length > 200) problems.push({ field: 'name', message: 'the workspace needs a name (1–200 characters)', fix: 'give it a name' })
-    if (d.description !== undefined && (typeof d.description !== 'string' || d.description.length > 1000))
-      problems.push({ field: 'description', message: 'the description is at most 1000 characters', fix: 'shorten it' })
+    if (typeof d.name !== 'string' || !d.name.trim() || d.name.length > WORKSPACE_NAME_KEPT_MAX) problems.push({ field: 'name', message: `the workspace needs a name (1–${WORKSPACE_NAME_KEPT_MAX} characters)`, fix: 'give it a name' })
+    if (d.description !== undefined && (typeof d.description !== 'string' || d.description.length > DESCRIPTION_MAX))
+      problems.push({ field: 'description', message: `the description is at most ${DESCRIPTION_MAX} characters`, fix: 'shorten it' })
   }
 
   if (cleaned === null && missing.length) {

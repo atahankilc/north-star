@@ -20,6 +20,7 @@ import { kindOfPiece } from '../model/pieces'
 import type { OpCtx, Plan, Write } from './types'
 import { cardColl, cardData, cardIn, once, refuse } from './util'
 import { comparisonId } from '../model/shapes'
+import { TAGS_MAX } from '../model/limits'
 import { cellIdOf, cellKey } from '../model/matrix'
 
 export type MergeCardsArgs = {
@@ -102,7 +103,7 @@ export function mergeCards(ctx: OpCtx, args: MergeCardsArgs): Plan {
     const from = gone.map((c) => (c as Card & Record<string, unknown>)[f]).find((v) => v !== undefined && !(Array.isArray(v) && !v.length))
     if (from !== undefined) own[f] = from
   }
-  const tags = [...new Set([...(keep.tags ?? []), ...gone.flatMap((c) => c.tags ?? [])])].slice(0, 20)
+  const tags = [...new Set([...(keep.tags ?? []), ...gone.flatMap((c) => c.tags ?? [])])].slice(0, TAGS_MAX)
   if (tags.length !== (keep.tags ?? []).length) own.tags = tags
   const notes = [keep.notes, ...gone.map((c) => c.notes)].map((x) => x?.trim()).filter((x): x is string => !!x)
   if (notes.length > (keep.notes?.trim() ? 1 : 0)) own.notes = [...new Set(notes)].join('\n\n')

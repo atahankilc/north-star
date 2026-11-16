@@ -36,7 +36,7 @@ import type { AgentEnv, AgentTool, AgentWs, ModelMessage, Source, TurnEnd, Usage
 import { NO_USAGE } from '../contract'
 import { readKey, suggested, useAgentSettings } from './settings'
 import { svgToPng } from './render'
-import { chooseAt, JOB_BUDGET, nextMove, nextStep, settled, type Job, type JobHost, type JobPreview, type Move } from '../job'
+import { chooseAt, JOB_BUDGET, moveAfterTurn, nextMove, nextStep, takeMove, type Job, type JobHost, type JobPreview, type Move } from '../job'
 import { plainError, NO_KEY } from './errors'
 import { subscribeWs } from '../../state/wsStore'
 import { NOTES_ID, saveNotes as saveNotesData, watchNotes } from '../../data/agentNotes'
@@ -213,20 +213,21 @@ const tellModel = (rt: Runtime, o: Outcome) => {
 // the event that led here, never inside them.
 // `inPreview`: the job has one preview at the end (D-328), so it goes on with the preview still waiting (a revising turn).
 function moveJob(chat: Chat, move: Move, inPreview = false) {
-  if (!move) return
   const rt = rtOf(chat)
-  if (!rt.job) return
-  if ('pause' in move) {
-    jobHost(chat.id, rt).set({ ...rt.job, status: 'paused', paused: move.pause })
-    if (get().chat.id === chat.id) push({ id: uid('note'), kind: 'note', text: `The job paused: ${move.pause}. Say go on (or press [go on]) to carry on.` })
+  // job.ts' takeMove: the same step the evals take.
+  const taken = takeMove(rt.job, move)
+  if (!taken) return
+  jobHost(chat.id, rt).set(taken.job)
+  const go = taken.send
+  if (go === undefined) {
+    if (get().chat.id === chat.id) push({ id: uid('note'), kind: 'note', text: `The job paused: ${taken.job.paused}. Say go on (or press [go on]) to carry on.` })
     return
   }
-  jobHost(chat.id, rt).set({ ...rt.job, settledAt: settled(rt.job) })
   setTimeout(() => {
     const c = get().chat
     if (c.id !== chat.id || (c.wf.phase !== 'idle' && c.wf.phase !== 'applied' && !(inPreview && c.wf.phase === 'previewing'))) return
-    push({ id: uid('you'), kind: 'user', text: move.go, auto: true })
-    if (canRun()) dispatch({ type: 'send', text: move.go })
+    push({ id: uid('you'), kind: 'user', text: go, auto: true })
+    if (canRun()) dispatch({ type: 'send', text: go })
   }, 0)
 }
 
@@ -612,12 +613,12 @@ function afterTurn(chat: Chat, end: TurnEnd) {
   }
   // A preview waits: one per step, the person applies it first; one at the end with steps left, the job goes on.
   if (phase === 'previewing') {
-    const move = nextMove(rt.job, { pending: true, stopped: end === 'stopped' })
+    const move = moveAfterTurn(rt.job, { pending: true, stopped: end === 'stopped' })
     setTimeout(() => moveJob(chat, move, true), 0)
     return
   }
   // Ended with nothing proposed: the agent waits for the person (D-333: what happened, never its words).
-  const move = nextMove(rt.job, { waits: true, stopped: end === 'stopped' })
+  const move = moveAfterTurn(rt.job, { pending: false, stopped: end === 'stopped' })
   setTimeout(() => moveJob(chat, move), 0)
 }
 

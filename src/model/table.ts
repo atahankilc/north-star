@@ -9,7 +9,8 @@
 // (D-204, `matrixId` holding the table's id), so deleting the table or a column takes them along.
 import type { Cell, Step } from './matrix'
 import { newId, SCALES } from './scales'
-import type { Rule, Source } from './source'
+import { statusOf, type Row, type Rule, type Source } from './source'
+import type { Card } from './cards'
 
 export { FIELDS, OWN_KINDS, COL_W } from './shapes'
 export type { Field, OwnKind } from './shapes'
@@ -117,3 +118,64 @@ export function readOwn(col: Column, cell: Cell | undefined): { step?: Step; num
   }
 }
 
+
+// ---- What a table reads, for everyone who reads one (the app's view, the finder, the agent): one text per field and
+// one order, so the agent sees the rows as the person does (D-388).
+
+// A table's cells by `row|col` (a matrix's too: `matrixId` holds either's id).
+export const cellsByKey = (cells: Cell[], pieceId: string) => new Map(cells.filter((c) => c.matrixId === pieceId).map((c) => [`${c.row}|${c.col}`, c]))
+
+// What the field's text needs from outside the card: the names of the planes it's on (its home first, D-281), and its
+// evidence counted (cardFacts.ts' `proof`).
+export type FieldCtx = {
+  planes: (card: Card) => string[]
+  proof: (card: Card) => { supports: number; contradicts: number } | undefined
+}
+
+// A card's field as its column shows it.
+export function fieldText(ctx: FieldCtx, c: Card | undefined, field: Field): string {
+  if (!c) return ''
+  switch (field) {
+    case 'type':
+      return c.type
+    case 'plane':
+      return ctx.planes(c).filter(Boolean).join(', ')
+    case 'status':
+      return statusOf(c) ?? ''
+    case 'tags':
+      return (c.tags ?? []).map((t) => `#${t}`).join(' ')
+    case 'regions':
+      return (c.regions ?? []).join(' · ')
+    case 'evidence': {
+      const p = ctx.proof(c)
+      return p ? [p.supports && `+${p.supports}`, p.contradicts && `−${p.contradicts}`].filter(Boolean).join(' ') : ''
+    }
+    default:
+      return c[field] ?? ''
+  }
+}
+
+// What a row sorts by in a column: text in lower case, a step's place on its scale, a number, a check as 1; '' = empty.
+export function sortKey(col: Column | typeof NAME_COL, row: Row, text: (row: Row, field: Field) => string, byKey: Map<string, Cell>): string | number {
+  if (col === NAME_COL) return row.name.toLowerCase()
+  if (col.field) return text(row, col.field).toLowerCase()
+  const v = readOwn(col, byKey.get(`${row.key}|${col.id}`))
+  if (v.step) return (col.steps ?? DEFAULT_STEPS).indexOf(v.step)
+  if (v.number !== undefined) return v.number
+  if (v.checked) return 1
+  return v.text?.toLowerCase() ?? ''
+}
+
+// The rows as the table's sort says (its source's order without one); empty ones last, whichever way.
+export function sortedRows(setup: TableSetup, rows: Row[], text: (row: Row, field: Field) => string, byKey: Map<string, Cell>): Row[] {
+  const s = setup.sort
+  const col = s && (s.col === NAME_COL ? NAME_COL : setup.cols.find((c) => c.id === s.col))
+  if (!s || !col) return rows
+  const keyed = rows.map((row) => ({ row, k: sortKey(col, row, text, byKey) }))
+  keyed.sort((a, b) => {
+    if ((a.k === '') !== (b.k === '')) return a.k === '' ? 1 : -1
+    const d = typeof a.k === 'number' && typeof b.k === 'number' ? a.k - b.k : String(a.k).localeCompare(String(b.k))
+    return s.desc ? -d : d
+  })
+  return keyed.map((x) => x.row)
+}

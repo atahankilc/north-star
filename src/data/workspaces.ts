@@ -20,7 +20,7 @@ import { useDoc, usePaged, useQuery, type WithId } from './hooks'
 import type { AuthUser } from './auth'
 import { deleteThread } from './threads'
 import type { Invite, InviteCode, JoinRequest, Member, Role, Workspace } from './model'
-import { DESCRIPTION_MAX, MEMBERS_LISTED } from '../model/limits'
+import { AUTHOR_NAME_MAX, DESCRIPTION_MAX, MEMBERS_LISTED, WORKSPACE_NAME_KEPT_MAX } from '../model/limits'
 import { WS_COLLECTIONS } from '../model/fromDocs'
 import { inBatches } from './batches'
 export { DESCRIPTION_MAX }
@@ -164,7 +164,7 @@ export function approveJoinRequest(wid: string, r: JoinRequest) {
 const memberRef = (wid: string, uid: string) => doc(db(), 'workspaces', wid, 'members', uid)
 
 const memberEntry = (name: string, email?: string | null, photo?: string | null): Member => ({
-  name: (name || email || 'Someone').slice(0, 200),
+  name: (name || email || 'Someone').slice(0, AUTHOR_NAME_MAX),
   ...(email && { email: email.slice(0, 320) }),
   ...(photo && { photo: photo.slice(0, 2000) }),
   joinedAt: Date.now(),
@@ -231,7 +231,7 @@ const inviteRef = (wid: string, email: string) => doc(db(), 'invites', `${wid}_$
 const inviteOf = (w: WithId<Workspace>, email: string, by: string): Invite => ({
   workspaceId: w.id,
   email,
-  name: w.name.slice(0, 200),
+  name: w.name.slice(0, WORKSPACE_NAME_KEPT_MAX),
   memberCount: w.memberIds.length,
   invitedBy: by,
   at: Date.now(),
@@ -264,8 +264,8 @@ export async function syncInvites(w: WithId<Workspace>) {
   let n = 0
   for (const email of invited) {
     const i = have.get(email)
-    if (i && (i.name !== w.name.slice(0, 200) || i.memberCount !== w.memberIds.length))
-      (batch.update(inviteRef(w.id, email), { name: w.name.slice(0, 200), memberCount: w.memberIds.length }), n++)
+    if (i && (i.name !== w.name.slice(0, WORKSPACE_NAME_KEPT_MAX) || i.memberCount !== w.memberIds.length))
+      (batch.update(inviteRef(w.id, email), { name: w.name.slice(0, WORKSPACE_NAME_KEPT_MAX), memberCount: w.memberIds.length }), n++)
   }
   for (const email of have.keys()) if (!invited.has(email)) (batch.delete(inviteRef(w.id, email)), n++)
   if (n) await batch.commit()
@@ -301,7 +301,7 @@ export function declineInvite(wid: string, email: string) {
 
 // Owners and editors; the invites waiting on it take the new name too.
 export async function renameWorkspace(wid: string, name: string) {
-  const next = name.trim().slice(0, 200) || 'Untitled'
+  const next = name.trim().slice(0, WORKSPACE_NAME_KEPT_MAX) || 'Untitled'
   await updateDoc(doc(db(), 'workspaces', wid), { name: next })
   const invites = await invitesOf(wid).catch(() => null)
   if (!invites?.size) return

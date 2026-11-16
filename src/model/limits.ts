@@ -5,9 +5,11 @@
 // Cards (D-187): a title; its notes (body) share the long-text cap.
 export const TITLE_MAX = 200
 export const LONG_TEXT_MAX = 20000
-// A card's #tag, a competitor's region (D-056, D-145): one item in its list.
+// A card's #tag, a competitor's region (D-056, D-145): one item in its list, and how many a list holds.
 export const TAG_MAX = 40
 export const REGION_MAX = 60
+export const TAGS_MAX = 30
+export const REGIONS_MAX = 20
 // A competitor's short facts (pricing, audience) and any card's web address (D-164).
 export const FACT_MAX = 2000
 export const URL_MAX = 2000
@@ -21,11 +23,14 @@ export const SOURCE_MAX = 200
 // A link's own label (D-207).
 export const LINK_LABEL_MAX = 200
 
-// The author's name a document (D-232) or a sticky note (D-257) keeps.
+// A person's name wherever it is kept beside what they made or were given: a document (D-232), a sticky note (D-257),
+// a task's `assigneeName`, a member.
 export const AUTHOR_NAME_MAX = 200
 
 // A workspace's name as typed on the workspaces page and in settings (D-338).
 export const WORKSPACE_NAME_MAX = 80
+// What the rules take for it (`validName`): older names were longer, so what is stored is cut here, not at 80.
+export const WORKSPACE_NAME_KEPT_MAX = 200
 
 // Pieces, canvases and text (D-176, D-302, D-194).
 export const PIECE_NAME_MAX = 80

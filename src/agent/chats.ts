@@ -6,7 +6,7 @@
 // reads: uid, title, times, shared, model, turns, summary?) and `…/{id}/content/body` (the turns and the chat's short
 // ids, read when it's opened). Never the key; never a tool's raw result (a step keeps only its label and time); the
 // usage log stays counts only (usage.ts).
-import type { Job } from './job'
+import { JOB_PAUSED_MAX, JOB_TITLE_MAX, MAX_STEPS, type Job } from './job'
 import type { IdsState } from './read/ids'
 import type { AgentTurn, ModelMessage, Transcript } from './contract'
 import { withOutcome } from './workflow'
@@ -61,7 +61,7 @@ export function savedJob(j: Job | null | undefined): Job | undefined {
   // The preview choice (`suggest`, `preview`) isn't saved: firestore.rules' job keys are closed, and a reopened job
   // waits for the person anyway (reopenedJob), who picks again.
   const { suggest: _s, preview: _p, ...kept } = j
-  return JSON.parse(JSON.stringify({ ...kept, title: j.title.slice(0, 120), steps: j.steps.slice(0, 12), ...(j.paused ? { paused: j.paused.slice(0, 200) } : {}), tokens: Math.max(0, Math.round(j.tokens)), budget: Math.max(1, Math.round(j.budget)), settledAt: Math.max(-1, Math.min(12, j.settledAt)) })) as Job
+  return JSON.parse(JSON.stringify({ ...kept, title: j.title.slice(0, JOB_TITLE_MAX), steps: j.steps.slice(0, MAX_STEPS), ...(j.paused ? { paused: j.paused.slice(0, JOB_PAUSED_MAX) } : {}), tokens: Math.max(0, Math.round(j.tokens)), budget: Math.max(1, Math.round(j.budget)), settledAt: Math.max(-1, Math.min(MAX_STEPS, j.settledAt)) })) as Job
 }
 
 // A job as a reopened chat holds it: one that was under way waits for the person (nothing runs by itself on opening).

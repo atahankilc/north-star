@@ -9,6 +9,7 @@ import { candidates, findCol } from '../model/lens'
 import type { Piece } from '../data/model'
 import { DELETE, type OpCtx, type Plan } from './types'
 import { find, refuse } from './util'
+import { MATRIX_NAME_MAX, PIECE_NAME_MAX, UNIT_MAX, VALUE_MAX } from '../model/limits'
 import { planeRef, shortId, stepsFrom, tidy, type StepSpec } from './matrix'
 
 type P = Piece & { id: string }
@@ -29,7 +30,7 @@ export function rulesFrom(ctx: OpCtx, op: string, v: unknown): Rule[] {
     const raw = typeof (r.values as unknown) === 'string' ? [r.values as unknown as string] : r.values
     if (!Array.isArray(raw) || !raw.every((s) => typeof s === 'string')) refuse(op, `the ${r.field} rule's values are a list of text`, 'give values: ["…"]')
     if (raw.length > MAX_VALUES) refuse(op, `a rule takes at most ${MAX_VALUES} values`, 'use fewer values')
-    let values = raw.map((s) => s.slice(0, 200))
+    let values = raw.map((s) => s.slice(0, VALUE_MAX))
     if (r.field === 'plane') values = values.map((p) => planeRef(ctx, op, p))
     if (r.field === 'type') for (const t of values) if (!(CARD_TYPES as readonly string[]).includes(t)) refuse(op, `${t} isn't a card type`, `use ${CARD_TYPES.join(', ')}`)
     if (r.field === 'status') for (const s of values) if (!STATUSES.includes(s)) refuse(op, `${s} isn't a status`, `use ${STATUSES.join(', ')}`)
@@ -59,7 +60,7 @@ export function columnFrom(ctx: OpCtx, op: string, v: unknown): Column {
   if ((c.scale !== undefined || c.steps !== undefined) && c.kind !== 'scale') refuse(op, 'only a scale column has steps', 'say kind: scale, or leave steps out')
   if (c.unit !== undefined && c.kind !== 'number') refuse(op, 'only a number column has a unit', 'say kind: number, or leave unit out')
   const steps = c.kind === 'scale' ? { steps: stepsFrom(op, c.steps ?? c.scale ?? 'level') } : {}
-  return { id, name: c.name.trim().slice(0, COL_NAME_MAX), kind: c.kind!, ...steps, ...(c.unit?.trim() ? { unit: c.unit.trim().slice(0, 20) } : {}), ...width }
+  return { id, name: c.name.trim().slice(0, COL_NAME_MAX), kind: c.kind!, ...steps, ...(c.unit?.trim() ? { unit: c.unit.trim().slice(0, UNIT_MAX) } : {}), ...width }
 }
 
 // A column by id or name, the candidates when it's unclear.
@@ -113,7 +114,7 @@ export function tableSetupFrom(ctx: OpCtx, op: string, spec: unknown): TableSetu
     if (card.type === 'package') refuse(op, "a package can't be a row", 'add its cards instead')
     items.push({ id: shortId(ctx), cardType: card.type, cardId: card.id })
   }
-  for (const n of s.names ?? []) items.push({ id: shortId(ctx), name: String(n).slice(0, 200) })
+  for (const n of s.names ?? []) items.push({ id: shortId(ctx), name: String(n).slice(0, MATRIX_NAME_MAX) })
   if (s.cards !== undefined || s.names !== undefined) setup.rows.items = items
   if (setup.rows.items.length > MAX_ITEMS) refuse(op, `at most ${MAX_ITEMS} rows by hand`, 'use rules instead')
   // Only names (no template, no rules, no cards): a list of names.
@@ -191,7 +192,7 @@ export function updateTable(ctx: OpCtx, args: UpdateTableArgs): Plan {
   }
   if (args.name !== undefined) {
     if (typeof args.name !== 'string') refuse(op, 'name is text', 'give the name as a string')
-    if (args.name.trim()) patch.name = args.name.trim().slice(0, 80)
+    if (args.name.trim()) patch.name = args.name.trim().slice(0, PIECE_NAME_MAX)
   }
   if (!Object.keys(patch).length) return { op, label, writes: [], ids: {}, meta: { kind: 'table' } }
   return { op, label, writes: [{ coll: 'pieces', id: p.id, patch: { ...patch, updatedAt: ctx.now } }], ids: {}, meta: { kind: 'table' } }

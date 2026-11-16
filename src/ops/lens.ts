@@ -11,6 +11,7 @@ import { axisEntries, candidates, colLine, entryLine, findEntry, findRow, hidden
 import type { Piece } from '../data/model'
 import { DELETE, type OpCtx, type Plan, type Write } from './types'
 import { handleOf, refuse } from './util'
+import { CELL_NOTES_MAX, CELL_TEXT_MAX, MATRIX_NAME_MAX, UNIT_MAX } from '../model/limits'
 import { lensIn, shortId, stepsFrom, type StepSpec } from './matrix'
 import { colIn, columnFrom, type ColumnSpec } from './table'
 
@@ -103,7 +104,7 @@ export function axisAdd(ctx: OpCtx, args: AxisAddArgs): Plan {
   }
   if (typeof args.name !== 'string') refuse(op, 'name is text', 'give the name as a string')
   if (items.length >= MAX_ITEMS) refuse(op, `at most ${MAX_ITEMS} added by hand`, 'take some out first')
-  const item: AxisItem = { id: shortId(ctx), name: args.name.slice(0, 200) }
+  const item: AxisItem = { id: shortId(ctx), name: args.name.slice(0, MATRIX_NAME_MAX) }
   return plan(op, label, p, [{ coll: 'pieces', id: p.id, patch: { [`${path}.items`]: [...clone(items), item], updatedAt: now } }], { [handleOf(args)]: item.id })
 }
 
@@ -213,7 +214,7 @@ export function axisUpdate(ctx: OpCtx, args: AxisUpdateArgs): Plan {
       next.kind = args.kind
       if (args.kind === 'scale' && !next.steps) next.steps = clone(DEFAULT_STEPS)
     }
-    if (args.unit !== undefined) next.unit = typeof args.unit === 'string' && args.unit.trim() ? args.unit.trim().slice(0, 20) : undefined
+    if (args.unit !== undefined) next.unit = typeof args.unit === 'string' && args.unit.trim() ? args.unit.trim().slice(0, UNIT_MAX) : undefined
     if (args.steps !== undefined) {
       if ((next.kind ?? c.kind) !== 'scale') refuse(op, 'only a scale column has steps', 'make it kind: scale first')
       next.steps = stepsFrom(op, args.steps)
@@ -241,7 +242,7 @@ export function axisUpdate(ctx: OpCtx, args: AxisUpdateArgs): Plan {
     item = e.item
   }
   if (!item || item.cardId) refuse(op, 'that row is a card: its row reads its title', 'rename the card with update_card')
-  const items = src.items.map((i) => (i.id === item!.id ? { ...i, name: args.name!.slice(0, 200) } : i))
+  const items = src.items.map((i) => (i.id === item!.id ? { ...i, name: args.name!.slice(0, MATRIX_NAME_MAX) } : i))
   return plan(op, label, p, [{ coll: 'pieces', id: p.id, patch: { [`${path}.items`]: clone(items), updatedAt: now } }])
 }
 
@@ -287,7 +288,7 @@ function numberValue(op: string, v: unknown): number {
 
 function textValue(op: string, v: unknown): string {
   if (typeof v !== 'string') refuse(op, `${JSON.stringify(v)} isn't text`, 'give the words as a string')
-  return v.slice(0, 200)
+  return v.slice(0, CELL_TEXT_MAX)
 }
 
 export function updateCell(ctx: OpCtx, args: UpdateCellArgs): Plan {
@@ -340,7 +341,7 @@ export function updateCell(ctx: OpCtx, args: UpdateCellArgs): Plan {
   if (args.value !== undefined) data.value = args.value === null || args.value === '' ? DELETE : value(args.value)
   if (args.note !== undefined) {
     if (args.note !== null && typeof args.note !== 'string') refuse(op, 'a note is text', 'give the note as a string, or null to take it away')
-    data.notes = args.note ? args.note.slice(0, 20000) : DELETE
+    data.notes = args.note ? args.note.slice(0, CELL_NOTES_MAX) : DELETE
   }
   if (args.not_relevant !== undefined) {
     if (args.not_relevant && p.kind === 'matrix' && !m!.notRelevant) refuse(op, `this matrix doesn't allow "doesn't apply" (—)`, 'allow it first: update_matrix with not_relevant: true')

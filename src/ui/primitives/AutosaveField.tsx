@@ -1,12 +1,12 @@
-// A text field that saves itself: debounced while typing, immediately on blur or unmount.
+// A text field that saves itself: after a pause while typing (foundation/pausedSave.ts, as canvas text does: a hidden
+// tab saves too), at once on blur or unmount.
 // Remote edits flow in, except while you're typing in it (last write wins per field).
 // It draws nothing of its own (a note typed where it reads brings its own class); `well` gives it Field's look, the
 // round well (D-384), for a setup's or the settings' fields, whose class then only places it.
 import { useEffect, useRef, useState, type InputHTMLAttributes } from 'react'
 import { useAutoGrow } from '../foundation/autoGrow'
+import { usePausedSave } from '../foundation/pausedSave'
 import field from './Field.module.css'
-
-const SAVE_AFTER_MS = 400
 
 type Props = {
   value: string
@@ -31,7 +31,6 @@ export function AutosaveField({ value, onSave, multiline, wrap, rows = 4, label,
   const el = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
   const focused = useRef(false)
   const pending = useRef<string | null>(null)
-  const timer = useRef<number | undefined>(undefined)
   const save = useRef(onSave)
   save.current = onSave
   useAutoGrow(el, multiline || wrap ? draft : '')
@@ -40,13 +39,11 @@ export function AutosaveField({ value, onSave, multiline, wrap, rows = 4, label,
     if (!focused.current) setDraft(value)
   }, [value])
 
-  const flush = () => {
-    window.clearTimeout(timer.current)
+  const { later, flush } = usePausedSave(() => {
     if (pending.current === null) return
     save.current(pending.current)
     pending.current = null
-  }
-  useEffect(() => flush, [])
+  })
 
   // Also when it turns true after mounting (e.g. the new item's data arrived first).
   useEffect(() => {
@@ -63,8 +60,7 @@ export function AutosaveField({ value, onSave, multiline, wrap, rows = 4, label,
       const next = wrap ? e.target.value.replace(/\s*\n\s*/g, ' ') : e.target.value
       setDraft(next)
       pending.current = next
-      window.clearTimeout(timer.current)
-      timer.current = window.setTimeout(flush, SAVE_AFTER_MS)
+      later()
     },
     onFocus: () => (focused.current = true),
     onBlur: () => {

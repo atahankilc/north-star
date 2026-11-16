@@ -27,6 +27,9 @@ const list = (path: string) => new RegExp(`${path.replace('.', '\\.')}\\.size\\(
 const CASES: [keyof typeof L, () => number][] = [
   ['TITLE_MAX', () => num(body('validCard'), text('title'))],
   ['LONG_TEXT_MAX', () => num(body('validCard'), opt('d', 'body'))],
+  ['TAGS_MAX', () => num(body('validCard'), list('d.tags'))],
+  ['REGIONS_MAX', () => num(body('validCompetitor'), list('d.regions'))],
+  ['WORKSPACE_NAME_KEPT_MAX', () => num(body('validName'), list('d.name'))],
   ['FACT_MAX', () => num(body('validCompetitor'), opt('d', 'pricing'))],
   ['URL_MAX', () => num(body('validCompetitor'), opt('d', 'url'))],
   ['CATEGORY_MAX', () => num(body('validCompetitorFeature'), opt('d', 'category'))],
@@ -79,7 +82,7 @@ const CLIENT_ONLY: Partial<Record<keyof typeof L, string>> = {
   ATOMIC_WRITE_MAX: 'docs in a write kept whole, for the page\'s sake, not a rule',
   ATOMIC_WRITE_BYTES: 'bytes in a write kept whole, under Firestore\'s 10 MiB, not a rule',
   MEMBERS_LISTED: 'how many people a picker loads, not data',
-  WORKSPACE_NAME_MAX: "the fields' cap; the rules' validName takes up to 200 (older names kept)",
+  WORKSPACE_NAME_MAX: "the fields' cap; the rules' validName takes up to WORKSPACE_NAME_KEPT_MAX (older names kept)",
   SUMMARY_PIECES_MAX: 'pieces in a workspace summary: the rules cap the joined string (SUMMARY_PIECES_CHARS), not the count',
   LIVE_FOLD_PACKETS: 'when a writer folds the packets, not data',
   LIVE_FOLD_BYTES: 'when a writer folds the packets, not data',
