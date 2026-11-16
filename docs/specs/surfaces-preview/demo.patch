@@ -1,0 +1,390 @@
+diff --git a/round.html b/round.html
+new file mode 100644
+index 0000000..f8d4e03
+--- /dev/null
++++ b/round.html
+@@ -0,0 +1,68 @@
++<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Yüzeyler (Q-035)</title>
++<style>
++:root{color-scheme:dark}*{box-sizing:border-box}
++body{margin:0;background:#000;color:#e8e8e8;font:14px/1.45 -apple-system,Inter,sans-serif}
++body[data-t=light]{background:#f3f3f3;color:#111}
++aside{position:fixed;inset:0 auto 0 0;width:330px;overflow:auto;padding:16px 16px 24px;background:#0c0c0d;box-shadow:1px 0 0 #8884}
++body[data-t=light] aside{background:#fff}
++main{margin-left:330px;min-width:0;padding-bottom:60vh}
++fieldset{all:unset;display:block;margin-bottom:14px;padding:8px;border-radius:14px}
++fieldset[data-cur=true]{background:#8881}
++.h{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;cursor:pointer}
++.h b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#2fd9e0;color:#000;font-size:12px;flex:none}
++.what{margin:2px 0 6px 28px;font-size:12.5px;opacity:.65}
++button{all:unset;box-sizing:border-box;display:block;width:100%;padding:6px 10px 6px 28px;margin-top:2px;border-radius:12px;cursor:pointer;font-size:13.5px;position:relative}
++button::before{content:'';position:absolute;left:10px;top:11px;width:9px;height:9px;border-radius:50%;box-shadow:inset 0 0 0 1px #8889}
++button i{display:block;font-style:normal;font-size:12px;opacity:.65}
++button:hover{background:#8882}
++button[data-on=true]{background:#2fd9e022}
++button[data-on=true]::before{background:#2fd9e0;box-shadow:0 0 6px #2fd9e0}
++button:focus-visible{outline:2px solid #2fd9e0;outline-offset:-2px}
++.row{display:flex;gap:4px}.row button{padding-right:6px}
++a{color:inherit;opacity:.75;font-size:13px}
++h2{font:500 12px ui-monospace,Menlo,monospace;text-transform:uppercase;letter-spacing:.05em;margin:0;padding:28px 24px 12px;color:#ff3d9a;display:flex;gap:10px;align-items:baseline}
++h2 span{color:inherit;opacity:.6;text-transform:none;letter-spacing:0;font-family:inherit}
++section{scroll-margin-top:0}
++.grid{display:grid;gap:16px;padding:0 24px 8px;grid-template-columns:repeat(auto-fit,minmax(480px,1fr))}
++figure{margin:0}figure.w{grid-column:1/-1}figcaption{opacity:.7;margin-bottom:6px;font-size:13px}
++iframe{display:block;width:100%;border:0;background:#0000;border-radius:6px;box-shadow:0 0 0 1px #8883}
++</style></head><body>
++<aside id="side"></aside>
++<main id="rest"></main>
++<script type="module">
++const KEY='q035-demo-6'
++const FIXED={modal:'line',hazard:'ring',mark:'tick',panel:'under',drop:'line',dock:'line',box:'round',thread:'tab'}
++const st={small:'pill',theme:'dark',...JSON.parse(sessionStorage.q035f||'{}'),...FIXED}
++const GROUPS=[
++['small','1','Bildirim ve açıklama','Değişen: bildirimin (toast) ve kelime açıklamasının (tip) köşeleri. Önizlemede bildirim kaybolmuyor, açıklama kendiliğinden açık',[
++ ['now','Bugün','İkisi de dik köşeli'],
++ ['pill','Hap','Bildirim tam yuvarlak uçlu; açıklama büyük yuvarlak köşeli'],
++ ['round','Yuvarlak köşeli','İkisi de küçük yuvarlak köşeli (8 px), uçları düz']]],
++]
++const SEC={
++small:[['toast|with-action','Bildirim, düğmeli',200],['toast|long','Bildirim, uzun',200],['tip|in-a-line','Açıklama',240,1]],
++}
++const cur=()=>{const {theme,...p}=st;return p}
++const send=()=>{localStorage.setItem(KEY,JSON.stringify(cur()));sessionStorage.q035f=JSON.stringify(st);document.querySelectorAll('iframe').forEach(f=>f.contentWindow?.postMessage({round:cur()},'*'))}
++const side=document.getElementById('side')
++side.innerHTML='<div style="font-weight:600;font-size:15px;margin:0 8px 2px">Yüzeyler</div><div style="font-size:12.5px;opacity:.65;margin:0 8px 12px">Son konu. Bir seçeneğe basınca sağdaki örnekler hemen değişir. Karar verilenler sabit: modal yuvarlak ve çizgili, silme onayında yuvarlağı izleyen ╱╱╱, köşeye uyan kısa yay işaretleri, altından çıkan yan panel, yuvarlak çizgili menü, çizgili sekme dock, Settings’te yuvarlak çizgili kutular, çizgili sekme yorumlar kutusu.</div>'
++for(const[key,n,title,what,opts]of GROUPS){const fs=document.createElement('fieldset');fs.dataset.k=key;fs.innerHTML=`<div class="h"><b>${n}</b>${title}</div><div class="what">${what}</div>`
++fs.querySelector('.h').onclick=()=>show(key)
++for(const[v,t,d]of opts){const b=document.createElement('button');b.dataset.v=v;b.innerHTML=t+(d?`<i>${d}</i>`:'');b.onclick=()=>pick(key,v);fs.append(b)}side.append(fs)}
++const tf=document.createElement('fieldset');tf.dataset.k='theme';tf.innerHTML='<div class="h">Tema</div><div class="row"></div>';for(const[v,t]of[['dark','Koyu'],['light','Açık']]){const b=document.createElement('button');b.dataset.v=v;b.textContent=t;b.onclick=()=>pick('theme',v);tf.querySelector('.row').append(b)}side.append(tf)
++const paint=()=>side.querySelectorAll('fieldset').forEach(fs=>{fs.querySelectorAll('button').forEach(b=>b.dataset.on=b.dataset.v===st[fs.dataset.k]);fs.dataset.cur=fs.dataset.k===at})
++let at='small'
++function show(key){at=key;paint();document.getElementById('sec-'+key)?.scrollIntoView({behavior:'smooth',block:'start'})}
++function pick(key,v){st[key]=v;if(key==='theme'){document.body.dataset.t=v;paint();send();load();return}send();show(key);if(key==='none')document.querySelectorAll('#sec-small iframe').forEach(i=>{i.src='about:blank';setTimeout(()=>{i.src=addr(i.dataset.c,i.dataset.m)},50)})}
++document.body.dataset.t=st.theme
++const addr=(c,m)=>`/gallery.html?round=${encodeURIComponent(JSON.stringify(cur()))}#c=${c.split('|')[0]}${c.includes('|')?'&s='+c.split('|')[1]:''}&theme=${st.theme}${m==='full'?'':'&motion=reduced'}&alone`
++function load(){const q=[];const r=document.getElementById('rest');r.innerHTML=''
++for(const[key,n,title,what]of GROUPS){const s=document.createElement('section');s.id='sec-'+key;s.innerHTML=`<h2>${n} · ${title}<span>${what}</span></h2>`;const g=document.createElement('div');g.className='grid'
++for(const[c,name,hh,w,m]of SEC[key]){const f=document.createElement('figure');if(w)f.className='w';f.innerHTML=`<figcaption>${name}</figcaption><iframe title="${name}" style="height:${hh}px"></iframe>`;const i=f.querySelector('iframe');i.dataset.c=c;i.dataset.m=m||'';q.push(i);g.append(f)}
++s.append(g);r.append(s)}
++const tell=i=>i.contentWindow?.postMessage({round:cur()},'*')
++const next=()=>{const i=q.shift();if(!i)return;i.onload=()=>{tell(i);setTimeout(()=>tell(i),1500);setTimeout(()=>tell(i),4000);setTimeout(next,200)};i.src=addr(i.dataset.c,i.dataset.m)};next();next();next()}
++// Which group's examples are on screen: its options are the ones lit in the list.
++addEventListener('scroll',()=>{let best=at;for(const[key]of GROUPS){const el=document.getElementById('sec-'+key);if(el&&el.getBoundingClientRect().top<innerHeight*0.4)best=key}if(best!==at){at=best;paint()}},{passive:true})
++paint();send();load()
++</script></body></html>
+diff --git a/src/gallery/main.tsx b/src/gallery/main.tsx
+index d417fe1..796ad4d 100644
+--- a/src/gallery/main.tsx
++++ b/src/gallery/main.tsx
+@@ -4,6 +4,7 @@
+ import { StrictMode } from 'react'
+ import { createRoot } from 'react-dom/client'
+ import '../styles/global.css'
++import '../roundDemo'
+ import '../state/theme'
+ import { setReadOnly } from '../data/history'
+ import { useCurtain } from '../state/curtain'
+diff --git a/src/main.tsx b/src/main.tsx
+index f5cf839..d33e4b8 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
+ import { createRoot } from 'react-dom/client'
+ import { App } from './app/App'
+ import './styles/global.css'
++import './roundDemo'
+ import './state/theme'
+ import { takeSandboxParam } from './onboarding/devSandbox'
+ 
+diff --git a/src/roundDemo.ts b/src/roundDemo.ts
+new file mode 100644
+index 0000000..8114344
+--- /dev/null
++++ b/src/roundDemo.ts
+@@ -0,0 +1,201 @@
++// Throwaway preview for Q-035: other ways to draw the surfaces (modals, dropdowns, docked panels, docks, boxes), laid
++// over the real CSS. Controls, cards and pieces are left alone. Never lands in the repo.
++import win from './ui/patterns/Window.module.css'
++import menu from './ui/patterns/Menu.module.css'
++import popover from './ui/patterns/Popover.module.css'
++import toast from './ui/patterns/Toast.module.css'
++import tip from './ui/patterns/Tip.module.css'
++import panel from './ui/patterns/PromptPanel.module.css'
++import column from './ui/patterns/EdgeColumn.module.css'
++import consoleCss from './ui/patterns/Console.module.css'
++import frame from './ui/foundation/Frame.module.css'
++import settings from './ui/patterns/Settings.module.css'
++import hazard from './ui/patterns/HazardConfirm.module.css'
++import promptFrame from './ui/foundation/PromptFrame.module.css'
++import row from './ui/primitives/PromptRow.module.css'
++import threads from './views/workspace/threads/Threads.module.css'
++import marks from './ui/primitives/Marks.module.css'
++import face from './views/workspace/cards/CardFace.module.css'
++import plane from './views/workspace/plane/PlaneCards.module.css'
++
++export const KEY = 'q035-demo-6'
++const dot = (x?: string) => '.' + (x ?? 'nope').split(' ')[0]
++const W = `:is(${dot(win.window)},${dot(settings.dialog)})`
++const HZ = dot(hazard.box)
++const H = dot(promptFrame.frame)
++const POP = dot(popover.popover)
++const MP = dot(menu.panel)
++const PAN = dot(panel.panel)
++const R = dot(row.row)
++const COL = dot(column.column)
++const CON = dot(consoleCss.console)
++const FL = dot(consoleCss.floor)
++const SEC = dot(settings.section)
++const NAV = dot(settings.navItem)
++const FR = `:is(${dot(frame.frame)},${dot(frame.dashed)},${dot(frame.interactive)})`
++const TOAST = dot(toast.toast)
++const TIP = dot(tip.tip)
++const INBOX = dot(threads.inbox)
++const MK = dot(marks.marks)
++
++const shade = `var(--q-shade)`
++const edge = `0 0 0 1px var(--line)`
++const a = (k: string, v: string) => `:root[data-${k}='${v}']`
++const raised = `--bg:var(--bg-raised);background:var(--bg-raised)`
++
++const CSS = `
++:root{--q-shade:0 18px 48px rgb(0 0 0/.55),0 2px 8px rgb(0 0 0/.35)}
++:root[data-theme='light']{--q-shade:0 18px 48px rgb(0 0 0/.16),0 2px 8px rgb(0 0 0/.10)}
++
++/* ── 1 modal ── */
++${a('modal', 'soft')} :is(${W},${HZ}){${raised};border:0;border-radius:24px;box-shadow:${edge},${shade};overflow:hidden}
++${a('modal', 'line')} :is(${W},${HZ}){border-radius:24px;overflow:hidden}
++${a('modal', 'cut')} :is(${W},${HZ}){${raised};border:0;border-radius:28px 28px 28px 0;box-shadow:${edge},${shade};overflow:hidden}
++:root:not([data-modal='now']) ${HZ}{border-top-width:var(--line-w)}
++
++/* ── 2 dropdown ── */
++:root{--q-dr:16px;--q-ds:9px;--q-corners:linear-gradient(#000 0 0) left top/var(--q-ds) var(--q-ds) no-repeat,linear-gradient(#000 0 0) right top/var(--q-ds) var(--q-ds) no-repeat,linear-gradient(#000 0 0) left bottom/var(--q-ds) var(--q-ds) no-repeat,linear-gradient(#000 0 0) right bottom/var(--q-ds) var(--q-ds) no-repeat}
++:root:not([data-drop='now']) :is(${H},${POP}){border-radius:var(--q-dr);corner-shape:squircle}
++:root:not([data-drop='now']) ${PAN}{padding:4px}
++:root:not([data-drop='now']) ${R}{box-shadow:none!important;border-radius:999px}
++:root:not([data-drop='now']) ${R}[data-picked]{background:color-mix(in srgb,var(--tone,var(--accent-cyan)) 22%,transparent)}
++:root:not([data-drop='now']) ${R}[data-danger][data-picked]{background:color-mix(in srgb,var(--diff-deleted) 24%,transparent)}
++:root:is([data-drop='line'],[data-drop='touch']) ${H}{box-shadow:0 0 0 1px var(--line-hover),var(--feather) color-mix(in srgb,var(--bg) var(--mix-strong),transparent)}
++:root:is([data-drop='line'],[data-drop='touch']) ${H}:focus-within{box-shadow:0 0 0 1px var(--accent-cyan),var(--feather) color-mix(in srgb,var(--bg) var(--mix-strong),transparent)}
++:root:is([data-drop='line'],[data-drop='touch']) ${H}::after{content:none}
++${a('drop', 'mark')} ${H}::after{background:none;border:var(--line-w) solid var(--mk);border-radius:var(--q-dr);corner-shape:squircle;-webkit-mask:var(--q-corners);mask:var(--q-corners)}
++${a('drop', 'touch')} :is(${H},${POP}){border-radius:0 var(--q-dr) var(--q-dr) var(--q-dr)}
++${a('drop', 'touch')} ${MP}[data-up='true'] ${H}{border-radius:var(--q-dr) var(--q-dr) var(--q-dr) 0}
++${a('drop', 'touch')} :is(${MP}[data-right='true'],${MP}[data-end='true']) ${H}{border-radius:var(--q-dr) 0 var(--q-dr) var(--q-dr)}
++
++/* ── 3 docked panel ── */
++:root:is([data-panel='touch'],[data-panel='isle']) ${COL}{${raised};border:0;box-shadow:${edge},${shade}}
++:root:not([data-panel='now']) ${COL}::before,:root:not([data-panel='now']) ${COL}::after{display:none}
++/* under, edge: the main screen is a sheet that lifts and draws back; the panel lies bare on the base under it */
++:root{--q-base:#121215;--q-right:400px;--q-lift:0 18px 50px rgb(0 0 0/.7),0 2px 10px rgb(0 0 0/.5);--q-rim:rgb(255 255 255/.16)}
++:root[data-theme='light']{--q-base:#e2e2e5;--q-lift:0 18px 50px rgb(0 0 0/.22),0 2px 10px rgb(0 0 0/.12);--q-rim:rgb(0 0 0/.12)}
++:root:is([data-panel='under'],[data-panel='edge']) ${COL}{--bg:var(--q-base);background:var(--q-base);border:0}
++:root:is([data-panel='under'],[data-panel='edge'])::before,:root:is([data-panel='under'],[data-panel='edge'])::after{content:'';position:fixed;inset:0;border-radius:0;pointer-events:none;transition:inset .55s cubic-bezier(.2,.8,.2,1),border-radius .55s cubic-bezier(.2,.8,.2,1),box-shadow .3s,opacity .3s}
++:root:is([data-panel='under'],[data-panel='edge'])::before{z-index:11;box-shadow:0 0 0 100vmax var(--q-base)}
++:root:is([data-panel='under'],[data-panel='edge'])::after{z-index:13;opacity:0;box-shadow:var(--q-lift),inset 0 0 0 1px var(--q-rim)}
++${a('panel', 'under')}[data-qopen]::before,${a('panel', 'under')}[data-qopen]::after{inset:8px var(--q-right) 8px 8px;border-radius:24px}
++${a('panel', 'edge')}[data-qopen]::before,${a('panel', 'edge')}[data-qopen]::after{inset:0 var(--q-right) 0 0;border-radius:0 24px 24px 0}
++:root[data-qopen]::after{opacity:1}
++${a('panel', 'touch')} ${COL}[data-side='right']{border-radius:22px 0 0 22px}
++${a('panel', 'touch')} ${COL}[data-side='left']{border-radius:0 22px 22px 0}
++${a('panel', 'touch')} ${INBOX}{border-radius:0 18px 0 0;overflow:hidden}
++${a('panel', 'isle')} ${COL}{top:10px;bottom:10px;border-radius:24px;overflow:hidden}
++${a('panel', 'isle')} ${COL}[data-side='right']{right:10px}
++${a('panel', 'isle')} ${COL}[data-side='left']{left:10px}
++${a('panel', 'isle')} ${INBOX}{border-radius:18px;overflow:hidden;translate:10px -10px}
++
++/* ── 4 dock (a console on the screen's foot) and its drawer ── */
++:root{--q-kr:14px;--q-line:0 0 0 1px var(--line-hover)}
++:root:not([data-dock='now']) ${CON}[data-at='foot']:not([data-full]){border-radius:var(--q-kr) var(--q-kr) 0 0}
++:root:not([data-dock='now']) ${CON}[data-at='foot']:not([data-full]) ${FL}{border-radius:var(--q-kr) var(--q-kr) 0 0;border-bottom:0}
++:root:not([data-dock='now']) ${CON}[data-at='foot']:not([data-full]):has(${FL}:not(:empty)){border-radius:0}
++:root:is([data-dock='line'],[data-dock='pill']) ${CON}[data-at='foot']:not([data-full]){box-shadow:var(--q-line)}
++:root:is([data-dock='line'],[data-dock='pill']) ${CON}[data-at='foot']:not([data-full]) ${FL}{box-shadow:var(--q-line)}
++:root:is([data-dock='line'],[data-dock='pill']) ${CON}[data-at='foot']:not([data-full])::before,:root:is([data-dock='line'],[data-dock='pill']) ${CON}[data-at='foot']:not([data-full]) ${FL}::before{content:none}
++${a('dock', 'line')} ${CON}[data-at='foot']:not([data-full]):is(:hover,:focus-within),${a('dock', 'line')} ${CON}[data-at='foot']:not([data-full]):is(:hover,:focus-within) ${FL}{box-shadow:0 0 0 1px var(--accent-cyan)}
++${a('dock', 'mark')} ${CON}[data-at='foot']:not([data-full])::before,${a('dock', 'mark')} ${CON}[data-at='foot']:not([data-full]) ${FL}::before{background:none;border:var(--line-w) solid var(--mk);border-bottom:0;border-radius:calc(var(--q-kr) + var(--space-1)) calc(var(--q-kr) + var(--space-1)) 0 0;--q-ds:10px;-webkit-mask:linear-gradient(#000 0 0) left top/var(--q-ds) var(--q-ds) no-repeat,linear-gradient(#000 0 0) right top/var(--q-ds) var(--q-ds) no-repeat;mask:linear-gradient(#000 0 0) left top/var(--q-ds) var(--q-ds) no-repeat,linear-gradient(#000 0 0) right top/var(--q-ds) var(--q-ds) no-repeat}
++${a('dock', 'mark')} ${CON}[data-at='foot']:not([data-full]):has(${FL}:not(:empty))::before{content:none}
++${a('dock', 'pill')} ${CON}[data-at='foot']:not([data-full]){bottom:10px;border-radius:999px;padding-inline:8px}
++${a('dock', 'pill')} ${CON}[data-at='foot']:not([data-full]) ${FL}{border-radius:18px 18px 0 0}
++${a('dock', 'pill')} ${CON}[data-at='foot']:not([data-full]):has(${FL}:not(:empty)){border-radius:0 0 18px 18px}
++
++/* ── 5 boxes inside a surface ── */
++${a('box', 'round')} ${SEC}{border-radius:14px}
++${a('box', 'round')} ${FR}:not(${W},${TOAST}){border-radius:14px}
++${a('box', 'fill')} ${SEC}{border:0;border-radius:14px;background:var(--wash-1)}
++${a('box', 'fill')} ${FR}:not(${W},${TOAST}){border-color:transparent;border-radius:14px;background:var(--wash-1)}
++${a('box', 'bare')} ${SEC}{border:0;border-radius:0;padding-inline:0;border-top:var(--line-w) solid var(--line)}
++:root:not([data-box='now']) ${NAV}{border:0;border-radius:999px;outline:none;box-shadow:none}
++:root:not([data-box='now']) ${NAV}[aria-current='page']{background:var(--wash-3)}
++
++/* ── 6 small things: toast, tip ── */
++:root:not([data-small='now']) ${TOAST}{border-color:var(--line-hover)}
++${a('small', 'pill')} ${TOAST}{border-radius:999px;padding-inline:var(--space-4)}
++${a('small', 'pill')} ${TIP}{border-radius:14px;padding-inline:var(--space-3)}
++${a('small', 'round')} ${TOAST}{border-radius:8px}
++${a('small', 'round')} ${TIP}{border-radius:8px}
++
++/* preview only: the toast stays, so its shape can be looked at */
++${TOAST}{opacity:1!important}
++
++/* ── 7 the threads dock, bottom left ── */
++:root:not([data-thread='now']) ${INBOX}{box-shadow:0 0 0 1px var(--line-hover);overflow:clip}
++:root:not([data-thread='now']) ${INBOX}::before,:root:not([data-thread='now']) ${INBOX}::after{display:none}
++${a('thread', 'tab')} ${INBOX}{border-radius:14px 14px 0 0}
++${a('thread', 'isle')} ${INBOX}{border-radius:14px;translate:0 -10px}
++
++/* ── hazard ── */
++${a('hazard', 'glow')} ${HZ}{box-shadow:0 0 0 1px var(--accent-magenta),0 0 70px -8px var(--accent-magenta)}
++
++/* ── marks: they take the corner of what they mark (--corner, which a card's face already sets; nothing set = square = the L).
++   Concentric: the face's radius plus how far out the mark is. min(corner * 9999, …) keeps a square thing's at 0. */
++:root{--q-k:0}
++${dot(face.face)}[data-flat='true']{--corner:0px}
++/* a card on a plane: its marks are drawn beside its face, in the box that holds both */
++*:has(> ${MK}):has(> ${dot(face.face)}):not(:has(> ${dot(plane.frame)})){--corner:var(--w-card-radius)}
++:root:is([data-mark='hug'],[data-mark='tick']) ${MK} i{--q-L:calc(var(--ml) * var(--zs,1));--q-R:calc(var(--corner,0px) + min(var(--corner,0px) * 9999,(var(--mo) + var(--th0)) * var(--zs,1) + var(--pad,0px)));corner-shape:squircle}
++${a('mark', 'hug')} ${MK} i{width:max(var(--q-L),var(--q-R) + var(--q-L) * .3);height:max(var(--q-L),var(--q-R) + var(--q-L) * .3)}
++${a('mark', 'tick')} ${MK} i{width:max(var(--q-L),var(--q-R));height:max(var(--q-L),var(--q-R))}
++:root:is([data-mark='hug'],[data-mark='tick']) ${MK} i[data-c='nw']{border-top-left-radius:var(--q-R)}
++:root:is([data-mark='hug'],[data-mark='tick']) ${MK} i[data-c='ne']{border-top-right-radius:var(--q-R)}
++:root:is([data-mark='hug'],[data-mark='tick']) ${MK} i[data-c='se']{border-bottom-right-radius:var(--q-R)}
++:root:is([data-mark='hug'],[data-mark='tick']) ${MK} i[data-c='sw']{border-bottom-left-radius:var(--q-R)}
++${a('mark', 'tick')} ${MK} i[data-c='nw']{clip-path:inset(0 calc(100% - var(--q-L)) calc(100% - var(--q-L)) 0)}
++${a('mark', 'tick')} ${MK} i[data-c='ne']{clip-path:inset(0 0 calc(100% - var(--q-L)) calc(100% - var(--q-L)))}
++${a('mark', 'tick')} ${MK} i[data-c='se']{clip-path:inset(calc(100% - var(--q-L)) 0 0 calc(100% - var(--q-L)))}
++${a('mark', 'tick')} ${MK} i[data-c='sw']{clip-path:inset(calc(100% - var(--q-L)) calc(100% - var(--q-L)) 0 0)}
++`
++
++export type Pick = { modal: string; drop: string; panel: string; dock: string; box: string; small: string; hazard: string; mark: string; thread: string }
++const START: Pick = { modal: 'line', drop: 'line', panel: 'under', dock: 'line', box: 'round', small: 'pill', hazard: 'ring', mark: 'tick', thread: 'tab' }
++function read(): Pick {
++  const q = new URLSearchParams(location.search).get('round')
++  try {
++    return { ...START, ...JSON.parse(q ?? localStorage.getItem(KEY) ?? '{}') }
++  } catch {
++    return START
++  }
++}
++const apply = (p: Pick) => {
++  for (const k of Object.keys(START) as (keyof Pick)[]) document.documentElement.dataset[k] = p[k]
++}
++const el = document.createElement('style')
++el.textContent = CSS
++document.head.appendChild(el)
++apply(read())
++// The new value itself: read() would go back to the address's first setting, undoing the message that just came.
++addEventListener('storage', (e) => e.key === KEY && e.newValue && apply(JSON.parse(e.newValue)))
++addEventListener('message', (e) => e.data?.round && apply(e.data.round))
++new MutationObserver(() => document.head.lastElementChild !== el && document.head.appendChild(el)).observe(document.head, { childList: true })
++
++// under, edge: how wide the right column is, and whether it's there; the sheet's edge follows.
++let col: HTMLElement | null = null
++const ro = new ResizeObserver(() => col && document.documentElement.style.setProperty('--q-right', col.offsetWidth + 'px'))
++let due = false
++const sync = () => {
++  due = false
++  const c = document.querySelector<HTMLElement>(`${COL}[data-side='right']`)
++  if (c !== col) {
++    ro.disconnect()
++    col = c
++    if (c) {
++      document.documentElement.style.setProperty('--q-right', c.offsetWidth + 'px')
++      ro.observe(c)
++    }
++  }
++  document.documentElement.toggleAttribute('data-qopen', !!c)
++}
++new MutationObserver(() => due || ((due = true), requestAnimationFrame(sync))).observe(document.documentElement, { childList: true, subtree: true })
++sync()
++
++// preview only: the tip's example opens its first word's meaning by itself.
++if (location.hash.includes('c=tip')) {
++  const open = () => document.querySelector<HTMLElement>(dot(tip.word))?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))
++  setTimeout(open, 800)
++  setTimeout(open, 2500)
++}
+diff --git a/src/ui/patterns/HazardConfirm.tsx b/src/ui/patterns/HazardConfirm.tsx
+index b2d2574..37e529d 100644
+--- a/src/ui/patterns/HazardConfirm.tsx
++++ b/src/ui/patterns/HazardConfirm.tsx
+@@ -66,6 +66,67 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
+     const draw = (grow: number, shift: number) => {
+       ctx.clearRect(0, 0, cv.width, cv.height)
+       const r = el.getBoundingClientRect()
++      // Q-035 preview: other tapes for a round box.
++      const mode = document.documentElement.dataset.hazard ?? 'now'
++      if (mode !== 'now') {
++        const R = 24
++        const GAP = 6
++        const pcx = r.left + r.width / 2
++        const pcy = r.top + r.height / 2
++        if (mode === 'ring') {
++          const reachPx = BAND * CELL_PX
++          for (let gy = Math.floor((r.top - reachPx - GAP) / CELL_PX) - 1; gy <= Math.ceil((r.bottom + reachPx + GAP) / CELL_PX); gy++)
++            for (let gx = Math.floor((r.left - reachPx - GAP) / CELL_PX) - 1; gx <= Math.ceil((r.right + reachPx + GAP) / CELL_PX); gx++) {
++              const px = gx * CELL_PX + CELL_PX / 2
++              const py = gy * CELL_PX + CELL_PX / 2
++              const qx = Math.abs(px - pcx) - (r.width / 2 - R)
++              const qy = Math.abs(py - pcy) - (r.height / 2 - R)
++              const d = Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - R
++              if (d < GAP + CELL_PX / 2 || d > GAP + reachPx || (d - GAP) / reachPx > grow) continue
++              const on = (((gx + gy + shift) % 4) + 4) % 4 < 2
++              ctx.globalAlpha = on ? 0.9 : 0.35
++              ctx.fillStyle = on ? ink.on : ink.off
++              ctx.fillText('╱', px, py)
++            }
++        } else if (mode === 'stripe') {
++          const wide = 10 * grow
++          if (wide > 0.5) {
++            ctx.save()
++            ctx.beginPath()
++            ctx.roundRect(r.left - GAP - wide, r.top - GAP - wide, r.width + 2 * (GAP + wide), r.height + 2 * (GAP + wide), R + GAP + wide)
++            ctx.roundRect(r.left - GAP, r.top - GAP, r.width + 2 * GAP, r.height + 2 * GAP, R + GAP)
++            ctx.clip('evenodd')
++            const step = 13
++            const off = (shift * 3) % step
++            ctx.lineWidth = 4.5
++            for (let x = r.left - r.height - 80 + off; x < r.right + 80; x += step) {
++              ctx.strokeStyle = ink.on
++              ctx.globalAlpha = 0.9
++              ctx.beginPath()
++              ctx.moveTo(x, r.bottom + 40)
++              ctx.lineTo(x + r.height + 80, r.top - 40)
++              ctx.stroke()
++            }
++            ctx.restore()
++          }
++        } else if (mode === 'band') {
++          ctx.save()
++          ctx.translate(pcx, pcy)
++          ctx.rotate((-7 * Math.PI) / 180)
++          const cols = Math.ceil(window.innerWidth / CELL_PX)
++          for (let gy = -3; gy < 3; gy++)
++            for (let gx = -cols; gx < cols; gx++) {
++              if (Math.abs(gx) / cols > grow) continue
++              const on = (((gx + gy + shift) % 4) + 4) % 4 < 2
++              ctx.globalAlpha = on ? 0.9 : 0.35
++              ctx.fillStyle = on ? ink.on : ink.off
++              ctx.fillText('╱', gx * CELL_PX + CELL_PX / 2, gy * CELL_PX + CELL_PX / 2)
++            }
++          ctx.restore()
++        }
++        ctx.globalAlpha = 1
++        return
++      }
+       const x0 = Math.floor(r.left / CELL_PX)
+       const y0 = Math.floor(r.top / CELL_PX)
+       const x1 = Math.ceil(r.right / CELL_PX)
+diff --git a/vite.config.ts b/vite.config.ts
+index 5e1f3c2..c0bbf26 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -16,7 +16,7 @@ export default defineConfig({
+   customLogger: logger,
+   plugins: [react()],
+   // This app's own port, so it never lands on another project's 5173; strict, so it fails rather than moving.
+-  server: { port: 5288, strictPort: true },
++  server: { port: 5288, strictPort: true, fs: { strict: false } },
+   // The libraries every page needs at once in files of their own, named by what's in them: a deploy changes only the
+   // app's own files, so a visitor keeps the libraries from before (D-288). The rest stays with what imports it (the
+   // workspace's chunk, D-287).

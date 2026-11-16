@@ -173,6 +173,10 @@
      round light before its word. The lamp is in em, so it grows with a console's text as the canvas zooms (D-264). */
   --radius-full: 999px; /* every pill and circle */
   --radius-well: var(--space-4); /* a <textarea>'s well: too tall for a pill */
+  /* Surfaces (D-387, docs/specs/surfaces.md): round with a line. */
+  --radius-window: 24px; /* a modal, the hazard box, the main screen as a sheet */
+  --radius-menu: 16px; /* a menu's frame, a popover */
+  --radius-box: 14px; /* a tab's top corners, a box inside a window, a tip */
   --lamp: 0.5em; /* its width and height */
   --lamp-gap: 0.55em; /* lamp to word */
   --lamp-glow: 0.55em; /* its glow while on */

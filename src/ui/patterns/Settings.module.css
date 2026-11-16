@@ -34,7 +34,9 @@
   composes: frame from '../foundation/Frame.module.css';
   width: min(var(--modal-w), calc(100vw - 2 * var(--space-4)));
   height: min(var(--modal-h), calc(100vh - 2 * var(--space-8)));
+  --window-inner: calc(var(--radius-window) - var(--line-w));
   padding: 0;
+  border-radius: var(--radius-window);
   color: var(--fg);
   background: var(--bg-raised);
 }
@@ -55,6 +57,8 @@
   overflow-y: auto;
   padding: var(--space-6) var(--space-3) var(--space-6) var(--space-4);
   border-right: var(--line-w) solid var(--line);
+  /* It paints up to the window's left corners (D-387). */
+  border-radius: var(--window-inner) 0 0 var(--window-inner);
   background: var(--wash-1);
 }
 
@@ -151,6 +155,8 @@
   min-height: 0;
   overflow-y: auto;
   padding: var(--space-6) var(--space-8) var(--space-8);
+  /* Its scroll bar stays inside the window's right corners (D-387). */
+  border-radius: 0 var(--window-inner) var(--window-inner) 0;
 }
 
 .head {

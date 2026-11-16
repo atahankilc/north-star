@@ -105,33 +105,12 @@
 .wa {
   width: var(--w, var(--size-xl));
   border: var(--line-w) solid var(--line-hover);
+  /* Round with a line, as every window (D-387): no corner marks. */
+  border-radius: var(--radius-window);
   background: var(--bg);
   --demo-strip-x: var(--space-6);
   --demo-strip-line: var(--line-w) solid var(--line);
   --demo-strip-line-b: var(--line-w) solid var(--line);
-}
-
-/* The finder's corner marks, top left and right. */
-.wa::before,
-.wa::after {
-  content: '';
-  position: absolute;
-  top: calc(-1 * var(--line-w));
-  z-index: var(--z-2);
-  width: var(--corner-mark);
-  height: var(--corner-mark);
-  border-top: var(--line-w) solid var(--accent-magenta);
-  pointer-events: none;
-}
-
-.wa::before {
-  left: calc(-1 * var(--line-w));
-  border-left: var(--line-w) solid var(--accent-magenta);
-}
-
-.wa::after {
-  right: calc(-1 * var(--line-w));
-  border-right: var(--line-w) solid var(--accent-magenta);
 }
 
 .wa .newsList {
