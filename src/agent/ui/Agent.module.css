@@ -1,5 +1,5 @@
-/* The agent (S14, D-312; agent.md §4.6): a small framed box in the bottom-right corner, growing into a terminal column on
-   the right (the right panel's look, D-219: a line on its left with magenta marks on its corners, the kind along the
+/* The agent (S14, D-312; agent.md §4.6): a tab on the screen's foot at the bottom right (D-389), growing into a column on
+   the right that lies on the ground under the main screen (D-387; the right panel's look, D-219: the kind along the
    top, mono only on the system's bits, Inter for the rest, D-337). Tokens only; light under [data-theme='light']. */
 
 /* The column's width, on <html> so the app's box (WorkspaceLayout.module.css `.app`) and the right panel (SidePanel)
@@ -21,39 +21,42 @@
 
 /* ---- The box */
 
+/* Closed, and opened small: a tab rising from the main screen's foot at the bottom right (D-389), the threads dock's
+   twin: top corners round, a line that goes cyan while the keyboard is in it, no foot line. The screen is a sheet
+   while a column is docked (D-387, foundation/sheet.ts): the tab stands on its foot (`--sheet-b`) and clear of its
+   round corner (`--sheet-round`), and travels with it. */
 .box {
-  composes: frame from '../../ui/foundation/Frame.module.css';
+  --tab-line: var(--line-hover);
   position: fixed;
   /* Left of a column docked on the right and clear of a pane's dock (`--box-*`, measured: Agent.tsx useBoxRoom). */
-  right: calc(var(--box-inset, 0px) + var(--space-3));
-  bottom: calc(var(--box-lift, 0px) + var(--space-3));
+  right: calc(var(--box-inset, 0px) + var(--space-3) + var(--sheet-round, 0px));
+  bottom: calc(var(--box-lift, 0px) + var(--sheet-b, 0px));
   z-index: var(--z-panel);
   display: flex;
   flex-direction: column;
   /* Clear of the focus dock at the bottom's middle on narrower windows (≈ 360 px wide round the middle). */
   width: clamp(var(--size-xs), calc(50vw - var(--panel-w) / 2 - var(--space-3)), var(--size-md));
   max-width: var(--box-room, none);
-  border-color: var(--line-hover);
+  border: var(--line-w) solid var(--tab-line);
+  border-bottom: 0;
+  border-radius: var(--radius-box) var(--radius-box) 0 0;
+  background: var(--bg);
   color: var(--fg);
   font-family: var(--font-display);
   font-size: var(--text-xs);
   line-height: var(--space-4);
+  transition:
+    right var(--dur-slow) var(--ease-out),
+    bottom var(--dur-slow) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
 }
 
-/* A cyan lead on its top edge, like a numbered rule's (it's where you talk to something). */
-.box::before {
-  content: '';
-  position: absolute;
-  top: calc(-1 * var(--line-w));
-  left: calc(-1 * var(--line-w));
-  width: var(--lead);
-  height: var(--line-w);
-  background: var(--accent-cyan);
+.box:focus-within {
+  --tab-line: var(--accent-cyan);
 }
 
 .box[data-open] {
   width: clamp(var(--size-sm), calc(50vw - var(--panel-w) / 2 - var(--space-3)), var(--size-lg));
-  background: var(--bg);
 }
 
 .boxTop {

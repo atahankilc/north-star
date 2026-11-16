@@ -128,7 +128,7 @@ feature comes back as a piece, and check them with the user then.
   under the main screen, which lifts as a round sheet and draws back for it (`foundation/sheet.ts`; closed, the screen
   fills the window). A console on a piece keeps its L's. `check:kit` refuses a corner L drawn by hand (`cornerMark`). While a
   column is docked the HUD's tools on the left edge stay where they are, on a rail of ground the sheet draws back off;
-  the breadcrumb rides the sheet (D-389). The agent closed is a tab on the sheet's foot, bottom right (D-389, not built).
+  the breadcrumb rides the sheet (D-389). The agent closed is a tab on the sheet's foot, bottom right (D-389).
 - HUD (D-027): the breadcrumb top left, fixed margins; the rest becomes a left side nav. Bottom left, top to bottom:
   people here, threads button, a rule, your square, the gear, `--space-3` from the edges, other bottom-left tools
   `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge, bare icons (D-384); its `+` a drawn

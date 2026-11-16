@@ -71,9 +71,13 @@ HUD's tools stay down on the ground**.
   too, the sheet drawing down off it.
 - *Built 2026-11-16:* `useSheetRail` (the HUD's, while it has tools on the left), `--sheet-rail`, `--sheet-round`.
 
-**The agent, closed, is a tab** (D-389, agreed, *not built yet*): the box in the bottom-right corner becomes a tab
-rising from the sheet's foot (top corners round, a line), the threads dock's twin; opened small it's the same tab
-grown taller; as a column it's on the ground already. With a card's panel open too, the two columns stand side by side.
+**The agent, closed, is a tab** (D-389): the box in the bottom-right corner is a tab rising from the sheet's foot (top
+corners round, a line that goes cyan while the keyboard is in it, no foot line), the threads dock's twin; opened small
+it's the same tab grown taller; as a column it's on the ground already. It stands on the sheet's foot (`--sheet-b`)
+and clear of its round corner (`--sheet-round`), left of a docked column as before (`--box-inset`).
+*Built 2026-11-16* in Agent.module.css only (its cyan lead on the top edge is gone: the line says it's in use). Seen in
+the real app on the emulators (the agent has no gallery): closed, opened small, as a column over the backdrop with the
+HUD's tools on the rail, folded back. Not seen: beside a card's panel, over a pane's dock (`--box-lift`), light.
 
 ## Tokens
 
