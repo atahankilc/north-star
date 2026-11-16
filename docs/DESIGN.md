@@ -150,6 +150,9 @@ Values will be tuned against contrast checks (WCAG AA for text).
   bare on the ground under it (`--ground`: no line, no marks). While one is there the screen lifts (a shadow, a lit
   rim), goes round and draws in `--sheet-gap` from the window and back from the column by its width, in `--dur-slow`;
   the foot dock and the threads dock travel with it. Two fixed layers draw it: nothing in the screen is laid out again.
+  The HUD's tools on the left edge stay where they are (D-389): the sheet draws back off them (`--sheet-rail-w`) and
+  they're left on a rail of ground beside it; the breadcrumb rides the sheet. With no column the canvas fills the
+  window and the HUD is on it.
 - Buttons are empty and round (D-384, [specs/controls.md](specs/controls.md); `src/ui/primitives/Button.tsx`, lowercase,
   D-093): a button has nothing behind it at rest, its word is enough; a round shade (`--wash-3`, `--radius-full`) comes
   under the pointer or the keyboard, and it's a little smaller while pressed (`--press-scale`). Its kind shows in its ink

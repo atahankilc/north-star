@@ -211,7 +211,9 @@
   position: absolute;
   /* On the main screen's foot, which rises while a column is docked (D-387). */
   bottom: var(--sheet-b, 0px);
-  left: var(--gutter);
+  /* Clear of the sheet's round corner while it's lifted (D-389: the sheet's left edge is at the gutter then). */
+  left: calc(var(--gutter) + var(--sheet-round, 0px));
+  transition: left var(--dur-slow) var(--ease-out), bottom var(--dur-slow) var(--ease-out);
   /* Over the HUD (10), so its shade down the left edge doesn't dim it; it never covers the HUD's buttons. */
   z-index: calc(var(--z-panel) - 1);
   display: flex;

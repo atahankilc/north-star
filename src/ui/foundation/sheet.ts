@@ -3,8 +3,13 @@
 // they're there (`useSheetColumn`); this measures them, keeps the two layers that draw the sheet (Sheet.module.css)
 // and tells the page how far the sheet has moved, as custom properties on the root:
 //   --sheet-x0, --sheet-x1   how far the sheet's left and right edges are from the window's: a column's reach on
-//                            its side, the gap on the other; 0 with no column
+//                            its side; on a side with none, the rail if the HUD has one there (below), else the gap;
+//                            0 with no column
 //   --sheet-b                how far its top and foot are from the window's (the gap; 0 with no column)
+//   --sheet-rail             the rail's width while it shows, else 0
+//   --sheet-round            the sheet's corner while it's lifted, else 0 (what sits on its foot keeps clear of it)
+// The rail (D-389): the HUD's tools on the left edge stay where they are, and while a column is docked the sheet draws
+// back off them too, so they're left on the ground beside it (`useSheetRail`, the HUD's).
 // The layers outlive the columns: when the last one leaves, the sheet still has to travel back.
 import { useLayoutEffect, type RefObject } from 'react'
 import { isReducedMotion } from '../../state/motion'
@@ -14,6 +19,7 @@ import styles from './Sheet.module.css'
 type Side = 'right' | 'left'
 
 const columns = new Map<HTMLElement, Side>()
+let rails = 0
 let layers: [HTMLElement, HTMLElement] | null = null
 
 function make(): [HTMLElement, HTMLElement] {
@@ -38,10 +44,14 @@ function measure() {
   }
   const open = columns.size > 0
   const gap = open ? tokenPx('--sheet-gap') : 0
+  // The rail only where no column is: a column on the left covers the HUD's tools as it always did.
+  const rail = open && rails > 0 && !left ? tokenPx('--sheet-rail-w') : 0
   const root = document.documentElement.style
-  root.setProperty('--sheet-x0', `${left || gap}px`)
+  root.setProperty('--sheet-x0', `${left || rail || gap}px`)
   root.setProperty('--sheet-x1', `${right || gap}px`)
   root.setProperty('--sheet-b', `${gap}px`)
+  root.setProperty('--sheet-rail', `${rail}px`)
+  root.setProperty('--sheet-round', `${open ? tokenPx('--radius-window') : 0}px`)
   if (!open && !layers) return
   layers ??= make()
   for (const el of layers) {
@@ -68,4 +78,17 @@ export function useSheetColumn(ref: RefObject<HTMLElement | null>, side: Side, p
       measure()
     }
   }, [ref, side, present])
+}
+
+// The HUD's tools on the left edge are there: a rail of ground is kept for them while a column is docked.
+export function useSheetRail(on = true) {
+  useLayoutEffect(() => {
+    if (!on) return
+    rails++
+    measure()
+    return () => {
+      rails--
+      measure()
+    }
+  }, [on])
 }

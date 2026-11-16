@@ -178,6 +178,7 @@
   --radius-menu: 16px; /* a menu's frame, a popover */
   --radius-box: 14px; /* a tab's top corners, a box inside a window, a tip */
   --sheet-gap: var(--space-2); /* how far the main screen draws in from the window while a column is docked */
+  --sheet-rail-w: 60px; /* and from the left, off the HUD's tools: their strip and its margins (D-389) */
   --ground: #121215; /* what a docked column lies on, under the main screen */
   --lift-shade: rgba(0, 0, 0, 0.7);
   --sheet-rim: rgba(255, 255, 255, 0.16); /* the lifted screen's lit edge */

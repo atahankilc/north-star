@@ -1,12 +1,15 @@
 // The HUD on every page: the breadcrumb top left, page actions top right; you and settings in the bottom-left corner
 // (D-175). The rest moves to the left side nav piece by piece.
 // Same position and margins everywhere (--hud-x / --hud-y), so nothing shifts between pages.
+// While a side panel is docked the main screen is a sheet (D-387): the bar rides it; the tools on the left edge stay
+// where they are, on the ground the sheet draws back off (D-389).
 import { Fragment, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../data/auth'
 import styles from './Hud.module.css'
 import { SettingsButton, type WorkspacePage } from './Settings'
 import { ButtonGroup } from '../primitives/ButtonGroup'
+import { useSheetRail } from '../foundation/sheet'
 
 export type Crumb = {
   label: ReactNode
@@ -35,6 +38,9 @@ type Props = {
 export function Hud({ crumbs = [], right, settings, settingsName, settingsBadge, side, corner, tools, mine }: Props) {
   const atRoot = crumbs.length === 0
   const { user } = useAuth()
+  // Tools on the left edge: a rail of ground is kept for them while a side panel is docked (D-389).
+  const rail = !!side || !!user
+  useSheetRail(rail)
 
   return (
     <header className={styles.hud}>
@@ -73,6 +79,7 @@ export function Hud({ crumbs = [], right, settings, settingsName, settingsBadge,
       <div className={styles.right} data-glide>
         {right}
       </div>
+      {rail && <span className={styles.rail} aria-hidden />}
       {side && (
         <div className={styles.side} data-learn="sidenav">
           {/* The side nav's tools, one vertical strip (D-344). */}

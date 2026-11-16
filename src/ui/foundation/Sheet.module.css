@@ -14,6 +14,7 @@
   transition:
     inset var(--dur-slow) var(--ease-out),
     border-radius var(--dur-slow) var(--ease-out),
+    clip-path var(--dur-slow) var(--ease-out),
     opacity var(--dur-fast) var(--ease-out);
 }
 
@@ -22,10 +23,15 @@
      that comes after it in the page. */
   z-index: calc(var(--z-panel) - 1);
   box-shadow: 0 0 0 100vmax var(--ground);
+  /* Not over the rail (D-389): the HUD's tools are left on the ground there, and the HUD paints that ground itself,
+     under them (Hud.module.css `.rail`). The cut travels with the sheet's edge, so its corners stay round on the way. */
+  clip-path: inset(0 0 0 var(--sheet-rail, 0px));
 }
 
 .rim {
   z-index: calc(var(--z-panel) + 1);
+  /* No shadow to its left: it would dim the tools on the rail. */
+  clip-path: inset(-100vmax -100vmax -100vmax 0);
   box-shadow:
     var(--lift) var(--lift-shade),
     inset 0 0 0 var(--line-w) var(--sheet-rim);

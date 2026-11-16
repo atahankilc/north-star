@@ -1,8 +1,15 @@
+/* The bar is on the main screen: while a column is docked the screen is a sheet that draws in (D-387,
+   foundation/sheet.ts), and the bar goes with it. The tools on the left edge don't (`.side`, `.corner`: fixed to the
+   window): the sheet draws back off them and they're left on the ground beside it (D-389, `.rail`). */
 .hud {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: var(--sheet-b, 0px);
+  left: var(--sheet-x0, 0px);
+  right: var(--sheet-x1, 0px);
+  transition:
+    top var(--dur-slow) var(--ease-out),
+    left var(--dur-slow) var(--ease-out),
+    right var(--dur-slow) var(--ease-out);
   z-index: var(--z-hud);
   display: flex;
   justify-content: space-between;
@@ -58,6 +65,20 @@ a.link:hover {
   overflow: hidden;
   color: var(--fg-strong);
   text-overflow: ellipsis;
+}
+
+/* The ground under the tools on the left edge while a column is docked (D-389): as wide as the sheet has drawn back
+   (`--sheet-rail`, 0 otherwise), under the tools, over the canvas. */
+.rail {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--z-under);
+  width: var(--sheet-rail, 0px);
+  background: var(--ground);
+  pointer-events: none;
+  transition: width var(--dur-slow) var(--ease-out);
 }
 
 /* The side nav's tools (D-176, D-178): middle of the left edge, level with the corner below it. */

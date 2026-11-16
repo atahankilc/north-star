@@ -54,6 +54,27 @@ After the "Only Panels" project's map: the main screen is a sheet lying on a gro
   dock. **What's on the ground:** the panel.
 - The panel's width is still dragged (D-378): the sheet's edge follows it.
 
+## The HUD while a column is docked (D-389)
+
+Agreed 2026-11-16 on a port (the first build left the HUD where it was, over the sheet's edge). The user's idea: with
+no panel the canvas fills the window and the HUD is on it, as always; when a panel opens and the screen lifts, **the
+HUD's tools stay down on the ground**.
+
+- **The tools on the left edge don't move** (the side nav, who's here, the threads button, you, the gear). The sheet
+  draws back off them, `--sheet-rail-w` (60 px: their strip and its margins), so they're on a rail of ground beside it.
+  The HUD paints that ground itself, under its tools (`.rail`); the ground layer is cut there, and the cut travels
+  with the sheet's edge so its corners stay round on the way. The rim casts no shadow to its left (it would dim them).
+- **The breadcrumb rides the sheet** (it can't fit on the rail): the bar's box is the sheet's.
+- The threads dock stands clear of the sheet's round corner while it's lifted (`--sheet-round`).
+- A column docked on the left covers the tools as before: no rail then.
+- Shown and not taken: the HUD riding the sheet whole; a rail kept always (the canvas always a sheet); the bar staying
+  too, the sheet drawing down off it.
+- *Built 2026-11-16:* `useSheetRail` (the HUD's, while it has tools on the left), `--sheet-rail`, `--sheet-round`.
+
+**The agent, closed, is a tab** (D-389, agreed, *not built yet*): the box in the bottom-right corner becomes a tab
+rising from the sheet's foot (top corners round, a line), the threads dock's twin; opened small it's the same tab
+grown taller; as a column it's on the ground already. With a card's panel open too, the two columns stand side by side.
+
 ## Tokens
 
 New, in `src/styles/tokens.css` (names to settle in step 1; values from the demo):
