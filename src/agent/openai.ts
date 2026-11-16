@@ -31,7 +31,8 @@
 // - The web (D-360): with `req.web`, OpenAI's hosted `web_search` tool beside ours, at most WEB_SEARCHES (or `req.searches`) built-in calls
 //   a response (`max_tool_calls` counts only built-in tools); its `web_search_call` items go back with the rest, the
 //   pages it read come with `web_search_call.action.sources`, the cited ones as the text's `url_citation`s.
-import { joinSources, type AgentModel, type ImagePart, type ModelEvent, type ModelMessage, type ModelRequest, type ModelResponse, type Source, type StopReason, type ToolCall, type ToolDef, type Usage } from './contract'
+import { joinSources, type ImagePart, type ModelEvent, type ModelMessage, type ModelRequest, type ModelResponse, type Source, type StopReason, type ToolCall, type ToolDef, type Usage } from './contract'
+import { abortError, ProviderError, respondFrom, type ProviderErrorKind, type StreamingModel } from './provider'
 import { WEB_SEARCHES } from './web'
 
 const OPENAI_API = 'https://api.openai.com/v1'
@@ -52,15 +53,11 @@ export type OpenAIOptions = {
   sleep?: (ms: number, signal?: AbortSignal) => Promise<void>
 }
 
-export type OpenAIErrorKind = 'auth' | 'forbidden' | 'not_found' | 'bad_request' | 'rate_limit' | 'quota' | 'server' | 'network' | 'stream'
+export type OpenAIErrorKind = ProviderErrorKind
 
-export class OpenAIError extends Error {
-  constructor(
-    message: string,
-    public kind: OpenAIErrorKind,
-    public status?: number,
-  ) {
-    super(message)
+export class OpenAIError extends ProviderError {
+  constructor(message: string, kind: OpenAIErrorKind, status?: number) {
+    super(message, kind, status)
     this.name = 'OpenAIError'
   }
 }
@@ -344,12 +341,6 @@ async function* readResponse(datas: AsyncIterable<string>, key?: string): AsyncG
 
 // ---- HTTP
 
-function abortError(): Error {
-  const e = new Error('Stopped.')
-  e.name = 'AbortError'
-  return e
-}
-
 const defaultSleep = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((res, rej) => {
     if (signal?.aborted) return rej(abortError())
@@ -433,7 +424,7 @@ async function send(h: Http, url: string, init: RequestInit, signal?: AbortSigna
 
 // ---- The model
 
-export type OpenAIModel = AgentModel & { stream: (req: ModelRequest) => AsyncIterable<ModelEvent>; readonly model: string }
+export type OpenAIModel = StreamingModel
 
 export function openaiModel(o: OpenAIOptions): OpenAIModel {
   // Trimmed: a key pasted with a space or a newline still works.
@@ -458,10 +449,7 @@ export function openaiModel(o: OpenAIOptions): OpenAIModel {
     model: o.model,
     provider: 'openai',
     stream,
-    async respond(req) {
-      for await (const ev of stream(req)) if (ev.type === 'done') return ev.response
-      throw new OpenAIError('The answer stopped before it finished.', 'stream')
-    },
+    respond: (req) => respondFrom(stream(req), (m) => new OpenAIError(m, 'stream')),
   }
 }
 

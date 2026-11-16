@@ -477,10 +477,11 @@ const namedOf = (ws: WorkspaceCtx) => {
   return n
 }
 
-// A doc's item as the snapshot holds it (for its words): by collection.
-function itemIn(ws: WorkspaceCtx, kind: Change['kind'], id: string): object | undefined {
-  if (Object.values(CARD_COLLECTION).includes(kind as never)) return ws.cards.find((c) => c.id === id)
-  const lists: Partial<Record<Change['kind'], { id: string }[]>> = {
+// The workspace's list of a collection, as the snapshot holds it (D-399: preview.ts had the same map); every card
+// collection is the one list of cards.
+export function listIn(ws: WorkspaceCtx, kind: string): { id: string }[] {
+  if (Object.values(CARD_COLLECTION).includes(kind as never)) return ws.cards
+  const lists: Record<string, { id: string }[] | undefined> = {
     labels: ws.labels,
     tasks: ws.tasks,
     pieces: ws.pieces,
@@ -494,8 +495,13 @@ function itemIn(ws: WorkspaceCtx, kind: Change['kind'], id: string): object | un
     canvases: ws.canvases,
     threads: ws.threads,
   }
+  return lists[kind] ?? []
+}
+
+// A doc's item as the snapshot holds it (for its words).
+function itemIn(ws: WorkspaceCtx, kind: Change['kind'], id: string): object | undefined {
   if (kind === 'workspace') return ws.workspace
-  return lists[kind]?.find((x) => x.id === id)
+  return listIn(ws, kind).find((x) => x.id === id)
 }
 
 // ---- Warnings: a card titled like one already there, an empty new section.

@@ -8,8 +8,8 @@ import { COL_NAME_MAX, MAX_COLS, NAME_COL, TEMPLATES, colName, type Column, type
 import { candidates, findCol } from '../model/lens'
 import type { Piece } from '../data/model'
 import { DELETE, type OpCtx, type Plan } from './types'
-import { find, refuse } from './util'
-import { MATRIX_NAME_MAX, PIECE_NAME_MAX, UNIT_MAX, VALUE_MAX } from '../model/limits'
+import { find, refuse, pieceName } from './util'
+import { MATRIX_NAME_MAX, UNIT_MAX, VALUE_MAX } from '../model/limits'
 import { planeRef, shortId, stepsFrom, tidy, type StepSpec } from './matrix'
 
 type P = Piece & { id: string }
@@ -190,10 +190,8 @@ export function updateTable(ctx: OpCtx, args: UpdateTableArgs): Plan {
     if (patch.table) delete (patch.table as TableSetup).rows.hide
     else patch['table.rows.hide'] = DELETE
   }
-  if (args.name !== undefined) {
-    if (typeof args.name !== 'string') refuse(op, 'name is text', 'give the name as a string')
-    if (args.name.trim()) patch.name = args.name.trim().slice(0, PIECE_NAME_MAX)
-  }
+  const name = pieceName(op, args.name)
+  if (name) patch.name = name
   if (!Object.keys(patch).length) return { op, label, writes: [], ids: {}, meta: { kind: 'table' } }
   return { op, label, writes: [{ coll: 'pieces', id: p.id, patch: { ...patch, updatedAt: ctx.now } }], ids: {}, meta: { kind: 'table' } }
 }

@@ -29,6 +29,7 @@
 //             "Pazar" fixture (cards, links, text, matrix, table, deck, timeline, pieces, canvases, places, or flow:
 //             a bit of everything), then says what's in the preview.
 import type { AgentEnv, AgentModel, ModelEvent, ModelMessage, ModelRequest, ModelResponse, ToolCall, Usage, WebUse } from './contract'
+import { abortError } from './provider'
 import { estimateTokens } from './read/text'
 import { clean, derive } from './read/derive'
 import { kindOfPiece } from '../model/pieces'
@@ -464,11 +465,7 @@ export function demoBatch(env: Env, what: string): { ops: Op[]; summary: string 
 
 const sleep = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((res, rej) => {
-    const abort = () => {
-      const e = new Error('Stopped.')
-      e.name = 'AbortError'
-      rej(e)
-    }
+    const abort = () => rej(abortError())
     if (signal?.aborted) return abort()
     if (ms <= 0) return res()
     const t = setTimeout(() => {

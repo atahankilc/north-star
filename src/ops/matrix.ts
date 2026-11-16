@@ -9,8 +9,8 @@ import { GLYPH_MAX, LABEL_MAX, MAX_ENTRIES, MAX_STEPS, NAME_MAX, TEMPLATES, entr
 import { candidates, findNamed } from '../model/lens'
 import type { Piece } from '../data/model'
 import { DELETE, type OpCtx, type Plan } from './types'
-import { a, find, refuse } from './util'
-import { AXIS_NOUN_MAX, PIECE_NAME_MAX, UNIT_MAX } from '../model/limits'
+import { a, find, refuse, pieceName } from './util'
+import { AXIS_NOUN_MAX, UNIT_MAX } from '../model/limits'
 
 type P = Piece & { id: string }
 
@@ -304,10 +304,8 @@ export function updateMatrix(ctx: OpCtx, args: UpdateMatrixArgs): Plan {
     if (patch.matrix) refuse(op, `${which} changes the setup being replaced`, 'start over from the template first, then change it in another op')
     Object.assign(patch, axisPatch(ctx, op, m![which], ap, which))
   }
-  if (args.name !== undefined) {
-    if (typeof args.name !== 'string') refuse(op, 'name is text', 'give the name as a string')
-    if (args.name.trim()) patch.name = args.name.trim().slice(0, PIECE_NAME_MAX)
-  }
+  const name = pieceName(op, args.name)
+  if (name) patch.name = name
   if (!Object.keys(patch).length) return { op, label, writes: [], ids: {}, meta: { kind: 'matrix' } }
   return { op, label, writes: [{ coll: 'pieces', id: p.id, patch: { ...patch, updatedAt: ctx.now } }], ids: {}, meta: { kind: 'matrix' } }
 }

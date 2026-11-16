@@ -1,7 +1,7 @@
 // Cleaning a workspace's docs into the shapes firestore.rules accepts (D-246), without Firebase (S3, D-312): moved out of
 // io/bundle.ts (which re-exports all of it) so the ops' validate can use it in node.
 import { CARD_TYPES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, PRIORITIES, VALIDATIONS, type AnyType } from './cards'
-import { AVAILABILITIES, CARD_FIELDS, CELL_KINDS, COL_W, CONFIDENCES, CRITERION_SCORES, DOC_COLS, DOC_KINDS, DOC_LIMITS, EVIDENCE_KINDS, FIELDS, OWN_KINDS, TONES, TOTALS_AS, TOTALS_AT, UNFOLDS } from './shapes'
+import { AVAILABILITIES, CARD_FIELDS, CELL_KINDS, COL_W, CONFIDENCES, CRITERION_SCORES, DOC_COLS, DOC_KINDS, DOC_LIMITS, EVIDENCE_KINDS, FIELDS, OWN_KINDS, TONES, TOTALS_AS, TOTALS_AT, UNFOLDS, STANCES, HEADING_SIZES, TEXT_SCALES, DOC_VIEWS, TIMELINE_ROWS, KANBAN_ROWS, BOX_TONES } from './shapes'
 import { bytesOf as bytes } from './notes'
 import { AUTHOR_NAME_MAX, AXIS_NOUN_MAX, BOX_NAMES_MAX, BOX_NAME_MAX, CANVAS_NAME_MAX, CATEGORY_MAX, CELL_NOTES_MAX, CELL_TEXT_MAX, CHECKS_MAX, CHECK_MAX, COL_NAME_MAX, CRITERION_MAX, EVIDENCE_TEXT_MAX, FACT_MAX, GLYPH_MAX, KANBAN_COLS_MAX, KICKER_MAX, LABELS_MAX, LIMIT_MAX, REGIONS_MAX, REGION_MAX, TAGS_MAX, TAG_MAX, LABEL_MAX, LINK_LABEL_MAX, LONG_TEXT_MAX, MATRIX_NAME_MAX, PIECE_NAME_MAX, SOURCE_MAX, STEP_LABEL_MAX, TABLE_COL_NAME_MAX, TASK_NOTES_MAX, TASK_TITLE_MAX, TITLE_MAX, UNIT_MAX, URL_MAX } from './limits'
 import { newId } from './scales'
@@ -133,7 +133,7 @@ export function cleanComparison(d: Raw, now: number) {
 export function cleanEvidence(d: Raw, now: number) {
   const text = str(d.text, EVIDENCE_TEXT_MAX)?.trim()
   const kind = oneOf(d.kind, EVIDENCE_KINDS)
-  const stance = oneOf(d.stance, ['supports', 'contradicts'] as const)
+  const stance = oneOf(d.stance, STANCES)
   if (!text || !kind || !stance) return null
   const date = typeof d.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.date) ? d.date : undefined
   return compact({ text, kind, stance, source: str(d.source, SOURCE_MAX), url: str(d.url, URL_MAX), date, ...times(d, now) })
@@ -157,7 +157,7 @@ export function cleanLabel(d: Raw, now: number) {
   const h = size(d.h)
   // A section without a size isn't one (rules).
   if (kind === 'section' && (!w || !h)) return null
-  const sizeName = oneOf(d.size, ['heading', 'subheading', 'minor', 'note'] as const)
+  const sizeName = oneOf(d.size, [...HEADING_SIZES, 'note'] as const)
   return compact({
     text: kind === 'title' ? '' : (str(d.text, textMax({ kind, size: sizeName })) ?? ''),
     x,
@@ -171,7 +171,7 @@ export function cleanLabel(d: Raw, now: number) {
     rotate: oneOf(d.rotate, [90, -90] as const),
     kicker: str(d.kicker, KICKER_MAX),
     side: kind === 'section' && d.side === 'left' ? ('left' as const) : undefined,
-    scale: oneOf(d.scale, ['small', 'medium', 'large'] as const),
+    scale: oneOf(d.scale, TEXT_SCALES),
     uid: kind === 'sticky' ? str(d.uid, 128) : undefined,
     author: kind === 'sticky' ? str(d.author, AUTHOR_NAME_MAX) : undefined,
     folded: kind === 'sticky' ? yes(d.folded) : undefined,
@@ -333,7 +333,7 @@ function cleanDocumentsSetup(v: unknown) {
   const sort = obj(t?.sort)
   const kinds = strings(t?.kinds, 4, 20).filter((k) => (DOC_KINDS as readonly string[]).includes(k))
   return compact({
-    view: oneOf(t?.view, ['table', 'shelf'] as const) ?? 'table',
+    view: oneOf(t?.view, DOC_VIEWS) ?? 'table',
     kinds: kinds.length ? kinds : undefined,
     sort: sort && oneOf(sort.col, DOC_COLS) ? compact({ col: sort.col as string, desc: bool(sort.desc) }) : undefined,
     pageSize: int(t?.pageSize, 1, 100),
@@ -343,7 +343,7 @@ function cleanDocumentsSetup(v: unknown) {
 // A kanban's columns (D-251; rules: 1–12, these keys only); none left, it starts over.
 // A timeline's setup (D-262): its rows.
 function cleanTimeline(v: unknown) {
-  return compact({ rows: oneOf(obj(v)?.rows, ['kanban', 'assignee', 'card'] as const) })
+  return compact({ rows: oneOf(obj(v)?.rows, TIMELINE_ROWS) })
 }
 
 // Holding cards (D-268): which (its source) and the field its columns come from.
@@ -361,7 +361,7 @@ function cleanKanban(v: unknown, ids: Ids) {
   const cards = oneOf(obj(v)?.holds, ['cards'] as const)
   return compact({
     cols: cols.length ? cols : [{ id: newId(), name: 'todo' }],
-    rows: oneOf(obj(v)?.rows, ['assignee', 'card'] as const),
+    rows: oneOf(obj(v)?.rows, KANBAN_ROWS),
     holds: cards,
     source: obj(v)?.source ? cleanSource(obj(v)!.source, ids) : undefined,
     colField: oneOf(obj(v)?.colField, CARD_FIELDS),
@@ -378,7 +378,7 @@ function boxNames(v: unknown) {
     const col = str(n?.col, 40)
     const row = str(n?.row, 40)
     const name = str(n?.name, BOX_NAME_MAX) ?? ''
-    const tone = oneOf(n?.tone, ['good', 'bad'] as const)
+    const tone = oneOf(n?.tone, BOX_TONES)
     return n && col !== undefined && row !== undefined && (name.trim() || tone) ? [compact({ col, row, name, tone })] : []
   })
   return out.length ? out : undefined

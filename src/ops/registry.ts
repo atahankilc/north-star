@@ -17,7 +17,7 @@
 // carry: false, having found them itself.
 import { CARD_TYPES } from '../model/cards'
 import { VALIDATIONS, FEATURE_PRIORITIES, FEATURE_STATUSES, FEATURE_IMPACTS, FEATURE_EFFORTS } from '../model/cards'
-import { EVIDENCE_KINDS, AVAILABILITIES } from '../model/shapes'
+import { EVIDENCE_KINDS, AVAILABILITIES, STANCES, BOX_TONES, DOC_VIEWS } from '../model/shapes'
 import { project } from './project'
 import { createCard, createPackage, duplicate, updateCard } from './cards'
 import { EDGE_KINDS, link, unlink, updateLink } from './edges'
@@ -108,7 +108,7 @@ const textStyle = (nullable: boolean): Record<string, ArgSchema> => {
   }
 }
 
-const evidenceArgs = { kind: { type: 'string', enum: EVIDENCE_KINDS }, text: s('what was learned, a sentence or a quote'), stance: { type: 'string', enum: ['supports', 'contradicts'] }, source: s('who or where'), url: s(), date: s('YYYY-MM-DD') }
+const evidenceArgs = { kind: { type: 'string', enum: EVIDENCE_KINDS }, text: s('what was learned, a sentence or a quote'), stance: { type: 'string', enum: STANCES }, source: s('who or where'), url: s(), date: s('YYYY-MM-DD') }
 // S7: a matrix's and a table's setup, typed (converted to the stored setup by src/ops/matrix.ts and table.ts).
 const stepsArg: ArgSchema = {
   anyOf: [{ type: 'string', enum: SCALE_KEYS }, { type: 'array', items: { anyOf: [s('a label'), obj({ label: s(), glyph: s('≤ 4 characters'), tone: { type: 'string', enum: TONES } }, ['label'])] } }],
@@ -220,7 +220,7 @@ const deckSpec = obj(
     cards: ids('cards: cards added by hand'),
     col_field: { type: 'string', enum: CARD_FIELDS, description: "cards: the field its columns are the values of (status when left out)" },
     row_field: { type: 'string', enum: CARD_FIELDS, description: 'cards: another field across the columns as rows' },
-    names: { type: 'array', items: obj({ col: s("the column field's value"), row: s("the row field's value (`-` for no value)"), name: s(), tone: { type: 'string', enum: ['good', 'bad'] } }, ['col', 'row']), description: 'cards: names for its boxes' },
+    names: { type: 'array', items: obj({ col: s("the column field's value"), row: s("the row field's value (`-` for no value)"), name: s(), tone: { type: 'string', enum: BOX_TONES } }, ['col', 'row']), description: 'cards: names for its boxes' },
   },
   [],
   'deck only: its setup, typed (left out: todo · doing · done)',
@@ -440,7 +440,7 @@ export const OPS: OpDef[] = [
         name: orNull('null or empty takes it away (it shows its kind)'),
         framed: b(),
         stuck_to: orNull('a plane (a timeline: a deck or a plane); null lets go'),
-        documents: obj({ view: { type: 'string', enum: ['table', 'shelf'] }, pageSize: n(), kinds: { type: 'array', items: s() }, sort: obj({ col: s(), desc: b() }) }, [], 'documents list only'),
+        documents: obj({ view: { type: 'string', enum: DOC_VIEWS }, pageSize: n(), kinds: { type: 'array', items: s() }, sort: obj({ col: s(), desc: b() }) }, [], 'documents list only'),
       },
       ['id'],
     ),
@@ -608,7 +608,7 @@ export const OPS: OpDef[] = [
         cards: ids('cards: cards added by hand (replaces them)'),
         col_field: { type: 'string', enum: CARD_FIELDS },
         row_field: { anyOf: [{ type: 'string', enum: CARD_FIELDS }, { type: 'null' }], description: 'null: no rows' },
-        names: { type: ['array', 'null'], items: obj({ col: s(), row: s(), name: s(), tone: { type: 'string', enum: ['good', 'bad'] } }, ['col', 'row']), description: "cards: its boxes' names (replaces them)" },
+        names: { type: ['array', 'null'], items: obj({ col: s(), row: s(), name: s(), tone: { type: 'string', enum: BOX_TONES } }, ['col', 'row']), description: "cards: its boxes' names (replaces them)" },
         lanes: { anyOf: [{ type: 'string', enum: LANES }, { type: 'null' }], description: 'tasks: lanes by who or by card; null: none' },
         tasks_to: s("switching to cards with tasks on it: 'new_deck' (a new deck of tasks next to it, with its columns) or a deck's id or name (each into the column of the same name)"),
         handle: s("with tasks_to 'new_deck': a $handle ($a…) for the new deck's id, for later ops in the batch (its name is always '<name> · tasks')"),

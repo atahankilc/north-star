@@ -6,7 +6,7 @@
 //
 // The model sees `deck`; the data keeps `kanban` (D-301).
 import { KANBAN_TEMPLATES } from '../model/kanbanCards'
-import { CARD_FIELDS, type CardField } from '../model/shapes'
+import { CARD_FIELDS, type CardField, KANBAN_ROWS } from '../model/shapes'
 import { MAX_ITEMS } from '../model/source'
 import { candidates } from '../model/lens'
 import { tasksIn } from '../model/tasks'
@@ -28,7 +28,7 @@ import { plural } from '../model/words'
 type P = Piece & { id: string }
 
 export const DECK_TEMPLATES = KANBAN_TEMPLATES.map((t) => t.key)
-export const LANES = ['assignee', 'card'] as const
+export const LANES = KANBAN_ROWS
 // A timeline's rows as the model says them: by deck (stored as none), by who, by card.
 export const TIMELINE_ROWS_SAID = ['deck', 'assignee', 'card'] as const
 

@@ -70,6 +70,7 @@ import { usePicker } from './usePicker'
 import { useDismiss } from '../../../ui/foundation/useDismiss'
 import { CELL_SEL } from '../canvas/gridCursor'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
+import { STANCES } from '../../../model/shapes'
 
 // Type = the panel's colour, as the card's edge (D-055).
 const TONE: Record<AnyType, string> = CARD_TONE
@@ -731,7 +732,7 @@ export function EvidenceForm({ start, onDone }: { start?: Partial<Evidence>; onD
   return (
     <div className={styles.form}>
       <Field multiline size="sm" rows={1} label="What was learned" autoFocus placeholder="What was learned, in a sentence or a quote" value={f.text} maxLength={EVIDENCE_TEXT_MAX} onChange={(v) => setF({ ...f, text: v })} onKeyDown={keys} />
-      <Choice bare clearable options={['supports', 'contradicts'] as const} value={f.stance} label="For or against" onChange={(v) => setF({ ...f, stance: v ?? f.stance })} />
+      <Choice bare clearable options={STANCES} value={f.stance} label="For or against" onChange={(v) => setF({ ...f, stance: v ?? f.stance })} />
       <Choice bare clearable options={EVIDENCE_KINDS} value={f.kind} label="Kind" onChange={(v) => setF({ ...f, kind: v ?? f.kind })} />
       <div className={styles.formRow}>
         <Field size="sm" label="From" placeholder="from (who, where)" value={f.source ?? ''} maxLength={SOURCE_MAX} onChange={(v) => setF({ ...f, source: v })} onKeyDown={keys} />

@@ -34,7 +34,7 @@ import { kindOf } from '../model/labels'
 import { fromDocs } from '../model/fromDocs'
 import { docsOf, toDocs } from '../ops/docs'
 import type { Coll } from '../ops/types'
-import { previewDiff, viewOf, type ChangeItem, type Changeset, type PreviewChange } from './changeset'
+import { listIn, previewDiff, viewOf, type ChangeItem, type Changeset, type PreviewChange } from './changeset'
 import { cut, plural } from '../model/words'
 
 export type MarkChange = 'added' | 'changed' | 'removed' | 'moved'
@@ -198,24 +198,7 @@ function wasLines(fields: string[], was: Record<string, unknown> | undefined, no
 
 // ---- Lists of the workspace by collection
 
-function listOf(ws: WorkspaceCtx, kind: Coll): { id: string }[] {
-  if (isCardColl(kind)) return ws.cards
-  const m: Partial<Record<Coll, { id: string }[]>> = {
-    labels: ws.labels,
-    tasks: ws.tasks,
-    pieces: ws.pieces,
-    cells: ws.cells as unknown as { id: string }[],
-    edges: ws.edges,
-    evidence: ws.evidence,
-    competitorFeatures: ws.competitorFeatures,
-    comparisons: ws.comparisons,
-    places: ws.places,
-    pieceSpots: ws.spots,
-    canvases: ws.canvases,
-    threads: ws.threads,
-  }
-  return m[kind] ?? []
-}
+const listOf = (ws: WorkspaceCtx, kind: Coll) => listIn(ws, kind)
 const find = (ws: WorkspaceCtx, kind: Coll, id: string) => listOf(ws, kind).find((x) => x.id === id) as Record<string, unknown> | undefined
 
 // ---- Targets

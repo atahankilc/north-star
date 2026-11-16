@@ -36,6 +36,7 @@ import { PageArrows, PageSize } from '../canvas/Pager'
 import { BinIcon, DownloadIcon, EditIcon, PlaceIcon, ShareIcon, WriteIcon } from '../../../ui/primitives/hudIcons'
 import { cut, authorName } from '../../../model/words'
 import { NOTES_ID } from '../../../model/notes'
+import { DOC_VIEWS } from '../../../model/shapes'
 
 // Its parts in its own px: model/world.ts (D-325).
 const D = DOCS_PX
@@ -610,7 +611,7 @@ export function DocumentsTools({ piece, editor, toolClass, compact = false }: { 
           />}
           {!compact && <PageSize p={p} count={count} noun="documents" editor onSize={(size) => (go(0), void setDocumentsSetup(wid, piece, { pageSize: size }))} />}
           {/* Table or shelf (D-232): shared, like its sort. */}
-          <Choice bare label="Show as" options={['table', 'shelf'] as const} value={setup.view} onChange={(v) => void setDocumentsSetup(wid, piece, { view: v })} />
+          <Choice bare label="Show as" options={DOC_VIEWS} value={setup.view} onChange={(v) => void setDocumentsSetup(wid, piece, { view: v })} />
         </>
       )}
       <WriteAction className={tool} />

@@ -242,7 +242,7 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
 
 A list of findings and of ways to keep repeats from coming back, for the user to pick from. Built so far: R1.1–R1.4
 and R1.10 (D-388), the checks R4.1–R4.4 (D-391), R1.5–R1.7 (D-392) and R1.8–R1.16 (D-394), under *Done, round 2* at
-the end; then R3 and R2's small logic twins (D-396) and more of R2 (D-397). What D-397 lists as left, and R4.5–R4.7, are not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
+the end; then R3 and R2's small logic twins (D-396) and more of R2 (D-397, D-399). What D-399 lists as left, and R4.5–R4.7, are not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
 finder (knip) and four full reads (the kit, the workspace views, the logic layers, demo/onboarding/gallery/scripts).
 Line numbers are from that day. *Checked* = the drift was looked at again by hand after the read.
 
@@ -493,3 +493,7 @@ merges (R1.5–R1.7, the demo) and R3.
     identical in five states); a pane beside a plane drawn through the kind record.
   - Looked at and not built: `<LensPane>` (two lines alike in each place), one `surface` class (three declarations
     of tokens each).
+- **R2's logic group (2026-11-17, D-399).** agent/provider.ts (`ProviderError`, `abortError`, `StreamingModel`,
+  `respondFrom`; Claude's paused-turn usage through `addUsage`); value lists in model/shapes.ts (`STANCES`,
+  `HEADING_SIZES`, `TEXT_SCALES`, `KANBAN_ROWS`, `TIMELINE_ROWS`, `DOC_VIEWS`, `BOX_TONES`); `listIn` for the two
+  collection maps; `makeMarkdown`; `pieceName`. Left of **Logic**: the model regexes in three files, functions/.

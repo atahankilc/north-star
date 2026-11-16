@@ -54,9 +54,10 @@ export type { CardField } from '../model/shapes'
 import type { CardField } from '../model/shapes'
 import { BOX_NAMES_MAX, BOX_NAME_MAX, KANBAN_COLS_MAX, COL_NAME_MAX, TASK_TITLE_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, LIMIT_MAX } from '../model/limits'
 import { PRIORITIES as TASK_PRIORITIES } from '../model/cards'
+import { TIMELINE_ROWS, KANBAN_ROWS } from '../model/shapes'
 export { BOX_NAMES_MAX, BOX_NAME_MAX, KANBAN_COLS_MAX, COL_NAME_MAX, TASK_TITLE_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, LIMIT_MAX }
 // A timeline (D-262): its rows. The kanbans it shows are the one it's linked to, else every kanban (D-289).
-export const TIMELINE_ROWS = ['kanban', 'assignee', 'card'] as const
+export { TIMELINE_ROWS, KANBAN_ROWS }
 export type TimelineRows = (typeof TIMELINE_ROWS)[number]
 export type TimelineSetup = { rows?: TimelineRows }
 
@@ -65,7 +66,6 @@ export function setTimeline(wid: string, pieceId: string, patch: TimelineSetup, 
   return runUi(wid, (ctx) => [updateTimeline(ctx, { id: pieceId, setup: patch, label: what })], { label: what })
 }
 
-export const KANBAN_ROWS = ['assignee', 'card'] as const
 export type KanbanRows = (typeof KANBAN_ROWS)[number]
 
 export type Check = { id: string; text: string; done?: boolean }

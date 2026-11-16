@@ -34,8 +34,9 @@
 // most PAUSES times, the parts joined into one response.
 import Anthropic, { APIConnectionError, APIUserAbortError, AuthenticationError, BadRequestError, InternalServerError, NotFoundError, PermissionDeniedError, RateLimitError } from '@anthropic-ai/sdk'
 import type { BetaContentBlock, BetaContentBlockParam, BetaMessage, BetaMessageParam, BetaTool } from '@anthropic-ai/sdk/resources/beta/messages/messages'
-import type { AgentModel, ImagePart, ModelEvent, ModelMessage, ModelRequest, ModelResponse, StopReason, ToolCall, ToolDef, Usage } from './contract'
-import { joinSources, type Source, type WebUse } from './contract'
+import type { ImagePart, ModelEvent, ModelMessage, ModelRequest, ModelResponse, StopReason, ToolCall, ToolDef, Usage } from './contract'
+import { addUsage, joinSources, type Source, type WebUse } from './contract'
+import { abortError, ProviderError, respondFrom, type ProviderErrorKind, type StreamingModel } from './provider'
 import { fitsStrict, redact, type Effort } from './openai'
 import { WEB_SEARCHES } from './web'
 
@@ -51,15 +52,11 @@ export type AnthropicOptions = {
   baseUrl?: string
 }
 
-export type AnthropicErrorKind = 'auth' | 'forbidden' | 'not_found' | 'bad_request' | 'rate_limit' | 'quota' | 'server' | 'network' | 'stream'
+export type AnthropicErrorKind = ProviderErrorKind
 
-export class AnthropicError extends Error {
-  constructor(
-    message: string,
-    public kind: AnthropicErrorKind,
-    public status?: number,
-  ) {
-    super(message)
+export class AnthropicError extends ProviderError {
+  constructor(message: string, kind: AnthropicErrorKind, status?: number) {
+    super(message, kind, status)
     this.name = 'AnthropicError'
   }
 }
@@ -268,7 +265,6 @@ export function cacheMissOf(msg: BetaMessage): string | undefined {
 
 // ---- Errors
 
-const abortError = () => Object.assign(new Error('stopped'), { name: 'AbortError' })
 
 const bindingRefused = (e: unknown) => e instanceof BadRequestError && /bound to a different conversation/i.test(String(e.message))
 // The API's own "retry" failures mid-stream (Sonnet, prioritize-01: "Unable to parse tool parameter JSON from model.
@@ -293,7 +289,7 @@ function plainFailure(e: unknown, model: string, key: string): Error {
 
 // ---- The model
 
-export type AnthropicModel = AgentModel & { stream: (req: ModelRequest) => AsyncIterable<ModelEvent>; readonly model: string }
+export type AnthropicModel = StreamingModel
 
 const clientOf = (key: string, o: Pick<AnthropicOptions, 'fetch' | 'baseUrl'>) =>
   new Anthropic({ apiKey: key, dangerouslyAllowBrowser: true, maxRetries: 2, ...(o.fetch ? { fetch: o.fetch } : {}), ...(o.baseUrl ? { baseURL: o.baseUrl } : {}) })
@@ -331,7 +327,7 @@ export function anthropicModel(o: AnthropicOptions): AnthropicModel {
       }
       const msg = await s.finalMessage()
       const u = usageOf(msg.usage)
-      usage = { input: usage.input + u.input, output: usage.output + u.output, cached: (usage.cached ?? 0) + (u.cached ?? 0), ...((usage.searches ?? 0) + (u.searches ?? 0) ? { searches: (usage.searches ?? 0) + (u.searches ?? 0) } : {}) }
+      usage = addUsage(usage, u)
       const content = [...before, ...(msg.content as BetaContentBlock[])]
       if (msg.stop_reason === 'pause_turn' && k < PAUSES) {
         before = content
@@ -380,10 +376,7 @@ export function anthropicModel(o: AnthropicOptions): AnthropicModel {
     provider: 'anthropic',
     appendOnly: true,
     stream,
-    async respond(req) {
-      for await (const ev of stream(req)) if (ev.type === 'done') return ev.response
-      throw new AnthropicError('The answer stopped before it finished.', 'stream')
-    },
+    respond: (req) => respondFrom(stream(req), (m) => new AnthropicError(m, 'stream')),
   }
 }
 

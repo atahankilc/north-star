@@ -2,6 +2,7 @@
 // labels' words, and turning a card's fields into its doc's.
 import { CARD_COLLECTION, titleField, type AnyType, type Card } from '../model/cards'
 import { DELETE, OpsRefused, type Coll, type OpCtx, type Write } from './types'
+import { PIECE_NAME_MAX } from '../model/limits'
 
 export function refuse(op: string, message: string, fix: string): never {
   throw new OpsRefused([{ op, message, fix }])
@@ -76,3 +77,11 @@ export function once(writes: Write[]): Write[] {
 }
 
 export const handleOf = (args: { handle?: string }, fallback = '$new') => args.handle ?? fallback
+
+// A piece's new name as an op was given it (D-399: a table's and a matrix's update each checked it): not said or blank
+// leaves the name as it is; anything but text is refused.
+export function pieceName(op: string, name: unknown): string | undefined {
+  if (name === undefined) return undefined
+  if (typeof name !== 'string') refuse(op, 'name is text', 'give the name as a string')
+  return name.trim().slice(0, PIECE_NAME_MAX) || undefined
+}

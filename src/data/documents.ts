@@ -170,11 +170,17 @@ function mdTitle(text: string, fileName: string) {
 export async function uploadMarkdown(wid: string, who: { uid: string; name: string }, file: File): Promise<string> {
   const text = await file.text()
   if (bytesOf(text) > DOC_LIMITS.text) throw new DocumentError('over 900 KB of text')
+  return makeMarkdown(wid, who, mdTitle(text, file.name), text, 'upload a document')
+}
+
+// A new .md of `who`'s, private until shared: its summary and its text, one batch, one undo step (D-399: an upload and
+// a document begun in the app each wrote this out).
+async function makeMarkdown(wid: string, who: { uid: string; name: string }, title: string, text: string, what: string): Promise<string> {
   const ref = doc(docsOf(wid))
   const body = bodyRef(wid, ref.id)
   const now = Date.now()
-  const summary: Doc = markdownSummary(text, { title: mdTitle(text, file.name), uid: who.uid, name: who.name, origin: 'upload', shared: false, createdAt: now, now })
-  await tracked('upload a document', [ref, body], () => {
+  const summary: Doc = markdownSummary(text, { title, uid: who.uid, name: who.name, origin: 'upload', shared: false, createdAt: now, now })
+  await tracked(what, [ref, body], () => {
     const batch = writeBatch(db())
     batch.set(ref, summary)
     batch.set(body, { text })
@@ -210,19 +216,7 @@ export function docRights(d: Pick<Doc, 'kind' | 'uid' | 'shared'> & { id: string
 
 // A new empty .md of yours, private until shared, titled `untitled` until it's named; one undo step (making it: what's
 // typed in it is undone in the page, D-374).
-export async function newDocument(wid: string, who: { uid: string; name: string }): Promise<string> {
-  const ref = doc(docsOf(wid))
-  const body = bodyRef(wid, ref.id)
-  const now = Date.now()
-  const summary: Doc = markdownSummary('', { title: 'untitled', uid: who.uid, name: who.name, origin: 'upload', shared: false, createdAt: now, now })
-  await tracked('write a document', [ref, body], () => {
-    const batch = writeBatch(db())
-    batch.set(ref, summary)
-    batch.set(body, { text: '' })
-    return batch.commit()
-  }, { before: absent([ref, body]) })
-  return ref.id
-}
+export const newDocument = (wid: string, who: { uid: string; name: string }): Promise<string> => makeMarkdown(wid, who, 'untitled', '', 'write a document')
 
 // A .md's Markdown, written again from the shared text on a pause in someone's typing (D-374): the text and its counts,
 // one batch, outside the workspace's undo (the page's own undo takes back only your changes; an undo here would write

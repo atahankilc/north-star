@@ -49,3 +49,16 @@ export const COL_W = { min: 48, max: 640 }
 // The cards' fields a kanban's columns can come from (D-268): never type (dragging doesn't change a card's type).
 export const CARD_FIELDS = ['status', 'impact', 'effort', 'priority'] as const
 export type CardField = (typeof CARD_FIELDS)[number]
+
+// Value lists named once (D-399): the cleaners, the ops' argument schemas and the views read them here.
+// Evidence: for or against what it's about.
+export const STANCES = ['supports', 'contradicts'] as const
+// A heading's size, and a paragraph's or a note's text size.
+export const HEADING_SIZES = ['heading', 'subheading', 'minor'] as const
+export const TEXT_SCALES = ['small', 'medium', 'large'] as const
+// A deck's lanes (D-256), and a timeline's rows (D-262: `kanban` is by deck).
+export const KANBAN_ROWS = ['assignee', 'card'] as const
+export const TIMELINE_ROWS = ['kanban', 'assignee', 'card'] as const
+// A documents list shown as, and a named box's tone on a deck of cards (D-269).
+export const DOC_VIEWS = ['table', 'shelf'] as const
+export const BOX_TONES = ['good', 'bad'] as const

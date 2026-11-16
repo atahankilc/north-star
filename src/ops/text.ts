@@ -16,10 +16,10 @@ import { boundTo } from './stick'
 import { DELETE, type OpCtx, type Plan, type Write } from './types'
 import { a, cardColl, find, handleOf, refuse } from './util'
 import { AUTHOR_NAME_MAX, KICKER_MAX } from '../model/limits'
+import { HEADING_SIZES, TEXT_SCALES } from '../model/shapes'
 
 export const TEXT_KINDS = ['heading', 'paragraph', 'sticky', 'section', 'title'] as const
-export const HEADING_SIZES = ['heading', 'subheading', 'minor'] as const
-export const TEXT_SCALES = ['small', 'medium', 'large'] as const
+export { HEADING_SIZES, TEXT_SCALES }
 
 // For undo's labels (data/labels.ts said the same).
 export const TEXT_NAMES: Record<TextKind, string> = { heading: 'a heading', paragraph: 'a paragraph', sticky: 'a sticky note', section: 'a section', title: 'the project title' }
