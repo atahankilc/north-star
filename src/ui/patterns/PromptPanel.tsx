@@ -1,7 +1,7 @@
 // The prompt (D-222): a `>` line over a list. Typing narrows it (matches lit, a letter puts its item first), the keys
 // move what's picked while focus stays in the line, Enter picks it (the first row until you move), a tick row keeps it
 // open, anything else runs and closes it. Nothing under it: no count, no keys (D-344; onboarding teaches them). Its look
-// is a console's (D-347): no box, a hugging shade, faint L's on its corners, cyan while the keyboard is in it.
+// is PromptFrame's (D-387): round with a line on a hugging shade, the line cyan while the keyboard is in it.
 // The menus are built on it: Menu (a trigger's), ContextMenu (at the pointer), InPlaceMenu (laid in the page).
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { PromptField } from '../primitives/PromptField'

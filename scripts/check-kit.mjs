@@ -48,11 +48,14 @@ const RULES = {
     // D-384: "on" written again (the line under a pressed control): it's written once, in Button.module.css, and everything
     // that can be on composes it. InlineEdit's line is a field's underline, not a state. The kit too: see `everywhere`.
     ['onLook', /inset 0 calc\(-1 \* var\(--line-w\)\) 0 var\(--(?:accent|button-on)/g, /^src\/ui\/primitives\/InlineEdit\.module\.css$/],
+    // D-387: a corner L drawn by hand. A surface is round with a line; what's selected has Marks; only a console on a
+    // piece (square, as its piece) keeps its own L's. The kit too: see `everywhere`.
+    ['cornerMark', /var\(--corner-mark\)/g, /^src\/ui\/patterns\/Console\.module\.css$/],
   ],
 }
 
 // Rules that hold inside the kit as well, where the others don't look.
-const everywhere = new Set(['scrollbar', 'onLook'])
+const everywhere = new Set(['scrollbar', 'onLook', 'cornerMark'])
 
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {

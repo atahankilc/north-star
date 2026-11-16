@@ -1,6 +1,6 @@
 # Surfaces: round with a line, marks that take the corner, panels under the screen (D-387)
 
-Status: **look agreed 2026-11-16 (D-387); steps 1–7 built 2026-11-16, step 8 not.** This is the build plan for what sits on top of D-384's controls
+Status: **look agreed 2026-11-16 (D-387); built 2026-11-16, all eight steps.** This is the build plan for what sits on top of D-384's controls
 ([controls.md](controls.md)): modals, the hazard confirm, the selection marks, menus, the foot dock, the threads dock,
 the side panel, Settings' inside, the toast and the tip. Cards (squircle) and pieces (square) don't change.
 
@@ -133,6 +133,9 @@ the build green before the next.
    left as they are. The agent's corner box is left square: its UI has no gallery yet and is being redesigned (D-312).
 8. **Sweep and docs.** What still draws a square surface or an L by hand; DESIGN.md §6; the release line in
    `src/onboarding/releases.ts`; D-359's and D-347's lines in the memory bank brought in step.
+   *Built 2026-11-16:* `check:kit` refuses `var(--corner-mark)` outside Console.module.css (`cornerMark`, the kit
+   too); nothing else drew one. DESIGN.md §6, decisions.md and D-387's log entry say the built look; release
+   `2026-11-16`, one item, no lesson (a look, not a feature).
 
 ## To check first
 
