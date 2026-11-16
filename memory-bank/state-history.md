@@ -1611,3 +1611,16 @@ Offered, not asked for: a deck's column width, the document reader's window.
   (headless Chrome, a fresh dev server each time: Vite keeps stale CSS in modules composing Button.module.css); tokens,
   kit, gallery, lessons and memory checks 0; unit 1082/1082; build ok. Not pushed.
 - Not seen in the real app: the HUD's bare tools over an empty canvas's backdrop, a console at 25 % and 400 %, touch.
+
+## Done (2026-11-16): surfaces round with a line, marks that take the corner, panels under the screen, D-387
+- Q-035 decided with the user piece by piece on a port (docs/specs/surfaces-preview/demo.patch), then all eight steps of
+  docs/specs/surfaces.md, one commit each: the corner tokens and round windows; the hazard confirm's round box and
+  tape; Marks from `--corner`; round menus with pill rows; the foot dock, setup panel and threads dock as tabs; the
+  sheet (`foundation/sheet.ts`, EdgeColumn bare on the ground, Corners.module.css deleted); Settings' boxes and side
+  list, toast, tip; the sweep (`check:kit`'s `cornerMark`, DESIGN.md §6, a `2026-11-16` release).
+- Checked: each part in the gallery, dark and light, headless Chrome on a fresh dev server; windows' corners at 4 ×; the
+  panel opening and closing frame by frame; tokens, kit, gallery, lessons and memory checks 0; unit 1082/1082; build ok;
+  `check:gallery:live` 70 states ok. Not pushed.
+- Found on the way: under reduced motion the hazard tape was drawn once, before its box had settled, and came out short
+  (it's drawn again when the box changes size).
+- Not seen in the real app: the sheet over the full backdrop, with a pane beside, the decks side view, touch.

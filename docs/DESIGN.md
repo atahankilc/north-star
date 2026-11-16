@@ -6,7 +6,7 @@
 ## 1. Direction: "3D ASCII"
 
 The interface is a dark, monochrome world rendered through **ASCII glyphs**, with depth and motion
-from three.js. It is mostly black and white. **Colour is rare and meaningful**, so it pops.
+from three.js. It is mostly black and white. **Colour is rare and meaningful**, so it pops. The one exception is the backdrop, whose waves are in colour (D-386).
 
 References in [design/references/](design/references/):
 - `ascii-hero-enosta.webp`: black canvas, flowing 3D forms rendered as fine character dithering,
@@ -51,7 +51,7 @@ tokens above for neutral light grey (`--bg #f3f3f3`, D-342), white surfaces, nea
 white (magenta `#e00070`, cyan `#0095ad`, yellow `#b47500`, blue `#1955ff`, green `#009a43`, D-368). Cards have their own
 colours in light (`--type-*`: customer `#00936a`, problem `#e11d48`, competitor `#e8590c`, idea `#7c3aed`, feature `#0891b2`,
 package `#2563eb`), which also tint a card's panel head and rows (`--panel-tint`, none in dark). The ASCII field prints as ink on the paper. Values in `src/styles/tokens.css`
-(`[data-theme='light']`); what WebGL draws (bg, accents, the night sky) also in `palettes.light` in `tokens.ts`, read through
+(`[data-theme='light']`); what WebGL draws (bg, accents) also in `palettes.light` in `tokens.ts`, read through
 `usePalette()` (D-321). Text on an accent fill uses `--on-accent`; tints use `--wash-*`.
 
 **Diff colours (D-096, 1.0's assistant):** the assistant's preview marks what a proposal does with the checklist's signs in their own colours,
@@ -140,6 +140,16 @@ Values will be tuned against contrast checks (WCAG AA for text).
 ## 6. Components (ASCII-styled DOM)
 
 - Boxes drawn with box characters (`┌─┐│└┘`) or 1px lines that echo them
+- **Surfaces are round with a line** (D-387, [specs/surfaces.md](specs/surfaces.md), built 2026-11-16): the page's
+  black, a thin line, round corners, no shadow. A window 24 px (`--radius-window`); a menu 16 px, a squircle
+  (`--radius-menu`), its line cyan while the keyboard is in it; a box inside a window, a tab's top corners and a tip
+  14 px (`--radius-box`); the toast a pill. What rises from the floor is a tab: the foot dock, its drawer, a setup
+  panel, the threads dock (top corners round, the line cyan while in use). A window doesn't clip (a menu opened in it
+  hangs past its edge), so what paints up to its corners rounds its own (`--window-inner`).
+- **The main screen is a sheet** (D-387, `src/ui/foundation/sheet.ts`): a column docked to an edge (`EdgeColumn`) lies
+  bare on the ground under it (`--ground`: no line, no marks). While one is there the screen lifts (a shadow, a lit
+  rim), goes round and draws in `--sheet-gap` from the window and back from the column by its width, in `--dur-slow`;
+  the foot dock and the threads dock travel with it. Two fixed layers draw it: nothing in the screen is laid out again.
 - Buttons are empty and round (D-384, [specs/controls.md](specs/controls.md); `src/ui/primitives/Button.tsx`, lowercase,
   D-093): a button has nothing behind it at rest, its word is enough; a round shade (`--wash-3`, `--radius-full`) comes
   under the pointer or the keyboard, and it's a little smaller while pressed (`--press-scale`). Its kind shows in its ink
@@ -175,7 +185,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Inputs: underscore or caret cursor `▌`, mono text
 - Tags: `#tag` in an accent colour
 - **Marks** (D-265, `src/ui/primitives/Marks.tsx`, tokens `--mark-*`): hover and selection on everything selectable (cards, text,
-  tasks, sheets, cells, rows, heads, chips, pieces, sections) are four L's in screen px, in three tiers (S 6 px for
+  tasks, sheets, cells, rows, heads, chips, pieces, sections) are four marks in screen px (an L on a square corner; round a round thing, a card, a piece of that corner's curve as long as the L, D-387: `--corner`), in three tiers (S 6 px for
   cells, rows, heads, chips; M 12 for cards, text, tasks; L 18 for pieces and sections; a tier down when small on
   screen). Grey a little out on hover (160 ms); on the corners, longer, in the item's tone while pressed (70 ms); just
   outside in the tone once selected (a 300 ms overshooting spring). Cyan is what you can do (a link's target, the box
@@ -261,8 +271,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   half in, half out, near the right corner (never over what the piece holds); shown only while the piece is pointed
   at (cell by cell), in edit mode, with its setup or the keyboard in it; 11 px, growing to 1.4 × as the canvas zooms
   out; new comments keep a small magenta tab. Past 70 % of its edge's width it takes the whole edge and wraps upward,
-  go at the right end. No edge line: faint L's on its visible corners (only the top two when it stands on the
-  screen's foot), cyan while pointed at or in edit mode. Edit mode: marks in the kind's colour, a cyan handle on every
+  go at the right end. On a piece no edge line: faint L's on its corners, cyan while pointed at or in edit mode. On the
+  screen's foot it's a tab (D-387): top corners round, a line, cyan while in use. Edit mode: marks in the kind's colour, a cyan handle on every
   corner and edge, the rail cyan with `delete` and `done`, no size.
 - Focus (D-185, D-189, D-297): a plane spreads over the screen like ink, cell by cell, while its own view glides to fit
   what it holds (going out it glides home while the ink draws back); its page eases from the piece's graphite to the
@@ -287,11 +297,11 @@ Values will be tuned against contrast checks (WCAG AA for text).
   top edge, rows split by hairlines, a note at the foot). Below 640 px the menu becomes tabs. 1.0's `ASSISTANT` (keys,
   usage) comes back with the assistant. Signed out there are no controls (D-069).
 - Dropdowns (`src/ui/patterns/Menu.tsx`) are a **prompt** (D-222, D-350): a trigger cell `SHOW all ▾` (D-344) (or a side
-  nav icon) opening `PromptPanel` (`src/ui/patterns/`), built cell by cell. Its look is a console's (D-347): no box, the
-  page's black on a hugging shade, faint L's on its four corners, cyan while the keyboard is in it. On top a `>` line
+  nav icon) opening `PromptPanel` (`src/ui/patterns/`), built cell by cell. Its look (D-387): round with a line on a
+  hugging shade, the line cyan while the keyboard is in it; no corner L's. On top a `>` line
   with focus (a placeholder saying what it does: `add…`, `find a place…`); the keys never leave it. Typing narrows the
   list, the typed part lit magenta. `# SECTION ──── 4` heads as the kit's Rule (an empty one a plain rule). A row
-  (`PromptRow`): a magenta `›` and a 2 px band in its tone on the picked row (the first until the keys or the pointer
+  (`PromptRow`): a pill; a magenta `›` and a fill in its tone on the picked row (no band on its side, D-387) (the first until the keys or the pointer
   move it; Enter picks it), its glyph, the label, a faint hint (data, never a key); dangerous ones red; tick rows a small
   box, lit in their tone with `✓` while on; the value now cyan with `✓` at its end. An item's letter still puts it
   first when typed alone (`+` `p` Enter makes a plane), but isn't shown: no keys anywhere in the app (D-344).
@@ -316,8 +326,8 @@ Every framed element (panels, cards, forms, chips, empty states) composes `src/u
 ### Windows and docked panels (D-359)
 Two families, each on its own shell; they share only foundation parts (`src/ui/foundation`): one Escape stack
 (`useEscapeLayer`: what opened last closes first; a field keeps its Escape in a panel), focus in and back
-(`focus.ts`), the canvas guard, `dragPointer`, and the docked marks (`Corners.module.css`: faint L's, cyan when pointed at).
-- **Docked to an edge:** `EdgeColumn` (full height, a line on its inner edge, the marks, cell by cell) with `PanelHead`
+(`focus.ts`), the canvas guard, `dragPointer`, and the sheet a docked column lies under (`sheet.ts`, D-387).
+- **Docked to an edge:** `EdgeColumn` (full height, bare on the ground under the main screen, D-387, cell by cell) with `PanelHead`
   (kind in its tone, tools and one `×` joined): the right panel (`SidePanel`, 400 px to start, its left edge dragged 320–800 and kept in the browser, D-378) and the agent's column. The
   threads dock stays bottom left in its own shape with the same parts. A dragged edge is `ResizeEdge` (a cyan line on
   the edge while pointed at); a line that shares the screen between two parts is `SplitLine` (9 px to grab, 1 px drawn,
@@ -354,16 +364,12 @@ there. A new scrolling area gets the look by itself; one that scrolls with no ba
   rebuilds cell by cell in random order (no coloured edge).
 - **Background** (D-026, D-028): flows by itself like a fluid; forms are born, drift, grow denser (heavier glyphs) and fade
   in overlapping generations. ASCII only; never reacts to the mouse.
-- **Welcome** (D-072): the first 10 s after the app starts, before the flow: the sky slowly fills with stars (few, then
-  faster) while a sunrise glow spreads low along the bottom edge from the lower left (pale gold at the edge, then orange, then red;
-  it never climbs far), and last one star blazes far brighter than the rest (cross and diagonal rays, upper right). Then the stars
-  go out one by one and the sky melts slowly into the flow, which has been running underneath. The landing has no scrim:
-  the glow and then the flow reach every edge, behind the title too (D-340). No galaxy, nebula, Milky Way,
-  shooting stars, constellation lines or aurora (all tried and rejected). Skipped when the app starts under reduced motion.
-  In the light theme, signed out only, the landing's sky turns dark blue for the intro (white stars, a brighter sunrise, light text):
-  it sweeps in with the page's other entrances as eight tones (paper → light blue → night) crossing diagonally from the bottom left
-  to the top right with room between them, ragged edges of small squares, 0.8 s; from 8.4 s the tones go out the same direction. Signed-in
-  pages play the intro on paper. Light theme prints its ASCII ink in sRGB space, so it reads as strongly as the dark theme's glyphs.
+- **Colour** (D-386): the waves are in colour. A wave's hue follows the folds of the flow along one ribbon of the accents
+  (cyan → blue → magenta → yellow → cyan) and drifts slowly; about one wave in three stays white (black ink in light). The
+  field sends the colour and the glyph's weight apart, so a dark hue prints as heavy a glyph as a bright one. Light and dark
+  each have their own strength (`INK`, AmbientField.tsx), so they read alike; light prints its ink in sRGB space. It starts
+  as the flow: there is no welcome (the stars, sunrise, north star and the light landing's night sky were taken out, D-386).
+  The landing has no scrim: the flow reaches every edge, behind the title too (D-340).
 - **Component enter/exit** (D-034, D-035): everything builds up cell by cell on the ASCII grid, in random order, no colour
   (`<Appear>`, `src/ui/foundation/cellReveal.ts`), and breaks apart the same way on exit. No tile waves, no blur rises (user-rejected).
 - Everything starts at the same moment (`revealed`), with no staggers. Durations: components 320 ms, headline and page reveal 400 ms, decode 260 ms.

@@ -409,33 +409,12 @@ so `Bob ✎ title`, the field outline and the `edit`/`field` presence writes are
 with no lock or warning (answers Q-006: no Yjs; changed for documents' text only by D-374, written together with Yjs). The panel strip now only says `Bob is here`.
 The RTDB rules accepted `edit`/`field` for a while so tabs on the previous build kept working; they were dropped later the same day. **Phase 3 is done.**
 
-### D-072 · 2026-10-17 · Accepted (extends D-028)
-**A welcome intro in the backdrop, and the landing's r/t pair opened.** User request: when the ASCII animation starts, the screen
-slowly fills with stars while a red-orange sunrise glows low from the lower left, our north star appears last, then it returns to
-the usual flow. (The first pass had a "space photo" look: nebula clouds, a galaxy, shooting stars; see below.)
-- `welcome()` + `dawn()` in `src/three/AmbientField.tsx`, driven by `introTime()` from `sceneClock.ts` (the scene clock's first `INTRO_SECONDS` = 10 s),
-  so the loading curtain's copy shows the same frame (D-025). Timeline: stars fill 0.2–4.4 s (accelerating), a sunrise glow rises 0.4–6 s
-  from the bottom edge, centred left of middle and squashed so it spreads sideways and stays low (palette `ember` → `dawn` → a pale gold
-  from the yellow accent at the edge; the ASCII target is 8-bit, so pure red alone only reaches faint glyphs), the bright star blooms
-  4.2–5 s in the upper right, stars go out 5.4–8.5 s, slow crossfade into the flow 6.2–9.8 s. The glow skips the bottom calm band.
-  The landing has no scrim under its headline since D-340: the glow and the flow reach every edge.
-- *Light theme (user's idea): a dark-blue night sky, landing only.* While signed out, the light theme's ASCII pass draws the intro on
-  `palettes.light.night` (#0c1736) the way dark draws on black: white stars, a brighter sunrise (glow 2.2× in light, `uLight`), light text.
-  Signed-in pages never get it (they see the intro faded on paper). Landing calls `startNight()` when the page is revealed, so the sky
-  sweeps in with every other entrance; `introNight()` (sceneClock.ts) gives the sweep in (0.8 s) and the sweep out (0.8 s from 8.4 s).
-  It moves as *tone sweeps* (user's design): eight tones from paper through light blue (`palettes.light.dusk`) to night, crossing the
-  screen diagonally from the bottom left to the top right with room between them, in squares a third of a cell wide with a ragged
-  edge; leaving, the tones go out the same direction, so day comes back from the bottom left. The text follows: `data-night`
-  (headline, `--bg`) switches when its spot is half way through the tones (`nightHalfway`); the landing has no HUD since
-  D-340, so `data-night-top` went with it. Rejected on the way: a 1.2 s fade that slid down from the top as a grey gradient, the night waiting for
-  its own fill before the page appeared, a slow morning rising from the bottom, plain random squares, glyph-ramp ink in random
-  order, a fast top-down front whose tones followed each other too closely, and four tones rising straight up from the bottom. Dark theme is untouched.
-- *Second pass (user):* the galaxy, nebula clouds, Milky Way band and shooting stars didn't look good and are gone; the sunrise replaces them.
-  The glow had to start at the very bottom edge, not climb high, and spread from the lower left rather than along the whole bottom.
-- *Rejected in the first pass:* drawing the Little Dipper's lines (not wanted), and an aurora (appeared and vanished too abruptly).
-- Plays once per app start (any page; dimmed in a workspace like the rest of the backdrop). Skipped if reduced motion is on at start,
-  since the frozen clock would hold an empty sky.
-- *Title:* Geist at -0.045em tracking made the r's arm touch the t in "North"; that one letter gets -0.02em (`.kernRt`).
+### D-072 · 2026-10-17 · Superseded by D-386
+**A welcome intro in the backdrop** (stars filling the sky, a sunrise low from the lower left, one bright north star, then the
+flow; in the light theme a dark-blue night sky on the landing, swept in and out in eight tones). Taken out by D-386: the backdrop
+starts as the flow. Its code (`welcome()`, `dawn()`, `introTime()`, `introNight()`, `data-night`, the palette's `ember`, `dawn`,
+`night`, `dusk`) is in git before D-386. Tried and rejected while it was built, and still not to be proposed: a galaxy, nebula
+clouds, the Milky Way, shooting stars, Little Dipper lines, an aurora; fades or fronts for the night sky.
 
 ### D-073 · 2026-10-17 · Accepted (Phase 4.1; answers Q-003)
 **The assistant is an ASCII orb with eyes, bottom-right in a workspace, that opens a chat.** The user's call: no per-panel AI menus for now.
@@ -7354,3 +7333,41 @@ glyphs were still over 1 at half, and half linear is ~73 % on screen, so the gly
 (`× pow(uDim, 2.2)` before the sRGB output); screenshots at 1 and 0.5 (dpr 2) now read clearly half. Light theme
 already dimmed its ink cover in display terms.
 Seen by the user in the real app after the shader fix (2026-11-07): "oldu". Committed and pushed.
+
+### D-386 · 2026-11-15 · Accepted (the user, of the pitch deck's cover: "bu rengarenk ascii charakter animasyonunu uygulamamıza uygulayabilir miyiz", of four looks on a port, docs/specs/backdrop-preview/: "coloured ı çok beğendim ama her saniye gözükmelerine gerek yok. Bugünkü gibi dalgalanan bir deniz gibi olsun ancak daha renkli", "arada bi beyazklıklar da olsun", "super bunu uygulayalım. Birde uygulama her kalktığında gösterdiğimiz güneş ışını artı north star animasyonunu kaldıralım. Direkt böyle başlasın"; replaces D-072, changes D-004's "mostly black and white" for the backdrop only): the backdrop's waves are in colour, and it starts as the flow
+- **The waves, in colour.** The field is the one it was (D-026, D-028: generations born, growing denser, fading, with empty
+  sea between them); only what a wave is drawn in changed. A wave's hue follows the folds of the flow along one ribbon of the
+  accents, cyan → blue → magenta → yellow → cyan, drifting slowly. About one generation in three stays white (black ink in
+  light), never the first two after the app starts, plus a few small white patches that move with the flow. The old sparse
+  accent streaks on grey are gone.
+- **Colour and weight apart.** The field writes the colour in rgb and the glyph's weight in alpha; the ASCII pass
+  (`AsciiEffect.ts`) picks the glyph and, in light, the ink's cover from the weight, not from the colour's brightness. Before,
+  a dark hue (blue, magenta) could only print a faint glyph. The field's material uses `NoBlending`, since alpha is no longer
+  transparency.
+- **Light and dark set apart, to read alike.** Dark lights a glyph on black; light prints it as ink on paper, where a small
+  glyph leaves most of its cell empty and the same weight reads paler. So the weight is multiplied per theme (`INK` in
+  AmbientField.tsx: dark 1.4, light 1.55) and light's ink keeps 0.95 of its hue (was 0.5). The ribbon uses the dark theme's
+  bright accents in both themes: the pass darkens a hue itself when it prints it.
+- **No welcome.** The stars, the sunrise, the north star and the light landing's night sky are deleted (D-072): `welcome()`,
+  `dawn()`, `introTime()`, `introNight()`, `startNight()`/`stopNight()`, Landing's `useNight`, `data-night` and its tokens, the
+  palette's `ember`, `dawn`, `night`, `dusk`. `@property --bg` stays: a focus eases the page's colour with it (D-297).
+- Where it shows is D-385's, unchanged: full on the landing, the workspaces page and an empty canvas, half with one piece, gone
+  from two. Reduced motion as before: the clock stands still, one still frame.
+- **Verified** 2026-11-15, headless Chrome on a dev server, dark and light, the landing at 2 s, 11 s and 51 s after the start:
+  no stars, glow or night at 2 s (`data-night` never set), waves in colour, white ones later; typecheck, `check:tokens` 0,
+  `check:kit` 0, unit tests 1082/0. Not yet seen by the user in the real app; not committed.
+- *Not yet:* the strength and the share of white are first numbers, to tune once seen live; the preview's other looks
+  (the whole field coloured, and a calmer one) were not taken. No lesson: the backdrop isn't taught (as D-385).
+
+### D-387 · 2026-11-16 · Accepted (the user, piece by piece on a port, answering Q-035: "Modal lar için yuvarlak ve çizgili güzel ancak silme için mesela yuvarlağın arkasında \"/\" karakterleri çok güzel durmuyor", "\"L\" şekilleri seviyorum her yerde çıkan ancak ui ı yumuşatmak için courved componentlere geçtiğimize göre artık \"L\" yerine daha çok bir eğik çizgi kullanabiliriz", "yan paneller için aklımdaki fikir daha çok \"Only Panels\" da yaptığımız gibi … Ana ekran yukarı kalkar ve altından side paneller belirir"; then "1 yuvarlağı izleyen", "köşesi dik olana L kullanalım, köşeli yumuşak olanlarlada da o köşeyi takip etksin. Kısacası köşe uyumlu indicator gibi kurgula", "1 kısa yay, 2 altından çıkan", "1 yuvarlak çizgili, 2 sekme çizgili", "1 yuvarlak çizgi, … 3 sekme çizgili", "hap olsun, kararı yaz ve adımlara böl"; changes D-359's and D-347's looks, D-265's L's on round things, D-183's tape): surfaces are round with a line, marks take the corner, a panel lies under the screen
+- The spec and the eight build steps: docs/specs/surfaces.md. **Built 2026-11-16**, one commit a step (c7dcbb8 … the sweep); what each step did is written under it in the spec.
+- **Round, with a line.** A modal (Window: Dialog, WizardShell, Settings, PromptOverlay) is round (24) and keeps its line on the page's black: no shadow, no lighter ground (shown and not taken: round with a shadow, one corner cut). A menu (PromptFrame: Menu, Select, right-click, the finder; Popover) is round (16) with a line, cyan while the keyboard is in it, its L's gone; a picked row is a filled pill, no band. Settings' sections and Frame's boxes keep the line and go round (14); its side list's current item is a filled pill. The toast is a pill with a line, its action without brackets; the tip round (14).
+- **A tab from the floor.** The foot dock and its drawer, and the threads dock: top corners round (14), a line, no L's. A console on a piece is unchanged (a piece is square).
+- **The hazard confirm:** a round box; its `╱╱╱` follow the round corner, a gap off the box, on the cell grid as before.
+- **Marks take the corner** (the user's rule: "köşe uyumlu indicator"): a square corner keeps the L; a round one gets a piece of that curve, as long as the L, concentric with the corner. Cards (squircle) get the curve; pieces, text, cells, sections keep the L. My first try (every L an arc or a slash, whatever it marked) was wrong and is not the rule.
+- **A side panel is under the main screen.** After the user's "Only Panels" project: the screen is a sheet that lifts (shadow, a lit rim), goes round (24), draws in 8 px and back by the panel's width; the panel lies bare on the ground under it (no line, no L's). Closed, the screen fills the window as today. Shown and not taken: the sheet flush to the edges with only the panel-side corners round.
+- Why a line and not a shadow: the user picked the line each time (modal, menu, dock, boxes, threads); one sentence for every surface.
+- How it's built, where it isn't obvious: a window doesn't clip (a menu opened in it hangs past its edge), so what paints up to its corners rounds its own (`--window-inner`). Marks read `--corner` (a card's face sets it; `corner` on `Marks`/`Landing` where they're drawn beside the face); the mark is as big as the round corner and `clip-path` keeps the L's length of it. The sheet lays nothing out again: `foundation/sheet.ts` keeps two fixed layers (the ground painted outside the sheet's box; its rim and shadow) and writes `--sheet-x0`, `--sheet-x1`, `--sheet-b` on the root, which the foot dock and the threads dock follow; a column stops counting as soon as it starts leaving. `check:kit` has `cornerMark` (a hand-drawn corner L; only Console.module.css, for a piece's console).
+- Older entries this changes, their look only: D-359 (a docked column's line and corner marks; `Corners.module.css` is deleted), D-347 (a prompt's and a foot dock's corner L's; a piece's console keeps them), D-350/D-222 (a picked row's band), D-265 (L's on a round thing), D-183 (the tape's square band), D-316 (the lesson window's magenta corner marks), D-097 (Settings' current side item's line).
+- **Verified** 2026-11-16, headless Chrome on a dev server, dark and light: every window's four corners at 4 ×; the hazard confirm's three examples; marks on cards (hover, selected, pressed, peers, landing) and on square things; menus, Select, right-click, finder, guide, kind guide; the docks, a matrix's setup, the threads dock; the Workspace screen with a card's panel opening and closing (frames mid-travel), a left column, a document beside the agent; Settings, toast, tip. `check:tokens`, `check:kit`, `check:gallery`, `check:lessons`, `check:memory` 0; unit 1082/0; build ok; `check:gallery:live` 70 states ok.
+- *Not yet:* seen only in the gallery. In the real app: the sheet over an empty canvas's full backdrop, with a pane beside (D-211) and the decks side view (D-300), touch; a pill's marks (a deck's `SOON` task keeps the L); the agent's corner box is still square (no gallery, its UI is being redesigned, D-312).

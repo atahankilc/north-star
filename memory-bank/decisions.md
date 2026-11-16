@@ -52,7 +52,7 @@ feature comes back as a piece, and check them with the user then.
   Settings, HazardConfirm, PromptOverlay; no native `<dialog>`); docked `EdgeColumn` + `PanelHead` (SidePanel, the
   agent's column), the threads dock its own shape bottom left; `ResizeEdge` for a dragged edge, `SplitLine` for a line
   that shares the screen; a panel's in-place fields `CommitField` and `AddField`. Both on foundation parts: one Escape stack (`useEscapeLayer`, what opened last first), focus,
-  the canvas guard, `dragPointer`, the docked marks.
+  the canvas guard, `dragPointer`, the sheet a docked column lies under (D-387).
 - Shared code above the kit (D-361, docs/specs/shared-code.md): behaviour and logic written twice get one home (pure
   helpers in model/, checks in ui/foundation, panel sections in panels/); drifted copies settle on one behaviour; four
   groups, small pure ones first, the drag/pan maths after the drag work.
@@ -87,7 +87,7 @@ feature comes back as a piece, and check them with the user then.
   `Loading` line (D-083, D-098).
 
 ## Design language (DESIGN.md has the spec)
-- 3D ASCII, mostly black and white with vivid accents (D-004). WebGL only behind; readable or editable text is DOM, never
+- 3D ASCII, mostly black and white with vivid accents (D-004); the backdrop alone is in colour (D-386). WebGL only behind; readable or editable text is DOM, never
   under the ASCII effect (D-009, D-019).
 - Fonts (D-337): Inter (`--font-display`) is the page's default for reading and the UI; JetBrains Mono (`--font-mono`)
   only on the system's bits (caps labels, numbers, `[verb]`, keys, the prompt's marks, cells, consoles, docks, tags,
@@ -115,8 +115,15 @@ feature comes back as a piece, and check them with the user then.
   consoles, panel and wizard feet, zooms, Choice). One component each (D-344): Checkbox, Tabs (Choice is its segments;
   Steps is Tabs with `lead`, `progress`, `even`), one dropdown trigger (Menu, Select), Options (pills with a line
   round them). A person is one `Avatar`, a circle, 30 px in the HUD, 24 in rows. Field a round well, a cyan ring with
-  the keyboard. Chips and badges pills. Cards (squircle), pieces and everything on the canvas (square) unchanged;
-  modals, dropdown panels and docked panels to decide (Q-035).
+  the keyboard. Chips and badges pills. Cards (squircle), pieces and everything on the canvas (square) unchanged.
+- Surfaces are round with a line (D-387, docs/specs/surfaces.md, DESIGN.md §6; built 2026-11-16; changes D-359's and
+  D-347's looks): no shadow; a window round (24) with its line, a menu round (16) with a line that goes cyan with the
+  keyboard, a picked row a filled pill; Settings' boxes round (14), its side list's current a pill; the toast a pill,
+  the tip round. The foot dock, its drawer, a setup panel and the threads dock are tabs: top corners round, a line. The
+  hazard confirm a round box, its `╱╱╱` following the corner. Marks take the corner of what they mark (`--corner`):
+  square keeps the L, round (cards) gets a piece of that curve as long as the L. A docked column lies bare on the ground
+  under the main screen, which lifts as a round sheet and draws back for it (`foundation/sheet.ts`; closed, the screen
+  fills the window). A console on a piece keeps its L's. `check:kit` refuses a corner L drawn by hand (`cornerMark`).
 - HUD (D-027): the breadcrumb top left, fixed margins; the rest becomes a left side nav. Bottom left, top to bottom:
   people here, threads button, a rule, your square, the gear, `--space-3` from the edges, other bottom-left tools
   `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge, bare icons (D-384); its `+` a drawn
@@ -124,17 +131,17 @@ feature comes back as a piece, and check them with the user then.
 - Menus, pickers and right-click are a **prompt** (D-222; an empty heading is a plain rule, D-291), one set of parts
   (D-350: promptModel, usePromptNav, useDismiss, PromptRow, PromptList, PromptPanel): a `>` line narrowing the list,
   the keys staying in it, the first row lit and picked by Enter until the keys or the pointer move it; `# SECTION ──`
-  heads; rows `› ▦ label  hint`, picked held by a band in its tone; a letter puts its item first (not shown, D-344);
-  tick rows a lamp in the row's tone (D-384); the value now cyan with `✓` at its end; no foot, no keys; a console's look (no box, shade,
-  corner L's, D-347); Select: the `>` line past 7 options.
+  heads; rows `› ▦ label  hint`, picked a pill filled with its tone (D-387); a letter puts its item first (not shown, D-344);
+  tick rows a lamp in the row's tone (D-384); the value now cyan with `✓` at its end; no foot, no keys; round with a line on a
+  hugging shade, cyan with the keyboard, no L's (D-387); Select: the `>` line past 7 options.
 - One look and behaviour across the canvas (consistency.md; agreed D-263–D-267, built D-270, D-272–D-277):
   - Surface (D-263, D-274, D-289): pieces graphite (`--piece*`, white in light) with a 2 px band in their kind's colour
     on top; inside a framed piece `--bg`/`--bg-raised`/`--grid-mark` map to that surface. In focus, beside it and
     unframed the page's black (`--bg`), what's held still `--piece-card`.
   - Console (D-264, D-275, D-347): one `Console` for every console, dock and bar; a rail (who · nouns · tools · go
     last), a noun's drawer its upper floor; on the canvas cut into the piece's bottom edge, in focus and panes on the
-    screen's foot; past 70 % of its edge (its open drawer counted) it takes the whole edge and wraps, the drawer spanning it too (D-354); no size in edit mode; marks (faint L's,
-    cyan when pointed at) on its visible corners, no edge line, the selection bars too. Shown only while pointed at
+    screen's foot; past 70 % of its edge (its open drawer counted) it takes the whole edge and wraps, the drawer spanning it too (D-354); no size in edit mode; on a piece marks (faint L's,
+    cyan when pointed at) on its corners, no edge line, the selection bars too; on the screen's foot a tab with a line (D-387). Shown only while pointed at
     (cells in 170 / out 90 ms), in edit mode, with its setup open or the keyboard in it; fresh comments keep a small
     tab; its cells as tall as the piece's name's row (`--cs`, D-370); on touch a first tap shows it, a second focuses.
   - `Marks` (D-265, D-270, D-272; `src/ui/primitives/Marks.tsx`) on everything selectable: three tiers in screen px (a step down
@@ -157,7 +164,8 @@ feature comes back as a piece, and check them with the user then.
   headline and page 400, text decode 260 (D-034, D-035); `<Appear>`, `src/ui/foundation/cellReveal.ts`.
 - Loading = the flowing backdrop, then a cell-by-cell rebuild; nothing in the backdrop depends on per-canvas state (D-025).
 - Backdrop: flows by itself (no pointer) in generations every ~9 s (D-026, D-028); 30 fps on demand, one texel per cell
-  (D-063); a cell is 9 device px, stars by a sine-free hash, light ink near-black (D-172); full on the landing, the workspaces page and an empty canvas, 0.5 with one piece, gone from two, fading 1.2 s between, its canvas unmounted at 0 so it costs nothing (D-385). Welcome intro: stars, sunrise, the north star, 10 s; the light landing gets a night sky with tone sweeps (D-072).
+  (D-063); a cell is 9 device px, stars by a sine-free hash, light ink near-black (D-172); full on the landing, the workspaces page and an empty canvas, 0.5 with one piece, gone from two, fading 1.2 s between, its canvas unmounted at 0 so it costs nothing (D-385).
+- The backdrop's waves are in colour (D-386): a wave's hue follows the flow's folds along one ribbon of the accents (cyan → blue → magenta → yellow → cyan), about one wave in three white; colour in rgb and the glyph's weight in alpha, so a dark hue prints as heavy a glyph; light and dark each have their own strength (`INK`) to read alike. It starts as the flow: no welcome intro, no night sky on the light landing.
 - Landing (D-340): the backdrop on the whole screen (no scrim), the name in JetBrains Mono, no HUD, sign-in a `Button` `md`.
 - Motion `full | reduced | system` (default full), read through `useMotion().reduced`; background on/off (D-030, D-063).
 
@@ -203,7 +211,7 @@ feature comes back as a piece, and check them with the user then.
   reading order; typed, matches grouped by space (`here`, Tab `everywhere`) with a live preview of where you'll land.
   Enter or a double-click goes: it glides there, into a plane's focus first.
 - Right panel (D-219): every panel on the right is a terminal column flush with its space's right edge, 400 px to start (its left edge dragged 320–800, one width for all, kept in the browser, never over the foot's dock, D-378), full
-  height, faint corner marks (D-347), kind + `[×] esc`, an Inter title, `01 NAME ──` sections, a `[verb]` foot; cell by cell.
+  height, bare on the ground under the main screen (D-387), kind + `[×] esc`, an Inter title, `01 NAME ──` sections, a `[verb]` foot; cell by cell.
 
 ## Cards and links on planes
 - Plane details (D-291, D-294): a card's face is `--card-tint` of its type's colour (16 % in both themes, D-368), on kanbans and a
@@ -439,7 +447,7 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - Cursor trail; typing indicator (D-067, D-071).
 - Copy/paste across tabs and workspaces via the system clipboard; a minimap for big boards (D-116).
 - A motion/theme control on the landing or outside Settings (D-069). Warm off-white light background (D-069).
-- Intro: galaxy, nebula, Milky Way, shooting stars, Little Dipper lines, aurora; fades/fronts for the night sky (D-072).
+- The welcome intro (stars, sunrise, north star, the light landing's night sky): built, then taken out (D-072, D-386); its variants too: galaxy, nebula, Milky Way, shooting stars, Little Dipper lines, aurora.
 - Orb: glossy anime eyes, eyes with pupils, pink blush on hover, kaomoji faces, glyph-cell faces; pomegranate as a "red
   queen with a crown"; `/nar` in the chat (D-078, D-092).
 - The threads panel sliding up from the edge, its halves sliding their width; a new kind of motion (D-199): cells only.
