@@ -25,7 +25,9 @@
   box-shadow: 0 0 0 100vmax var(--ground);
   /* Not over the rail (D-389): the HUD's tools are left on the ground there, and the HUD paints that ground itself,
      under them (Hud.module.css `.rail`). The cut travels with the sheet's edge, so its corners stay round on the way. */
-  clip-path: inset(0 0 0 var(--sheet-rail, 0px));
+  /* `inset()` is from this layer's own box, whose left edge is the sheet's (`--sheet-x0`): the cut is at the rail's
+     width from the window's edge, and nothing is cut on the other sides (the paint is all outside the box). */
+  clip-path: inset(-100vmax -100vmax -100vmax calc(var(--sheet-rail, 0px) - var(--sheet-x0, 0px)));
 }
 
 .rim {
