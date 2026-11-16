@@ -46,7 +46,9 @@ function measure() {
   const gap = open ? tokenPx('--sheet-gap') : 0
   // The rail only where no column is: a column on the left covers the HUD's tools as it always did.
   const rail = open && rails > 0 && !left ? tokenPx('--sheet-rail-w') : 0
-  const root = document.documentElement.style
+  // Written only when it changes: the root's style is watched below, and a write that changed nothing must not call back.
+  const style = document.documentElement.style
+  const root = { setProperty: (name: string, value: string) => void (style.getPropertyValue(name) !== value && style.setProperty(name, value)) }
   root.setProperty('--sheet-x0', `${left || rail || gap}px`)
   root.setProperty('--sheet-x1', `${right || gap}px`)
   root.setProperty('--sheet-b', `${gap}px`)
@@ -62,6 +64,10 @@ function measure() {
 
 const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
 if (typeof window !== 'undefined') window.addEventListener('resize', measure)
+// A column can move without changing size: the right panel steps aside as the agent's column opens and closes
+// (`--ai-w`, set with `data-agent-open` on the root), and a dragged width is written on the root's style (D-378).
+if (typeof MutationObserver !== 'undefined')
+  new MutationObserver(() => columns.size && measure()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-agent-open', 'style'] })
 
 // A docked column is on the ground while `present` (false as soon as it starts leaving, so the sheet comes back as it
 // breaks apart, not after).

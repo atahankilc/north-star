@@ -77,7 +77,9 @@
    (`--sheet-x0`, `--sheet-x1`, `--sheet-b`, foundation/sheet.ts, D-387); it travels with it. */
 .console[data-at='foot'] {
   --mkb: transparent;
-  left: calc(50% + (var(--sheet-x0, 0px) - var(--sheet-x1, 0px)) / 2);
+  /* `--sheet-x1` is from the window's edge; the app's own box already stops short of the agent's column (`--ai-w`). */
+  --sheet-in-x1: max(0px, var(--sheet-x1, 0px) - var(--ai-w, 0px));
+  left: calc(50% + (var(--sheet-x0, 0px) - var(--sheet-in-x1)) / 2);
   bottom: var(--sheet-b, 0px);
   transform: translateX(-50%);
   transition:
@@ -131,7 +133,7 @@
 
 .console[data-full][data-at='foot'] {
   left: var(--sheet-x0, 0px);
-  right: var(--sheet-x1, 0px);
+  right: var(--sheet-in-x1);
   transform: none;
 }
 

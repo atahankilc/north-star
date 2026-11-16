@@ -190,7 +190,9 @@ function useBoxRoom(box: React.RefObject<HTMLElement | null>) {
       const pushed = Math.max(0, ...over.map((r) => W - r.left))
       // Room left of it: its least width, clear of the side nav and the corner's squares (a HUD tool and its margins).
       const inset = W - pushed - gap - least >= tokenPx('--control') + 2 * gap ? pushed : 0
-      const right = W - inset - gap
+      // While the main screen is a sheet (D-387) the tab stands clear of its round corner too (`--sheet-round`, as its CSS).
+      const round = parseFloat(document.documentElement.style.getPropertyValue('--sheet-round')) || 0
+      const right = W - inset - gap - round
       // Docks standing on the foot, left of the box's right edge.
       const docks = [...document.querySelectorAll<HTMLElement>('[data-learn=dock]')].map((d) => d.getBoundingClientRect()).filter((d) => d.width && d.bottom > H - gap * 4 && d.left < right)
       const room = docks.length ? right - Math.max(...docks.map((d) => d.right)) - gap : Infinity
@@ -207,10 +209,14 @@ function useBoxRoom(box: React.RefObject<HTMLElement | null>) {
     seen.observe(document.body, { childList: true, subtree: true })
     seen.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] })
     window.addEventListener('resize', later)
+    // A dock travels with the sheet (D-387): where it ends up is known when its move ends.
+    const moved = (e: TransitionEvent) => void ((e.target as Element).matches?.('[data-learn=dock]') && later())
+    document.addEventListener('transitionend', moved, true)
     later()
     return () => {
       seen.disconnect()
       window.removeEventListener('resize', later)
+      document.removeEventListener('transitionend', moved, true)
       if (frame) cancelAnimationFrame(frame)
     }
   }, [box])
