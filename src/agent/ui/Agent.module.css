@@ -8,8 +8,19 @@
   --agent-col-w: min(var(--agent-width, var(--size-lg)), calc(100vw - var(--size-md)));
 }
 
+/* A length, so it can wait: the app narrows only once the sheet has drawn back over the part it gives up (the sheet's
+   own time, foundation/Sheet.module.css). Narrowing at once left a bare strip between the app's new edge and the
+   sheet's, still on its way. Closing, it widens at once, under the column, and the sheet travels back over it. */
+@property --ai-w { syntax: '<length>'; inherits: true; initial-value: 0px; }
+
 :global(html[data-agent-open]) {
   --ai-w: var(--agent-col-w);
+  transition: --ai-w 0s linear var(--dur-slow);
+}
+
+/* Reduced motion (global.css) shortens a duration, not a wait. */
+:global(html[data-motion='reduced'][data-agent-open]) {
+  transition: none;
 }
 
 /* ≤ 760 px the chat covers the screen (1.0's D-114): the app keeps its width under it. */

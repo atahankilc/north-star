@@ -2,8 +2,8 @@
 // with the right edge of the space it belongs to (EdgeColumn, D-359): a piece's own view in focus (its part of the
 // screen when something is open beside it), or the screen's right edge for what's on the canvas itself. Its head
 // (PanelHead: the kind in its colour, tools, `×`), the title under it, then sections under rules that carry a number and
-// a name (`01 STATUS ────`), actions at the foot, joined (D-344). It builds up cell by cell as it opens and breaks apart
-// as it closes (D-034): wrap it in <AnimatePresence>.
+// a name (`01 STATUS ────`), actions at the foot, joined (D-344). The main screen drawing back uncovers it as it opens and covers
+// it again as it closes (D-395): wrap it in <AnimatePresence>.
 import { useRef, type ReactNode } from 'react'
 import styles from './SidePanel.module.css'
 import { Button } from '../primitives/Button'
@@ -33,7 +33,7 @@ type Props = {
   children?: ReactNode
 }
 
-// On the docked column (EdgeColumn, D-359): fixed right, full height, the marks, cell by cell, Escape; this is what's in it.
+// On the docked column (EdgeColumn, D-359): fixed right, full height, under the sheet, Escape; this is what's in it.
 export function SidePanel({ kind, tone, title, label, onClose, actions, right = 0, width, tools, children }: Props) {
   // Where its right edge is on the screen, read as a drag starts (what's beside it or the agent's column can move it).
   const edge = useRef(0)

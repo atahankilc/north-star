@@ -131,7 +131,9 @@ feature comes back as a piece, and check them with the user then.
   the breadcrumb rides the sheet (D-389). The agent closed is a tab on the sheet's foot, bottom right (D-389). The foot has three tabs of one
   family (D-393): the threads on the left, the dock, the agent on the right. A console off the foot (a piece's, a
   selection's bar) is a pill with a line, a gap under its piece; no corner L's are left (`--corner-mark` gone). The threads
-  lie on the ground: the list a column on the left beside the HUD's rail, a conversation a column on the right (D-393).
+  lie on the ground: the list a column on the left beside the HUD's rail, a conversation a column on the right (D-393). A docked
+  column has no entrance of its own (D-395): it's whole under the screen, whose edge uncovers it in 600 ms and covers it
+  again; it leaves once covered. The app narrows for the agent's column only after the screen has drawn back.
 - HUD (D-027): the breadcrumb top left, fixed margins; the rest becomes a left side nav. Bottom left, top to bottom:
   people here, a rule, your square, the gear (the threads are a tab on the foot, D-393), `--space-3` from the edges, other bottom-left tools
   `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge, bare icons (D-384); its `+` a drawn
@@ -380,8 +382,8 @@ feature comes back as a piece, and check them with the user then.
   conversation per component; its chip under its bottom-right corner (mark + count, magenta new, `@` mention); a plane's
   own chip apart from what's inside it (`[💬 N inside]` on its console). Threads keep their space (`planeId`).
 - Threads (D-197, D-199, D-220; D-393): the threads tab on the foot's left opens the list, a column on the left ground
-  beside the HUD's rail; a chip or a row opens the conversation, a column on the right ground; each works alone, building and
-  breaking cell by cell; a narrow window drops the list while a conversation is open. It says what it shows (`whole workspace` or `inside "<plane>"`); `[on the canvas ↗]` goes there. Its preview always
+  beside the HUD's rail; a chip or a row opens the conversation, a column on the right ground; each works alone, uncovered
+  and covered by the main screen (D-395); a narrow window drops the list while a conversation is open. It says what it shows (`whole workspace` or `inside "<plane>"`); `[on the canvas ↗]` goes there. Its preview always
   the newest message left, an edit changing it too; the thread deleted by its starter or the last message's writer (D-356).
 
 ## Agent (planned, docs/specs/agent.md)
@@ -464,7 +466,8 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - The welcome intro (stars, sunrise, north star, the light landing's night sky): built, then taken out (D-072, D-386); its variants too: galaxy, nebula, Milky Way, shooting stars, Little Dipper lines, aurora.
 - Orb: glossy anime eyes, eyes with pupils, pink blush on hover, kaomoji faces, glyph-cell faces; pomegranate as a "red
   queen with a crown"; `/nar` in the chat (D-078, D-092).
-- The threads panel sliding up from the edge, its halves sliding their width; a new kind of motion (D-199): cells only.
+- The threads panel sliding up from the edge, its halves sliding their width (D-199).
+- A docked panel building cell by cell while the screen draws back from it (D-395): two movements at once.
 - The workspaces page at full width with an activity column (D-338): too much to look over.
 - On the workspaces page (D-390): the last workspace's name as the page's big text with a small title; the prompt in a round well; lined pills for a row's buttons; a strip of cells for when things changed; pictures dim until pointed at; an empty one's picture as a window onto the backdrop; live cursors over the pictures.
 - Chat window sliding in from the right (D-081). Saving whole chats (reports instead) (D-090).

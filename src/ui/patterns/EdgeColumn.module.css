@@ -18,3 +18,31 @@
   line-height: var(--space-4);
   cursor: default;
 }
+
+/* Under the sheet (D-387): only what the sheet has drawn back off shows, so its edge uncovers the column as it opens
+   and covers it as it closes; never a column over a screen still on its way. A mask, not a clip: the clip is the
+   cells' (Appear). It reaches from far outside the column to the sheet's edge (`--sheet-x0`/`--sheet-x1`, from the
+   window's; `--column-off` this column's own start), and travels as the sheet does. A new column is first laid out
+   before the sheet hears of it (sheet.ts measures it, then moves), so it starts as covered as the sheet then leaves
+   it: all of it the first time, none of it when it takes the place of one already open. Leaving, it takes no press. */
+.column {
+  /* Any solid colour: a mask only reads how solid it is. */
+  mask-image: linear-gradient(var(--ground), var(--ground));
+  mask-repeat: no-repeat;
+  mask-clip: no-clip;
+  transition: mask-size var(--dur-slow) var(--ease-out);
+}
+
+.column[data-side='left'] {
+  mask-position: left -100vmax top -100vmax;
+  mask-size: calc(100vmax + var(--sheet-x0, 0px) - var(--column-off, 0px)) 300vmax;
+}
+
+.column[data-side='right'] {
+  mask-position: right -100vmax top -100vmax;
+  mask-size: calc(100vmax + var(--sheet-x1, 0px) - var(--column-off, 0px)) 300vmax;
+}
+
+.column[data-leaving] {
+  pointer-events: none;
+}

@@ -2,35 +2,43 @@
    edge lies on the ground under the screen: while one is there the screen lifts, goes round, draws in `--sheet-gap` from
    the window's edges and back from the column by its width. Nothing in the screen is laid out again: two fixed
    layers over it draw the look. `.ground` paints the ground's colour over everything outside the sheet (a spread
-   shadow from the sheet's box), under the column. `.rim` is the sheet's lit edge and the shadow it casts on the ground
+   shadow from `.hole`, the sheet's box in it), under the column. `.rim` is the sheet's lit edge and the shadow it casts on the ground
    and the column. With no column both are the whole window, square, and draw nothing. */
-.ground,
+.hole,
 .rim {
-  position: fixed;
-  /* sheet.ts's: all 0 with no column, so the layers are the whole window. */
+  /* sheet.ts's: all 0 with no column, so they are the whole window. */
   inset: var(--sheet-b, 0px) var(--sheet-x1, 0px) var(--sheet-b, 0px) var(--sheet-x0, 0px);
   border-radius: 0;
   pointer-events: none;
   transition:
     inset var(--dur-slow) var(--ease-out),
     border-radius var(--dur-slow) var(--ease-out),
-    clip-path var(--dur-slow) var(--ease-out),
     opacity var(--dur-fast) var(--ease-out);
 }
 
 .ground {
+  position: fixed;
+  /* Not over the rail (D-389): the HUD's tools are left on the ground there, and the HUD paints that ground itself,
+     under them (Hud.module.css `.rail`). This box starts where the paint may (`--sheet-cut`, the rail's width while
+     the tools stand on it) and cuts what's outside it, so the cut stays put while the sheet's edge travels: the
+     ground never passes over the tools on the way. */
+  inset: 0 0 0 var(--sheet-cut, 0px);
   /* Over the app (its HUD too: only the margins outside the sheet are painted), under a column of the same layer
      that comes after it in the page. */
   z-index: calc(var(--z-panel) - 1);
+  overflow: clip;
+  pointer-events: none;
+}
+
+/* The sheet's own box, in the ground's: everything outside it is painted the ground's colour. */
+.hole {
+  position: absolute;
+  left: calc(var(--sheet-x0, 0px) - var(--sheet-cut, 0px));
   box-shadow: 0 0 0 100vmax var(--ground);
-  /* Not over the rail (D-389): the HUD's tools are left on the ground there, and the HUD paints that ground itself,
-     under them (Hud.module.css `.rail`). The cut travels with the sheet's edge, so its corners stay round on the way. */
-  /* `inset()` is from this layer's own box, whose left edge is the sheet's (`--sheet-x0`): the cut is at the rail's
-     width from the window's edge, and nothing is cut on the other sides (the paint is all outside the box). */
-  clip-path: inset(-100vmax -100vmax -100vmax calc(var(--sheet-rail, 0px) - var(--sheet-x0, 0px)));
 }
 
 .rim {
+  position: fixed;
   z-index: calc(var(--z-panel) + 1);
   /* No shadow to its left: it would dim the tools on the rail. */
   clip-path: inset(-100vmax -100vmax -100vmax 0);
@@ -40,7 +48,7 @@
   opacity: 0;
 }
 
-:is(.ground, .rim)[data-open] {
+:is(.hole, .rim)[data-open] {
   border-radius: var(--radius-window);
 }
 
@@ -48,6 +56,6 @@
   opacity: 1;
 }
 
-:is(.ground, .rim)[data-reduced] {
+:is(.hole, .rim)[data-reduced] {
   transition: none;
 }

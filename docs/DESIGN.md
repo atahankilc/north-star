@@ -334,7 +334,7 @@ Every framed element (panels, cards, forms, chips, empty states) composes `src/u
 Two families, each on its own shell; they share only foundation parts (`src/ui/foundation`): one Escape stack
 (`useEscapeLayer`: what opened last closes first; a field keeps its Escape in a panel), focus in and back
 (`focus.ts`), the canvas guard, `dragPointer`, and the sheet a docked column lies under (`sheet.ts`, D-387).
-- **Docked to an edge:** `EdgeColumn` (full height, bare on the ground under the main screen, D-387, cell by cell) with `PanelHead`
+- **Docked to an edge:** `EdgeColumn` (full height, bare on the ground under the main screen, D-387; no entrance of its own, the screen drawing back uncovers it and covers it again, D-395) with `PanelHead`
   (kind in its tone, tools and one `×` joined): the right panel (`SidePanel`, 400 px to start, its left edge dragged 320–800 and kept in the browser, D-378) and the agent's column. The
   threads dock stays bottom left in its own shape with the same parts. A dragged edge is `ResizeEdge` (a cyan line on
   the edge while pointed at); a line that shares the screen between two parts is `SplitLine` (9 px to grab, 1 px drawn,

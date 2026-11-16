@@ -6,7 +6,7 @@
 // on when that isn't the open one (D-168: going there switches to it); new ones (someone else wrote since you last read
 // it) lit magenta, `@` where you're mentioned. The two work apart (D-199): a chip on the canvas opens only its
 // conversation, `all threads` there opens the list; closing the list leaves the conversation, and the other way round.
-// Each builds up cell by cell as it opens and breaks apart as it closes (EdgeColumn's Appear, D-034, D-035).
+// Each is uncovered by the main screen drawing back, and covered as it comes back (EdgeColumn, D-395).
 import { useMemo, useState } from 'react'
 import { AnimatePresence } from 'motion/react'
 import type { WithId } from '../../../data/hooks'

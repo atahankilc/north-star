@@ -8,6 +8,8 @@
 //   --sheet-b                how far its top and foot are from the window's (the gap; 0 with no column)
 //   --sheet-rail             the rail's width while it shows, else 0
 //   --sheet-round            the sheet's corner while it's lifted, else 0 (what sits on its foot keeps clear of it)
+//   --sheet-cut              where the ground's paint starts from the window's left: the rail's width while the HUD's
+//                            tools stand on it, so the ground never passes over them as the sheet travels
 // The rail (D-389): the HUD's tools on the left edge stay where they are, and while a column is docked the sheet draws
 // back off them too, so they're left on the ground beside it (`useSheetRail`, the HUD's).
 // The layers outlive the columns: when the last one leaves, the sheet still has to travel back.
@@ -20,18 +22,23 @@ type Side = 'right' | 'left'
 
 const columns = new Map<HTMLElement, Side>()
 let rails = 0
-let layers: [HTMLElement, HTMLElement] | null = null
+let layers: HTMLElement[] | null = null
+// Kept while the sheet travels home: the tools it drew back off are still there.
+let cut = 0
 
-function make(): [HTMLElement, HTMLElement] {
+function make(): HTMLElement[] {
   const ground = document.createElement('div')
+  const hole = document.createElement('div')
   const rim = document.createElement('div')
   ground.className = styles.ground
+  hole.className = styles.hole
   rim.className = styles.rim
+  ground.append(hole)
   for (const el of [ground, rim]) el.setAttribute('aria-hidden', 'true')
   // The ground first in the page: a column of its layer, portalled in after it, is over it.
   document.body.prepend(ground)
   document.body.append(rim)
-  return [ground, rim]
+  return [ground, hole, rim]
 }
 
 function measure() {
@@ -52,6 +59,19 @@ function measure() {
   const open = columns.size > 0
   const gap = open ? tokenPx('--sheet-gap') : 0
   const rail = open && rails > 0 && !covered ? railW : 0
+  if (open) cut = rail
+  else if (!layers?.[0].hasAttribute('data-open')) cut = rails > 0 ? railW : 0
+  if (!open && !layers) {
+    // Known before the first column: the layers are made with the cut where it will be.
+    document.documentElement.style.setProperty('--sheet-cut', `${cut}px`)
+    return
+  }
+  // Made before the first move is written, and laid out once at rest: made in the same step they'd start where they
+  // end, and the sheet would jump there while everything on it travels.
+  if (!layers) {
+    layers = make()
+    void layers[0].offsetWidth
+  }
   // Written only when it changes: the root's style is watched below, and a write that changed nothing must not call back.
   const style = document.documentElement.style
   const root = { setProperty: (name: string, value: string) => void (style.getPropertyValue(name) !== value && style.setProperty(name, value)) }
@@ -60,8 +80,7 @@ function measure() {
   root.setProperty('--sheet-b', `${gap}px`)
   root.setProperty('--sheet-rail', `${rail}px`)
   root.setProperty('--sheet-round', `${open ? tokenPx('--radius-window') : 0}px`)
-  if (!open && !layers) return
-  layers ??= make()
+  root.setProperty('--sheet-cut', `${cut}px`)
   for (const el of layers) {
     el.toggleAttribute('data-reduced', isReducedMotion())
     el.toggleAttribute('data-open', open)
@@ -74,6 +93,9 @@ if (typeof window !== 'undefined') window.addEventListener('resize', measure)
 // (`--ai-w`, set with `data-agent-open` on the root), and a dragged width is written on the root's style (D-378).
 if (typeof MutationObserver !== 'undefined')
   new MutationObserver(() => columns.size && measure()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-agent-open', 'style'] })
+// `--ai-w` waits for the sheet before it changes (Agent.module.css): what stands beside the agent's column moves then.
+if (typeof document !== 'undefined')
+  document.documentElement.addEventListener('transitionend', (e) => e.target === document.documentElement && columns.size && measure())
 
 // A docked column is on the ground while `present` (false as soon as it starts leaving, so the sheet comes back as it
 // breaks apart, not after).

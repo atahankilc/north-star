@@ -45,8 +45,10 @@ After the "Only Panels" project's map: the main screen is a sheet lying on a gro
 - **A panel opens:** the screen lifts (a shadow under it, a lit rim on its edge), its corners go round (24), it draws in
   8 px from the window's edges and back from the panel's side by the panel's width. The panel is on the ground under it:
   the ground's colour (a step off the page's black: `#121215` in the demo, `#e2e2e5` in light), no line, no L's, no
-  shadow of its own. One movement, ~550 ms, eased out. The panel's contents build cell by cell as today while the sheet
-  uncovers them.
+  shadow of its own. One movement, 600 ms, eased out. The panel is there at once, whole, under the sheet: the sheet's
+  edge uncovers it (D-395; no cells, they were a second movement over the first). Everything on the sheet (the bar,
+  the foot's tabs) travels with its edge, from the first open on; the ground never passes over the HUD's tools; the app
+  narrows for the agent's column only once the sheet has drawn back over that part.
 - **It closes:** the sheet comes back over the panel; the panel's contents leave with it, not before it (the demo drops
   them at once, the build must not).
 - **Reduced motion:** no travel; the sheet is at once where it ends.
