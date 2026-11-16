@@ -169,6 +169,16 @@
   align-self: flex-end;
 }
 
+/* The next one of a run by the same writer: close under the one before, in line with it (no circle of its own). */
+.msg[data-follows] {
+  margin-top: calc(-1 * var(--space-4));
+}
+
+.noCircle {
+  flex: none;
+  width: var(--control-sm);
+}
+
 .said {
   display: grid;
   gap: var(--space-1);
@@ -233,10 +243,19 @@
   color: var(--accent-cyan);
 }
 
-/* Editing one's own message: a Field where its bubble was. */
+/* Editing one's own message: a Field where its bubble was, as wide as a bubble may be (the field has no words to take
+   its width from). */
 .editField {
   font: inherit;
   line-height: var(--lh-body);
+}
+
+.msg:has(.editField) {
+  width: 100%;
+}
+
+.msg:has(.editField) .said {
+  flex: 1;
 }
 
 /* The prompt: `>` in a round well with `send` in it, its line cyan while the keys are in it (D-384's Field; D-398). */

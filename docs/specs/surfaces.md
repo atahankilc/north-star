@@ -114,8 +114,9 @@ Picked 2026-11-17 on a port (list: now, A people first, **B by place**, C cards 
 thing on top, **B bubbles**), built the same day. The columns, the foot tab and their motion stay D-393's and D-395's.
 
 - **The list has one head:** `Threads` (Inter, `--text-lg`), what it shows beside it, `mark all read` and `×`. What it
-  shows is plain words (`whole workspace`) until there's something to pick: with several canvases, or opened from a
-  plane's console, it's the one dropdown trigger (`whole workspace`, `on <canvas>`, `in <plane>`). The views are tabs
+  shows is a plain word (`everywhere`) until there's something to pick: with several canvases, or opened from a
+  plane's console, it's the one dropdown trigger (`everywhere`, `this canvas`, `in <plane>`: the finder's words,
+  D-305, short enough to stand whole beside `mark all read`). The views are tabs
   right under it, their words short enough for one row: `all`, `new`, `@you`, `done`. Three strips with a line each
   became one.
 - **The list is as wide as the right panel** (`--panel-w`, 400; it was 340).
@@ -134,13 +135,17 @@ thing on top, **B bubbles**), built the same day. The columns, the foot tab and 
 - **Messages are bubbles:** someone else's on the left, their `Avatar` at its foot, their name in their colour and when
   over it; yours on the right in cyan (`--mix-pick` of `--accent-cyan`), no circle and no name: the side says it's
   you. The corner by its writer is small. `edit` and `delete` show on your own under the pointer, beside its time. A
-  bubble is at most 88 % of the column.
+  bubble is at most 88 % of the column; a message being edited is a field that wide.
+- **One writer's messages in a row are one run:** their name once on top, their circle once at the foot of the last,
+  the bubbles close together (each keeps its time).
 - **A person's colour** (`usePersonColor`): the one they have here now (D-067), else their own (`presenceColor`, as
   the workspaces page names them, D-390), in the theme's shade.
 - **The prompt is a round well** (`--radius-well`, a line that goes cyan with the keys), `>` and `send` inside it.
 - `thingOf` (CanvasView) gives a thread's kind, name, colour and whether it's gone; `titleOf` is made from it.
-- *Not yet:* messages one after another by the same person as one group; the conversation as a tab of the thing's
-  own panel (D-393's); touch.
+- With `all threads` on the head's row (the list shut) the row has no room for the word `thread`: the count alone.
+- Seen in the real app on the emulators (2026-11-17, two people in it, a 26-message thread, two canvases): live
+  colours, the runs, an edit, the scope's dropdown, the light theme.
+- *Not yet:* the conversation as a tab of the thing's own panel (D-393's); touch.
 
 ## Tokens
 

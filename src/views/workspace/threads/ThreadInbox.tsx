@@ -112,11 +112,12 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows])
   // What the list shows (D-195): the whole workspace, this canvas (with several, D-302), or what's inside the plane whose
-  // console opened it. One picker beside the title; plain words while there's nothing to pick.
+  // console opened it. One picker beside the title; plain words (`everywhere`) while there's nothing to pick.
   const planeScope = scope && scope !== THIS_CANVAS ? scope : null
   const scopes = [
-    { value: 'all', label: 'whole workspace' },
-    ...(canvasScope ? [{ value: THIS_CANVAS, label: `on ${canvasScope.name}` }] : []),
+    // The finder's words for the same choice (D-305), short enough to stand whole beside `mark all read`.
+    { value: 'all', label: 'everywhere' },
+    ...(canvasScope ? [{ value: THIS_CANVAS, label: 'this canvas' }] : []),
     ...(planeScope ? [{ value: planeScope, label: `in ${(scopeName?.(planeScope) ?? 'a plane').replace(/^"|"$/g, '')}` }] : []),
   ]
 
@@ -150,7 +151,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
                   onChange={(v) => useThreadView.setState({ scope: v === 'all' ? null : v })}
                 />
               ) : (
-                <span className={styles.scope}>whole workspace</span>
+                <span className={styles.scope}>everywhere</span>
               )}
               <ButtonGroup className={styles.actions}>
                 {counts.new > 0 && <Button onClick={markAll}>mark all read</Button>}

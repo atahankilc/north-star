@@ -18,7 +18,7 @@ export const THREADS = [
     lastUid: PEOPLE.ayla.uid, lastName: 'Ayla Demir', lastText: '@You can the cut-off move to 10 pm? Cooks asked twice.', mentions: [DEMO_USER.uid],
   }),
   thread('t-break', {
-    on: 'card', targetId: 'r-break', planeId: P.lunch, count: 3, lastAt: DEMO_DAY - 40 * MIN,
+    on: 'card', targetId: 'r-break', planeId: P.lunch, count: 4, lastAt: DEMO_DAY - 40 * MIN,
     lastUid: PEOPLE.jonas.uid, lastName: 'Jonas Weber', lastText: 'Ten minutes from order to desk, or they stay with the canteen.',
   }),
   thread('t-cooks', {
@@ -41,6 +41,7 @@ const MESSAGES: Record<string, WithId<ThreadMessage>[]> = {
   ],
   't-break': [
     msg('b1', PEOPLE.jonas, 'Asked five people at Factory how long their break really is.', 120),
+    msg('b1b', PEOPLE.jonas, 'Thirty minutes on paper, twenty once they’re back at the desk.', 118),
     msg('b2', PEOPLE.lena, 'And?', 90),
     msg('b3', PEOPLE.jonas, 'Ten minutes from order to desk, or they stay with the canteen.', 40),
   ],

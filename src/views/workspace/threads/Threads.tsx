@@ -310,7 +310,8 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
         <div className={styles.headTop}>
           {onList && <Button onClick={onList}>all threads</Button>}
           <Label className={styles.kind}>{thing.kind}</Label>
-          <Label className={styles.kindMore}>thread{thread ? ` · ${thread.count}` : ''}</Label>
+          {/* With `all threads` on the row there's no room for the word: the count alone. */}
+          <Label className={styles.kindMore}>{onList ? (thread ? `· ${thread.count}` : '') : `thread${thread ? ` · ${thread.count}` : ''}`}</Label>
           <ButtonGroup className={styles.actions}>
             {thread && <Button onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>{resolved ? 'reopen' : 'resolve'}</Button>}
             {mayDeleteThread && (
@@ -338,13 +339,18 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
       <ol ref={list} className={styles.log} onScroll={stick.onScroll}>
         {!thread && <li className={styles.lead}>Start a thread here: everyone in the workspace sees it, viewers too. @ mentions someone.</li>}
         {thread && messages.isLoading && <li className={styles.lead}>Loading</li>}
-        {messages.data.map((m: WithId<ThreadMessage>) => (
-          <li key={m.id} className={styles.msg} data-mine={m.uid === me || undefined}>
-            {/* The others' circle at the foot of their bubble; yours needs none: it's on your side. */}
-            {m.uid !== me && <Avatar size="sm" name={m.name} color={colorOf(m.uid)} />}
+        {messages.data.map((m: WithId<ThreadMessage>, i) => {
+          // One writer's messages in a row are one run: their name once on top, their circle once at its foot, the
+          // bubbles closer together.
+          const follows = messages.data[i - 1]?.uid === m.uid
+          const goesOn = messages.data[i + 1]?.uid === m.uid
+          return (
+          <li key={m.id} className={styles.msg} data-mine={m.uid === me || undefined} data-follows={follows || undefined}>
+            {/* The others' circle at the foot of their last bubble; yours needs none: it's on your side. */}
+            {m.uid !== me && (goesOn ? <span className={styles.noCircle} aria-hidden /> : <Avatar size="sm" name={m.name} color={colorOf(m.uid)} />)}
             <div className={styles.said}>
               <div className={styles.who}>
-                {m.uid !== me && (
+                {m.uid !== me && !follows && (
                   <span className={styles.name} style={{ color: colorOf(m.uid) }}>
                     {m.name}
                   </span>
@@ -390,7 +396,8 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
               )}
             </div>
           </li>
-        ))}
+          )
+        })}
       </ol>
       {!resolved && (
         <form

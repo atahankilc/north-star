@@ -383,12 +383,12 @@ feature comes back as a piece, and check them with the user then.
   own chip apart from what's inside it (`[💬 N inside]` on its console). Threads keep their space (`planeId`).
 - Threads (D-197, D-199, D-220; D-393): the threads tab on the foot's left opens the list, a column on the left ground
   beside the HUD's rail; a chip or a row opens the conversation, a column on the right ground; each works alone, uncovered
-  and covered by the main screen (D-395); a narrow window drops the list while a conversation is open. It says what it shows (`whole workspace`, or a dropdown with `on <canvas>` / `in <plane>`); `on … ↗` goes there. Its preview always
+  and covered by the main screen (D-395); a narrow window drops the list while a conversation is open. It says what it shows (`everywhere`, or a dropdown with `this canvas` / `in <plane>`); `on … ↗` goes there. Its preview always
   the newest message left, an edit changing it too; the thread deleted by its starter or the last message's writer (D-356).
 - Their look (D-398, docs/specs/surfaces.md): the list as wide as the right panel, one head (`Threads`, what it shows, tools), views `all new @you done`,
   threads under their place's rule (`02 PRODUCT ── 1`), a row leading with the thing (colour bar, kind, name) over who wrote last
   in their colour; new a magenta lamp and count. A conversation's head as a thing's panel (kind in its colour, name big),
-  messages bubbles (the others' left with their circle, yours right in cyan), the prompt a round well with `send`; a
+  messages bubbles (the others' left with their circle, yours right in cyan; one writer's in a row one run), the prompt a round well with `send`; a
   person's colour the one they have here, else their own (`usePersonColor`).
 
 ## Agent (planned, docs/specs/agent.md)

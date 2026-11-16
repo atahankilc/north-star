@@ -237,8 +237,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
 - Comment threads (D-159, D-166, D-167, D-193): a chip under the component's bottom-right corner, at screen size: the
   comment icon (a square speech bubble, three square dots) and a count; magenta when someone else wrote since you read
   it, `@` when it mentions you. Nothing opens on the canvas (D-199): the threads are two columns on the ground (D-393),
-  the list left and the conversation right. The list (D-398): one head (`Threads`, what it shows, D-195: `whole
-  workspace`, or a dropdown with `on <canvas>` / `in <plane>`), the views as tabs (`all new @you done`), the threads under
+  the list left and the conversation right. The list (D-398): one head (`Threads`, what it shows, D-195: `everywhere`,
+  or a dropdown with `this canvas` / `in <plane>`), the views as tabs (`all new @you done`), the threads under
   their place's rule (`02 PRODUCT ── 1`); a row leads with the thing (its colour a bar, its kind, its name), under it who
   wrote last in their colour and how it began; new: a magenta lamp and count. A conversation (D-398): its head as a
   thing's panel (the kind in its colour, the name big, `on … ↗`, D-220), messages as bubbles (the others' left with
