@@ -38,8 +38,9 @@
   position: relative;
   width: min(var(--confirm-w), calc(100vw - 2 * var(--space-12)));
   padding: var(--space-6);
+  /* Round with a line, as every window (D-387); the same line all round: a bolder top bends at the corners. */
   border: var(--line-w) solid var(--accent-magenta);
-  border-top-width: var(--line-w-bold);
+  border-radius: var(--radius-window);
   background: var(--bg);
   font-family: var(--font-mono);
 }

@@ -1,5 +1,6 @@
 // "Are you sure?" for something that can't be taken lightly (D-182, D-183): hazard tape. The screen darkens, the box
-// comes in a few hard steps, and ASCII tape `╱╱╱` wraps round it from the box outwards, runs once and stops; the text
+// comes in a few hard steps, and ASCII tape `╱╱╱` wraps round it from the box outwards, following its round corners
+// (D-387), runs once and stops; the text
 // settles out of glyphs (DecodeText). Leaving, the box breaks apart cell by cell (D-034). Reduced motion: the tape is
 // just there, nothing moves. On the one Window (D-359): focus kept inside (on cancel first, or the gentler answer),
 // Escape cancels, a press on the dark does nothing; the tape is drawn on its scrim (`behind`).
@@ -14,6 +15,7 @@ import styles from './HazardConfirm.module.css'
 import { DUR } from '../foundation/motion'
 import { stopCanvas } from '../foundation/canvasGuard'
 import { Window } from './Window'
+import { tokenPx } from '../../styles/cssToken'
 
 type Props = {
   title: string
@@ -53,6 +55,8 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
     const css = getComputedStyle(document.documentElement)
     const color = (name: string) => css.getPropertyValue(name).trim()
     const ink = { on: color('--accent-magenta'), off: color('--fg-faint'), font: color('--font-mono') }
+    const radius = tokenPx('--radius-window')
+    const gap = tokenPx('--space-1')
     const size = () => {
       const dpr = window.devicePixelRatio || 1
       cv.width = Math.round(window.innerWidth * dpr)
@@ -66,21 +70,25 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
     const draw = (grow: number, shift: number) => {
       ctx.clearRect(0, 0, cv.width, cv.height)
       const r = el.getBoundingClientRect()
-      const x0 = Math.floor(r.left / CELL_PX)
-      const y0 = Math.floor(r.top / CELL_PX)
-      const x1 = Math.ceil(r.right / CELL_PX)
-      const y1 = Math.ceil(r.bottom / CELL_PX)
-      const cx = (x0 + x1) / 2
-      const cy = (y0 + y1) / 2
-      for (let gy = y0 - BAND; gy < y1 + BAND; gy++)
-        for (let gx = x0 - BAND; gx < x1 + BAND; gx++) {
-          if (gx >= x0 && gx < x1 && gy >= y0 && gy < y1) continue
-          const reach = Math.max(Math.abs(gx + 0.5 - cx) / ((x1 - x0) / 2 + BAND), Math.abs(gy + 0.5 - cy) / ((y1 - y0) / 2 + BAND))
-          if (reach > grow) continue
+      // The box is round (D-387), so the tape is every cell whose middle is within the band of the round box's edge:
+      // `d` is how far a point is outside it (a rounded rectangle's distance).
+      const reach = BAND * CELL_PX
+      const far = gap + reach
+      const midX = r.left + r.width / 2
+      const midY = r.top + r.height / 2
+      for (let gy = Math.floor((r.top - far) / CELL_PX); gy <= Math.ceil((r.bottom + far) / CELL_PX); gy++)
+        for (let gx = Math.floor((r.left - far) / CELL_PX); gx <= Math.ceil((r.right + far) / CELL_PX); gx++) {
+          const px = gx * CELL_PX + CELL_PX / 2
+          const py = gy * CELL_PX + CELL_PX / 2
+          const qx = Math.abs(px - midX) - (r.width / 2 - radius)
+          const qy = Math.abs(py - midY) - (r.height / 2 - radius)
+          const d = Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - radius
+          // Clear of the box by the gap and a cell's half, so no glyph touches its line.
+          if (d < gap + CELL_PX / 2 || d > far || (d - gap) / reach > grow) continue
           const on = (((gx + gy + shift) % 4) + 4) % 4 < 2
           ctx.globalAlpha = on ? 0.9 : 0.35
           ctx.fillStyle = on ? ink.on : ink.off
-          ctx.fillText('╱', gx * CELL_PX + CELL_PX / 2, gy * CELL_PX + CELL_PX / 2)
+          ctx.fillText('╱', px, py)
         }
       ctx.globalAlpha = 1
     }
@@ -89,6 +97,9 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
     let last = { grow: 1, shift: 0 }
     const onResize = () => (size(), draw(last.grow, last.shift))
     window.addEventListener('resize', onResize)
+    // The box settles after the first draw (its font arriving, its lines wrapping): the tape follows its edge.
+    const watch = new ResizeObserver(() => draw(last.grow, last.shift))
+    watch.observe(el)
     if (reduced) draw(1, 0)
     else {
       const t0 = performance.now()
@@ -103,6 +114,7 @@ export function HazardConfirm({ title, lines = [], confirm, onConfirm, onCancel,
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', onResize)
+      watch.disconnect()
     }
   }, [reduced])
 

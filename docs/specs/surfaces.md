@@ -1,6 +1,6 @@
 # Surfaces: round with a line, marks that take the corner, panels under the screen (D-387)
 
-Status: **look agreed 2026-11-16 (D-387); step 1 built 2026-11-16, steps 2–8 not.** This is the build plan for what sits on top of D-384's controls
+Status: **look agreed 2026-11-16 (D-387); steps 1–2 built 2026-11-16, steps 3–8 not.** This is the build plan for what sits on top of D-384's controls
 ([controls.md](controls.md)): modals, the hazard confirm, the selection marks, menus, the foot dock, the threads dock,
 the side panel, Settings' inside, the toast and the tip. Cards (squircle) and pieces (square) don't change.
 
@@ -83,6 +83,9 @@ the build green before the next.
    step 4. The sheet's tokens come with step 6.
 2. **The hazard confirm.** Round box; the tape drawn by distance to the round box (HazardConfirm.tsx), the same grow and
    run; reduced motion: the tape just there.
+   *Built 2026-11-16:* the box round, one line all round (the bolder top bent at the corners); a cell is tape when its
+   middle is within the band of the round box's edge, `--space-1` clear of it. The tape is drawn again when the box
+   changes size: under reduced motion it was drawn once, before the box had settled, and came out short.
 3. **Marks take the corner.** `Marks` reads its host's corner (`--corner`, which CardFace already sets) and takes a
    `corner` where it's drawn beside the face (PlaneCards, a deck's and a table's cards) and on `Landing`; a flat face
    says 0. The short curve, every state (hover, selected, pressed, arrive, target, peers), all three tiers, at 25 % and
