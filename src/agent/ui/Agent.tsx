@@ -1,7 +1,7 @@
 // The agent in the screen's bottom-right corner (S14, D-312; docs/specs/agent.md §4.6, §6 Phase 6). Closed: a small
 // framed box with the `>` prompt (`ask about Pazar…`). Focused (a click, ⌘J, or `/` when nothing has the keyboard): the
 // first asks above it. The first message grows it, cell by cell, into a full-height column on the right; the app
-// narrows beside it (`html[data-agent-open]` sets `--ai-w`, which WorkspaceLayout's `[data-app]` box and the right
+// narrows beside it (`html[data-agent-in]` sets `--ai-w`, which WorkspaceLayout's `[data-app]` box and the right
 // panel read), so the canvas, the card panel, beside and the tasks side view are never under it. ≤ 760 px it covers the
 // screen. `[×] esc` folds it back to the box, the chat kept. Chats are saved (S16): `[chats]` lists them (yours and
 // shared ones) to reopen, rename, share or delete; `[notes]` opens the agent notes (AgentMemory.tsx).
@@ -29,6 +29,9 @@ import { canvasCenter } from '../../state/canvasView'
 import { shownPieces } from '../../views/workspace/canvas/shownBox'
 import { isTyping, keysTaken } from '../../ui/foundation/focus'
 import { sheetRound } from '../../ui/foundation/sheet'
+import { DUR } from '../../ui/foundation/motionTokens'
+import { isReducedMotion } from '../../state/motion'
+import { onPageValue, pageValue, setPageValue } from '../../ui/foundation/pageValues'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
 import { pickerRows } from '../models'
 import { previewOf, type Job, type JobStep } from '../job'
@@ -89,10 +92,19 @@ export function Agent() {
   useLayoutEffect(() => {
     const h = document.documentElement
     const w = Number(readLocal(WIDTH_STORE))
-    if (w >= W_MIN && w <= W_MAX) h.style.setProperty('--agent-width', `${w}px`)
+    if (w >= W_MIN && w <= W_MAX) setPageValue('--agent-width', `${w}px`, 'app')
     if (mode !== 'column') return
     h.setAttribute('data-agent-open', '')
-    return () => h.removeAttribute('data-agent-open')
+    // The app narrows (`data-agent-in`, Agent.module.css) only once the sheet has drawn back over the part it gives up:
+    // narrowing at once left a bare strip between the app's new edge and the sheet's, still on its way. Closing, it
+    // widens at once, under the column, and the sheet travels back over it.
+    const narrow = () => h.setAttribute('data-agent-in', '')
+    const wait = isReducedMotion() ? (narrow(), 0) : window.setTimeout(narrow, DUR.slow)
+    return () => {
+      window.clearTimeout(wait)
+      h.removeAttribute('data-agent-open')
+      h.removeAttribute('data-agent-in')
+    }
   }, [mode])
 
   // ⌘J opens or folds it from anywhere; `/` opens it when nothing has the keyboard. On Windows and Linux it's Ctrl+J,
@@ -207,10 +219,10 @@ function useBoxRoom(box: React.RefObject<HTMLElement | null>) {
     }
     const later = () => void (frame ||= requestAnimationFrame(fit))
     // What opens and closes (panels, panes, docks) changes the page's elements; a split line dragged, the window's size;
-    // a right panel's width dragged, <html>'s style (D-378).
+    // a right panel's width dragged, a page value (D-378, pageValues.ts).
     const seen = new MutationObserver(later)
     seen.observe(document.body, { childList: true, subtree: true })
-    seen.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] })
+    const unheard = onPageValue(later)
     window.addEventListener('resize', later)
     // A dock travels with the sheet (D-387): where it ends up is known when its move ends.
     const moved = (e: TransitionEvent) => void ((e.target as Element).matches?.('[data-learn=dock]') && later())
@@ -218,6 +230,7 @@ function useBoxRoom(box: React.RefObject<HTMLElement | null>) {
     later()
     return () => {
       seen.disconnect()
+      unheard()
       window.removeEventListener('resize', later)
       document.removeEventListener('transitionend', moved, true)
       if (frame) cancelAnimationFrame(frame)
@@ -456,11 +469,11 @@ function Column() {
 // Drag the column's left edge to resize it (DragLine, D-359); remembered in this browser.
 function resizeTo(e: PointerEvent) {
   const w = Math.round(Math.min(W_MAX, Math.max(W_MIN, window.innerWidth - e.clientX)))
-  document.documentElement.style.setProperty('--agent-width', `${w}px`)
+  setPageValue('--agent-width', `${w}px`, 'app')
 }
 
 function keepWidth() {
-  const w = parseInt(document.documentElement.style.getPropertyValue('--agent-width'), 10)
+  const w = parseInt(pageValue('--agent-width') ?? '', 10)
   if (w) keepLocal(WIDTH_STORE, String(w))
 }
 

@@ -2,30 +2,28 @@
    the right that lies on the ground under the main screen (D-387; the right panel's look, D-219: the kind along the
    top, mono only on the system's bits, Inter for the rest, D-337). Tokens only; light under [data-theme='light']. */
 
-/* The column's width, on <html> so the app's box (WorkspaceLayout.module.css `.app`) and the right panel (SidePanel)
-   read it: `--ai-w` is how far the app stops short of the right edge. Never leaves the app less than 360 px. */
-:global(html) {
+/* The column's width. `--agent-width` is the dragged one (Agent.tsx, a page value: pageValues.ts); `--ai-w` is how far
+   the app stops short of the right edge, read by the app's box (WorkspaceLayout.module.css `.app`), the right panel
+   (SidePanel), a document beside (DocReader) and the foot's console. Never leaves the app less than 360 px.
+   None of the three is inherited, and each is set on the elements that read it (`[data-sheet]`, `[data-app]`), never
+   on <html>: the app's box holds the whole canvas, and a value inherited from it or from the root restyles every
+   element there when it changes. So whoever reads one reads it on itself. */
+@property --agent-width { syntax: '*'; inherits: false; }
+@property --agent-col-w { syntax: '*'; inherits: false; }
+@property --ai-w { syntax: '<length>'; inherits: false; initial-value: 0px; }
+
+:global(:is([data-sheet], [data-app])) {
   --agent-col-w: min(var(--agent-width, var(--size-lg)), calc(100vw - var(--size-md)));
 }
 
-/* A length, so it can wait: the app narrows only once the sheet has drawn back over the part it gives up (the sheet's
-   own time, foundation/Sheet.module.css). Narrowing at once left a bare strip between the app's new edge and the
-   sheet's, still on its way. Closing, it widens at once, under the column, and the sheet travels back over it. */
-@property --ai-w { syntax: '<length>'; inherits: true; initial-value: 0px; }
-
-:global(html[data-agent-open]) {
+/* `data-agent-in` comes after `data-agent-open`, once the sheet has drawn back (Agent.tsx): the app narrows then. */
+:global(html[data-agent-in] :is([data-sheet], [data-app])) {
   --ai-w: var(--agent-col-w);
-  transition: --ai-w 0s linear var(--dur-slow);
-}
-
-/* Reduced motion (global.css) shortens a duration, not a wait. */
-:global(html[data-motion='reduced'][data-agent-open]) {
-  transition: none;
 }
 
 /* ≤ 760 px the chat covers the screen (1.0's D-114): the app keeps its width under it. */
 @media (max-width: 760px) {
-  :global(html[data-agent-open]) {
+  :global(html[data-agent-in] :is([data-sheet], [data-app])) {
     --ai-w: 0px;
   }
 }
@@ -118,7 +116,7 @@
     width: calc(100vw - 2 * var(--space-3) - var(--control-lg) - var(--space-6));
   }
 
-  :global(html) {
+  :global(:is([data-sheet], [data-app])) {
     --agent-col-w: 100%;
   }
 }

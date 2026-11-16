@@ -13,13 +13,11 @@
 // The rail (D-389): the HUD's tools on the left edge stay where they are, and while a column is docked the sheet draws
 // back off them too, so they're left on the ground beside it (`useSheetRail`, the HUD's).
 // The layers outlive the columns: when the last one leaves, the sheet still has to travel back.
-// Who reads them says so with `data-sheet` (the HUD's bar and rail, the foot's console and tabs, a docked column, the
-// layers here): the values are one rule for those in a style sheet of its own, never on the root. Written on <html>
-// they are inherited by everything, and each change had the browser work out the style of every element on the page
-// again, the canvas's thousands too, in the frame a panel opens (24 ms on a small canvas against 1).
+// Who reads them says so with `data-sheet`, and they are a rule for those, never on the root (pageValues.ts).
 import { useLayoutEffect, type RefObject } from 'react'
 import { isReducedMotion } from '../../state/motion'
 import { tokenPx } from '../../styles/cssToken'
+import { pageValue, setPageValue } from './pageValues'
 import styles from './Sheet.module.css'
 
 type Side = 'right' | 'left'
@@ -30,23 +28,8 @@ let layers: HTMLElement[] | null = null
 // Kept while the sheet travels home: the tools it drew back off are still there.
 let cut = 0
 
-const values = new Map<string, string>()
-let rule: CSSStyleRule | null = null
-// Written only when it changes.
-function put(name: string, value: string) {
-  if (values.get(name) === value) return
-  values.set(name, value)
-  if (!rule) {
-    const sheet = new CSSStyleSheet()
-    sheet.replaceSync('[data-sheet]{}')
-    document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]
-    rule = sheet.cssRules[0] as CSSStyleRule
-  }
-  rule.style.setProperty(name, value)
-}
-
 // The sheet's corner now, in px: 0 while it fills the window (the agent's tab keeps clear of it, as its CSS does).
-export const sheetRound = () => parseFloat(values.get('--sheet-round') ?? '') || 0
+export const sheetRound = () => parseFloat(pageValue('--sheet-round') ?? '') || 0
 
 function make(): HTMLElement[] {
   const ground = document.createElement('div')
@@ -88,7 +71,7 @@ function measure() {
   else if (!layers?.[0].hasAttribute('data-open')) cut = rails > 0 ? railW : 0
   if (!open && !layers) {
     // Known before the first column: the layers are made with the cut where it will be.
-    put('--sheet-cut', `${cut}px`)
+    setPageValue('--sheet-cut', `${cut}px`)
     return
   }
   // Made before the first move is written, and laid out once at rest: made in the same step they'd start where they
@@ -97,12 +80,12 @@ function measure() {
     layers = make()
     void layers[0].offsetWidth
   }
-  put('--sheet-x0', `${left || rail || gap}px`)
-  put('--sheet-x1', `${right || gap}px`)
-  put('--sheet-b', `${gap}px`)
-  put('--sheet-rail', `${rail}px`)
-  put('--sheet-round', `${round}px`)
-  put('--sheet-cut', `${cut}px`)
+  setPageValue('--sheet-x0', `${left || rail || gap}px`)
+  setPageValue('--sheet-x1', `${right || gap}px`)
+  setPageValue('--sheet-b', `${gap}px`)
+  setPageValue('--sheet-rail', `${rail}px`)
+  setPageValue('--sheet-round', `${round}px`)
+  setPageValue('--sheet-cut', `${cut}px`)
   for (const el of layers) {
     el.toggleAttribute('data-reduced', isReducedMotion())
     el.toggleAttribute('data-open', open)
@@ -111,13 +94,11 @@ function measure() {
 
 const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
 if (typeof window !== 'undefined') window.addEventListener('resize', measure)
-// A column can move without changing size: the right panel steps aside as the agent's column opens and closes
-// (`--ai-w`, set with `data-agent-open` on the root), and a dragged width is written on the root's style (D-378).
+// A column can move without changing size: the right panel steps aside as the agent's column opens and closes, and
+// again once the app has narrowed for it (`data-agent-open`, then `data-agent-in`, on the root: Agent.tsx). A dragged
+// width changes the column's own size, which `watch` sees.
 if (typeof MutationObserver !== 'undefined')
-  new MutationObserver(() => columns.size && measure()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-agent-open', 'style'] })
-// `--ai-w` waits for the sheet before it changes (Agent.module.css): what stands beside the agent's column moves then.
-if (typeof document !== 'undefined')
-  document.documentElement.addEventListener('transitionend', (e) => e.target === document.documentElement && columns.size && measure())
+  new MutationObserver(() => columns.size && measure()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-agent-open', 'data-agent-in'] })
 
 // A docked column is on the ground while `present` (false as soon as it starts leaving, so the sheet comes back as it
 // breaks apart, not after).

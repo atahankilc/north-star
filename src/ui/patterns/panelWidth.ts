@@ -1,10 +1,11 @@
 // How wide the right panels are (D-378): one width for all of them, dragged from a panel's left edge and remembered in
-// this browser. Written as `--panel-width` on <html>, so a drag restyles the panel and draws nothing; `--panel-w`, the
+// this browser. Written as `--panel-width` for the panels alone (pageValues.ts), so a drag restyles the panel and draws nothing; `--panel-w`, the
 // token, stays the width to start from. Never so wide on this window that it covers the dock at the foot's middle. What
 // keeps a card clear of the panel reads `sidePanelW()` when it moves.
 import { PANEL_W } from '../foundation/feel'
 import { tokenPx } from '../../styles/cssToken'
 import { keepLocal, readLocal } from '../../state/local'
+import { setPageValue } from '../foundation/pageValues'
 
 const STORE = 'northstar.panel.width'
 
@@ -17,7 +18,7 @@ let shown: number | null = null
 function show() {
   if (wanted === null) return
   shown = Math.round(Math.min(widest(), wanted))
-  document.documentElement.style.setProperty('--panel-width', `${shown}px`)
+  setPageValue('--panel-width', `${shown}px`)
 }
 
 // No storage (a private window): the usual width.

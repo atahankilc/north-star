@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const SRC = join(__dirname, '..', '..', 'src')
-const READS = /var\(--sheet-(x0|x1|b|rail|round|cut)\b/
+const READS = /var\(--(sheet-(x0|x1|b|rail|round|cut)|panel-width|agent-col-w)\b/
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -30,7 +30,7 @@ describe('what rides the sheet says so', () => {
   })
 
   it('nothing writes them on the root', () => {
-    const writers = all.filter((f) => /\.tsx?$/.test(f) && /documentElement\.style\.(set|get)Property(Value)?\(['"`]--sheet-/.test(readFileSync(f, 'utf8')))
+    const writers = all.filter((f) => /\.tsx?$/.test(f) && /documentElement\.style\.(set|get)Property(Value)?\(['"`]--(sheet-|panel-width|agent-width|ai-w)/.test(readFileSync(f, 'utf8')))
     expect(writers).toEqual([])
   })
 })
