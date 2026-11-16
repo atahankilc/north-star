@@ -2,6 +2,7 @@
 // split beside a plane) listened to the same three events and took them away again by hand.
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { DRAG_PX } from './feel'
+import { holdKeys } from './focus'
 
 // From a press on `e.currentTarget`: `move` hears every step, `end` the release (or a cancel). Only the main button.
 // The pointer is captured, so the drag goes on outside the element and over iframes.
@@ -35,6 +36,47 @@ export function pressDrag(move: (ev: PointerEvent) => void, end?: (ev: PointerEv
   window.addEventListener('pointermove', move)
   window.addEventListener('pointerup', up)
   window.addEventListener('pointercancel', up)
+}
+
+// A box drawn from a press (D-394): alt+drag on a plane or on a deck. `at` gives a pointer's place in the caller's own
+// px; `draw` hears the box as it grows, and `null` once it's over; `done` hears it when the pointer lets go. Escape
+// while drawing drops the box (it would reach the canvas and leave the focus), so does a cancel, and a box under
+// BOX_MIN across is a click, not a box: none of them selects anything.
+export type DragBox = { x0: number; y0: number; x1: number; y1: number }
+const BOX_MIN = 3
+type At = { clientX: number; clientY: number }
+export function boxDrag(e: At, at: (ev: At) => readonly [number, number], draw: (box: DragBox | null) => void, done: (box: { l: number; t: number; r: number; b: number }) => void) {
+  const [x0, y0] = at(e)
+  let last: DragBox = { x0, y0, x1: x0, y1: y0 }
+  draw(last)
+  let dropped = false
+  const esc = (ev: KeyboardEvent) => {
+    if (ev.key !== 'Escape') return
+    ev.preventDefault()
+    ev.stopImmediatePropagation()
+    dropped = true
+    draw(null)
+  }
+  // The keys are the box's while it's drawn: a view's own Escape (let go of what's picked) asks keysTaken and waits.
+  const free = holdKeys()
+  window.addEventListener('keydown', esc, true)
+  pressDrag(
+    (ev) => {
+      if (dropped) return
+      const [x1, y1] = at(ev)
+      last = { x0, y0, x1, y1 }
+      draw(last)
+    },
+    (ev) => {
+      window.removeEventListener('keydown', esc, true)
+      free()
+      draw(null)
+      if (dropped || ev.type === 'pointercancel') return
+      const [l, t, r, b] = [Math.min(last.x0, last.x1), Math.min(last.y0, last.y1), Math.max(last.x0, last.x1), Math.max(last.y0, last.y1)]
+      if (r - l < BOX_MIN && b - t < BOX_MIN) return
+      done({ l, t, r, b })
+    },
+  )
 }
 
 // A pan from a press on a view's empty space (D-186, D-217, D-361): the canvas, a plane in focus, a pane beside it.

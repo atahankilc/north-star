@@ -54,6 +54,7 @@ import { PeerTaskDrags } from '../canvas/collab'
 import { CARRIED, Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
 import { ThreadChip, threadOn } from '../threads/Threads'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
+import { boxDrag, type DragBox } from '../../../ui/foundation/dragPointer'
 import { dueText } from '../../../model/tasks'
 import { hasMeta, TaskSheet } from '../cards/TaskSheet'
 import { Assignee } from '../cards/Assignee'
@@ -187,8 +188,6 @@ export function selectTasks(piece: string, tasks: string[]) {
 // lane ('' without lanes), the place among that cell's tasks.
 type Over = { col: string; lane: string; index: number }
 type Drag = Held & { id: string; ids: string[]; over: Over | null }
-// A box being drawn with alt held (its px), from where it began to the pointer.
-type Box = { from: [number, number]; to: [number, number] }
 
 // `onTask`: a task picked (beside a plane, D-255: the plane glides to its card); `onCard`: a card picked on one holding
 // cards (D-268).
@@ -264,7 +263,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
   const board = useRef<HTMLDivElement>(null)
   const bd = useBoardDrag<Drag>(board)
   const { drag, setDrag, dragRef, local } = bd
-  const [box, setBox] = useState<Box | null>(null)
+  const [box, setBox] = useState<DragBox | null>(null)
 
   // What you're dragging, for the others (D-260): sent with your cursor, gone once let go.
   const sending = drag?.moving ? { id: drag.id, x: drag.at[0] - drag.grab[0], y: drag.at[1] - drag.grab[1], n: drag.ids.length } : null
@@ -397,33 +396,22 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
     if ((e.target as HTMLElement).closest('[data-task], button, input, textarea')) return
     e.stopPropagation()
     e.preventDefault()
-    const from = local(e.clientX, e.clientY)
     const keep = e.shiftKey ? (many ?? (selected ? [selected] : [])) : []
-    let to = from
-    setBox({ from, to })
-    const move = (ev: PointerEvent) => {
-      to = local(ev.clientX, ev.clientY)
-      setBox({ from, to })
-    }
-    const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
-      setBox(null)
-      const [x0, x1] = [Math.min(from[0], to[0]), Math.max(from[0], to[0])]
-      const [y0, y1] = [Math.min(from[1], to[1]), Math.max(from[1], to[1])]
-      const hit = [...(board.current?.querySelectorAll<HTMLElement>('[data-cell] [data-task]') ?? [])]
-        .filter((el) => {
-          const r = el.getBoundingClientRect()
-          const [a, b] = [local(r.left, r.top), local(r.right, r.bottom)]
-          return a[0] < x1 && b[0] > x0 && a[1] < y1 && b[1] > y0
-        })
-        .map((el) => el.dataset.task!)
-      selectTasks(piece.id, [...new Set([...keep, ...hit])])
-    }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    boxDrag(
+      e,
+      (ev) => local(ev.clientX, ev.clientY),
+      setBox,
+      ({ l, t, r, b }) => {
+        const hit = [...(board.current?.querySelectorAll<HTMLElement>('[data-cell] [data-task]') ?? [])]
+          .filter((el) => {
+            const at = el.getBoundingClientRect()
+            const [p, q] = [local(at.left, at.top), local(at.right, at.bottom)]
+            return p[0] < r && q[0] > l && p[1] < b && q[1] > t
+          })
+          .map((el) => el.dataset.task!)
+        selectTasks(piece.id, [...new Set([...keep, ...hit])])
+      },
+    )
   }
 
   // A click on a task: picked (its panel opens), or let go if it was.
@@ -583,7 +571,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
       {box && (
         <div
           className={styles.box}
-          style={{ left: Math.min(box.from[0], box.to[0]), top: Math.min(box.from[1], box.to[1]), width: Math.abs(box.to[0] - box.from[0]), height: Math.abs(box.to[1] - box.from[1]) }}
+          style={{ left: Math.min(box.x0, box.x1), top: Math.min(box.y0, box.y1), width: Math.abs(box.x1 - box.x0), height: Math.abs(box.y1 - box.y0) }}
           aria-hidden
         />
       )}

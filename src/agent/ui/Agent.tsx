@@ -52,6 +52,7 @@ import { PromptField } from '../../ui/primitives/PromptField'
 import { Num, Rule } from '../../ui/primitives/Rule'
 import { Label } from '../../ui/primitives/Label'
 import { NextIcon, PrevIcon } from '../../ui/primitives/hudIcons'
+import { keepLocal, readLocal } from '../../state/local'
 
 const WIDTH_STORE = 'northstar.agent.width'
 const W_MIN = 340
@@ -85,7 +86,7 @@ export function Agent() {
   // The app narrows beside the column (WorkspaceLayout.module.css `.app { right: var(--ai-w) }`).
   useLayoutEffect(() => {
     const h = document.documentElement
-    const w = Number(localStorage.getItem(WIDTH_STORE))
+    const w = Number(readLocal(WIDTH_STORE))
     if (w >= W_MIN && w <= W_MAX) h.style.setProperty('--agent-width', `${w}px`)
     if (mode !== 'column') return
     h.setAttribute('data-agent-open', '')
@@ -457,11 +458,7 @@ function resizeTo(e: PointerEvent) {
 
 function keepWidth() {
   const w = parseInt(document.documentElement.style.getPropertyValue('--agent-width'), 10)
-  try {
-    if (w) localStorage.setItem(WIDTH_STORE, String(w))
-  } catch {
-    // No storage (a private window): it's only for this time.
-  }
+  if (w) keepLocal(WIDTH_STORE, String(w))
 }
 
 // The model for this chat (agent.md §4.2): the person's pick in Settings, switchable here for this chat only.

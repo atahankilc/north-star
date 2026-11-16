@@ -48,7 +48,20 @@ export const isTyping = (t: EventTarget | null) =>
 // What can itself live in one (a deck in the tasks side view) passes `home`, its own element: the docked thing that
 // holds it is its own, any other still takes the keys.
 const HOLDS_KEYS = '[role=menu], [role=listbox], [aria-modal=true], [role=alertdialog], [data-coach]'
+// Something under way that owns the keys while it lasts (a box being drawn: its Escape drops the box, D-394, and isn't
+// a view's Escape letting go of what's picked). Gives back the way to let them go.
+let held = 0
+export function holdKeys() {
+  held++
+  let freed = false
+  return () => {
+    if (!freed) held--
+    freed = true
+  }
+}
+export const keysHeld = () => held > 0
 export function keysTaken(t: EventTarget | null, o: { docked?: boolean; home?: Element | null } = {}) {
+  if (held) return true
   if (isTyping(t)) return true
   if (!(t instanceof Element)) return false
   if (t.closest(HOLDS_KEYS)) return true

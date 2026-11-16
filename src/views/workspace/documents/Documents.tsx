@@ -16,6 +16,8 @@ import { roleOf } from '../../../data/workspaces'
 import { type Bounds, type PlaneCam } from '../../../state/canvasView'
 import { Select } from '../../../ui/patterns/Select'
 import { ago } from '../../../ui/foundation/ago'
+import { pressDrag } from '../../../ui/foundation/dragPointer'
+import { DRAG_PX } from '../../../ui/foundation/feel'
 import { useWs } from '../canvas/context'
 import { KindMark, lengthOf } from './DocContent'
 import { useOpenSize } from '../canvas/shownBox'
@@ -476,14 +478,11 @@ const dragOut = (docId: string) => (e: ReactPointerEvent<HTMLElement>) => {
   const [sx, sy] = [e.clientX, e.clientY]
   let moving = false
   const move = (ev: PointerEvent) => {
-    if (!moving && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 5) return
+    if (!moving && Math.hypot(ev.clientX - sx, ev.clientY - sy) < DRAG_PX) return
     moving = true
     useDocUi.setState({ drag: { docId, x: ev.clientX, y: ev.clientY } })
   }
   const up = (ev: PointerEvent) => {
-    window.removeEventListener('pointermove', move)
-    window.removeEventListener('pointerup', up)
-    window.removeEventListener('pointercancel', up)
     useDocUi.setState({ drag: null, dropped: moving && ev.type === 'pointerup' ? { docId, x: ev.clientX, y: ev.clientY } : null })
     // A drag isn't a click as well: the one that follows it (on the button or its row) goes nowhere.
     if (moving) {
@@ -495,9 +494,7 @@ const dragOut = (docId: string) => (e: ReactPointerEvent<HTMLElement>) => {
       setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 0)
     }
   }
-  window.addEventListener('pointermove', move)
-  window.addEventListener('pointerup', up)
-  window.addEventListener('pointercancel', up)
+  pressDrag(move, up)
 }
 
 // Files given to the workspace (dropped, or picked from `[upload]`): .md goes up now; anything else says why not.

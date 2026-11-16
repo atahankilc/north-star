@@ -38,6 +38,7 @@ import {
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { Select } from '../../../ui/patterns/Select'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
+import { followAdded } from '../canvas/followAdded'
 import { useWs } from '../canvas/context'
 import { SetupRow as Row, SetupShell } from '../canvas/SetupShell'
 import { setupOf, SETUP_TABS, StepSquare, type SetupTab } from './Matrix'
@@ -63,7 +64,11 @@ export type SetPart = <K extends keyof MatrixSetup>(part: K, value: MatrixSetup[
 export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
   const { wid, cards, cells } = useWs()
   const setup = setupOf(piece)
-  const part: SetPart = (k, v, key) => void setPart(wid, piece.id, k, v, key)
+  // A row or column added here: the matrix's view follows it in, as from its dashed cards (D-214, D-394).
+  const part: SetPart = (k, v, key) => {
+    if (k === 'rows' || k === 'cols') followAdded(piece.id)
+    void setPart(wid, piece.id, k, v, key)
+  }
   const count = { rows: tops(entriesOf(setup.rows, cards)).length, cols: tops(entriesOf(setup.cols, cards)).length }
   // Taking a typed entry out takes its cells too, as its `×` on the table does.
   const removeItem = (which: 'rows' | 'cols', item: AxisItem) =>

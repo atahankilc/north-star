@@ -16,6 +16,7 @@
 import type { AgentEnv, AgentModel, Usage } from './contract'
 import { openaiModel, type Effort } from './openai'
 import { SEARCH_PRICE } from './web'
+import { readLocal } from '../state/local'
 
 // `well`: passes the eval suite; `struggles`: answers well, may struggle with big changes; `unknown`: not measured.
 export type Fit = 'well' | 'struggles' | 'unknown'
@@ -147,7 +148,7 @@ export function devStubWanted(): boolean {
   if (!import.meta.env.DEV) return false
   try {
     if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('agentStub') === '1') return true
-    return typeof localStorage !== 'undefined' && localStorage.getItem('northstar.agentStub') === '1'
+    return readLocal('northstar.agentStub') === '1'
   } catch {
     return false
   }

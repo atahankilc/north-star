@@ -405,7 +405,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
     const follow = (ev: { clientX: number; clientY: number }) => {
       const d = dragRef.current
       if (!d) return
-      const moving = d.moving || Math.hypot(ev.clientX - d.from[0], ev.clientY - d.from[1]) > 4
+      const moving = d.moving || Math.hypot(ev.clientX - d.from[0], ev.clientY - d.from[1]) >= DRAG_PX
       if (!moving) return
       const by = Math.floor(dayAt(ev.clientX)) - d.day0
       const lr = timeLayer.current!.getBoundingClientRect()
@@ -461,16 +461,13 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
     const el = board.current!
     el.dataset.panning = 'true'
     const move = (ev: PointerEvent) => {
-      if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > 4) moved = true
+      if (Math.hypot(ev.clientX - sx, ev.clientY - sy) >= DRAG_PX) moved = true
       const t = performance.now()
       v = (ev.clientX - lx) / Math.max(1, t - lt)
       ;[lx, lt] = [ev.clientX, t]
       setStrip(piece.id, { from: start.from - (ev.clientX - sx) / s / ppd, top: Math.max(0, Math.min(maxTopRef.current, start.top - (ev.clientY - sy) / s)) })
     }
     const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
       delete el.dataset.panning
       if (!moved) return void useKanbanUi.setState({ selected: null, many: null })
       if (isReducedMotion() || performance.now() - lt > 60) return
@@ -486,9 +483,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
       raf = requestAnimationFrame(decay)
       motion.set(piece.id, () => cancelAnimationFrame(raf))
     }
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    pressDrag(move, up)
   }
 
   // The overview: a press jumps there (glides), a drag on its window moves along.

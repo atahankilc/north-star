@@ -9,6 +9,7 @@ import type { Effort } from '../openai'
 import { DEFAULT_EFFORT } from '../models'
 
 import { KNOWN_MODELS, suggestedFor, type ProviderId } from '../models'
+import { keepLocal, readLocal } from '../../state/local'
 
 export const KEY_STORE = 'northstar.agent.openaiKey'
 export const ANTHROPIC_KEY_STORE = 'northstar.agent.anthropicKey'
@@ -20,22 +21,9 @@ export const MODELS_STORE = 'northstar.agent.models'
 
 export const EFFORTS: readonly Effort[] = ['low', 'medium', 'high']
 
-const read = (k: string): string => {
-  try {
-    return localStorage.getItem(k) ?? ''
-  } catch {
-    return ''
-  }
-}
-
-const write = (k: string, v: string | null) => {
-  try {
-    if (v === null || v === '') localStorage.removeItem(k)
-    else localStorage.setItem(k, v)
-  } catch {
-    // Storage blocked: the setting lasts for this tab only.
-  }
-}
+// Through state/local.ts: storage blocked, nothing is read and the setting lasts for this tab only.
+const read = (k: string): string => readLocal(k) ?? ''
+const write = (k: string, v: string | null) => keepLocal(k, v || null)
 
 const readModels = (store = MODELS_STORE): string[] => {
   try {

@@ -18,10 +18,11 @@ import { cellKey, cellRef, meets, readCell, relevant, subKey } from '../../../da
 import { kindOfPiece } from '../../../data/pieces'
 import { deleteField } from 'firebase/firestore'
 import { deleteEdge, FOR } from '../../../data/edges'
+import { linkLabel } from '../../../model/edges'
 import { mismatch } from '../../../data/evidence'
 import { PanelSection } from '../../../ui/patterns/SidePanel'
 import { Select } from '../../../ui/patterns/Select'
-import { CardPicker, goToCard, KIND_LABEL, PLACEHOLDER, type P } from './CardPanel'
+import { CardPicker, goToCard, PLACEHOLDER, type P } from './CardPanel'
 import { createEdge } from '../../../data/edges'
 import { useWs } from '../canvas/context'
 import { useCanvasView } from '../../../state/canvasView'
@@ -450,7 +451,7 @@ export function RestsOn({ n, card, cards, editor }: P) {
           <PanelRow
             tone={linkTone(e.kind)}
             card={CARD_TONE[c.type]}
-            kind={e.fromId === card.id ? `${KIND_LABEL[e.kind] ?? e.kind} →` : `← ${KIND_LABEL[e.kind] ?? e.kind}`}
+            kind={e.fromId === card.id ? `${linkLabel(e.kind)} →` : `← ${linkLabel(e.kind)}`}
             name={c.title || PLACEHOLDER.idea}
             onGo={() => goToCard(c)}
             type={status(c)}

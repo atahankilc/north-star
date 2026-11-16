@@ -7,6 +7,7 @@ import { createElement as h, useRef, type RefObject } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { act } from 'react'
 import { useEscapeLayer } from '../../src/ui/foundation/useEscapeLayer'
+import { holdKeys } from '../../src/ui/foundation/focus'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -127,5 +128,14 @@ describe('useEscapeLayer', () => {
     draw([{ name: 'following', first: true, on: false }, { name: 'panel' }])
     esc()
     expect(heard).toEqual(['following', 'panel'])
+  })
+  it('waits while something holds the keys (a box being drawn, D-394)', () => {
+    draw([{ name: 'a' }])
+    const free = holdKeys()
+    esc()
+    expect(heard).toEqual([])
+    free()
+    esc()
+    expect(heard).toEqual(['a'])
   })
 })

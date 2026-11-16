@@ -29,3 +29,12 @@ export function keepLocal(key: string, value: string | null) {
     // Not kept: it applies for this tab only.
   }
 }
+
+// Everything kept under names starting with `prefix`, taken away (a setting no longer kept in the browser).
+export function forgetLocal(prefix: string) {
+  try {
+    for (const k of Object.keys(localStorage)) if (k.startsWith(prefix)) localStorage.removeItem(k)
+  } catch {
+    // Nothing kept, nothing to take away.
+  }
+}

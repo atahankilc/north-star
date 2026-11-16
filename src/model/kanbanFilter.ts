@@ -4,7 +4,7 @@
 // Sunday), or with no day; FOR keeps tasks for a type of card, a card, or no card; LABEL keeps tasks with one of the
 // labels. Within one, any of the picks; across them, all. Nothing picked, everything.
 import type { AnyType } from './cards'
-import { today } from './tasks'
+import { overdue, today } from './tasks'
 import type { Task } from '../data/tasks'
 
 export type DueKey = 'past' | 'today' | 'week' | 'none'
@@ -28,7 +28,7 @@ export function passes(t: Task, f: KanbanFilter, finished: boolean, me: string |
   if (f.due.length) {
     const day = today()
     const ok = f.due.some((d) =>
-      d === 'none' ? !t.due : d === 'past' ? !!t.due && !finished && t.due < day : d === 'today' ? t.due === day : !!t.due && t.due >= day && t.due <= weekEnd(),
+      d === 'none' ? !t.due : d === 'past' ? overdue(t, finished, day) : d === 'today' ? t.due === day : !!t.due && t.due >= day && t.due <= weekEnd(),
     )
     if (!ok) return false
   }

@@ -4,6 +4,7 @@
 // keeps a card clear of the panel reads `sidePanelW()` when it moves.
 import { PANEL_W } from '../foundation/feel'
 import { tokenPx } from '../../styles/cssToken'
+import { keepLocal, readLocal } from '../../state/local'
 
 const STORE = 'northstar.panel.width'
 
@@ -19,12 +20,9 @@ function show() {
   document.documentElement.style.setProperty('--panel-width', `${shown}px`)
 }
 
-try {
-  const kept = Number(localStorage.getItem(STORE))
-  if (kept >= PANEL_W.min && kept <= PANEL_W.max) ((wanted = kept), show())
-} catch {
-  // No storage (a private window): the usual width.
-}
+// No storage (a private window): the usual width.
+const kept = Number(readLocal(STORE))
+if (kept >= PANEL_W.min && kept <= PANEL_W.max) ((wanted = kept), show())
 window.addEventListener('resize', show)
 
 export const sidePanelW = () => shown ?? tokenPx('--panel-w')
@@ -36,9 +34,5 @@ export function dragPanelWidth(edge: number, x: number) {
 }
 
 export function keepPanelWidth() {
-  try {
-    if (wanted !== null) localStorage.setItem(STORE, String(Math.round(wanted)))
-  } catch {
-    // No storage (a private window): it's only for this time.
-  }
+  if (wanted !== null) keepLocal(STORE, String(Math.round(wanted)))
 }

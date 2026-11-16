@@ -3,7 +3,7 @@
 import { CARD_TYPES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, PRIORITIES, VALIDATIONS, type AnyType } from './cards'
 import { AVAILABILITIES, CARD_FIELDS, CELL_KINDS, COL_W, CONFIDENCES, CRITERION_SCORES, DOC_COLS, DOC_KINDS, DOC_LIMITS, EVIDENCE_KINDS, FIELDS, OWN_KINDS, TONES, TOTALS_AS, TOTALS_AT, UNFOLDS } from './shapes'
 import { bytesOf as bytes } from './notes'
-import { AUTHOR_NAME_MAX, AXIS_NOUN_MAX, BOX_NAMES_MAX, BOX_NAME_MAX, CATEGORY_MAX, CELL_NOTES_MAX, CELL_TEXT_MAX, CHECKS_MAX, CHECK_MAX, COL_NAME_MAX, CRITERION_MAX, EVIDENCE_TEXT_MAX, FACT_MAX, GLYPH_MAX, KANBAN_COLS_MAX, KICKER_MAX, LABELS_MAX, LIMIT_MAX, REGIONS_MAX, REGION_MAX, TAGS_MAX, TAG_MAX, LABEL_MAX, LINK_LABEL_MAX, LONG_TEXT_MAX, MATRIX_NAME_MAX, PIECE_NAME_MAX, SOURCE_MAX, STEP_LABEL_MAX, TABLE_COL_NAME_MAX, TASK_NOTES_MAX, TASK_TITLE_MAX, TITLE_MAX, UNIT_MAX, URL_MAX } from './limits'
+import { AUTHOR_NAME_MAX, AXIS_NOUN_MAX, BOX_NAMES_MAX, BOX_NAME_MAX, CANVAS_NAME_MAX, CATEGORY_MAX, CELL_NOTES_MAX, CELL_TEXT_MAX, CHECKS_MAX, CHECK_MAX, COL_NAME_MAX, CRITERION_MAX, EVIDENCE_TEXT_MAX, FACT_MAX, GLYPH_MAX, KANBAN_COLS_MAX, KICKER_MAX, LABELS_MAX, LIMIT_MAX, REGIONS_MAX, REGION_MAX, TAGS_MAX, TAG_MAX, LABEL_MAX, LINK_LABEL_MAX, LONG_TEXT_MAX, MATRIX_NAME_MAX, PIECE_NAME_MAX, SOURCE_MAX, STEP_LABEL_MAX, TABLE_COL_NAME_MAX, TASK_NOTES_MAX, TASK_TITLE_MAX, TITLE_MAX, UNIT_MAX, URL_MAX } from './limits'
 import { newId } from './scales'
 import { textMax } from './labels'
 import { RULE_FIELDS } from './source'
@@ -390,6 +390,22 @@ export function cleanPlace(d: Raw, now: number) {
   const y = num(d.y)
   if (x === undefined || y === undefined) return null
   return compact({ x, y, folded: yes(d.folded), createdAt: num(d.createdAt) ?? now })
+}
+
+// One of the workspace's canvases (D-302; D-394), without its id or who made it: a name, and its place in the order
+// (one that lost its order goes first: the rules need a number).
+export function cleanCanvas(d: Raw, now: number) {
+  const name = typeof d.name === 'string' ? d.name.trim().slice(0, CANVAS_NAME_MAX) : ''
+  if (!name) return null
+  return { name, order: num(d.order) ?? 0, createdAt: num(d.createdAt) ?? now }
+}
+
+// A piece's spot on a canvas besides its own (D-302), without the two (their new ids are the importer's).
+export function cleanSpot(d: Raw, now: number) {
+  const x = num(d.x)
+  const y = num(d.y)
+  if (x === undefined || y === undefined) return null
+  return { x, y, createdAt: num(d.createdAt) ?? now }
 }
 
 // One of a kanban's tasks (D-251), without its kanban, its card or who made it; who it was given to stays behind (the

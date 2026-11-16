@@ -2,6 +2,7 @@
 // from what the workspace holds, so each one has something to answer. The skills (S17) are listed beside them (Agent.tsx FirstSkills).
 import type { WorkspaceCtx } from '../../state/wsStore'
 import { kindOfPiece } from '../../model/pieces'
+import { doneCols, isFinished, overdue } from '../../model/tasks'
 
 const q = (s: string | undefined, n = 28) => {
   const flat = (s ?? '').replace(/\s+/g, ' ').trim()
@@ -16,9 +17,10 @@ export function firstAsks(ws: WorkspaceCtx | null, focus?: string | null): strin
   const problems = ws.cards.filter((c) => c.type === 'problem')
   const backed = new Set(ws.evidence.map((e) => e.nodeId))
   if (problems.length) out.push(problems.some((c) => !backed.has(c.id)) ? 'which problems have no evidence yet?' : 'which problems are we least sure about?')
-  const today = new Date().toISOString().slice(0, 10)
+  // Late as a deck says it (model/tasks.ts): this person's day, never a finished task.
+  const done = doneCols(ws.pieces.filter((p) => p.kind === 'kanban'))
   const decks = named('kanban')
-  const late = decks.find((d) => ws.tasks.some((t) => t.pieceId === d.id && t.due && t.due < today))
+  const late = decks.find((d) => ws.tasks.some((t) => t.pieceId === d.id && overdue(t, isFinished(t, done))))
   const deck = late ?? decks.find((d) => ws.tasks.some((t) => t.pieceId === d.id))
   if (deck) out.push(late ? `what's late on "${q(deck.name)}"?` : `what's next on "${q(deck.name)}"?`)
   if (plane) out.push(`summarise "${q(plane.name)}"`)

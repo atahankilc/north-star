@@ -81,6 +81,7 @@ import { CONSOLE_FILL, DRAG_PX, KIND_WORD_ZOOM, PLANE_FIT_MAX, wheelStep, zoomAt
 import { PIECE_GLYPH } from './glyphs'
 import { tokenPx } from '../../../styles/cssToken'
 import type { PieceKind } from '../../../data/model'
+import { PIECE_TONE } from '../../../ui/foundation/pieceTone'
 import { panPointer, pressDrag } from '../../../ui/foundation/dragPointer'
 import { keysTaken } from '../../../ui/foundation/focus'
 import { stuckChain } from '../../../model/pieceMoves'
@@ -1430,17 +1431,6 @@ function numberOf(name: string | undefined): { num: string; rest: string } {
   return m ? { num: m[1], rest: m[2] ?? '' } : { num: '', rest: name ?? '' }
 }
 
-// A piece's kind's colour (D-263): its marks' tone now, its band later.
-const KIND_TONE: Record<string, string> = {
-  plane: 'var(--fg)',
-  matrix: 'var(--link-solves)',
-  table: 'var(--link-part)',
-  kanban: 'var(--link-draws)',
-  documents: 'var(--link-depends)',
-  document: 'var(--link-depends)',
-  timeline: 'var(--link-competes)',
-}
-
 // Its kind's tab (D-365): its icon and word.
 function KindTab({ kind }: { kind: PieceKind }) {
   return (
@@ -1667,7 +1657,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
   const carried = moving
     ? { translate: `${moving.free[0] - left}px ${moving.free[1] - top}px`, scale: `${CARRIED}`, transformOrigin: `${moving.at[0]}px ${moving.at[1]}px` }
     : carriedStyle(shift, [box.x, box.y])
-  const tone = KIND_TONE[kind]
+  const tone = PIECE_TONE[kind]
   const numbered = numberOf(name)
   const nameRef = useRef<HTMLSpanElement | null>(null)
   useNameFills(nameRef, box.w, zoom, `${name} ${editing} ${piece.canvases?.length}`)
@@ -1689,7 +1679,7 @@ function PieceBoxOf({ piece, shown, live, zoom, selected, editing, editor, onFoc
       // A matrix in focus is its focused copy's: the one here would show under it as it glides.
       data-away={bare && focusing ? true : undefined}
       // --z: the canvas's zoom, so the name holds its size on the screen (D-223).
-      style={{ ...carried, left, top, width: box.w, height: box.h, ['--cs' as string]: consoleScale(zoom), ['--name-size' as string]: `${nameSize(zoom)}px`, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px`, ['--z' as string]: zoom }}
+      style={{ ...carried, left, top, width: box.w, height: box.h, ['--cs' as string]: consoleScale(zoom), ['--name-size' as string]: `${nameSize(zoom)}px`, ['--mark' as string]: `${step}px`, ['--mx' as string]: `${inner.ox - step / 2}px`, ['--my' as string]: `${inner.oy - step / 2}px`, ['--z' as string]: zoom, ['--kind' as string]: tone }}
       ref={self}
       onPointerDown={(e) => (tap(e), press('move')(e))}
       onPointerEnter={(e) => (hover(true)(), e.pointerType !== 'touch' && setPointed(true))}

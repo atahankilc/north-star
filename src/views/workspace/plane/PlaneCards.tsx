@@ -17,7 +17,7 @@ import { CARD, copyCards, foldCard, foldPackage, moveCard, moveCards, spotRef, t
 import { planeOf } from '../../../data/places'
 import { clipboard, deleteHere, heldAt, onPlane, pasteSame, selectedIds, setSelection, startGroupDrag, startMove, toggleSelected, useLanding } from '../canvas/selection'
 import { toggleGuides, toggleSnap, useGuides } from '../canvas/guides'
-import { groupOf, keep, useFilter } from '../canvas/planeFilter'
+import { keep, useFilter } from '../canvas/planeFilter'
 import { useSearchParams } from 'react-router-dom'
 import { useHistory } from '../../../data/history'
 import { labelRef, moveMany } from '../../../data/labels'
@@ -40,6 +40,7 @@ import { useWs, useWsNow } from '../canvas/context'
 import { useStill } from '../canvas/still'
 import { factsOf, useTaskTally, type Facts } from './cardFacts'
 import { createEdge, defaultKind } from '../../../data/edges'
+import { linkGroup } from '../../../model/edges'
 import { drawLinks, ghostOf, LinkChips, LinkLines } from './PlaneLinks'
 import { learn } from '../../../onboarding/learn'
 import styles from './PlaneCards.module.css'
@@ -47,7 +48,7 @@ import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { PackageBand, PlaneCard, type Detail } from '../cards/PlaneCard'
 import { keysTaken } from '../../../ui/foundation/focus'
-import { pressDrag } from '../../../ui/foundation/dragPointer'
+import { boxDrag, pressDrag, type DragBox } from '../../../ui/foundation/dragPointer'
 export type { Detail }
 
 // How a card is drawn by how big it is on screen (D-111, D-153): everything while its small text (8 px) is 4 px or more;
@@ -83,7 +84,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   const detail = useCanvasView((s) => detailAt(view.zoom * (live || still ? 1 : (s.cams[wid]?.zoom ?? 1)), was.current))
   was.current = detail
   const [params] = useSearchParams()
-  const [box, setBox] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null)
+  const [box, setBox] = useState<DragBox | null>(null)
   // Alt+drag on the plane draws a box: the cards and text it touches are selected (with shift, added).
   // Picking a package's cards (D-240): a drag on the plane draws the box without alt, adding to what's picked.
   const packing = useCanvasView((s) => live && !!s.packing && s.packing === params.get('focus'))
@@ -92,35 +93,8 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
     e.stopPropagation()
     const r = e.currentTarget.getBoundingClientRect()
     const at = (ev: { clientX: number; clientY: number }) => toPlane(view, ev.clientX - r.left, ev.clientY - r.top)
-    const [x0, y0] = at(e)
     const keep = e.shiftKey || packing ? selectedIds() : []
-    let last = { x0, y0, x1: x0, y1: y0 }
-    setBox(last)
-    // Escape while drawing drops the box (it used to reach the canvas and leave the focus); so does a cancel.
-    let dropped = false
-    const esc = (ev: KeyboardEvent) => {
-      if (ev.key !== 'Escape') return
-      ev.preventDefault()
-      ev.stopImmediatePropagation()
-      dropped = true
-      setBox(null)
-    }
-    window.addEventListener('keydown', esc, true)
-    const move = (ev: PointerEvent) => {
-      if (dropped) return
-      const [x1, y1] = at(ev)
-      last = { x0, y0, x1, y1 }
-      setBox(last)
-    }
-    const up = (ev: PointerEvent) => {
-      window.removeEventListener('keydown', esc, true)
-      setBox(null)
-      if (dropped || ev.type === 'pointercancel') return
-      const [l, t, rr, b] = [Math.min(last.x0, last.x1), Math.min(last.y0, last.y1), Math.max(last.x0, last.x1), Math.max(last.y0, last.y1)]
-      if (rr - l < 3 && b - t < 3) return
-      setSelection([...new Set([...keep, ...onPlane.hit({ l, t, r: rr, b }, packing)])])
-    }
-    pressDrag(move, up)
+    boxDrag(e, at, setBox, (box) => setSelection([...new Set([...keep, ...onPlane.hit(box, packing)])]))
   }
   return (
     <div className={styles.layer} data-live={live || undefined} data-packing={packing || undefined} onPointerDown={boxSelect}>
@@ -227,7 +201,7 @@ function PlaneInside({ cards, labels, zoom, detail, live, editor, still, box }: 
     (e) =>
       // Both ends folded into the same thing (a feature's parts, a package's cards, D-240): inside it, not drawn.
       outer(e.fromId) === outer(e.toId) ||
-      (filter.links.includes(groupOf(e.kind)) && before.has(e.id) && e.id !== linkSel && !lit.includes(e.fromId) && !lit.includes(e.toId)),
+      (filter.links.includes(linkGroup(e.kind)) && before.has(e.id) && e.id !== linkSel && !lit.includes(e.fromId) && !lit.includes(e.toId)),
   )
   // Cards inside an unfolded package's frame that aren't in it (D-242): drawn faint, so the frame says who's in.
   const outsiders = new Set<string>()

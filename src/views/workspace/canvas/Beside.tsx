@@ -179,7 +179,7 @@ function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
       aria-label={`${piece.name || KIND_NAME[kind]}, beside the plane`}
     >
       {kind === 'matrix' ? (
-        <MatrixView piece={piece} view={view} live editor={editor} />
+        <MatrixView piece={piece} view={view} live editor={editor} onView={setView} />
       ) : (
         <TableView piece={piece} view={view} live editor={editor} onCard={toCard} onView={setView} />
       )}

@@ -51,6 +51,7 @@ import {
 } from '../../../data/matrix'
 import { fitInto, glide, useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
+import { followAdded, useFollowAdded } from '../canvas/followAdded'
 import { useWs } from '../canvas/context'
 import { alikeProps, useKept } from '../canvas/kept'
 import { useSeen, within } from '../canvas/visible'
@@ -151,9 +152,10 @@ const selKey = SEL.key
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
 
 // `onCanvas`: live on the canvas itself, opened there (D-228): its heads never stick, nothing cut at its edge.
-type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean }
+// `onView`: a pane's own view (beside a plane, D-211), moved when a row or column added there is glided to.
+type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onView?: (v: PlaneCam) => void }
 
-export function MatrixView({ piece, view, live, editor, onCanvas = false }: Props) {
+export function MatrixView({ piece, view, live, editor, onCanvas = false, onView }: Props) {
   const { wid, cards, cells } = useWs()
   const still = useStill()
   // Marks and chips at screen size take the zoom once it settles (D-278): a wheel step restyles none of them.
@@ -197,32 +199,23 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
     ro.observe(el)
     return () => ro.disconnect()
   }, [live])
-  // A row or column just added from its dashed card: the view glides to bring it to the middle (D-214).
-  const centre = useRef<'rows' | 'cols' | null>(null)
-
-
   const write = (row: string, col: string, fields: Parameters<typeof setCell>[4]) => void setCell(wid, piece.id, row, col, fields)
   // A card's head clicked: the card selected, its panel open as on its plane (LensCardPanel).
   const picked = useCanvasView((s) => (live ? s.cardSelected : null))
   const pick = (card: Card) => useCanvasView.setState({ cardSelected: card.id, labelSelected: null })
   const stepTo = (row: string, col: string, i: number | undefined) => write(row, col, { value: i === undefined ? undefined : setup.steps[i]?.id })
 
-  // The one just added, brought to the middle: a row up or down, a column across. Only on the focus's own view (a pane
-  // beside a plane has its own).
-  useEffect(() => {
-    const which = centre.current
+  // A row or column you just added (followAdded: from its dashed card or its setup), brought to the middle: a row up or
+  // down, a column across (D-214). On the focus's own view, or a pane's beside a plane (`onView`).
+  useFollowAdded(piece.id, live, rows.map((r) => r.key), cols.map((c) => c.key), (ri, ci) => {
     const el = layer.current
-    const { planeCam } = useCanvasView.getState()
-    if (!which || !el || !live || planeCam !== view) return
-    centre.current = null
-    const to =
-      which === 'rows'
-        ? { ...view, oy: el.clientHeight / 2 - (L.rowY(rows.length - 1) + M.row / 2) * view.zoom }
-        : { ...view, ox: el.clientWidth / 2 - (L.colX(cols.length - 1) + M.cell / 2) * view.zoom }
-    glide(view, to, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
-    // When one comes in.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows.length, cols.length])
+    const move = onView ?? (useCanvasView.getState().planeCam === view ? (v: PlaneCam) => useCanvasView.setState({ planeCam: v }) : null)
+    if (!el || !move) return false
+    let to = view
+    if (ri >= 0) to = { ...to, oy: el.clientHeight / 2 - (L.rowY(ri) + M.row / 2) * view.zoom }
+    if (ci >= 0) to = { ...to, ox: el.clientWidth / 2 - (L.colX(ci) + M.cell / 2) * view.zoom }
+    glide(view, to, DUR.glide, move)
+  })
   // Leaving focus closes its setup (its own, never another piece's: D-392) and ends a naming.
   useSetupClosesOnLeave(piece.id, live)
   useEffect(() => {
@@ -411,7 +404,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false }: Prop
   const stick = (live || still) && !onCanvas
   const dy = stick ? Math.min(Math.max(0, (stickTop - view.oy) / view.zoom), Math.max(0, L.addY - M.top)) : 0
   const dx = stick ? Math.min(Math.max(0, (stickLeft - view.ox) / view.zoom), Math.max(0, L.addX - M.head)) : 0
-  const added = (which: 'rows' | 'cols') => (centre.current = which)
+  const added = () => followAdded(piece.id)
 
   return (
     <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>

@@ -7,6 +7,7 @@ import { deleteField, doc, onSnapshot, setDoc, type DocumentSnapshot } from 'fir
 import { firebase } from './firebase'
 import { cleanSeenState, mergeSeenState, type SeenState } from '../onboarding/seenMerge'
 import { SANDBOX_KEY } from '../onboarding/devSandbox'
+import { keepLocal, readLocal } from '../state/local'
 
 const localKey = (uid: string) => `north-star:onboarding:${uid}`
 
@@ -14,7 +15,7 @@ const seenRef = (uid: string) => doc(firebase!.firestore, 'users', uid, 'private
 
 export function readLocalSeen(uid: string): SeenState | null {
   try {
-    const raw = localStorage.getItem(localKey(uid))
+    const raw = readLocal(localKey(uid))
     return raw ? cleanSeenState(JSON.parse(raw)) : null
   } catch {
     // Storage blocked or a broken value: as if nothing was kept.
@@ -27,11 +28,8 @@ export function readLocalSeen(uid: string): SeenState | null {
 export function writeLocalSeen(uid: string, s: SeenState): SeenState {
   const kept = readLocalSeen(uid)
   const out = kept ? mergeSeenState(s, kept) : s
-  try {
-    localStorage.setItem(localKey(uid), JSON.stringify(out))
-  } catch {
-    // Not kept in this browser; Firestore still has it.
-  }
+  // Not kept in this browser (storage blocked): Firestore still has it.
+  keepLocal(localKey(uid), JSON.stringify(out))
   return out
 }
 

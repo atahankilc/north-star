@@ -6,13 +6,13 @@
 import { cardsOn, elsewhere, type Place } from '../../../data/places'
 import { addCard, copyCards, foldCard, foldPackage, type Card, type CardType, CARD_TYPES } from '../../../data/cards'
 import { deleteEdge, reverseEdge, updateEdge, type Edge } from '../../../data/edges'
+import { LINK_KINDS } from '../../../model/edges'
 import { addLabel, deleteLabel, PARA_W, STICKY_W, type Label } from '../../../data/labels'
 import { snap, GRID } from '../../../data/grid'
 import { useCanvasView } from '../../../state/canvasView'
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { TEXT_GLYPH } from './glyphs'
 import { linkTone } from '../plane/PlaneLinks'
-import { LINK_GROUPS } from './planeFilter'
 import { clipboard, deleteHere, onPlane, packageThese, pasteSame, selectedIds, setSelection } from './selection'
 import { foldsOf } from '../plane/cardInside'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
@@ -148,7 +148,7 @@ export function linkItems(c: Ctx, id: string): PromptEntry[] {
     { key: 'label', label: e.label ? 'edit its label' : 'add a label', glyph: '✎', letter: 'l', onSelect: () => useCanvasView.setState({ linkSelected: id, linkLabelling: true, cardSelected: null, labelSelected: null }) },
     ...(e.kind === 'for' ? [] : [{ key: 'rev', label: 'turn it round', glyph: '⇄', letter: 'r', onSelect: () => void reverseEdge(c.wid, e) }]),
     { key: 'kind', heading: 'kind' },
-    ...LINK_GROUPS.map((g) => ({ key: `k-${g.kind}`, label: g.label, glyph: '━', tone: linkTone(g.kind), checked: e.kind === g.kind, onSelect: () => void updateEdge(c.wid, id, { kind: g.kind }) })),
+    ...LINK_KINDS.map((g) => ({ key: `k-${g.kind}`, label: g.label, glyph: '━', tone: linkTone(g.kind), checked: e.kind === g.kind, onSelect: () => void updateEdge(c.wid, id, { kind: g.kind }) })),
     { key: 'del', label: 'remove', glyph: '×', danger: true, onSelect: () => void deleteEdge(c.wid, id) },
   ]
 }

@@ -20,7 +20,8 @@ export function today(now = new Date()) {
   return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`
 }
 // Past its due day and not finished.
-export const overdue = (t: Pick<Task, 'due'>, finished: boolean) => !!t.due && !finished && t.due < today()
+// `day`: today as the reader has it (the agent's reads take theirs from the workspace they were given).
+export const overdue = (t: Pick<Task, 'due'>, finished: boolean, day = today()) => !!t.due && !finished && t.due < day
 
 // A due day as a task says it: `today`, `tomorrow`, `yesterday`, else `28 oct` (the year only when it isn't this one)
 // (D-358: one home for the task's words, read by the deck, the timeline and the panels).

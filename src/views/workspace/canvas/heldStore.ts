@@ -4,15 +4,12 @@
 // Never kept in the browser: what an older version kept under `oldPrefix` is taken away once.
 import { useEffect } from 'react'
 import { create } from 'zustand'
+import { forgetLocal } from '../../../state/local'
 
 export function makeHeldStore<K extends string, T>(key: K, fallback: T, oldPrefix: string) {
   type State = Record<K, Record<string, T>>
   const store = create<State>(() => ({ [key]: {} }) as State)
-  try {
-    for (const k of Object.keys(localStorage)) if (k.startsWith(oldPrefix)) localStorage.removeItem(k)
-  } catch {
-    // Private windows: nothing kept.
-  }
+  forgetLocal(oldPrefix)
   const held = new Map<string, number>()
   const drop = (id: string) =>
     store.setState((s) => {

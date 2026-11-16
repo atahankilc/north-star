@@ -261,6 +261,8 @@ describe('the read layer: what the tools say', () => {
     expect(query(ws, ids, { status: 'validate' }).text).toMatch(/status "validate" isn't one; use hypothesis/)
     expect(query(ws, ids, { kind: 'task', column: 'nope' }).text).toMatch(/column "nope" isn't one/)
     expect(query(ws, ids, { kind: 'task', due_before: 'next friday' }).text).toMatch(/isn't a day; write YYYY-MM-DD \(today is 2026-11-03\)/)
+    // A day that isn't on the calendar is no day (model/tasks.ts' isDay, D-394).
+    expect(query(ws, ids, { kind: 'task', due_before: '2026-13-45' }).text).toMatch(/due_before "2026-13-45" isn't a day/)
     expect(query(ws, ids, { kind: 'text', status: 'testing' }).text).toMatch(/status doesn't apply to texts/)
     expect(query(ws, ids, { tag: 'nosuchtag' }).text).toMatch(/tag "nosuchtag" isn't one; use smb/)
   })

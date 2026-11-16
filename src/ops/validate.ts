@@ -12,7 +12,7 @@ import { CARD_COLLECTION, CARD_TYPES, type AnyType } from '../model/cards'
 import { CANVAS } from '../model/labels'
 import { MAIN } from '../model/canvases'
 import { TYPE_OF_COLLECTION, WS_COLLECTIONS, type RawDoc } from '../model/fromDocs'
-import { cleanCard, cleanCell, cleanComparison, cleanCompetitorFeature, cleanEdge, cleanEvidence, cleanLabel, cleanPiece, cleanPlace, cleanTask, type Ids, type Raw } from '../model/clean'
+import { cleanCanvas, cleanCard, cleanCell, cleanComparison, cleanCompetitorFeature, cleanEdge, cleanEvidence, cleanLabel, cleanPiece, cleanPlace, cleanSpot, cleanTask, type Ids, type Raw } from '../model/clean'
 import type { WorkspaceCtx } from '../state/wsStore'
 import { docAt, toDocs, WriteError, writeTo, type DocStore } from './docs'
 import { a } from './util'
@@ -56,6 +56,8 @@ export const KEPT: Record<string, Record<string, 'string' | 'number' | 'strings'
   places: { planeId: 'string', cardId: 'string', type: 'string' },
   tasks: { pieceId: 'string', col: 'string', cardId: 'string', cardType: 'string', uid: 'string', assignee: 'string', assigneeName: 'string', givenAt: 'number', givenBy: 'string', learned: 'string', updatedAt: 'number' },
   cells: { matrixId: 'string', row: 'string', col: 'string' },
+  canvases: { createdBy: 'string' },
+  pieceSpots: { canvasId: 'string', pieceId: 'string' },
 }
 
 function same(a: unknown, b: unknown): boolean {
@@ -243,11 +245,11 @@ function checkDoc(coll: Coll, d: RawDoc, store: DocStore, ws: WorkspaceCtx): { p
   else if (coll === 'tasks') ((cleaned = cleanTask(raw, now)), (kept = KEPT.tasks))
   else if (coll === 'cells') ((cleaned = cleanCell(raw, now)), (kept = KEPT.cells))
   else if (coll === 'canvases') {
-    if (typeof d.name !== 'string' || !d.name.trim() || d.name.length > CANVAS_NAME_MAX) problems.push({ field: 'name', message: `a canvas needs a name (1–${CANVAS_NAME_MAX} characters)`, fix: 'give it a name' })
+    ;((cleaned = cleanCanvas(raw, now)), (kept = KEPT.canvases))
+    // The cleaner puts a canvas that lost its order first (an import's file); an op says where it goes.
     if (typeof d.order !== 'number') problems.push({ field: 'order', message: 'a canvas needs an order (a number)', fix: 'put it after the others: the largest order + 1' })
-  } else if (coll === 'pieceSpots') {
-    for (const k of ['x', 'y'] as const) if (typeof d[k] !== 'number' || !Number.isFinite(d[k])) problems.push({ field: k, message: `${k} must be a number`, fix: 'give the spot x and y in canvas px' })
-  } else if (coll === 'documents' && d.id !== NOTES_ID) {
+  } else if (coll === 'pieceSpots') ((cleaned = cleanSpot(raw, now)), (kept = KEPT.pieceSpots))
+  else if (coll === 'documents' && d.id !== NOTES_ID) {
     // S17: a markdown document an op made (create_document): the shape the app writes for an uploaded .md.
     for (const k of DOC_NEEDED) if (!(k in d)) problems.push({ field: k, message: `a document needs ${k}`, fix: 'use create_document' })
     for (const [k, v] of Object.entries(d)) {
@@ -282,7 +284,7 @@ function checkDoc(coll: Coll, d: RawDoc, store: DocStore, ws: WorkspaceCtx): { p
 
   if (cleaned === null && missing.length) {
     // What it points at is missing: that's the error (below), not its shape.
-  } else if (cleaned === null) problems.push({ message: `isn't a valid ${coll === 'pieces' ? 'piece' : cardColl ?? coll.replace(/s$/, '')}`, fix: hintFor(coll, cardColl) })
+  } else if (cleaned === null) problems.push({ message: `isn't a valid ${coll === 'pieces' ? 'piece' : coll === 'canvases' ? 'canvas' : coll === 'pieceSpots' ? 'spot' : cardColl ?? coll.replace(/s$/, '')}`, fix: hintFor(coll, cardColl) })
   else if (cleaned) {
     for (const [k, v] of Object.entries(d)) {
       if (k === 'id') continue
@@ -373,6 +375,10 @@ function hintFor(coll: Coll, type?: AnyType): string {
       return 'evidence needs text, a kind (interview, quote, data, observation, link) and a stance (supports, contradicts)'
     case 'places':
       return 'a place needs x and y'
+    case 'canvases':
+      return `a canvas needs a name (1–${CANVAS_NAME_MAX} characters) and an order`
+    case 'pieceSpots':
+      return 'a spot needs x and y in canvas px'
     case 'tasks':
       return 'a task needs a title and an order (a number)'
     default:

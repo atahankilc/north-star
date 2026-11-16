@@ -241,8 +241,8 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
 # Round 2: what a second read found (2026-11-16)
 
 A list of findings and of ways to keep repeats from coming back, for the user to pick from. Built so far: R1.1–R1.4
-and R1.10 (D-388), the checks R4.1–R4.4 (D-391) and R1.5–R1.7 (D-392), under *Done, round 2* at the end; the rest is
-not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
+and R1.10 (D-388), the checks R4.1–R4.4 (D-391), R1.5–R1.7 (D-392) and R1.8–R1.16 (D-394), under *Done, round 2* at
+the end; R2, R3 and R4.5–R4.7 are not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
 finder (knip) and four full reads (the kit, the workspace views, the logic layers, demo/onboarding/gallery/scripts).
 Line numbers are from that day. *Checked* = the drift was looked at again by hand after the read.
 
@@ -456,4 +456,20 @@ merges (R1.5–R1.7, the demo) and R3.
   - Checked: tsc; vitest; every check; old and new from frozen worktrees at one commit in headless Chrome (the setup
     panels' own box pixel-identical in 21 of 22 shots, one pixel in the last; the same tries give the same answers in
     both). The gallery's workspace takes no writes, so saving is held by the unit test and CommitField's example.
-
+- **R1.8, R1.11–R1.16 (2026-11-17, D-394; R1.9 was done with R4.2).**
+  - R1.8: ui/foundation/pieceTone.ts `PIECE_TONE`; the canvas sets `--kind` from it, WorkspacePicture reads it. Settled
+    drift: a timeline's colour in a workspace's picture is the canvas's.
+  - R1.11: `boxDrag` in ui/foundation/dragPointer.ts (the foundation, not canvas/selection.ts: it listens to a window
+    key) for a plane's and a deck's box; the timeline's pan and Documents' drag out on `pressDrag`; thresholds
+    `DRAG_PX`. Settled drift: a deck's box is dropped by Escape and a cancel, and a press that doesn't move draws none.
+  - R1.12: model/edges.ts `LINK_KINDS`, `linkLabel`, `linkGroup`, `PICK_ORDER`, `READ_ORDER`; five other lists gone.
+    Settled drift: `inspired by` in a card's panel; the link bar's kinds in the filter's order.
+  - R1.13: canvas/followAdded.ts. Settled drift: a matrix follows a row or column added from its setup and beside a
+    plane.
+  - R1.14: model/clean.ts `cleanCanvas`, `cleanSpot`, for the import and validate. The import still fills a lost
+    order with 0 (a file is taken as it can be); an op must give one.
+  - R1.15: the agent's reads on `overdue` and `isDay`; suggest.ts on the model's today and finished columns.
+  - R1.16: state/local.ts for every localStorage read and write (`forgetLocal` added); check:kit's `storage` is 0.
+    Left: agent/usage.ts (a `Storage` handed in for its tests), sessionStorage in app/chunks.ts and the onboarding's
+    dev copy.
+  - Checked: tsc; vitest; every check; build; check:gallery:live.

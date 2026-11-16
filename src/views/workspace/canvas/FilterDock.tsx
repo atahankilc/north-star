@@ -13,7 +13,8 @@ import { FilterColumn, FilterColumns } from '../../../ui/patterns/FilterColumn'
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { ConsoleFloor, ConsoleTab, FloorTitle, useEscapeCloses } from '../../../ui/patterns/Console'
 import { linkTone } from '../plane/PlaneLinks'
-import { LINK_GROUPS, narrowing, setFilter, START, useFilter, useHoldFilter, type Filter } from './planeFilter'
+import { LINK_KINDS } from '../../../model/edges'
+import { narrowing, setFilter, START, useFilter, useHoldFilter, type Filter } from './planeFilter'
 import styles from './FilterDock.module.css'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { Button } from '../../../ui/primitives/Button'
@@ -71,7 +72,7 @@ function Panel({ plane, cards, f }: { plane: string; cards: Card[]; f: Filter })
   const regionItems = pickRows(f.regions, 'anywhere', regions.map((r) => ({ key: r, label: r })), (v) => set({ regions: v }))
   const linkItems: PromptEntry[] = [
     { key: 'all', label: 'every link', checked: f.links.length === 0, onSelect: () => set({ links: [] }) },
-    ...LINK_GROUPS.map((g) => ({ key: g.key, label: g.label, checked: !f.links.includes(g.key), tone: linkTone(g.kind), glyph: '━', hint: START.links.includes(g.key) ? 'starts hidden' : undefined, onSelect: () => set({ links: flip(f.links, g.key) }) })),
+    ...LINK_KINDS.map((g) => ({ key: g.group, label: g.label, checked: !f.links.includes(g.group), tone: linkTone(g.kind), glyph: '━', hint: START.links.includes(g.group) ? 'starts hidden' : undefined, onSelect: () => set({ links: flip(f.links, g.group) }) })),
   ]
   const linksNarrow = f.links.filter((g) => !START.links.includes(g)).length
   return (

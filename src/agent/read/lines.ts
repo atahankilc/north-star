@@ -1,7 +1,7 @@
 // One line per thing, the same everywhere the read layer lists them (map, view, query, search, get):
 //   c12 · problem · "Founders can't price" · testing +2 −1 · #pricing · for c3 · ⧉ also on p4 "Rivals"
 import type { Card } from '../../model/cards'
-import { FOR } from '../../model/edges'
+import { FOR, READ_ORDER } from '../../model/edges'
 import { kindOf, type Label } from '../../model/labels'
 import { kindOfPiece, KIND_NAME } from '../../model/pieces'
 import type { Task, KanbanSetup } from '../../data/tasks'
@@ -15,11 +15,10 @@ import { derive, nameOf, shownTasks, timelineDecks, type Derived, type P } from 
 import type { Ids } from './ids'
 import { count, q, oneLine } from './text'
 import type { ReadWs } from './types'
-import { isFinished } from '../../model/tasks'
+import { isFinished, overdue } from '../../model/tasks'
 
 // Link kinds in the chain's order, then the rest; to it after from it.
-const LINK_ORDER = ['solves', 'competes-with', 'inspired-by', 'part-of', 'depends-on', 'contradicts', 'relates', 'for']
-const linkRank = (k: string) => (k.startsWith('←') ? 100 : 0) + (LINK_ORDER.indexOf(k.replace('←', '')) + 1 || 50)
+const linkRank = (k: string) => (k.startsWith('←') ? 100 : 0) + ((READ_ORDER as readonly string[]).indexOf(k.replace('←', '')) + 1 || 50)
 
 export type CardLineOpts = { links?: boolean; tags?: boolean; planes?: boolean; except?: string; max?: number }
 
@@ -90,7 +89,7 @@ export function taskLine(ws: ReadWs, ids: Ids, t: Task, o: { where?: boolean; ca
   }
   if (t.assignee) parts.push(`→ ${ids.short('person', t.assignee)} ${t.assigneeName ?? nameOf(d, t.assignee)}`)
   if ((t.start || t.due) && o.days !== false) {
-    const late = !!t.due && !finished && t.due < d.today
+    const late = overdue(t, finished, d.today)
     parts.push([t.start && `from ${t.start}`, t.due && `due ${t.due}${late ? ' (overdue)' : ''}`].filter(Boolean).join(' '))
   }
   if (t.cardId && o.card !== 'none') {
@@ -192,7 +191,7 @@ export function pieceSays(ws: ReadWs, ids: Ids, p: P): string {
         return `holds cards: ${count(cards.length, 'card')} by ${k.colField ?? 'status'}${k.rowField ? ` × ${k.rowField}` : ''}${k.source?.rules.length ? ` (${k.source.rules.map((r) => ruleWords(ids, d, r)).join(' and ')})` : ''}`
       }
       const { line, tasks } = deckCounts(ws, p)
-      const late = tasks.filter((t) => t.due && t.due < d.today && !isFinished(t, d.doneCols)).length
+      const late = tasks.filter((t) => overdue(t, isFinished(t, d.doneCols), d.today)).length
       return `${count(tasks.length, 'task')}: ${line}${late ? ` · ${late} overdue` : ''}`
     }
     case 'timeline': {

@@ -34,7 +34,8 @@ import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { useWs } from '../canvas/context'
 import { AddPill, Choices, Toggle } from '../matrix/MatrixSetup'
 import { SetupRow as Row, SetupShell } from '../canvas/SetupShell'
-import { followTable, tableOf, TABLE_TABS, type TableTab } from './Table'
+import { followAdded } from '../canvas/followAdded'
+import { tableOf, TABLE_TABS, type TableTab } from './Table'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import m from '../matrix/Matrix.module.css'
 import styles from './Table.module.css'
@@ -58,8 +59,8 @@ export function TableSetupPanel({ piece }: { piece: WithId<Piece> }) {
   const part: SetTable = (k, v, key) => {
     // A row or column added here: the table's view follows it in (D-214's way).
     const r = k === 'rows' ? (v as Source | undefined) : undefined
-    if (r && (r.items.length > setup.rows.items.length || (r.hide?.length ?? 0) < (setup.rows.hide?.length ?? 0))) followTable(piece.id)
-    if (k === 'cols' && ((v as Column[] | undefined)?.length ?? 0) > setup.cols.length) followTable(piece.id)
+    if (r && (r.items.length > setup.rows.items.length || (r.hide?.length ?? 0) < (setup.rows.hide?.length ?? 0))) followAdded(piece.id)
+    if (k === 'cols' && ((v as Column[] | undefined)?.length ?? 0) > setup.cols.length) followAdded(piece.id)
     void setTablePart(wid, piece.id, k, v, key)
   }
   const count = { rows: rowsOf(setup.rows, cards, !setup.manual).length, cols: setup.cols.length + 1 }

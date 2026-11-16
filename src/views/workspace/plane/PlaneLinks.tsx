@@ -7,6 +7,7 @@
 // straight: no bend points (D-292).
 import { useEffect, useRef, useState } from 'react'
 import { CARD, type Card } from '../../../data/cards'
+import { LINK_KINDS, linkGroup, linkLabel } from '../../../model/edges'
 import { deleteEdge, FOR, reverseEdge, updateEdge, type Edge } from '../../../data/edges'
 import { useCanvasView } from '../../../state/canvasView'
 import { Select } from '../../../ui/patterns/Select'
@@ -22,21 +23,8 @@ import { Field } from '../../../ui/primitives/Field'
 import { LINK_LABEL_MAX } from '../../../model/limits'
 import { WORLD } from '../../../model/world'
 
-type LinkGroup = 'solves' | 'part' | 'competes' | 'clashes' | 'draws' | 'depends' | 'plain' | 'for'
-
 // Each kind its own colour, all solid (D-146, D-147).
-const KINDS: Record<string, { label: string; group: LinkGroup }> = {
-  relates: { label: 'relates', group: 'plain' },
-  solves: { label: 'solves', group: 'solves' },
-  'part-of': { label: 'part of', group: 'part' },
-  'competes-with': { label: 'competes', group: 'competes' },
-  contradicts: { label: 'contradicts', group: 'clashes' },
-  'inspired-by': { label: 'inspired by', group: 'draws' },
-  'depends-on': { label: 'depends on', group: 'depends' },
-  [FOR]: { label: 'for', group: 'for' },
-}
-const kindOf = (kind: string) => KINDS[kind] ?? { label: kind, group: 'plain' as LinkGroup }
-export const linkTone = (kind: string) => `var(--link-${kindOf(kind).group})`
+export const linkTone = (kind: string) => `var(--link-${linkGroup(kind)})`
 
 // In plane px (the old board's units × 80): the arrowhead, the gap between a line's end and its card, and how far apart
 // links between the same two cards sit.
@@ -186,7 +174,7 @@ export function LinkChips({ links, live, editor, zoom }: { links: Drawn[]; live:
         const thread = live ? threadOn(threads, edge.id) : null
         if (!readable && !s.selected && !thread) return null
         // Its own label only while it's in focus (D-135); otherwise its kind.
-        const text = (s.selected || s.active) && edge.label ? edge.label : kindOf(edge.kind).label
+        const text = (s.selected || s.active) && edge.label ? edge.label : linkLabel(edge.kind)
         return (
           <div key={edge.id} className={styles.at} style={{ left: mid[0], top: mid[1], ['--tone' as string]: linkTone(edge.kind) }}>
             {/* Its kind in the system's voice; its own label (in focus) in the person's (D-266). */}
@@ -233,7 +221,7 @@ function KindOption({ kind }: { kind: string }) {
   return (
     <span style={{ ['--tone' as string]: linkTone(kind) }}>
       <span className={styles.swatch} aria-hidden />
-      {kindOf(kind).label}
+      {linkLabel(kind)}
     </span>
   )
 }
@@ -271,7 +259,7 @@ function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
         <Select
           className={styles.kind}
           value={edge.kind}
-          options={Object.keys(KINDS).map((k) => ({ value: k, label: <KindOption kind={k} /> }))}
+          options={LINK_KINDS.map((k) => ({ value: k.kind, label: <KindOption kind={k.kind} /> }))}
           onChange={(kind) => void updateEdge(wid, edge.id, { kind })}
           ariaLabel="Link type"
         />

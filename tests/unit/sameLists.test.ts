@@ -6,10 +6,12 @@ import { describe, expect, it } from 'vitest'
 import { ALL_TYPES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_STATUSES, PRIORITIES, VALIDATIONS } from '../../src/model/cards'
 import { AVAILABILITIES, CELL_KINDS, CONFIDENCES, DOC_COLS, DOC_KINDS, EVIDENCE_KINDS, TOTALS_AS, TOTALS_AT } from '../../src/model/shapes'
 import { TYPE_OF_COLLECTION, WS_COLLECTIONS } from '../../src/model/fromDocs'
-import { cleanCard, cleanCell, cleanComparison, cleanCompetitorFeature, cleanEdge, cleanEvidence, cleanLabel, cleanPiece, cleanPlace, cleanTask, type Ids, type Raw } from '../../src/model/clean'
+import { cleanCanvas, cleanCard, cleanCell, cleanComparison, cleanCompetitorFeature, cleanEdge, cleanEvidence, cleanLabel, cleanPiece, cleanPlace, cleanSpot, cleanTask, type Ids, type Raw } from '../../src/model/clean'
 import { KEPT } from '../../src/ops/validate'
 import { BUNDLE_COLLECTIONS } from '../../src/io/bundle'
 import { colors, fonts, palettes } from '../../src/styles/tokens'
+import { LINK_KINDS, PICK_ORDER, READ_ORDER } from '../../src/model/edges'
+import { PIECE_TONE } from '../../src/ui/foundation/pieceTone'
 import { fixtureDocs, lensDocs, taskDocs } from './fixtures/ws'
 
 const read = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), 'utf8')
@@ -95,13 +97,15 @@ const clean = (coll: string, raw: Raw): Record<string, unknown> | null | undefin
   if (coll === 'places') return cleanPlace(raw, 0)
   if (coll === 'tasks') return cleanTask(raw, 0)
   if (coll === 'cells') return cleanCell(raw, 0)
+  if (coll === 'canvases') return cleanCanvas(raw, 0)
+  if (coll === 'pieceSpots') return cleanSpot(raw, 0)
   return undefined
 }
 const keptFor = (coll: string) => Object.keys(KEPT[TYPE_OF_COLLECTION[coll] ? 'card' : coll] ?? {})
 
 // A cleaner's own text: a field the fixtures' docs don't hold still counts as handled when the cleaner names it.
 const cleanSrc = read('src/model/clean.ts')
-const CLEANER: Record<string, string> = { labels: 'cleanLabel', pieces: 'cleanPiece', edges: 'cleanEdge', evidence: 'cleanEvidence', competitorFeatures: 'cleanCompetitorFeature', comparisons: 'cleanComparison', places: 'cleanPlace', tasks: 'cleanTask', cells: 'cleanCell' }
+const CLEANER: Record<string, string> = { labels: 'cleanLabel', pieces: 'cleanPiece', edges: 'cleanEdge', evidence: 'cleanEvidence', competitorFeatures: 'cleanCompetitorFeature', comparisons: 'cleanComparison', places: 'cleanPlace', tasks: 'cleanTask', cells: 'cleanCell', canvases: 'cleanCanvas', pieceSpots: 'cleanSpot' }
 function named(coll: string): Set<string> {
   const at = cleanSrc.indexOf(`export function ${TYPE_OF_COLLECTION[coll] ? 'cleanCard' : CLEANER[coll]}(`)
   const body = cleanSrc.slice(at, cleanSrc.indexOf('\nexport function ', at + 1))
@@ -154,5 +158,23 @@ describe('tokens.ts mirrors tokens.css', () => {
   it('the fonts', () => {
     expect(token(dark, 'font-mono')).toContain(`'${fonts.mono}'`)
     expect(token(dark, 'font-display')).toContain(`'${fonts.display}'`)
+  })
+})
+
+// ---- Link kinds: one record in model/edges.ts (D-394); its two other orders name the same kinds, each once, and every
+// group and every piece kind's colour is a token that exists.
+describe('link kinds and piece colours', () => {
+  const css = read('src/styles/tokens.css')
+  const kinds = LINK_KINDS.map((k) => k.kind)
+  it('the agent picks from, and reads in the order of, the same kinds', () => {
+    expect(sorted(PICK_ORDER)).toEqual(sorted(kinds))
+    expect(sorted(READ_ORDER)).toEqual(sorted(kinds))
+    expect(new Set(kinds).size).toBe(kinds.length)
+  })
+  it("a group's colour is a token", () => {
+    for (const k of LINK_KINDS) expect(css, k.group).toContain(`--link-${k.group}:`)
+  })
+  it("a piece kind's colour is a token", () => {
+    for (const [kind, tone] of Object.entries(PIECE_TONE)) expect(css, kind).toContain(`${tone.slice(4, -1)}:`)
   })
 })

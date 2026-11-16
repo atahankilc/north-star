@@ -1,10 +1,10 @@
 // Link ops (S4, D-312; agent-actions.md §2): link, unlink, update_link (kind, label, turn round).
-import { defaultKind, FOR, type EdgeKind } from '../model/edges'
+import { defaultKind, FOR, PICK_ORDER, type EdgeKind } from '../model/edges'
 import { DELETE, type OpCtx, type Plan } from './types'
 import { cardIn, find, handleOf, refuse } from './util'
 
 // The kinds a link can be (the link bar's and the panel's; `for` tags a card with a customer).
-export const EDGE_KINDS = ['relates', 'solves', 'part-of', 'competes-with', 'contradicts', 'inspired-by', 'depends-on', FOR] as const
+export const EDGE_KINDS = PICK_ORDER
 
 function kindOk(op: string, kind: unknown) {
   if (kind !== undefined && !(EDGE_KINDS as readonly unknown[]).includes(kind)) refuse(op, `${String(kind)} isn't a kind of link`, `use one of ${EDGE_KINDS.join(', ')}`)

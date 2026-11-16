@@ -5,24 +5,14 @@
 // before, and a page of them all looked alike); with `sample`, a made-up canvas of the same shapes, nothing to read, for
 // a first visit's START. Drawn on a 2D canvas from the tokens, again when the theme changes.
 import { useEffect, useRef } from 'react'
-import type { PieceKind } from '../../data/model'
 import { CARD_UNITS, type Summary } from '../../model/summary'
 import { tokenPx, tokenText } from '../../styles/cssToken'
 import { useTheme } from '../../state/theme'
 import { CARD_TONE } from '../../ui/foundation/cardTone'
+import { PIECE_TONE } from '../../ui/foundation/pieceTone'
 import { DUR } from '../../ui/foundation/motionTokens'
 import styles from './WorkspacePicture.module.css'
 
-// Each kind's band, as the canvas draws it (CanvasView.module.css `--kind`).
-const BAND: Record<PieceKind, `--${string}`> = {
-  plane: '--fg',
-  matrix: '--link-solves',
-  table: '--link-part',
-  kanban: '--link-draws',
-  timeline: '--link-draws',
-  documents: '--link-depends',
-  document: '--link-depends',
-}
 const varName = (v: string) => v.slice(4, -1) as `--${string}` // 'var(--x)' → '--x'
 
 // The made-up canvas for `sample`: a heading, a plane with cards, a deck, a table (0–1000; cards 0–100).
@@ -123,7 +113,7 @@ function paint(cv: HTMLCanvasElement, summary: Summary | null, wantSample: boole
     g.beginPath()
     g.rect(x, y, w, h)
     g.clip()
-    g.fillStyle = tokenText(BAND[p.kind])
+    g.fillStyle = tokenText(varName(PIECE_TONE[p.kind]))
     g.globalAlpha = base * (shapesOnly ? 0.7 : 1)
     g.fillRect(x, y, w, 2)
     g.globalAlpha = base

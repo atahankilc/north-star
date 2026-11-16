@@ -1,18 +1,11 @@
 {
-  "src/agent/models.ts": {
-    "storage": 1
-  },
   "src/agent/ui/Agent.tsx": {
     "windowKeys": 1,
-    "rafLoop": 1,
-    "storage": 2
+    "rafLoop": 1
   },
   "src/agent/ui/PreviewMarks.tsx": {
-    "windowKeys": 1,
-    "rafLoop": 2
-  },
-  "src/agent/ui/settings.ts": {
-    "storage": 3
+    "rafLoop": 2,
+    "windowKeys": 1
   },
   "src/data/documents.ts": {
     "rawCut": 1
@@ -22,9 +15,6 @@
   },
   "src/data/importWorkspace.ts": {
     "rawCut": 2
-  },
-  "src/data/onboarding.ts": {
-    "storage": 2
   },
   "src/data/presence.ts": {
     "rawCut": 3
@@ -110,9 +100,6 @@
   "src/ui/patterns/WizardShell.tsx": {
     "windowKeys": 1
   },
-  "src/ui/patterns/panelWidth.ts": {
-    "storage": 2
-  },
   "src/ui/primitives/Appear.tsx": {
     "rafLoop": 2
   },
@@ -141,21 +128,17 @@
   "src/views/workspace/canvas/gridCursor.ts": {
     "windowKeys": 1
   },
-  "src/views/workspace/canvas/heldStore.ts": {
-    "storage": 1
-  },
   "src/views/workspace/canvas/useEditKeys.ts": {
     "windowKeys": 1
   },
   "src/views/workspace/deck/Kanban.tsx": {
-    "windowKeys": 4
+    "windowKeys": 1
   },
   "src/views/workspace/deck/Timeline.tsx": {
-    "windowKeys": 3,
     "rafLoop": 4
   },
   "src/views/workspace/documents/Documents.tsx": {
-    "windowKeys": 4
+    "windowKeys": 1
   },
   "src/views/workspace/find/FindPreview.tsx": {
     "rafLoop": 1
@@ -170,7 +153,7 @@
     "windowKeys": 1
   },
   "src/views/workspace/plane/PlaneCards.tsx": {
-    "windowKeys": 2
+    "windowKeys": 1
   },
   "src/views/workspace/threads/Threads.tsx": {
     "rafLoop": 1

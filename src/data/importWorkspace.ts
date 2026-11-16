@@ -5,6 +5,7 @@
 // new workspace; if a write fails, the half-made workspace is deleted.
 import { collection, doc, getDoc, writeBatch, type DocumentReference } from 'firebase/firestore'
 import {
+  cleanCanvas,
   cleanCard,
   cleanCell,
   cleanComparison,
@@ -15,13 +16,14 @@ import {
   cleanLabel,
   cleanPiece,
   cleanPlace,
+  cleanSpot,
   cleanTask,
   type Bundle,
   type Ids,
 } from '../io/bundle'
 import { ALL_TYPES, CARD_COLLECTION, type AnyType } from './cards'
 import { CANVAS } from './labels'
-import { CANVAS_NAME_MAX, MAIN } from './canvases'
+import { MAIN } from './canvases'
 import { SUB, subKey } from './matrix'
 import { db } from './firebase'
 import type { Workspace } from './model'
@@ -69,15 +71,14 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
   // canvas's text on one that didn't come over goes on the first.
   const canvasIds = new Map<string, string>([[MAIN, MAIN]])
   for (const d of bundle.canvases) {
-    const name = typeof d.name === 'string' ? d.name.trim().slice(0, CANVAS_NAME_MAX) : ''
-    const order = typeof d.order === 'number' && Number.isFinite(d.order) ? d.order : 0
-    if (!name || canvasIds.has(d.id) && d.id !== MAIN) {
+    const fields = cleanCanvas(d, now)
+    if (!fields || (canvasIds.has(d.id) && d.id !== MAIN)) {
       skipped++
       continue
     }
     const id = d.id === MAIN ? MAIN : doc(col('canvases')).id
     canvasIds.set(d.id, id)
-    writes.push([doc(col('canvases'), id), { name, order, createdAt: typeof d.createdAt === 'number' ? d.createdAt : now }])
+    writes.push([doc(col('canvases'), id), fields])
   }
   const onCanvas = (v: unknown) => {
     const id = typeof v === 'string' ? canvasIds.get(v) : undefined
@@ -98,15 +99,14 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
     const canvas = typeof d.canvasId === 'string' ? canvasIds.get(d.canvasId) : undefined
     const home = bundle.pieces.find((p) => p.id === d.pieceId)
     const homeCanvas = (home && typeof home.canvasId === 'string' && canvasIds.get(home.canvasId)) || MAIN
-    const x = typeof d.x === 'number' && Number.isFinite(d.x) ? d.x : undefined
-    const y = typeof d.y === 'number' && Number.isFinite(d.y) ? d.y : undefined
+    const at = cleanSpot(d, now)
     const id = spotId(canvas ?? '', piece ?? '')
-    if (!piece || !canvas || !cleanPieces.get(d.pieceId as string) || canvas === homeCanvas || x === undefined || y === undefined || spotted.has(id)) {
+    if (!piece || !canvas || !cleanPieces.get(d.pieceId as string) || canvas === homeCanvas || !at || spotted.has(id)) {
       skipped++
       continue
     }
     spotted.add(id)
-    writes.push([doc(col('pieceSpots'), id), { canvasId: canvas, pieceId: piece, x, y, createdAt: typeof d.createdAt === 'number' ? d.createdAt : now }])
+    writes.push([doc(col('pieceSpots'), id), { canvasId: canvas, pieceId: piece, ...at }])
   }
 
   // Cards written, with their home: a place needs its card here, on another plane than that.

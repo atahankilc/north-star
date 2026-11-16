@@ -29,6 +29,7 @@ import {
 } from '../../../data/cards'
 import { CompetitorProfile, CompetitorFeatures, Criteria, hasMatches, InPackages, MatchedBy, Parent, Parts, RestsOn } from './CardPanelKinds'
 import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } from '../../../data/edges'
+import { linkLabel } from '../../../model/edges'
 import { addEvidence, EVIDENCE_KINDS, mismatch, removeEvidence, tally, updateEvidence, type Evidence, type EvidenceKind, type Stance } from '../../../data/evidence'
 import { glide, useBesideW, useCanvasView } from '../../../state/canvasView'
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
@@ -83,17 +84,6 @@ const NOTES_HINT: Record<AnyType, string> = {
   competitor: 'What stands out about them?',
   idea: "What's the thought behind it?",
   feature: 'What does it do, and for whom?',
-}
-
-export const KIND_LABEL: Record<string, string> = {
-  relates: 'relates',
-  solves: 'solves',
-  'part-of': 'part of',
-  'competes-with': 'competes',
-  contradicts: 'contradicts',
-  'inspired-by': 'inspired',
-  'depends-on': 'depends on',
-  [FOR]: 'for',
 }
 
 // `selected`: this card's rather than the selection's (a matrix's or a table's cell, LensCardPanel), `onClose` then
@@ -784,7 +774,7 @@ export function LinkSection({ n, name, card, cards, editor, links, add, count, e
       {links.map((e) => {
         const other = byId.get(e.fromId === card.id ? e.toId : e.fromId)!
         const out = e.fromId === card.id
-        const kind = KIND_LABEL[e.kind] ?? e.kind
+        const kind = linkLabel(e.kind)
         return (
           <PanelRow
             key={e.id}

@@ -24,7 +24,7 @@ import { cardLine, pieceLine, pieceSays, ruleWords, taskLine, textLine } from '.
 import { finish, readDocument, view, type ReadDocArgs, type ViewArgs } from './view'
 import { count, dayOf, oneLine, pageLine, pageOf, q, timeOf, wrap } from './text'
 import type { ReadWs, ToolResult } from './types'
-import { isFinished } from '../../model/tasks'
+import { isDay, isFinished, overdue } from '../../model/tasks'
 import { DOC_KINDS } from '../../model/shapes'
 import { TEXT_KINDS } from '../../ops/text'
 import { PIECE_KINDS } from '../../ops/pieces'
@@ -303,7 +303,6 @@ export type QueryArgs = {
 }
 
 const list = (v: string | string[] | undefined) => (v === undefined ? [] : (Array.isArray(v) ? v : [v]).map((x) => String(x).trim().replace(/^#/, '')).filter(Boolean))
-const DAY = /^\d{4}-\d{2}-\d{2}$/
 
 // Which filters each kind reads; another one given is refused, never ignored (a silent 0 reads as an answer).
 const FILTERS: Record<(typeof QUERY_KINDS)[number], string[]> = {
@@ -341,8 +340,8 @@ export function query(ws: ReadWs, ids: Ids, a: QueryArgs): ToolResult {
     bad('status', statuses, ALL_STATUSES) ||
     bad('priority', prios, PRIORITIES) ||
     bad('on', list(a.on), THREAD_ON) ||
-    (a.due_before && !DAY.test(a.due_before) ? `query: due_before "${oneLine(a.due_before, 30)}" isn't a day; write YYYY-MM-DD (today is ${d.today}).` : '') ||
-    (a.due_after && !DAY.test(a.due_after) ? `query: due_after "${oneLine(a.due_after, 30)}" isn't a day; write YYYY-MM-DD (today is ${d.today}).` : '')
+    (a.due_before && !isDay(a.due_before) ? `query: due_before "${oneLine(a.due_before, 30)}" isn't a day; write YYYY-MM-DD (today is ${d.today}).` : '') ||
+    (a.due_after && !isDay(a.due_after) ? `query: due_after "${oneLine(a.due_after, 30)}" isn't a day; write YYYY-MM-DD (today is ${d.today}).` : '')
   if (refusal) return fail(refusal)
   if (tags.length && kind === 'card') {
     const known = [...new Set(ws.cards.flatMap((c) => c.tags ?? []))].sort()
@@ -430,7 +429,7 @@ export function query(ws: ReadWs, ids: Ids, a: QueryArgs): ToolResult {
       if (who !== undefined && (t.assignee ?? '') !== who) return false
       if (prios.length && !prios.includes(t.priority ?? '')) return false
       const finished = isFinished(t, d.doneCols)
-      if (a.overdue && !(t.due && !finished && t.due < d.today)) return false
+      if (a.overdue && !overdue(t, finished, d.today)) return false
       if (a.finished !== undefined && finished !== a.finished) return false
       if (a.due_before && !(t.due && t.due < a.due_before)) return false
       if (a.due_after && !(t.due && t.due > a.due_after)) return false
@@ -715,7 +714,7 @@ function taskText(ws: ReadWs, ids: Ids, d: Derived, t: Task, full: boolean): str
     `given to ${t.assignee ? `${ids.short('person', t.assignee)} ${t.assigneeName ?? nameOf(d, t.assignee)}` : 'nobody'}${t.givenBy && t.givenAt ? ` (by ${nameOf(d, t.givenBy)}, ${dayOf(t.givenAt)})` : ''}`,
   ]
   const finished = !!col?.done
-  if (t.start || t.due) lines.push([t.start && `starts ${t.start}`, t.due && `due ${t.due}${t.due < d.today && !finished ? ' (overdue)' : ''}`].filter(Boolean).join(' · '))
+  if (t.start || t.due) lines.push([t.start && `starts ${t.start}`, t.due && `due ${t.due}${overdue(t, finished, d.today) ? ' (overdue)' : ''}`].filter(Boolean).join(' · '))
   if (t.cardId) {
     const c = d.cards.get(t.cardId)
     lines.push(c ? `for ${cardLine(ws, ids, c, { links: false, tags: false })}` : 'for a card that is gone')
@@ -819,7 +818,7 @@ export function whatsNew(ws: ReadWs, ids: Ids, a: WhatsNewArgs): ToolResult {
   ws = clean(ws)
   ids.sync(ws)
   const d = derive(ws)
-  const since = typeof a.since === 'number' ? a.since : Date.parse(/^\d{4}-\d{2}-\d{2}$/.test(String(a.since)) ? `${a.since}T00:00:00Z` : String(a.since))
+  const since = typeof a.since === 'number' ? a.since : Date.parse(isDay(a.since) ? `${a.since}T00:00:00Z` : String(a.since))
   if (!Number.isFinite(since)) return { text: `whats_new needs a time: a day (2026-10-28), an ISO time or ms; got "${a.since}".` }
   type Item = { group: string; where: string; at: number; line: string }
   const items: Item[] = []

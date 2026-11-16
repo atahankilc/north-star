@@ -111,12 +111,7 @@
   pointer-events: none;
 }
 
-.piece[data-kind='matrix'] { --kind: var(--link-solves); }
-.piece[data-kind='table'] { --kind: var(--link-part); }
-.piece[data-kind='kanban'] { --kind: var(--link-draws); }
-.piece[data-kind='documents'],
-.piece[data-kind='document'] { --kind: var(--link-depends); }
-.piece[data-kind='timeline'] { --kind: var(--link-competes); }
+/* --kind: its kind's colour, set on the piece from PIECE_TONE (ui/foundation/pieceTone.ts). */
 
 /* A matrix or table about to stick to this plane (D-210): its edge in cyan. */
 .piece[data-stick='true'] {

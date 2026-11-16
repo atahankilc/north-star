@@ -14,6 +14,7 @@ import { rowsOf, type Row } from '../../../data/source'
 import { addNamedRow, cellsByKey, CHECKED, COL_W, colName, DEFAULT_STEPS, emptyTable, fieldText, NAME_COL, readOwn, sortedRows, type FieldCtx, removeRow, renameRow, setColumnWidth, setTablePart, type Column, type TableSetup } from '../../../data/table'
 import { kindOfPiece } from '../../../data/pieces'
 import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
+import { followAdded, useFollowAdded } from '../canvas/followAdded'
 import { useWs } from '../canvas/context'
 import { useKept } from '../canvas/kept'
 import { useSeen, within } from '../canvas/visible'
@@ -62,17 +63,12 @@ export const useTableUi = create<{
   naming: string | null
   pages: Record<string, number>
   wizard: boolean
-  follow: { piece: string; at: number } | null
 }>(() => ({
   naming: null,
   pages: {},
   wizard: false,
-  follow: null,
 }))
 
-// A row or column about to be added here: when it comes in, the table's view glides to it, as the matrix's (D-214).
-export const followTable = (piece: string) => useTableUi.setState({ follow: { piece, at: Date.now() } })
-const FOLLOW_MS = 4000
 // How far down the screen a followed column's head comes to, clear of the breadcrumb.
 const HEAD_IN = 64
 
@@ -199,22 +195,12 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
     return () => useTableUi.setState({ naming: null })
   }, [live])
   useSetupClosesOnLeave(piece.id, live)
-  // A row or column you just added (followTable): the view glides to bring it to the middle, a row up or down (its page
+  // A row or column you just added (followAdded): the view glides to bring it to the middle, a row up or down (its page
   // turned to if it's on another), a column across. Others' adds don't move you.
-  const seen = useRef<{ rows: Set<string>; cols: Set<string> } | null>(null)
-  const rowKeys = all.map((r) => r.key).join('|')
-  const colIds = cols.map((c) => c.id).join('|')
-  useEffect(() => {
-    const was = seen.current
-    seen.current = { rows: new Set(all.map((r) => r.key)), cols: new Set(cols.map((c) => c.id)) }
-    const f = useTableUi.getState().follow
+  useFollowAdded(piece.id, live, all.map((r) => r.key), cols.map((c) => c.id), (ri, ci) => {
     const el = layer.current
-    if (!was || !el || !live || f?.piece !== piece.id || Date.now() - f.at > FOLLOW_MS) return
     const move = onView ?? (useCanvasView.getState().planeCam === view ? (v: PlaneCam) => useCanvasView.setState({ planeCam: v }) : null)
-    const ri = all.findIndex((r) => !was.rows.has(r.key))
-    const ci = cols.findIndex((c) => !was.cols.has(c.id))
-    if (!move || (ri < 0 && ci < 0)) return
-    useTableUi.setState({ follow: null })
+    if (!el || !move) return false
     let to = view
     if (ri >= 0) {
       const at = setup.pageSize ? Math.floor(ri / setup.pageSize) : 0
@@ -225,9 +211,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
     // A column across to the middle, its head brought down into sight if it's above (the setup sits over the middle).
     if (ci >= 0) to = { ...to, ox: el.clientWidth / 2 - (xs[ci] + ws[ci] / 2) * view.zoom, oy: Math.max(to.oy, HEAD_IN) }
     glide(view, to, DUR.glide, move)
-    // When one comes in.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowKeys, colIds])
+  })
 
   const keysRef = useRef<(e: KeyboardEvent, selected: CellAt) => void>(() => {})
   keysRef.current = (e, selected) => {
@@ -381,7 +365,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
               aria-label="Add a row"
               onPointerDown={own}
               onClick={() => {
-                followTable(piece.id)
+                followAdded(piece.id)
                 void addNamedRow(wid, piece.id, setup).then((id) => useTableUi.setState({ naming: id }))
               }}
             >

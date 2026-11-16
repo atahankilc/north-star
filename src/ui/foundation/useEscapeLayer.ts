@@ -8,6 +8,7 @@
 //   no root (a console's drawer, D-388) can sit inside a docked panel, so only a menu or a modal is someone else's.
 // - `first`: heard before every other layer, wherever the key is (stop following someone: D-191's `esc to stop`).
 import { useEffect, useRef, type RefObject } from 'react'
+import { keysHeld } from './focus'
 
 type Layer = { close: () => void; fields: boolean; first: boolean; root?: RefObject<HTMLElement | null> }
 
@@ -20,7 +21,8 @@ const OWN = '[role=menu], [role=listbox], [role=dialog], [role=alertdialog], dia
 const OWN_ANYWHERE = '[role=menu], [role=listbox], [aria-modal=true], [role=alertdialog], dialog'
 
 function onKey(e: KeyboardEvent) {
-  if (e.key !== 'Escape' || e.defaultPrevented || e.isComposing) return
+  // A box being drawn holds the keys (focus.ts' holdKeys): its Escape is its own.
+  if (e.key !== 'Escape' || e.defaultPrevented || e.isComposing || keysHeld()) return
   const t = e.target as Element | null
   if (t?.closest?.('[data-coach]')) return
   const first = [...stack].reverse().find((l) => l.first)
