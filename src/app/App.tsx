@@ -1,16 +1,18 @@
 // Plain paths, no `#` (D-070). GitHub Pages has no rewrites, so the build copies index.html to 404.html and every deep
 // link still boots the app.
 import { MotionConfig } from 'motion/react'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { useAuth } from '../data/auth'
-import { useHoldCurtain } from '../state/curtain'
+import { useCurtain, useHoldCurtain, useRevealed } from '../state/curtain'
 import { useBackdropPieces } from '../state/backdrop'
 import { useDisplay } from '../state/display'
 import { useMotion } from '../state/motion'
 import { Backdrop } from '../three/Backdrop'
 import { backdropLevel } from '../three/sceneClock'
+import { DUR } from '../ui/foundation/motionTokens'
 import { Curtain } from '../ui/patterns/Curtain'
+import { runCells } from '../ui/primitives/Appear'
 import { Landing } from '../views/landing/Landing'
 import { Workspaces } from '../views/workspaces/Workspaces'
 import { WORKSPACES } from './paths'
@@ -41,7 +43,9 @@ function Shell() {
     if (!isLoading) wasSignedIn.current = Boolean(user)
   }, [isLoading, user])
   const fontsReady = useFontsReady()
-  const { pathname } = useLocation()
+  const page = useRef<HTMLDivElement>(null)
+  const shown = useShownPage(page)
+  const { pathname } = shown
   const inWorkspace = pathname.startsWith(`${WORKSPACES}/`)
   // Switching the background off applies to signed-in pages only; the landing always flows (D-063). While auth
   // is still loading, assume the choice applies, so a signed-in user who turned it off never sees it flash in.
@@ -54,6 +58,7 @@ function Shell() {
   const level = !user || !inWorkspace ? 1 : pieces === null ? lastLevel.current : backdropLevel(pieces)
   lastLevel.current = level
   useHoldCurtain('auth', isLoading)
+  const revealed = useRevealed()
   useHoldCurtain('fonts', !fontsReady)
   // Signed in, a workspace is likely next: its code is fetched while the page is idle.
   useEffect(() => {
@@ -65,32 +70,36 @@ function Shell() {
       {/* Fades between levels, and once at 0 its canvas goes, so it costs nothing (D-385). */}
       {field && <Backdrop level={level} />}
       {!isLoading && (
-        // A page that throws, or whose code can't load, says so instead of leaving the screen blank.
-        <Crash at={pathname}>
-          <Routes>
-            {user ? (
-              <>
-                <Route path={WORKSPACES} element={<Workspaces user={user} />} />
-                <Route
-                  path={`${WORKSPACES}/:wid`}
-                  element={
-                    // Its code still coming: the curtain holds, the field flowing, as for any loading (D-025).
-                    <Suspense fallback={<HoldCurtain name="workspace-code" />}>
-                      <OneWorkspace />
-                    </Suspense>
-                  }
-                />
-                <Route path="/" element={<AfterSignIn />} />
-                <Route path="*" element={<Navigate to={WORKSPACES} replace />} />
-              </>
-            ) : (
-              <>
-                <Route path="/" element={<Landing error={error?.message} />} />
-                <Route path="*" element={<ToLanding remember={!wasSignedIn.current} />} />
-              </>
-            )}
-          </Routes>
-        </Crash>
+        // A page still loading is never seen half made, with the curtain up or before it comes: hidden until revealed.
+        // No box of its own, so pages lie in the root as before.
+        <div ref={page} style={{ display: 'contents', visibility: revealed ? undefined : 'hidden' }}>
+          {/* A page that throws, or whose code can't load, says so instead of leaving the screen blank. */}
+          <Crash at={pathname}>
+            <Routes location={shown}>
+              {user ? (
+                <>
+                  <Route path={WORKSPACES} element={<Workspaces user={user} />} />
+                  <Route
+                    path={`${WORKSPACES}/:wid`}
+                    element={
+                      // Its code still coming: the curtain holds, the field flowing, as for any loading (D-025).
+                      <Suspense fallback={<HoldCurtain name="workspace-code" />}>
+                        <OneWorkspace />
+                      </Suspense>
+                    }
+                  />
+                  <Route path="/" element={<AfterSignIn />} />
+                  <Route path="*" element={<Navigate to={WORKSPACES} replace />} />
+                </>
+              ) : (
+                <>
+                  <Route path="/" element={<Landing error={error?.message} />} />
+                  <Route path="*" element={<ToLanding remember={!wasSignedIn.current} />} />
+                </>
+              )}
+            </Routes>
+          </Crash>
+        </div>
       )}
       <Curtain field={field} />
     </>
@@ -102,6 +111,31 @@ function Shell() {
 function OneWorkspace() {
   const { wid = '' } = useParams()
   return <WorkspaceLayout key={wid} />
+}
+
+const isPage = (pathname: string) => pathname === WORKSPACES || pathname.startsWith(`${WORKSPACES}/`)
+
+// The page shown follows the address: going from one page to another (the workspaces page, a workspace), the one you
+// leave breaks cell by cell first, as a canvas does for the next (WorkspaceLayout), then the new one loads and builds.
+// `page` holds the pages' own elements. Anything else (a focus, a canvas, signing in or out) is the address at once.
+function useShownPage(page: RefObject<HTMLElement | null>) {
+  const location = useLocation()
+  const [shown, setShown] = useState(location)
+  const leaving = shown.pathname !== location.pathname && isPage(shown.pathname) && isPage(location.pathname)
+  useLayoutEffect(() => {
+    if (!leaving) return setShown(location)
+    const els = [...(page.current?.children ?? [])] as HTMLElement[]
+    // Nothing drawn to break (still loading under the curtain): the next page at once.
+    if (!els.length || !useCurtain.getState().revealed) return setShown(location)
+    let left = els.length
+    const stops = els.map((el) => runCells(el, 'exit', 0, DUR.exit, () => --left || setShown(location)))
+    // Gone back before it broke: whole again.
+    return () => {
+      stops.forEach((stop) => stop())
+      els.forEach((el) => (el.style.clipPath = ''))
+    }
+  }, [location, leaving, page])
+  return leaving ? shown : location
 }
 
 function HoldCurtain({ name }: { name: string }) {

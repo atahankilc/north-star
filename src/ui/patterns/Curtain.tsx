@@ -4,7 +4,7 @@
 // and the page "rebuilds" out of the background without it ever restarting.
 import { Canvas } from '@react-three/fiber'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useCurtain } from '../../state/curtain'
 import type { AsciiEffect, MaskMode } from '../../three/AsciiEffect'
 import { BACKDROP_CAMERA, BackdropScene } from '../../three/Backdrop'
@@ -43,7 +43,15 @@ export function Curtain({ field = true }: { field?: boolean }) {
   const cover = useRef<HTMLDivElement>(null)
   const drawn = useRef(false)
 
+  // A page that starts loading with the curtain down (going from one page to another) is not shown half made while
+  // the curtain decides whether to come: it stays hidden (App's `revealed`) and its entrances wait, before any paint.
+  useLayoutEffect(() => {
+    if (busy && !mounted) setRevealed(false)
+  }, [busy, mounted, setRevealed])
+
   useEffect(() => {
+    // Loaded before the curtain came: the page builds at once, no cover.
+    if (!mounted && !busy) return setRevealed(true)
     if (mounted && !revealing && !busy) {
       const min = booting.current ? MIN_BOOT_MS : MIN_SHOWN_MS
       const wait = Math.max(SETTLE_MS, min - (performance.now() - shownAt.current))
