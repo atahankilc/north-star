@@ -60,7 +60,7 @@
 }
 
 /* The open thread, as the assistant's chat window (D-081, D-165): a terminal log, mono, bracket actions, a `>` prompt.
-   In its own column on the right (D-392), all its height. */
+   In its own column on the right (D-393), all its height. */
 .panel {
   display: flex;
   flex: 1;
@@ -199,7 +199,7 @@
   font-size: var(--text-sm);
 }
 
-/* The threads (D-166, D-193, D-199; D-392): two columns on the ground under the main screen (EdgeColumn). The list on
+/* The threads (D-166, D-193, D-199; D-393): two columns on the ground under the main screen (EdgeColumn). The list on
    the left, beside the HUD's rail; the conversation on the right, where a thing's panel is. Each builds up cell by cell
    and breaks apart (EdgeColumn's). */
 .list {
@@ -229,7 +229,7 @@
   margin-left: auto;
 }
 
-/* The threads tab (ThreadsTool.tsx, D-392): on the main screen's foot at its left, past the HUD's tools; a tab like the
+/* The threads tab (ThreadsTool.tsx, D-393): on the main screen's foot at its left, past the HUD's tools; a tab like the
    dock's and the agent's (top corners round, a line, cyan while pointed at). The screen is a sheet while a column is
    docked (D-387): the tab stands on its foot, clear of its round corner, and travels with it. Drawn from the HUD's
    corner, fixed to the window. */

@@ -44,7 +44,7 @@
   height: 1em;
 }
 
-/* Off the screen's foot (a piece's, a selection's bar) it's a pill with a line (D-392): all round, the line faint at
+/* Off the screen's foot (a piece's, a selection's bar) it's a pill with a line (D-393): all round, the line faint at
    rest and cyan while it's in use. A piece is square and its console isn't part of its edge any more: it stands a
    little under it. No corner L's anywhere now. */
 .console:not([data-at='foot']):not([data-full]) {
@@ -165,7 +165,7 @@
 }
 
 /* The upper floor: a drawer over the rail, at least its width. Over a pill it's a round box with the same line, a
-   small gap up (D-392); on the screen's foot it's a tab (above). */
+   small gap up (D-393); on the screen's foot it's a tab (above). */
 .floor {
   position: absolute;
   right: 0;

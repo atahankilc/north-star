@@ -37,7 +37,7 @@ function make(): [HTMLElement, HTMLElement] {
 function measure() {
   let right = 0
   let left = 0
-  // A column on the left that starts past the rail stands beside the HUD's tools (the threads' list, D-392); one from
+  // A column on the left that starts past the rail stands beside the HUD's tools (the threads' list, D-393); one from
   // the window's edge covers them, as it always did.
   const railW = tokenPx('--sheet-rail-w')
   let covered = false

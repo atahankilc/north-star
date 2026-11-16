@@ -1,4 +1,4 @@
-// The threads tab on the screen's foot, at its left (D-392; it was a tool in the HUD's corner, D-193): one of the foot's
+// The threads tab on the screen's foot, at its left (D-393; it was a tool in the HUD's corner, D-193): one of the foot's
 // three tabs, with the dock in the middle and the agent's on the right, the same height, line and corners. Its lamp is
 // lit while the list is open; a magenta count of new mentions (`@2`), or of threads with something new.
 import type { WithId } from '../../../data/hooks'
