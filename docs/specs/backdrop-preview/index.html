@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Landing backdrop · preview</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
+      #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+      .hero { position: fixed; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-end; justify-content: space-between; padding: 24px 40px 40px; pointer-events: none; }
+      .title { margin: 0; font-family: var(--font-mono); font-size: var(--text-display); font-weight: 400; line-height: 1; letter-spacing: var(--track-display); color: var(--fg-strong); }
+      .signin { font: 500 14px var(--font-display); height: 36px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--fg-strong); color: var(--bg); }
+      /* the preview's own controls: fixed in view, not part of the landing */
+      .opts { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; background: rgba(20, 20, 20, 0.92); border: 1px solid #3a3a3a; z-index: 5; font: 500 13px/1.3 system-ui, sans-serif; }
+      .opts button { all: unset; cursor: pointer; padding: 8px 12px; color: #cfcfcf; max-width: 190px; }
+      .opts button b { display: block; color: #fff; font-weight: 600; }
+      .opts button[aria-pressed='true'] { background: #2de2e6; color: #003b3d; }
+      .opts button[aria-pressed='true'] b { color: #000; }
+      .opts .sep { width: 1px; background: #3a3a3a; margin: 4px 4px; }
+    </style>
+  </head>
+  <body>
+    <canvas id="gl"></canvas>
+    <div class="hero"><h1 class="title">North Star</h1><button class="signin" tabindex="-1">sign in with Google</button></div>
+    <div class="opts" id="opts"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

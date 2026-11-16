@@ -17,7 +17,6 @@ export const DUR = {
   glide: 420,
   slow: 600,
   blink: 1000,
-  intro: 10000,
   // A component breaking cell by cell on its way out: 0.6 of its build-up (Appear's exit).
   exit: 192,
   // A piece's console appearing and leaving, cell by cell (D-264).

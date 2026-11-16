@@ -1,6 +1,6 @@
 // Pass that re-renders the scene as glyphs (docs/DESIGN.md §5).
-// Each screen cell shows the scene's luminance as a glyph from a ramp and keeps the scene's colour,
-// so accent-coloured objects come through as coloured glyphs.
+// Each screen cell shows the scene's weight (its alpha) as a glyph from a ramp, in the scene's colour (D-386): weight
+// and colour apart, so a dark hue prints as heavy a glyph as a bright one.
 //
 // The scene is rendered into a target with one texel per cell, never at full resolution: the glyphs only ever
 // read one sample per cell, so the expensive field shader runs about 300× fewer times (D-063). Only this cheap
@@ -37,7 +37,7 @@ void main() {
 
 const fragmentShader = /* glsl */ `
 varying vec2 vUv;
-uniform sampler2D uScene;   // one texel per cell
+uniform sampler2D uScene;   // one texel per cell: rgb the colour, a the glyph's weight
 uniform vec2 uGrid;         // cells across, down
 uniform vec2 uResolution;   // drawing buffer, px
 uniform sampler2D uGlyphs;
@@ -50,10 +50,6 @@ uniform float uMaskMode;   // 0 off · 1 covering · 2 revealing · 3 fully cove
 uniform float uProgress;   // 0 → 1 along the sweep
 uniform float uLight;      // 1: ink on paper (light theme, D-069)
 uniform vec3 uPaper;
-uniform float uNight;      // light theme only: the welcome's night sweeping in (0 → 1, D-072)
-uniform float uNightOut;   // and sweeping out again (0 → 1)
-uniform vec3 uSky;
-uniform vec3 uDusk;        // the light blue between paper and the night sky
 
 vec3 toSrgb(vec3 c) { return pow(max(c, 0.0), vec3(1.0 / 2.2)); }
 float hash12(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
@@ -61,10 +57,12 @@ float hash12(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5
 void main() {
   vec2 px = vUv * uResolution;
   vec2 cell = floor(px / uCell);
-  vec3 c = texture2D(uScene, (cell + 0.5) / uGrid).rgb;
+  vec4 texel = texture2D(uScene, (cell + 0.5) / uGrid);
+  vec3 c = texel.rgb;
 
   float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-  float idx = floor(clamp(l * uGain, 0.0, 0.999) * uCount);
+  float w = texel.a;
+  float idx = floor(clamp(w * uGain, 0.0, 0.999) * uCount);
   vec2 local = fract(px / uCell);
   float glyph = texture2D(uGlyphs, vec2((idx + local.x) / uCount, local.y)).r;
 
@@ -77,30 +75,14 @@ void main() {
     float peak = max(c.r, max(c.g, c.b));
     float chroma = peak > 1e-3 ? (peak - min(c.r, min(c.g, c.b))) / peak : 0.0;
     // Near-black ink: on a fine 2x grid (D-172) the glyphs are thin, and grey ink on them barely showed.
-    vec3 ink = mix(vec3(0.015), c / max(peak, 1e-3) * 0.5, chroma * uSaturation);
+    vec3 ink = mix(vec3(0.015), c / max(peak, 1e-3) * 0.95, chroma * uSaturation);
     // Blended in display (sRGB) space: in linear light 30% ink over paper reads only ~15% darker on screen, so the
     // printed backdrop came out far paler than the dark one. This way ink darkness on screen matches glyph brightness in dark.
     // Thin glyph edges count for more than in dark: a small glyph is mostly antialiased edge.
     // uDim may pass 1 (a strong backdrop, D-348): ink never covers more than all of the cell.
-    float cover = min(pow(clamp(l * uGain, 0.0, 1.0) * glyph, 0.6) * uDim, 1.0);
+    float cover = min(pow(clamp(w * uGain, 0.0, 1.0) * glyph, 0.6) * uDim, 1.0);
     vec3 printed = mix(toSrgb(uPaper), toSrgb(ink), toSrgb(vec3(cover)).r);
     col = pow(printed, vec3(2.2));
-    // The welcome's night: glyphs glow on a dark-blue sky the way they do on black. It sweeps in diagonally from the bottom
-    // left to the top right in eight tones (paper → light blue → night), the sweeps following each other with room between
-    // them, in squares a third of a cell wide with a ragged edge; it leaves the same way, the tones going out bottom left
-    // first. uNight / uNightOut are the two sweeps' progress (0 → 1); NIGHT_SPREAD in sceneClock.ts must match the 1.4.
-    vec2 square = floor(px / (uCell / 3.0));
-    float depth = (vUv.x + vUv.y) * 0.5 * 0.94 + hash12(square + 7.0) * 0.06;   // 0 bottom left → 1 top right, frayed
-    float toneIn = floor(clamp((uNight * 2.4 - depth) / 1.4, 0.0, 1.0) * 8.0) / 8.0;
-    float toneOut = floor(clamp((uNightOut * 2.4 - depth) / 1.4, 0.0, 1.0) * 8.0) / 8.0;
-    float tone = min(toneIn, 1.0 - toneOut);
-    if (tone >= 1.0) {
-      col = uSky * uDim * (1.0 - clamp(l * uGain, 0.0, 1.0) * glyph) + mix(vec3(l), c, uSaturation) * uGain * uDim * glyph;
-    } else if (tone > 0.0) {
-      vec3 dusk = toSrgb(uDusk);
-      vec3 shade = tone < 0.5 ? mix(toSrgb(uPaper), dusk, tone * 2.0) : mix(dusk, toSrgb(uSky), tone * 2.0 - 1.0);
-      col = pow(shade, vec3(2.2));
-    }
   }
   float alpha = 1.0;
 
@@ -198,10 +180,6 @@ export class AsciiEffect {
         uProgress: { value: 0 },
         uLight: { value: 0 },
         uPaper: { value: new Color() },
-        uNight: { value: 0 },
-        uNightOut: { value: 0 },
-        uSky: { value: new Color() },
-        uDusk: { value: new Color() },
       },
     })
     const mesh = new Mesh(this.geometry, this.material)
@@ -220,7 +198,7 @@ export class AsciiEffect {
   }
 
   // Light theme: glyphs print dark on `paper` instead of glowing on black.
-  setTheme(light: boolean, paper: string, sky: string, dusk: string) {
+  setTheme(light: boolean, paper: string) {
     this.material.uniforms.uLight.value = light ? 1 : 0
     const weight = light ? WEIGHT.light : WEIGHT.dark
     if (weight !== this.weight) {
@@ -229,14 +207,6 @@ export class AsciiEffect {
       this.atlas.needsUpdate = true
     }
     ;(this.material.uniforms.uPaper.value as Color).set(paper)
-    ;(this.material.uniforms.uSky.value as Color).set(sky)
-    ;(this.material.uniforms.uDusk.value as Color).set(dusk)
-  }
-
-  // Light theme only: the welcome's night sky (see introNight in sceneClock.ts).
-  setNight(sweepIn: number, sweepOut: number) {
-    this.material.uniforms.uNight.value = this.material.uniforms.uLight.value * sweepIn
-    this.material.uniforms.uNightOut.value = sweepOut
   }
 
   setMask(mode: MaskMode, progress = 0) {

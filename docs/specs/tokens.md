@@ -231,7 +231,6 @@ Durations today: 40, 70, 80, 120, 140, 160, 180, 200, 260, 280, 320, 400, 420, 6
 | `--dur-med` | 400 | headline, page, large moves | 400, 420 |
 | `--dur-slow` | 600 | | 600 |
 | `--dur-blink` | 1 s | a caret's or a pulse's beat | 1 s, 1.2 s |
-| `--dur-intro` | 10 s | the welcome (D-072) | 10 s |
 | `--dur-spring` | 300 | Marks' spring | 300 |
 
 Eases: `--ease-out` (as today), `--ease-in-out` `cubic-bezier(0.65, 0, 0.35, 1)` (fold and resize; today raw twice),

@@ -1,16 +1,17 @@
 // Full-screen living field behind every view (D-026, D-028). Forms come in overlapping
-// "generations": each is born, drifts with the flow, grows denser (brighter → heavier glyphs in the
+// "generations": each is born, drifts with the flow, grows denser (heavier glyphs in the
 // ASCII pass), then fades while the next one rises elsewhere. Only the shared scene clock drives it,
 // so every copy of the backdrop renders the same frame.
 //
-// The first seconds after the app starts are a welcome (D-072): the sky slowly fills with stars while a red-orange
-// glow spreads from the lower left like a sunrise, one star finally blazes brighter than the rest, then the stars go out
-// and the sky melts into the usual flow.
+// The waves are in colour (D-386): a wave's hue follows the folds of the flow along one ribbon of the accents (cyan →
+// blue → magenta → yellow → cyan), and now and then a wave stays white. The colour goes out in rgb, the glyph's weight
+// in alpha, so a dark hue (blue, magenta) prints as heavy a glyph as a bright one. It starts as the flow: no welcome.
 import { useFrame, useThree } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
-import { Color, Vector2, type ShaderMaterial } from 'three'
-import { usePalette, useTheme } from '../state/theme'
-import { introTime, sceneTime } from './sceneClock'
+import { Color, NoBlending, Vector2, type ShaderMaterial } from 'three'
+import { useTheme } from '../state/theme'
+import { palettes } from '../styles/tokens'
+import { sceneTime } from './sceneClock'
 
 const vertexShader = /* glsl */ `
 varying vec2 vUv;
@@ -26,18 +27,11 @@ precision highp float;
 varying vec2 vUv;
 uniform float uTime;
 uniform vec2 uAspect;
-uniform vec3 uAccentA;
-uniform vec3 uAccentB;
-uniform vec3 uAccentC;
-uniform vec3 uEmber;        // welcome: red-orange of the sky above the horizon
-uniform vec3 uDawn;         // welcome: warmer orange right at the horizon
-uniform float uLight;       // light theme (D-069): the ASCII pass prints brightness as ink
-uniform float uIntro;       // seconds into the welcome; INTRO or more = plain flow
-uniform float uFine;        // cells per 9 CSS px: 2 on a 2x screen (D-172), so the north star keeps its size on screen
+uniform vec3 uStops[6];     // the accents as one ribbon of colour, the last the first again
+uniform float uInk;         // how much heavier the glyphs print in this theme (INK below)
 
 const float PI = 3.14159265;
 const float LIFE = 9.0;        // seconds between births; each generation lives two of these
-const float INTRO = 10.0;      // INTRO_SECONDS in sceneClock.ts
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) {
@@ -45,13 +39,6 @@ float noise(vec2 p) {
   vec2 u = f * f * (3.0 - 2.0 * f);
   return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x),
              mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
-}
-// Per-cell randomness for whole-number cell ids (stars, dither). The sine hash above loses precision on big ids, so on a
-// fine grid (D-172) its values lined up in rows; this one has no sine and stays random at any size.
-float cellHash(vec2 p) {
-  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-  p3 += dot(p3, p3.yzx + 33.33);
-  return fract((p3.x + p3.y) * p3.z);
 }
 const mat2 ROT = mat2(0.8, -0.6, 0.6, 0.8);
 float fbm(vec2 p) {
@@ -76,7 +63,16 @@ float generation(vec2 p, vec2 r, float seed, float age) {
   return shape * env * swell;
 }
 
-vec3 flow(vec2 p) {
+vec3 ribbon(float x) {
+  x = fract(x) * 5.0;
+  float k = floor(x), f = x - k;
+  vec3 a = k < 0.5 ? uStops[0] : k < 1.5 ? uStops[1] : k < 2.5 ? uStops[2] : k < 3.5 ? uStops[3] : uStops[4];
+  vec3 b = k < 0.5 ? uStops[1] : k < 1.5 ? uStops[2] : k < 2.5 ? uStops[3] : k < 3.5 ? uStops[4] : uStops[5];
+  return mix(a, b, f);
+}
+
+// rgb: the wave's colour; a: its weight (how heavy a glyph it prints).
+vec4 flow(vec2 p) {
   float t = uTime * 0.09;
 
   // Shared fluid: a warp that is itself warped, both evolving, so everything folds and curls.
@@ -92,87 +88,41 @@ vec3 flow(vec2 p) {
   float younger = generation(p, r, g + 1.0, ph);
   float lum = clamp(max(older, younger), 0.0, 1.0);
 
-  // Accents: sparse streaks inside the bright parts, carried by the same flow.
-  float pick = fbm(r * 2.0 + 11.0);
-  vec3 accent = pick < 0.47 ? uAccentA : (pick < 0.53 ? uAccentB : uAccentC);
-  float accentMask = smoothstep(0.6, 0.68, fbm(r * 3.0 + q - t)) * step(0.25, lum);
+  // Every wave in colour: the hue follows the flow's folds, and drifts slowly along the ribbon.
+  vec3 hue = ribbon(0.18 + q.x * 1.1 + r.y * 0.9 + lum * 0.35 - t * 0.25);
+  // Now and then a wave stays white (black ink in light): about one generation in three, never the first two, plus
+  // a few small patches that move with the flow.
+  float whiteOlder = step(hash(vec2(g, 3.7)), 0.3) * step(2.0, g);
+  float whiteYounger = step(hash(vec2(g + 1.0, 3.7)), 0.3) * step(2.0, g + 1.0);
+  float white = (whiteOlder * older + whiteYounger * younger) / (older + younger + 1e-4);
+  white = max(white, smoothstep(0.7, 0.78, fbm(p * 1.6 + r * 2.0 + vec2(7.0, 3.0) + t * 0.3)));
+  hue = mix(hue, vec3(1.0), white);
 
-  vec3 col = mix(vec3(lum), accent * (0.4 + lum), accentMask);
-  return col;
-}
-
-// --- Welcome (D-072). Times in seconds of the intro clock. -----------------------------------------------------
-
-// As if the sun were just under the horizon, off to the lower left: pale gold at the bottom edge, then orange, then red,
-// spreading wide along the bottom but staying low, in slow horizontal streaks of cloud. Rises and brightens over the intro.
-// The ASCII target is 8-bit, so a pure red caps at a faint glyph; the gold core is what carries the brightness.
-vec3 dawn(vec2 p, float y, float t) {
-  float rise = smoothstep(0.4, 6.0, t);
-  vec2 sun = vec2(-0.22 * uAspect.x, 0.0);
-  float d = length(vec2((p.x - sun.x) * 0.2, y));           // squashed: it spreads sideways more than it climbs
-  float streaks = 0.7 + 0.3 * fbm(vec2(p.x * 1.3 + t * 0.03, y * 20.0));
-  float glow = exp(-d / (0.04 + 0.1 * rise)) * rise * streaks;
-  glow *= 0.7 + 0.6 * cellHash(floor(gl_FragCoord.xy) + 91.0);   // per-cell dither, so the faint edge frays instead of cutting off
-  vec3 hue = mix(uEmber, uDawn, exp(-d / 0.06));
-  hue = mix(hue, vec3(1.0, 0.82, 0.42), exp(-d / 0.022));
-  return hue * min(glow * (uLight > 0.5 ? 2.2 : 1.5), 1.0); // printed on paper it needs more ink to read as strongly
-}
-
-vec3 welcome(vec2 p, float y, float t, float cell) {
-  vec2 id = floor(gl_FragCoord.xy); // one texel per ASCII cell
-
-  // Stars fill the sky slowly, few at first and then faster; each goes out at its own moment near the end.
-  // The glow near the horizon washes the faint ones out.
-  float h = cellHash(id), hOn = cellHash(id + 17.0), hOff = cellHash(id + 41.0), hLum = cellHash(id + 73.0);
-  float on = smoothstep(0.0, 0.35, t - (0.2 + 4.2 * pow(hOn, 0.75)));
-  float off = 1.0 - smoothstep(0.0, 0.5, t - (5.4 + hOff * 2.6));
-  float twinkle = 0.72 + 0.28 * sin(t * (1.5 + hOff * 3.0) + hOn * 40.0);
-  float sky = smoothstep(0.08, 0.3, y);
-  // On a fine grid a star is one small glyph, so they start brighter; printed on paper they need more ink still.
-  float stars = step(0.966, h) * (0.3 + 0.7 * hLum * hLum * hLum) * on * off * twinkle * sky * (uLight > 0.5 ? 1.6 : 1.0);
-
-  vec3 col = vec3(stars);
-
-  // Last, one star far brighter than the rest: cross rays, short diagonal ones, a halo.
-  vec2 polaris = vec2(min(0.22 * uAspect.x, 0.5 * uAspect.x - 0.12), 0.17);
-  float bloom = smoothstep(4.2, 5.0, t);
-  float flash = bloom * exp(-max(t - 5.0, 0.0) * 1.2);
-  vec2 d = p - polaris, ad = abs(d);
-  vec2 dr = abs(mat2(0.7071, -0.7071, 0.7071, 0.7071) * d);
-  float reach = 0.03 + 0.2 * bloom + 0.12 * flash;
-  float rays = exp(-ad.x / (cell * 0.7)) * exp(-ad.y / reach) + exp(-ad.y / (cell * 0.7)) * exp(-ad.x / (reach * 0.8));
-  float diag = exp(-dr.x / (cell * 0.6)) * exp(-dr.y / (reach * 0.3)) + exp(-dr.y / (cell * 0.6)) * exp(-dr.x / (reach * 0.3));
-  float core = 1.0 - smoothstep(0.8, 2.2, length(d) / cell);
-  float halo = exp(-length(d) / (0.025 + 0.03 * flash));
-  float north = (core + 0.8 * rays + 0.45 * diag + 0.3 * halo) * bloom * (0.92 + 0.08 * sin(t * 4.0));
-  north *= 1.0 - smoothstep(7.0, 9.0, t);
-  return col + min(north, 1.0) * mix(vec3(1.0), uAccentC, 0.35 * (1.0 - core));
+  return vec4(hue * (0.6 + 0.4 * lum), lum * mix(1.0, 0.8, white));
 }
 
 void main() {
   vec2 p = (vUv - 0.5) * uAspect;
-  vec3 col = flow(p);
+  vec4 wave = flow(p);
 
   // Keep the top band calm. The field runs all the way down: the landing's headline has its own scrim.
   float calm = smoothstep(1.0, 0.86, vUv.y);
-  col *= calm;
 
-  if (uIntro < INTRO) {
-    // The night sky melts slowly into the flow, which has been running underneath all along. The dawn starts at the
-    // very bottom edge (the headline keeps its own scrim).
-    float cell = abs(dFdy(p.y)) * uFine;
-    vec3 sky = welcome(p, vUv.y, uIntro, cell) * calm + dawn(p, vUv.y, uIntro) * smoothstep(1.0, 0.86, vUv.y);
-    col = mix(sky, col, smoothstep(6.2, 9.8, uIntro));
-  }
-
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(wave.rgb * calm, clamp(wave.a * calm * uInk, 0.0, 1.0));
 }
 `
+
+// How much heavier the glyphs print, per theme (D-386). Light prints ink on paper, where a small glyph leaves most of
+// the cell empty, so the same weight reads paler than a glyph lit on black: it gets more.
+const INK = { dark: 1.4, light: 1.55 } // tokens-ok: brightness factors, not sizes or colours
+
+// The ribbon's colours: the dark theme's bright accents in both themes. The ASCII pass darkens a hue itself when it
+// prints it as ink, so light's darker accents would come out muddy.
+const RIBBON = [palettes.dark.cyan, palettes.dark.blue, palettes.dark.magenta, palettes.dark.magenta, palettes.dark.yellow, palettes.dark.cyan]
 
 // Rendered at one texel per ASCII cell (D-063); `uvScale` maps those texels back to screen UVs.
 export function AmbientField({ uvScale }: { uvScale: Vector2 }) {
   const size = useThree((s) => s.size)
-  const dpr = useThree((s) => s.viewport.dpr)
   const material = useRef<ShaderMaterial>(null)
   const theme = useTheme((s) => s.theme)
 
@@ -181,35 +131,19 @@ export function AmbientField({ uvScale }: { uvScale: Vector2 }) {
       uTime: { value: 0 },
       uUvScale: { value: new Vector2(1, 1) },
       uAspect: { value: new Vector2(1, 1) },
-      uAccentA: { value: new Color() },
-      uAccentB: { value: new Color() },
-      uAccentC: { value: new Color() },
-      uEmber: { value: new Color() },
-      uDawn: { value: new Color() },
-      uLight: { value: 0 },
-      uIntro: { value: 0 },
-      uFine: { value: 1 },
+      uStops: { value: RIBBON.map((c) => new Color(c)) },
+      uInk: { value: 1 },
     }),
     [],
   )
-  const p = usePalette()
-  const accents = useMemo(() => [new Color(p.magenta), new Color(p.yellow), new Color(p.cyan), new Color(p.ember), new Color(p.dawn)], [p])
-
   // Write through the material: R3F copies the uniforms prop, so the memo object isn't the live one.
   useFrame(() => {
     const u = material.current?.uniforms
     if (!u) return
     u.uTime.value = sceneTime()
-    u.uIntro.value = introTime()
-    u.uLight.value = theme === 'light' ? 1 : 0
-    u.uAccentA.value.copy(accents[0])
-    u.uAccentB.value.copy(accents[1])
-    u.uAccentC.value.copy(accents[2])
-    u.uEmber.value.copy(accents[3])
-    u.uDawn.value.copy(accents[4])
+    u.uInk.value = INK[theme]
     u.uUvScale.value.copy(uvScale)
     u.uAspect.value.set(size.width / size.height, 1)
-    u.uFine.value = Math.min(Math.max(dpr, 1), 2)
   })
 
   return (
@@ -222,6 +156,8 @@ export function AmbientField({ uvScale }: { uvScale: Vector2 }) {
         uniforms={uniforms}
         depthWrite={false}
         depthTest={false}
+        // Alpha carries the glyph's weight to the ASCII pass, not transparency.
+        blending={NoBlending}
       />
     </mesh>
   )

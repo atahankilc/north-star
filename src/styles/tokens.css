@@ -271,7 +271,6 @@
   --dur-exit: 192ms; /* a component breaking cell by cell on its way out */
   --dur-slow: 600ms;
   --dur-blink: 1s; /* a caret's or a pulse's beat */
-  --dur-intro: 10s; /* the welcome (D-072) */
 
   /* Marks (D-265, src/ui/primitives/Marks.tsx): the four L's of anything selectable, in screen px, by tier (the thing's short side
      on screen: < 48 S, < 240 M, else L). len / stroke; how far out hovered, selected, at rest (where they leave to);
@@ -423,37 +422,8 @@
 @property --enter-timing { syntax: '*'; inherits: false; }
 @property --rise-from { syntax: '*'; inherits: false; }
 
-/* The welcome's night sky in light theme (D-072): while the landing's sky is dark blue its text is light, then eases back.
-   Set on <html> by Landing (data-night). Registered so they can ease back to day as fast as the sky breaks up; going into the night they switch at once. */
+/* Registered as a colour so it can be eased: the page goes graphite ↔ black with a focus's ink (CanvasView, D-297). */
 @property --bg { syntax: '<color>'; inherits: true; initial-value: #000000; }
-@property --fg { syntax: '<color>'; inherits: true; initial-value: #ededed; }
-@property --fg-strong { syntax: '<color>'; inherits: true; initial-value: #ffffff; }
-@property --fg-dim { syntax: '<color>'; inherits: true; initial-value: #8a8a8a; }
-@property --fg-faint { syntax: '<color>'; inherits: true; initial-value: #666666; }
-
-:root[data-theme='light']:not([data-night]) {
-  transition: --bg 0.25s ease, --fg 0.25s ease, --fg-strong 0.25s ease, --fg-dim 0.25s ease, --fg-faint 0.25s ease;
-}
-
-/* The night's ink and the paper's, named so the HUD can hold either while the night crosses it (Hud.module.css). */
-:root {
-  --night-fg: #e8ecf5;
-  --night-fg-strong: #ffffff;
-  --night-fg-dim: #8f9bb8;
-  --night-fg-faint: #5d6a8a;
-  --paper-fg: #111111;
-  --paper-fg-strong: #000000;
-  --paper-fg-dim: #595959;
-  --paper-fg-faint: #767676;
-}
-
-:root[data-theme='light'][data-night] {
-  --bg: #0c1736; /* palettes.light.night: the HUD's fade strip and the page behind the canvas */
-  --fg: var(--night-fg);
-  --fg-strong: var(--night-fg-strong);
-  --fg-dim: var(--night-fg-dim);
-  --fg-faint: var(--night-fg-faint);
-}
 
 /* The HUD's size (D-348), set on <html> from Settings → display (any element in the gallery); the side nav and the
    corner keep their lane. */

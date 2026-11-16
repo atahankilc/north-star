@@ -69,7 +69,7 @@ The app talks to Firebase only through **`src/data/`**, so another swap would st
 
 ### Rendering strategy (hybrid)
 Fully WebGL text editing is painful and inaccessible. So:
-- **WebGL (R3F):** the flowing ASCII backdrop and the welcome intro (`src/three/`), and the curtain's cell-by-cell reveal.
+- **WebGL (R3F):** the flowing ASCII backdrop (`src/three/`), and the curtain's cell-by-cell reveal.
 - **DOM:** the canvas and every piece on it (planes and their cards, links, text, matrices, tables, kanbans, documents),
   panels, menus and settings, styled in the same ASCII language. The canvas is a transformed DOM layer that pans and
   zooms (`CanvasView.tsx`); only what's on screen is drawn (`visible.ts`); a few dense things paint into a 2D `<canvas>`
