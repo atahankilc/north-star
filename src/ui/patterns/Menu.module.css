@@ -74,15 +74,15 @@
   color: inherit;
 }
 
-/* In the HUD (the side nav's `+`), it follows the HUD's size (D-348), its drawn `+` with it. */
+/* In the HUD (the side nav's `+`), it follows the HUD's size (D-348), its drawn `+` as big as every HUD icon (D-402). */
 .icon[data-hud] {
   width: var(--hud-tool);
   height: var(--hud-tool);
 }
 
 .icon[data-hud] .label svg {
-  width: var(--hud-plus);
-  height: var(--hud-plus);
+  width: var(--tool-icon);
+  height: var(--tool-icon);
 }
 
 .icon:hover,

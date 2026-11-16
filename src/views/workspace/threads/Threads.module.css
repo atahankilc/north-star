@@ -299,34 +299,6 @@
   font-size: var(--text-sm);
 }
 
-/* The threads tab (ThreadsTool.tsx, D-393): on the main screen's foot at its left, past the HUD's tools; a tab like the
-   dock's and the agent's (top corners round, a line, cyan while pointed at). The screen is a sheet while a column is
-   docked (D-387): the tab stands on its foot, clear of its round corner, and travels with it. Drawn from the HUD's
-   corner, fixed to the window. */
-.footTab {
-  --tab-line: var(--line-hover);
-  position: fixed;
-  bottom: var(--sheet-b, 0px);
-  left: calc(max(var(--sheet-rail-w), var(--sheet-x0, 0px)) + var(--sheet-round, 0px) + var(--space-3));
-  display: flex;
-  padding: var(--space-1);
-  border-radius: var(--radius-box) var(--radius-box) 0 0;
-  background: var(--bg);
-  box-shadow: 0 0 0 var(--line-w) var(--tab-line);
-  transition:
-    left var(--dur-slow) var(--ease-out),
-    bottom var(--dur-slow) var(--ease-out);
-}
-
-.footTab:is(:hover, :focus-within) {
-  --tab-line: var(--accent-cyan);
-}
-
-.footTab svg {
-  width: 1em;
-  height: 1em;
-}
-
 /* The list (D-166, D-193; D-393: a column on the left ground; D-398). One head: the title, what the list shows, its
    tools. */
 .listHead {

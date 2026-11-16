@@ -47,7 +47,7 @@ export function PeopleHere() {
   const shown = peers.length <= MAX ? peers : peers.slice(0, MAX - 1)
   const more = peers.length - shown.length
   return (
-    <div ref={root} className={styles.root} data-learn="people">
+    <div ref={root} className={styles.root} data-learn="people" data-filled>
       <ul className={`${styles.people} ${styles.stack}`} aria-label={`${peers.length} more ${peers.length === 1 ? 'person' : 'people'} here`}>
         {shown.map((p) => {
           const on = following === p.uid

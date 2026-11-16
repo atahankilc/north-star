@@ -29,7 +29,7 @@ type Props = {
   side?: ReactNode
   // In the bottom-left corner, above the corner's tools: who's here (D-193).
   corner?: ReactNode
-  // The workspace's tools in the corner, above yours (the threads button, D-193).
+  // The workspace's tools in the corner, above yours (the threads button, D-193, D-402).
   tools?: ReactNode
   // Under the rule, by your square: what's yours (the tasks given to you, D-261).
   mine?: ReactNode
@@ -92,11 +92,11 @@ export function Hud({ crumbs = [], right, settings, settingsName, settingsBadge,
           landing has no controls. */}
       {user && (
         <div className={styles.corner}>
-          {corner}
-          {tools}
-          {/* Yours, apart from the workspace's threads above (D-175's split, a gap now): your square and the gear, one
-              vertical strip (D-344). */}
-          <ButtonGroup vertical label="You and settings">
+          {/* One vertical strip (D-344), its gaps the strip's own (D-402): who's here, the workspace's threads, then
+              yours, your square and the gear. */}
+          <ButtonGroup vertical label="People, threads, you and settings">
+            {corner}
+            {tools}
             {mine}
             <SettingsButton workspace={settings} workspaceName={settingsName} badge={settingsBadge} />
           </ButtonGroup>

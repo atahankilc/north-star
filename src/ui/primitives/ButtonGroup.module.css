@@ -16,10 +16,18 @@
   display: none;
 }
 
-/* Stacked (the HUD's columns): the gap between rows. */
+/* Stacked (the HUD's columns): the gap between rows; each cell in the column's middle. */
 .group[data-vertical] {
   flex-direction: column;
   flex-wrap: nowrap;
+  align-items: center;
+}
+
+/* A cell that is filled to its edge (a person's circle; `data-filled`) stands as far from its neighbours as an icon
+   does: an icon keeps this much air inside its cell, a filled one gets it outside. So every seen gap in a HUD column is
+   one, whatever is stacked, at every HUD size (D-402). */
+.group[data-vertical] > [data-filled] {
+  margin-block: calc((var(--hud-tool) - var(--tool-icon)) / 2);
 }
 
 /* What isn't a button in the strip (a status, a number, a menu's root) lines up with the buttons; a closed <dialog>

@@ -153,8 +153,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   The HUD's tools on the left edge stay where they are (D-389): the sheet draws back off them (`--sheet-rail-w`) and
   they're left on a rail of ground beside it; the breadcrumb rides the sheet. With no column the canvas fills the
   window and the HUD is on it.
-- **The foot and the ground** (D-393): the screen's foot has three tabs of one family, the threads (left), the dock
-  (middle), the agent (right). The threads' list is a column on the left ground beside the HUD's rail, a conversation a
+- **The foot and the ground** (D-393, D-402): the screen's foot has two tabs of one family, the dock (middle) and the
+  agent (right); the threads' button is a tool in the HUD's corner. The threads' list is a column on the left ground beside the HUD's rail, a conversation a
   column on the right ground. A console off the foot (a piece's, a selection's bar) is a pill with a line, a gap under
   its piece; nothing draws corner L's any more.
 - Buttons are empty and round (D-384, [specs/controls.md](specs/controls.md); `src/ui/primitives/Button.tsx`, lowercase,
@@ -292,13 +292,15 @@ Values will be tuned against contrast checks (WCAG AA for text).
 ### HUD (D-027, D-175)
 - Top left on every page but the landing (which has none, D-340): the breadcrumb (`# north-star / workspaces / <name>`, then the focused plane's name, D-189).
   Everything else moves to a left side nav piece by piece. Screen-edge margins come only from `--hud-x` / `--hud-y`.
-- The side nav's tools at the middle of the left edge (D-178): ToolButton cells like the gear (D-344); the `+` a drawn 20 px
+- The side nav's tools at the middle of the left edge (D-178): ToolButton cells like the gear (D-344); the `+` a drawn 18 px (every icon's size, D-402)
   magenta `+` in its cell, its menu opening right.
 - Bottom-left corner, `--space-3` from the edges, top to bottom (D-175, D-193): people here (D-169: squares, no names,
-  overlapping, name on hover, `+N` past four; a click follows), the threads button, a short rule, your square (initial,
-  name on hover), the ⚙ (a cyan count when people wait to join). Anything else bottom left stays `--corner-h` above.
+  overlapping, name on hover, `+N` past four; a click follows), the threads button, your square (initial,
+  name on hover), the ⚙ (a cyan count when people wait to join). The side nav and the corner are each one
+  `ButtonGroup vertical`, and the gaps are its own (D-402): a circle filled to its edge (`data-filled`) gets outside
+  the air an icon keeps inside its cell, so every seen gap is one (14 px at the normal size); nothing else sets a gap. Anything else bottom left stays `--corner-h` above.
 - Its size (D-348): Settings → display → `hud size` small / normal / large: the tools', squares' and `+N`'s cell 24 / 30
-  / 36 px (`--hud-tool`), icons 14 / 18 / 22 (`--tool-icon`), the drawn `+` 16 / 20 / 24 (`--hud-plus`), the breadcrumb
+  / 36 px (`--hud-tool`), icons, the drawn `+` among them, 14 / 18 / 22 (`--tool-icon`), the breadcrumb
   12 / 14 / 15 (`--hud-text`); `data-hud` on `<html>`, set before the first paint; normal by default. Panels, menus and
   pieces keep their size.
 - Settings (D-064, D-097): your square opens it on the account page, the gear on the last page used. A modal with a side

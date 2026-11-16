@@ -1,5 +1,5 @@
-// The threads (D-166): every conversation in the workspace in one place, opened from the threads tab on the screen's
-// foot. Two columns on the ground under the main screen (D-393, EdgeColumn, foundation/sheet.ts): the list on the left,
+// The threads (D-166): every conversation in the workspace in one place, opened from the threads tool in the
+// HUD's corner (D-402). Two columns on the ground under the main screen (D-393, EdgeColumn, foundation/sheet.ts): the list on the left,
 // beside the HUD's rail (people and what they say are the left's); the conversation on the right, where a thing's panel
 // is (it's about a thing). The list (D-398): one head (`Threads`, what it shows, `mark all read`, `×`), the views as
 // tabs under it (all · new · @you · done, D-344), then the threads under the name of the place they're on

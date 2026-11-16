@@ -128,16 +128,16 @@ feature comes back as a piece, and check them with the user then.
   under the main screen, which lifts as a round sheet and draws back for it (`foundation/sheet.ts`; closed, the screen
   fills the window). A console on a piece keeps its L's. `check:kit` refuses a corner L drawn by hand (`cornerMark`). While a
   column is docked the HUD's tools on the left edge stay where they are, on a rail of ground the sheet draws back off;
-  the breadcrumb rides the sheet (D-389). The agent closed is a tab on the sheet's foot, bottom right (D-389). The foot has three tabs of one
-  family (D-393): the threads on the left, the dock, the agent on the right. A console off the foot (a piece's, a
+  the breadcrumb rides the sheet (D-389). The agent closed is a tab on the sheet's foot, bottom right (D-389). The foot has two tabs of one
+  family (D-393, D-402): the dock, the agent on the right; the threads' button is a tool in the HUD's corner. A console off the foot (a piece's, a
   selection's bar) is a pill with a line, a gap under its piece; no corner L's are left (`--corner-mark` gone). The threads
   lie on the ground: the list a column on the left beside the HUD's rail, a conversation a column on the right (D-393). A docked
   column has no entrance of its own (D-395): it's whole under the screen, whose edge uncovers it in 600 ms and covers it
   again; it leaves once covered. The app narrows for the agent's column only after the screen has drawn back.
 - HUD (D-027): the breadcrumb top left, fixed margins; the rest becomes a left side nav. Bottom left, top to bottom:
-  people here, a rule, your square, the gear (the threads are a tab on the foot, D-393), `--space-3` from the edges, other bottom-left tools
+  people here, the threads button (D-402), your square, the gear, one `ButtonGroup vertical` whose gaps are its own (a filled cell says `data-filled`; nothing in the HUD sets a gap, D-402), `--space-3` from the edges, other bottom-left tools
   `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge, bare icons (D-384); its `+` a drawn
-  20 px magenta `+`, its menu opening right (D-178).
+  magenta `+` as big as every HUD icon (18 px, D-402), its menu opening right (D-178).
 - Menus, pickers and right-click are a **prompt** (D-222; an empty heading is a plain rule, D-291), one set of parts
   (D-350: promptModel, usePromptNav, useDismiss, PromptRow, PromptList, PromptPanel): a `>` line narrowing the list,
   the keys staying in it, the first row lit and picked by Enter until the keys or the pointer move it; `# SECTION ──`
@@ -381,7 +381,7 @@ feature comes back as a piece, and check them with the user then.
 - Comments on components only (D-192, D-193, D-195): right-click a plane, card, text, link or task → `comment`; one open
   conversation per component; its chip under its bottom-right corner (mark + count, magenta new, `@` mention); a plane's
   own chip apart from what's inside it (`[💬 N inside]` on its console). Threads keep their space (`planeId`).
-- Threads (D-197, D-199, D-220; D-393): the threads tab on the foot's left opens the list, a column on the left ground
+- Threads (D-197, D-199, D-220; D-393): the threads button in the HUD's corner (D-402) opens the list, a column on the left ground
   beside the HUD's rail; a chip or a row opens the conversation, a column on the right ground; each works alone, uncovered
   and covered by the main screen (D-395); a narrow window drops the list while a conversation is open. It says what it shows (`everywhere`, or a dropdown with `this canvas` / `in <plane>`); `on … ↗` goes there. Its preview always
   the newest message left, an edit changing it too; the thread deleted by its starter or the last message's writer (D-356).

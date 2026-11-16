@@ -89,7 +89,7 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
 
   return (
     <>
-      <button className={styles.account} onClick={() => show('account')} aria-haspopup="dialog" aria-label={`Account: ${who}`} title={who}>
+      <button className={styles.account} data-filled onClick={() => show('account')} aria-haspopup="dialog" aria-label={`Account: ${who}`} title={who}>
         {/* In a workspace, your square is in the colour the others see you in (D-067). */}
         <Avatar name={who} color={myColor ? themeAccent(myColor, theme) : 'var(--accent-cyan)'} />
       </button>

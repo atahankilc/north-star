@@ -1,6 +1,6 @@
 // `comment` "Every conversation" (lessons.ts, D-349): the whole screen, Pazar fitted, four threads
 // in the workspace (on cards of both planes, one resolved, one mentioning you; the others new to you). The hand clicks
-// the threads tab on the foot: the real list builds cell by cell on the left, under the screen (D-393), every open
+// the threads tool in the HUD's corner (D-402): the real list builds cell by cell on the left, under the screen (D-393), every open
 // thread newest first, a magenta lamp on what's new; it presses `@you`: only the one that names you; it opens it: the
 // conversation builds on the right (the stage is narrow, so the list gives way to it), and the hand rests on its
 // `on 02 Product ↗`, what takes you there.
