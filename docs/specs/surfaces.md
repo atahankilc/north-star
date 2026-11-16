@@ -1,6 +1,6 @@
 # Surfaces: round with a line, marks that take the corner, panels under the screen (D-387)
 
-Status: **look agreed 2026-11-16 (D-387); steps 1–6 built 2026-11-16, steps 7–8 not.** This is the build plan for what sits on top of D-384's controls
+Status: **look agreed 2026-11-16 (D-387); steps 1–7 built 2026-11-16, step 8 not.** This is the build plan for what sits on top of D-384's controls
 ([controls.md](controls.md)): modals, the hazard confirm, the selection marks, menus, the foot dock, the threads dock,
 the side panel, Settings' inside, the toast and the tip. Cards (squircle) and pieces (square) don't change.
 
@@ -126,6 +126,11 @@ the build green before the next.
    full backdrop, the split with a pane beside, the decks side view and touch are still to look at.
 7. **Settings' inside, toast, tip.** Sections and Frame's boxes round; the side list's pill; the toast a pill, its action
    without brackets (the callers' `'[go there]'` strings too); the tip round.
+   *Built 2026-11-16:* Settings' sections `--radius-box` (their foot rounds its own corners), its side list's items
+   pills, the one you're on `--wash-3` (was a cyan line on its left and a cyan wash); the toast a pill with a line (the
+   callers already said `go there` without brackets: only the gallery's example had them); the tip `--radius-box`;
+   the people-here list round with a line, its rows pills. Frame's `dashed` and `interactive` have no users and are
+   left as they are. The agent's corner box is left square: its UI has no gallery yet and is being redesigned (D-312).
 8. **Sweep and docs.** What still draws a square surface or an L by hand; DESIGN.md §6; the release line in
    `src/onboarding/releases.ts`; D-359's and D-347's lines in the memory bank brought in step.
 

@@ -1,5 +1,5 @@
 /* A word with its meaning on hover (src/ui/patterns/Tip.tsx, D-355): the word cyan with a dotted line under it, the
-   meaning a small box in a console's look (the page's black, a hairline), Inter, over everything. */
+   meaning a small round box with a line (the page's black, D-387), Inter, over everything. */
 .word {
   color: var(--accent-cyan);
   text-decoration: underline dotted;
@@ -18,6 +18,7 @@
   z-index: var(--z-popover);
   padding: var(--space-2) var(--space-3);
   border: var(--line-w) solid var(--line-hover);
+  border-radius: var(--radius-box);
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-display);

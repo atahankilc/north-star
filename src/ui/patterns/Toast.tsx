@@ -1,5 +1,5 @@
 // One line at the bottom centre for what was just done, undone or redone (Q-013). Polite live region. With something to
-// do from it (`[go there]`, D-302's session 2) it stays longer and takes that click.
+// do from it (`go there`, D-302's session 2) it stays longer and takes that click.
 import { useEffect, useState } from 'react'
 import { useHistory } from '../../data/history'
 import styles from './Toast.module.css'

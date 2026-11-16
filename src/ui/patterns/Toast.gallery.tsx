@@ -11,7 +11,7 @@ export default example({
   note: 'bottom centre, 2.6 s (6 s with an action); \\ shows it again',
   states: {
     done: { size: 'full', render: () => <Toast />, setup: say('Deleted 3 cards') },
-    'with action': { size: 'full', render: () => <Toast />, setup: say('Moved Rivals to Research', '[go there]') },
+    'with action': { size: 'full', render: () => <Toast />, setup: say('Moved Rivals to Research', 'go there') },
     long: { size: 'full', render: () => <Toast />, setup: say('Undid: put “Lunch near the office is expensive and samey” on Pazar and Rivals') },
   },
 })
