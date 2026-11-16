@@ -781,7 +781,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
                   const y = r.top + T.pad + lane * (T.bar + T.gap)
                   return (
                     <>
-                      <Landing x={b.x - origin * ppd} y={y} w={b.w} h={T.bar} zoom={screen} tone={tone(it.task)} />
+                      <Landing x={b.x - origin * ppd} y={y} w={b.w} h={T.bar} zoom={screen} tone={tone(it.task)} corner="var(--w-card-radius-sm)" />
                       <span className={styles.readout} style={{ left: b.x - origin * ppd, top: y }}>
                         {it.point ? `due ${short(held.e)}` : `${short(held.s)} → ${short(held.e)} · ${held.e - held.s + 1} days`}
                       </span>

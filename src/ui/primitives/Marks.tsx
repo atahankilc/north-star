@@ -1,4 +1,5 @@
-// The marks of anything selectable (D-265): four L's round it, the same for everything. Their size is screen px in three
+// The marks of anything selectable (D-265): four L's round it, the same for everything; round a thing with round
+// corners (a card) each is a piece of that corner's curve instead (D-387, `corner`). Their size is screen px in three
 // tiers: S for cells, rows, heads and chips, M for cards and text, L for pieces and sections, a tier down when the thing
 // is small on screen (`tierFor`); where they are says the state: grey a little out
 // on hover, on the corners and longer while pressed, just outside once selected; their colour is what the thing is
@@ -73,6 +74,9 @@ type Props = {
   tone?: string
   // Space px between the thing's box and where the marks go round it (text keeps clear of its glyphs).
   pad?: number
+  // Its corner's radius (a CSS length in its space's px), when the marks aren't drawn inside the round thing itself (a
+  // card's face sets `--corner` for the marks in it, D-387); none: what's around says, else square, the L.
+  corner?: string
   // The pointer over the box shows the hover marks; `hover` says it instead when the box isn't what's hovered.
   live?: boolean
   hover?: boolean
@@ -88,7 +92,7 @@ type Props = {
 
 type State = 'none' | 'hover' | 'sel' | 'press' | 'arrive' | 'drag' | 'target'
 
-export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live = true, hover, selected = false, pressed = false, dragging = false, target = false, peers, handles, onHandle, resizing }: Props) {
+export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, corner, live = true, hover, selected = false, pressed = false, dragging = false, target = false, peers, handles, onHandle, resizing }: Props) {
   const reduced = useMotion((s) => s.reduced)
   // Selected without a press: a frame on the corners first, then the spring out (`arrive`). Let go after a drag: on the
   // corners while it grows back (`settle`), then the spring.
@@ -127,6 +131,7 @@ export function Marks({ zoom, tier = 'm', short = Infinity, tone, pad = 0, live 
     ...(zoom && { '--zs': 1 / zoom }),
     '--pad': `${pad}px`,
     ...(tone && { '--tone': tone }),
+    ...(corner && { '--corner': corner }),
   } as CSSProperties
   const t = tierFor(tier, short * (zoom ?? 1))
   return (
@@ -178,9 +183,9 @@ export function carriedStyle(shift: { dx: number; dy: number; shrink?: boolean; 
 }
 
 // Where something being dragged will land (D-265): its L's at full size there, on the corners, stepping grid to grid.
-export function Landing({ x, y, w, h, zoom, tier = 'm', tone, pad = 0 }: { x: number; y: number; w: number; h: number; zoom: number; tier?: Tier; tone?: string; pad?: number }) {
+export function Landing({ x, y, w, h, zoom, tier = 'm', tone, pad = 0, corner }: { x: number; y: number; w: number; h: number; zoom: number; tier?: Tier; tone?: string; pad?: number; corner?: string }) {
   const reduced = useMotion((s) => s.reduced)
-  const style = { left: x, top: y, width: w, height: h, '--zs': 1 / zoom, '--pad': `${pad}px`, ...(tone && { '--tone': tone }) } as CSSProperties
+  const style = { left: x, top: y, width: w, height: h, '--zs': 1 / zoom, '--pad': `${pad}px`, ...(tone && { '--tone': tone }), ...(corner && { '--corner': corner }) } as CSSProperties
   return (
     <span className={styles.landing} data-screen-sized style={style} data-reduced={reduced || undefined} aria-hidden>
       <span className={styles.marks} data-tier={tierFor(tier, Math.min(w, h) * zoom)} data-state="press" data-reduced={reduced || undefined}>

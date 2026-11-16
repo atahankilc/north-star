@@ -44,6 +44,8 @@
 /* Flat: no paper of its own, the tint over what's under it and its edge only (a table's row name: its row lines show
    through): square, its edge flush. */
 .face[data-flat='true'] {
+  /* Square, and its marks with it (D-387). */
+  --corner: 0px;
   border-radius: 0;
   background: none;
   box-shadow: none;

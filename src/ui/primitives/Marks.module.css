@@ -1,4 +1,7 @@
-/* Marks (D-265): four L's round the thing (a `--pad` out), sized in screen px by tier (`--zs` = 1 / the space's zoom).
+/* Marks (D-265): four marks round the thing (a `--pad` out), sized in screen px by tier (`--zs` = 1 / the space's zoom).
+   A mark takes the corner of what it marks (D-387): `--corner` is that corner's radius, in the space's px. A card's face
+   sets it and its marks, drawn inside it, read it; drawn beside the face, `corner` says it. None, or 0: square, the L.
+   Round: a piece of that curve as long as the L, concentric with the corner (its radius plus how far out the mark is).
    `--mo` is how far out of the box they are (screen px): at rest (where they leave to), hovered, selected; pressed on
    their corners. `--mo` and `--ml` (the L's length) are what moves, unscaled: their transitions never start on a zoom,
    which only rescales them (with every L on the canvas transitioning at each wheel step, zooming crawled). */
@@ -53,20 +56,26 @@
   --mo: var(--rest0);
   --ml: var(--len0);
   --at: calc(-1 * (var(--mo) + var(--th0)) * var(--zs, 1));
+  /* The L's length, and the mark's own radius: nothing on a square corner (`min()` keeps it 0 there, whatever the
+     distance), else the corner's plus the way out to the mark's outer edge. */
+  --len-now: calc(var(--ml) * var(--zs, 1));
+  --round: calc(var(--corner, 0px) + min(var(--corner, 0px) * 1000, (var(--mo) + var(--th0)) * var(--zs, 1) + var(--pad, 0px))); /* tokens-ok: 1000 only makes any radius above 0 win the min() */
   position: absolute;
-  width: calc(var(--ml) * var(--zs, 1));
-  height: calc(var(--ml) * var(--zs, 1));
+  /* As big as the round corner, so the curve is the corner's own; `clip-path` below keeps the L's length of it. */
+  width: max(var(--len-now), var(--round));
+  height: max(var(--len-now), var(--round));
   border: 0 solid var(--fg-dim);
+  corner-shape: squircle;
   opacity: 0;
   transition-property: --mo, --ml, border-color, opacity;
   transition-duration: var(--dur-quick);
   transition-timing-function: var(--ease-out);
 }
 
-.marks i[data-c='nw'] { top: var(--at); left: var(--at); border-top-width: var(--th); border-left-width: var(--th); }
-.marks i[data-c='ne'] { top: var(--at); right: var(--at); border-top-width: var(--th); border-right-width: var(--th); }
-.marks i[data-c='se'] { bottom: var(--at); right: var(--at); border-bottom-width: var(--th); border-right-width: var(--th); }
-.marks i[data-c='sw'] { bottom: var(--at); left: var(--at); border-bottom-width: var(--th); border-left-width: var(--th); }
+.marks i[data-c='nw'] { top: var(--at); left: var(--at); border-top-width: var(--th); border-left-width: var(--th); border-top-left-radius: var(--round); clip-path: inset(0 calc(100% - var(--len-now)) calc(100% - var(--len-now)) 0); }
+.marks i[data-c='ne'] { top: var(--at); right: var(--at); border-top-width: var(--th); border-right-width: var(--th); border-top-right-radius: var(--round); clip-path: inset(0 0 calc(100% - var(--len-now)) calc(100% - var(--len-now))); }
+.marks i[data-c='se'] { bottom: var(--at); right: var(--at); border-bottom-width: var(--th); border-right-width: var(--th); border-bottom-right-radius: var(--round); clip-path: inset(calc(100% - var(--len-now)) 0 0 calc(100% - var(--len-now))); }
+.marks i[data-c='sw'] { bottom: var(--at); left: var(--at); border-bottom-width: var(--th); border-left-width: var(--th); border-bottom-left-radius: var(--round); clip-path: inset(calc(100% - var(--len-now)) calc(100% - var(--len-now)) 0 0); }
 
 /* Hovered: grey, a little out, gliding in. */
 :hover > .marks[data-live='true'][data-state='none'] i,

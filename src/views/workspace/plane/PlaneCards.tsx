@@ -667,7 +667,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
           onMember={(c) => useCanvasView.setState({ cardSelected: c.id, labelSelected: null, linkSelected: null })}
           onFold={() => void (card.type === 'package' ? foldPackage(wid, card, null) : foldCard(wid, card, !card.folded))}
         />
-        {live && <Marks zoom={zoom} short={Math.min(CARD.w, h)} tone="var(--type)" selected={selected} pressed={pressed} dragging={moving} target={target} peers={peers} />}
+        {live && <Marks zoom={zoom} short={Math.min(CARD.w, h)} tone="var(--type)" corner="var(--w-card-radius)" selected={selected} pressed={pressed} dragging={moving} target={target} peers={peers} />}
         {live && editor && !lifted && (hovered || linkingFrom) && (
           <span className={styles.handle} data-linking={linkingFrom || undefined} onPointerDown={startLink} aria-label="Drag to another card to link">
             <span aria-hidden>›</span>
@@ -676,7 +676,7 @@ function CardBody({ card, facts, detail, zoom, live, editor, arrive, h, tuck, pa
         {live && <ThreadChip wid={wid} thread={thread} zoom={zoom} />}
       </div>
       {/* Carried by what holds it (a section, a package), only that one's marks show where they land (D-291). */}
-      {live && moving && (!shift?.lead || lifted) && <Landing x={x} y={y} w={CARD.w} h={h} zoom={zoom} tone={CARD_TONE[card.type]} />}
+      {live && moving && (!shift?.lead || lifted) && <Landing x={x} y={y} w={CARD.w} h={h} zoom={zoom} tone={CARD_TONE[card.type]} corner="var(--w-card-radius)" />}
     </>
   )
 }

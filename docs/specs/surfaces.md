@@ -1,6 +1,6 @@
 # Surfaces: round with a line, marks that take the corner, panels under the screen (D-387)
 
-Status: **look agreed 2026-11-16 (D-387); steps 1–2 built 2026-11-16, steps 3–8 not.** This is the build plan for what sits on top of D-384's controls
+Status: **look agreed 2026-11-16 (D-387); steps 1–3 built 2026-11-16, steps 4–8 not.** This is the build plan for what sits on top of D-384's controls
 ([controls.md](controls.md)): modals, the hazard confirm, the selection marks, menus, the foot dock, the threads dock,
 the side panel, Settings' inside, the toast and the tip. Cards (squircle) and pieces (square) don't change.
 
@@ -90,6 +90,11 @@ the build green before the next.
    `corner` where it's drawn beside the face (PlaneCards, a deck's and a table's cards) and on `Landing`; a flat face
    says 0. The short curve, every state (hover, selected, pressed, arrive, target, peers), all three tiers, at 25 % and
    400 %. `check:kit` refuses a hand-drawn corner mark outside Marks.
+   *Built 2026-11-16:* in Marks.module.css, from `--corner`: a card's face sets it and the marks drawn in it read it (a
+   flat face says 0); `Marks` and `Landing` take `corner` where they're drawn beside the round thing (a plane's cards, a
+   deck's gap, a timeline's bar). The mark is as big as the round corner and `clip-path` keeps the L's length of it, so
+   the curve is the corner's own at every distance. A pill (a deck's `SOON` task) keeps the L for now: its corner is
+   half its height, which CSS can't read. The `check:kit` rule waits for step 8, when the docked L's are gone too.
 4. **Menus.** PromptFrame round with a line, cyan with the keyboard, its L's gone; PromptRow a pill, picked filled, no
    band; Menu, Select, ContextMenu, InPlaceMenu, the finder, the kind guide, Popover, PeopleHere's list checked. A menu
    in a console or dock (`plain`) too.

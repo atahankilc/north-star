@@ -699,7 +699,7 @@ const Slotted = memo(function Slotted({ slot, tone, children }: { slot: number; 
 export function Gap({ h, tone }: { h: number; tone?: string }) {
   return (
     <span className={styles.slot} style={{ height: h }} aria-hidden>
-      <Marks tone={tone} pressed />
+      <Marks tone={tone} corner="var(--w-card-radius)" pressed />
     </span>
   )
 }

@@ -200,7 +200,7 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
                             {/* Over its own box, it lands back in the room it kept: the L's there (D-265). */}
                             {x.id === lifted?.id && over && here && (
                               <span style={{ position: 'absolute', inset: 0, visibility: 'visible' }}>
-                                <Marks tone={CARD_TONE[x.type]} pressed />
+                                <Marks tone={CARD_TONE[x.type]} corner="var(--w-card-radius)" pressed />
                               </span>
                             )}
                           </div>
