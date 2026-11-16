@@ -10,6 +10,7 @@ import { key, pointOf, run, type Action, type Step, type Target } from '../direc
 import { pazar, workspace, WID } from './pazar'
 import { planeArea, useCanvasView } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
+import { ease, onStage, putStyle } from '../stageKit'
 
 export const base = { ...pazar, wid: WID, workspace }
 export const AT = workspace.createdAt + 8 * 24 * 3600 * 1000
@@ -19,15 +20,7 @@ export const CLEAR = { x: -1600, y: 0 }
 
 // The stage without the HUD (breadcrumb, side nav, the corner): the scene's piece alone on the canvas. A style for this
 // scene only, put in once; the tree is made again each loop, the style stays.
-export const bare = (scene: string): Action =>
-  run(() => {
-    const id = `demo-bare-${scene}`
-    if (document.getElementById(id)) return
-    const st = document.createElement('style')
-    st.id = id
-    st.textContent = `[data-scene="${scene}"] header { display: none !important; }`
-    document.head.appendChild(st)
-  }, 'no HUD')
+export const bare = (scene: string): Action => putStyle(`demo-bare-${scene}`, `${onStage(scene)} header { display: none !important; }`, 'no HUD')
 
 // Typed into what has the focus, at a readable pace, no key chips (it's words, not a key).
 export const type = (text: string, each = 70): Step[] => [...text].map((ch) => ({ do: { ...key(/[A-Z]/.test(ch) ? `⇧${ch}` : ch === ' ' ? ' ' : ch, 0), ms: each } }))
@@ -78,7 +71,6 @@ export const arrive = (c: Card, what = `${c.type} arrives`) => ({ what, ms: 0, s
 
 // The focused piece's own view gliding (eased both ends) to frame part of it (its px), as camera.frame does at once:
 // the scene's look following what it shows (a package folding small, a card growing).
-const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 export const frameTo = (b: { x: number; y: number; w: number; h: number }, ms: number, pad = 16): Action => {
   let from = { zoom: 1, ox: 0, oy: 0 }
   let to = from

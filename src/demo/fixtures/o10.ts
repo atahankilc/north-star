@@ -5,6 +5,7 @@ import type { Edge } from '../../data/edges'
 import { planeArea, useCanvasView } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
 import { find, key, run, type Action, type Ctx } from '../director'
+import { ease, onStage, putStyle } from '../stageKit'
 
 // ——— keys held while the pointer works ———
 // The director's pointer events carry no modifier keys; a held key is put on every pointer and mouse event made while
@@ -41,23 +42,14 @@ export const letGoKeys = (): Action => run(() => holding({}), 'keys up')
 
 // ——— the stage ———
 
-// CSS for this scene only (put in once; the tree is made again each loop, the style stays).
-const style = (scene: string, css: string): Action =>
-  run(() => {
-    const id = `demo-o10-${scene}`
-    if (document.getElementById(id)) return
-    const st = document.createElement('style')
-    st.id = id
-    st.textContent = css.replaceAll('&', `[data-scene="${scene}"]`)
-    document.head.appendChild(st)
-  }, 'scene css')
+// CSS for this scene only, inside its stage: `&` in it is the stage.
+const style = (scene: string, css: string): Action => putStyle(`demo-o10-${scene}`, css.replaceAll('&', onStage(scene)), 'scene css')
 
 // The stage without the HUD, and every key let go (a loop that started over mid-hold).
 export const stage = (scene: string, css = ''): Action[] => [style(scene, `& header { display: none !important; } ${css}`), letGoKeys()]
 
 // ——— the panel ———
 
-const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 // What scrolls in the open card panel (its body), scrolled to show `selector` (or `#name`, a section) near its top
 // (or by `px`), eased: as a wheel's flow would.
 export const scrollPanel = (to: string | number, ms: number): Action => {

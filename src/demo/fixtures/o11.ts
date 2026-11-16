@@ -11,18 +11,9 @@ import { isReducedMotion } from '../../state/motion'
 import { run, type Action, type Ctx } from '../director'
 import { base } from './kit'
 import { P } from './pazar'
+import { ease, pageStyle } from '../stageKit'
 
-// CSS for this scene only, also over what the page puts in the body: `&` is the page while this scene is on the stage
-// (put in once; the tree is made again each loop, the style stays; another scene in the same frame doesn't match it).
-export const pageStyle = (scene: string, css: string): Action =>
-  run(() => {
-    const id = `demo-o11-${scene}`
-    if (document.getElementById(id)) return
-    const st = document.createElement('style')
-    st.id = id
-    st.textContent = css.replaceAll('&', `html:has([data-scene="${scene}"])`)
-    document.head.appendChild(st)
-  }, 'scene css')
+export { pageStyle }
 
 // The stage without the HUD (the breadcrumb's bar, the side nav, the corner: the app's top <header>), as kit's bare()
 // but only that header: a setup panel's own <header> (its tabs) stays.
@@ -90,7 +81,6 @@ export const pieceSet = (id: string, change: (p: WithId<Piece>) => WithId<Piece>
 })
 
 // ——— the focused piece's view, gliding ———
-const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 const glide = (what: string, ms: number, aim: () => { zoom: number; ox: number; oy: number } | null): Action => {
   let from = { zoom: 1, ox: 0, oy: 0 }
   let to = from

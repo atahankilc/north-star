@@ -16,6 +16,7 @@ import { runCells } from '../ui/primitives/Appear'
 import { finishAnimations, releaseAnimations, restart, step as stepClock, stepAnimations, yieldTask, realClock } from './clock'
 import { CELLS_SHUT } from '../ui/foundation/cellReveal'
 import { boundsOf } from '../model/layout'
+import { easeInOut } from '../ui/foundation/motionTokens'
 
 export type Pt = { x: number; y: number }
 // Where the cursor goes: a CSS selector (the element's middle, or `aim()`'s point in it), a stage point, or a function
@@ -327,10 +328,9 @@ export const onStage =
 
 // ——— the cursor's motion ———
 
-const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 // A person's hand doesn't go straight: a slight bow to one side.
 function along(a: Pt, b: Pt, k: number, bow = 0.1): Pt {
-  const e = inOut(k)
+  const e = easeInOut(k)
   const c = { x: (a.x + b.x) / 2 - (b.y - a.y) * bow, y: (a.y + b.y) / 2 + (b.x - a.x) * bow }
   const u = 1 - e
   return { x: u * u * a.x + 2 * u * e * c.x + e * e * b.x, y: u * u * a.y + 2 * u * e * c.y + e * e * b.y }
@@ -447,7 +447,7 @@ const cursor_ = {
       ms,
       start: () => (done = 0),
       frame: (_c, k) => {
-        const want = deltaY * inOut(k)
+        const want = deltaY * easeInOut(k)
         const d = want - done
         if (Math.abs(d) < 0.01) return
         done = want
@@ -556,7 +556,7 @@ export const camera = {
         to = { x: -((x0 + x1) / 2) * zoom, y: -((y0 + y1) / 2) * zoom, zoom }
       },
       frame: (c, k) => {
-        const e = isReducedMotion() ? 1 : inOut(k)
+        const e = isReducedMotion() ? 1 : easeInOut(k)
         setCam(c.wid, { x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e, zoom: from.zoom + (to.zoom - from.zoom) * e })
       },
     }

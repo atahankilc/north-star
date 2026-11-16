@@ -17,8 +17,10 @@ import path from 'node:path'
 import { root, walk } from './lib.mjs'
 
 const baselinePath = path.join(root, 'scripts/kit-baseline.json')
-// The kit itself, the dev-only gallery and the demo realm's stage, tests.
-const skip = [/^src\/ui\//, /^src\/gallery\//, /^src\/demo\//, /\.gallery\.tsx$/, /\.test\.tsx?$/]
+// The kit itself and tests. The dev-only gallery, its examples and the demo realm's stage are read too (D-400: the
+// repeats of round 2 had gathered where no check looked), counted apart as the dev pages.
+const skip = [/^src\/ui\//, /\.test\.tsx?$/]
+const dev = (file) => /^src\/(?:gallery|demo)\//.test(file) || /\.gallery\.tsx$/.test(file)
 
 const RULES = {
   tsx: [
@@ -78,8 +80,8 @@ const HINT = {
   kitRaw: 'a raw element inside the kit: build the pattern from the primitives (Button, Field, Checkbox…)',
 }
 const isCode = (name) => name in HINT
-// Where the code rules never look: the dev-only gallery, the demo realm's stage, tests.
-const codeSkip = [/^src\/gallery\//, /^src\/demo\//, /\.gallery\.tsx$/, /\.test\.tsx?$/, /\.d\.ts$/]
+// Where the code rules never look: tests.
+const codeSkip = [/\.test\.tsx?$/, /\.d\.ts$/]
 
 // Rules that hold inside the kit as well, where the others don't look.
 const everywhere = new Set(['scrollbar', 'onLook', 'cornerMark'])
@@ -175,11 +177,12 @@ for (const [f, c] of Object.entries(baseline))
 const sum = (pick) => {
   let n = 0
   const files = new Set()
-  for (const [f, c] of Object.entries(now)) for (const [k, v] of Object.entries(c)) if (pick(k)) ((n += v), files.add(f))
+  for (const [f, c] of Object.entries(now)) for (const [k, v] of Object.entries(c)) if (pick(k, f)) ((n += v), files.add(f))
   return [n, files.size]
 }
-const [ui, uiFiles] = sum((k) => !isCode(k))
-const [code, codeFiles] = sum(isCode)
+const [ui, uiFiles] = sum((k, f) => !isCode(k) && !dev(f))
+const [code, codeFiles] = sum((k, f) => isCode(k) && !dev(f))
+const [devs, devFiles] = sum((_, f) => dev(f))
 if (over.length) {
   const hints = [...new Set(over.map((o) => o.split(': ')[1].split(' ')[0]).filter(isCode))].map((k) => `  ${k}: ${HINT[k]}`)
   console.error(
@@ -189,6 +192,6 @@ if (over.length) {
   process.exit(1)
 }
 console.log(
-  `check:kit: ${ui} hand-made left in ${uiFiles} files; behaviour by hand: ${code} in ${codeFiles} files (in the baseline, only shrinks)` +
+  `check:kit: ${ui} hand-made left in ${uiFiles} files; behaviour by hand: ${code} in ${codeFiles} files; the dev pages (gallery, examples, demo): ${devs} in ${devFiles} files (in the baseline, only shrinks)` +
     (under.length ? ` (${under.length} below the baseline: npm run check:kit -- --write)` : ''),
 )

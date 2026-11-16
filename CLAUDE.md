@@ -39,7 +39,8 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
   that finds nothing fails it (~3 min, so by hand and in CI's own job, not on every write; `-- <path part>` runs some)
 - `npm run check:kit`: hand-made UI outside src/ui no more than scripts/kit-baseline.json (D-326); and behaviour written by hand
   where a shared home exists (D-391: a window key or pointer listener, a frame loop, localStorage, a cut at a typed
-  number in model/ops/data, a raw element in the kit's patterns), today's in the baseline, new ones refused
+  number in model/ops/data, a raw element in the kit's patterns), today's in the baseline, new ones refused; the dev
+  pages (src/demo, src/gallery, every example) are read too (D-400), counted apart
 - `npm run check:repeats`: an exported name declared in two files, copied blocks (jscpd), unused files and exports
   (knip), no more than scripts/repeats-baseline.json (D-391); `-- --names` is the fast part the hook and commits run,
   the whole runs in CI's own job (~10 s, tools in its own cache); `-- --write` lowers the baseline, `-- --admit names`

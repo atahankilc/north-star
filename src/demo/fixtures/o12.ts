@@ -12,18 +12,10 @@ import { isReducedMotion } from '../../state/motion'
 import type { Task } from '../../data/tasks'
 import { run, type Action } from '../director'
 import { DAY } from '../time'
+import { ease, pageStyle } from '../stageKit'
 
 // ——— the stage ———
-// CSS for this scene only, over the whole page (its portals too: a wizard, a panel), put in once.
-export const pageStyle = (scene: string, css: string): Action =>
-  run(() => {
-    const id = `demo-o12-${scene}`
-    if (document.getElementById(id)) return
-    const st = document.createElement('style')
-    st.id = id
-    st.textContent = css.replaceAll('&', `html:has([data-scene="${scene}"])`)
-    document.head.appendChild(st)
-  }, 'scene css')
+export { pageStyle }
 // No HUD (a lesson about one part shows that part).
 export const NO_HUD = '& header { display: none !important; }'
 
@@ -99,7 +91,6 @@ export const docsShut = (readerAt: number | null = null): Action => run(() => us
 
 // The canvas's camera gliding (eased both ends) to a canvas point in the stage's middle at a zoom: as camera.set, over
 // `ms` (a person scrolling along something long).
-const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 export const glideTo = (x: number, y: number, zoom: number, ms: number): Action => {
   let from = { x: 0, y: 0, zoom: 1 }
   return {

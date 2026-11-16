@@ -20,20 +20,13 @@ import { inFocus, onCanvas, run, type Action, type Ctx } from '../director'
 import { PEOPLE } from './pazar'
 import { DEMO_DAY } from '../clock'
 import { MIN } from '../time'
+import { ease, onPage, putStyle } from '../stageKit'
 
 // ——— the stage ———
 // Only the HUD's part the lesson is about (onboarding.md §6.2b.1): on a 16:10 stage small enough to read in the lesson's
 // slot (640 × 400) the side nav (the left edge's middle) and the bottom-left corner would overlap, as they never do on a
 // real screen; so a side nav lesson shows no corner, and a corner lesson (people, threads) no side nav.
-const hide = (scene: string, what: string, selector: string): Action =>
-  run(() => {
-    const id = `demo-o13-${scene}-${what}`
-    if (document.getElementById(id)) return
-    const st = document.createElement('style')
-    st.id = id
-    st.textContent = `html:has([data-scene="${scene}"]) [data-scene] ${selector} { visibility: hidden !important; }`
-    document.head.appendChild(st)
-  }, `no ${what}`)
+const hide = (scene: string, what: string, selector: string): Action => putStyle(`demo-o13-${scene}-${what}`, `${onPage(scene)} [data-scene] ${selector} { visibility: hidden !important; }`, `no ${what}`)
 export const sideOnly = (scene: string): Action => hide(scene, 'corner', `.${hudStyles.corner}`)
 export const cornerOnly = (scene: string): Action => hide(scene, 'side nav', '[data-learn="sidenav"]')
 // No breadcrumb: a scene framed close on a plane's top row would print it over the cards there.
@@ -155,7 +148,6 @@ export const keepPlaced = (ms: number): Action => ({
 })
 
 // A teammate's cursor glides (eased both ends, a slight bow, as a hand) to a point of its space.
-const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 export const drift = (uid: string, to: { x: number; y: number }, ms: number): Action => {
   let a = { x: 0, y: 0 }
   return {
@@ -168,7 +160,7 @@ export const drift = (uid: string, to: { x: number; y: number }, ms: number): Ac
     frame: (c, k) => {
       const d = drawn.get(uid)
       if (!d) return
-      const e = inOut(k)
+      const e = ease(k)
       const bow = Math.sin(Math.PI * e) * 0.08
       d.at = {
         x: a.x + (to.x - a.x) * e - (to.y - a.y) * bow,

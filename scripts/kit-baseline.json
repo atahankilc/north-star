@@ -25,6 +25,25 @@
   "src/data/workspaces.ts": {
     "rawCut": 2
   },
+  "src/demo/Stage.tsx": {
+    "portal": 1
+  },
+  "src/gallery/Gallery.module.css": {
+    "caps": 2,
+    "pieceSurface": 1
+  },
+  "src/gallery/Gallery.tsx": {
+    "button": 8,
+    "menuHost": 1,
+    "windowKeys": 1
+  },
+  "src/gallery/UsesTree.tsx": {
+    "button": 2
+  },
+  "src/gallery/onboarding.tsx": {
+    "menuHost": 1,
+    "rafLoop": 1
+  },
   "src/model/clean.ts": {
     "rawCut": 1
   },
@@ -37,8 +56,14 @@
   "src/model/tasks.ts": {
     "rawCut": 1
   },
+  "src/onboarding/Guide.gallery.tsx": {
+    "button": 1
+  },
   "src/onboarding/KindGuide.tsx": {
     "rafLoop": 1
+  },
+  "src/onboarding/Pages.gallery.tsx": {
+    "button": 1
   },
   "src/onboarding/busy.ts": {
     "windowKeys": 4
@@ -100,11 +125,17 @@
   "src/ui/primitives/AutosaveField.tsx": {
     "kitRaw": 3
   },
+  "src/ui/primitives/CountBadge.gallery.tsx": {
+    "kitRaw": 1
+  },
   "src/ui/primitives/DecodeText.tsx": {
     "rafLoop": 2
   },
   "src/ui/primitives/InlineEdit.tsx": {
     "kitRaw": 3
+  },
+  "src/ui/primitives/Label.gallery.tsx": {
+    "kitRaw": 1
   },
   "src/ui/primitives/Marks.tsx": {
     "windowKeys": 1
@@ -134,8 +165,14 @@
   "src/views/workspace/documents/Documents.tsx": {
     "windowKeys": 1
   },
+  "src/views/workspace/find/FindPreview.gallery.tsx": {
+    "dialog": 1
+  },
   "src/views/workspace/find/FindPreview.tsx": {
     "rafLoop": 1
+  },
+  "src/views/workspace/find/Finder.gallery.tsx": {
+    "dialog": 1
   },
   "src/views/workspace/find/Finder.tsx": {
     "windowKeys": 1

@@ -11,9 +11,11 @@ import { accents } from '../../styles/tokens'
 import { themeAccent } from '../../state/theme'
 import { usePresence, type Peer } from '../../data/presence'
 import peerStyles from '../../views/workspace/canvas/collab.module.css'
-import { aim, camera, cursor, inFocus, key, pointOf, wait, type Action, type Ctx, type Scene, type Step, type Target } from '../director'
+import { aim, camera, cursor, inFocus, wait, type Action, type Ctx, type Scene, } from '../director'
 import { pazar, workspace, WID, P, PEOPLE, DEMO_USER } from '../fixtures/pazar'
 import { DEMO_DAY } from '../clock'
+import { rightClick, type } from '../fixtures/kit'
+import { ease } from '../stageKit'
 
 const CARD = '[data-target="card:r-greasy"]'
 const COMMENT = '[role="menu"] [data-key="comment"]'
@@ -68,7 +70,6 @@ const arrive = (start: Record<string, { x: number; y: number }>): Action => ({
 })
 
 // A peer's cursor glides (eased both ends, a slight bow, as a hand) to a point of the plane.
-const inOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 const drift = (uid: string, to: { x: number; y: number }, ms: number): Action => {
   let a = { x: 0, y: 0 }
   return {
@@ -81,34 +82,13 @@ const drift = (uid: string, to: { x: number; y: number }, ms: number): Action =>
     frame: (c, k) => {
       const d = drawn.get(uid)
       if (!d) return
-      const e = inOut(k)
+      const e = ease(k)
       const bow = Math.sin(Math.PI * e) * 0.08
       d.at = { x: a.x + (to.x - a.x) * e - (to.y - a.y) * bow, y: a.y + (to.y - a.y) * e + (to.x - a.x) * bow }
       place(c, d)
     },
   }
 }
-
-// A right-click where the cursor is (it went to `t` the step before): the browser's contextmenu, which the canvas
-// answers with its menu. (The director's press is the left button's.)
-const rightClick = (t: Target): Action => ({
-  what: 'right-click',
-  ms: 120,
-  start: (c) => {
-    const p = pointOf(t, c)
-    if (!p) return console.error('[demo] peers-comment: nothing to right-click')
-    const el = document.elementFromPoint(p.x, p.y) ?? document.body
-    const init = { bubbles: true, cancelable: true, composed: true, clientX: p.x, clientY: p.y, button: 2, buttons: 2, view: window }
-    el.dispatchEvent(new PointerEvent('pointerdown', { ...init, pointerId: 1, pointerType: 'mouse', isPrimary: true }))
-    el.dispatchEvent(new MouseEvent('mousedown', init))
-    el.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0, pointerId: 1, pointerType: 'mouse', isPrimary: true }))
-    el.dispatchEvent(new MouseEvent('mouseup', { ...init, buttons: 0 }))
-    el.dispatchEvent(new MouseEvent('contextmenu', { ...init, buttons: 0 }))
-  },
-})
-
-// Typed into what has the focus, at a readable pace, no key chips (it's words, not a key).
-const type = (text: string, each = 75): Step[] => [...text].map((ch) => ({ do: { ...key(/[A-Z]/.test(ch) ? `⇧${ch}` : ch, 0), ms: each } }))
 
 const on = aim(CARD, 0.55, 0.55)
 
@@ -139,7 +119,7 @@ const scene: Scene = {
     { do: cursor.press() },
     // The thread builds, its field takes the keys; a first line.
     { do: wait(600) },
-    ...type(TYPED),
+    ...type(TYPED, 75),
     // The teammates meanwhile: Ayla looks over the ideas, Jonas comes down the problems toward the person's card.
     { at: 0, do: drift(PEOPLE.ayla.uid, { x: 610, y: 600 }, 1600) },
     { at: 300, do: drift(PEOPLE.jonas.uid, { x: 520, y: 230 }, 1500) },
