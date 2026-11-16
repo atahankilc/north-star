@@ -73,12 +73,16 @@
 
 /* `under`: hanging under what it belongs to; the caller places it. */
 
-/* On the screen's foot, in the middle. */
+/* On the screen's foot, in the middle: the main screen's, which draws in and aside while a column is docked
+   (`--sheet-x0`, `--sheet-x1`, `--sheet-b`, foundation/sheet.ts, D-387); it travels with it. */
 .console[data-at='foot'] {
   --mkb: transparent;
-  left: 50%;
-  bottom: 0;
+  left: calc(50% + (var(--sheet-x0, 0px) - var(--sheet-x1, 0px)) / 2);
+  bottom: var(--sheet-b, 0px);
   transform: translateX(-50%);
+  transition:
+    left var(--dur-slow) var(--ease-out),
+    bottom var(--dur-slow) var(--ease-out);
 }
 
 /* There it's a tab rising from the floor (D-387): its top corners round, a line round it (its foot's is under the
@@ -126,6 +130,8 @@
 }
 
 .console[data-full][data-at='foot'] {
+  left: var(--sheet-x0, 0px);
+  right: var(--sheet-x1, 0px);
   transform: none;
 }
 

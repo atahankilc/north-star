@@ -1,7 +1,9 @@
-/* A column docked to an edge (src/ui/patterns/EdgeColumn.tsx, D-359): the screen's full height, over the HUD's bar
-   (whose shade would dim its top line), the page's black, a line on its inner edge (a full-height column on the page's
-   black needs it). `--column-w` its width, `--column-z` its layer. */
+/* A column docked to an edge (src/ui/patterns/EdgeColumn.tsx, D-359): the screen's full height, `--column-w` its width,
+   `--column-z` its layer. It lies on the ground under the main screen (D-387, foundation/Sheet.module.css): the
+   ground's colour, no line, no marks; the screen's lifted edge beside it says where it ends. What's in it paints on
+   the ground too (`--bg`). */
 .column {
+  --bg: var(--ground);
   position: fixed;
   top: 0;
   bottom: 0;
@@ -9,18 +11,10 @@
   display: flex;
   flex-direction: column;
   width: min(var(--column-w, var(--panel-w)), 100%);
-  background: var(--bg);
+  background: var(--ground);
   color: var(--fg);
   font-family: var(--font-display);
   font-size: var(--text-xs);
   line-height: var(--space-4);
   cursor: default;
-}
-
-.column[data-side='right'] {
-  border-left: var(--line-w) solid var(--line-hover);
-}
-
-.column[data-side='left'] {
-  border-right: var(--line-w) solid var(--line-hover);
 }

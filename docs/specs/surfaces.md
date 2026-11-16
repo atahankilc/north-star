@@ -1,6 +1,6 @@
 # Surfaces: round with a line, marks that take the corner, panels under the screen (D-387)
 
-Status: **look agreed 2026-11-16 (D-387); steps 1–5 built 2026-11-16, steps 6–8 not.** This is the build plan for what sits on top of D-384's controls
+Status: **look agreed 2026-11-16 (D-387); steps 1–6 built 2026-11-16, steps 7–8 not.** This is the build plan for what sits on top of D-384's controls
 ([controls.md](controls.md)): modals, the hazard confirm, the selection marks, menus, the foot dock, the threads dock,
 the side panel, Settings' inside, the toast and the tip. Cards (squircle) and pieces (square) don't change.
 
@@ -114,6 +114,16 @@ the build green before the next.
    the travel in and out, reduced motion; the dock and the HUD on the sheet; the agent's column, a document beside it
    (D-382), a left column; the split with a pane beside (D-211) and the decks side view (D-300) checked, since they
    share the screen another way; the panel's drag; touch. Corners.module.css's `left`/`right` pairs go.
+   *Built 2026-11-16:* nothing in the screen is laid out again (no pointer maths moves, the canvas isn't resized):
+   `foundation/sheet.ts` keeps two fixed layers (Sheet.module.css): the ground's colour painted over everything
+   outside the sheet's box, and the sheet's rim and shadow over the column. EdgeColumn says it's there
+   (`useSheetColumn`, off as soon as it starts leaving, so the sheet comes back while the column breaks apart); the
+   reach is measured from the columns, so the agent's column with a document beside it, a left column and a dragged
+   width all follow. The root gets `--sheet-x0`, `--sheet-x1`, `--sheet-b`: the foot dock stays in the sheet's middle
+   and on its foot, the threads dock rises with it. EdgeColumn is the ground's colour, no line; Corners.module.css is
+   deleted. The travel is `--dur-slow`; reduced motion: none. Tokens: `--sheet-gap`, `--ground`, `--lift`,
+   `--lift-shade`, `--sheet-rim`. Seen in the gallery only (both themes, opening and closing): the real app over the
+   full backdrop, the split with a pane beside, the decks side view and touch are still to look at.
 7. **Settings' inside, toast, tip.** Sections and Frame's boxes round; the side list's pill; the toast a pill, its action
    without brackets (the callers' `'[go there]'` strings too); the tip round.
 8. **Sweep and docs.** What still draws a square surface or an L by hand; DESIGN.md §6; the release line in

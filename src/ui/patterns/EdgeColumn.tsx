@@ -2,7 +2,8 @@
 // agent's column; the tasks side view). What each had to do for itself before, once:
 // - fixed to the edge (`side`), the screen's full height, `offset` from that edge (what's already there: a pane beside,
 //   the agent's column), `width` (the right panel's 400 by default);
-// - the page's black, a line on its inner edge with the docked marks on that edge's corners (Corners.module.css);
+// - on the ground under the main screen (D-387, foundation/sheet.ts): the screen lifts, goes round and draws back from
+//   it; the column itself is bare, the ground's colour, no line, no marks;
 // - built cell by cell as it opens and broken apart as it closes (Appear: wrap it in <AnimatePresence>);
 // - the canvas never hears a press, a wheel, a double-click or a right-click through it (stopCanvas);
 // - Escape closes it (`onClose`), on the one Escape stack (useEscapeLayer): a menu or a thread opened over it first;
@@ -14,7 +15,8 @@ import { createPortal } from 'react-dom'
 import { Appear } from '../primitives/Appear'
 import { stopCanvas } from '../foundation/canvasGuard'
 import { useEscapeLayer } from '../foundation/useEscapeLayer'
-import corners from '../foundation/Corners.module.css'
+import { useIsPresent } from 'motion/react'
+import { useSheetColumn } from '../foundation/sheet'
 import styles from './EdgeColumn.module.css'
 
 type Props = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
@@ -38,6 +40,7 @@ export function EdgeColumn({ side = 'right', offset = '0px', width, label, onClo
   const own = useRef<HTMLElement>(null)
   const root = elRef ?? own
   useEscapeLayer(() => onClose?.(), { on: escape && !!onClose, root })
+  useSheetColumn(root, side, useIsPresent())
   const column = (
     <Appear
       as="aside"
@@ -47,8 +50,7 @@ export function EdgeColumn({ side = 'right', offset = '0px', width, label, onClo
       role="dialog"
       aria-label={label}
       data-side={side}
-      data-corners={side === 'right' ? 'left' : 'right'}
-      className={[styles.column, corners.corners, className].filter(Boolean).join(' ')}
+      className={[styles.column, className].filter(Boolean).join(' ')}
       style={{ [side]: offset, ...(width !== undefined ? { '--column-w': typeof width === 'number' ? `${width}px` : width } : {}), ...style } as CSSProperties}
     >
       {children}

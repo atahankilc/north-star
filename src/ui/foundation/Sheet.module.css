@@ -1,0 +1,45 @@
+/* The main screen as a sheet (D-387, docs/specs/surfaces.md; sheet.ts makes and moves these). A column docked to an
+   edge lies on the ground under the screen: while one is there the screen lifts, goes round, draws in `--sheet-gap` from
+   the window's edges and back from the column by its width. Nothing in the screen is laid out again: two fixed
+   layers over it draw the look. `.ground` paints the ground's colour over everything outside the sheet (a spread
+   shadow from the sheet's box), under the column. `.rim` is the sheet's lit edge and the shadow it casts on the ground
+   and the column. With no column both are the whole window, square, and draw nothing. */
+.ground,
+.rim {
+  position: fixed;
+  /* sheet.ts's: all 0 with no column, so the layers are the whole window. */
+  inset: var(--sheet-b, 0px) var(--sheet-x1, 0px) var(--sheet-b, 0px) var(--sheet-x0, 0px);
+  border-radius: 0;
+  pointer-events: none;
+  transition:
+    inset var(--dur-slow) var(--ease-out),
+    border-radius var(--dur-slow) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+
+.ground {
+  /* Over the app (its HUD too: only the margins outside the sheet are painted), under a column of the same layer
+     that comes after it in the page. */
+  z-index: calc(var(--z-panel) - 1);
+  box-shadow: 0 0 0 100vmax var(--ground);
+}
+
+.rim {
+  z-index: calc(var(--z-panel) + 1);
+  box-shadow:
+    var(--lift) var(--lift-shade),
+    inset 0 0 0 var(--line-w) var(--sheet-rim);
+  opacity: 0;
+}
+
+:is(.ground, .rim)[data-open] {
+  border-radius: var(--radius-window);
+}
+
+.rim[data-open] {
+  opacity: 1;
+}
+
+:is(.ground, .rim)[data-reduced] {
+  transition: none;
+}

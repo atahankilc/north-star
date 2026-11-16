@@ -153,6 +153,9 @@ up" may need to give way to "round down" in dense lists (kanban sheets, the tabl
   screen as a sheet), `--radius-menu` 16 px (a menu's frame, a popover), `--radius-box` 14 px (a tab's top corners, a box
   inside a window, a tip). A window doesn't clip, so what paints up to its corners rounds its own with `--window-inner`
   (the radius less the line). `--mix-pick` 22 %: a prompt's picked row, a pill filled with its tone.
+- **The sheet** (D-387): `--sheet-gap` (`--space-2`: how far the main screen draws in while a column is docked),
+  `--ground` (what the column lies on: `#121215`, light `#e2e2e5`), `--lift` with `--lift-shade` (the lifted screen's
+  shadow), `--sheet-rim` (its lit edge).
 - **Controls' shape and lamp** (D-384, [controls.md](controls.md)): `--radius-full` 999 px (every pill and circle),
   `--radius-well` (`--space-4`, a `<textarea>`); a worded control's side padding is `--space-3` (`--button-pad`); the lamp
   `--lamp` 0.5em, `--lamp-gap` 0.55em, `--lamp-glow` 0.55em (in em: it grows with a console's text), `--tick-lamp` 8

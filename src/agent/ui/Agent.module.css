@@ -95,10 +95,6 @@
   :global(html) {
     --agent-col-w: 100%;
   }
-
-  .column[data-side='right'][data-corners] {
-    border-left: 0;
-  }
 }
 
 /* PanelHead (D-359), here with a rule under it and room above the log. */

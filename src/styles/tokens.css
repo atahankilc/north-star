@@ -177,6 +177,10 @@
   --radius-window: 24px; /* a modal, the hazard box, the main screen as a sheet */
   --radius-menu: 16px; /* a menu's frame, a popover */
   --radius-box: 14px; /* a tab's top corners, a box inside a window, a tip */
+  --sheet-gap: var(--space-2); /* how far the main screen draws in from the window while a column is docked */
+  --ground: #121215; /* what a docked column lies on, under the main screen */
+  --lift-shade: rgba(0, 0, 0, 0.7);
+  --sheet-rim: rgba(255, 255, 255, 0.16); /* the lifted screen's lit edge */
   --lamp: 0.5em; /* its width and height */
   --lamp-gap: 0.55em; /* lamp to word */
   --lamp-glow: 0.55em; /* its glow while on */
@@ -222,6 +226,7 @@
      box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent). */
   --feather: 0 0 16px 10px; /* the hugging shade behind ink on the page (D-277) */
   --ink-feather: 0 0 18px 12px; /* the same, round the onboarding's ink (--ink-shade) */
+  --lift: 0 18px 50px 0; /* the main screen lifted over the ground (D-387), with --lift-shade */
 
   /* How much of a colour goes into a color-mix (D-319). --card-tint (below) is the card face's. */
   --mix-wash: 8%;
@@ -328,6 +333,9 @@
 :root[data-theme='light'] {
   color-scheme: light;
   --bg: #f3f3f3; /* D-342: a step down from #f5f5f5, which glared; pieces stay white on it */
+  --ground: #e2e2e5;
+  --lift-shade: rgba(0, 0, 0, 0.22);
+  --sheet-rim: rgba(0, 0, 0, 0.12);
   --bg-raised: #ffffff;
   --piece: #ffffff;
   --piece-head: #f7f7f8;

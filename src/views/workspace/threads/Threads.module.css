@@ -209,7 +209,8 @@
   --list-w: min(var(--size-md), calc(100vw - 2 * var(--gutter)));
   --convo-w: min(var(--size-xl), calc(100vw - 2 * var(--gutter)));
   position: absolute;
-  bottom: 0;
+  /* On the main screen's foot, which rises while a column is docked (D-387). */
+  bottom: var(--sheet-b, 0px);
   left: var(--gutter);
   /* Over the HUD (10), so its shade down the left edge doesn't dim it; it never covers the HUD's buttons. */
   z-index: calc(var(--z-panel) - 1);

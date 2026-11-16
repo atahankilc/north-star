@@ -9,14 +9,14 @@ export default example({
   name: 'EdgeColumn',
   place: 'panels/frame',
   file: 'src/ui/patterns/EdgeColumn.tsx',
-  note: 'a column docked to an edge (D-359): full height, a line on its inner edge with the docked marks, cell by cell, Escape on the one stack; SidePanel, the agent’s column and the tasks side view are built on it',
+  note: 'a column docked to an edge (D-359): full height, on the ground under the main screen, which lifts, goes round and draws back from it (D-387), cell by cell, Escape on the one stack; SidePanel, the agent’s column and the tasks side view are built on it',
   states: {
     right: {
       size: 'full',
       render: () => (
         <EdgeColumn label="a right column" onClose={none}>
           <PanelHead kind="right" onClose={none} />
-          <p style={body}>Docked to the right edge, 400 px. Point at it: its marks turn cyan.</p>
+          <p style={body}>Docked to the right edge, 400 px. The main screen is the round sheet beside it.</p>
         </EdgeColumn>
       ),
     },
