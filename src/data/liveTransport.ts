@@ -15,6 +15,7 @@ import {
   type DocumentData,
 } from 'firebase/firestore'
 import { LIVE_DROP_BATCH } from '../model/limits'
+import { inBatches } from './batches'
 import { db } from './firebase'
 import type { LivePacket, LiveState, LiveTransport } from './liveText'
 
@@ -84,11 +85,7 @@ export function firestoreLive(wid: string, id: string, uid: string): LiveTranspo
         if (old) tx.update(stateRef, { s, v: old.v + 1, at: serverTimestamp() })
         else tx.set(stateRef, { s, v: 0, at: serverTimestamp() })
       })
-      for (let i = 0; i < drop.length; i += LIVE_DROP_BATCH) {
-        const batch = writeBatch(db())
-        for (const eid of drop.slice(i, i + LIVE_DROP_BATCH)) batch.delete(doc(edits, eid))
-        await batch.commit()
-      }
+      for (const batch of inBatches(drop, (b, eid) => b.delete(doc(edits, eid)), LIVE_DROP_BATCH)) await batch.commit()
     },
   }
 }
@@ -97,11 +94,7 @@ export function firestoreLive(wid: string, id: string, uid: string): LiveTranspo
 // state is never left behind with its packets gone (an undo of the delete reseeds from the Markdown body).
 export async function deleteLive(wid: string, id: string) {
   const all = await getDocs(editsOf(wid, id))
-  for (let i = 0; i < all.docs.length; i += LIVE_DROP_BATCH) {
-    const batch = writeBatch(db())
-    for (const d of all.docs.slice(i, i + LIVE_DROP_BATCH)) batch.delete(d.ref)
-    await batch.commit()
-  }
+  for (const batch of inBatches(all.docs, (b, d) => b.delete(d.ref), LIVE_DROP_BATCH)) await batch.commit()
   const batch = writeBatch(db())
   batch.delete(stateOf(wid, id))
   await batch.commit()

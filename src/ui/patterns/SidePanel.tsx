@@ -7,7 +7,7 @@
 import { useRef, type ReactNode } from 'react'
 import styles from './SidePanel.module.css'
 import { Button } from '../primitives/Button'
-import { ResizeEdge } from '../primitives/ResizeEdge'
+import { DragLine } from '../primitives/DragLine'
 import { Rule } from '../primitives/Rule'
 import { EdgeColumn } from './EdgeColumn'
 import { PanelHead } from './PanelHead'
@@ -50,8 +50,8 @@ export function SidePanel({ kind, tone, title, label, onClose, actions, right = 
       style={{ ['--tone' as string]: tone ?? 'var(--accent-magenta)' }}
     >
       {width === undefined && (
-        <ResizeEdge
-          edge="left"
+        <DragLine
+          at="left"
           label="The panel's width"
           onStart={(e) => (edge.current = e.currentTarget.parentElement?.getBoundingClientRect().right ?? window.innerWidth)}
           onDrag={(e) => dragPanelWidth(edge.current, e.clientX)}

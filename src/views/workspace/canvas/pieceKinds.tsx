@@ -29,7 +29,9 @@ export type LensKind = Exclude<PieceKind, 'plane'>
 // How a kind is drawn wherever it shows: in its window (`live` false), open on the canvas (`onCanvas`), in focus.
 // `onFocus`: what takes it into focus (a documents list's row, a document's `[continue reading ↗]`, open on the canvas).
 // `page`: a table's or list's page to show (the finder's preview, D-236).
-export type ShownProps = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onFocus?: () => void; page?: number }
+// `onView`, `onCard`: in a pane beside a plane (D-211): the pane's own view, moved when what was added is glided to; a
+// card's row picked there.
+export type ShownProps = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: boolean; onCanvas?: boolean; onFocus?: () => void; page?: number; onView?: (v: PlaneCam) => void; onCard?: (card: Card) => void }
 
 // What its contents' box is worked out from.
 export type BoundsCtx = { cards: Card[]; tasks: Task[]; pieces: WithId<Piece>[]; documents: WithId<Doc>[]; me?: string }
@@ -60,8 +62,8 @@ export type KindRecord = {
 const pageOf = (it: FindItem) => (it.page !== undefined ? ` · page ${it.page + 1}` : '')
 
 // Drawn again only when what it shows changes, not as the camera moves (its view is the same object meanwhile).
-const MatrixShown = memo(({ piece, view, live, editor, onCanvas }: ShownProps) => <MatrixView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} />)
-const TableShown = memo(({ piece, view, live, editor, onCanvas, page }: ShownProps) => <TableView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} page={page} />)
+const MatrixShown = memo(({ piece, view, live, editor, onCanvas, onView }: ShownProps) => <MatrixView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} onView={onView} />)
+const TableShown = memo(({ piece, view, live, editor, onCanvas, page, onView, onCard }: ShownProps) => <TableView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} page={page} onView={onView} onCard={onCard} />)
 // Open on the canvas (D-234), a row's click takes the list into focus with the document beside it.
 const DocumentsShown = memo(({ piece, view, live, editor, onCanvas, onFocus, page }: ShownProps) => <DocumentsView piece={piece} view={view} live={live} editor={editor} onCanvas={onCanvas} onOpen={onCanvas ? onFocus : undefined} page={page} />)
 const DocumentShown = memo(({ piece, view, live, onCanvas, onFocus }: ShownProps) => <DocumentPieceView piece={piece} view={view} live={live} onCanvas={onCanvas} onMore={onCanvas ? onFocus : undefined} />)

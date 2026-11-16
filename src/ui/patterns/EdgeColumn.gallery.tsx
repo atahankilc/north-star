@@ -1,8 +1,8 @@
 import { example } from '../../gallery/example'
 import { EdgeColumn } from './EdgeColumn'
 import { PanelHead } from './PanelHead'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 const body = { padding: 'var(--space-4) var(--space-6)', color: 'var(--fg-dim)' } as const
 
 export default example({

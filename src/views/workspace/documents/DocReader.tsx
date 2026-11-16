@@ -28,6 +28,7 @@ import { useDocActions, useDocUi, type DocAct, type DocDraft } from './Documents
 import { wordsOf } from '../../../model/notes'
 import styles from './DocReader.module.css'
 import content from './DocContent.module.css'
+import { authorName } from '../../../model/words'
 
 const DocEditor = lazy(() => import('./DocEditor'))
 
@@ -197,7 +198,7 @@ function Reading({ d, docked }: { d: WithId<Doc>; docked: boolean }) {
   const acts = useDocActions(d)
   const writes = !!acts.write
   const writing = !!uid && editing && writes
-  const name = user?.name || user?.email || 'Someone'
+  const name = authorName(user)
   // The shared text and the carets, made once per document opened for writing.
   const live = useMemo<LiveSetup | undefined>(() => {
     if (!writing || !id || !uid) return undefined

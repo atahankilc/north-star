@@ -8,11 +8,12 @@
 // the usual places). Its own dev server on a free port, stopped at the end.
 import { fileURLToPath } from 'node:url'
 import { execFileSync, spawn } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync, statSync, mkdirSync } from 'node:fs'
+import { existsSync, readFileSync, mkdirSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { homedir } from 'node:os'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { walk } from './lib.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const ACTS = /\b(press|drag|rightClick|find)\(/
@@ -38,11 +39,10 @@ if (!chrome) {
 }
 
 // The examples that act.
-const walk = (dir) => readdirSync(dir).flatMap((n) => (statSync(join(dir, n)).isDirectory() ? walk(join(dir, n)) : [join(dir, n)]))
 const acting = new Set(
-  walk(join(ROOT, 'src'))
-    .filter((p) => p.endsWith('.gallery.tsx') && ACTS.test(readFileSync(p, 'utf8')))
-    .map((p) => `/${relative(ROOT, p).split('\\').join('/')}`)
+  walk('src', /\.gallery\.tsx$/)
+    .filter((p) => ACTS.test(readFileSync(join(ROOT, p), 'utf8')))
+    .map((p) => `/${p}`)
     .filter((p) => !process.argv[2] || p.includes(process.argv[2])),
 )
 

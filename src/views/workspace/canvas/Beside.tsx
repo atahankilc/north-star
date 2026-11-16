@@ -15,10 +15,10 @@ import { KIND_NAME, kindOfPiece } from '../../../data/pieces'
 import { fitInto, glide, setSplit, stopGlide, useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
 import { sidePanelW } from '../../../ui/patterns/panelWidth'
-import { SplitLine } from '../../../ui/primitives/SplitLine'
+import { DragLine } from '../../../ui/primitives/DragLine'
 import { useWs } from './context'
-import { MatrixView } from '../matrix/Matrix'
-import { TableView } from '../table/Table'
+import { } from '../matrix/Matrix'
+import { } from '../table/Table'
 import { PIECE_KINDS } from './pieceKinds'
 import { toggleSetup, useSetupOn } from './setupStore'
 import { DockAction, FocusDock } from './FocusDock'
@@ -48,7 +48,7 @@ export function Beside({ plane, open, editor, onClose }: Props) {
   const total = w.reduce((a, b) => a + b, 0) || 1
   const tops = w.reduce<number[]>((acc, x, i) => [...acc, acc[i] + (x / total) * size.h], [0])
 
-  // The line between them drags (SplitLine, D-359).
+  // The line between them drags (DragLine, D-359).
   const drag = (ev: PointerEvent) => setSplit(ev.clientX / Math.max(1, size.w))
 
   // The line under pane `i`: it moves the height between that pane and the next, each kept at least 15 % of the screen.
@@ -71,10 +71,10 @@ export function Beside({ plane, open, editor, onClose }: Props) {
         <Pane key={p.id} piece={p} plane={plane} box={{ x: left, y: tops[i], w: size.w - left, h: tops[i + 1] - tops[i] }} editor={editor} first={i === 0} onClose={() => onClose(p.id)} />
       ))}
       {open.slice(0, -1).map((p, i) => (
-        <SplitLine key={`row-${p.id}`} axis="y" data-off-space style={{ left, top: tops[i + 1] }} onDrag={dragRow(i)} label="Between two panes" />
+        <DragLine key={`row-${p.id}`} at="y" data-off-space style={{ left, top: tops[i + 1] }} onDrag={dragRow(i)} label="Between two panes" />
       ))}
       {/* After the pane lines, so where one meets it (the same layer) a press moves the split, not the panes' heights. */}
-      <SplitLine data-off-space data-learn="split" style={{ left }} onDrag={drag} label="Plane and what's beside it" />
+      <DragLine at="x" data-off-space data-learn="split" style={{ left }} onDrag={drag} label="Plane and what's beside it" />
     </>
   )
 }
@@ -178,11 +178,8 @@ function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
       onPointerDown={pan}
       aria-label={`${piece.name || KIND_NAME[kind]}, beside the plane`}
     >
-      {kind === 'matrix' ? (
-        <MatrixView piece={piece} view={view} live editor={editor} onView={setView} />
-      ) : (
-        <TableView piece={piece} view={view} live editor={editor} onCard={toCard} onView={setView} />
-      )}
+      {/* Its own view, live: a row or column added is glided to in this pane (`onView`); a card's row goes to the plane. */}
+      <rec.Shown piece={piece} view={view} live editor={editor} onView={setView} onCard={toCard} />
       {setup && setupOpen && editor && <setup.Panel piece={piece} />}
       {/* Its dock: the focus dock itself, at the bottom middle of its part, named (D-189, D-211). */}
       <FocusDock

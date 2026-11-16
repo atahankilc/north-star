@@ -242,7 +242,7 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
 
 A list of findings and of ways to keep repeats from coming back, for the user to pick from. Built so far: R1.1–R1.4
 and R1.10 (D-388), the checks R4.1–R4.4 (D-391), R1.5–R1.7 (D-392) and R1.8–R1.16 (D-394), under *Done, round 2* at
-the end; then R3 and R2's small logic twins (D-396). R2's bigger merges and R4.5–R4.7 are not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
+the end; then R3 and R2's small logic twins (D-396) and more of R2 (D-397). What D-397 lists as left, and R4.5–R4.7, are not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
 finder (knip) and four full reads (the kit, the workspace views, the logic layers, demo/onboarding/gallery/scripts).
 Line numbers are from that day. *Checked* = the drift was looked at again by hand after the read.
 
@@ -484,3 +484,12 @@ merges (R1.5–R1.7, the demo) and R3.
   - Left of R2: every item under **Views**, **Kit** and **Demo, gallery, scripts** but the two small ones above, and
     of **Logic** the adapters, the value lists, the batching, the document's three makers, `authorName`, renaming a
     piece, functions/ (parked).
+- **More of R2 (2026-11-17, D-397).**
+  - Scripts: scripts/lib.mjs (`root`, `walk`, `COVERED`, `RULE_CHECKS`, `runChecks`). Gallery: gallery/samples.ts.
+  - Logic: `authorName`; the import on `wholeBatches`, the live writing's drops on `inBatches`.
+  - Kit: `DragLine` for `ResizeEdge` and `SplitLine` (pixel-identical strip; the page's cursor is kept while a split
+    line is held).
+  - Views and demo: `WorkspaceScreen` and `useCanvasSwap`, mounted by the app, the demo and the gallery (the HUD's DOM
+    identical in five states); a pane beside a plane drawn through the kind record.
+  - Looked at and not built: `<LensPane>` (two lines alike in each place), one `surface` class (three declarations
+    of tokens each).

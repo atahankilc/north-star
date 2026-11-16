@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { example } from '../../gallery/example'
 import { Options } from './Options'
 import { CARD_TONE } from '../foundation/cardTone'
+import { none } from '../../gallery/samples'
 
 const TYPES = ['customer', 'problem', 'competitor', 'idea', 'feature'] as const
 type Type = (typeof TYPES)[number]
@@ -46,7 +47,6 @@ function Cards() {
   )
 }
 
-const none = () => {}
 
 export default example({
   name: 'Options',

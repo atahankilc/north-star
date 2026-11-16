@@ -1,6 +1,5 @@
 // Whole screens in the gallery (D-324, G3): WorkspaceLayout can't mount itself (it loads the workspace from Firestore),
-// so the screen is put together as the demo's CanvasScreen does (src/demo/views.tsx): the HUD (breadcrumb, side nav,
-// the bottom-left corner) over the real CanvasView, and the finder. Over Pazar, through onCanvas (its states: focus,
+// so the screen is the demo's CanvasScreen (src/demo/views.tsx), the app's own WorkspaceScreen over a made-up store. Over Pazar, through onCanvas (its states: focus,
 // picked, edit…), and with a second canvas when the breadcrumb's prompt is the point.
 import { CanvasScreen } from '../demo/views'
 import { MAIN, setCanvasHere } from '../data/canvases'

@@ -1,8 +1,8 @@
 import { example } from '../../gallery/example'
 import { ToolButton } from './ToolButton'
 import { CompassIcon } from './hudIcons'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 const icon = <CompassIcon />
 
 export default example({

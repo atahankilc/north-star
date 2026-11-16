@@ -139,7 +139,6 @@
   },
   "copies": {
     "evals/tasks/edit.ts <> evals/tasks/edit.ts": 12,
-    "scripts/check-repeats.mjs <> scripts/check-tokens.mjs": 7,
     "src/agent/changeset.ts <> src/agent/preview.ts": 15,
     "src/agent/read/space.ts <> src/agent/read/space.ts": 7,
     "src/app/Crash.module.css <> src/views/workspace/canvas/WorkspaceLayout.module.css": 13,

@@ -23,6 +23,7 @@ import type { Invite, InviteCode, JoinRequest, Member, Role, Workspace } from '.
 import { AUTHOR_NAME_MAX, DESCRIPTION_MAX, MEMBERS_LISTED, WORKSPACE_NAME_KEPT_MAX } from '../model/limits'
 import { WS_COLLECTIONS } from '../model/fromDocs'
 import { inBatches } from './batches'
+import { authorName } from '../model/words'
 export { DESCRIPTION_MAX }
 
 // No 0/O/1/I/L: codes get read aloud and typed by hand.
@@ -111,7 +112,7 @@ export async function requestToJoin(rawCode: string, user: AuthUser): Promise<Jo
   const request: JoinRequest = {
     workspaceId,
     uid: user.id,
-    name: user.name || user.email || 'Someone',
+    name: authorName(user),
     email: user.email ?? '',
     code,
     createdAt: Date.now(),
@@ -164,7 +165,7 @@ export function approveJoinRequest(wid: string, r: JoinRequest) {
 const memberRef = (wid: string, uid: string) => doc(db(), 'workspaces', wid, 'members', uid)
 
 const memberEntry = (name: string, email?: string | null, photo?: string | null): Member => ({
-  name: (name || email || 'Someone').slice(0, AUTHOR_NAME_MAX),
+  name: authorName({ name, email }).slice(0, AUTHOR_NAME_MAX),
   ...(email && { email: email.slice(0, 320) }),
   ...(photo && { photo: photo.slice(0, 2000) }),
   joinedAt: Date.now(),

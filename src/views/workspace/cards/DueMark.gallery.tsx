@@ -1,12 +1,7 @@
 import { example } from '../../../gallery/example'
-import { today } from '../../../model/tasks'
 import { DueMark } from './DueMark'
+import { day } from '../../../gallery/samples'
 
-const day = (n: number) => {
-  const d = new Date()
-  d.setDate(d.getDate() + n)
-  return today(d)
-}
 const row = { display: 'flex', gap: 'var(--space-4)', alignItems: 'center', fontSize: 'var(--text-xs)' }
 
 export default example({

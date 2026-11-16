@@ -12,11 +12,10 @@
 //   npm run check:kit            check
 //   npm run check:kit -- --list  print every hit, file by file
 //   npm run check:kit -- --write lower the baseline to today's counts (never raises it)
-import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import path from 'node:path'
+import { root, walk } from './lib.mjs'
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const baselinePath = path.join(root, 'scripts/kit-baseline.json')
 // The kit itself, the dev-only gallery and the demo realm's stage, tests.
 const skip = [/^src\/ui\//, /^src\/gallery\//, /^src\/demo\//, /\.gallery\.tsx$/, /\.test\.tsx?$/]
@@ -85,15 +84,6 @@ const codeSkip = [/^src\/gallery\//, /^src\/demo\//, /\.gallery\.tsx$/, /\.test\
 // Rules that hold inside the kit as well, where the others don't look.
 const everywhere = new Set(['scrollbar', 'onLook', 'cornerMark'])
 
-function walk(dir, out = []) {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, e.name)
-    if (e.isDirectory()) walk(p, out)
-    else if (/\.(tsx?|module\.css)$/.test(e.name)) out.push(path.relative(root, p).split(path.sep).join('/'))
-  }
-  return out
-}
-
 const skipped = (file) => skip.some((r) => r.test(file))
 
 function count(file) {
@@ -114,7 +104,7 @@ function count(file) {
   return hits
 }
 
-const files = walk(path.join(root, 'src'))
+const files = walk('src', /\.(tsx?|module\.css)$/)
 const now = {}
 const all = {}
 for (const f of files) {

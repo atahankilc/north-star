@@ -1,8 +1,8 @@
 import { example } from '../../gallery/example'
 import { Num, Rule } from './Rule'
+import { none } from '../../gallery/samples'
 
 const box = { width: 400, display: 'grid', gap: 'var(--space-4)' } as const
-const none = () => {}
 
 export default example({
   name: 'Rule',

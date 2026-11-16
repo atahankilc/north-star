@@ -86,7 +86,7 @@ import { panPointer, pressDrag } from '../../../ui/foundation/dragPointer'
 import { keysTaken } from '../../../ui/foundation/focus'
 import { stuckChain } from '../../../model/pieceMoves'
 import { resizedBox } from '../../../model/resizeBox'
-import { cut, plural, leadingNumber } from '../../../model/words'
+import { cut, plural, leadingNumber, authorName } from '../../../model/words'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
 const SCROLLS_ITSELF = 'section[aria-label=Threads], [role=dialog], [role=menu], [data-scrolls]'
@@ -459,7 +459,7 @@ export function CanvasView() {
     if (focusId && !useCanvasView.getState().focusArrived) return
     const hit = (e.target as HTMLElement).closest<HTMLElement>('[data-target]')?.dataset.target
     // Inside a focused plane (D-237): what can be done with what's under the pointer, or added where it is.
-    const inPlane = focused && !isBare(focused) ? planeCtx(wid, focused.id, editor, { cards, labels, edges, places, pieces }, { uid: user?.id, author: user?.name || user?.email || 'someone' }, planeToSpace(e.clientX, e.clientY), [e.clientX, e.clientY]) : null
+    const inPlane = focused && !isBare(focused) ? planeCtx(wid, focused.id, editor, { cards, labels, edges, places, pieces }, { uid: user?.id, author: authorName(user) }, planeToSpace(e.clientX, e.clientY), [e.clientX, e.clientY]) : null
     if (!hit) {
       const items = inPlane ? planeItems(null, null, inPlane) : []
       const r0 = root.current!.getBoundingClientRect()
@@ -607,7 +607,7 @@ export function CanvasView() {
     const files = [...e.dataTransfer.files]
     const onList = focusedDocuments || !!(e.target as HTMLElement).closest('[data-kind=documents]')
     const at = !focusId && !onList ? canvasToSpace(e.clientX, e.clientY) : null
-    const ids = await uploadFiles(wid, { uid: user.id, name: user.name || user.email || 'someone' }, files)
+    const ids = await uploadFiles(wid, { uid: user.id, name: authorName(user) }, files)
     if (at && editor && ids[0]) useDocUi.setState({ placing: { docId: ids[0], at } })
   }
 

@@ -3,8 +3,8 @@ import { example } from '../../gallery/example'
 import { Button } from '../primitives/Button'
 import { Field } from '../primitives/Field'
 import { Dialog } from './Dialog'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 
 function Naming({ about }: { about?: boolean }) {
   const [name, setName] = useState('Pet-sitting marketplace')

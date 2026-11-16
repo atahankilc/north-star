@@ -1,8 +1,8 @@
 import { example } from '../../gallery/example'
 import { Button } from '../primitives/Button'
 import { PanelAction, PanelSection, SidePanel } from './SidePanel'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 
 function Problem({ empty }: { empty?: boolean }) {
   return (

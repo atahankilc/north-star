@@ -2,8 +2,8 @@ import { example } from '../../gallery/example'
 import { ToolButton } from './ToolButton'
 import { Button } from './Button'
 import { BinIcon, CheckIcon, CloseIcon, CompassIcon, DeckIcon, DownloadIcon, EditIcon, FitIcon, GearIcon, GuideIcon, LimitIcon, MinusIcon, MoreIcon, NextIcon, PlaceIcon, PlusIcon, PrevIcon, ShareIcon, ThreadsIcon, TurnLeftIcon, TurnRightIcon, WriteIcon } from './hudIcons'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 const GLYPHS = [
   ['close', CloseIcon], ['before', PrevIcon], ['after', NextIcon], ['less', MinusIcon], ['more of it', PlusIcon], ['done', CheckIcon],
   ['at most', LimitIcon], ['rename', EditIcon], ['write', WriteIcon], ['place', PlaceIcon], ['download', DownloadIcon], ['delete', BinIcon],

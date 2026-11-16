@@ -20,7 +20,7 @@ import { Select } from '../../ui/patterns/Select'
 import { openSettingsAt } from '../../ui/patterns/Settings'
 import { EdgeColumn } from '../../ui/patterns/EdgeColumn'
 import { PanelHead } from '../../ui/patterns/PanelHead'
-import { ResizeEdge } from '../../ui/primitives/ResizeEdge'
+import { DragLine } from '../../ui/primitives/DragLine'
 import { useWs } from '../../views/workspace/canvas/context'
 import { documentsOf, listed, useDocUi } from '../../views/workspace/documents/Documents'
 import { addPiece } from '../../data/pieces'
@@ -378,7 +378,7 @@ function Column() {
       data-learn="agent-column"
       onKeyDown={onKey}
     >
-      <ResizeEdge edge="left" label="The agent's width" onDrag={resizeTo} onEnd={keepWidth} />
+      <DragLine at="left" label="The agent's width" onDrag={resizeTo} onEnd={keepWidth} />
       <PanelHead
         className={styles.head}
         tone="var(--accent-cyan)"
@@ -451,7 +451,7 @@ function Column() {
   )
 }
 
-// Drag the column's left edge to resize it (ResizeEdge, D-359); remembered in this browser.
+// Drag the column's left edge to resize it (DragLine, D-359); remembered in this browser.
 function resizeTo(e: PointerEvent) {
   const w = Math.round(Math.min(W_MAX, Math.max(W_MIN, window.innerWidth - e.clientX)))
   document.documentElement.style.setProperty('--agent-width', `${w}px`)

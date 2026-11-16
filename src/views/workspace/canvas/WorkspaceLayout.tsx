@@ -1,22 +1,16 @@
 // /workspaces/:wid: loads one workspace and its canvas (D-036, D-174). There are no pages: the old views are archived
 // (src/archive/, D-177) and come back as pieces on the canvas.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { canvasPath, WORKSPACES } from '../../../app/paths'
+import { WORKSPACES } from '../../../app/paths'
 import { useAuth } from '../../../data/auth'
 import { setReadOnly } from '../../../data/history'
 import type { WithId } from '../../../data/hooks'
 import type { JoinRequest } from '../../../data/model'
-import { KIND_NAME, kindOfPiece } from '../../../data/pieces'
-import { ThreadsTool } from '../threads/ThreadsTool'
-import { Finder } from '../find/Finder'
 import { usePresenceSession } from '../../../data/presence'
 import { useWorkspaceData } from '../../../data/workspaceData'
 import { useMarkVisits, useSummaryWriter } from '../../../data/glance'
 import { canvasOf, MAIN, setCanvasHere } from '../../../data/canvases'
-import { CanvasCrumb } from './CanvasSwitch'
-import { runCells } from '../../../ui/primitives/Appear'
-import { isReducedMotion } from '../../../state/motion'
 import {
   canEditIn,
   describeWorkspace,
@@ -25,23 +19,18 @@ import {
   isOwnerOf,
   renameWorkspace,
   useJoinRequests,
-  useWorkspace,
-} from '../../../data/workspaces'
-import { swapCam } from '../../../state/canvasView'
+  useWorkspace } from '../../../data/workspaces'
 import { useHoldCurtain } from '../../../state/curtain'
 import { Button } from '../../../ui/primitives/Button'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { DecodeText } from '../../../ui/primitives/DecodeText'
-import { Hud } from '../../../ui/patterns/Hud'
 import { InlineEdit } from '../../../ui/primitives/InlineEdit'
-import { PeopleHere } from '../../../ui/patterns/PeopleHere'
 import { Note, Row, Section, type WorkspacePage } from '../../../ui/patterns/Settings'
 import { Toast } from '../../../ui/patterns/Toast'
-import { CanvasView } from './CanvasView'
 import { previewCanvasName, previewHasCanvas, subscribePreview } from '../../../agent/preview'
 import { useWorkspaceStore, WorkspaceContext, type WorkspaceCtx } from './context'
 import { PeopleSettings } from '../settings/PeopleSettings'
-import { SideNav } from './SideNav'
+import { useCanvasSwap, WorkspaceScreen } from './WorkspaceScreen'
 import { exportWorkspace } from '../../../data/exportWorkspace'
 import { download, fileSlug, zipBundle } from '../../../io/bundle'
 import { useEditKeys } from './useEditKeys'
@@ -49,7 +38,6 @@ import { Coach } from '../../../onboarding/Coach'
 import { Agent } from '../../../agent/ui/Agent'
 import { DocReader } from '../documents/DocReader'
 import styles from './WorkspaceLayout.module.css'
-import { DUR } from '../../../ui/foundation/motion'
 import { plural } from '../../../model/words'
 
 const VIEWER = "You're a viewer in this workspace: an owner can make you an editor."
@@ -104,40 +92,20 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   useMarkVisits(wid)
   useSummaryWriter(wid, data, isLoading, editor)
   useEditKeys(wid)
-  // With one canvas the workspace's name opens the canvases (D-302); with more, the canvas's own crumb does.
-  const several = data.canvases.length > 1
-  const canvasName = data.canvases.find((c) => c.id === shown)?.name ?? previewCanvasName(shown) ?? ''
-
   return (
     <WorkspaceContext.Provider value={store}>
-      <div className={styles.app} data-app>
-        <Hud
-          crumbs={[
-            { label: 'workspaces', to: WORKSPACES },
-            several
-              ? { label: workspace.name, to: canvasPath(wid, MAIN) }
-              : focused
-                ? { label: workspace.name, to: canvasPath(wid, shown) }
-                : { label: isLoading ? workspace.name : <CanvasCrumb label={workspace.name} current /> },
-            ...(several ? [focused ? { label: canvasName, to: canvasPath(wid, shown) } : { label: <CanvasCrumb label={canvasName} current /> }] : []),
-            // A document on its own goes by its document's title (D-232).
-            ...(focused ? [{ label: focused.name || data.documents.find((d) => d.id === focused.docId)?.title || KIND_NAME[kindOfPiece(focused)] }] : []),
-          ]}
-          settings={(page) => <WorkspaceSettings page={page} wid={wid} workspace={workspace} requests={requests.data} />}
-          settingsName={workspace.name}
-          settingsBadge={requests.data.length}
-          // Who's here, then the threads on their own above your square and the gear (D-193, D-344).
-          corner={<PeopleHere />}
-          tools={<ThreadsTool wid={wid} threads={data.threads} />}
-          side={<SideNav wid={wid} focused={focused} editor={editor} />}
-        />
-        {/* One per canvas (D-302): going to another builds it anew, its camera its own. */}
-        {!isLoading && <CanvasView key={shown} />}
-        {!isLoading && <Finder />}
+      <WorkspaceScreen
+        shown={shown}
+        loading={isLoading}
+        editor={editor}
+        canvasName={previewCanvasName(shown)}
+        settings={(page) => <WorkspaceSettings page={page} wid={wid} workspace={workspace} requests={requests.data} />}
+        settingsBadge={requests.data.length}
+      >
         {!isLoading && <DocReader />}
         <Toast />
         <Coach />
-      </div>
+      </WorkspaceScreen>
       {/* The agent (S14, D-312): beside the app's box, which narrows for its column (--ai-w). */}
       <Agent />
     </WorkspaceContext.Provider>
@@ -150,28 +118,7 @@ function useShownCanvas(wid: string, canvas: string) {
   const [shown, setShown] = useState(canvas)
   // New things go on the canvas shown.
   setCanvasHere(shown)
-  const built = useRef(false)
-  const swapped = useRef(false)
-  const canvasEl = () => document.querySelector<HTMLElement>('[data-app] [role="application"][aria-label="Canvas"]')
-  useLayoutEffect(() => {
-    if (canvas === shown) return
-    const swap = () => {
-      swapCam(wid, shown, canvas)
-      swapped.current = true
-      setShown(canvas)
-    }
-    const el = canvasEl()
-    if (!built.current || !el || isReducedMotion()) return swap()
-    return runCells(el, 'exit', 0, DUR.exit, swap)
-  }, [wid, canvas, shown])
-  // Once the canvas has been on screen: a canvas found only as the workspace loads (a focused plane's) isn't animated.
-  useEffect(() => void (built.current ||= !!canvasEl()))
-  useLayoutEffect(() => {
-    const el = canvasEl()
-    if (!swapped.current || !el) return
-    swapped.current = false
-    return runCells(el, 'enter', 0, 320)
-  }, [shown])
+  useCanvasSwap(wid, canvas, shown, setShown, true)
   return shown
 }
 

@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { example } from '../../gallery/example'
 import { PromptList } from './PromptList'
 import type { PromptEntry } from '../foundation/promptModel'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 const GO_TO = (open: boolean, toggle: () => void): PromptEntry[] => [
   { key: 'h', heading: 'go to · on the canvas', count: 5 },
   { key: 'title', label: 'Pazar', glyph: '★', hint: 'project', onSelect: none },

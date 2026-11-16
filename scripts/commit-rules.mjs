@@ -5,29 +5,20 @@
 // X.gallery.tsx and its lesson), so it asks the commit to say: when a component file is staged without its gallery
 // file, the message needs a `Gallery: …` line (why it's unchanged); when UI is staged without src/onboarding/lessons.ts
 // or docs/specs/onboarding-lessons.md, a `Lessons: …` line. Saying so is enough; forgetting it isn't.
-import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { COVERED, root, RULE_CHECKS, runChecks } from './lib.mjs'
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const [mode, msgFile] = process.argv.slice(2)
 const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' })
 // What's staged (RULES_STAGED, comma-separated, stands in for it in a test without touching the index).
 const staged = (process.env.RULES_STAGED?.split(',') ?? git('diff', '--cached', '--name-only', '--diff-filter=ACMR').split('\n')).filter(Boolean)
 
 if (mode === 'pre') {
-  const checks = ['check-tokens', 'check-kit', 'check-gallery', 'check-lessons', 'check-repeats --names']
+  const checks = [...RULE_CHECKS]
   if (staged.some((f) => f.startsWith('memory-bank/'))) checks.push('check-memory')
-  const refused = []
-  for (const c of checks) {
-    try {
-      const [name, ...rest] = c.split(' ')
-      execFileSync(process.execPath, [path.join(root, 'scripts', `${name}.mjs`), ...rest], { cwd: root, stdio: 'pipe', encoding: 'utf8' })
-    } catch (e) {
-      refused.push(`npm run ${c.replace('check-', 'check:').replace(' --', ' -- --')}:\n${`${e.stdout ?? ''}${e.stderr ?? ''}`.trim().split('\n').slice(-15).join('\n')}`)
-    }
-  }
+  const refused = runChecks(checks, 15).map((r) => `${r.run}:\n${r.said}`)
   if (refused.length) {
     console.error(`commit refused by the repo's rules (D-339):\n\n${refused.join('\n\n')}`)
     process.exit(1)
@@ -38,13 +29,13 @@ if (mode === 'pre') {
 if (mode === 'msg') {
   const message = readFileSync(msgFile, 'utf8')
   const said = (key) => new RegExp(`^${key}:\\s*\\S`, 'mi').test(message)
-  const COVERED = /^src\/(ui|views\/workspace|views\/workspaces|onboarding)\/.*\.tsx$/
+  const covered = (f) => f.endsWith('.tsx') && COVERED.some((dir) => f.startsWith(`${dir}/`))
   const UI = /^src\/(ui|views|onboarding|agent\/ui)\/.*\.tsx$/
   const isExtra = (f) => /\.(gallery|test)\.tsx$/.test(f)
   const problems = []
 
   // Gallery: a covered component staged without its example (D-324).
-  const noGallery = staged.filter((f) => COVERED.test(f) && !isExtra(f)).filter((f) => {
+  const noGallery = staged.filter((f) => covered(f) && !isExtra(f)).filter((f) => {
     const g = f.replace(/\.tsx$/, '.gallery.tsx')
     return existsSync(path.join(root, g)) && !staged.includes(g)
   })

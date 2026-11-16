@@ -54,7 +54,7 @@ import { PieceCard } from '../../ui/patterns/PieceCard'
 import { WorkspacePicture } from './WorkspacePicture'
 import styles from './Workspaces.module.css'
 import { keysTaken } from '../../ui/foundation/focus'
-import { codeText, people, plural } from '../../model/words'
+import { codeText, people, plural, authorName } from '../../model/words'
 import { loadOptional } from '../../app/chunks'
 
 // The onboarding's coach (D-315), loaded apart from this page (it's shared with the workspace's chunk).
@@ -153,7 +153,7 @@ export function Workspaces({ user }: { user: AuthUser }) {
     setBusy(true)
     setNote({ text: `importing ${f.name}…` })
     try {
-      const result = await importWorkspace(await readBundle(f), user.id, user.name || user.email || 'someone')
+      const result = await importWorkspace(await readBundle(f), user.id, authorName(user))
       learn('ws-made')
       if (!result.skipped) return go(result.workspaceId)
       const n = result.skipped

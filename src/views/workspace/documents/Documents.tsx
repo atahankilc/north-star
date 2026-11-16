@@ -34,7 +34,7 @@ import { Empty } from '../../../ui/primitives/Empty'
 import { pagesOf } from '../../../model/paging'
 import { PageArrows, PageSize } from '../canvas/Pager'
 import { BinIcon, DownloadIcon, EditIcon, PlaceIcon, ShareIcon, WriteIcon } from '../../../ui/primitives/hudIcons'
-import { cut } from '../../../model/words'
+import { cut, authorName } from '../../../model/words'
 import { NOTES_ID } from '../../../model/notes'
 
 // Its parts in its own px: model/world.ts (D-325).
@@ -547,7 +547,7 @@ function UploadAction({ className }: { className?: string }) {
         onChange={(e) => {
           const files = [...(e.target.files ?? [])]
           e.target.value = ''
-          if (files.length) void uploadFiles(wid, { uid: user.id, name: user.name || user.email || 'someone' }, files)
+          if (files.length) void uploadFiles(wid, { uid: user.id, name: authorName(user) }, files)
         }}
       />
     </>
@@ -560,7 +560,7 @@ function WriteAction({ className }: { className?: string }) {
   const { user } = useAuth()
   if (!user) return null
   return (
-    <Button className={className} title="write a new document (only you see it until you share it)" onClick={() => void newDocument(wid, { uid: user.id, name: user.name || user.email || 'someone' }).then((id) => readDoc(id, true))}>
+    <Button className={className} title="write a new document (only you see it until you share it)" onClick={() => void newDocument(wid, { uid: user.id, name: authorName(user) }).then((id) => readDoc(id, true))}>
       write
     </Button>
   )

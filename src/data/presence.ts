@@ -8,6 +8,7 @@ import { accents } from '../styles/tokens'
 import type { AuthUser } from './auth'
 import { firebase } from './firebase'
 import { AWAY_AFTER_MS } from '../ui/foundation/feel'
+import { authorName } from '../model/words'
 
 // The canvas is the only view (D-174).
 export type PresenceView = 'canvas'
@@ -291,7 +292,7 @@ export async function leavePresence() {
 // `canvas`: the one shown (D-302), said only when it isn't the first.
 export function usePresenceSession(wid: string, user: AuthUser | null, view: PresenceView, canvas = 'main') {
   const uid = user?.id
-  const name = user?.name || user?.email || 'Someone'
+  const name = authorName(user)
   const photo = safePhoto(user?.photoURL)
 
   useEffect(() => {

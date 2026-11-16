@@ -1,7 +1,7 @@
 import { example } from '../../gallery/example'
 import { SettingsTool } from './SettingsTool'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 
 export default example({
   name: 'SettingsTool',

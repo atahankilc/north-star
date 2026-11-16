@@ -66,7 +66,7 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Console } from '../../../ui/patterns/Console'
 import { pressDrag } from '../../../ui/foundation/dragPointer'
 import { TurnLeftIcon, TurnRightIcon } from '../../../ui/primitives/hudIcons'
-import { leadingNumber } from '../../../model/words'
+import { leadingNumber, authorName } from '../../../model/words'
 export { labelBox } from '../../../model/labelBox'
 
 // Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
@@ -943,5 +943,5 @@ function LabelBar({ l, zoom }: { l: Label; zoom: number }) {
 // Who's writing: a sticky note is signed with their name as it is now.
 export function useAuthor() {
   const { user } = useAuth()
-  return { uid: user?.id, author: user?.name || user?.email || 'someone' }
+  return { uid: user?.id, author: authorName(user) }
 }

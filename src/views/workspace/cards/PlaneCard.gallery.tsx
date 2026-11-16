@@ -7,9 +7,9 @@ import { byCategory, foldedHeight, openHeight } from '../../../model/cardInside'
 import type { Facts } from '../plane/cardFacts'
 import { GRID } from '../../../data/grid'
 import { PackageBand, PlaneCard, type Detail } from './PlaneCard'
+import { TITLE } from '../../../gallery/samples'
 
 // Cards at their plane size (200 × 100, taller when they hold something), as in a focused plane at 100 %.
-const TITLE = { customer: 'Office workers near the market', problem: 'Lunch takes too long', competitor: 'Lieferando', idea: 'Pre-order at the stall', feature: 'Order by QR code', package: 'Pickup at work' } as const
 const of = (type: Card['type'], more: Partial<Card> = {}): Card => ({ id: `c-${type}`, type, pieceId: 'p', title: TITLE[type], x: 0, y: 0, ...more })
 const FACTS: Record<string, Facts> = {
   customer: { head: 'testing', proof: { supports: 2, contradicts: 1, clash: false }, meta: 'for 3 problems' },

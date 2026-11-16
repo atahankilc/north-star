@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { example } from '../../gallery/example'
 import { Button } from './Button'
 import { CloseIcon } from './hudIcons'
+import { none } from '../../gallery/samples'
 
 const row = (items: [string, ReactNode][]) => (
   <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 'var(--space-3) var(--space-8)', alignItems: 'baseline' }}>
@@ -13,7 +14,6 @@ const row = (items: [string, ReactNode][]) => (
     ])}
   </div>
 )
-const none = () => {}
 
 export default example({
   name: 'Button',

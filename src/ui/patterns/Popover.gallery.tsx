@@ -3,8 +3,8 @@ import { example } from '../../gallery/example'
 import { Popover } from './Popover'
 import { Button } from '../primitives/Button'
 import { PromptPanel } from './PromptPanel'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 const ITEMS = ['solves', 'part of', 'competes with', 'depends on'].map((l) => ({ key: l, label: l, onSelect: none }))
 
 function Opened({ bottom }: { bottom?: boolean }) {

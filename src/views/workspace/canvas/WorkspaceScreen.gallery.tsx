@@ -5,8 +5,8 @@ import { screen, twoCanvases } from '../../../gallery/screens'
 export default example({
   name: 'Workspace screen',
   place: 'screens/workspace',
-  file: 'src/views/workspace/canvas/WorkspaceLayout.tsx',
-  note: 'the whole screen as WorkspaceLayout puts it together (assembled as the demo’s CanvasScreen: it loads from Firestore itself); THEME switches light',
+  file: 'src/views/workspace/canvas/WorkspaceScreen.tsx',
+  note: 'the whole screen: the HUD over the canvas shown, and the finder (D-397: the one the app, a lesson’s demo and this page mount; WorkspaceLayout loads the workspace and adds a document’s window, the toast and the coach); THEME switches light',
   states: {
     canvas: screen(),
     'plane in focus': screen({ focus: P.lunch }),

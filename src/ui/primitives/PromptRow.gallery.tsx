@@ -2,8 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { example } from '../../gallery/example'
 import { Hit, PromptHead, PromptRow } from './PromptRow'
 import type { PromptItem } from '../foundation/promptModel'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 const box = (children: ReactNode) => <div style={{ width: 'var(--size-md)', background: 'var(--bg)' }}>{children}</div>
 const row = (item: Partial<PromptItem> & { key: string }, picked = false, q = '') => (
   <PromptRow key={item.key} item={{ label: item.key, onSelect: none, ...item }} picked={picked} q={q} onPick={none} onPoint={none} />

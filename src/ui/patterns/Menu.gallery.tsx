@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { example } from '../../gallery/example'
 import { Menu } from './Menu'
 import type { PromptEntry } from '../foundation/promptModel'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 const ADD: PromptEntry[] = [
   { key: 'h1', heading: 'pieces' },
   { key: 'plane', label: 'plane', letter: 'p', glyph: '▦', hint: 'cards and links', onSelect: none },

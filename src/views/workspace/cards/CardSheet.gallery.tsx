@@ -3,9 +3,9 @@ import { example } from '../../../gallery/example'
 import type { Card } from '../../../data/cards'
 import { ALL_TYPES } from '../../../model/cards'
 import { CardSheet } from './CardSheet'
+import { TITLE } from '../../../gallery/samples'
 
 const qr: Card = { id: 'f-qr', type: 'feature', pieceId: 'p', title: 'Order by QR code', x: 0, y: 0, priority: 'P1', status: 'planned', impact: 'high', effort: 'low' }
-const TITLE = { customer: 'Office workers near the market', problem: 'Lunch takes too long', competitor: 'Lieferando', idea: 'Pre-order at the stall', feature: 'Order by QR code', package: 'Pickup at work' } as const
 const col = (n: ReactNode) => <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', width: 240 }}>{n}</div>
 
 export default example({

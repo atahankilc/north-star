@@ -4,9 +4,9 @@ import { DOC_TEXTS } from '../../../demo/fixtures/o12'
 import { accents } from '../../../styles/tokens'
 import type { Peer } from '../../../data/presence'
 import { DocReaderView } from './DocReader'
+import { none } from '../../../gallery/samples'
 
 const [, interviews] = PAZAR.documents
-const none = () => {}
 const body = { text: DOC_TEXTS[interviews.title] }
 // Two others writing in it (D-374): their squares at the end of its head line, one of them away.
 const writer = (uid: string, name: string, color: string, away?: true): Peer => ({ uid, name, color, view: 'canvas', ts: 0, doc: { id: interviews.id }, away })

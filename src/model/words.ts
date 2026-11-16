@@ -26,3 +26,6 @@ export function leadingNumber(name: string): { num: string; rest: string } | nul
   const m = /^(\d{1,4})(?:[\s.·:—–-]+(.*))?$/.exec(name.trim())
   return m ? { num: m[1], rest: m[2] ?? '' } : null
 }
+// The signed-in person as a name on what they make (a note, a document, a member's row): their name, else their
+// email (D-361's round 2: written about twelve times, `Someone` and `someone`).
+export const authorName = (user: { name?: string | null; email?: string | null } | null | undefined) => user?.name || user?.email || 'Someone'

@@ -9,15 +9,10 @@ import { cardPlaceholder } from '../../../model/cardName'
 import { CardRow } from './CardRow'
 import { DueMark } from './DueMark'
 import { PriorityChip } from './PriorityChip'
+import { day, TITLE } from '../../../gallery/samples'
 
-const TITLE = { customer: 'Office workers near the market', problem: 'Lunch takes too long', competitor: 'Lieferando', idea: 'Pre-order at the stall', feature: 'Order by QR code', package: 'Pickup at work' } as const
 const list = (n: ReactNode, width = 360) => <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', width, fontSize: 'var(--text-sm)' }}>{n}</div>
 const dim = (t: string) => <span style={{ color: 'var(--fg-dim)', fontSize: 'var(--text-xs)' }}>{t}</span>
-const day = (n: number) => {
-  const d = new Date()
-  d.setDate(d.getDate() + n)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
 
 export default example({
   name: 'CardRow',

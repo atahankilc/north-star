@@ -5,24 +5,14 @@
 //   npm run check:tokens            check
 //   npm run check:tokens -- --list  print every raw value, file by file
 //   npm run check:tokens -- --write lower the baseline to today's counts (never raises it)
-import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import path from 'node:path'
+import { root, walk } from './lib.mjs'
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const baselinePath = path.join(root, 'scripts/tokens-baseline.json')
 const skip = [/^src\/styles\/tokens\.css$/, /^src\/gallery\//, /\.gallery\.tsx$/, /\.test\.tsx?$/]
 // The sources themselves: tokens.ts (WebGL's palette), the card types' colours, motion's TS mirror, the world's geometry.
 const sources = [/^src\/styles\/tokens\.ts$/, /^src\/ui\/foundation\/cardTone\.ts$/, /^src\/ui\/foundation\/pieceTone\.ts$/, /^src\/ui\/foundation\/motionTokens\.ts$/, /^src\/model\/world\.ts$/]
-
-function walk(dir, out = []) {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, e.name)
-    if (e.isDirectory()) walk(p, out)
-    else if (/\.(css|tsx?)$/.test(e.name)) out.push(path.relative(root, p).split(path.sep).join('/'))
-  }
-  return out
-}
 
 // What counts as raw. `0`, %, ch, em, vw/vh and unitless calc() multipliers are fine.
 const RULES = [
@@ -81,7 +71,7 @@ function scan(file) {
   return found
 }
 
-const files = walk(path.join(root, 'src')).filter((f) => !skip.some((r) => r.test(f))).sort()
+const files = walk('src', /\.(css|tsx?)$/).filter((f) => !skip.some((r) => r.test(f))).sort()
 
 // Constants that aren't tokens have one home each (docs/specs/tokens.md §8). A name a home exports is defined nowhere
 // else (import it), and the same UPPER_CASE name with the same number is not written in two files (move it home).

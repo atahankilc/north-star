@@ -4,15 +4,14 @@
 // - nothing in the app imports the gallery (src/gallery/ or a *.gallery.tsx), so it never reaches a build;
 // - gallery.html is in no build input.
 import { fileURLToPath } from 'node:url'
-import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { join, relative, dirname, basename } from 'node:path'
+import { COVERED, walk as walkFrom } from './lib.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-// The folders whose components need an example (D-324): src/ui since G1, src/views/workspace since G2, src/onboarding
-// since G3.
-const COVERED = ['src/ui', 'src/views/workspace', 'src/views/workspaces', 'src/onboarding']
 // Component files with no example, and why.
 const EXEMPT = {
+  'src/views/workspace/canvas/WorkspaceLayout.tsx': 'loads the workspace from Firestore, so it can’t be mounted here; what it draws is WorkspaceScreen, which has the example',
   'src/ui/patterns/Curtain.tsx': 'the page’s own loading curtain (WebGL backdrop); seen on every page load, and it drives the global `revealed` the gallery holds on',
 }
 
@@ -21,11 +20,7 @@ const EXEMPT = {
 const PENDING = []
 
 const problems = []
-const walk = (dir) =>
-  readdirSync(dir).flatMap((n) => {
-    const p = join(dir, n)
-    return statSync(p).isDirectory() ? walk(p) : [p]
-  })
+const walk = (dir) => walkFrom(relative(ROOT, dir).split('\\').join('/')).map((p) => join(ROOT, p))
 const rel = (p) => relative(ROOT, p).split('\\').join('/')
 
 // A file exports a component: a capitalised function or const (memo, forwardRef, an arrow).

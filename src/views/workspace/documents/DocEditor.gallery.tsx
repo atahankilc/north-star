@@ -7,9 +7,9 @@ import { encodePosition } from '../../../data/liveText'
 import { accents } from '../../../styles/tokens'
 import { themeAccent } from '../../../state/theme'
 import { DocEditor, seedOf, type LiveCaret, type LiveSetup } from './DocEditor'
+import { none } from '../../../gallery/samples'
 
 const [, interviews] = PAZAR.documents
-const none = () => {}
 const RICH = `## What we heard
 
 Six owners, **two** of them *twice*. One said \`same-day\` matters most.

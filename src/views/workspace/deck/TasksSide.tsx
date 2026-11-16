@@ -33,7 +33,7 @@ import { closeTasksSide, useTasksSide } from './sideState'
 import pane from '../canvas/Beside.module.css'
 import styles from './TasksSide.module.css'
 import { Tabs } from '../../../ui/primitives/Tabs'
-import { SplitLine } from '../../../ui/primitives/SplitLine'
+import { DragLine } from '../../../ui/primitives/DragLine'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Button } from '../../../ui/primitives/Button'
 import { Num, Rule } from '../../../ui/primitives/Rule'
@@ -116,7 +116,7 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
   const deckW = twoCols ? Math.round(width * inner) : width
 
   // The line between the left part and the side view drags (the days' share kept apart from beside's).
-  // The split lines (SplitLine, D-359): the side view's width, the line between the deck and its days.
+  // The split lines (DragLine, D-359): the side view's width, the line between the deck and its days.
   const drag = (ev: PointerEvent) => {
     const at = ev.clientX / Math.max(1, size.w)
     if (!twoCols) return setSplit(at)
@@ -150,7 +150,7 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
   const colH = size.h - top
   return (
     <>
-      <SplitLine data-off-space className={styles.outerLine} style={{ left }} onDrag={drag} label="The side view's width" />
+      <DragLine at="x" data-off-space className={styles.outerLine} style={{ left }} onDrag={drag} label="The side view's width" />
       <aside className={styles.side} data-off-space data-learn="side-view" style={{ left, width }} aria-label="Decks and days" onPointerDown={(e) => e.stopPropagation()}>
         <div className={styles.tabs}>
           {/* The decks and, in the corner, across them (D-300): two rows of tabs sharing one choice (Tabs, D-326). */}
@@ -215,7 +215,7 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
             <Board key={deck.id} box={{ x: 0, y: top, w: deckW, h: colH }} deck={deck} editor={editor} onTask={onTask} onCard={onCard} dock={<>{daysToggle}</>} close={close} />
             {twoCols && (
               <>
-                <SplitLine style={{ left: deckW, top }} onDrag={dragInner} label="The deck and its days" />
+                <DragLine at="x" style={{ left: deckW, top }} onDrag={dragInner} label="The deck and its days" />
                 <Days key={`days:${deck.id}`} box={{ x: deckW, y: top, w: width - deckW, h: colH }} deck={deck} plane={null} editor={editor} onTask={onTask} dock={closeDays} />
               </>
             )}

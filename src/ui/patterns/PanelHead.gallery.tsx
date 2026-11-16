@@ -1,8 +1,8 @@
 import { example } from '../../gallery/example'
 import { Button } from '../primitives/Button'
 import { PanelHead } from './PanelHead'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 const box = { width: 400, background: 'var(--bg)', border: 'var(--line-w) solid var(--line-hover)', paddingBottom: 'var(--space-4)' } as const
 
 export default example({

@@ -12,13 +12,12 @@
 //   npm run check:repeats -- --list          print what's found, baseline or not
 //   npm run check:repeats -- --write         lower the baseline to today's (never raises it)
 //   npm run check:repeats -- --admit names   take today's names (or copies, unused) into the baseline, on purpose
-import { fileURLToPath } from 'node:url'
 import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { root, walk } from './lib.mjs'
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const baselinePath = path.join(root, 'scripts/repeats-baseline.json')
 const args = process.argv.slice(2)
 const only = args.includes('--names') ? ['names'] : ['names', 'copies', 'unused']
@@ -27,20 +26,11 @@ const TOOLS = { jscpd: '4.3.0', knip: '5.88.1', typescript: '5.9.3' }
 // The dev-only gallery, the demo realm, tests: their own helpers may share a name with the app's.
 const apart = [/^src\/gallery\//, /^src\/demo\//, /\.gallery\.tsx$/, /\.test\.tsx?$/, /\.d\.ts$/]
 
-function walk(dir, out = []) {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, e.name)
-    if (e.isDirectory()) walk(p, out)
-    else if (/\.tsx?$/.test(e.name)) out.push(path.relative(root, p).split(path.sep).join('/'))
-  }
-  return out
-}
-
 // ---- names: { name: [files] } for every exported function, const or class declared in two files or more. A
 // re-export (`export { x } from`) declares nothing and isn't counted.
 function names() {
   const by = new Map()
-  for (const f of walk(path.join(root, 'src')).filter((f) => !apart.some((r) => r.test(f)))) {
+  for (const f of walk('src', /\.tsx?$/).filter((f) => !apart.some((r) => r.test(f)))) {
     const src = fs.readFileSync(path.join(root, f), 'utf8')
     for (const m of src.matchAll(/^export (?:async )?(?:function\*?|const|let|class) ([A-Za-z_$][\w$]*)/gm)) by.set(m[1], [...new Set([...(by.get(m[1]) ?? []), f])])
   }

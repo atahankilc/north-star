@@ -3,8 +3,8 @@ import { Avatar } from './Avatar'
 import { Button } from './Button'
 import { ToolButton } from './ToolButton'
 import { GearIcon } from './hudIcons'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 const row = { display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }
 
 export default example({

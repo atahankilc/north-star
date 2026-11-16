@@ -3,8 +3,8 @@ import { example } from '../../../gallery/example'
 import type { Task } from '../../../data/tasks'
 import { STRIP_PX } from '../../../model/world'
 import { TimelineBar } from './TimelineBar'
+import { baseTask as base } from '../../../gallery/samples'
 
-const base: Task = { id: 't', pieceId: 'deck', col: 'todo', order: 1, title: 'Ask five stall owners what they lose a week', uid: 'u', createdAt: 0, updatedAt: 0 }
 const qr: Task = { ...base, id: 't-qr', title: 'Print the QR stickers', cardId: 'f-qr', cardType: 'feature' }
 const office: Task = { ...base, id: 't-office', title: 'Survey 40 office workers', cardId: 'c-office', cardType: 'customer', priority: 'P1' }
 

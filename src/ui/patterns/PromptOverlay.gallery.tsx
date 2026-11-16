@@ -3,8 +3,8 @@ import { example } from '../../gallery/example'
 import { PromptField } from '../primitives/PromptField'
 import { PromptList } from './PromptList'
 import { PromptOverlay } from './PromptOverlay'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 const ROWS = ['01 Lunch', '02 Product', '03 Rivals', '05 Launch'].map((t) => ({ key: t, label: t, onSelect: none }))
 
 function Overlay({ layer, coach }: { layer?: 'float' | 'menu'; coach?: boolean }) {

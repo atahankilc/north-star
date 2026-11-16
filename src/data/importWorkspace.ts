@@ -3,7 +3,7 @@
 // matrix or a table its planes, cards and cells, a document piece its document, a card's other planes (D-281). Anything pointing at something that isn't
 // in the file is left out (a card on a plane that didn't come over, a link to a card that didn't). Not undoable: it's a
 // new workspace; if a write fails, the half-made workspace is deleted.
-import { collection, doc, getDoc, writeBatch, type DocumentReference } from 'firebase/firestore'
+import { collection, doc, getDoc, type DocumentReference } from 'firebase/firestore'
 import {
   cleanCanvas,
   cleanCard,
@@ -28,14 +28,12 @@ import { SUB, subKey } from './matrix'
 import { db } from './firebase'
 import type { Workspace } from './model'
 import { createWorkspace, deleteWorkspace } from './workspaces'
-import { WRITE_BATCH_MAX as BATCH_WRITES } from '../model/limits'
+import { docBytes, wholeBatches } from './batches'
 import { spotId } from '../model/canvases'
 import { placeId } from '../model/placement'
 import { comparisonId } from '../model/shapes'
 import { cellKey } from '../model/matrix'
 
-// A batch takes 500 writes and about 10 MB; cards and notes can be long, so batches are cut by size too.
-const BATCH_BYTES = 4_000_000
 // A document's content rule reads its summary (getAfter), and a batch's rules may read at most 20 documents.
 const DOCUMENTS_PER_BATCH = 6
 
@@ -262,22 +260,7 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
   return { workspaceId: wid, written: writes.length + docWrites.length, skipped }
 }
 
-// In batches, cut at BATCH_WRITES writes or about BATCH_BYTES of data.
+// One after another, as batches.ts cuts them (one batch while it fits, D-369): a later one may need what an earlier wrote.
 async function commit(writes: Write[]) {
-  let batch = writeBatch(db())
-  let n = 0
-  let size = 0
-  for (const [ref, fields] of writes) {
-    const bytes = JSON.stringify(fields).length
-    if (n && (n >= BATCH_WRITES || size + bytes > BATCH_BYTES)) {
-      await batch.commit()
-      batch = writeBatch(db())
-      n = 0
-      size = 0
-    }
-    batch.set(ref, fields)
-    n++
-    size += bytes
-  }
-  if (n) await batch.commit()
+  for (const batch of wholeBatches(writes, ([, fields]) => docBytes(fields), (b, [ref, fields]) => b.set(ref, fields))) await batch.commit()
 }

@@ -2,17 +2,11 @@ import type { ReactNode } from 'react'
 import { example } from '../../../gallery/example'
 import type { Card } from '../../../data/cards'
 import type { Task } from '../../../data/tasks'
-import { today } from '../../../model/tasks'
 import { TaskSheet } from './TaskSheet'
+import { day, baseTask as base } from '../../../gallery/samples'
 
-const day = (n: number) => {
-  const d = new Date()
-  d.setDate(d.getDate() + n)
-  return today(d)
-}
 const office: Card = { id: 'c-office', type: 'customer', pieceId: 'p', title: 'Office workers near the market', x: 0, y: 0 }
 const qr: Card = { id: 'f-qr', type: 'feature', pieceId: 'p', title: 'Order by QR code', x: 0, y: 0 }
-const base: Task = { id: 't', pieceId: 'deck', col: 'todo', order: 1, title: 'Ask five stall owners what they lose a week', uid: 'u', createdAt: 0, updatedAt: 0 }
 const full: Task = {
   ...base,
   id: 't-full',

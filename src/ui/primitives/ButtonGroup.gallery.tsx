@@ -1,8 +1,8 @@
 import { example } from '../../gallery/example'
 import { Button } from './Button'
 import { ButtonGroup } from './ButtonGroup'
+import { none } from '../../gallery/samples'
 
-const none = () => {}
 
 export default example({
   name: 'ButtonGroup',

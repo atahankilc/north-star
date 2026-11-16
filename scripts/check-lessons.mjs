@@ -18,6 +18,7 @@
 import { fileURLToPath } from 'node:url'
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { root as libRoot, walk } from './lib.mjs'
 
 const root = new URL('../', import.meta.url)
 const at = (p) => new URL(p, root)
@@ -342,15 +343,7 @@ for (const [name, list] of [['releases.ts', RELEASES], ['releases.sample.ts', SA
 }
 
 // The ratchet: scenes, anchors and events still to be built.
-const srcFiles = []
-const walk = (dir) => {
-  for (const f of readdirSync(dir)) {
-    const p = join(dir, f)
-    if (statSync(p).isDirectory()) walk(p)
-    else if (/\.(tsx?|html)$/.test(f)) srcFiles.push(p)
-  }
-}
-walk(fileURLToPath(at('src/')))
+const srcFiles = walk('src', /\.(tsx?|html)$/).map((p) => join(libRoot, p))
 // Anchors count only where the app draws them: the coach's own selectors (`[data-learn="plus"]`) and the demo don't.
 const learnIn = new Set()
 const coachOrDemo = /[\\/]src[\\/](onboarding|demo)[\\/]/

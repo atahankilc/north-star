@@ -27,7 +27,7 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Label } from '../../../ui/primitives/Label'
 import { Window } from '../../../ui/patterns/Window'
-import { SplitLine } from '../../../ui/primitives/SplitLine'
+import { DragLine } from '../../../ui/primitives/DragLine'
 import { people as peopleWord, cut, plural } from '../../../model/words'
 import { MinusIcon, PlusIcon } from '../../../ui/primitives/hudIcons'
 
@@ -172,7 +172,7 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
   const total = wt.reduce((a, b) => a + b, 0)
   const lefts = wt.reduce<number[]>((acc, x, i) => [...acc, acc[i] + (x / total) * room], [left])
 
-  // The split lines (SplitLine, D-359): the list's width, and between two documents.
+  // The split lines (DragLine, D-359): the list's width, and between two documents.
   const drag = (ev: PointerEvent) => useDocUi.setState({ readerAt: ev.clientX })
 
   // The line after document `i`: moves the width between it and the next, each kept at least PANE_MIN wide.
@@ -189,9 +189,9 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
       {open.map((id, i) => (
         <DocPane key={id} id={id} list={list} box={{ x: Math.round(lefts[i]), y: 0, w: Math.round(lefts[i + 1] - lefts[i]), h: size.h }} first={i === 0} />
       ))}
-      {!hidden && <SplitLine style={{ left }} onDrag={drag} label="List and documents" />}
+      {!hidden && <DragLine at="x" style={{ left }} onDrag={drag} label="List and documents" />}
       {open.slice(0, -1).map((id, i) => (
-        <SplitLine
+        <DragLine at="x"
           key={`between-${id}`}
           style={{ left: Math.round(lefts[i + 1]) }}
           onDrag={dragBetween(i)}
