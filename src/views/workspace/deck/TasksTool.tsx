@@ -14,6 +14,7 @@ import { useWs } from '../canvas/context'
 import { loadTasksSide, sideShared, toggleTasksSide, useTasksSide } from './sideState'
 import { ToolButton } from '../../../ui/primitives/ToolButton'
 import { DeckIcon } from '../../../ui/primitives/hudIcons'
+import { plural } from '../../../model/words'
 
 export function TasksTool() {
   const { wid, tasks, pieces, canvas, spots } = useWs()
@@ -35,7 +36,7 @@ export function TasksTool() {
       data-learn="tasks"
       pressed={open}
       badge={fresh}
-      label={`Decks and their days${fresh ? `: ${fresh} task${fresh === 1 ? '' : 's'} given to you, new` : ''}`}
+      label={`Decks and their days${fresh ? `: ${plural(fresh, 'task')} given to you, new` : ''}`}
       title={fresh ? `decks and days (t) · ${fresh} given to you since you last looked` : 'decks and days (t)'}
       data-viewer-ok
       onClick={() => toggleTasksSide(fresh && !open ? 'mine' : undefined)}

@@ -7,7 +7,7 @@ import { useCallback, useSyncExternalStore } from 'react'
 import { arrayUnion, collection, doc, getDoc, getDocs, increment, limit, onSnapshot, orderBy, query, setDoc, updateDoc, writeBatch, deleteField } from 'firebase/firestore'
 import { db, firebase } from './firebase'
 import { useQuery, type Live, type WithId } from './hooks'
-import { MENTIONS_MAX, MESSAGE_MAX, type Member, type Thread, type ThreadMessage, type ThreadReads, type ThreadTarget } from './model'
+import { MENTIONS_MAX, MESSAGE_MAX, type Thread, type ThreadMessage, type ThreadReads, type ThreadTarget } from './model'
 
 const threadsOf = (wid: string) => collection(db(), 'workspaces', wid, 'threads')
 const messagesOf = (wid: string, tid: string) => collection(db(), 'workspaces', wid, 'threads', tid, 'messages')
@@ -68,10 +68,6 @@ export function useReads(wid: string, uid: string | null): Live<WithId<ThreadRea
   const live = useSyncExternalStore(subscribe, get, get)
   return firebase ? live : { data: { id: uid ?? '', seen: demoThreads.seen } as WithId<ThreadReads>, isLoading: false, error: null }
 }
-
-// Everyone in the workspace, for `@` (D-166): the people list, up to 200.
-export const useMembers = (wid: string, on = true) =>
-  useQuery<Member>(on && firebase ? query(collection(db(), 'workspaces', wid, 'members'), orderBy('name'), limit(200)) : null, `${wid}/members/all`)
 
 export type NewThread = { on: ThreadTarget; targetId: string; planeId: string; at: [number, number] }
 

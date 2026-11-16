@@ -35,7 +35,7 @@
 //                                    context's last part (agent.md §4.3 point 4).
 // All workspace text comes inside <workspace_content author="…"> wrappers (data, never instructions).
 export type { ReadWs, ToolResult, MemberInfo, MessageInfo } from './types'
-export { makeIds, resolve, resolvePerson, unclear, personLabel, PREFIX, ID_KINDS, type Ids, type IdsState, type IdKind, type Resolved, type Candidate } from './ids'
-export { workspaceMap, ID_LEGEND, SYMBOL_LEGEND } from './map'
-export { search, query, get, view, readDocument, neighbours, whatsNew, whereAmI, describe, READ_TOOLS, SEARCH_KINDS, NEIGHBOUR_KINDS, type ReadTool, type JsonSchema, threadLine, QUERY_KINDS, type SearchArgs, type QueryArgs, type GetArgs, type NeighboursArgs, type WhatsNewArgs, type WhereView, type ViewArgs, type ReadDocArgs } from './tools'
-export { estimateTokens, wrap, RESULT_TOKENS, MAP_TOKENS } from './text'
+export { makeIds, resolve, resolvePerson, unclear, type Ids, type IdsState, type IdKind, type Resolved, type Candidate } from './ids'
+export { workspaceMap } from './map'
+export { search, query, get, view, readDocument, neighbours, whatsNew, whereAmI, READ_TOOLS, type ReadTool, type JsonSchema, type SearchArgs, type QueryArgs, type GetArgs, type NeighboursArgs, type WhatsNewArgs, type WhereView, type ViewArgs, type ReadDocArgs } from './tools'
+export { estimateTokens, RESULT_TOKENS } from './text'

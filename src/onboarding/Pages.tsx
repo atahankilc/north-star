@@ -22,7 +22,7 @@ export type PagesEnd = { how: 'done' | 'skipped'; go?: NonNullable<ReleaseItem['
 
 // A line with its key chips (backticks), written as this computer writes keys (Ctrl off a Mac, D-355), and the app's
 // own words coloured with their meaning on hover, each only the first time it comes up in the line (glossary.ts).
-export function Words({ text }: { text: string }) {
+function Words({ text }: { text: string }) {
   const seen = new Set<string>()
   return (
     <>
@@ -52,7 +52,7 @@ export function Words({ text }: { text: string }) {
 // A button: the kit's Button (D-326, cells D-344). `tone`: hot the strong one (`main`), go the solid cyan one (`primary`),
 // out a way out (the plain cell: quiet by where it sits, never by contrast, onboarding.md §4); `bare` a glyph's cell. `elRef` is the
 // button itself, for the focus a dialog starts on (Button takes no ref: a wrapper that is no box hands it over).
-export function Btn({ children, onClick, tone, disabled, bare, label, elRef }: { children: ReactNode; onClick?: () => void; tone?: 'hot' | 'go' | 'out'; disabled?: boolean; bare?: boolean; label?: string; elRef?: React.Ref<HTMLButtonElement> }) {
+function Btn({ children, onClick, tone, disabled, bare, label, elRef }: { children: ReactNode; onClick?: () => void; tone?: 'hot' | 'go' | 'out'; disabled?: boolean; bare?: boolean; label?: string; elRef?: React.Ref<HTMLButtonElement> }) {
   const button = (
     <Button tone={tone === 'hot' ? 'main' : tone === 'go' ? 'primary' : undefined} icon={bare} disabled={disabled} onClick={onClick} aria-label={label}>
       {children}

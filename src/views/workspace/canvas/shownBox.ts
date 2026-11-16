@@ -14,11 +14,11 @@ export { useOpenSize }
 
 // The margin round an open piece's contents, and under them, where its console is.
 export const OPEN_PAD = GRID
-export const OPEN_FOOT = 2 * GRID
+const OPEN_FOOT = 2 * GRID
 
 export const isOpen = (p: Pick<Piece, 'kind' | 'open'>) => canOpen(p) && !!p.open
 
-export function shownBox(p: Piece, cards: Card[]): Box {
+function shownBox(p: Piece, cards: Card[]): Box {
   if (!isOpen(p)) return { x: p.x, y: p.y, w: p.w, h: p.h }
   const kind = kindOfPiece(p)
   // The rest as big as they came out when drawn (sizes.ts); until then, their window's size.

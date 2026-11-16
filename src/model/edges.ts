@@ -42,8 +42,3 @@ export function defaultKind(from: AnyType, to: AnyType): EdgeKind {
   if (from === 'feature' && to === 'idea') return 'inspired-by'
   return 'relates'
 }
-
-export const linked = (edges: Edge[], a: string, b: string) => edges.some((e) => (e.fromId === a && e.toId === b) || (e.fromId === b && e.toId === a))
-
-// The links a card's deletion takes with it.
-export const edgesOn = (edges: Edge[], ids: Set<string>) => edges.filter((e) => ids.has(e.fromId) || ids.has(e.toId))

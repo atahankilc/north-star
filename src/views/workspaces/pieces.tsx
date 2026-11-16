@@ -22,7 +22,7 @@ import { people, plural } from '../../model/words'
 import { MoreIcon } from '../../ui/primitives/hudIcons'
 
 // The workspace's menu (open, rename, invite code, leave, delete), under its `⋯`: right-click opens the same.
-export function More({ name, onMenu }: { name: string; onMenu: (at: [number, number]) => void }) {
+function More({ name, onMenu }: { name: string; onMenu: (at: [number, number]) => void }) {
   return (
     <Button icon aria-label={`more for ${name}`} title="more: rename, invite code, leave, delete" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); onMenu([r.left, r.bottom]) }}>
       <MoreIcon />
@@ -37,7 +37,7 @@ export function People({ w }: { w: WithId<Workspace> }) {
 }
 
 // Who's in it now: a lamp that beats, their circles in their colours, `here now`.
-export function HereNow({ here }: { here: readonly Here[] }) {
+function HereNow({ here }: { here: readonly Here[] }) {
   const accent = useThemeAccent()
   if (!here.length) return null
   return (
@@ -85,7 +85,7 @@ const KIND_WORD: Partial<Record<ChangeKind, [string, string]>> = {
   evidence: ['evidence', 'evidence'],
 }
 const CARD_KINDS = new Set(['customers', 'problems', 'competitors', 'ideas', 'features', 'packages', 'places'])
-export function kindsText(kinds: Record<string, number>): string {
+function kindsText(kinds: Record<string, number>): string {
   const cards = Object.entries(kinds).filter(([k]) => CARD_KINDS.has(k)).reduce((n, [, v]) => n + v, 0)
   const parts: string[] = cards ? [plural(cards, 'card')] : []
   for (const [k, n] of Object.entries(kinds).sort((a, b) => b[1] - a[1])) {

@@ -25,6 +25,7 @@ import { labelBox } from '../text/TextItems'
 import styles from './CanvasSwitch.module.css'
 import { DUR } from '../../../ui/foundation/motion'
 import { keysTaken } from '../../../ui/foundation/focus'
+import { cut } from '../../../model/words'
 
 type Box = { x: number; y: number; w: number; h: number }
 
@@ -95,7 +96,7 @@ function Prompt({ asked, canvas, canvases, onClose }: { asked: { pieces: string[
     // What was asked for by its name, and how many came with it (stuck to it, held by a section).
     const askedFor = [...pieces.filter((p) => asked.pieces.includes(p.id)).map((p) => p.name), ...texts.filter((l) => asked.labels.includes(l.id)).map((l) => l.text)]
     const extra = pieces.length + texts.length - askedFor.length
-    const named = askedFor.length === 1 ? (askedFor[0] ? `"${askedFor[0].length > 30 ? `${askedFor[0].slice(0, 29)}…` : askedFor[0]}"` : 'it') : `${askedFor.length} things`
+    const named = askedFor.length === 1 ? (askedFor[0] ? `"${cut(askedFor[0], 30)}"` : 'it') : `${askedFor.length} things`
     useHistory.getState().say(`Moved ${named}${extra ? ` and ${extra} more with it` : ''} to ${target.name}`, {
       label: 'go there',
       run: () => goThere(ws.wid, target.id, landed),

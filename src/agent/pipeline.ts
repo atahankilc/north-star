@@ -10,7 +10,7 @@ import { parseSkill } from './skills'
 import type { Effort } from './openai'
 
 export type Role = 'chat' | 'planner' | 'executor' | 'reviewer'
-export const ROLES: Role[] = ['chat', 'planner', 'executor', 'reviewer']
+const ROLES: Role[] = ['chat', 'planner', 'executor', 'reviewer']
 
 // What is known before a turn runs: the message (a `/skill` is a fact, not a reading of words), the chat's job.
 export type TurnSignals = { message: string; job: Job | null }
@@ -30,7 +30,6 @@ export function roleOf(s: TurnSignals): Role {
 export type Pipeline = { name: string; models: { chat: string } & Partial<Record<Exclude<Role, 'chat'>, string>>; effort?: Partial<Record<Role, Effort>> }
 
 export const modelFor = (p: Pipeline, role: Role): string => p.models[role] ?? p.models.chat
-export const effortFor = (p: Pipeline, role: Role): Effort | undefined => p.effort?.[role] ?? p.effort?.chat
 
 const providerOfId = (id: string) => (id.startsWith('anthropic:') ? 'anthropic' : 'openai')
 

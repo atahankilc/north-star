@@ -77,14 +77,14 @@ export function startBusy(): () => void {
 const editable = (el: Element | null) =>
   !!el && (el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !['button', 'checkbox', 'radio', 'range', 'submit'].includes(el.type)) || (el as HTMLElement).isContentEditable)
 
-export const settingsPage = (): string | null => {
+const settingsPage = (): string | null => {
   const d = document.querySelector('[role="dialog"][aria-label="Settings"]')
   if (!d) return null
   return d.querySelector('[aria-current="page"] span')?.textContent?.trim().toLowerCase() || 'account'
 }
 // A prompt or a Select's list (D-222).
 // A surface's own list (the finder's matches) isn't one (queue.ts' countsAsMenu).
-export const menuOpen = () => [...document.querySelectorAll('[role="menu"], [role="listbox"]')].some(countsAsMenu)
+const menuOpen = () => [...document.querySelectorAll('[role="menu"], [role="listbox"]')].some(countsAsMenu)
 
 // Every busy source as it is now (polled by the coach, and on change). `extra`: the coach's own (`modal`).
 export function readBusy(extra: Busy = {}): Busy {

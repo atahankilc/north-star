@@ -242,7 +242,7 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
 
 A list of findings and of ways to keep repeats from coming back, for the user to pick from. Built so far: R1.1–R1.4
 and R1.10 (D-388), the checks R4.1–R4.4 (D-391), R1.5–R1.7 (D-392) and R1.8–R1.16 (D-394), under *Done, round 2* at
-the end; R2, R3 and R4.5–R4.7 are not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
+the end; then R3 and R2's small logic twins (D-396). R2's bigger merges and R4.5–R4.7 are not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
 finder (knip) and four full reads (the kit, the workspace views, the logic layers, demo/onboarding/gallery/scripts).
 Line numbers are from that day. *Checked* = the drift was looked at again by hand after the read.
 
@@ -473,3 +473,14 @@ merges (R1.5–R1.7, the demo) and R3.
     Left: agent/usage.ts (a `Storage` handed in for its tests), sessionStorage in app/chunks.ts and the onboarding's
     dev copy.
   - Checked: tsc; vitest; every check; build; check:gallery:live.
+- **R3, and R2's small logic twins (2026-11-17, D-396).**
+  - R3: `export` dropped from every name nothing imports, then what nothing used deleted; Swatches, data/regions.ts and
+    the two re-export files deleted; Frame's three unused classes and `Empty`'s `tone` gone. Unused 476 → 12, each
+    kept on purpose (Blaze's two, what check-lessons reads, motion's curves, the two dev files the user is to say
+    about). The unused-code tool can't see a dynamic import or a build config: tests, check:lessons and the demo build
+    caught four; the configs are entries now.
+  - R2 (Logic): `cut`, `flat`, `kept`, `norm`, `leadingNumber` in model/words.ts; `count` is `plural`; 36 inline
+    plurals; `snap`; `NOTES_ID`; the chain's order is `ALL_TYPES`. scripts/check-tokens.mjs' stale paths fixed.
+  - Left of R2: every item under **Views**, **Kit** and **Demo, gallery, scripts** but the two small ones above, and
+    of **Logic** the adapters, the value lists, the batching, the document's three makers, `authorName`, renaming a
+    piece, functions/ (parked).

@@ -9,11 +9,11 @@ import type { Edge } from './edges'
 import { boundsOf } from './layout'
 
 // Where the list inside a card starts: under its type line and a title kept to two lines.
-export const INNER_TOP = 56
+const INNER_TOP = 56
 // A part's row in a folded feature; a competitor feature's small card (18 + 3 apart) and a category's name over its.
-export const PART_ROW = WORLD.rowPart
-export const FEATURE_ROW = WORLD.rowFeature
-export const CATEGORY_ROW = WORLD.rowCategory
+const PART_ROW = WORLD.rowPart
+const FEATURE_ROW = WORLD.rowFeature
+const CATEGORY_ROW = WORLD.rowCategory
 // Under the list: a gap, the facts line, the card's padding.
 const FOOT = 4 + 8 + 7 + 6
 
@@ -153,7 +153,7 @@ export function partRowBox(parent: Box, index: number, depth: number): Box {
 // An unfolded package (D-239): a frame round its members, the band that is the package over it. The whole box, band and
 // frame, in plane px; null without members to frame. Every edge on the plane's `+` marks (D-244): a grid step round
 // the members, out to the next mark, the band one step tall.
-export const BAND_H = GRID
+const BAND_H = GRID
 const FRAME_PAD = GRID
 export function packageBox(members: Box[]): Box | null {
   if (!members.length) return null

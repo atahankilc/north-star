@@ -9,11 +9,11 @@
 //   D-045) and how many of its links step between neighbouring types: a group that runs the chain is a flow to follow.
 // - hubs: cards linked to many others, or to several topics.
 // - outside: links from these cards to cards that aren't among them (on another plane): no plane draws them (D-207).
+import { ALL_TYPES } from './cards'
 
-export const CHAIN = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package'] as const
 export const chainRank = (type: string) => {
-  const i = (CHAIN as readonly string[]).indexOf(type)
-  return i < 0 ? CHAIN.length : i
+  const i = (ALL_TYPES as readonly string[]).indexOf(type)
+  return i < 0 ? ALL_TYPES.length : i
 }
 
 export type GraphCard = { id: string; type: string }
@@ -87,9 +87,9 @@ function components(adj: Map<string, Map<string, number>>): string[][] {
 // sides keep at least BRIDGE_SIDE cards and a quarter of the group (a card or a short branch hanging off a link is no
 // topic; in a group shaped like a tree almost every link is a bridge, and cutting each would mean nothing). What's left connected are the
 // topics; the cut links are what crosses between them. Deterministic: the same group, the same topics.
-export const BRIDGE_SIDE = 3
+const BRIDGE_SIDE = 3
 
-export function topicsOf(cards: string[], adj: Map<string, Map<string, number>>): Topic[] {
+function topicsOf(cards: string[], adj: Map<string, Map<string, number>>): Topic[] {
   if (cards.length < TOPIC_MIN) return [{ cards: [...cards], links: linksWithin(cards, adj) }]
   const set = new Set(cards)
   const order = new Map<string, number>()

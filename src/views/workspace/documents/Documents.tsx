@@ -34,9 +34,11 @@ import { Empty } from '../../../ui/primitives/Empty'
 import { pagesOf } from '../../../model/paging'
 import { PageArrows, PageSize } from '../canvas/Pager'
 import { BinIcon, DownloadIcon, EditIcon, PlaceIcon, ShareIcon, WriteIcon } from '../../../ui/primitives/hudIcons'
+import { cut } from '../../../model/words'
+import { NOTES_ID } from '../../../model/notes'
 
 // Its parts in its own px: model/world.ts (D-325).
-export const D = DOCS_PX
+const D = DOCS_PX
 const COL_W: Record<DocCol | 'grip' | 'actions', number> = { kind: 70, title: 340, by: 130, size: 90, added: 96, grip: 36, actions: 190 }
 const COLS: DocCol[] = ['kind', 'title', 'by', 'size', 'added']
 // The grips' column only where they show (unframed on the canvas, D-234): elsewhere no empty column at its end.
@@ -95,7 +97,7 @@ export type DocDraft = {
 }
 
 // At most this many side by side.
-export const READERS_MAX = 4
+const READERS_MAX = 4
 // A document opened from the list: in place of what's open, or (side by side) next to it, or closed when it's open.
 export function openDoc(id: string, alongside = useDocUi.getState().sideBySide) {
   useDocUi.setState((s) => {
@@ -110,7 +112,7 @@ export const readDoc = (id: string, edit = false) => useDocUi.setState({ reading
 export const closeDoc = (id: string) => useDocUi.setState((s) => ({ readers: s.readers.filter((x) => x !== id) }))
 // Sharing or unsharing (its author's). Unsharing one that's on the canvas on its own asks first (its pieces would go).
 export function shareOrAsk(wid: string, d: Pick<Doc, 'shared'> & { id: string }, pieces: Pick<Piece, 'docId'>[]) {
-  if (d.id === 'agent-notes') return // The agent notes stay shared (S16; firestore.rules).
+  if (d.id === NOTES_ID) return // The agent notes stay shared (S16; firestore.rules).
   if (d.shared && pieces.some((p) => p.docId === d.id)) return useDocUi.setState({ unsharing: d.id })
   void shareDocument(wid, d.id, !d.shared)
 }
@@ -139,7 +141,7 @@ export function useDocActions(d: WithId<Doc>, near?: string) {
 
 // With a document open beside it (D-232), the list sits pinned to the top-left of its part, fitted to its width
 // (never over 100 %), so it's never under the document or off the screen; the document takes what's left.
-export const PIN = { left: 72, top: 64, right: 24 }
+const PIN = { left: 72, top: 64, right: 24 }
 const READER_MIN = 420
 // The list put away, the documents start right of the side nav.
 const SIDE_NAV = 56
@@ -274,7 +276,7 @@ const DocumentsBoard = memo(function DocumentsBoard({ piece, live, editor, onCan
     {all.length === 0 ? (
       <div className={styles.empty} style={{ width: TABLE_W }}>
         <p>No documents yet.</p>
-        <Empty tone="dim">Drop .md files here{live ? ', or [upload] below' : ''}. Images and PDFs come with Storage.</Empty>
+        <Empty>Drop .md files here{live ? ', or [upload] below' : ''}. Images and PDFs come with Storage.</Empty>
       </div>
     ) : setup.view === 'shelf' ? (
       <div className={styles.shelf} style={{ width: shelfW(shown.length), padding: D.pad, gap: D.sheet.gap, gridTemplateColumns: `repeat(${shelfCols(shown.length)}, ${D.sheet.w}px)` }}>
@@ -526,7 +528,7 @@ export async function uploadFiles(wid: string, who: { uid: string; name: string 
 }
 
 // `[upload]`: a hidden file input behind a bracketed action.
-export function UploadAction({ className }: { className?: string }) {
+function UploadAction({ className }: { className?: string }) {
   const { wid } = useWs()
   const { user } = useAuth()
   const input = useRef<HTMLInputElement>(null)
@@ -553,7 +555,7 @@ export function UploadAction({ className }: { className?: string }) {
 }
 
 // `write`: a new empty .md of yours (private until shared), opened in its reader to be written (D-373).
-export function WriteAction({ className }: { className?: string }) {
+function WriteAction({ className }: { className?: string }) {
   const { wid } = useWs()
   const { user } = useAuth()
   if (!user) return null
@@ -590,7 +592,7 @@ export function DocumentsTools({ piece, editor, toolClass, compact = false }: { 
     <span className={styles.tools} role="group" aria-label="Documents">
       {uploads.map((u) => (
         <span key={u.name} className={styles.upload} data-state={u.state} title={u.why}>
-          {u.state === 'sending' ? '◌' : u.state === 'done' ? '✓' : '×'} {u.name.length > 18 ? `${u.name.slice(0, 17)}…` : u.name}
+          {u.state === 'sending' ? '◌' : u.state === 'done' ? '✓' : '×'} {cut(u.name, 18)}
           {u.why ? ` · ${u.why}` : ''}
         </span>
       ))}

@@ -50,10 +50,10 @@ export const KNOWN_MODELS: KnownModel[] = [
 ]
 
 export type ProviderId = KnownModel['provider']
-export const ANTHROPIC = 'anthropic:'
+const ANTHROPIC = 'anthropic:'
 // Whose key a model id needs, and the id that provider knows it by.
 export const providerOf = (id: string): ProviderId => (id.startsWith(ANTHROPIC) ? 'anthropic' : 'openai')
-export const bareId = (id: string) => id.replace(/^(anthropic|openai):/, '')
+const bareId = (id: string) => id.replace(/^(anthropic|openai):/, '')
 // Claude's own ids (from its model list) as ours.
 export const claudeId = (id: string) => (id.startsWith(ANTHROPIC) ? id : `${ANTHROPIC}${id}`)
 
@@ -61,7 +61,7 @@ export const claudeId = (id: string) => (id.startsWith(ANTHROPIC) ? id : `${ANTH
 // Pre-selected in the picker when the person has chosen nothing (they still choose: nothing runs until they save).
 export const SUGGESTED = 'gpt-5.6-terra'
 // Pre-selected when only an Anthropic key is saved (Anthropic's own default, never its cheapest).
-export const SUGGESTED_CLAUDE = 'anthropic:claude-opus-5-5'
+const SUGGESTED_CLAUDE = 'anthropic:claude-opus-5-5'
 // The suggestion for the keys saved: OpenAI's when there's an OpenAI key (or none), else Claude's.
 export const suggestedFor = (keys: { openai: boolean; anthropic: boolean }) => (!keys.openai && keys.anthropic ? SUGGESTED_CLAUDE : SUGGESTED)
 export const DEFAULT_EFFORT: Effort = 'medium'

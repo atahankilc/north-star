@@ -29,7 +29,6 @@ import {
   ALIGNS,
   alignTo,
   besideSpot,
-  BLOCK_LAYOUTS,
   boundsOf,
   clashes,
   clearOffset,
@@ -52,7 +51,7 @@ import {
   type Obstacle,
   type Side,
 } from '../model/layout'
-import { GRID } from '../model/grid'
+import { GRID, snap } from '../model/grid'
 import { arrange, type ArrangeArgs } from './text'
 import type { OpCtx, Plan, Write } from './types'
 import { refuse } from './util'
@@ -231,8 +230,8 @@ export function arrangeAny(ctx: OpCtx, args: LayoutArgs): Plan {
     const at = (o: { x: number; y: number }) => {
       const ds = units.map((u, i) => {
         const f = feet.get(u.id)!
-        const nx = snapTo(u.at.x + o.x + rel[i].x - f.x)
-        const ny = snapTo(u.at.y + o.y + rel[i].y - f.y)
+        const nx = snap(u.at.x + o.x + rel[i].x - f.x)
+        const ny = snap(u.at.y + o.y + rel[i].y - f.y)
         return { dx: nx - u.at.x, dy: ny - u.at.y }
       })
       const hs = groupBoxes.flatMap((g) => (g.head ? [{ name: g.name, x: o.x + g.head.x, y: o.y + g.head.y }] : []))
@@ -265,7 +264,7 @@ export function arrangeAny(ctx: OpCtx, args: LayoutArgs): Plan {
       // area searched from the plane's top-left, or under everything on a canvas, took things already there far away).
       if (w && w.at !== 'clear') refuse(OP, `at: ${String(w.at)} isn't a place`, "say where: { at: 'clear' }")
       const now = boundsOf(units.map((u) => feet.get(u.id)!))
-      o = { x: snapTo(now.x), y: snapTo(now.y) }
+      o = { x: snap(now.x), y: snap(now.y) }
     }
     let placed = at(o)
     // In a section it only goes down (the section grows); elsewhere to the nearest clear spot.
@@ -343,7 +342,6 @@ function colsNow(sizes: { w: number; h: number }[], now: Box, maxW?: number): nu
 // ---- The space and what's in it
 
 const spaceName = (s: Space) => (s.plane ? `plane ${s.plane}` : `canvas ${s.canvas}`)
-const snapTo = (v: number) => Math.round(v / GRID) * GRID
 const shift = (b: Box, d: { dx: number; dy: number }): Box => ({ x: b.x + d.dx, y: b.y + d.dy, w: b.w, h: b.h })
 // An H3 over a group, as labelBox counts it.
 const headBox = (h: { name: string; x: number; y: number }): Box => labelBox({ id: '', pieceId: '', text: h.name, size: 'minor', x: h.x, y: h.y, createdAt: 0 })
@@ -522,4 +520,4 @@ function groupsOf(units: Thing[], by: GroupBy, headings: boolean): Group[] {
     })
 }
 
-export { BLOCK_LAYOUTS, LAYOUTS, SIDES }
+export { LAYOUTS, SIDES }

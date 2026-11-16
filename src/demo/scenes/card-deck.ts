@@ -11,8 +11,8 @@ import { view } from '../fixtures/o10'
 import { NO_HUD, pageStyle } from '../fixtures/o12'
 import { WID } from '../fixtures/pazar'
 
-export const CARD_DECK = 'k-features'
-export const cardDeck = piece(CARD_DECK, { kind: 'kanban', x: 0, y: 1550, w: 1500, h: 600, name: '08 Features by status', kanban: { ...emptyKanban(), ...KANBAN_TEMPLATES[1].setup() } })
+const CARD_DECK = 'k-features'
+const cardDeck = piece(CARD_DECK, { kind: 'kanban', x: 0, y: 1550, w: 1500, h: 600, name: '08 Features by status', kanban: { ...emptyKanban(), ...KANBAN_TEMPLATES[1].setup() } })
 const CARD = '[data-ccard="f-qr"]'
 // Under the last card in `building`.
 const dropAt = () => {

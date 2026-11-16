@@ -15,7 +15,7 @@ import { learn } from '../../../onboarding/learn'
 import { ContextMenu } from '../../../ui/patterns/ContextMenu'
 import { useWs, useWsNow } from './context'
 import styles from './CanvasSwitch.module.css'
-import { plural } from '../../../model/words'
+import { plural, cut } from '../../../model/words'
 
 
 type Mode = 'list' | 'new' | 'rename'
@@ -116,7 +116,7 @@ export function CanvasCrumb({ label, current }: { label: string; current: boolea
         )}
       {deleting && goes && (
         <HazardConfirm
-          title={`delete the canvas "${deleting.name.length > 40 ? `${deleting.name.slice(0, 39)}…` : deleting.name}"?`}
+          title={`delete the canvas "${cut(deleting.name, 40)}"?`}
           lines={[
             goes.pieces.length ? `${plural(goes.pieces.length, 'piece')} on it ${goes.pieces.length === 1 ? 'goes' : 'go'}${goes.gone.length ? `, with ${plural(goes.gone.length, 'card')}` : ''}, and the text on it.` : 'Nothing is on it but its text.',
             ...(goes.stay.length ? [`${plural(goes.stay.length, 'card')} also on planes elsewhere ${goes.stay.length === 1 ? 'stays' : 'stay'} there.`] : []),

@@ -55,13 +55,7 @@
   "src/ops/deck.ts": {
     "rawCut": 2
   },
-  "src/ops/document.ts": {
-    "rawCut": 2
-  },
   "src/ops/matrix.ts": {
-    "rawCut": 2
-  },
-  "src/ops/merge.ts": {
     "rawCut": 2
   },
   "src/ops/newId.ts": {

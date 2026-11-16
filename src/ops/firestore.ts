@@ -12,7 +12,7 @@ import { isDelete, OpsRefused, type OpActor, type OpCtx, type Plan, type Write }
 import { docBytes, wholeBatches } from '../data/batches'
 
 
-export function refOf(wid: string, w: Pick<Write, 'coll' | 'id'>): DocumentReference {
+function refOf(wid: string, w: Pick<Write, 'coll' | 'id'>): DocumentReference {
   if (w.coll === 'workspace') return doc(db(), 'workspaces', wid)
   // A document's body lives under it (documents.ts' bodyRef): only the agent notes are written by ops (S16).
   if (w.coll === 'docBodies') return doc(db(), 'workspaces', wid, 'documents', w.id, 'content', 'body')
@@ -20,7 +20,7 @@ export function refOf(wid: string, w: Pick<Write, 'coll' | 'id'>): DocumentRefer
 }
 
 // DELETE as Firestore's deleteField(), in a patch's values and a merged set's maps.
-export const forFirestore = (o: Record<string, unknown>): Record<string, unknown> =>
+const forFirestore = (o: Record<string, unknown>): Record<string, unknown> =>
   Object.fromEntries(Object.entries(o).map(([k, v]) => [k, isDelete(v) ? deleteField() : v && typeof v === 'object' && !Array.isArray(v) ? forFirestore(v as Record<string, unknown>) : v]))
 
 // The signed-in person and their role here (when the caller doesn't say).
@@ -241,7 +241,7 @@ export type UiOpts = Pick<ApplyOpts, 'label' | 'key' | 'mergeAlways' | 'settle'>
 
 // Applies plans built in `ctx` as the signed-in person; null when they write nothing or validate refuses them (said in
 // the toast).
-export function applyUi(wid: string, ctx: OpCtx, plans: Plan[], opts: UiOpts = {}): Promise<Applied | null> {
+function applyUi(wid: string, ctx: OpCtx, plans: Plan[], opts: UiOpts = {}): Promise<Applied | null> {
   if (!plans.some((p) => p.writes.length)) return Promise.resolve(null)
   // Refused right now (a viewer, a preview, the demo): said as tracked() said it, nothing checked or written.
   if (!writable()) return Promise.resolve(null)
@@ -277,7 +277,7 @@ export const serverHas = (p: Promise<Applied | null>): Promise<void> => p.then((
 
 // A plan the builder refused (what it names isn't there): said in the toast, as a refused write was; anything else is
 // thrown on.
-export function sayRefused(e: unknown, label: string) {
+function sayRefused(e: unknown, label: string) {
   if (!(e instanceof OpsRefused)) throw e
   useHistory.getState().say(`Couldn't ${label}: ${e.errors[0]?.message ?? 'refused'}`)
 }

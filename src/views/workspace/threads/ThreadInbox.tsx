@@ -23,6 +23,7 @@ import { useWindowWidth } from '../../../ui/foundation/useWindowWidth'
 import { tokenPx } from '../../../styles/cssToken'
 import styles from './Threads.module.css'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
+import { plural } from '../../../model/words'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
 // The threads panel's scope for the canvas shown (D-302's session 4), beside a plane's id (D-193).
@@ -189,7 +190,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
                 <b>{t.lastName ?? t.name}</b> {t.lastText ?? ''}
               </span>
               <span className={styles.rowMeta}>
-                {t.count} message{t.count === 1 ? '' : 's'} · started by {t.name}
+                {plural(t.count, 'message')} · started by {t.name}
                 {goneOf?.(t) && <span className={styles.rowGone}> · what it was on was deleted</span>}
                 {/* Another plane than the open one: going there switches to it (D-168). */}
                 {(() => {

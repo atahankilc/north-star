@@ -2,7 +2,8 @@
 // value. Built as "rows by a field" (docs/specs/priorities.md): a field says which lane an item is in, which lanes there
 // are, and what dropping into one writes. Tasks have two, who it's given to and the card it's for; cards (priorities,
 // P2) will add theirs the same way.
-import type { AnyType, Card } from '../../../data/cards'
+import type { Card } from '../../../data/cards'
+import { ALL_TYPES } from '../../../model/cards'
 import type { KanbanRows, Task, TaskFields } from '../../../data/tasks'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { initials } from '../../../model/tasks'
@@ -28,14 +29,14 @@ export type RowField<T, F> = {
   set: (lane: string) => F | null
 }
 
-export const NOBODY = 'nobody'
-export const NO_CARD = 'none'
-export const GONE = 'gone'
+const NOBODY = 'nobody'
+const NO_CARD = 'none'
+const GONE = 'gone'
 
 type People = { me?: { id: string; name: string }; names: Map<string, string> }
 
 // Who it's given to: you first (always there, to give yourself one), the others by name, then nobody.
-export function byAssignee({ me, names }: People): RowField<Task, TaskFields> {
+function byAssignee({ me, names }: People): RowField<Task, TaskFields> {
   const nameOf = (uid: string, t?: Task) => names.get(uid) ?? t?.assigneeName ?? 'someone'
   return {
     name: 'given to',
@@ -54,18 +55,16 @@ export function byAssignee({ me, names }: People): RowField<Task, TaskFields> {
   }
 }
 
-const ORDER: AnyType[] = ['customer', 'problem', 'competitor', 'idea', 'feature', 'package']
-
 // The card it's for: the cards its tasks point at, in chain order then by title, then no card; tasks whose card is gone
 // in a lane of their own, which takes nothing.
-export function byCard(cards: Card[]): RowField<Task, TaskFields> {
+function byCard(cards: Card[]): RowField<Task, TaskFields> {
   const byId = new Map(cards.map((c) => [c.id, c]))
   return {
     name: 'for',
     laneOf: (t) => (!t.cardId ? NO_CARD : byId.has(t.cardId) ? t.cardId : GONE),
     lanes: (tasks) => {
       const used = [...new Set(tasks.flatMap((t) => (t.cardId && byId.has(t.cardId) ? [t.cardId] : [])))].map((id) => byId.get(id)!)
-      used.sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type) || (a.title || '').localeCompare(b.title || ''))
+      used.sort((a, b) => ALL_TYPES.indexOf(a.type) - ALL_TYPES.indexOf(b.type) || (a.title || '').localeCompare(b.title || ''))
       const gone = tasks.some((t) => t.cardId && !byId.has(t.cardId))
       return [
         ...used.map((c) => ({ key: c.id, label: cardName(c), tone: CARD_TONE[c.type], kind: c.type, drop: true })),

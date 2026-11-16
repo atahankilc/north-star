@@ -10,7 +10,7 @@ import { canvasOf } from '../model/canvases'
 import { viewOf } from './changeset'
 import { parseSkill } from './skills'
 import type { Card } from '../model/cards'
-import { plural } from '../model/words'
+import { plural, cut } from '../model/words'
 
 type Env = Pick<AgentEnv, 'getWs' | 'ids'> & { changes?: AgentEnv['changes'] }
 type Call = { name: string; args: Record<string, unknown> }
@@ -18,12 +18,12 @@ export type SkillStep = { calls: Call[]; text?: string } | { answer: string }
 type Result = Pick<Extract<ModelMessage, { role: 'tool' }>, 'name' | 'content'>
 type Op = { op: string; args: Record<string, unknown>; why?: string }
 
-export const SKILL_PLAN_MARK = 'Say go, or tell me what to change in the plan.'
+const SKILL_PLAN_MARK = 'Say go, or tell me what to change in the plan.'
 const ASK_MARK = 'Merge them?'
 
 const q = (s: string | undefined, n = 60) => {
   const flat = (s ?? '').replace(/\s+/g, ' ').trim()
-  return `"${flat.length > n ? `${flat.slice(0, n - 1)}…` : flat}"`
+  return `"${cut(flat, n)}"`
 }
 const today = () => new Date().toISOString().slice(0, 10)
 const dayPlus = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10)
@@ -57,7 +57,7 @@ const head = (name: string, rest: string) => `/${name}${rest ? ` ${rest.split('\
 const plan = (name: string, rest: string, lines: string[]) => ({ answer: [`Here's my plan for ${head(name, rest)}:`, ...lines.map((l, i) => `${i + 1}. ${l}`), SKILL_PLAN_MARK].join('\n') })
 
 // The skill (and what followed it) a plan, or a "merge them?", just before this message was for.
-export function planOf(before: string): { name: string; rest: string } | null {
+function planOf(before: string): { name: string; rest: string } | null {
   if (!before.includes(SKILL_PLAN_MARK) && !before.includes(ASK_MARK)) return null
   const m = /\bfor \/([a-z-]+)(?: ([^\n]*?))?:\n/.exec(before)
   return m ? { name: m[1], rest: m[2] ?? '' } : null

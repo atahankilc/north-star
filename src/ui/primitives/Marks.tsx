@@ -25,7 +25,7 @@ export const EVERY_HANDLE: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w
 export type PeerMark = { uid: string; name: string; color: string }
 
 // A kind's tier, a step down while its short side on screen is too small for it: L under 120 px, M under 24 px.
-export function tierFor(tier: Tier, screenPx: number): Tier {
+function tierFor(tier: Tier, screenPx: number): Tier {
   if (tier === 'l' && screenPx < 120) tier = 'm'
   if (tier === 'm' && screenPx < 24) tier = 's'
   return tier

@@ -30,7 +30,7 @@ type Props = {
 }
 
 // `hash`: a leading `#` is the tag's mark, not its word, so it's dropped; a list without one (regions) keeps what's typed.
-export const cleanTag = (typed: string, max: number, hash = true) => (hash ? typed.trim().replace(/^#/, '') : typed).trim().slice(0, max)
+const cleanTag = (typed: string, max: number, hash = true) => (hash ? typed.trim().replace(/^#/, '') : typed).trim().slice(0, max)
 
 export function TagList({ items, editor, word, placeholder, hash = true, max, room = Infinity, suggest = [], removeLabel = 'Remove', draft, onDraft, onAdd, onRemove, inlineAdd }: Props) {
   const add = (typed: string) => {

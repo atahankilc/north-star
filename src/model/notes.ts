@@ -19,7 +19,7 @@ export type NotesDoc = MarkdownSummary & { role: typeof NOTES_ROLE; shared: true
 type DocLike = { id: string; role?: unknown; kind?: unknown }
 type WsLike = { documents?: DocLike[]; bodies?: Record<string, { text?: string } | undefined> }
 
-export const isNotesDoc = (d: DocLike | undefined | null): boolean => !!d && d.id === NOTES_ID && d.role === NOTES_ROLE
+const isNotesDoc = (d: DocLike | undefined | null): boolean => !!d && d.id === NOTES_ID && d.role === NOTES_ROLE
 
 // The notes as a snapshot carries them: the doc (if there is one), its text (if loaded) and whether it is loaded.
 // No doc: empty and loaded (there is nothing to read).

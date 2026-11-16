@@ -342,12 +342,12 @@ function cleanDocumentsSetup(v: unknown) {
 
 // A kanban's columns (D-251; rules: 1–12, these keys only); none left, it starts over.
 // A timeline's setup (D-262): its rows.
-export function cleanTimeline(v: unknown) {
+function cleanTimeline(v: unknown) {
   return compact({ rows: oneOf(obj(v)?.rows, ['kanban', 'assignee', 'card'] as const) })
 }
 
 // Holding cards (D-268): which (its source) and the field its columns come from.
-export function cleanKanban(v: unknown, ids: Ids) {
+function cleanKanban(v: unknown, ids: Ids) {
   const seen = new Set<string>()
   const cols = list(obj(v)?.cols, KANBAN_COLS_MAX).flatMap((raw) => {
     const c = obj(raw)

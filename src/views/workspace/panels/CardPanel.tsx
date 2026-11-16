@@ -38,7 +38,7 @@ import { InPlaceMenu } from '../../../ui/patterns/InPlaceMenu'
 import { PanelAction, PanelSection, SidePanel } from '../../../ui/patterns/SidePanel'
 import { sidePanelW } from '../../../ui/patterns/panelWidth'
 import { factsOf } from '../plane/cardFacts'
-import { packageTree } from '../plane/cardInside'
+import { packageTree } from '../../../model/cardInside'
 import { labelBox } from '../text/TextItems'
 import { kindOf, labelRef, moveMany, type Label } from '../../../data/labels'
 import { clipboard, deleteHere, onPlane, packageThese, setSelection } from '../canvas/selection'
@@ -62,7 +62,7 @@ import { Label as UiLabel } from '../../../ui/primitives/Label'
 import { EVIDENCE_TEXT_MAX, LONG_TEXT_MAX, SOURCE_MAX, TAG_MAX, URL_MAX } from '../../../model/limits'
 import { CARD_PLACEHOLDER } from '../../../model/cardName'
 import { ALIGNS, alignTo, spreadTo } from '../../../model/layout'
-import { plural } from '../../../model/words'
+import { plural, leadingNumber } from '../../../model/words'
 import { TagList } from './TagList'
 import { NotesSection } from './NotesSection'
 import { PanelRow } from './PanelRow'
@@ -758,7 +758,7 @@ export type LinkAdd = { label: string; types: AnyType[] | null; kind: EdgeKind |
 
 // Links as rows like the old panel's (D-154): the kind's colour, its name with an arrow (→ from this card, ← to it),
 // the other card, its type. A row goes to that card; `×` unlinks.
-export function LinkSection({ n, name, card, cards, editor, links, add, count, extra }: P & { name: string; links: Edge[]; add: LinkAdd; count?: boolean; extra?: ReactNode }) {
+function LinkSection({ n, name, card, cards, editor, links, add, count, extra }: P & { name: string; links: Edge[]; add: LinkAdd; count?: boolean; extra?: ReactNode }) {
   const { wid } = useWs()
   const picker = usePicker()
   const byId = new Map(cards.map((c) => [c.id, c]))
@@ -920,11 +920,11 @@ export function goToCard(c: Card) {
 
 // A piece's name with its leading number apart, magenta (D-266, D-276): `01 Pazar`.
 function PlaneName({ name }: { name: string }) {
-  const m = /^(\d{1,4})(?:[\s.·:—–-]+(.*))?$/.exec(name.trim())
+  const m = leadingNumber(name)
   if (!m) return <>{name}</>
   return (
     <>
-      <span className={styles.planeNum}>{m[1]}</span> {m[2] ?? ''}
+      <span className={styles.planeNum}>{m.num}</span> {m.rest}
     </>
   )
 }

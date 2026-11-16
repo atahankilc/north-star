@@ -24,7 +24,6 @@ import { shortId } from './matrix'
 import { colsOf, columnIn, deckIn, tasksOf } from './tasks'
 import { KANBAN_COLS_MAX, COL_NAME_MAX, LIMIT_MAX, BOX_NAMES_MAX, BOX_NAME_MAX } from '../model/limits'
 import { plural } from '../model/words'
-export { KANBAN_COLS_MAX, COL_NAME_MAX, LIMIT_MAX, BOX_NAMES_MAX, BOX_NAME_MAX }
 
 type P = Piece & { id: string }
 
@@ -251,7 +250,7 @@ const tasksWord = (n: number) => plural(n, 'task')
 
 // Each into `to`'s column of the same name, else its first; after what's already in it, in the order they had
 // (KanbanSetup.tsx' moveTo).
-export function movesTo(ctx: OpCtx, from: P, to: P, held: Task[]): Write[] {
+function movesTo(ctx: OpCtx, from: P, to: P, held: Task[]): Write[] {
   const cols = colsOf(to)
   const there = (name?: string) => cols.find((c) => c.name.trim().toLowerCase() === name?.trim().toLowerCase()) ?? cols[0]
   const last = new Map(cols.map((c) => [c.id, Math.max(0, ...tasksIn(tasksOf(ctx, to.id), c.id).map((t) => t.order))]))

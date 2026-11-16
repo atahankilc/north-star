@@ -42,7 +42,7 @@ export const letGoKeys = (): Action => run(() => holding({}), 'keys up')
 // ——— the stage ———
 
 // CSS for this scene only (put in once; the tree is made again each loop, the style stays).
-export const style = (scene: string, css: string): Action =>
+const style = (scene: string, css: string): Action =>
   run(() => {
     const id = `demo-o10-${scene}`
     if (document.getElementById(id)) return
@@ -54,9 +54,6 @@ export const style = (scene: string, css: string): Action =>
 
 // The stage without the HUD, and every key let go (a loop that started over mid-hold).
 export const stage = (scene: string, css = ''): Action[] => [style(scene, `& header { display: none !important; } ${css}`), letGoKeys()]
-
-// A card's panel kept shut (as Enter leaves one just named, D-250): the plane stays in view.
-export const shut = (id: string): Action => run(() => useCanvasView.setState({ panelShut: id }), `panel shut for ${id}`)
 
 // ——— the panel ———
 

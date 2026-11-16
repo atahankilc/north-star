@@ -205,7 +205,7 @@ export function discardNew(ref: DocumentReference, key: string) {
 
 // A write too big for one batch (wholeBatches) where some batches went through and some didn't: what went through
 // stays, so its step stays too (undo takes it back; it puts back what didn't go through as it already is).
-export class PartlyWritten extends Error {
+class PartlyWritten extends Error {
   constructor(readonly cause: unknown) {
     super(`only part of it was saved: ${(cause as Error)?.message ?? String(cause)}`)
   }
@@ -222,12 +222,6 @@ export async function allCommitted(commits: Promise<void>[]): Promise<void> {
 }
 
 export const absent = (refs: DocumentReference[]): Snapshot => refs.map((ref) => ({ ref, data: null }))
-
-// The document as it is now, with some fields as they were (e.g. a card's position before a drag).
-export async function snapshotWith(ref: DocumentReference, fields: DocumentData): Promise<Snapshot> {
-  const data = await read(ref)
-  return [{ ref, data: data && { ...data, ...fields } }]
-}
 
 export const undo = () => (writable() ? serial(undoNow) : Promise.resolve())
 export const redo = () => (writable() ? serial(redoNow) : Promise.resolve())

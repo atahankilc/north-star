@@ -13,11 +13,11 @@ import { keepLocal, readLocal } from '../../state/local'
 
 export const KEY_STORE = 'northstar.agent.openaiKey'
 export const ANTHROPIC_KEY_STORE = 'northstar.agent.anthropicKey'
-export const CLAUDE_MODELS_STORE = 'northstar.agent.claudeModels'
+const CLAUDE_MODELS_STORE = 'northstar.agent.claudeModels'
 const STORE: Record<ProviderId, string> = { openai: KEY_STORE, anthropic: ANTHROPIC_KEY_STORE }
-export const MODEL_STORE = 'northstar.agent.model'
-export const EFFORT_STORE = 'northstar.agent.effort'
-export const MODELS_STORE = 'northstar.agent.models'
+const MODEL_STORE = 'northstar.agent.model'
+const EFFORT_STORE = 'northstar.agent.effort'
+const MODELS_STORE = 'northstar.agent.models'
 
 export const EFFORTS: readonly Effort[] = ['low', 'medium', 'high']
 

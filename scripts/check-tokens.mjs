@@ -13,7 +13,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const baselinePath = path.join(root, 'scripts/tokens-baseline.json')
 const skip = [/^src\/styles\/tokens\.css$/, /^src\/gallery\//, /\.gallery\.tsx$/, /\.test\.tsx?$/]
 // The sources themselves: tokens.ts (WebGL's palette), the card types' colours, motion's TS mirror, the world's geometry.
-const sources = [/^src\/styles\/tokens\.ts$/, /^src\/ui\/cardTone\.ts$/, /^src\/ui\/motionTokens\.ts$/, /^src\/model\/world\.ts$/]
+const sources = [/^src\/styles\/tokens\.ts$/, /^src\/ui\/foundation\/cardTone\.ts$/, /^src\/ui\/foundation\/pieceTone\.ts$/, /^src\/ui\/foundation\/motionTokens\.ts$/, /^src\/model\/world\.ts$/]
 
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -3,7 +3,7 @@
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 // The first element matching `sel` (whose text starts with `words`, if given), waited for up to `ms`.
-export async function find(sel: string, words?: string, ms = 2000): Promise<HTMLElement | null> {
+async function find(sel: string, words?: string, ms = 2000): Promise<HTMLElement | null> {
   const t = performance.now()
   for (;;) {
     const el = [...document.querySelectorAll<HTMLElement>(sel)].find((e) => !words || (e.textContent ?? '').trim().replace(/^\[|\]$/g, '').trim().startsWith(words))
@@ -78,4 +78,3 @@ export async function drag(sel: string, from: [number, number], to: [number, num
   Element.prototype.setPointerCapture = capture
 }
 
-export { wait }

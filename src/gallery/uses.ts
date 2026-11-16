@@ -62,6 +62,3 @@ export const NODES: Map<string, Node> = (() => {
   for (const n of nodes.values()) n.usedBy.sort((a, b) => base(a).localeCompare(base(b)))
   return nodes
 })()
-
-// From the gallery's `file: 'src/ui/X.tsx'` to a node's key.
-export const nodeOf = (file: string) => NODES.get(`/${file}`)

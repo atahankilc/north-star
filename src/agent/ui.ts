@@ -355,13 +355,12 @@ function currentView(): View {
 const confirmOpen = () => typeof document !== 'undefined' && !!document.querySelector('[role="alertdialog"]')
 const guard = <T>(fn: () => Promise<T>) => () => (confirmOpen() ? Promise.reject(new Error('agent ui: a confirm is open: answer it first')) : fn())
 
-export const goTo = (id: string) => queued(guard(() => goToNow(id)))
+const goTo = (id: string) => queued(guard(() => goToNow(id)))
 export const focus = (planeId: string | null) => queued(guard(() => focusOn(planeId)))
 export const select = (ids: string[]) => queued(guard(() => selectNow(ids)))
-export const openPanel = (id: string) => queued(guard(() => openPanelNow(id)))
-export const showBeside = (pieceId: string) => queued(guard(() => showBesideNow(pieceId)))
-export const show = (id: string, o: { plane?: string; canvas?: string; focus?: boolean } = {}) => queued(guard(() => showNow(id, o)))
-export { currentView }
+const openPanel = (id: string) => queued(guard(() => openPanelNow(id)))
+const showBeside = (pieceId: string) => queued(guard(() => showBesideNow(pieceId)))
+const show = (id: string, o: { plane?: string; canvas?: string; focus?: boolean } = {}) => queued(guard(() => showNow(id, o)))
 
 export const agentUi = { goTo, focus, select, openPanel, showBeside, show, currentView, agentDriving }
 

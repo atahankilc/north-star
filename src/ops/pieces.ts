@@ -34,7 +34,7 @@ const STORED: Record<string, PieceKind> = { plane: 'plane', deck: 'kanban', kanb
 // The setup field each kind keeps.
 const SETUP_KEY: Partial<Record<PieceKind, 'matrix' | 'table' | 'kanban' | 'timeline' | 'documents'>> = { matrix: 'matrix', table: 'table', kanban: 'kanban', timeline: 'timeline', documents: 'documents' }
 
-export const pieceName = (p: Pick<Piece, 'kind'>) => KIND_NAME[kindOfPiece(p)]
+const pieceName = (p: Pick<Piece, 'kind'>) => KIND_NAME[kindOfPiece(p)]
 const aPiece = (p: Pick<Piece, 'kind'>) => `a ${pieceName(p)}`
 
 const pieceIn = (ctx: OpCtx, op: string, id: unknown): P => find(ctx.ws.pieces as P[], op, id, 'piece')
@@ -329,7 +329,6 @@ export function resize(ctx: OpCtx, args: ResizeArgs): Plan {
   return place(ctx, { id: p.id, canvas, to: { x: args.x ?? at.x, y: args.y ?? at.y, w: Math.round(args.w), h: Math.round(h) } }, op)
 }
 
-export { followerMoves }
 
 // ---- delete (pieces and canvases; ops/delete.ts sends them here)
 
@@ -365,7 +364,7 @@ function pieceRehome(ctx: OpCtx, piece: string, s: { id: string; canvasId: strin
 // that stays move their home there), their links and what hangs off them, its text and the places on it; a matrix's or
 // table's cells; a deck's tasks; every spot of theirs. Threads stay (never written by ops); pieces stuck to them stay,
 // let go by the app's reading (D-141).
-export function pieceCascade(ctx: OpCtx, list: P[]): Write[] {
+function pieceCascade(ctx: OpCtx, list: P[]): Write[] {
   const ws = ctx.ws
   const going = new Set(list.map((p) => p.id))
   const writes: Write[] = list.map((p): Write => ({ coll: 'pieces', id: p.id, del: true }))

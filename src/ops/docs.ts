@@ -47,7 +47,7 @@ function docOfCard(c: Card): RawDoc {
 }
 
 // Documents' bodies, when the snapshot carries them (the agent's ReadWs).
-export const bodiesOf = (ws: WorkspaceCtx): Record<string, object | undefined> => (ws as { bodies?: Record<string, object | undefined> }).bodies ?? {}
+const bodiesOf = (ws: WorkspaceCtx): Record<string, object | undefined> => (ws as { bodies?: Record<string, object | undefined> }).bodies ?? {}
 
 // The workspace's items as the docs they came from, by collection, plus the workspace doc.
 export function toDocs(ws: WorkspaceCtx): DocStore {
@@ -129,5 +129,4 @@ export function writeTo(store: DocStore, w: Write) {
   }
 }
 
-export const exists = (store: DocStore, coll: Coll, id: string) => !!store.get(coll)?.has(id)
 export const docAt = (store: DocStore, coll: Coll, id: string) => store.get(coll)?.get(id)

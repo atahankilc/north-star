@@ -32,7 +32,7 @@ export function planeBoxes(ws: PlaneWs, plane: string): Boxed[] {
 }
 
 export const hit = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
-export const wholly = (a: Box, s: Box) => a.x >= s.x && a.y >= s.y && a.x + a.w <= s.x + s.w && a.y + a.h <= s.y + s.h
+const wholly = (a: Box, s: Box) => a.x >= s.x && a.y >= s.y && a.x + a.w <= s.x + s.w && a.y + a.h <= s.y + s.h
 
 // The things that land on each other, where at least one was made or moved since `before` (what was already there may
 // overlap: it isn't the change's doing). `cuts`: one cuts through a frame (a section, a package) without being inside it.

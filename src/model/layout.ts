@@ -15,9 +15,9 @@ export type Box = { x: number; y: number; w: number; h: number }
 export type Boxed = Box & { id: string }
 
 // Beside a thing is a `where` (`{ near }`), not a layout: any block goes there.
-export const BLOCK_LAYOUTS = ['grid', 'row', 'column', 'cluster', 'flow'] as const
+const BLOCK_LAYOUTS = ['grid', 'row', 'column', 'cluster', 'flow'] as const
 export const ALIGNS = ['align-left', 'align-centre', 'align-right', 'align-top', 'align-middle', 'align-bottom'] as const
-export const SPREADS = ['spread-x', 'spread-y'] as const
+const SPREADS = ['spread-x', 'spread-y'] as const
 export const LAYOUTS = [...BLOCK_LAYOUTS, ...ALIGNS, ...SPREADS] as const
 export type Layout = (typeof LAYOUTS)[number]
 export type Align = (typeof ALIGNS)[number]
@@ -27,7 +27,7 @@ export const SIDES: Side[] = ['right', 'below', 'left', 'above']
 // Between the things laid out; between groups of a cluster; between what moves and what stays.
 export const GAP = 2 * GRID
 export const GROUP_GAP = 4 * GRID
-export const CLEAR = GRID
+const CLEAR = GRID
 // How wide to tall a grid (and a cluster's group) is packed.
 const ASPECT = 1.6
 

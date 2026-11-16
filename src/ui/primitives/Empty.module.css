@@ -4,7 +4,3 @@
   color: var(--fg-dim);
   white-space: normal;
 }
-
-.empty[data-tone='dim'] {
-  color: var(--fg-dim);
-}

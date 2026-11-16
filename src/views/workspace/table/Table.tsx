@@ -37,12 +37,12 @@ import { PageArrows, PageSize } from '../canvas/Pager'
 import { CloseIcon, PlusIcon } from '../../../ui/primitives/hudIcons'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
-export const T = { head: 40, row: 32, name: 260, add: 40 }
+const T = { head: 40, row: 32, name: 260, add: 40 }
 
 const FIELD_W: Record<string, number> = { type: 100, plane: 140, status: 120, tags: 180, regions: 160, priority: 90, impact: 90, effort: 90, evidence: 90 }
 const OWN_W: Record<string, number> = { scale: 90, number: 110, text: 220, check: 70 }
-export const widthOf = (c: Column) => c.width ?? (c.field ? FIELD_W[c.field] : OWN_W[c.kind ?? 'text']) ?? 120
-export const nameWidth = (s: TableSetup) => s.nameWidth ?? T.name
+const widthOf = (c: Column) => c.width ?? (c.field ? FIELD_W[c.field] : OWN_W[c.kind ?? 'text']) ?? 120
+const nameWidth = (s: TableSetup) => s.nameWidth ?? T.name
 
 const NO_SETUP = emptyTable()
 export const tableOf = (p: Pick<Piece, 'table'>): TableSetup => p.table ?? NO_SETUP
@@ -102,7 +102,7 @@ export function useFieldText(): FieldText {
 }
 
 // A table's rows, in its source's order or sorted by a column (model/table.ts' sortedRows, the agent's reading too).
-export const tableRows = (setup: TableSetup, cards: Card[], fieldText: FieldText, byKey: Map<string, Cell>): Row[] =>
+const tableRows = (setup: TableSetup, cards: Card[], fieldText: FieldText, byKey: Map<string, Cell>): Row[] =>
   sortedRows(setup, rowsOf(setup.rows, cards, !setup.manual), fieldText, byKey)
 
 // What find looks through in a table (D-236): its heads, then each row's name and cells, on every page, in reading
@@ -374,7 +374,7 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
           </>
         )}
         {!rows.length && (
-          <Empty className={styles.empty} tone="dim" style={box(nameW, T.head, Math.max(width - nameW, 200), T.row)}>
+          <Empty className={styles.empty} style={box(nameW, T.head, Math.max(width - nameW, 200), T.row)}>
             {setup.manual ? 'No rows yet' : 'No card meets its rules'}
           </Empty>
         )}

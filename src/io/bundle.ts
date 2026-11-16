@@ -43,7 +43,7 @@ export type Bundle = {
   documents: BundleDocument[]
 } & Record<BundleCollection, Raw[]>
 
-export class BundleError extends Error {}
+class BundleError extends Error {}
 
 export function makeBundle(workspace: { name: string; description?: string }, data: Record<BundleCollection, Raw[]>, documents: BundleDocument[]): Bundle {
   const bundle = {
@@ -107,7 +107,7 @@ export async function readBundle(file: File): Promise<Bundle> {
 }
 
 // ---- Cleaning (every clean* below) lives in src/model/clean.ts, without Firebase (S3); re-exported here.
-export { cleanCard, cleanCompetitorFeature, cleanComparison, cleanEvidence, cleanEdge, cleanLabel, cleanPiece, cleanTimeline, cleanKanban, cleanPlace, cleanTask, cleanCell, cleanDocument, cleanCanvas, cleanSpot } from '../model/clean'
+export { cleanCard, cleanCompetitorFeature, cleanComparison, cleanEvidence, cleanEdge, cleanLabel, cleanPiece, cleanPlace, cleanTask, cleanCell, cleanDocument, cleanCanvas, cleanSpot } from '../model/clean'
 export type { Ids } from '../model/clean'
 
 // A file name safe on every system: "Example: Tablebook" → "example-tablebook".

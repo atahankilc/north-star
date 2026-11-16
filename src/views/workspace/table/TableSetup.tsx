@@ -304,7 +304,7 @@ const ALL = 'all'
 const NONE = 'none'
 
 // View: how many rows a page, and the order (the heads sort too).
-export function ViewEditor({ setup, onChange }: EditorProps) {
+function ViewEditor({ setup, onChange }: EditorProps) {
   return (
     <>
       <Row label="rows a page" hint="the dock pages through them">

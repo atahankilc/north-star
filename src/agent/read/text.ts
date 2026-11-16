@@ -3,12 +3,11 @@
 // An estimate, not a tokenizer (no dependency): plain English runs about 4 characters a token, but this text is dense
 // with ids, symbols (· ⧉ ☐ −), quotes and non-English names, which tokenize worse; 3 characters a token keeps the
 // estimate on the safe side. Check the targets with a real tokenizer once a key is in (agent-run.md, S10).
-export const CHARS_PER_TOKEN = 3
+const CHARS_PER_TOKEN = 3
 export const estimateTokens = (s: string) => Math.ceil(s.length / CHARS_PER_TOKEN)
 
 // A tool result's ceiling (agent.md §7.2 point 4) and the map's (§4.3).
 export const RESULT_TOKENS = 8000
-export const MAP_TOKENS = 15000
 // What the map aims for under the estimate, leaving room below the target.
 export const MAP_BUDGET = 13500
 
@@ -44,7 +43,7 @@ export const dayOf = (ms: number) => new Date(ms).toISOString().slice(0, 10)
 export const timeOf = (ms: number) => new Date(ms).toISOString().slice(0, 16).replace('T', ' ')
 
 // `n things`.
-export const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+export { plural as count } from '../../model/words'
 
 // A page of a list, and the line that says where you are and how to get more.
 export function pageOf<T>(list: T[], page = 1, limit = 30): { items: T[]; page: number; pages: number; from: number; to: number } {
@@ -79,4 +78,4 @@ export function fit(text: string, max = RESULT_TOKENS, hint = 'Narrow it (a smal
   return { text: out.join('\n'), cut: true }
 }
 
-export const norm = (s: string) => s.trim().replace(/^["'`]+|["'`]+$/g, '').replace(/\s+/g, ' ').toLowerCase()
+export { norm } from '../../model/words'

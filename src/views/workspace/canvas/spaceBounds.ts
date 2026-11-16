@@ -8,7 +8,7 @@ import type { Edge } from '../../../data/edges'
 import type { Label } from '../../../data/labels'
 import type { Bounds } from '../../../state/canvasView'
 import { keep, filterOf } from './planeFilter'
-import { foldedHeight, foldsOf, packageBox, type Box } from '../plane/cardInside'
+import { foldedHeight, foldsOf, packageBox, type Box } from '../../../model/cardInside'
 import { labelBox } from '../text/TextItems'
 import { boundsOf } from '../../../model/layout'
 

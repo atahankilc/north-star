@@ -47,7 +47,7 @@ export function stubModel(script: Script, o: { name?: string; callId?: () => str
 }
 
 // A researcher's answer from the research script: the question found in what it was asked.
-export function researched(req: ModelRequest, research: ResearchScript = {}): ModelResponse {
+function researched(req: ModelRequest, research: ResearchScript = {}): ModelResponse {
   const asked = req.messages.filter((m) => m.role === 'user').map((m) => m.content).join('\n')
   const hit = Object.entries(research).find(([q]) => asked.includes(q))?.[1]
   if (!hit) return { text: 'The pages found do not answer this.', toolCalls: [], usage: { ...NO_USAGE }, stop: 'end' }

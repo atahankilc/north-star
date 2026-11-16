@@ -41,7 +41,7 @@ export const noCrumbs = (scene: string): Action => hide(scene, 'breadcrumb', `.$
 
 // ——— teammates ———
 
-export const peer = (who: { uid: string; name: string }, color: string, since: number, extra: Partial<Peer> = {}): Peer => ({
+const peer = (who: { uid: string; name: string }, color: string, since: number, extra: Partial<Peer> = {}): Peer => ({
   uid: who.uid,
   name: who.name.split(' ')[0],
   color,

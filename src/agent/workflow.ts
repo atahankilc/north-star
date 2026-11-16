@@ -1,4 +1,5 @@
 import type { ModelMessage } from './contract'
+import { plural } from '../model/words'
 // The agent's turn lifecycle (S13, D-312; docs/specs/agent.md §4.5, §4.10): what the chat (S14) and the preview (S15)
 // drive. Pure: a state, an event, the next state and the effects the driver carries out. No React, no Firebase.
 //
@@ -126,7 +127,7 @@ export function step(s: WorkflowState, e: WorkflowEvent): { state: WorkflowState
     }
     case 'discard': {
       if (s.phase !== 'previewing') return same(s, e)
-      const report: Report = { text: `Discarded: nothing changed${s.pending ? ` (${s.pending} change${s.pending === 1 ? '' : 's'} not applied)` : ''}.`, done: [], notDone: e.notDone ?? [], step: null }
+      const report: Report = { text: `Discarded: nothing changed${s.pending ? ` (${plural(s.pending, 'change')} not applied)` : ''}.`, done: [], notDone: e.notDone ?? [], step: null }
       return { state: { phase: 'discarded', turn: s.turn, pending: 0, report }, effects: [{ type: 'discard' }, { type: 'close_preview' }, { type: 'unlock' }, { type: 'report', report }] }
     }
     case 'undo': {
@@ -155,7 +156,7 @@ export function reportOf(o: { applied: { line: string; where: string }[]; notDon
   for (const i of o.applied) where.set(i.where, (where.get(i.where) ?? 0) + 1)
   const places = [...where].map(([w, n]) => `${w} (${n})`).join(', ')
   const text = [
-    `Applied ${o.applied.length} change${o.applied.length === 1 ? '' : 's'}${places ? ` on ${places}` : ''}${o.step ? ', one undo step' : ''}.`,
+    `Applied ${plural(o.applied.length, 'change')}${places ? ` on ${places}` : ''}${o.step ? ', one undo step' : ''}.`,
     ...(o.notDone.length ? [`Not done: ${o.notDone.length} (${o.notDone.map((i) => i.line).slice(0, 3).join('; ')}${o.notDone.length > 3 ? '; …' : ''}).`] : []),
   ].join(' ')
   return { text, done: o.applied.map((i) => i.line), notDone: o.notDone.map((i) => i.line), step: o.step, ...(o.docs?.length ? { docs: o.docs } : {}) }

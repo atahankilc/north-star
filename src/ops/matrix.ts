@@ -95,7 +95,7 @@ export type AxisSpec = {
   unfold?: boolean
 }
 
-export function axisFrom(ctx: OpCtx, op: string, spec: unknown, which: 'rows' | 'cols'): Axis {
+function axisFrom(ctx: OpCtx, op: string, spec: unknown, which: 'rows' | 'cols'): Axis {
   const side = which === 'rows' ? 'rows' : 'columns'
   if (!spec || typeof spec !== 'object' || Array.isArray(spec)) refuse(op, `${side} is an object`, 'give { type, plane, cards, names, noun, unfold }')
   const s = spec as AxisSpec

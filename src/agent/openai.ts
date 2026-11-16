@@ -34,7 +34,7 @@
 import { joinSources, type AgentModel, type ImagePart, type ModelEvent, type ModelMessage, type ModelRequest, type ModelResponse, type Source, type StopReason, type ToolCall, type ToolDef, type Usage } from './contract'
 import { WEB_SEARCHES } from './web'
 
-export const OPENAI_API = 'https://api.openai.com/v1'
+const OPENAI_API = 'https://api.openai.com/v1'
 
 export type Effort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
 
@@ -161,7 +161,7 @@ export function requestBody(req: ModelRequest, o: Pick<OpenAIOptions, 'model' | 
 // ---- Server-sent events
 
 // The `data` of each event in a stream (multi-line data joined with \n; comments and other fields skipped).
-export async function* sseData(body: ReadableStream<Uint8Array>, signal?: AbortSignal): AsyncGenerator<string> {
+async function* sseData(body: ReadableStream<Uint8Array>, signal?: AbortSignal): AsyncGenerator<string> {
   const reader = body.getReader()
   const dec = new TextDecoder()
   let buf = ''
@@ -202,12 +202,12 @@ export async function* sseData(body: ReadableStream<Uint8Array>, signal?: AbortS
 
 type RawUsage = { input_tokens?: number; output_tokens?: number; input_tokens_details?: { cached_tokens?: number }; output_tokens_details?: { reasoning_tokens?: number } }
 
-export function usageOf(u: RawUsage | undefined): Usage {
+function usageOf(u: RawUsage | undefined): Usage {
   return { input: u?.input_tokens ?? 0, output: u?.output_tokens ?? 0, cached: u?.input_tokens_details?.cached_tokens ?? 0, reasoning: u?.output_tokens_details?.reasoning_tokens ?? 0 }
 }
 
 // A function call's arguments as the contract's ToolCall: parsed, or `argsError` (never thrown).
-export function toolCallOf(item: { call_id?: string; id?: string; name?: string; arguments?: string }): ToolCall {
+function toolCallOf(item: { call_id?: string; id?: string; name?: string; arguments?: string }): ToolCall {
   const rawArgs = item.arguments ?? ''
   const base = { id: item.call_id ?? item.id ?? '', name: item.name ?? '', rawArgs }
   if (!rawArgs.trim()) return { ...base, args: {} }
@@ -244,7 +244,7 @@ const failText = (e?: { message?: string; code?: string }) =>
   `${e?.message || 'OpenAI stopped with an error.'}${e?.code ? ` (${e.code})` : ''}`
 
 // Reads the events of one streamed response, yielding the contract's events; the last is always `done`.
-export async function* readResponse(datas: AsyncIterable<string>, key?: string): AsyncGenerator<ModelEvent> {
+async function* readResponse(datas: AsyncIterable<string>, key?: string): AsyncGenerator<ModelEvent> {
   let text = ''
   let refusal = ''
   // Output items with their output_index, put in that order at the end (the stream may finish them out of order).
@@ -377,7 +377,7 @@ export function retryAfterMs(h: Headers, now = Date.now()): number | undefined {
 }
 
 // The longest wait a retry takes; past it, the message says to try later.
-export const MAX_RETRY_WAIT = 20_000
+const MAX_RETRY_WAIT = 20_000
 
 async function detailOf(res: Response): Promise<{ message: string; code?: string }> {
   try {

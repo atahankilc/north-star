@@ -31,7 +31,7 @@ const VARS: Record<keyof typeof WORLD, string> = {
   smallText: '--w-text-2xs',
 }
 
-export function writeWorldCss(root: HTMLElement) {
+function writeWorldCss(root: HTMLElement) {
   for (const k of Object.keys(WORLD) as (keyof typeof WORLD)[]) root.style.setProperty(VARS[k], `${WORLD[k]}px`)
 }
 

@@ -38,7 +38,7 @@ type Props = {
 let lastList: { open: string | null; selKey: string | null } | null = null
 
 // `whats-new` and `welcome` are what `# start` plays: the coach knows both (welcome is a lesson; what's new its own).
-export const WHATS_NEW = 'whats-new'
+const WHATS_NEW = 'whats-new'
 
 // Keys pressed anywhere in the guide stay in it (the canvas's and the app's own never hear them), except `?`, which the
 // coach hears to close it.

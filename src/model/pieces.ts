@@ -28,7 +28,7 @@ export const kindOfPiece = (p: Pick<Piece, 'kind'>): PieceKind => (KINDS.include
 export const isBare = (p: Pick<Piece, 'kind'>) => kindOfPiece(p) !== 'plane'
 
 // A lens on the cards (D-209): a matrix or a table, which sticks to a plane (D-210) and opens onto the canvas (D-228).
-export const isLens = (p: Pick<Piece, 'kind'>) => p.kind === 'matrix' || p.kind === 'table'
+const isLens = (p: Pick<Piece, 'kind'>) => p.kind === 'matrix' || p.kind === 'table'
 
 // What sticks to something (D-210): a lens or a kanban to a plane (D-255), a timeline to a kanban (D-262).
 export const sticks = (p: Pick<Piece, 'kind'>) => isLens(p) || p.kind === 'kanban' || p.kind === 'timeline'

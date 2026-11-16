@@ -214,7 +214,6 @@ export function joinSources(lists: (Source[] | undefined)[]): Source[] {
   return [...all.filter((s) => s.cited), ...all.filter((s) => !s.cited)]
 }
 
-export const turnUsage = (steps: AgentStep[]): Usage => steps.reduce((u, s) => addUsage(u, s.usage), { ...NO_USAGE })
 export const transcriptUsage = (t: Transcript): Usage => t.turns.reduce((u, x) => addUsage(u, x.usage), { ...NO_USAGE })
 
 // Every call the model made in a transcript, in order.

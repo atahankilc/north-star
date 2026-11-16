@@ -24,7 +24,6 @@ import type { Place } from '../canvas/goTo'
 import { cardsOn, type Place as CardPlace } from '../../../data/places'
 
 // A text cut round a match, a document's text as read: src/model/findIndex.ts (R8).
-export { pageText, snippet } from '../../../model/findIndex'
 
 // Where a row goes: a place on the canvas or in a plane (go to's, D-196), lit there; a match in a table, matrix or list
 // (into its focus, landing on `view`); in a document on its own (its focus); in a document open beside a list.

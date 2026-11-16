@@ -17,7 +17,7 @@ import { researchTool } from './research'
 import { comparisonId } from '../model/shapes'
 import { plural } from '../model/words'
 
-export { NO_COORDS, COORDS_FIX, agentArgs, ID_KEYS } from './change'
+export { NO_COORDS, ID_KEYS } from './change'
 
 const SHORT = /^[a-z]\d+$/
 
@@ -102,7 +102,7 @@ const NAMED = new Map(SHAPES.filter(([, a]) => a).map(([n, a]) => [bare(a), n]))
 // A short type signature from an ArgSchema: `{type: 'idea'|'problem'|…, plane: str, title?: str, where?: {near?: str},
 // links?: Link[]}`. Strings `str` (most are ids or names), numbers `num`, booleans `bool`; long enums cut; a handle
 // `"$a"`; a shared shape by its name (`top`: the shape itself, for its definition); nested past depth 3 `{…}`.
-export function sig(a: ArgSchema | undefined, depth = 0, key = '', top = false): string {
+function sig(a: ArgSchema | undefined, depth = 0, key = '', top = false): string {
   if (!a) return '?'
   if (key === 'handle') return '"$a"'
   const named = !top && NAMED.get(bare(a))
@@ -160,8 +160,8 @@ export const opArgs = (name: string): string => {
 
 // More than this many things changed by what's pending, with no plan: a big job (the prompt's "more than about ten
 // changes"), counted as the preview counts them (each card, text, link or piece added, changed or moved).
-export const BIG_CHANGE_AT = 10
-export const BIG_CHANGE = (n: number) =>
+const BIG_CHANGE_AT = 10
+const BIG_CHANGE = (n: number) =>
   `change refused, nothing added: this would change ${n} things, a big job. Call plan first with its steps and the preview you suggest, answer with the plan in a few lines, and wait for go. (A skill's own steps and a job under way aren't held back.)`
 const jobOpen = (env: AgentEnv) => {
   const j = env.job?.get()
@@ -205,7 +205,7 @@ export function rewordedLines(args: Record<string, unknown>, input: string): [st
 }
 
 // A refusal naming an op whose args the description leaves out: those args after it, once per op.
-export function withOpArgs(text: string): string {
+function withOpArgs(text: string): string {
   const rare = [...new Set([...text.matchAll(/ops\[\d+\] ([a-z_]+)[.\s]/g)].map((m) => m[1]))].filter((n) => REGISTRY.has(n) && !COMMON_OPS.has(n))
   return rare.length ? `${text}\n${rare.map((n) => `Its args: ${opArgs(n)}`).join('\n')}` : text
 }
@@ -253,7 +253,7 @@ const changeTool: AgentTool = {
 // model filled cells by guessing from names and left the recorded matches empty): each match still empty, and each
 // other cell stated as documented, is told, in names. Read from the pending view, so a later call that fills them
 // stops the note.
-export function matchNotes(env: AgentEnv): string[] {
+function matchNotes(env: AgentEnv): string[] {
   const live = env.getWs()
   const ws = viewOf(env.changes, live)
   const had = new Set(live.pieces.map((p) => p.id))

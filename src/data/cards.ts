@@ -9,7 +9,7 @@ import { forgetRecent, present, runUi, runUiWith, startUiWith } from '../ops/fir
 import { createCard, createPackage, deleteThings, duplicatePlan, updateCard as updateCardOp } from '../ops/cards'
 
 // What a card is (its types, fields, the doc → card conversion) lives in src/model/cards.ts, without Firebase (S3).
-export { CARD_TYPES, ALL_TYPES, CARD_COLLECTION, CARD, TITLE_MAX, VALIDATIONS, FEATURE_PRIORITIES, FEATURE_STATUSES, FEATURE_IMPACTS, FEATURE_EFFORTS, isOnPlane, toCards, cardDoc } from '../model/cards'
+export { CARD_TYPES, ALL_TYPES, CARD_COLLECTION, CARD, TITLE_MAX, VALIDATIONS, FEATURE_PRIORITIES, FEATURE_STATUSES, FEATURE_IMPACTS, FEATURE_EFFORTS, isOnPlane } from '../model/cards'
 export type { CardType, AnyType, Validation, CardFields, Card } from '../model/cards'
 import { CARD, CARD_COLLECTION, type AnyType, type Card, type CardFields, type CardType } from '../model/cards'
 import { placeId } from '../model/placement'
@@ -19,7 +19,7 @@ const ref = (wid: string, type: AnyType, id?: string) =>
   id ? doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]), id) : doc(collection(db(), 'workspaces', wid, CARD_COLLECTION[type]))
 
 // A card on a plane besides its home (D-281): fixed by the two, so a card is on a plane once.
-export const placeRef = (wid: string, plane: string, cardId: string) => doc(collection(db(), 'workspaces', wid, 'places'), placeId(plane, cardId))
+const placeRef = (wid: string, plane: string, cardId: string) => doc(collection(db(), 'workspaces', wid, 'places'), placeId(plane, cardId))
 
 // Where a card's spot on the plane it's shown on is stored: the card itself on its home, its place elsewhere.
 export const spotRef = (wid: string, card: Card) => (card.on ? placeRef(wid, card.on, card.id) : ref(wid, card.type, card.id))
@@ -78,7 +78,7 @@ export function addPackage(wid: string, plane: string, members: Card[], at: [num
 }
 
 // As addPackage, with the write to wait for (R4): `applied` resolves once it's recorded and issued locally.
-export function addPackageOp(wid: string, plane: string, members: Card[], at: [number, number], n: number) {
+function addPackageOp(wid: string, plane: string, members: Card[], at: [number, number], n: number) {
   // Nothing made (no workspace shown, or refused): id ''.
   const { value: id, applied } = startUiWith(wid, 'package these', (ctx) => {
     const plan = createPackage(ctx, { cards: members.map((m) => m.id), plane, x: at[0], y: at[1], name: `Package ${n}` })
@@ -121,7 +121,7 @@ export function copyCards(wid: string, pieceId: string, list: Card[], edges: Edg
 }
 
 // As copyCards, with the write to wait for (R4): `applied` resolves once it's recorded and issued locally.
-export function copyCardsOp(wid: string, pieceId: string, list: Card[], edges: Edge[], by: [number, number], labels: ({ id: string; x: number; y: number } & Record<string, unknown>)[] = []) {
+function copyCardsOp(wid: string, pieceId: string, list: Card[], edges: Edge[], by: [number, number], labels: ({ id: string; x: number; y: number } & Record<string, unknown>)[] = []) {
   const { value: ids, applied } = startUiWith(wid, 'duplicate these', (ctx) => {
     const { plan, ids } = duplicatePlan(ctx, { to: pieceId, by, source: { cards: list, edges, labels } })
     return { plans: [plan], value: ids }

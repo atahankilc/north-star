@@ -129,7 +129,7 @@ export const usePresence = create<PresenceState>((set) => ({
 type Sample = { t: number; x: number; y: number }
 const tracks = new Map<string, Sample[]>()
 const listeners = new Set<() => void>()
-export const CURSOR_DELAY_MS = 2 * WRITE_EVERY_MS
+const CURSOR_DELAY_MS = 2 * WRITE_EVERY_MS
 
 function track(uid: string, x: number, y: number) {
   const now = performance.now()

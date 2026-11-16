@@ -89,8 +89,9 @@ function unused() {
   fs.writeFileSync(
     config,
     JSON.stringify({
-      // What starts something: the three pages, tests, the evals, the scripts; a gallery example is found by a glob.
-      entry: ['index.html', 'demo.html', 'gallery.html', 'src/main.tsx', 'src/demo/main.tsx', 'src/demo/firebaseStub.ts', 'src/gallery/main.tsx', 'src/**/*.gallery.tsx', 'src/**/*.test.ts', 'tests/**/*.{ts,mjs}', 'evals/**/*.{ts,mjs}', 'scripts/*.mjs'],
+      // What starts something: the three pages, tests, the evals, the scripts, the build's configs (the demo's reads
+      // src/demo/demoCss.ts); a gallery example is found by a glob.
+      entry: ['index.html', 'demo.html', 'gallery.html', 'src/main.tsx', 'src/demo/main.tsx', 'src/demo/firebaseStub.ts', 'src/gallery/main.tsx', 'src/**/*.gallery.tsx', 'src/**/*.test.ts', 'tests/**/*.{ts,mjs}', 'evals/**/*.{ts,mjs}', 'scripts/*.mjs', 'vite.config.ts', 'vite.demo.config.ts', 'vitest.config.ts'],
       project: ['src/**/*.{ts,tsx}'],
       ignoreDependencies: ['.*'],
     }),

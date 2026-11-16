@@ -27,7 +27,7 @@ function same(a: unknown, b: unknown): boolean {
 }
 
 // The fields of two items that differ (a missing field and an undefined one are the same).
-export function changedFields(a: object, b: object): string[] {
+function changedFields(a: object, b: object): string[] {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)])
   return [...keys].filter((k) => !same((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])).sort()
 }

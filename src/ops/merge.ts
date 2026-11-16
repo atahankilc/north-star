@@ -22,6 +22,7 @@ import { cardColl, cardData, cardIn, once, refuse } from './util'
 import { comparisonId } from '../model/shapes'
 import { TAGS_MAX } from '../model/limits'
 import { cellIdOf, cellKey } from '../model/matrix'
+import { cut as cutTo } from '../model/words'
 
 export type MergeCardsArgs = {
   // The card that stays.
@@ -33,7 +34,7 @@ export type MergeCardsArgs = {
 }
 
 // A title cut for an undo line.
-const cut = (t: string) => (t.length > 40 ? `${t.slice(0, 39)}…` : t)
+const cut = (t: string) => cutTo(t, 40)
 
 const OP = 'merge_cards'
 

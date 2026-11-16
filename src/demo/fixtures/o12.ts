@@ -27,16 +27,6 @@ export const pageStyle = (scene: string, css: string): Action =>
 // No HUD (a lesson about one part shows that part).
 export const NO_HUD = '& header { display: none !important; }'
 
-// A wizard laid out for a small stage (as O11's): the whole stage, no dimmed margin, the preview beside the questions a
-// little narrower, so its words read in the lesson's slot (~246 px wide) as the app's own wizard.
-export const wizardCss = `
-  & [data-learn="wizard"] { width: 100%; min-height: 100%; height: 100%; border: 0; }
-  & body > div:has(> [data-learn="wizard"]) { padding: 0; }
-  & [data-learn="wizard"] > div:nth-child(2) { grid-template-columns: minmax(0, 1fr) calc(8 * var(--w-grid)); overflow: hidden; }
-  & [data-learn="wizard"] [aria-label="Preview"] { padding: var(--space-3); border-top: 0; border-left: var(--line-w) solid var(--line); }
-  & [data-learn="wizard"] [role="tab"] { padding: var(--space-2) var(--space-3); }
-`
-
 // ——— a document's text ———
 // The text of each made-up document by its title: drawn with the app's own Markdown under its head, where the
 // document's content goes (DocContent's article), as it reads once loaded.
@@ -61,14 +51,6 @@ export const docText = (texts: Record<string, string>): Action =>
     watching = new MutationObserver(fill)
     watching.observe(document.body, { childList: true, subtree: true })
   }, 'documents read')
-
-// The first element matching `selector` whose text starts with `words` (kit's byText takes the last), at (ax, ay) in it.
-export const firstText = (selector: string, words: string, ax = 0.5, ay = 0.5) => () => {
-  const el = [...document.querySelectorAll(selector)].find((e) => (e.textContent ?? '').trim().startsWith(words))
-  if (!el) return null
-  const r = el.getBoundingClientRect()
-  return { x: r.left + r.width * ax, y: r.top + r.height * ay }
-}
 
 // Pazar's unfinished tasks a week later: nothing due this week, so no SOON band over a deck's columns (it isn't what
 // these scenes are about).

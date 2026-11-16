@@ -16,7 +16,7 @@ import styles from './Demo.module.css'
 import { DEMO_NS, STAGE, canMove, giveBack, lend, setFrameClass, setSrcBase, type Pool } from './demoPool'
 import { DRAG_PX } from '../ui/foundation/feel'
 
-export { DEMO_NS, STAGE, preloadDemo, disposeDemoPool } from './demoPool'
+export { preloadDemo, disposeDemoPool } from './demoPool'
 const LOOPS = 3
 
 // The scenes demo.html can play today (src/demo/sceneList.ts). Every other id plays `plane-drag` for now (a
@@ -33,7 +33,7 @@ BUILT.push('text-edit', 'sticky', 'section', 'finder-heading', 'matrix-wizard', 
 BUILT.push('deck-filter', 'task-panel', 'task-learned', 'card-deck', 'priorities', 'side-view', 'side-mine', 'timeline-scroll', 'timeline-draw', 'doc-beside', 'documents', 'doc-place', 'deck-add')
 // O13: the side nav's pages, together, canvases.
 BUILT.push('sidenav-fit', 'peers-cursors', 'follow', 'thread', 'threads-panel', 'canvases')
-export const playable = (scene: string) => (BUILT.includes(scene) ? scene : 'plane-drag')
+const playable = (scene: string) => (BUILT.includes(scene) ? scene : 'plane-drag')
 
 type Msg = { ns: typeof DEMO_NS; type: string; [k: string]: unknown }
 

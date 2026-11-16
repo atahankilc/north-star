@@ -29,7 +29,7 @@ export const AREAS: Area[] = [
   { id: 'other', name: 'other', test: /./, about: '' },
 ]
 
-export const areaOf = (file: string): Area => AREAS.find((a) => a.test.test(file))!
+const areaOf = (file: string): Area => AREAS.find((a) => a.test.test(file))!
 
 export type Page = { id: string; name: string; file: string; area: Area; entry?: Entry; node?: Node }
 

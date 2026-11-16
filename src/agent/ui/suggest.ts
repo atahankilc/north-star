@@ -3,10 +3,11 @@
 import type { WorkspaceCtx } from '../../state/wsStore'
 import { kindOfPiece } from '../../model/pieces'
 import { doneCols, isFinished, overdue } from '../../model/tasks'
+import { cut } from '../../model/words'
 
 const q = (s: string | undefined, n = 28) => {
   const flat = (s ?? '').replace(/\s+/g, ' ').trim()
-  return flat.length > n ? `${flat.slice(0, n - 1)}…` : flat
+  return cut(flat, n)
 }
 
 export function firstAsks(ws: WorkspaceCtx | null, focus?: string | null): string[] {

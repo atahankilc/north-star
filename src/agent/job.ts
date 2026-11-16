@@ -7,6 +7,7 @@
 // next step by itself (agentStore.ts' `goOn`). What stops it: a step left without progress since the last go-on, the
 // job's token budget (seen and raised by the person), `[stop]`, a discard, or a question from the model. No fixed
 // number of steps: the job is as long as its plan.
+import { kept as cut } from '../model/words'
 
 export type JobStepState = 'todo' | 'doing' | 'done' | 'skipped'
 export type JobStep = { n: number; title: string; scope?: string; check?: string; state: JobStepState; why?: string }
@@ -33,7 +34,7 @@ export type Job = {
   preview?: JobPreview
 }
 
-export const PREVIEWS: JobPreview[] = ['all', 'each']
+const PREVIEWS: JobPreview[] = ['all', 'each']
 // The preview a job runs with: the person's choice, else the model's, else one per step.
 export const previewOf = (j: Job): JobPreview => j.preview ?? j.suggest ?? 'each'
 // The person's choice at go (a button), or the model's when they just wrote.
@@ -49,7 +50,6 @@ export const JOB_TITLE_MAX = 120
 export const JOB_PAUSED_MAX = 200
 const LINE = 300
 
-const cut = (s: unknown, n: number) => (typeof s === 'string' ? s.replace(/\s+/g, ' ').trim().slice(0, n) : '')
 
 export const settled = (j: Job) => j.steps.filter((s) => s.state === 'done' || s.state === 'skipped').length
 export const nextStep = (j: Job) => j.steps.find((s) => s.state === 'doing') ?? j.steps.find((s) => s.state === 'todo')

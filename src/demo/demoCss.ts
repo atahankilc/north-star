@@ -14,7 +14,7 @@ const FOCUS = /:focus(?![\w-])/g
 const FOCUS_WITHIN = /:focus-within(?![\w-])/g
 const DONE = '[data-demo-'
 
-export function demoSelector(selector: string): string {
+function demoSelector(selector: string): string {
   // Already rewritten, or one of the demo's own rules (Stage.module.css: the browser's own ring off).
   if (selector.includes(DONE) || /data-demo-input=['"]?pointer/.test(selector)) return selector
   return selector

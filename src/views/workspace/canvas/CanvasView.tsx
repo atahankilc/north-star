@@ -86,9 +86,10 @@ import { panPointer, pressDrag } from '../../../ui/foundation/dragPointer'
 import { keysTaken } from '../../../ui/foundation/focus'
 import { stuckChain } from '../../../model/pieceMoves'
 import { resizedBox } from '../../../model/resizeBox'
+import { cut, plural, leadingNumber } from '../../../model/words'
 
 // What the wheel scrolls rather than zooms: the threads panel, an open thread, a menu.
-export const SCROLLS_ITSELF = 'section[aria-label=Threads], [role=dialog], [role=menu], [data-scrolls]'
+const SCROLLS_ITSELF = 'section[aria-label=Threads], [role=dialog], [role=menu], [data-scrolls]'
 
 // The catch round 100%: a wheel zoom within 3% of it stays at exactly 1, where the canvas is drawn at its own pixels.
 const ZOOM_CATCH = 0.03
@@ -1098,7 +1099,7 @@ export function CanvasView() {
       {/* Unsharing a document that's on the canvas (D-232): its pieces go too; asks first. */}
       {unsharingDoc && (
         <HazardConfirm
-          title={`unshare "${unsharingDoc.title.length > 40 ? `${unsharingDoc.title.slice(0, 39)}…` : unsharingDoc.title}"?`}
+          title={`unshare "${cut(unsharingDoc.title, 40)}"?`}
           lines={[
             `It's on the canvas ${unsharingPieces.length === 1 ? 'once' : `${unsharingPieces.length} times`}. Only you would see it, so ${unsharingPieces.length === 1 ? 'that piece is' : 'those pieces are'} taken off the canvas.`,
             editor ? 'You can undo it.' : 'An editor has to take it off the canvas first: you can only read here.',
@@ -1116,7 +1117,7 @@ export function CanvasView() {
       )}
       {deletingDoc && (
         <HazardConfirm
-          title={`delete "${deletingDoc.title.length > 40 ? `${deletingDoc.title.slice(0, 39)}…` : deletingDoc.title}"?`}
+          title={`delete "${cut(deletingDoc.title, 40)}"?`}
           lines={[
             everyPiece.some((p) => p.docId === deletingDoc.id) ? 'The document goes, and every piece showing it on the canvas.' : 'The document goes from every list.',
             'You can undo it.',
@@ -1426,10 +1427,7 @@ function dragBox(from: Box, handle: Handle, dx: number, dy: number, free: boolea
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h
 
 // A name's leading number, apart (D-266): `04 Rivals` → `04`, `Rivals`.
-function numberOf(name: string | undefined): { num: string; rest: string } {
-  const m = /^(\d{1,4})(?:[\s.·:—–-]+(.*))?$/.exec(name?.trim() ?? '')
-  return m ? { num: m[1], rest: m[2] ?? '' } : { num: '', rest: name ?? '' }
-}
+const numberOf = (name: string | undefined): { num: string; rest: string } => leadingNumber(name ?? '') ?? { num: '', rest: name ?? '' }
 
 // Its kind's tab (D-365): its icon and word.
 function KindTab({ kind }: { kind: PieceKind }) {
@@ -1967,7 +1965,7 @@ function PlaneConsole({ comments, editing = false, unframed = false, noun = 'pla
             <Button
               className={styles.tool}
               data-new={comments.fresh || undefined}
-              title={`${comments.count} conversation${comments.count === 1 ? '' : 's'} inside this ${noun}${comments.fresh ? ', something new' : ''}`}
+              title={`${plural(comments.count, 'conversation')} inside this ${noun}${comments.fresh ? ', something new' : ''}`}
               aria-label={`Comments inside, ${comments.count}`}
               onClick={comments.onOpen}
             >

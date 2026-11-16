@@ -73,7 +73,7 @@ export function touchSide(box: Box, plane: Box): Side | null {
 }
 
 // Which side of `plane` a stuck piece sits on.
-export function sideOf(box: Box, plane: Box): Side {
+function sideOf(box: Box, plane: Box): Side {
   const gaps: [Side, number][] = [
     ['right', box.x - (plane.x + plane.w)],
     ['left', plane.x - (box.x + box.w)],

@@ -19,11 +19,12 @@ import { FOR } from '../model/edges'
 import type { ReadWs } from './read/types'
 import type { Ids } from './read/ids'
 import { boundsOf } from '../model/layout'
+import { cut as cutTo, flat } from '../model/words'
 
 export type Picture = { svg: string; w: number; h: number; text: string }
 
 // The longest side of a picture, px: big enough to read a card's id, small enough to cost little (~1–2k tokens).
-export const PICTURE_MAX = 1400
+const PICTURE_MAX = 1400
 const MARGIN = 40
 // The app's own font (D-337, Inter): the renderers embed it, since neither sees the page's web fonts (src/agent/ui/render.ts,
 // evals/render.ts).
@@ -33,10 +34,7 @@ const TONE: Record<string, string> = { customer: colors.green, problem: colors.m
 export const LEGEND = 'Colours: customer green, problem magenta, competitor yellow, idea white, feature cyan, package blue (a frame round its members when unfolded). Lines are links (dashed: for and relates, which the app hides until a card is picked). Grey frames are sections.'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-const cut = (s: string, n: number) => {
-  const flat = s.replace(/\s+/g, ' ').trim()
-  return flat.length > n ? `${flat.slice(0, n - 1)}…` : flat
-}
+const cut = (s: string, n: number) => cutTo(flat(s), n)
 
 type Box = { x: number; y: number; w: number; h: number }
 

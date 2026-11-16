@@ -25,7 +25,7 @@ import { CheckMark } from '../../../ui/primitives/Checkbox'
 let lastKanban: string | null = null
 
 // A task picked from a card's panel: its panel opens in place of the card's.
-export function openTask(t: Pick<Task, 'id' | 'pieceId'>) {
+function openTask(t: Pick<Task, 'id' | 'pieceId'>) {
   useCanvasView.setState({ cardSelected: null, cardMulti: [] })
   selectTask(t.pieceId, t.id)
 }

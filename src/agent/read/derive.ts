@@ -4,8 +4,8 @@ import type { Card } from '../../model/cards'
 import { factsOf, type Facts } from '../../model/cardFacts'
 import { foldsOf, type Folds } from '../../model/cardInside'
 import { cardsByPlane, planesOf } from '../../model/placement'
-import { canvasOf, MAIN } from '../../model/canvases'
-import { CANVAS, type Label } from '../../model/labels'
+import { canvasOf, } from '../../model/canvases'
+import { type Label } from '../../model/labels'
 import { kindOfPiece, KIND_NAME } from '../../model/pieces'
 import { doneCols as doneColsOf, isFinished, shownTasks as modelShownTasks, timelineKanbans, today } from '../../model/tasks'
 import type { Edge } from '../../model/edges'
@@ -180,8 +180,3 @@ export function shownTasks(ws: ReadWs, d: Derived, deck: P & { cardsOnly?: boole
   return modelShownTasks(tasks, { ...deck, stuckTo: plane }, ws.cards)
 }
 export const timelineDecks = (ws: ReadWs, t: P): (P & { cardsOnly?: boolean })[] => timelineKanbans(t, ws.pieces)
-
-// The canvas a space is on: a plane's own canvas; the canvas's text its `canvasId`.
-export const canvasOfLabel = (d: Derived, l: Label) => (l.pieceId === CANVAS ? canvasOf(l) : (d.pieces.get(l.pieceId) && canvasOf(d.pieces.get(l.pieceId)!)) || MAIN)
-
-export const byReading = (a: { x: number; y: number }, b: { x: number; y: number }) => a.y - b.y || a.x - b.x

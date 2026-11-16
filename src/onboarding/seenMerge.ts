@@ -30,13 +30,13 @@ export type SeenState = {
 
 // Bounds, the same as the rules'.
 export const MAX_SEEN = 300
-export const MAX_ARMED = 200
-export const MAX_ID = 80
-export const MAX_RELEASE = 40
+const MAX_ARMED = 200
+const MAX_ID = 80
+const MAX_RELEASE = 40
 
-export const armKey = (id: string, v: number) => `${id}@${v}`
+const armKey = (id: string, v: number) => `${id}@${v}`
 
-export function parseArmed(entry: string): { id: string; v: number } {
+function parseArmed(entry: string): { id: string; v: number } {
   const at = entry.lastIndexOf('@')
   const v = at > 0 ? Number(entry.slice(at + 1)) : NaN
   return Number.isInteger(v) && v >= 1 ? { id: entry.slice(0, at), v } : { id: entry, v: 1 }

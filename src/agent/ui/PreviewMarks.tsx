@@ -29,8 +29,9 @@ import { runCells } from '../../ui/primitives/Appear'
 import { previewState, setBeforeOpen, subscribePreview, type MarkChange, type PreviewState, type Target } from '../preview'
 import styles from './PreviewMarks.module.css'
 import { tokenPx } from '../../styles/cssToken'
+import { plural } from '../../model/words'
 
-export function usePreview(): PreviewState | null {
+function usePreview(): PreviewState | null {
   return useSyncExternalStore(subscribePreview, previewState, () => null)
 }
 
@@ -94,7 +95,7 @@ export function folded(plane: Element, list: Drawn[]): Drawn {
   const n = items.size
   const signs = [...by].map(([c, k]) => `${SIGN[c]}${k}`).join(' ')
   const change: MarkChange = by.size === 1 ? [...by.keys()][0] : 'changed'
-  const made: Target = { key: `inside:${id}`, id, change, sel: '', tier: 'l', tag: `${n} change${n === 1 ? '' : 's'} inside ${signs}`, was: [...new Set([...items.values()].map((d) => d.t.tag))] }
+  const made: Target = { key: `inside:${id}`, id, change, sel: '', tier: 'l', tag: `${plural(n, 'change')} inside ${signs}`, was: [...new Set([...items.values()].map((d) => d.t.tag))] }
   // The same target while its words stay (the layer redraws only when a target or a box changes).
   const had = foldedTargets.get(made.key)
   const t = had && had.change === made.change && had.tag === made.tag && had.was.join('\n') === made.was.join('\n') ? had : made

@@ -20,5 +20,3 @@ export function Label({ as: Tag = 'span', htmlFor, tone, className, children, ..
     </Tag>
   )
 }
-
-export const labelClass = styles.label

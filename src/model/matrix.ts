@@ -34,7 +34,7 @@ export type Axis = {
   open?: string[]
 }
 
-export { UNFOLDS, TONES, CELL_KINDS, TOTALS_AT, TOTALS_AS, CONFIDENCES } from './shapes'
+export { TONES, CELL_KINDS, TOTALS_AT, TOTALS_AS, CONFIDENCES } from './shapes'
 export type { Unfold, Tone, CellKind, TotalsAt, TotalsAs, Confidence } from './shapes'
 import type { CellKind, Confidence, Tone, TotalsAs, TotalsAt, Unfold } from './shapes'
 import { MATRIX_NAME_MAX as NAME_MAX, CELL_TEXT_MAX as TEXT_MAX, CELL_NOTES_MAX as NOTES_MAX, GLYPH_MAX, STEP_LABEL_MAX as LABEL_MAX } from './limits'
@@ -213,7 +213,7 @@ export function readingOf(setup: MatrixSetup, cells: (Cell | undefined)[]): Read
 
 // A card's cell read from what it unfolds into (D-249), the ones left out (—) and unset aside: a scale's the step at the
 // average of theirs, rounded down (one `none` among `full`s isn't full); numbers' average; words aren't summed.
-export function rollUp(setup: MatrixSetup, cells: (Cell | undefined)[]): string | number | undefined {
+function rollUp(setup: MatrixSetup, cells: (Cell | undefined)[]): string | number | undefined {
   const counted = setup.notRelevant ? cells.filter(relevant) : cells
   const read = counted.map((c) => readCell(setup, c))
   if (setup.cell === 'scale') {

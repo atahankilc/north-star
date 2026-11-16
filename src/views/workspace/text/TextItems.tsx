@@ -66,6 +66,7 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Console } from '../../../ui/patterns/Console'
 import { pressDrag } from '../../../ui/foundation/dragPointer'
 import { TurnLeftIcon, TurnRightIcon } from '../../../ui/primitives/hudIcons'
+import { leadingNumber } from '../../../model/words'
 export { labelBox } from '../../../model/labelBox'
 
 // Text smaller than this on screen is left out (a heading's small line), as on the old board (D-111).
@@ -76,7 +77,7 @@ export type Carried = { id: string; ref: DocumentReference; x: number; y: number
 // Given as they are, or (a plane's cards) built when a section is first dragged.
 type Carry = Carried[] | (() => Carried[])
 
-export const COLOR_VAR: Record<LabelColor, string> = {
+const COLOR_VAR: Record<LabelColor, string> = {
   ink: 'var(--fg)',
   magenta: 'var(--accent-magenta)',
   cyan: 'var(--accent-cyan)',
@@ -94,8 +95,8 @@ const tracking = (l: Label, size: HeadingSize) => (l.caps ? '0.04em' : size === 
 function kickerParts(kicker: string | undefined): { num: string; rest: string } | null {
   const k = kicker?.trim()
   if (!k) return null
-  const m = /^(\d{1,4})(?:[\s.·:—–-]+(.*))?$/.exec(k)
-  return m ? { num: m[1], rest: (m[2] ?? '').toUpperCase() } : { num: '', rest: k.toUpperCase() }
+  const m = leadingNumber(k)
+  return m ? { num: m.num, rest: m.rest.toUpperCase() } : { num: '', rest: k.toUpperCase() }
 }
 
 // Where a heading or paragraph lands, its L's on the grid's marks all round (D-294): its size up to the next step (alt

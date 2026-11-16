@@ -10,7 +10,7 @@ import { placeOnPlan, takeOffPlan } from '../ops/places'
 import { deleteThings } from '../ops/cards'
 
 // What a place is and where cards land live in src/model/placement.ts, without Firebase (S4).
-export { cardsOn, cardsByPlane, planeOf, elsewhere, planesOf, onPlane, withParts, landing } from '../model/placement'
+export { cardsOn, cardsByPlane, planeOf, elsewhere, planesOf, onPlane, withParts } from '../model/placement'
 export type { Place } from '../model/placement'
 import type { Place } from '../model/placement'
 

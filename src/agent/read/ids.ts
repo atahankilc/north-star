@@ -14,12 +14,12 @@ import { ALL_TYPES } from '../../model/cards'
 import { canvasOf } from '../../model/canvases'
 import { kindOf } from '../../model/labels'
 import { kindOfPiece, KIND_NAME } from '../../model/pieces'
-import { derive, nameOf, type Derived, clean } from './derive'
+import { derive, type Derived, clean } from './derive'
 import { norm, oneLine } from './text'
 import type { ReadWs } from './types'
 
 export type IdKind = 'card' | 'piece' | 'text' | 'task' | 'link' | 'evidence' | 'feature' | 'document' | 'canvas' | 'thread' | 'person'
-export const PREFIX: Record<IdKind, string> = {
+const PREFIX: Record<IdKind, string> = {
   card: 'c',
   piece: 'p',
   text: 'x',
@@ -33,7 +33,7 @@ export const PREFIX: Record<IdKind, string> = {
   person: 'u',
 }
 const KIND_OF_PREFIX = Object.fromEntries(Object.entries(PREFIX).map(([k, p]) => [p, k as IdKind])) as Record<string, IdKind>
-export const ID_KINDS = Object.keys(PREFIX) as IdKind[]
+const ID_KINDS = Object.keys(PREFIX) as IdKind[]
 
 export type IdsState = { v: 1; next: Record<string, number>; ids: Record<string, string> }
 
@@ -233,6 +233,3 @@ export function resolvePerson(ws: ReadWs, ids: Ids, ref: string): Resolved {
   if (ref.trim().toLowerCase() === 'me' && ws.me) return { id: ws.me, kind: 'person', short: ids.short('person', ws.me) }
   return resolve(ws, ids, ref, ['person'])
 }
-
-// A person as a short handle and a name: `u2 Bob`.
-export const personLabel = (ws: ReadWs, ids: Ids, uid: string | undefined) => (uid ? `${ids.short('person', uid)} ${nameOf(derive(ws), uid)}` : 'nobody')

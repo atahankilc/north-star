@@ -32,7 +32,7 @@ const FIELD_VALUES: Record<CardField, Values[]> = {
   priority: [{ values: FEATURE_PRIORITIES, types: ['feature'] }],
 }
 
-export const appliesTo = (field: CardField, type: AnyType) => FIELD_VALUES[field].some((v) => v.types.includes(type))
+const appliesTo = (field: CardField, type: AnyType) => FIELD_VALUES[field].some((v) => v.types.includes(type))
 
 // Which value a card has: its validation for a customer, problem or idea; the field itself otherwise.
 export function valueOf(c: Card, field: CardField): string | undefined {
@@ -41,7 +41,7 @@ export function valueOf(c: Card, field: CardField): string | undefined {
 }
 
 // What dropping it in a column writes; null: nothing (the column isn't for its type, or it's there already).
-export function patchFor(c: Card, field: CardField, col: string): Partial<CardFields> | null {
+function patchFor(c: Card, field: CardField, col: string): Partial<CardFields> | null {
   const value = col === NO_VALUE ? undefined : col
   if (value !== undefined && !FIELD_VALUES[field].some((v) => v.types.includes(c.type) && v.values.includes(value))) return null
   if (value === valueOf(c, field)) return null

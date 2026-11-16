@@ -65,7 +65,7 @@ export type Scene = {
   steps: Step[]
 }
 
-export const HOLD_MS = 1000
+const HOLD_MS = 1000
 const BREAK_MS = 420
 const BUILD_MS = 420
 const FRAME = 1000 / 60
@@ -335,8 +335,6 @@ function along(a: Pt, b: Pt, k: number, bow = 0.1): Pt {
   const u = 1 - e
   return { x: u * u * a.x + 2 * u * e * c.x + e * e * b.x, y: u * u * a.y + 2 * u * e * c.y + e * e * b.y }
 }
-// How long a move takes at ~60 % of a person's speed (onboarding.md §6.2b.3), so it can be followed.
-export const moveMs = (from: Pt, to: Pt) => Math.round(520 + Math.hypot(to.x - from.x, to.y - from.y) * 0.9)
 
 // ——— the steps ———
 
@@ -390,7 +388,7 @@ function moveTo(target: Target, ms: number | undefined, bow: number, what: strin
   return act
 }
 
-export const cursor_ = {
+const cursor_ = {
   // Glides to the target on a slight curve, eased at both ends; `ms` from the distance when not given.
   to: (target: Target, ms?: number): Action => moveTo(target, ms, 0.1, `cursor to ${String(target)}`),
   // Presses and lets go where it is: a click (the press held 90 ms, so the Marks' 70 ms press shows).
@@ -471,7 +469,7 @@ const KEYS: Record<string, { key: string; code: string }> = {
   '↑': { key: 'ArrowUp', code: 'ArrowUp' },
   '⌫': { key: 'Backspace', code: 'Backspace' },
 }
-export const CHIP_MS = 900
+const CHIP_MS = 900
 let chipUntil = -1
 let chipText = ''
 export function key(combo: string, chipMs = CHIP_MS): Action {
@@ -851,12 +849,10 @@ export async function seek(t: number) {
   await busy
 }
 
-export const current = () => scene
 export const onLoop = (f: () => void) => void (listeners.loop = f)
 export const onError = (f: (message: string) => void) => void (listeners.error = f)
 // What the scenes check reads: the presses since the scene last started, and frames shown at a seam.
 export const record = () => ({ presses: [...presses], leaks, rings: [...rings] })
-export const sceneTimeNow = () => sceneT
 
 // What the page shows the coach and headless checks (main.tsx keeps it up to date).
 export type DemoHandle = {

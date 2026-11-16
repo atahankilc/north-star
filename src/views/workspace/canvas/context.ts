@@ -3,7 +3,6 @@ import { makeStore, registerStore, type Store, type WorkspaceCtx } from '../../.
 
 // The store and its type live in state/wsStore.ts (React-free, read outside React with `getWs()`, R9).
 export type { WorkspaceCtx }
-export { getWs, subscribeWs } from '../../../state/wsStore'
 
 export const WorkspaceContext = createContext<Store | null>(null)
 

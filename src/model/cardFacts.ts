@@ -118,7 +118,7 @@ export function confidenceOf(held: Card[]): Confidence {
 }
 
 // What a feature or a package rests on (see confidenceOf). Others rest on nothing here.
-export function restsOn(c: Card, cards: Card[], edges: Edge[]): Card[] {
+function restsOn(c: Card, cards: Card[], edges: Edge[]): Card[] {
   if (c.type === 'package') return packageTree(c, cards, edges).map((r) => r.card)
   if (c.type !== 'feature') return []
   const byId = new Map(cards.map((x) => [x.id, x]))

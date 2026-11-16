@@ -8,6 +8,7 @@ import { DOC_LIMITS } from '../model/shapes'
 import { bytesOf, markdownSummary } from '../model/notes'
 import type { OpCtx, Plan } from './types'
 import { handleOf, refuse } from './util'
+import { cut as cutTo } from '../model/words'
 
 export type CreateDocumentArgs = {
   title: string
@@ -19,12 +20,9 @@ export type CreateDocumentArgs = {
 }
 
 // A title cut for an undo line.
-const cut = (t: string) => (t.length > 40 ? `${t.slice(0, 39)}…` : t)
+const cut = (t: string) => cutTo(t, 40)
 
 const OP = 'create_document'
-
-// The fields a document an op writes may have (a subset of firestore.rules' validDoc).
-export const DOC_FIELDS = ['kind', 'title', 'excerpt', 'origin', 'uid', 'name', 'shared', 'contentType', 'size', 'words', 'createdAt', 'updatedAt'] as const
 
 export function createDocument(ctx: OpCtx, args: CreateDocumentArgs): Plan {
   const title = String(args.title ?? '').replace(/\s+/g, ' ').trim()

@@ -28,13 +28,14 @@ import { markOtherPlanes, withNames as textWithNames } from './read/names'
 import { TITLE_MAX } from '../model/limits'
 import type { AgentEnv, AgentWs } from './contract'
 import type { OpError } from '../ops/types'
+import { plural } from '../model/words'
 
 // ---- No coordinates (agent.md §4.4, §7.1 rule 4): the args the UI uses to put things at exact spots stay out of the
 // agent's view of each op and are refused when sent: a card's x/y, a duplicate's or arrange's [dx, dy] (`by`, and `stick`,
 // which only goes with it), a text's width/height at creation (update_text never takes them). Sizing a piece on purpose
 // stays (`resize`); `by: 'up' | 'down' | 'left' | 'right'` (canvases, deck columns) is an order, not a coordinate.
 export const NO_COORDS: Record<string, string[]> = { update_card: ['x', 'y'], duplicate: ['by'], create_text: ['w', 'h'], update_text: ['w', 'h', 'x', 'y'], arrange: ['by', 'stick'] }
-export const COORDS_FIX = 'say where by meaning instead: arrange with layout (grid, row, column, cluster, align-…) and where (near a thing, in_section, at: clear); new things take where: near or in_section'
+const COORDS_FIX = 'say where by meaning instead: arrange with layout (grid, row, column, cluster, align-…) and where (near a thing, in_section, at: clear); new things take where: near or in_section'
 
 // An op's schema as the agent sees it: the coordinate args taken out.
 export function agentArgs(def: OpDef): ArgSchema {
@@ -125,7 +126,7 @@ function oneId(ws: AgentWs, ids: Ids, key: string, kinds: IdKind[] | undefined, 
 }
 
 // Every id in an op's args resolved, deeply, only under ID_KEYS.
-export function resolveIds(ws: AgentWs, ids: Ids, op: string, v: unknown, path = 'args', key = '', asId = false): Resolve {
+function resolveIds(ws: AgentWs, ids: Ids, op: string, v: unknown, path = 'args', key = '', asId = false): Resolve {
   if (typeof v === 'string') return asId ? oneId(ws, ids, key, OP_KINDS[op]?.[key] ?? KINDS[key], v, path) : { value: v, errors: [] }
   if (Array.isArray(v)) {
     const out = v.map((x, i) => resolveIds(ws, ids, op, x, `${path}[${i}]`, key, asId))
@@ -315,7 +316,7 @@ function broughtAlong(cs: Changeset, added: ChangeItem[], ws: AgentWs, ids: Ids)
 }
 
 // The tool's answer: the items grouped by where, the new ids, warnings, the short view.
-export function describeResult(o: { cs: Changeset; added: ChangeItem[]; handles: Record<string, string>; ws: AgentWs; ids: Ids; head: string }): string {
+function describeResult(o: { cs: Changeset; added: ChangeItem[]; handles: Record<string, string>; ws: AgentWs; ids: Ids; head: string }): string {
   const { cs, added, handles, ws, ids } = o
   const lines: string[] = [o.head]
   const groups = byWhere(added)
@@ -362,7 +363,7 @@ export async function runChange(env: AgentEnv, args: Record<string, unknown>): P
   const dropped = parsed.drop.length ? `Took off ${r.cs.off.slice(cs.off.length).map((i) => i.id).join(', ')}. ` : ''
   if (parsed.dryRun) {
     ids.sync(after)
-    return { ok: true, text: describeResult({ cs: r.cs, added: r.added, handles: r.handles, ws: after, ids, head: `Dry run: nothing was added. ${dropped}Would propose ${r.added.length} change${r.added.length === 1 ? '' : 's'} (its item and short ids are only examples: they are given when it is really proposed):` }) }
+    return { ok: true, text: describeResult({ cs: r.cs, added: r.added, handles: r.handles, ws: after, ids, head: `Dry run: nothing was added. ${dropped}Would propose ${plural(r.added.length, 'change')} (its item and short ids are only examples: they are given when it is really proposed):` }) }
   }
   env.ids.sync(after)
   env.changes = r.cs
@@ -374,7 +375,7 @@ export async function runChange(env: AgentEnv, args: Record<string, unknown>): P
     const done = await accept(r.cs, env.apply, { key: `agent-turn:${env.chatId ?? 'chat'}:${turn}`, mergeAlways: true })
     if (done.ok) {
       env.changes = { ...done.cs, auto: { turn, n: auto + n } }
-      return { ok: true, text: describeResult({ cs: r.cs, added: r.added, handles: r.handles, ws: env.getWs(), ids: env.ids, head: `${dropped}Applied at once (auto-apply is on; one undo step for the turn): ${n} change${n === 1 ? '' : 's'}.` }) }
+      return { ok: true, text: describeResult({ cs: r.cs, added: r.added, handles: r.handles, ws: env.getWs(), ids: env.ids, head: `${dropped}Applied at once (auto-apply is on; one undo step for the turn): ${plural(n, 'change')}.` }) }
     }
     // Refused at apply: it stays pending for the preview.
   }
@@ -388,7 +389,7 @@ export async function runChange(env: AgentEnv, args: Record<string, unknown>): P
       handles: r.handles,
       ws: after,
       ids: env.ids,
-      head: `${dropped}Proposed ${r.added.length} change${r.added.length === 1 ? '' : 's'} (${pending} pending in all). Nothing is written yet: the person sees them as a preview when your turn ends, and accepts them as one undo step or not. Your reads now show them.`,
+      head: `${dropped}Proposed ${plural(r.added.length, 'change')} (${pending} pending in all). Nothing is written yet: the person sees them as a preview when your turn ends, and accepts them as one undo step or not. Your reads now show them.`,
     })}${notes}`,
   }
 }

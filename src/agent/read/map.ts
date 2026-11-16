@@ -26,10 +26,10 @@ const LEVELS: Level[] = [
   { n: 7, notes: false, tasks: false, tags: false, bigPlane: 0, firsts: 0 },
 ]
 
-export const SYMBOL_LEGEND =
+const SYMBOL_LEGEND =
   'Reading a line: +a −b evidence for/against · ! status and evidence disagree · ☐ d/a tasks done/all · ⧉ on more than one plane (or canvas) · 7/5 count/limit · ✓ finished column · for cN tagged for that customer · part of cN its parent · solves cN, ←solves cN links from it / to it · #tag'
 
-export const ID_LEGEND =
+const ID_LEGEND =
   'Ids (stable in this chat; a title works too): c card · p piece · x text · t task · d document · k canvas · u person · e link · v evidence · f competitor feature · m comment thread'
 
 export function workspaceMap(ws: ReadWs, ids: Ids, o: { budget?: number } = {}): string {

@@ -3,12 +3,12 @@
 // the candidates when it's unclear. Pure: the ops (src/ops/lens.ts) refuse with these lists, the read layer can show
 // the same names.
 import type { Card } from './cards'
-import { entriesOf, type Axis, type Entry, type MatrixSetup } from './matrix'
+import { entriesOf, Axis, Entry, } from './matrix'
 import { rowsOf, type Row } from './source'
 import { colName, NAME_COL, type Column, type TableSetup } from './table'
+import { norm } from './words'
 
 // Lower case, single spaces, no quotes round it.
-export const norm = (s: string) => s.trim().replace(/^["'`]+|["'`]+$/g, '').replace(/\s+/g, ' ').toLowerCase()
 
 export type Found<T> = { it: T } | { many: T[] } | { none: true }
 
@@ -34,7 +34,7 @@ export const axisEntries = (a: Axis, cards: Card[]): Entry[] => {
 }
 
 // What an entry is called: its name; a criterion also `Card › criterion` (and `Card > criterion`, `Card: criterion`).
-export function entryNames(e: Entry, list: Entry[]): string[] {
+function entryNames(e: Entry, list: Entry[]): string[] {
   if (!e.parent) return [e.name]
   const parent = list.find((x) => x.key === e.parent)?.name ?? ''
   return [e.name, `${parent} › ${e.name}`, `${parent} > ${e.name}`, `${parent}: ${e.name}`]
@@ -56,8 +56,6 @@ export function hiddenCard(a: Axis, cards: Card[], ref: string): Card | undefine
   return cards.find((c) => a.hide!.includes(c.id) && c.type === a.type && (c.id === ref || (!!n && norm(c.title) === n)))
 }
 
-export const matrixAxes = (m: MatrixSetup) => ({ rows: m.rows, cols: m.cols })
-
 // ---- Table
 
 export const tableRows = (t: TableSetup, cards: Card[]): Row[] => rowsOf(t.rows, cards, !t.manual)
@@ -71,7 +69,7 @@ export const rowLine = (r: Row) => `${r.name || '(unnamed)'} [${r.key}]`
 
 // What a column is called: its name, and its head as the view and the read layer show it (`cost (€)`, `cost €`; a card
 // field's `impact (card field)`).
-export function colNames(c: Column): string[] {
+function colNames(c: Column): string[] {
   const n = colName(c)
   return [n, ...(c.unit ? [`${n} (${c.unit})`, `${n} ${c.unit}`] : []), ...(c.field ? [`${c.field} (card field)`] : [])]
 }

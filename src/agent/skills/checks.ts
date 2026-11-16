@@ -10,6 +10,7 @@ import { heldCards, isPriorities, rowFieldOf } from '../../model/kanbanCards'
 import type { Changeset, Warning } from '../changeset'
 import type { AgentWs } from '../contract'
 import type { Ids } from '../read'
+import { cut, plural } from '../../model/words'
 
 export type CheckCtx = {
   // The workspace without the pending changes, and with them.
@@ -28,7 +29,7 @@ export type CheckCtx = {
 type Check = (c: CheckCtx) => Warning[]
 
 const madeOf = (cs: Changeset) => new Set(cs.items.flatMap((i) => i.made))
-const q = (s: string | undefined, n = 40) => `"${(s ?? '').length > n ? `${(s ?? '').slice(0, n - 1)}…` : (s ?? '')}"`
+const q = (s: string | undefined, n = 40) => `"${cut((s ?? ''), n)}"`
 const cardName = (c: CheckCtx, card: Card) => `${c.ids.short('card', card.id)} ${q(card.title)}`
 const names = (cards: Card[]) => `${cards.slice(0, 5).map((x) => q(x.title)).join(', ')}${cards.length > 5 ? ', …' : ''}`
 const low = (s: string) => s.toLowerCase().replace(/\s+/g, ' ')
@@ -114,7 +115,7 @@ const CHECKS: Record<string, Check> = {
     const where = planes.length ? planes.map(deckName).join(', ') : deck ? deckName(deck) : ''
     const whereNamed = planes.length ? planes.map((pl) => q(pl.name)).join(', ') : deck ? q(deck.name) : ''
     const lacking = asked.filter((x) => !x.impact || !x.effort)
-    const lack = `${lacking.length} feature${lacking.length === 1 ? '' : 's'} on`
+    const lack = `${plural(lacking.length, 'feature')} on`
     const lacks = `still lack${lacking.length === 1 ? 's' : ''} impact or effort`
     if (lacking.length)
       out.push({
@@ -161,8 +162,6 @@ const CHECKS: Record<string, Check> = {
     return out
   },
 }
-
-export const hasChecks = (name: string) => name in CHECKS
 
 // What a skill's checks find in the proposal; a check that throws finds nothing (it never stops a turn).
 export function skillChecks(name: string, c: CheckCtx): Warning[] {

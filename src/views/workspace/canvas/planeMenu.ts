@@ -14,7 +14,7 @@ import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { TEXT_GLYPH } from './glyphs'
 import { linkTone } from '../plane/PlaneLinks'
 import { clipboard, deleteHere, onPlane, packageThese, pasteSame, selectedIds, setSelection } from './selection'
-import { foldsOf } from '../plane/cardInside'
+import { foldsOf } from '../../../model/cardInside'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { plural } from '../../../model/words'
 
@@ -86,7 +86,7 @@ function several(c: Ctx, n: number): PromptEntry[] {
   ]
 }
 
-export function cardItems(c: Ctx, id: string): PromptEntry[] {
+function cardItems(c: Ctx, id: string): PromptEntry[] {
   const card = c.cards.find((x) => x.id === id)
   if (!card) return []
   const { cardMulti } = useCanvasView.getState()
@@ -124,7 +124,7 @@ export function cardItems(c: Ctx, id: string): PromptEntry[] {
   ]
 }
 
-export function labelItems(c: Ctx, id: string): PromptEntry[] {
+function labelItems(c: Ctx, id: string): PromptEntry[] {
   const l = c.labels.find((x) => x.id === id)
   if (!l) return []
   const { cardMulti } = useCanvasView.getState()
@@ -141,7 +141,7 @@ export function labelItems(c: Ctx, id: string): PromptEntry[] {
   ]
 }
 
-export function linkItems(c: Ctx, id: string): PromptEntry[] {
+function linkItems(c: Ctx, id: string): PromptEntry[] {
   const e = c.edges.find((x) => x.id === id)
   if (!e || !c.editor) return []
   return [
@@ -155,7 +155,7 @@ export function linkItems(c: Ctx, id: string): PromptEntry[] {
 
 // Right-clicked on the plane itself: add something right there (its top-left a step from the pointer, on the grid), or
 // paste what was copied there.
-export function emptyItems(c: Ctx): PromptEntry[] {
+function emptyItems(c: Ctx): PromptEntry[] {
   if (!c.editor) return []
   const [x, y] = c.at
   const others = c.cards

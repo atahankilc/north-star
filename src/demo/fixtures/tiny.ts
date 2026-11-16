@@ -8,7 +8,7 @@ import type { Card } from '../../data/cards'
 import { MAIN } from '../../data/canvases'
 
 // The demo's person (no Firebase user: the demo realm has none).
-export const DEMO_USER = { uid: 'demo', name: 'You' }
+const DEMO_USER = { uid: 'demo', name: 'You' }
 
 export const WID = 'demo'
 export const PLANE = 'pazar'

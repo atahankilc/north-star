@@ -20,8 +20,6 @@ export const realClock = clock.real
 export const DEMO_DAY = clock.day
 // The scene starts (again): its time 0 is now, the random numbers from the start.
 export const restart = clock.restart
-// The scene's time, ms.
-export const sceneTime = clock.sceneTime
 // Moves the clock on by `dt` ms: the timers that came due in order, then one frame for everything waiting on one.
 export const step = clock.step
 

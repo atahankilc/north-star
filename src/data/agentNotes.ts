@@ -11,7 +11,7 @@ import { runUi } from '../ops/firestore'
 import { updateNotes } from '../ops/notes'
 import { NOTES_ID } from '../model/notes'
 
-export { NOTES_ID, NOTES_TITLE, NOTES_MAX, notesOf, isNotesDoc } from '../model/notes'
+export { NOTES_ID } from '../model/notes'
 
 // The notes' text, live: `cb(text)` on every change (null while it isn't loaded or there are none). Returns the stop.
 export function watchNotes(wid: string, cb: (text: string | null) => void): () => void {

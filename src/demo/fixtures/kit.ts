@@ -58,8 +58,6 @@ export const moved = (id: string, pieceId: string, x: number, y: number, extra: 
 
 // A piece appearing (what `+` makes, shown with set()), built cell by cell by the canvas as it comes.
 export const appear = (p: WithId<Piece>, what = 'it appears') => ({ what, ms: 0, start: (c: import('../director').Ctx) => { const ws = c.store.get(); c.store.set({ ...ws, pieces: [...ws.pieces.filter((x) => x.id !== p.id), p] }); c.store.tell() } })
-// Pazar without one of its pieces (it appears in the scene).
-export const without = (id: string) => ({ ...base, pieces: base.pieces.filter((p) => p.id !== id) })
 export const pazarPiece = (id: string) => base.pieces.find((p) => p.id === id)!
 // Off the stage: a scene where no hand is needed (the `+` menu beside it was the cause).
 export const AWAY = { x: 4000, y: 4000 }
@@ -132,8 +130,8 @@ export const doubleClick = (t: Target): Action => ({
 // every feature.
 export const PLANE_F = 'p-f'
 export const TABLE_F = 't-f'
-export const planeF = piece(PLANE_F, { kind: 'plane', x: CLEAR.x, y: CLEAR.y, w: 500, h: 325, name: '02 Product' })
-export const planeFCards = [copy('f-pickup', PLANE_F, 25, 50), copy('f-qr', PLANE_F, 275, 50), copy('f-counter', PLANE_F, 25, 200), copy('f-allergens', PLANE_F, 275, 200)]
+const planeF = piece(PLANE_F, { kind: 'plane', x: CLEAR.x, y: CLEAR.y, w: 500, h: 325, name: '02 Product' })
+const planeFCards = [copy('f-pickup', PLANE_F, 25, 50), copy('f-qr', PLANE_F, 275, 50), copy('f-counter', PLANE_F, 25, 200), copy('f-allergens', PLANE_F, 275, 200)]
 const cols: TableSetup['cols'] = [
   { id: 'tc-status', field: 'status' },
   { id: 'tc-priority', field: 'priority' },
@@ -151,7 +149,7 @@ export const tableF = (stuck: boolean, extra: Partial<WithId<Piece>> = {}) =>
     ...(stuck ? { stuckTo: PLANE_F } : {}),
     ...extra,
   })
-export const costs = [
+const costs = [
   { matrixId: TABLE_F, row: `${PLANE_F}-f-pickup`, col: 'tc-cost', value: 120, updatedAt: AT },
   { matrixId: TABLE_F, row: `${PLANE_F}-f-qr`, col: 'tc-cost', value: 640, updatedAt: AT },
 ]

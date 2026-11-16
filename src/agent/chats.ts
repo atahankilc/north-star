@@ -10,17 +10,18 @@ import { JOB_PAUSED_MAX, JOB_TITLE_MAX, MAX_STEPS, type Job } from './job'
 import type { IdsState } from './read/ids'
 import type { AgentTurn, ModelMessage, Transcript } from './contract'
 import { withOutcome } from './workflow'
+import { cut } from '../model/words'
 
 export const CHAT_TURNS_MAX = 200
 export const CHAT_BYTES_MAX = 450_000
-export const CHAT_TITLE_MAX = 120
-export const CHAT_TEXT_MAX = 20_000
-export const CHAT_STEPS_MAX = 40
-export const CHAT_SUMMARY_MAX = 2000
+const CHAT_TITLE_MAX = 120
+const CHAT_TEXT_MAX = 20_000
+const CHAT_STEPS_MAX = 40
+const CHAT_SUMMARY_MAX = 2000
 // An answer's sources as kept (D-360): how many, a url's and a title's length.
-export const CHAT_SOURCES_MAX = 20
-export const CHAT_URL_MAX = 2000
-export const CHAT_SOURCE_TITLE_MAX = 200
+const CHAT_SOURCES_MAX = 20
+const CHAT_URL_MAX = 2000
+const CHAT_SOURCE_TITLE_MAX = 200
 
 // One kept entry of the chat, as the column shows it: the person's message, the agent's answer (its steps as labels),
 // a preview's change list (its lines, and what became of it), the status line after it, a note.
@@ -71,7 +72,6 @@ export function reopenedJob(j: Job | undefined): Job | null {
 }
 export type SavedChat = { id: string; summary: ChatSummary; body: ChatBody }
 
-const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s)
 const bytes = (v: unknown) => new TextEncoder().encode(JSON.stringify(v)).length
 
 // The title: the first thing the person asked, on one line.

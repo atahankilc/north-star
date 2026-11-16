@@ -15,6 +15,7 @@ import styles from './AgentSettings.module.css'
 import { Button } from '../../ui/primitives/Button'
 import { ButtonGroup } from '../../ui/primitives/ButtonGroup'
 import { Field } from '../../ui/primitives/Field'
+import { plural } from '../../model/words'
 
 const k = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 
@@ -84,7 +85,7 @@ function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text
         ids = (await listModels(readKey())).filter(canChat)
         s.setModels(ids)
       }
-      onSaid({ text: `Your ${p.name} key works: ${ids.length} model${ids.length === 1 ? '' : 's'} it can use for the agent.` })
+      onSaid({ text: `Your ${p.name} key works: ${plural(ids.length, 'model')} it can use for the agent.` })
     } catch (e) {
       onSaid({ text: plainError((e as Error)?.message ?? String(e)).text, tone: 'error' })
     } finally {
@@ -220,7 +221,7 @@ function UsageSection() {
     <Section label="usage" note="Counts only, kept in this browser: never your messages, the workspace's content or your key.">
       <Row label="this month" hint={`Since ${new Date(since).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}.`}>
         <span className={styles.usage}>
-          {u.answers} answer{u.answers === 1 ? '' : 's'} · {k(u.input)} in{u.cached ? ` (${k(u.cached)} cached)` : ''} · {k(u.output)} out
+          {plural(u.answers, 'answer')} · {k(u.input)} in{u.cached ? ` (${k(u.cached)} cached)` : ''} · {k(u.output)} out
         </span>
         {u.answers > 0 && (
           <Button onClick={() => (clearUsage(), redraw((n) => n + 1))}>

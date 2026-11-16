@@ -84,8 +84,8 @@ export type PlaneCam = { ox: number; oy: number; zoom: number }
 
 // The plane's share of the screen with something open beside it (D-211), kept in this browser (read as the store is
 // made, so no module constants here).
-export const SPLIT_MIN = 0.25
-export const SPLIT_MAX = 0.75
+const SPLIT_MIN = 0.25
+const SPLIT_MAX = 0.75
 function savedSplit() {
   const v = Number(readLocal('north-star:split'))
   return v >= SPLIT_MIN && v <= SPLIT_MAX ? v : 0.5

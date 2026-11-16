@@ -8,6 +8,7 @@ import { myUid, toggleInbox, useThreadView } from './Threads'
 import { Button } from '../../../ui/primitives/Button'
 import { ThreadsIcon } from '../../../ui/primitives/hudIcons'
 import styles from './Threads.module.css'
+import { plural } from '../../../model/words'
 
 export function ThreadsTool({ wid, threads }: { wid: string; threads: WithId<Thread>[] }) {
   const open = useThreadView((s) => s.inbox)
@@ -20,7 +21,7 @@ export function ThreadsTool({ wid, threads }: { wid: string; threads: WithId<Thr
       <Button
         pressed={open}
         aria-label={`Threads${mentions ? `, ${mentions} new mention${mentions === 1 ? '' : 's'}` : fresh.length ? `, ${fresh.length} new` : ''}`}
-        title={mentions ? `${mentions} new mention${mentions === 1 ? '' : 's'}` : fresh.length ? `${fresh.length} thread${fresh.length === 1 ? '' : 's'} with something new` : 'Every conversation in the workspace'}
+        title={mentions ? `${mentions} new mention${mentions === 1 ? '' : 's'}` : fresh.length ? `${plural(fresh.length, 'thread')} with something new` : 'Every conversation in the workspace'}
         data-viewer-ok
         onClick={() => toggleInbox()}
       >

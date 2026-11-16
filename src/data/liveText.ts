@@ -179,12 +179,12 @@ export function openLiveText(t: LiveTransport, opts: Options): LiveText {
 
 // ---- Carets (presence's `doc`: base64 Yjs relative positions, so a caret stays on its letter as others type)
 
-export function toBase64(u: Uint8Array) {
+function toBase64(u: Uint8Array) {
   let s = ''
   for (const b of u) s += String.fromCharCode(b)
   return btoa(s)
 }
-export function fromBase64(s: string) {
+function fromBase64(s: string) {
   const bin = atob(s)
   const u = new Uint8Array(bin.length)
   for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i)

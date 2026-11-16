@@ -81,7 +81,7 @@ export function useMatcher() {
 
 // The matches on the page under `root`, as ranges, one text node at a time; not in what's marked `data-find-skip`
 // (a document's line of who and when).
-export function rangesIn(root: Node, re: RegExp, most = MOST): Range[] {
+function rangesIn(root: Node, re: RegExp, most = MOST): Range[] {
   const out: Range[] = []
   const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode: (n) => (n.parentElement?.closest('[data-find-skip]') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
@@ -102,7 +102,7 @@ export function rangesIn(root: Node, re: RegExp, most = MOST): Range[] {
 // ---- Painting: every match, and the current one (global.css has their colours). One painter at a time: the
 // finder's preview while it's open, what was picked once it's gone.
 const canPaint = () => typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight !== 'undefined'
-export function paint(all: Range[], at: Range[]) {
+function paint(all: Range[], at: Range[]) {
   if (!canPaint()) return
   CSS.highlights.set('find', new Highlight(...all))
   CSS.highlights.set('find-at', new Highlight(...at))
@@ -114,7 +114,7 @@ export function unpaint() {
 }
 // A match that isn't text on the page (a scale's step shows a square, a note isn't shown): its box is lit.
 const FOUND = 'data-found'
-export const unmark = (root: Element) => root.querySelectorAll(`[${FOUND}]`).forEach((el) => el.removeAttribute(FOUND))
+const unmark = (root: Element) => root.querySelectorAll(`[${FOUND}]`).forEach((el) => el.removeAttribute(FOUND))
 
 // Paints the matches under `root` and the current one: the element `current` (its k-th match, or its box when it has
 // no text match), or the k-th match of the whole page.
@@ -189,7 +189,7 @@ export function landing(content: Bounds, box: Bounds, room: { w: number; h: numb
   return revealed(fitted, box, room, heads)
 }
 
-export function revealed(view: PlaneCam, box: Bounds, room: { w: number; h: number }, heads = { top: 0, left: 0 }): PlaneCam {
+function revealed(view: PlaneCam, box: Bounds, room: { w: number; h: number }, heads = { top: 0, left: 0 }): PlaneCam {
   const zoom = box.h * view.zoom < READ_PX ? Math.min(1, (READ_PX * 1.5) / box.h) : view.zoom
   const x0 = view.ox + box.x * zoom
   const y0 = view.oy + box.y * zoom

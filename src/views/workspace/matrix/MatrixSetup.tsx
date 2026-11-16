@@ -388,7 +388,7 @@ const AT_NAME: Record<(typeof TOTALS_AT)[number], string> = { head: 'in the head
 const AS_NAME: Record<(typeof TOTALS_AS)[number], string> = { squares: 'squares', number: 'a number', bar: 'a line' }
 
 // `doesn't apply`, guesses marked, and the totals: whether, where and as what.
-export function OptionsEditor({ setup, onChange }: { setup: MatrixSetup; onChange: SetPart }) {
+function OptionsEditor({ setup, onChange }: { setup: MatrixSetup; onChange: SetPart }) {
   return (
     <>
       <Row label="cells">

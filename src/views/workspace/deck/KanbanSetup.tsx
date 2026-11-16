@@ -20,12 +20,13 @@ import { SetupRow as Row, SetupShell } from '../canvas/SetupShell'
 import { openSetup } from '../canvas/setupStore'
 import { RowsEditor } from '../table/TableSetup'
 import { kanbanOf, KANBAN_TABS, type KanbanTab } from './Kanban'
-import { columnsOf, FIELD_NAME, heldCards, KANBAN_TEMPLATES, NO_VALUE, rowFieldOf, rowsOfField } from './kanbanCards'
+import { columnsOf, FIELD_NAME, heldCards, KANBAN_TEMPLATES, NO_VALUE, rowFieldOf, rowsOfField } from '../../../model/kanbanCards'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import styles from './Kanban.module.css'
 import { useWs } from '../canvas/context'
 import m from '../matrix/Matrix.module.css'
 import { Button } from '../../../ui/primitives/Button'
+import { plural } from '../../../model/words'
 
 const TAB_NAME: Record<KanbanTab, string> = { holds: 'holds', cards: 'cards', cols: 'columns', boxes: 'boxes' }
 
@@ -34,7 +35,7 @@ export type KanbanPatch = Partial<Pick<KanbanSetup, 'holds' | 'source' | 'colFie
 export type SetKanban = (patch: KanbanPatch, what: string, key?: string) => void
 
 // What a kanban holding cards starts with when switched to it: features by status (the template's).
-export const CARDS_START = KANBAN_TEMPLATES[1].setup() as Required<Pick<KanbanPatch, 'colField' | 'source'>>
+const CARDS_START = KANBAN_TEMPLATES[1].setup() as Required<Pick<KanbanPatch, 'colField' | 'source'>>
 
 export function KanbanSetupPanel({ piece }: { piece: WithId<Piece> }) {
   const { wid, cards, tasks } = useWs()
@@ -135,7 +136,7 @@ function HeldTasks({ piece, held, onDone }: { piece: WithId<Piece>; held: Task[]
   const [picking, setPicking] = useState(false)
   const others = pieces.filter((p) => p.id !== piece.id && p.kind === 'kanban' && kanbanOf(p).holds !== 'cards')
   const n = held.length
-  const tasksWord = `${n} task${n === 1 ? '' : 's'}`
+  const tasksWord = `${plural(n, 'task')}`
   const toCards = { holds: 'cards' as const, colField: setup.colField ?? CARDS_START.colField, source: setup.source ?? CARDS_START.source }
 
   // Each into the column of the same name there, else its first; after what's already in it, in the order they had.
@@ -198,7 +199,7 @@ function HeldTasks({ piece, held, onDone }: { piece: WithId<Piece>; held: Task[]
                 <button /* kit-ok: a deck offered in the list to move the tasks to */ key={p.id} role="listitem" className={styles.heldTo} onClick={() => moveTo(p)}>
                   {p.name || 'deck'}
                   <span className={styles.heldHint}>
-                    {count} task{count === 1 ? '' : 's'} · {same ? 'same columns' : `others into ${cols.cols[0]?.name ?? 'its first'}`}
+                    {plural(count, 'task')} · {same ? 'same columns' : `others into ${cols.cols[0]?.name ?? 'its first'}`}
                   </span>
                 </button>
               )

@@ -40,6 +40,7 @@ import { PromptList } from '../../../ui/patterns/PromptList'
 import { PromptField } from '../../../ui/primitives/PromptField'
 import styles from './Threads.module.css'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
+import { plural } from '../../../model/words'
 
 type ThreadView = {
   // Pins shown (`c`); only threads with something new (D-166); resolved ones too.
@@ -138,7 +139,7 @@ function ChipOf({ wid, thread, zoom }: { wid: string; thread: WithId<Thread>; zo
         className={styles.chip}
         data-open={thread.id === openId || undefined}
         data-new={fresh || undefined}
-        title={`${thread.count} message${thread.count === 1 ? '' : 's'}${fresh ? ', new for you' : ''}`}
+        title={`${plural(thread.count, 'message')}${fresh ? ', new for you' : ''}`}
         aria-label={`Comments, ${thread.count}${fresh ? ', new' : ''}`}
         onPointerDown={(e) => e.stopPropagation()}
         onDoubleClick={(e) => e.stopPropagation()}
@@ -418,7 +419,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
 }
 
 // `@Full Name` of someone in the workspace, or any `@word`, stands out (D-166).
-export function withMentions(text: string, names: string[]) {
+function withMentions(text: string, names: string[]) {
   const known = [...names].sort((a, b) => b.length - a.length).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
   const re = new RegExp(`(${known.map((n) => `@${n}`).concat('@[\\p{L}\\p{N}_.-]+').join('|')})`, 'u')
   return text.split(re).map((part, i) =>

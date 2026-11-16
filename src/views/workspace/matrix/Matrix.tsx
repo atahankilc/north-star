@@ -450,7 +450,7 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false, onView
             </div>
           </div>
           {!rows.length && !cols.length && !(live && editor) && (
-            <Empty className={styles.empty} tone="dim" style={box(0, M.top, L.w, M.row * 2)}>
+            <Empty className={styles.empty} style={box(0, M.top, L.w, M.row * 2)}>
               Nothing to cross yet
             </Empty>
           )}
@@ -1043,6 +1043,3 @@ function CellBar({ setup, cell, row, col, editor, onFold, at, room, write, onTyp
     </Console>
   )
 }
-
-// For the setup panel: a card picked to be a row or a column.
-export const addCard = (wid: string, piece: WithId<Piece>, which: 'rows' | 'cols', card: Card) => void addCardEntry(wid, piece.id, setupOf(piece), which, card)

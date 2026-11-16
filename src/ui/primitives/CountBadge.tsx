@@ -12,7 +12,7 @@ type Props = {
   title?: string
 }
 
-export const countText = (count: number, max = 9) => (count > max ? `${max}+` : String(count))
+const countText = (count: number, max = 9) => (count > max ? `${max}+` : String(count))
 
 export function CountBadge({ count, max = 9, tone = 'magenta', placement = 'corner', title }: Props) {
   if (count <= 0) return null

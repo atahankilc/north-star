@@ -50,7 +50,6 @@ export const CHECKED = 'yes'
 export const NAME_COL = 'name'
 
 // The page sizes the dock offers (D-213).
-export { PAGE_SIZES } from './paging'
 
 // What a column is called in its head.
 export const colName = (c: Column) => c.name || c.field || 'column'

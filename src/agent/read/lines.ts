@@ -23,7 +23,7 @@ const linkRank = (k: string) => (k.startsWith('←') ? 100 : 0) + ((READ_ORDER a
 export type CardLineOpts = { links?: boolean; tags?: boolean; planes?: boolean; except?: string; max?: number }
 
 // What a card says after its type: status and evidence, a competitor's regions, a feature's plan, a package's contents.
-export function cardHead(c: Card, d: Derived): string[] {
+function cardHead(c: Card, d: Derived): string[] {
   const f = d.facts.get(c.id)
   const out: string[] = []
   if (c.validation) {

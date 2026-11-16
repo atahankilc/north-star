@@ -6,7 +6,7 @@ import { DUR, easeInOut, lerp } from '../ui/foundation/motionTokens'
 
 // The field drifts slowly, so it only needs a new frame this often (D-063). Time moves in these steps, so every
 // canvas that draws the backdrop shows the same frame, and the backdrop only re-renders when the step changes.
-export const BACKDROP_FPS = 30
+const BACKDROP_FPS = 30
 const step = (t: number) => Math.floor(t * BACKDROP_FPS) / BACKDROP_FPS
 
 let base = performance.now()
@@ -50,7 +50,7 @@ export const backdropSettled = () => backdropDim.current === backdropDim.target
 
 // How much of the field a canvas shows (D-385): full on the landing, the workspaces page and an empty canvas; about
 // half with one piece on it; none from two pieces on, and then nothing of it runs at all (Backdrop unmounts).
-export const BACKDROP_DIM_ONE_PIECE = 0.5 // tokens-ok: a brightness factor, not a size or colour
+const BACKDROP_DIM_ONE_PIECE = 0.5 // tokens-ok: a brightness factor, not a size or colour
 
 export function backdropLevel(pieces: number | null): number {
   if (!pieces) return 1

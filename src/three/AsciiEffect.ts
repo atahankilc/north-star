@@ -102,7 +102,7 @@ void main() {
 }
 `
 
-export const GLYPH_RAMP = ' .·:-=+*#%@'
+const GLYPH_RAMP = ' .·:-=+*#%@'
 
 export type AsciiOptions = {
   cellSize?: number

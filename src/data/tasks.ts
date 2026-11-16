@@ -52,9 +52,9 @@ export type BoxName = { col: string; row: string; name: string; tone?: 'good' | 
 export { CARD_FIELDS } from '../model/shapes'
 export type { CardField } from '../model/shapes'
 import type { CardField } from '../model/shapes'
-import { BOX_NAMES_MAX, BOX_NAME_MAX, KANBAN_COLS_MAX, COL_NAME_MAX, TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, LIMIT_MAX } from '../model/limits'
+import { BOX_NAMES_MAX, BOX_NAME_MAX, KANBAN_COLS_MAX, COL_NAME_MAX, TASK_TITLE_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, LIMIT_MAX } from '../model/limits'
 import { PRIORITIES as TASK_PRIORITIES } from '../model/cards'
-export { BOX_NAMES_MAX, BOX_NAME_MAX, KANBAN_COLS_MAX, COL_NAME_MAX, TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, LIMIT_MAX }
+export { BOX_NAMES_MAX, BOX_NAME_MAX, KANBAN_COLS_MAX, COL_NAME_MAX, TASK_TITLE_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, LIMIT_MAX }
 // A timeline (D-262): its rows. The kanbans it shows are the one it's linked to, else every kanban (D-289).
 export const TIMELINE_ROWS = ['kanban', 'assignee', 'card'] as const
 export type TimelineRows = (typeof TIMELINE_ROWS)[number]

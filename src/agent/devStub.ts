@@ -38,6 +38,7 @@ import { parseSkill } from './skills'
 import { skillOfPlan, skillStep } from './devStubSkills'
 import { STEER_HEAD } from './loop'
 import { isResearcher } from './stubModel'
+import { cut } from '../model/words'
 
 export const DEV_STUB_MARK = 'north-star:agent-dev-stub'
 
@@ -80,7 +81,7 @@ export function pickScript(ask: string, before = ''): Script {
   return 'question'
 }
 
-export const keywords = (ask: string) =>
+const keywords = (ask: string) =>
   ask
     .toLowerCase()
     .replace(/["“”'’?.!,:;()]/g, ' ')
@@ -127,7 +128,7 @@ function titleOf(env: Env, short: string): string {
     : r.kind === 'document' ? ws.documents.find((c) => c.id === r.id)?.title
     : undefined
   const flat = (t ?? '').replace(/\s+/g, ' ').trim()
-  return flat ? `"${flat.length > 60 ? `${flat.slice(0, 59)}…` : flat}"` : short
+  return flat ? `"${cut(flat, 60)}"` : short
 }
 
 function firstPlane(env: Env): string | undefined {
@@ -147,7 +148,7 @@ const startupName = (env: Env) => env.getWs().workspace?.name?.trim() || 'your s
 
 // The script's next step for this turn.
 // `canWrite`: the request lists the change tool (a viewer's agent gets none: it answers in words instead).
-export function nextStep(env: Env, ask: string, step: number, results: { name: string; content: string }[], before = '', canWrite = true): Step {
+function nextStep(env: Env, ask: string, step: number, results: { name: string; content: string }[], before = '', canWrite = true): Step {
   const last = results[results.length - 1]?.content ?? ''
   const kind = pickScript(ask, before)
   const why = (t: string) => t.split('\n')[0].replace(/[.\s]+$/, '')

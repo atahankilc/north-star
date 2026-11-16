@@ -15,7 +15,7 @@ import { colName, type TableSetup } from '../src/model/table'
 import { statusOf } from '../src/model/source'
 import type { Box } from '../src/model/layout'
 import { callsOf, resultsOf } from '../src/agent/contract'
-import { notesOf } from '../src/model/notes'
+import { NOTES_ID, notesOf } from '../src/model/notes'
 import type { AgentWs, ImagePart } from '../src/agent/contract'
 import { LEGEND, planePicture } from '../src/agent/picture'
 import { clean } from '../src/agent/read/derive'
@@ -313,7 +313,7 @@ export const noWebInTurn = (n: number): Grader => ({
 export const docCitesWeb = (min = 1): Grader => ({
   name: `docCitesWeb(${min})`,
   grade: (r) => {
-    const made = madeIds(r, 'document').filter((id) => id !== 'agent-notes')
+    const made = madeIds(r, 'document').filter((id) => id !== NOTES_ID)
     if (made.length !== 1) return ok(false, `made ${made.length} documents`)
     const text = String((r.end as AgentWs & { bodies?: Record<string, { text?: string } | undefined> }).bodies?.[made[0]]?.text ?? '')
     const sites = new Set(r.transcript.turns.flatMap((t) => t.sources ?? []).map((s) => hostOf(s.url)))
@@ -912,7 +912,7 @@ export const judge = (rubric: string): Grader => ({
     // A document the run wrote is shown whole, under the short id the agent knows it by (the diff only has its real id).
     const bodies = (r.end as AgentWs & { bodies?: Record<string, { text?: string } | undefined> }).bodies ?? {}
     const docs = madeIds(r, 'document')
-      .filter((id) => id !== 'agent-notes')
+      .filter((id) => id !== NOTES_ID)
       .map((id) => {
         const d = r.end.documents.find((x) => x.id === id)
         return `Document ${r.ids.short('document', id)} (documents/${id}) "${d?.title ?? ''}":\n${String(bodies[id]?.text ?? '').slice(0, 12000) || '(no text)'}`
@@ -1045,7 +1045,7 @@ export const chatSaved = (o: { other?: string } = {}): Grader => ({
 export const docWritten = (o: { words?: (string | RegExp)[]; cites?: Ref[]; anyOf?: { of: Ref[]; n: number }; min?: number; onPlane?: string; shared?: boolean; excludes?: (string | RegExp)[] } = {}): Grader => ({
   name: `docWritten(${[o.words?.length && `${o.words.length} words`, o.cites?.length && `cites ${o.cites.map(showRef).join(', ')}`, `≥ ${o.min ?? 3} cards`, o.onPlane && `on ${o.onPlane}`, o.shared && 'shared'].filter(Boolean).join(', ')})`,
   grade: (r) => {
-    const made = madeIds(r, 'document').filter((id) => id !== 'agent-notes')
+    const made = madeIds(r, 'document').filter((id) => id !== NOTES_ID)
     if (made.length !== 1) return ok(false, `made ${made.length} documents`)
     const doc = r.end.documents.find((d) => d.id === made[0])!
     const text = String((r.end as AgentWs & { bodies?: Record<string, { text?: string } | undefined> }).bodies?.[doc.id]?.text ?? '')
@@ -1198,7 +1198,7 @@ export const sameLine = (want: [string | RegExp, Ref][], not: [string | RegExp, 
 export const docSectionCards = (section: RegExp, check: (c: Card, r: RunResult) => boolean, what: string): Grader => ({
   name: `docSectionCards(${String(section)}: ${what})`,
   grade: (r) => {
-    const made = madeIds(r, 'document').filter((id) => id !== 'agent-notes')
+    const made = madeIds(r, 'document').filter((id) => id !== NOTES_ID)
     if (made.length !== 1) return ok(false, `made ${made.length} documents`)
     const text = String((r.end as AgentWs & { bodies?: Record<string, { text?: string } | undefined> }).bodies?.[made[0]]?.text ?? '')
     let inside = false

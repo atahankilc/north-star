@@ -27,7 +27,7 @@ const col = (wid: string) => collection(db(), 'workspaces', wid, 'pieces')
 export const pieceRef = (wid: string, id: string) => doc(col(wid), id)
 
 // What a piece is lives in src/model/pieces.ts, without Firebase (S3).
-export { PIECE_SIZE, PIECE_MIN, KIND_NAME, kindOfPiece, isBare, isLens, sticks, hostKinds, isHost, canOpen, PIECE_NAME_MAX } from '../model/pieces'
+export { PIECE_SIZE, PIECE_MIN, KIND_NAME, kindOfPiece, isBare, sticks, hostKinds, isHost, canOpen, PIECE_NAME_MAX } from '../model/pieces'
 import { KIND_NAME, PIECE_MIN, PIECE_SIZE, kindOfPiece } from '../model/pieces'
 
 // Pieces sit on the canvas's 25 px grid (D-182), the step of a plane's `+` marks, so marks of planes side by side line up.
@@ -40,7 +40,7 @@ export type Box = Pick<Piece, 'x' | 'y' | 'w' | 'h'>
 // view; with none clear there, on top of what's there (it starts in edit mode, to be moved). Steps of the grid, nearest
 // first (src/model/pieceMoves.ts' nearClearIn).
 // Only what's on the canvas shown is in the way (D-302), or on `canvas` (moved there, D-302's session 2).
-export function nearClear(box: Box, all: Box[], canvas = canvasHere()): Pick<Box, 'x' | 'y'> {
+function nearClear(box: Box, all: Box[], canvas = canvasHere()): Pick<Box, 'x' | 'y'> {
   // On the canvas shown, what's drawn there (through spots too, D-307); elsewhere, the list given.
   const here = canvas === canvasHere() ? shownHere() : null
   const others = here ?? (all as (Box & { canvasId?: string; spot?: string })[]).filter((o) => (o.spot ? o.spot === canvas : onCanvas(canvas)(o)))
@@ -86,7 +86,7 @@ export async function placePiece(wid: string, id: string, from: Box, to: Box, ki
 // ---- Sticking (D-210): a matrix or a table dropped near a plane's edge sits one grid step out from it and is bound to
 // it: it moves with the plane, and what it shows is that plane's cards (a rule set by itself, `auto`, still changeable).
 // Pulled away, it lets go and its own rule goes. The geometry is src/model/pieceMoves.ts'.
-export { STICK_GAP, STICK_REACH, stickTarget, touchSide, sideOf, followTo, type Side } from '../model/pieceMoves'
+export { STICK_GAP, STICK_REACH, stickTarget, touchSide, followTo, type Side } from '../model/pieceMoves'
 
 // Linked to a plane, or let go, from its console's dropdown (D-215), where it is: one undo step (S6: update_piece).
 export const linkLens = (wid: string, piece: Piece & { id: string }, plane: string | null) => {

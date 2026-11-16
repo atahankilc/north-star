@@ -3,7 +3,7 @@
 // (top-left) in that space's px (D-050, D-118, D-130, D-156–D-158).
 import { collection, doc, type DocumentReference } from 'firebase/firestore'
 import { db } from './firebase'
-import { snap } from '../model/grid'
+import { } from '../model/grid'
 import { discardNew } from './history'
 import { forgetRecent, present, runUi, runUiWith } from '../ops/firestore'
 import { arrange, createText, TEXT_NAMES, updateText, type CreateTextArgs, type UpdateTextArgs } from '../ops/text'
@@ -100,5 +100,3 @@ export async function moveMany(label: string, moves: Move[]) {
     { label },
   )
 }
-
-export const snapPoint = (x: number, y: number, free: boolean): [number, number] => (free ? [Math.round(x), Math.round(y)] : [snap(x), snap(y)])

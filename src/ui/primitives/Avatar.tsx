@@ -17,7 +17,7 @@ type Props = {
   className?: string
 }
 
-export const initialOf = (name: string) => (name.trim()[0] ?? '?').toUpperCase()
+const initialOf = (name: string) => (name.trim()[0] ?? '?').toUpperCase()
 
 export function Avatar({ name, color, photo, size = 'hud', away, className }: Props) {
   return (

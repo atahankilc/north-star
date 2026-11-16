@@ -22,7 +22,7 @@ import styles from './collab.module.css'
 import type { PeerMark } from '../../../ui/primitives/Marks'
 
 // Which space a peer is in: the canvas, or the plane they have in focus.
-export const spaceOf = (p: Pick<Peer, 'plane'>) => p.plane ?? CANVAS
+const spaceOf = (p: Pick<Peer, 'plane'>) => p.plane ?? CANVAS
 
 // A point in a space's px as it is on screen (px from the canvas's corner): the canvas's camera, or the focused plane's
 // own view.

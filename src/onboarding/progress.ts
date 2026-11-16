@@ -18,7 +18,6 @@ import {
 } from '../data/onboarding'
 import { sandboxOn } from './devSandbox'
 import {
-  armKey,
   cleanArmed,
   freshState,
   isArmed,
@@ -31,7 +30,6 @@ import {
   type WelcomeEnd,
 } from './seenMerge'
 
-export { armKey }
 
 type Progress = {
   uid: string | null

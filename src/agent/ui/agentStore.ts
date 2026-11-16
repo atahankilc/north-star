@@ -46,12 +46,11 @@ import { chatsAvailable, deleteChat, listChats, newChatId, openChat as openChatD
 import { chatDocs, historyOf, reopenedJob, type ChatCursor, type ChatSummary } from '../chats'
 import { entriesOf, turnsOf } from './chatEntries'
 
-export { entriesOf, turnsOf } from './chatEntries'
 import type { MemberInfo } from '../read'
 import type { DiffLine } from '../../model/notes'
 import { useDocUi } from '../../views/workspace/documents/Documents'
+import { cut } from '../../model/words'
 
-export { plainError, KEY_REFUSED, NO_KEY } from './errors'
 
 // ---- What the chat shows
 
@@ -360,7 +359,7 @@ function scheduleSave() {
 }
 
 // Saves the open chat (once it has a message of the person's); one save at a time.
-export function saveNow(): Promise<void> {
+function saveNow(): Promise<void> {
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = null
   const chat = get().chat
@@ -398,9 +397,9 @@ function dispatch(ev: WorkflowEvent) {
 const lastChanges = (c: Chat) => [...c.entries].reverse().find((e): e is Extract<Entry, { kind: 'changes' }> => e.kind === 'changes' && (e.state === 'pending' || e.state === 'applying' || e.state === 'revising'))
 
 // An item in a few words, for a note about it: what it does (`link "Stalls run out…" → "Weekend…"`), not its id.
-export const wordsOfItem = (i: Pick<ChangeItem, 'line' | 'label'>) => {
+const wordsOfItem = (i: Pick<ChangeItem, 'line' | 'label'>) => {
   const w = i.line.split(': ').slice(1).join(': ') || i.label
-  return w.length > 60 ? `${w.slice(0, 59)}…` : w
+  return cut(w, 60)
 }
 const lineOf = (i: ChangeItem, on: boolean, needs?: string[], all?: ChangeItem[]): ChangeLine => ({
   id: i.id,

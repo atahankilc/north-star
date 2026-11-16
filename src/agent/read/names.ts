@@ -13,7 +13,7 @@ import type { ReadWs } from './types'
 export type Named = { kind: IdKind; name: string; go?: string }
 
 // Every short id's letters (ids.ts' PREFIX).
-export const SHORT_ID = /\b[cptxkevfdmu]\d+\b/
+const SHORT_ID = /\b[cptxkevfdmu]\d+\b/
 
 export function namedShort(ws: ReadWs, ids: Ids, short: string): Named | undefined {
   const r = ids.real(short)

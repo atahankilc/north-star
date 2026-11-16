@@ -37,7 +37,7 @@ export const onPlane: {
 }
 
 // What lines things up against: everything on the plane but these.
-export const othersThan = (ids: Set<string>) =>
+const othersThan = (ids: Set<string>) =>
   onPlane
     .boxes()
     .filter((b) => !ids.has(b.id))
@@ -63,11 +63,11 @@ export function toggleSelected(id: string) {
 }
 
 // Let go where they are: held at `to` until their data says so (each item clears its own when it arrives).
-export function land(moves: { id: string; to: [number, number] }[]) {
+function land(moves: { id: string; to: [number, number] }[]) {
   useCanvasView.setState((s) => ({ landing: { ...s.landing, ...Object.fromEntries(moves.map((m) => [m.id, m.to])) }, dragShift: null }))
 }
 // `to`: only if it's still held there (a later drop of the same thing keeps its own).
-export function landed(id: string, to?: [number, number]) {
+function landed(id: string, to?: [number, number]) {
   useCanvasView.setState((s) => {
     const was = s.landing[id]
     if (!was || (to && (was[0] !== to[0] || was[1] !== to[1]))) return s

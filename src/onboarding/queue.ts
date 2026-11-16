@@ -37,14 +37,14 @@ export type Payload = Record<string, unknown>
 
 // A surface's own list isn't a menu (O11): the finder's matches are a `listbox`, but the finder is its own busy source,
 // and counting its list as a menu too would hold the finder's lessons for good.
-export const OWN_LISTS = '[role="dialog"][aria-label="Find"]'
+const OWN_LISTS = '[role="dialog"][aria-label="Find"]'
 export const countsAsMenu = (el: Pick<Element, 'closest'>) => !el.closest(OWN_LISTS)
 // `target`: what it was about, as the app's `data-target` names it (`card:<id>`, `plane:<id>`…): a lesson's anchor is
 // looked for there first.
 export type LearnEvent = { event: LessonEvent; payload?: Payload; target?: string }
 
 // What can hold a lesson back (onboarding.md §5.4); `modal`: the coach's own welcome or what's new.
-export const BUSY_SOURCES = [
+const BUSY_SOURCES = [
   'drag', 'focusMoving', 'typing', 'menu', 'wizard', 'setup', 'hazard', 'settings', 'finder', 'threads', 'following',
   'gliding', 'curtainHidden', 'modal',
 ] as const
@@ -60,10 +60,10 @@ export const COOLDOWN_MS = 20_000
 // Waiting while a coach surface shows (a lesson, the welcome, what's new) doesn't count towards GIVE_UP_MS, up to this.
 export const PAUSE_CAP_MS = 60_000
 // How long a lesson retired while showing stays as "✓ done" before it goes.
-export const DONE_MS = 1200
+const DONE_MS = 1200
 
 // Events nobody did just now (the canvas opening, someone else's doing): what they trigger is automatic.
-export const AUTOMATIC: ReadonlySet<LessonEvent> = new Set<LessonEvent>(['canvas-open', 'peer-joined', 'task-given', 'workspaces-open'])
+const AUTOMATIC: ReadonlySet<LessonEvent> = new Set<LessonEvent>(['canvas-open', 'peer-joined', 'task-given', 'workspaces-open'])
 
 
 export type Shown = {
@@ -127,7 +127,7 @@ export function matches(t: Trigger, e: LearnEvent): boolean {
   return whenMatches(t.when, e.payload ?? {})
 }
 
-export function whenMatches(when: Match | undefined, payload: Payload): boolean {
+function whenMatches(when: Match | undefined, payload: Payload): boolean {
   if (!when) return true
   for (const [k, want] of Object.entries(when)) {
     const got = payload[k]
@@ -151,7 +151,7 @@ export function pagesFor(l: Lesson, role: Role | null, audience: Audience, paylo
 }
 
 // Whether a busy state holds a lesson back: any source on, except the one it's within (and typing inside that one).
-export function holds(busy: Busy, within: Within | undefined): boolean {
+function holds(busy: Busy, within: Within | undefined): boolean {
   for (const s of BUSY_SOURCES) {
     if (!busy[s]) continue
     if (within && s === within) continue

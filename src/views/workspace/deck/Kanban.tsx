@@ -61,7 +61,7 @@ import { Assignee } from '../cards/Assignee'
 import { holdOnBoard, useBoardDrag, type Held } from './boardDrag'
 import { learnable } from '../panels/TaskPanel'
 import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
-import { FIELD_NAME, isPriorities, rowFieldOf } from './kanbanCards'
+import { FIELD_NAME, isPriorities, rowFieldOf } from '../../../model/kanbanCards'
 import { useKanbanSizes } from '../canvas/sizes'
 import { useMeasuredSize } from '../canvas/useMeasuredSize'
 import { keepLocal, readLocal } from '../../../state/local'
@@ -75,6 +75,7 @@ import styles from './Kanban.module.css'
 import { DECK_PX } from '../../../model/world'
 import { keysTaken } from '../../../ui/foundation/focus'
 import { CheckIcon, CloseIcon, LimitIcon, NextIcon, PrevIcon } from '../../../ui/primitives/hudIcons'
+import { plural } from '../../../model/words'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const K = DECK_PX
@@ -85,7 +86,7 @@ function weekEnd() {
   d.setDate(d.getDate() + ((7 - d.getDay()) % 7))
   return today(d)
 }
-export function soonOf(piece: Pick<Piece, 'kanban'>, tasks: Task[]) {
+function soonOf(piece: Pick<Piece, 'kanban'>, tasks: Task[]) {
   const done = new Set(kanbanOf(piece).cols.filter((c) => c.done).map((c) => c.id))
   const end = weekEnd()
   return tasks.filter((t) => t.due && t.due <= end && !done.has(t.col)).sort((a, b) => a.due!.localeCompare(b.due!) || a.order - b.order)
@@ -863,7 +864,7 @@ function HiddenTasks({ piece, editor }: { piece: WithId<Piece>; editor: boolean 
   if (kanbanOf(piece).holds !== 'cards' || !n) return null
   return (
     <DockAction
-      label={`☐ ${n} task${n === 1 ? '' : 's'} from before`}
+      label={`☐ ${plural(n, 'task')} from before`}
       tone="var(--accent-magenta)"
       title={editor ? 'tasks from before it held cards, not shown on it: move them, or let it hold tasks again' : 'tasks from before it held cards, not shown on it'}
       onClick={() => editor && openSetup(piece.id, 'holds' satisfies KanbanTab)}

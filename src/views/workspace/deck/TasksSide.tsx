@@ -16,7 +16,7 @@ import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import type { Card } from '../../../data/cards'
 import { finished, overdue, shownTasks, timelineOf, type Task } from '../../../data/tasks'
-import { heldCards } from './kanbanCards'
+import { heldCards } from '../../../model/kanbanCards'
 import { markTasksSeen, useReads } from '../../../data/threads'
 import { setSplit, useCanvasView, type Bounds } from '../../../state/canvasView'
 import { toggleSetup, useSetupOn } from '../canvas/setupStore'
@@ -177,7 +177,7 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
               }))}
             />
           ) : (
-            <Empty as="span" tone="dim">
+            <Empty as="span">
               no deck on this canvas yet
             </Empty>
           )}
@@ -341,7 +341,7 @@ function Mine({ decks, top, children }: { decks: WithId<Piece>[]; top: number; c
     <div className={styles.part} style={{ left: 0, right: 0, top, bottom: 0 }}>
       <div className={styles.mine} data-scrolls>
         {!groups.length && (
-          <Empty className={styles.none} tone="dim">
+          <Empty className={styles.none}>
             nothing given to you{decks.length ? '' : ': no deck on this canvas yet'}
           </Empty>
         )}

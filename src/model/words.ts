@@ -11,3 +11,18 @@ export const firstName = (name: string) => name.trim().split(/[\s@]+/)[0] ?? ''
 
 // An invite code as it's shown and copied: `ABCD-EFGH` (D-062).
 export const codeText = (code: string) => `${code.slice(0, 4)}-${code.slice(4)}`
+
+// Text on one line: every run of spaces and line ends one space, none at the ends.
+export const flat = (s: string) => s.replace(/\s+/g, ' ').trim()
+// Text no longer than `n`, ending in `…` when it was (D-361's round 2: written about twenty times).
+export const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s)
+// What's kept of text that came from outside (a model's answer, a saved chat): one line, at most `n`; nothing if it
+// isn't text.
+export const kept = (s: unknown, n: number) => (typeof s === 'string' ? flat(s).slice(0, n) : '')
+// A name as typed by a person or a model, to compare: no quotes round it, one line, lower case.
+export const norm = (s: string) => s.trim().replace(/^["'`]+|["'`]+$/g, '').replace(/\s+/g, ' ').toLowerCase()
+// A name's leading number, apart (D-266): `04 Rivals` → `04`, `Rivals`; `null` when it starts with none.
+export function leadingNumber(name: string): { num: string; rest: string } | null {
+  const m = /^(\d{1,4})(?:[\s.·:—–-]+(.*))?$/.exec(name.trim())
+  return m ? { num: m[1], rest: m[2] ?? '' } : null
+}

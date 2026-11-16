@@ -12,7 +12,6 @@ import { DELETE, type OpCtx, type Plan, type Write } from './types'
 import { cardIn, find, handleOf, refuse } from './util'
 import { AUTHOR_NAME_MAX, TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, TASK_NOTES_MAX as NOTES_MAX } from '../model/limits'
 import { PRIORITIES } from '../model/cards'
-export { TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, NOTES_MAX }
 
 type P = Piece & { id: string }
 
@@ -50,14 +49,14 @@ export function columnIn(op: string, d: P, ref: unknown): KanbanCol {
   refuse(op, 'many' in f ? `"${ref}" names more than one column` : `the deck ${d.name || d.id} has no column ${ref}`, `name one of: ${candidates(('many' in f ? f.many : cols).map(line))}`)
 }
 
-export const taskIn = (ctx: OpCtx, op: string, id: unknown): Task => find(ctx.ws.tasks, op, id, 'task')
+const taskIn = (ctx: OpCtx, op: string, id: unknown): Task => find(ctx.ws.tasks, op, id, 'task')
 
 // A deck's tasks (each deck's columns have their own ids: two decks may both have a `todo`).
 export const tasksOf = (ctx: OpCtx, deck: string) => ctx.ws.tasks.filter((t) => t.pieceId === deck)
 
 // Orders for `n` tasks put in `col` of `deck`, before or after a task there, else at the end; `skip`: the tasks being
 // moved (not their own neighbours).
-export function ordersIn(ctx: OpCtx, op: string, deck: string, col: string, n: number, where: { before?: string; after?: string }, skip: string[] = []): number[] {
+function ordersIn(ctx: OpCtx, op: string, deck: string, col: string, n: number, where: { before?: string; after?: string }, skip: string[] = []): number[] {
   if (where.before !== undefined && where.after !== undefined) refuse(op, 'before and after both say where', 'give one of them')
   const list = tasksIn(tasksOf(ctx, deck).filter((t) => !skip.includes(t.id)), col)
   const ref = where.before ?? where.after

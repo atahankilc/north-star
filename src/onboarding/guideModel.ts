@@ -101,7 +101,7 @@ export function guideModel(p: ProgressLike, role: Role | null, lessons: readonly
 }
 
 // Every word typed is in it.
-export function matches(text: string, q: string): boolean {
+function matches(text: string, q: string): boolean {
   const t = text.toLowerCase()
   return q
     .toLowerCase()
@@ -121,7 +121,7 @@ export type Row =
   | { kind: 'keys'; key: string; open: boolean; shown: number }
   | { kind: 'key'; key: string; row: KeyRow }
 
-export const KEYS_ID = 'keys'
+const KEYS_ID = 'keys'
 
 // The rows shown: `open` is the one area (or `keys`) unfolded. Typed, every area with a match is open with only its
 // matches, the rest left out.
@@ -154,7 +154,7 @@ export function guideRows(m: GuideModel, open: string | null, q: string): Row[] 
   return rows
 }
 
-export const pickable = (r: Row) => r.kind !== 'head'
+const pickable = (r: Row) => r.kind !== 'head'
 
 // The fold a row belongs to (an area or the keys): ← on a note folds it and goes back to its area.
 export function parentOf(rows: Row[], i: number): number {

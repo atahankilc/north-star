@@ -18,7 +18,7 @@ import { onTracked, useHistory, type TrackedMeta } from './history'
 import { getRealWs } from '../state/wsStore'
 import { changeEntry, fromChangeDoc, mergeEntries, toChangeDoc, type ChangeEntry } from '../model/changeLog'
 import { REGISTRY } from '../ops/registry'
-import { keepLocal, readLocal } from '../state/local'
+import { readLocal } from '../state/local'
 
 const OPS: ReadonlySet<string> = new Set(REGISTRY.keys())
 
@@ -29,12 +29,6 @@ const QUIET_MS = 2500
 
 // Read guarded: storage refusing (a private window, blocked site data) must not stop this module loading.
 let on = readLocal(OFF_KEY) !== '1'
-export const changeLogOn = () => on
-export function setChangeLogOn(v: boolean) {
-  on = v
-  keepLocal(OFF_KEY, v ? null : '1')
-  if (!v) pending = null
-}
 
 // The entry being gathered for the current step (its key, or the step object when it has none), and its workspace.
 let pending: { wid: string; step: unknown; entry: ChangeEntry; timer: ReturnType<typeof setTimeout> | null } | null = null

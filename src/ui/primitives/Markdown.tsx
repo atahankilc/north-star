@@ -27,7 +27,7 @@ const TABLE_SEP = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/
 const cellsOf = (line: string) => line.trim().replace(/^\|/, '').replace(/(?<!\\)\|$/, '').split(/(?<!\\)\|/).map((c) => c.trim())
 const startsTable = (lines: string[], i: number) => lines[i].includes('|') && i + 1 < lines.length && TABLE_SEP.test(lines[i + 1])
 
-export function parse(src: string): Block[] {
+function parse(src: string): Block[] {
   const lines = src.replace(/\r\n?/g, '\n').split('\n')
   const out: Block[] = []
   let i = 0

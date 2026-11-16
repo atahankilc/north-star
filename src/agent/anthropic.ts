@@ -66,7 +66,7 @@ export class AnthropicError extends Error {
 
 const NEED_KEY = 'An Anthropic key is needed (Settings → the agent).'
 // Streamed, so a long answer never hits a timeout; a cap only, not what it costs.
-export const MAX_TOKENS = 64_000
+const MAX_TOKENS = 64_000
 
 const BETA_FALLBACK = 'server-side-fallback-2026-07-01'
 const BETA_BINDING = 'thinking-binding-controls-2026-08-01'
@@ -76,11 +76,11 @@ export const modern = (model: string) => /^claude-(opus|sonnet|haiku|fable|mytho
 // Mid-conversation system messages (no beta): not Sonnet 5, not the 4.6/4.7 generation.
 export const nativeSystem = (model: string) => /^claude-(opus-5|opus-4-8|fable-5|mythos-5|sonnet-5-5|haiku-5-5)/.test(model)
 // Server-side fallbacks on a refusal, the `default` form: the models Anthropic offers it for.
-export const fallsBack = (model: string) => /^claude-(opus-5|fable-5|sonnet-5-5)/.test(model)
+const fallsBack = (model: string) => /^claude-(opus-5|fable-5|sonnet-5-5)/.test(model)
 
 // Dynamic filtering (the search's results filtered by code before they reach the context): Opus, Sonnet, Fable and
 // Mythos from 4.6 on; Haiku and older models get the basic tool, which needs no code execution.
-export const filtersWeb = (model: string) => /^claude-(opus|sonnet|fable|mythos)-(4-[6-9]|[5-9])/.test(model)
+const filtersWeb = (model: string) => /^claude-(opus|sonnet|fable|mythos)-(4-[6-9]|[5-9])/.test(model)
 export const webTool = (model: string, searches = WEB_SEARCHES) => ({ type: filtersWeb(model) ? ('web_search_20260209' as const) : ('web_search_20250305' as const), name: 'web_search' as const, max_uses: searches })
 // How many times a paused search turn is taken up again before its answer stands as it is.
 export const PAUSES = 3
@@ -89,7 +89,7 @@ const EFFORTS = { none: 'low', minimal: 'low', low: 'low', medium: 'medium', hig
 
 // ---- The request
 
-export function toClaudeTool(def: ToolDef): BetaTool {
+function toClaudeTool(def: ToolDef): BetaTool {
   const input_schema = { ...def.parameters, additionalProperties: def.parameters.additionalProperties ?? false } as BetaTool['input_schema']
   const strict = def.strict !== false && fitsStrict(input_schema)
   return { name: def.name, description: def.description, input_schema, ...(strict ? { strict: true } : {}), eager_input_streaming: true }
@@ -209,7 +209,7 @@ export function requestBody(req: ModelRequest, o: Pick<AnthropicOptions, 'model'
 
 const STOPS: Record<string, StopReason> = { end_turn: 'end', stop_sequence: 'end', pause_turn: 'end', tool_use: 'tool_calls', max_tokens: 'length', model_context_window_exceeded: 'length', refusal: 'refusal' }
 
-export function usageOf(u: BetaMessage['usage'] | undefined): Usage {
+function usageOf(u: BetaMessage['usage'] | undefined): Usage {
   if (!u) return { input: 0, output: 0 }
   const read = u.cache_read_input_tokens ?? 0
   const searches = u.server_tool_use?.web_search_requests ?? 0
@@ -275,7 +275,7 @@ const bindingRefused = (e: unknown) => e instanceof BadRequestError && /bound to
 // Please retry your request"): the same request once more.
 const askedToRetry = (e: unknown) => /please retry your request|unable to parse tool parameter json/i.test(String((e as Error)?.message ?? e))
 
-export function plainFailure(e: unknown, model: string, key: string): Error {
+function plainFailure(e: unknown, model: string, key: string): Error {
   const say = (m: string, kind: AnthropicErrorKind, status?: number) => new AnthropicError(redact(m, key), kind, status)
   if (e instanceof APIUserAbortError) return abortError()
   if (e instanceof AuthenticationError) return say("Anthropic didn't accept this key. Check the key in Settings → the agent.", 'auth', 401)

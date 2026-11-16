@@ -9,7 +9,7 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type PointerEven
 import { WORLD } from '../../../model/world'
 import { CARD, type Card } from '../../../data/cards'
 import type { CompetitorFeature } from '../../../data/competitorFeatures'
-import { byCategory, INDENT } from '../plane/cardInside'
+import { byCategory, INDENT } from '../../../model/cardInside'
 import type { Facts, Proof } from '../plane/cardFacts'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { Chip } from '../../../ui/primitives/Chip'
@@ -18,6 +18,7 @@ import { CardFace } from './CardFace'
 import { Progress } from './Progress'
 import { CardRow } from './CardRow'
 import styles from './PlaneCard.module.css'
+import { plural } from '../../../model/words'
 
 // How much of it shows, by its size on screen (PlaneCards.tsx picks it, D-111, D-153).
 export type Detail = 'full' | 'compact' | 'far'
@@ -211,7 +212,7 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onFold}
           >
-            {card.type === 'package' ? `+ ${parts} inside` : `${card.folded ? '+' : '−'} ${parts} part${parts === 1 ? '' : 's'}`}
+            {card.type === 'package' ? `+ ${parts} inside` : `${card.folded ? '+' : '−'} ${plural(parts, 'part')}`}
           </button>
         )}
       </span>

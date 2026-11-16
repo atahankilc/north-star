@@ -11,7 +11,7 @@ import { ago } from '../../ui/foundation/ago'
 import { Field } from '../../ui/primitives/Field'
 import { useWs } from '../../views/workspace/canvas/context'
 import { useAuth } from '../../data/auth'
-import { diffShown, NOTES_MAX, NOTES_TITLE, type DiffLine } from '../../model/notes'
+import { diffShown, NOTES_ID, NOTES_MAX, NOTES_TITLE, type DiffLine } from '../../model/notes'
 import { agentActions, isViewer, liveWs, useAgent } from './agentStore'
 import styles from './AgentMemory.module.css'
 import { Button } from '../../ui/primitives/Button'
@@ -104,7 +104,7 @@ export function NotesView() {
   const wid = useAgent((s) => s.wid)
   const viewer = isViewer(wid)
   const ws = useWs()
-  const doc = ws.documents?.find((d) => d.id === 'agent-notes')
+  const doc = ws.documents?.find((d) => d.id === NOTES_ID)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [said, setSaid] = useState('')

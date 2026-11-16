@@ -13,7 +13,7 @@
 // fine-grained ops when the editor's list is one change from what's there now, columns or rows someone else added
 // since left aside (model/lens.ts' editorChange: a column added, edited or moved; a row added), so their column, its
 // cells and your edit all stay. Anything else is written whole, as before (a concurrent edit can still be lost then).
-import type { Card } from './cards'
+import type { } from './cards'
 import { runUi, runUiWith } from '../ops/firestore'
 import { updateTable } from '../ops/table'
 import { axisAdd, axisRemove, axisUpdate } from '../ops/lens'
@@ -59,18 +59,12 @@ export function setTablePart<K extends keyof TableSetup>(wid: string, id: string
   return runUi(wid, (ctx) => [partPlan(ctx, id, part, value)], { label: LABEL, ...(key ? { key: `table:${id}:${key}` } : {}) })
 }
 
-export const setRows = (wid: string, id: string, rows: Source, key?: string) => setTablePart(wid, id, 'rows', rows, key)
-
 // A typed row at the end; its id, to type its name in ('' when nothing was made).
 export function addNamedRow(wid: string, id: string, _setup: TableSetup, name = '') {
   return runUiWith(wid, LABEL, (ctx) => {
     const plan = axisAdd(ctx, { id, axis: 'rows', name, label: LABEL })
     return { plans: [plan], value: plan.ids.$new }
   }, '', { label: LABEL })
-}
-
-export function addCardRow(wid: string, id: string, _setup: TableSetup, card: Card) {
-  return runUi(wid, (ctx) => [axisAdd(ctx, { id, axis: 'rows', card: card.id, label: LABEL })], { label: LABEL })
 }
 
 export function renameRow(wid: string, id: string, _setup: TableSetup, itemId: string, name: string) {
@@ -80,14 +74,6 @@ export function renameRow(wid: string, id: string, _setup: TableSetup, itemId: s
 // A row taken out: one added by hand goes with its cells; a card the rules bring is hidden (its cells kept).
 export function removeRow(wid: string, id: string, _setup: TableSetup, row: Row, _cells: Cell[]) {
   return runUi(wid, (ctx) => [axisRemove(ctx, { id, axis: 'rows', entry: row.auto ? row.key : (row.item?.id ?? row.key) })], { label: 'take out a row' })
-}
-
-export function addColumn(wid: string, id: string, _setup: TableSetup, col: Omit<Column, 'id'>) {
-  return runUi(wid, (ctx) => [axisAdd(ctx, { id, axis: 'cols', column: col, label: LABEL })], { label: LABEL })
-}
-
-export function editColumn(wid: string, id: string, _setup: TableSetup, colId: string, change: Partial<Column>, key?: string) {
-  return runUi(wid, (ctx) => [axisUpdate(ctx, { id, axis: 'cols', entry: colId, change, label: LABEL })], { label: LABEL, ...(key ? { key: `table:${id}:col:${colId}:${key}` } : {}) })
 }
 
 // A column's width (or the name column's, NAME_COL) dragged to `w`; undefined goes back to its own.

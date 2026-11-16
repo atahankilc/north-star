@@ -28,12 +28,13 @@ import { isDay, isFinished, overdue } from '../../model/tasks'
 import { DOC_KINDS } from '../../model/shapes'
 import { TEXT_KINDS } from '../../ops/text'
 import { PIECE_KINDS } from '../../ops/pieces'
+import { plural } from '../../model/words'
 
 export { view, readDocument }
 
 // ---- search
 
-export const SEARCH_KINDS = ['card', 'customer', 'problem', 'competitor', 'idea', 'feature', 'package', 'text', 'task', 'cell', 'evidence', 'competitor_feature', 'document', 'comment', 'piece'] as const
+const SEARCH_KINDS = ['card', 'customer', 'problem', 'competitor', 'idea', 'feature', 'package', 'text', 'task', 'cell', 'evidence', 'competitor_feature', 'document', 'comment', 'piece'] as const
 export type SearchArgs = { query: string; kinds?: string[]; scope?: string; page?: number; limit?: number }
 
 type Entry = {
@@ -265,11 +266,10 @@ export function search(ws: ReadWs, ids: Ids, a: SearchArgs): ToolResult {
 
 // ---- query
 
-export const QUERY_KINDS = ['card', 'task', 'text', 'piece', 'document', 'comment'] as const
+const QUERY_KINDS = ['card', 'task', 'text', 'piece', 'document', 'comment'] as const
 // The model's and ops' own lists (D-361: they had been written again here).
-export const CARD_KINDS = ALL_TYPES
-export { TEXT_KINDS, PIECE_KINDS, DOC_KINDS, ALL_STATUSES, PRIORITIES }
-export const THREAD_ON = ['card', 'label', 'link', 'plane', 'task'] as const
+const CARD_KINDS = ALL_TYPES
+const THREAD_ON = ['card', 'label', 'link', 'plane', 'task'] as const
 
 export type QueryArgs = {
   kind?: (typeof QUERY_KINDS)[number]
@@ -500,7 +500,7 @@ export function query(ws: ReadWs, ids: Ids, a: QueryArgs): ToolResult {
 }
 
 // A comment thread in a line: what it's on, open or resolved, how many messages, the last one.
-export function threadLine(ids: Ids, d: Derived, t: Derived['threads'] extends Map<string, infer T> ? T : never): string {
+function threadLine(ids: Ids, d: Derived, t: Derived['threads'] extends Map<string, infer T> ? T : never): string {
   return `${ids.short('thread', t.id)} on ${targetName(ids, d, t.on, t.targetId)} · ${t.resolved ? 'resolved' : 'open'} · ${count(t.count, 'message')}${t.lastText ? ` · last ${oneLine(t.lastName ?? '?', 30)} ${dayOf(t.lastAt)}: ${q(t.lastText, 80)}` : ''}`
 }
 
@@ -526,7 +526,7 @@ export function get(ws: ReadWs, ids: Ids, a: GetArgs): ToolResult {
   return finish({ text: out.join('\n\n') })
 }
 
-export function describe(ws: ReadWs, ids: Ids, kind: IdKind, id: string, full: boolean): { author: string; text: string } {
+function describe(ws: ReadWs, ids: Ids, kind: IdKind, id: string, full: boolean): { author: string; text: string } {
   ws = clean(ws)
   const d = derive(ws)
   switch (kind) {
@@ -733,7 +733,7 @@ function taskText(ws: ReadWs, ids: Ids, d: Derived, t: Task, full: boolean): str
 // ---- neighbours
 
 export type NeighboursArgs = { id: string; kinds?: string[]; depth?: number; limit?: number }
-export const NEIGHBOUR_KINDS = ['links', 'for', 'parts', 'packages', 'tasks', 'places'] as const
+const NEIGHBOUR_KINDS = ['links', 'for', 'parts', 'packages', 'tasks', 'places'] as const
 
 export function neighbours(ws: ReadWs, ids: Ids, a: NeighboursArgs): ToolResult {
   ws = clean(ws)
@@ -984,7 +984,7 @@ export function structure(ws: ReadWs, ids: Ids, a: StructureArgs): ToolResult {
     const pn = (id: string) => `${ids.short('piece', id)} ${q(d.nameById(id), 40)}`
     return {
       text: [
-        `## Structure of ${ids.short('canvas', r.id)} (canvas): ${planes.length} plane${planes.length === 1 ? '' : 's'}`,
+        `## Structure of ${ids.short('canvas', r.id)} (canvas): ${plural(planes.length, 'plane')}`,
         ...planes.map((p) => {
           const g = linkGraph((d.onPlane.get(p.id) ?? []).map((c) => ({ id: c.id, type: c.type })), [...d.edges.values()])
           return `- ${pn(p.id)}: ${count(g.cards, 'card')}, ${count(g.links, 'link')}, ${count(g.groups.length, 'linked group')}, ${g.loose.length} loose; ${count(g.outside.length, 'link')} to cards on no shared plane`
@@ -1008,7 +1008,7 @@ export function structure(ws: ReadWs, ids: Ids, a: StructureArgs): ToolResult {
   g.groups.forEach((gr, i) => {
     lines.push(`- group ${i + 1}: ${count(gr.cards.length, 'card')}, ${count(gr.links, 'link')}; runs ${typeLine(gr.types)}; ${gr.chainLinks} of ${count(gr.links, 'link')} step along the chain${gr.flow ? ' (it reads as a flow)' : ''}`)
     if (gr.topics.length > 1) {
-      lines.push(`  ${gr.topics.length} topics inside it, ${gr.crossing} link${gr.crossing === 1 ? '' : 's'} crossing between them:`)
+      lines.push(`  ${gr.topics.length} topics inside it, ${plural(gr.crossing, 'link')} crossing between them:`)
       gr.topics.forEach((t, k) => lines.push(`  - topic ${i + 1}.${k + 1}: ${count(t.cards.length, 'card')}, ${count(t.links, 'link')}: ${few(t.cards, 4)}`))
     } else lines.push(`  ${few(gr.cards)}`)
   })
@@ -1025,7 +1025,7 @@ export function structure(ws: ReadWs, ids: Ids, a: StructureArgs): ToolResult {
   const texts = [...d.labels.values()].filter((l) => l.pieceId === plane.id)
   const sections = texts.filter((l) => kindOf(l) === 'section').length
   const heads = texts.filter((l) => kindOf(l) === 'heading').length
-  lines.push(`Text on it: ${sections} section${sections === 1 ? '' : 's'}, ${heads} heading${heads === 1 ? '' : 's'}, ${texts.length - sections - heads} other.`)
+  lines.push(`Text on it: ${plural(sections, 'section')}, ${plural(heads, 'heading')}, ${texts.length - sections - heads} other.`)
   return { text: lines.join('\n') }
 }
 

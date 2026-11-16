@@ -3,8 +3,7 @@
 // field, `is` or `is not`, and the values it takes (any of them): a plane, a card type, a status, a tag; or a few words
 // the title holds. Generic on purpose, so a table (and later a matrix's axes) can show any slice of the workspace.
 import { isOnPlane, type Card, ALL_STATUSES } from './cards'
-import { VALUE_MAX } from './limits'
-export { VALUE_MAX }
+import { } from './limits'
 
 export const RULE_FIELDS = ['plane', 'type', 'status', 'tag', 'title'] as const
 export type RuleField = (typeof RULE_FIELDS)[number]
@@ -70,7 +69,7 @@ function meets(c: Card, r: Rule) {
 // A rule with nothing picked yet doesn't narrow anything: it's being set up.
 const active = (r: Rule) => r.values.some((x) => x.trim())
 
-export const matches = (c: Card, rules: Rule[]) => rules.every((r) => !active(r) || meets(c, r))
+const matches = (c: Card, rules: Rule[]) => rules.every((r) => !active(r) || meets(c, r))
 
 // One row as shown: its key (the card's id or the entry's), its name, and the card or entry behind it. `auto`: the rules
 // brought it.

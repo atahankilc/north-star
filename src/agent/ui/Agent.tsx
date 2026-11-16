@@ -53,6 +53,7 @@ import { Num, Rule } from '../../ui/primitives/Rule'
 import { Label } from '../../ui/primitives/Label'
 import { NextIcon, PrevIcon } from '../../ui/primitives/hudIcons'
 import { keepLocal, readLocal } from '../../state/local'
+import { plural } from '../../model/words'
 
 const WIDTH_STORE = 'northstar.agent.width'
 const W_MIN = 340
@@ -138,7 +139,7 @@ function openAndFocus() {
   requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-agent-input]')?.focus())
 }
 
-export function closeAgent() {
+function closeAgent() {
   agentActions.close()
   const back = before
   before = null
@@ -722,7 +723,7 @@ function AgentAnswer({ entry }: { entry: Extract<Entry, { kind: 'agent' }> }) {
     <div className={styles.answer}>
       {tools.length > 0 && !entry.running && (
         <button /* kit-ok: a fold line (mark, how many steps, how long) that opens the steps, not a verb */ className={styles.fold} onClick={() => setUnfold((u) => !u)} aria-expanded={!folded}>
-          <span className={styles.foldMark}>{folded ? '▸' : '▾'}</span> {tools.length} step{tools.length === 1 ? '' : 's'}
+          <span className={styles.foldMark}>{folded ? '▸' : '▾'}</span> {plural(tools.length, 'step')}
           {entry.ms !== undefined && <> · {secs(entry.ms)}</>}
         </button>
       )}
@@ -1024,7 +1025,7 @@ function Changes({ entry }: { entry: Extract<Entry, { kind: 'changes' }> }) {
             <ButtonGroup>
             <span ref={apply} className={styles.applyBox}>
               <Button tone="primary" onClick={() => agentActions.accept()}>
-                {on.length === 1 && on[0].op === 'create_document' ? 'create' : 'apply'}{deletes > 0 && <span className={styles.applyDeletes}> · {deletes} delete{deletes === 1 ? '' : 's'}</span>}
+                {on.length === 1 && on[0].op === 'create_document' ? 'create' : 'apply'}{deletes > 0 && <span className={styles.applyDeletes}> · {plural(deletes, 'delete')}</span>}
               </Button>
             </span>
             <Button tone="danger" onClick={() => agentActions.discard()}>
@@ -1077,7 +1078,7 @@ const STATE_WORDS: Record<Extract<Entry, { kind: 'changes' }>['state'], string> 
 const docText = (i: ChangeLine) => (i.diff ?? []).map((l) => l.text).join('\n')
 function docLine(i: ChangeLine) {
   const n = (i.diff ?? []).filter((l) => l.text.trim()).length
-  return `new document "${i.doc!.title}" · ${n} line${n === 1 ? '' : 's'}, ${i.doc!.shared ? 'shared with everyone here' : 'private to you'}`
+  return `new document "${i.doc!.title}" · ${plural(n, 'line')}, ${i.doc!.shared ? 'shared with everyone here' : 'private to you'}`
 }
 // Its first line of prose (past the title and headings), cut short.
 function docStart(i: ChangeLine) {
@@ -1163,7 +1164,7 @@ function ReportLine({ entry }: { entry: Extract<Entry, { kind: 'report' }> }) {
       </p>
     )
   }
-  const what = [`${entry.count} change${entry.count === 1 ? '' : 's'}`, ...entry.wheres.slice(0, 3), ...(r.notDone.length ? [`${r.notDone.length} left out`] : [])]
+  const what = [`${plural(entry.count, 'change')}`, ...entry.wheres.slice(0, 3), ...(r.notDone.length ? [`${r.notDone.length} left out`] : [])]
   return (
     <div className={styles.status} data-undone={shown.undone || undefined}>
       <span className={styles.statusMark} aria-hidden>

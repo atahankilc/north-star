@@ -77,7 +77,7 @@ const deck: KanbanSetup = {
   ],
 }
 
-export const pieces: WithId<Piece>[] = [
+const pieces: WithId<Piece>[] = [
   piece(P.lunch, { kind: 'plane', x: 0, y: 0, w: 1200, h: 725, name: '01 Lunch' }, 1),
   piece(P.product, { kind: 'plane', x: 1300, y: 0, w: 1200, h: 725, name: '02 Product' }, 2),
   piece(P.matrix, { kind: 'matrix', x: 2600, y: 0, w: 900, h: 600, name: '03 Who covers what', matrix }, 3),
@@ -134,7 +134,7 @@ const product: Card[] = [
   card(P.product, 'competitor', 'k-canteen', 'The office canteen', 4, 3, { regions: ['Berlin'], description: 'Subsidised, same menu every week', pricing: '€4.20 a meal' }),
 ]
 
-export const cards: Card[] = [...lunch, ...product]
+const cards: Card[] = [...lunch, ...product]
 
 // ——— what links them ———
 
@@ -143,7 +143,7 @@ const link = (id: string, from: Card['id'], kind: Edge['kind'], to: Card['id'], 
   return { id, fromId: from, fromType: t(from), toId: to, toType: t(to), kind, ...(label ? { label } : {}) }
 }
 
-export const edges: Edge[] = [
+const edges: Edge[] = [
   link('e-1', 'i-preorder', 'solves', 'r-greasy'),
   link('e-2', 'i-preorder', 'solves', 'r-break'),
   link('e-3', 'i-shelf', 'solves', 'r-far'),
@@ -168,7 +168,7 @@ export const edges: Edge[] = [
 
 // What backs the statuses (D-137): the validated problem has three for it; the pre-order idea one against.
 const ev = (id: string, nodeId: string, nodeType: Evidence['nodeType'], kind: Evidence['kind'], stance: Evidence['stance'], text: string, source: string, date: string): Evidence => ({ id, nodeId, nodeType, kind, stance, text, source, date, createdAt: AT })
-export const evidence: Evidence[] = [
+const evidence: Evidence[] = [
   ev('v-1', 'r-greasy', 'problem', 'interview', 'supports', '9 of 12 said they skip delivery lunch most days because it’s heavy and dear', 'Interviews, Kreuzberg offices', '2026-09-18'),
   ev('v-2', 'r-greasy', 'problem', 'data', 'supports', 'Average delivery lunch: €14.60 with fees, 41 minutes', 'Survey, 86 office workers', '2026-09-25'),
   ev('v-3', 'r-greasy', 'problem', 'quote', 'supports', '“By two I’m asleep at my desk.”', 'Lena, UX designer', '2026-09-18'),
@@ -180,7 +180,7 @@ export const evidence: Evidence[] = [
 ]
 
 const cf = (id: string, competitorId: string, name: string, category: string, availability: CompetitorFeature['availability']): CompetitorFeature => ({ id, competitorId, name, category, availability, createdAt: AT })
-export const competitorFeatures: CompetitorFeature[] = [
+const competitorFeatures: CompetitorFeature[] = [
   cf('w-1', 'k-wolt', 'Live courier tracking', 'delivery', 'free'),
   cf('w-2', 'k-wolt', 'Wolt+ free delivery', 'pricing', 'paid'),
   cf('l-1', 'k-lieferando', 'Group orders', 'ordering', 'free'),
@@ -195,7 +195,7 @@ export const competitorFeatures: CompetitorFeature[] = [
 // ——— the matrix's cells (features × competitors, coverage) ———
 
 const cell = (row: string, col: string, s: number, confidence?: Cell['confidence']): Cell => ({ matrixId: P.matrix, row, col, value: step(s), ...(confidence ? { confidence } : {}), updatedAt: AT })
-export const cells: Cell[] = [
+const cells: Cell[] = [
   cell('f-pickup', 'k-wolt', 0),
   cell('f-pickup', 'k-lieferando', 0),
   cell('f-pickup', 'k-tgtg', 1),
@@ -242,7 +242,7 @@ const task = (id: string, col: string, title: string, who: keyof typeof PEOPLE |
     ...extra,
   }
 }
-export const tasks: Task[] = [
+const tasks: Task[] = [
   task('tk-permit', 'todo', 'Ask the Bezirksamt which permit home cooks need', 'jonas', { due: day(3), cardId: 'r-permit', priority: 'P1' }),
   task('tk-shelf', 'todo', 'Find two lobbies that would host a shelf', 'ayla', { start: day(2), due: day(9), cardId: 'i-shelf' }),
   task('tk-allergy', 'todo', 'Write the allergen checklist with a dietitian', 'lena', { due: day(6), cardId: 'f-allergens', labels: ['trust'] }),
@@ -274,7 +274,7 @@ const docOf = (id: string, title: string, excerpt: string, words: number, n: num
   createdAt: AT + n * 3600_000,
   updatedAt: AT + n * 3600_000,
 })
-export const documents: WithId<Doc>[] = [
+const documents: WithId<Doc>[] = [
   docOf('doc-interviews', 'Interviews: Kreuzberg offices', 'Twelve people, three offices, one question: what did you eat yesterday, and why?', 2140, 2),
   docOf('doc-pilot', 'Pilot, week one: 31 pre-orders', 'Two cooks, one WhatsApp group, a shelf at Factory. What sold, what didn’t, what we’d change.', 980, 30, PEOPLE.ayla),
 ]

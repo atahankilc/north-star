@@ -35,6 +35,7 @@ import { fromDocs } from '../model/fromDocs'
 import { docsOf, toDocs } from '../ops/docs'
 import type { Coll } from '../ops/types'
 import { previewDiff, viewOf, type ChangeItem, type Changeset, type PreviewChange } from './changeset'
+import { cut, plural } from '../model/words'
 
 export type MarkChange = 'added' | 'changed' | 'removed' | 'moved'
 
@@ -165,11 +166,11 @@ function kept(ws: WorkspaceCtx, real: WorkspaceCtx, diff: Map<string, PreviewCha
 
 const short = (v: unknown, n = 36): string => {
   if (v === undefined || v === null || v === '') return '—'
-  if (typeof v === 'string') return `"${v.length > n ? `${v.slice(0, n - 1)}…` : v}"`
+  if (typeof v === 'string') return `"${cut(v, n)}"`
   if (typeof v === 'number' || typeof v === 'boolean') return String(v)
-  if (Array.isArray(v)) return v.length ? (v.every((x) => typeof x === 'string') ? short(v.join(', '), n) : `${v.length} item${v.length === 1 ? '' : 's'}`) : 'none'
+  if (Array.isArray(v)) return v.length ? (v.every((x) => typeof x === 'string') ? short(v.join(', '), n) : `${plural(v.length, 'item')}`) : 'none'
   const s = JSON.stringify(v)
-  return s.length > n ? `${s.slice(0, n - 1)}…` : s
+  return cut(s, n)
 }
 
 const FIELD_WORD: Record<string, string> = { x: 'spot', y: 'spot', w: 'size', h: 'size', pieceId: 'plane', canvasId: 'canvas', col: 'column', stuckTo: 'stuck to', fromId: 'from', toId: 'to', validation: 'status', open: 'unframed' }
@@ -269,7 +270,7 @@ export function targetsOf(diff: Map<string, PreviewChange>, real: WorkspaceCtx, 
         // A card brought onto (or taken off) another plane: its places carry the marks; here only the count.
         const a = ((was as Card | undefined)?.planes?.length ?? 0) + 1
         const b = ((now as Card | undefined)?.planes?.length ?? 0) + 1
-        push({ ...base, change: 'changed', sel: sel.card(id), tier: 'm', tag: `~ ⧉ ${a} → ${b}`, was: [`on ${a} plane${a === 1 ? '' : 's'} → ${b}`] })
+        push({ ...base, change: 'changed', sel: sel.card(id), tier: 'm', tag: `~ ⧉ ${a} → ${b}`, was: [`on ${plural(a, 'plane')} → ${b}`] })
         continue
       }
       push({ ...base, sel: sel.card(id), tier: 'm', tag: verbTag(ch.change, ch.fields), was: lines, ...(geo && sameSpace('pieceId') ? { ghost: geo } : {}) })

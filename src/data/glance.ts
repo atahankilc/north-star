@@ -62,7 +62,7 @@ export function useVisits(wids: readonly string[], uid: string): Live<Record<str
 // The rules want `seen` on a new read-marks doc, so only a first write brings an empty one (as markTasksSeen does).
 const VISIT_EVERY_MS = 60_000
 let lastVisit: Record<string, number> = {}
-export async function markVisited(wid: string, force = false) {
+async function markVisited(wid: string, force = false) {
   const user = firebase?.auth.currentUser
   if (!user || isDemo) return
   const now = Date.now()

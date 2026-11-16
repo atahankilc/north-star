@@ -15,7 +15,7 @@ export function sandboxOn(): boolean {
 }
 
 // On: a fresh, empty test copy (again if one was on); off: back to the real seen-state.
-export function setSandbox(on: boolean): void {
+function setSandbox(on: boolean): void {
   try {
     if (on) sessionStorage.setItem(SANDBOX_KEY, '')
     else sessionStorage.removeItem(SANDBOX_KEY)

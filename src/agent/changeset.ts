@@ -41,6 +41,7 @@ import { entriesOf, type MatrixSetup } from '../model/matrix'
 import { colName, type Column, type TableSetup } from '../model/table'
 import { tableRows } from '../model/lens'
 import { lineDiff, notesOf, NOTES_ID, NOTES_TITLE, type DiffLine } from '../model/notes'
+import { cut, plural } from '../model/words'
 
 // Handles are read under id keys, and `handle` itself (buildBatch's own default) is never resolved.
 const HANDLE_KEYS: ReadonlySet<string> = ID_KEYS
@@ -364,8 +365,8 @@ function setupWords(was: { matrix?: MatrixSetup; table?: TableSetup }, now: { ma
       const b = new Set(tableRows(now.table, nowWs.cards).map((r) => r.key))
       const join = [...b].filter((k) => !a.has(k)).length
       const leave = [...a].filter((k) => !b.has(k)).length
-      if (join) out.push(`${join} row${join === 1 ? '' : 's'} join`)
-      if (leave) out.push(`${leave} row${leave === 1 ? '' : 's'} leave`)
+      if (join) out.push(`${plural(join, 'row')} join`)
+      if (leave) out.push(`${plural(leave, 'row')} leave`)
     }
   }
   return out
@@ -414,7 +415,7 @@ function itemsOf(groups: Group[], built: Built[], live: WorkspaceCtx, ids: Ids |
         const lines = lineDiff(notesOf(before as never).text, notesOf(after as never).text)
         const plus = lines.filter((l) => l.sign === '+' && l.text.trim()).length
         const minus = lines.filter((l) => l.sign === '-' && l.text.trim()).length
-        const said = [plus ? `+${plus} line${plus === 1 ? '' : 's'}` : '', minus ? `−${minus} line${minus === 1 ? '' : 's'}` : ''].filter(Boolean).join(' ') || 'the same lines'
+        const said = [plus ? `+${plural(plus, 'line')}` : '', minus ? `−${plural(minus, 'line')}` : ''].filter(Boolean).join(' ') || 'the same lines'
         items.push({ id: s.item, call: g.call, op: s.op, kind: 'notes', label: plan.label, line: `${plan.label}: ${said}`, where: `${NOTES_TITLE} · document`, sign: notesOf(before as never).doc ? '~' : '+', ids: wrote, made, dependsOn, delete: false, diff: lines, ...(s.why ? { why: s.why } : {}) })
         ws = after
         return
@@ -426,7 +427,7 @@ function itemsOf(groups: Group[], built: Built[], live: WorkspaceCtx, ids: Ids |
         const goneIds = new Set(plan.writes.filter((w) => w.del && before.cards.some((c) => c.id === w.id)).map((w) => w.id))
         const gone = before.cards.filter((c) => goneIds.has(c.id))
         const sid = (id: string) => (ids ? `${ids.short('card', id)} ` : '')
-        const name = (c: { id: string; title: string }) => `${sid(c.id)}"${c.title.length > 40 ? `${c.title.slice(0, 39)}…` : c.title}"`
+        const name = (c: { id: string; title: string }) => `${sid(c.id)}"${cut(c.title, 40)}"`
         const moved = (coll: string) => plan.writes.filter((w) => w.coll === coll && w.patch).length
         const n = (k: number, one: string, many = `${one}s`) => (k ? [`${k} ${k === 1 ? one : many}`] : [])
         const what = [...n(moved('edges'), 'link'), ...n(moved('evidence'), 'evidence', 'evidence'), ...n(moved('tasks'), 'task'), ...n(moved('competitorFeatures'), 'competitor feature'), ...n(plan.writes.filter((w) => w.coll === 'places' && w.set).length, 'plane')]
@@ -442,7 +443,7 @@ function itemsOf(groups: Group[], built: Built[], live: WorkspaceCtx, ids: Ids |
         const sum = plan.writes.find((w) => w.coll === 'documents')?.set ?? {}
         const lines: DiffLine[] = text.split('\n').map((t) => ({ sign: '+', text: t }))
         const n = lines.filter((l) => l.text.trim()).length
-        items.push({ id: s.item, call: g.call, op: s.op, kind: 'document', label: plan.label, line: `${plan.label}: ${n} line${n === 1 ? '' : 's'}, ${sum.shared ? 'shared with everyone here' : 'private to you'}`, where: `${String(sum.title ?? 'a document')} · document`, sign: '+', ids: wrote, made, dependsOn, delete: false, diff: lines, doc: { title: String(sum.title ?? 'untitled'), shared: !!sum.shared }, ...(s.why ? { why: s.why } : {}) })
+        items.push({ id: s.item, call: g.call, op: s.op, kind: 'document', label: plan.label, line: `${plan.label}: ${plural(n, 'line')}, ${sum.shared ? 'shared with everyone here' : 'private to you'}`, where: `${String(sum.title ?? 'a document')} · document`, sign: '+', ids: wrote, made, dependsOn, delete: false, diff: lines, doc: { title: String(sum.title ?? 'untitled'), shared: !!sum.shared }, ...(s.why ? { why: s.why } : {}) })
         ws = after
         return
       }
@@ -730,16 +731,15 @@ export function previewDiff(cs: Changeset, live: WorkspaceCtx): Map<string, Prev
 // ---- Accept and discard
 
 // A short summary for the undo line: the calls' summaries, else the items' labels counted (`add a problem, 2 × add a task`).
-export function summaryOf(cs: Changeset): string {
+function summaryOf(cs: Changeset): string {
   const said = cs.groups.flatMap((g) => (g.summary ? [g.summary] : []))
   if (said.length) return cut(said.join('; '), 80)
   const counts = new Map<string, number>()
   for (const i of cs.items) counts.set(i.label, (counts.get(i.label) ?? 0) + 1)
   return cut([...counts].map(([l, n]) => (n > 1 ? `${n} × ${l}` : l)).join(', '), 80) || 'nothing'
 }
-const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s)
 
-export const agentLabel = (cs: Changeset) => `agent: ${summaryOf(cs)}`
+const agentLabel = (cs: Changeset) => `agent: ${summaryOf(cs)}`
 
 // `said`: for the person, in names (a thing's Firestore id never shows). `stale`: the workspace changed since the
 // preview and some changes came off: nothing was written, the preview shows what's left.
@@ -828,13 +828,13 @@ function changedSince(was: Plan[], now: Plan[], ws: WorkspaceCtx): string[] {
 }
 
 // Nothing pending (the counters go on, so ids are never reused in the chat; what the agent made stays known).
-export const cleared = (cs: Changeset): Changeset => ({ ...emptyChangeset(), nextItem: cs.nextItem, nextCall: cs.nextCall, version: cs.version + 1, agentMade: cs.agentMade, ...(cs.auto ? { auto: cs.auto } : {}) })
+const cleared = (cs: Changeset): Changeset => ({ ...emptyChangeset(), nextItem: cs.nextItem, nextCall: cs.nextCall, version: cs.version + 1, agentMade: cs.agentMade, ...(cs.auto ? { auto: cs.auto } : {}) })
 export const discard = cleared
 
 // ---- Auto-apply (agent.md §4.5's last paragraph; off until the person turns it on)
 
 export type AgentSettings = { autoApply?: boolean }
-export const AUTO_APPLY_MAX = 5
+const AUTO_APPLY_MAX = 5
 
 // Whether a batch may skip the preview: the setting on, ≤ 5 changes in this turn (with what it already applied), no
 // delete, and it only touches the agent's own new things (what it makes now, or made earlier in the chat: `agentMade`).

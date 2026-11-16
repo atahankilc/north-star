@@ -9,7 +9,7 @@ import { camOf, useCanvasView } from '../state/canvasView'
 import { onCanvas, P, PAZAR, type OnCanvas } from './canvas'
 import type { StateSpec } from './example'
 
-export function Screen() {
+function Screen() {
   setCanvasHere(MAIN)
   return <CanvasScreen />
 }
@@ -18,7 +18,7 @@ export const screen = (o: OnCanvas = {}): StateSpec => ({ ...onCanvas(o), render
 
 // Pazar on two canvases, as the `canvases` scene has it: Main (the planes, the matrix, the table) and Launch week (the
 // deck, its days and the research).
-export const LAUNCH = 'c-launch'
+const LAUNCH = 'c-launch'
 const ON_LAUNCH = new Set<string>([P.deck, P.days, P.docs])
 export const twoCanvases = (ws: typeof PAZAR): typeof PAZAR => ({
   ...ws,

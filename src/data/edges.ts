@@ -1,18 +1,13 @@
 // Links between cards (D-059, D-207): the old `edges` collection, as before. A link has no plane of its own: a plane
 // draws the links whose two cards are both on it. Every write is one undo step (history.ts).
-import { collection, doc, type DocumentReference } from 'firebase/firestore'
-import { db } from './firebase'
 import type { AnyType } from '../model/cards'
 import { runUi, startUiWith } from '../ops/firestore'
 import { link, unlink, updateLink } from '../ops/edges'
 
 // What a link is lives in src/model/edges.ts, without Firebase (S3).
-export { FOR, defaultKind, linked, edgesOn } from '../model/edges'
+export { FOR, defaultKind } from '../model/edges'
 export type { EdgeKind, Edge } from '../model/edges'
 import { FOR, type Edge, type EdgeKind } from '../model/edges'
-
-const edgesOf = (wid: string) => collection(db(), 'workspaces', wid, 'edges')
-export const edgeRef = (wid: string, id: string): DocumentReference => doc(edgesOf(wid), id)
 
 // Every write is an op (S4, D-312: src/ops/edges.ts) applied as one undo step, with the labels and promises of before.
 

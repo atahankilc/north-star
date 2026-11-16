@@ -20,7 +20,7 @@ export { DEDUPE_MS }
 // The ids the hazard confirm asked about are remembered this long after it closed (its delete is written just after).
 const CONFIRM_MS = 10_000
 // How often the address and the DOM (Settings, menus) are looked at.
-export const POLL_MS = 250
+const POLL_MS = 250
 
 // The events emitted (check:lessons' ratchet reads this list): by this file's watchers, then (the last lines) by the
 // one-line `learn()` hooks in views (O6), the workspaces page and the coach itself.
@@ -130,7 +130,7 @@ const CARD_COLLECTIONS: Record<string, string> = {
 // The filters' fields as the dock names them (SHOW FOR TAG REGION LINKS).
 const FILTER_KINDS: Record<string, string> = { hide: 'show', for: 'for', tags: 'tag', regions: 'region', links: 'links' }
 
-export const textKind = (d: { kind?: unknown; size?: unknown }) => (typeof d.kind === 'string' ? d.kind : d.size === 'note' ? 'paragraph' : 'heading')
+const textKind = (d: { kind?: unknown; size?: unknown }) => (typeof d.kind === 'string' ? d.kind : d.size === 'note' ? 'paragraph' : 'heading')
 
 // On the canvas shown: its own, or shown there too (a shared piece, D-307).
 const onCanvas = (w: WsLike) => w.pieces.filter((p) => canvasOf(p) === w.canvas || !!p.canvases?.includes(w.canvas))

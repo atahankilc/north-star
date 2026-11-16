@@ -16,7 +16,7 @@ import { absent, tracked } from './history'
 import { useDoc, useQuery, type WithId } from './hooks'
 import { deleteLive } from './liveTransport'
 
-export { DOC_KINDS, DOC_COLS, DOC_LIMITS } from '../model/shapes'
+export { DOC_LIMITS } from '../model/shapes'
 export type { DocKind, DocCol } from '../model/shapes'
 import { DOC_LIMITS, type DocCol, type DocKind } from '../model/shapes'
 import { bytesOf, excerptOf, markdownSummary, NOTES_ID, wordsOf } from '../model/notes'
@@ -25,7 +25,7 @@ import { bytesOf, excerptOf, markdownSummary, NOTES_ID, wordsOf } from '../model
 export type DocOrigin = 'upload' | 'assistant'
 
 // The file types a document may be; the same list is in firestore.rules (and storage.rules for files).
-export const DOC_TYPES = ['text/markdown', 'image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'] as const
+const DOC_TYPES = ['text/markdown', 'image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml', 'application/pdf'] as const
 export type DocType = (typeof DOC_TYPES)[number]
 
 // A research report's own kind (D-090, D-091), kept on a moved one.
@@ -87,7 +87,7 @@ export type DocumentsSetup = {
 }
 export const emptyDocuments = (): DocumentsSetup => ({ view: 'table', pageSize: 10 })
 
-export const FILE_MAX_BYTES = 10 * 1024 * 1024
+const FILE_MAX_BYTES = 10 * 1024 * 1024
 
 // Storage needs the Blaze plan (D-083): images and PDFs are taken only on the emulators until it's live.
 const FILES_LIVE = false
@@ -150,8 +150,6 @@ export function typeOfFile(file: { name: string; type: string }): DocType | null
   return (DOC_TYPES as readonly string[]).includes(file.type) ? (file.type as DocType) : null
 }
 
-export const kindOfType = (t: DocType): DocKind => (t === 'text/markdown' ? 'markdown' : t === 'application/pdf' ? 'pdf' : 'image')
-
 // What an upload of these files would refuse, in plain words, before anything is sent; null = fine.
 export function refusal(file: File): string | null {
   const t = typeOfFile(file)
@@ -162,7 +160,7 @@ export function refusal(file: File): string | null {
 }
 
 // A .md's title: its first heading, else the file's name without the extension.
-export function mdTitle(text: string, fileName: string) {
+function mdTitle(text: string, fileName: string) {
   const h = /^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/m.exec(text)
   const base = fileName.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim()
   return (h?.[1] ?? base ?? 'untitled').slice(0, DOC_LIMITS.title) || 'untitled'

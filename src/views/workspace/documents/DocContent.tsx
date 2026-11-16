@@ -12,7 +12,7 @@ import { numText } from '../../../ui/primitives/Rule'
 import { plural } from '../../../model/words'
 
 // Each kind's mark (D-232): a square in its colour and a short name.
-export const KIND_SHORT: Record<DocKind, string> = { markdown: 'md', image: 'img', pdf: 'pdf', report: 'rep' }
+const KIND_SHORT: Record<DocKind, string> = { markdown: 'md', image: 'img', pdf: 'pdf', report: 'rep' }
 
 export function KindMark({ kind }: { kind: DocKind }) {
   return (
@@ -23,7 +23,7 @@ export function KindMark({ kind }: { kind: DocKind }) {
 }
 
 
-export function formatSize(bytes: number) {
+function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`

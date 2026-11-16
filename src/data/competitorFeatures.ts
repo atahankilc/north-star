@@ -6,10 +6,10 @@ import { present, runUi } from '../ops/firestore'
 import { createCompetitorFeature, updateCompetitorFeature as updateFeatureOp } from '../ops/features'
 import { deleteThings, updateCard as updateCardOp } from '../ops/cards'
 
-export { AVAILABILITIES, CRITERION_SCORES } from '../model/shapes'
+export { AVAILABILITIES } from '../model/shapes'
 export type { Availability, CriterionScore } from '../model/shapes'
 import type { Availability, CriterionScore } from '../model/shapes'
-import { comparisonId } from '../model/shapes'
+import { } from '../model/shapes'
 
 export type CompetitorFeature = {
   id: string
@@ -72,5 +72,3 @@ export function dropCriterionScores(wid: string, featureId: string, criterionId:
     { label: 'remove a criterion' },
   )
 }
-
-export const removeComparison = (wid: string, c: Comparison) => runUi(wid, (ctx) => [deleteThings(ctx, { ids: present(ctx, [comparisonId(c.featureId, c.competitorId)]) })], { label: 'unmatch' })

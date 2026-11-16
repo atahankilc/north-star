@@ -9,20 +9,6 @@ import type { WorkspaceCtx } from '../state/wsStore'
 // category, in the building's order (foundations at the bottom, whole screens at the top), and a group inside it.
 export const CATEGORIES = ['foundations', 'motion', 'actions', 'forms', 'text', 'feedback', 'overlays', 'hud', 'panels', 'canvas', 'screens', 'onboarding'] as const
 export type Category = (typeof CATEGORIES)[number]
-export const CATEGORY_NAME: Record<Category, string> = {
-  foundations: 'foundations',
-  motion: 'motion',
-  actions: 'actions',
-  forms: 'forms',
-  text: 'text and labels',
-  feedback: 'feedback',
-  overlays: 'overlays',
-  hud: 'hud and navigation',
-  panels: 'panels',
-  canvas: 'canvas pieces',
-  screens: 'screens',
-  onboarding: 'onboarding',
-}
 // `motion/text`: a category and a group in it.
 export type Place = `${Category}/${string}`
 

@@ -28,13 +28,13 @@ import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Label } from '../../../ui/primitives/Label'
 import { Window } from '../../../ui/patterns/Window'
 import { SplitLine } from '../../../ui/primitives/SplitLine'
-import { people as peopleWord } from '../../../model/words'
+import { people as peopleWord, cut, plural } from '../../../model/words'
 import { MinusIcon, PlusIcon } from '../../../ui/primitives/hudIcons'
 
 // The margin round its text, in its px.
 const PAD = WORLD.docPad
 // Its text's width in a window of width `w`: the window's, less the margins.
-export const docWidth = (w: number) => Math.max(240, w - 2 - 2 * PAD)
+const docWidth = (w: number) => Math.max(240, w - 2 - 2 * PAD)
 // How tall each document piece's text came out, measured as it's drawn: what fit frames (its first screen).
 const useHeights = create<Record<string, number>>(() => ({}))
 const FIRST_SCREEN = 640
@@ -394,7 +394,7 @@ export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlacePro
   const h = 500 * zoom
   const spot = placing.at && toScreen ? toScreen(placing.at[0] - 325, placing.at[1] - 250) : null
   const rect: ScreenRect | null = spot ? { x: spot[0], y: spot[1], w, h, zoom } : null
-  const people = `${peopleWord(members.total)}${members.editors || members.viewers ? ` (${[members.editors && `${members.editors} editor${members.editors === 1 ? '' : 's'}`, members.viewers && `${members.viewers} viewer${members.viewers === 1 ? '' : 's'}`].filter(Boolean).join(', ')})` : ''}`
+  const people = `${peopleWord(members.total)}${members.editors || members.viewers ? ` (${[members.editors && `${plural(members.editors, 'editor')}`, members.viewers && `${plural(members.viewers, 'viewer')}`].filter(Boolean).join(', ')})` : ''}`
   return (
     <div className={styles.placeLayer} onPointerDown={(e) => e.stopPropagation()}>
       {rect && (
@@ -418,7 +418,7 @@ export function DocPlace({ toScreen, zoom, others, members, onPlaced }: PlacePro
       >
         <span className={styles.tape} aria-hidden />
         <p className={styles.askKicker}>only you see this</p>
-        <p className={styles.askTitle}>Show "{d.title.length > 60 ? `${d.title.slice(0, 59)}…` : d.title}" to everyone?</p>
+        <p className={styles.askTitle}>Show "{cut(d.title, 60)}" to everyone?</p>
         <p className={styles.askLines}>Putting it on the canvas shares it with the workspace: {people}. You can unshare it later from the documents list.</p>
         <ButtonGroup>
           <Button onClick={cancel}>

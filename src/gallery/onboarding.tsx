@@ -2,7 +2,7 @@
 // made-up data, as src/onboarding/devMount.tsx and devGuides.tsx force them in the app. Nothing reaches Firestore: the
 // seen-state (useProgress) is never started here (no `startFor`), only reset and, for a state that needs it, patched.
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { create } from 'zustand'
+import { } from 'zustand'
 import { PromptPanel } from '../ui/patterns/PromptPanel'
 import type { PromptEntry } from '../ui/foundation/promptModel'
 import { useProgress } from '../onboarding/progress'
@@ -47,14 +47,6 @@ export function shown(id: string, o: { via?: 'event' | 'play'; done?: boolean; r
     since: Date.now(),
     ...(o.done ? { doneAt: Date.now() } : {}),
   }
-}
-
-// Shown once the example's setup says so (a lesson placed by an anchor needs the anchor drawn first).
-export const useShowNow = create<{ on: boolean }>(() => ({ on: false }))
-export function WhenReady({ children }: { children: ReactNode }) {
-  const on = useShowNow((s) => s.on)
-  useLayoutEffect(() => () => useShowNow.setState({ on: false }), [])
-  return on ? <>{children}</> : null
 }
 
 // The kind guide beside a `+` menu (devGuides.kind's): a prompt with the guide's rows, the row under the keys or the

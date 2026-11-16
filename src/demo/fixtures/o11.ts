@@ -8,7 +8,7 @@ import { useMatrixUi } from '../../views/workspace/matrix/Matrix'
 import { useTableUi } from '../../views/workspace/table/Table'
 import { useCanvasView } from '../../state/canvasView'
 import { isReducedMotion } from '../../state/motion'
-import { CHIP_MS, key, run, type Action, type Ctx } from '../director'
+import { run, type Action, type Ctx } from '../director'
 import { base } from './kit'
 import { P } from './pazar'
 
@@ -58,7 +58,6 @@ export const openWizard = (which: 'matrix' | 'table'): Action =>
 // ——— the matrix in focus ———
 
 export const MATRIX = P.matrix
-export const matrixPiece = base.pieces.find((p) => p.id === MATRIX)!
 export const matrixRoute = `/workspaces/${base.wid}?focus=${MATRIX}`
 // Pazar with its matrix's setup changed (fewer columns, criteria unfolding, …).
 export const withMatrix = (change: (m: MatrixSetup) => MatrixSetup, cells: Cell[] = base.cells) => ({
@@ -89,14 +88,6 @@ export const pieceSet = (id: string, change: (p: WithId<Piece>) => WithId<Piece>
     c.store.tell()
   },
 })
-
-// `→` / `←` pressed, its chip shown (the director's keys know `↑` `↓` but not these: the real key sent by its name,
-// then the chip; the chip's own key event, `→`, means nothing to the app).
-export const arrow = (dir: '→' | '←'): Action => {
-  const real = key(dir === '→' ? 'ArrowRight' : 'ArrowLeft', 0)
-  const chip = key(dir, CHIP_MS)
-  return { what: `key ${dir}`, ms: 0, start: (c) => (real.start?.(c), chip.start?.(c)) }
-}
 
 // ——— the focused piece's view, gliding ———
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)

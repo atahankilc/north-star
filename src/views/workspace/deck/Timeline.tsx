@@ -58,7 +58,7 @@ export const T = STRIP_PX
 const TOP = T.over + 8 + T.head
 
 // Its scales: px a day.
-export const STRIP_SCALES = [
+const STRIP_SCALES = [
   { name: 'day', ppd: 150 },
   { name: 'week', ppd: 48 },
   { name: 'month', ppd: 18 },

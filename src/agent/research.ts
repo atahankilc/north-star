@@ -5,6 +5,7 @@
 // tokens and searches count in the turn's usage, their pages in its sources. Pure: no React, no Firebase.
 import { joinSources, toolDef, type AgentModel, type AgentTool, type ModelRequest, type ModelResponse, type Source, type Usage, type WebUse, addUsage, NO_USAGE } from './contract'
 import { RESEARCHERS, RESEARCH_QUESTIONS, RESEARCH_SEARCHES, siteOf } from './web'
+import { cut as cutTo, kept as cut, plural } from '../model/words'
 
 // What a researcher is told. Short: it answers one question and nothing else.
 export const RESEARCHER_PROMPT = [
@@ -16,13 +17,12 @@ export const RESEARCHER_PROMPT = [
   'No greeting, no restating the question, no advice beyond what the question asks.',
 ].join('\n')
 
-export const CONTEXT_MAX = 600
-export const QUESTION_MAX = 300
+const CONTEXT_MAX = 600
+const QUESTION_MAX = 300
 // A researcher's answer as the agent reads it (a document needs the facts, not pages of text), and its pages listed.
 const FINDING_MAX = 8000
 const PAGES_SHOWN = 20
 
-const cut = (s: unknown, n: number) => (typeof s === 'string' ? s.replace(/\s+/g, ' ').trim().slice(0, n) : '')
 
 export type Found = { question: string; text: string; sources: Source[]; queries?: string[]; usage: Usage; error?: string }
 
@@ -37,7 +37,7 @@ async function once(model: AgentModel, req: ModelRequest, onSearch: (q: string) 
 }
 
 // One researcher: the context and the question, the web on, no tools.
-export async function researchOne(model: AgentModel, question: string, context: string, o: { signal?: AbortSignal; onSearch?: (q: string) => void } = {}): Promise<Found> {
+async function researchOne(model: AgentModel, question: string, context: string, o: { signal?: AbortSignal; onSearch?: (q: string) => void } = {}): Promise<Found> {
   const req: ModelRequest = {
     messages: [
       { role: 'system', content: RESEARCHER_PROMPT },
@@ -61,7 +61,7 @@ export async function researchOne(model: AgentModel, question: string, context: 
 
 // A gate of `n` places: researchers of calls running together (two `research` calls in one step) wait in turn.
 export type Gate = { take: () => Promise<() => void> }
-export function gate(n: number): Gate {
+function gate(n: number): Gate {
   let free = n
   const queue: (() => void)[] = []
   const give = () => {
@@ -106,12 +106,12 @@ export function foundText(found: Found[]): string {
   const parts = found.map((f, i) => {
     const head = `## Q${i + 1}. ${f.question}`
     if (f.error) return `${head}\nNot researched: ${f.error}. Say so in the document; don't fill it from memory.`
-    const text = f.text.length > FINDING_MAX ? `${f.text.slice(0, FINDING_MAX - 1)}…` : f.text || '(the researcher found nothing to say)'
+    const text = cutTo(f.text, FINDING_MAX) || '(the researcher found nothing to say)'
     const pages = f.sources.slice(0, PAGES_SHOWN).map((s) => `- [${cut(s.title, 120) || siteOf(s.url)}](${s.url})${s.cited ? '' : ' (read, not cited)'}`)
     return [head, text, ...(pages.length ? ['Pages:', ...pages] : ['Pages: none'])].join('\n')
   })
   return [
-    `Research done: ${found.length} question${found.length === 1 ? '' : 's'}. Where a question is still open and the web may say more, research it again with sharper questions first. Then write it up as the /research guide says: every fact with its link from the findings, nothing added from memory.`,
+    `Research done: ${plural(found.length, 'question')}. Where a question is still open and the web may say more, research it again with sharper questions first. Then write it up as the /research guide says: every fact with its link from the findings, nothing added from memory.`,
     ...parts,
   ].join('\n\n')
 }

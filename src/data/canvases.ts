@@ -2,7 +2,7 @@
 // or a second is made), more for whoever wants them: a marketing canvas, an engineering one. Pieces and the canvas's
 // own text say which they're on (`canvasId`, missing = `main`); text on a plane goes where its plane goes. Cards, links,
 // tasks and documents stay the workspace's, so a card can be on planes on different canvases.
-import { collection, doc } from 'firebase/firestore'
+import { doc } from 'firebase/firestore'
 import { db } from './firebase'
 import type { Label } from './labels'
 import type { WithId } from './hooks'
@@ -14,12 +14,9 @@ import { deleteAny } from '../ops/delete'
 
 // The names, the implied first canvas and the list in order live in src/model/canvases.ts, without Firebase (S3).
 // What a canvas holds, what goes with it and with a move (S6) too.
-export { MAIN, CANVAS_NAME_MAX, MAIN_NAME, canvasOf, canvasList, onCanvas, canvasTextOn, canvasesOf, withStuck, canvasGoes } from '../model/canvases'
+export { MAIN, CANVAS_NAME_MAX, canvasOf, onCanvas, canvasTextOn, withStuck, canvasGoes } from '../model/canvases'
 export type { Canvas, Spot, CanvasContent } from '../model/canvases'
 import { MAIN, canvasOf, canvasesOf, onCanvas, spotId, type Canvas, type CanvasContent, type Spot } from '../model/canvases'
-
-const col = (wid: string) => collection(db(), 'workspaces', wid, 'canvases')
-export const canvasRef = (wid: string, id: string) => doc(col(wid), id)
 
 
 // ---- One piece on several canvases (D-302's session 3): its home is its own `canvasId` and x/y; every other canvas it's
@@ -48,18 +45,12 @@ export function piecesOn(canvas: string, pieces: WithId<Piece>[], spots: Spot[])
   return out
 }
 
-
-// The canvas shown's pieces as drawn (CanvasView sets them): those through a spot have their moves written to it
-// (pieces.ts' placeAll, a section's carry), and all of them are what's in a new piece's way there (nearClear).
-let throughSpot = new Set<string>()
+// The canvas shown's pieces as drawn (CanvasView sets them): what's in a new piece's way there (nearClear).
 let drawn: (Box & { id: string })[] | null = null
 export function setShownHere(shown: (Box & { id: string; spot?: string })[]) {
   drawn = shown
-  throughSpot = new Set(shown.filter((p) => p.spot).map((p) => p.id))
 }
 export const shownHere = () => drawn
-export const spotted = (id: string) => throughSpot.has(id)
-export const posRef = (wid: string, id: string) => (throughSpot.has(id) ? spotRef(wid, here, id) : doc(db(), 'workspaces', wid, 'pieces', id))
 
 // The canvas new things go on: the one shown, set by the workspace's layout. A piece or the canvas's text made there
 // carries it; on `main` nothing (old workspaces keep their shape).

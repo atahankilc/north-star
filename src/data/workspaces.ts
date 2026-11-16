@@ -26,17 +26,17 @@ import { inBatches } from './batches'
 export { DESCRIPTION_MAX }
 
 // No 0/O/1/I/L: codes get read aloud and typed by hand.
-export const INVITE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+const INVITE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 const ALPHABET = INVITE_ALPHABET
 // What could be a code as typed: four and four of its letters, the dash optional (normalizeInviteCode drops it).
 export const INVITE_CODE_TYPED = new RegExp(`^[${INVITE_ALPHABET}]{4}-?[${INVITE_ALPHABET}]{4}$`, 'i')
 
-export function newInviteCode(length = 8): string {
+function newInviteCode(length = 8): string {
   const bytes = crypto.getRandomValues(new Uint8Array(length))
   return Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join('')
 }
 
-export function normalizeInviteCode(input: string): string {
+function normalizeInviteCode(input: string): string {
   return input.toUpperCase().replace(/[^A-Z0-9]/g, '')
 }
 

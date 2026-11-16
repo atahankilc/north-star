@@ -4,7 +4,7 @@
 // without breaking a word, the star beside its first line; the block shrinks to it.
 import { TITLE_PX } from '../../../model/world'
 export const T = TITLE_PX // its sizes: model/world.ts (D-325)
-export const NAME_TRACK = -0.045
+const NAME_TRACK = -0.045
 // What the description says until someone writes it (editors only).
 export const ABOUT_HINT = "What are you building? Double-click to write it."
 // The description is set this much of the block's text width.
