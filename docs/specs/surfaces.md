@@ -64,8 +64,10 @@ HUD's tools stay down on the ground**.
 
 - **The tools on the left edge don't move** (the side nav, who's here, the threads button, you, the gear). The sheet
   draws back off them, `--sheet-rail-w` (60 px: their strip and its margins), so they're on a rail of ground beside it.
-  The HUD paints that ground itself, under its tools (`.rail`); the ground layer is cut there, and the cut travels
-  with the sheet's edge so its corners stay round on the way. The rim casts no shadow to its left (it would dim them).
+  The HUD paints that ground itself, under its tools (`.rail`); the ground layer is cut there, and the rail
+  paints what that layer would in its strip, the same way: the sheet's own box in it (its edge, its gap above and
+  below, its round corners, its time and ease), the ground's colour outside. A plain block up to the sheet's left edge
+  let the canvas show past the sheet's line on the way (fixed 2026-11-17). The rim casts no shadow to its left (it would dim them).
 - **The breadcrumb rides the sheet** (it can't fit on the rail): the bar's box is the sheet's.
 - The threads dock stands clear of the sheet's round corner while it's lifted (`--sheet-round`).
 - A column docked on the left covers the tools as before: no rail then.

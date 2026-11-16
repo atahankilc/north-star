@@ -67,22 +67,37 @@ a.link:hover {
   text-overflow: ellipsis;
 }
 
-/* The ground under the tools on the left edge while a column is docked (D-389), under the tools, over the canvas. Its
-   edge is the sheet's own edge on its way (`--sheet-x0`, the sheet's time and ease), and stops at the rail's width
-   (`--sheet-cut`: the rail while the tools stand on it, kept until the sheet is home; 0 when a column covers them). A
-   width of its own, growing to 60 while the sheet's edge went on to a column's far side, left the canvas showing
-   between the two for most of the way. */
+/* The ground under the tools on the left edge while a column is docked (D-389), under the tools, over the canvas: the
+   strip the ground layer leaves out (`--sheet-cut`: the rail while the tools stand on it, kept until the sheet is
+   home; 0 when a column covers them). It paints what that layer would there, the same way (Sheet.module.css `.hole`):
+   the sheet's own box in it, with the sheet's time and ease, and the ground's colour on everything outside that box.
+   A plain block up to the sheet's left edge left the canvas showing past the sheet's line on the way, above it, under
+   it and outside its round corners, until the edge reached the rail's width. */
 .rail {
   position: fixed;
   top: 0;
   bottom: 0;
   left: 0;
   z-index: var(--z-under);
-  width: var(--sheet-x0, 0px);
-  max-width: var(--sheet-cut, 0px);
-  background: var(--ground);
+  width: var(--sheet-cut, 0px);
+  overflow: clip;
   pointer-events: none;
-  transition: width var(--dur-slow) var(--ease-out);
+}
+
+.rail::before {
+  content: '';
+  position: absolute;
+  top: var(--sheet-b, 0px);
+  bottom: var(--sheet-b, 0px);
+  left: var(--sheet-x0, 0px);
+  width: 100vw;
+  border-radius: var(--sheet-round, 0px);
+  box-shadow: 0 0 0 100vmax var(--ground);
+  transition:
+    top var(--dur-slow) var(--ease-out),
+    bottom var(--dur-slow) var(--ease-out),
+    left var(--dur-slow) var(--ease-out),
+    border-radius var(--dur-slow) var(--ease-out);
 }
 
 /* The side nav's tools (D-176, D-178): middle of the left edge, level with the corner below it. */
