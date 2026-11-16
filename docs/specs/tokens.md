@@ -147,7 +147,7 @@ up" may need to give way to "round down" in dense lists (kanban sheets, the tabl
   `--menu-w` (sm), `--menu-max-w` (md), `--confirm-w` (lg), `--name-max-w` (xs). Kept as their own: `--panel-w` 400
   (D-219), `--menu-h` 460, `--list-h` 320, `--modal-w` 960 / `--modal-h` 720 / `--modal-nav-w` 216,
   `--page-w` 1100, `--measure` 760. Small labels' and columns' widths are in `ch` (10ch–13ch).
-- **Marks on edges:** `--corner-mark` 7 (the magenta L's on panel, console and dock corners), `--lead` 12 (a numbered
+- **Marks on edges:** `--lead` 12 (a numbered
   rule's magenta lead), `--underline-offset` 3 (2–4).
 - **Surfaces' corners** (D-387, [surfaces.md](surfaces.md)): `--radius-window` 24 px (a modal, the hazard box, the main
   screen as a sheet), `--radius-menu` 16 px (a menu's frame, a popover), `--radius-box` 14 px (a tab's top corners, a box

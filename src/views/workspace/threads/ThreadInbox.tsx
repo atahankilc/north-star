@@ -1,58 +1,30 @@
-// The threads panel (D-166): every conversation in the workspace in one place, opened from the board's bottom-left
-// corner. Like the assistant's chat window: a header with views as tabs (all · new · mentions · resolved, D-344),
-// then one row per thread, newest first: what it's on, who wrote last and how it began, when, how many messages, and
-// the plane it's on when that isn't the open one (D-168: going there switches to it); new
-// ones (someone else wrote since you last read it) lit magenta, `@` where you're mentioned. A row opens the thread
-// beside the list (D-197). The two halves work apart (D-199): a chip on the canvas opens only its thread, `all threads`
-// there opens the list beside it; closing the list closes both, closing the thread leaves the list. The tab, and each
-// half on its own, builds up cell by cell as it opens and breaks apart as it closes (D-034, D-035), like everything else.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+// The threads (D-166): every conversation in the workspace in one place, opened from the threads tab on the screen's
+// foot. Two columns on the ground under the main screen (D-392, EdgeColumn, foundation/sheet.ts): the list on the left,
+// beside the HUD's rail (people and what they say are the left's); the conversation on the right, where a thing's panel
+// is (it's about a thing). The list: a header with views as tabs (all · new · mentions · resolved, D-344), then one row
+// per thread, newest first: what it's on, who wrote last and how it began, when, how many messages, and the plane it's
+// on when that isn't the open one (D-168: going there switches to it); new ones (someone else wrote since you last read
+// it) lit magenta, `@` where you're mentioned. The two work apart (D-199): a chip on the canvas opens only its
+// conversation, `all threads` there opens the list; closing the list leaves the conversation, and the other way round.
+// Each builds up cell by cell as it opens and breaks apart as it closes (EdgeColumn's Appear, D-034, D-035).
+import { useMemo, useState } from 'react'
+import { AnimatePresence } from 'motion/react'
 import type { WithId } from '../../../data/hooks'
 import type { Thread } from '../../../data/model'
-import { isNew, markSeen, useReads, type NewThread } from '../../../data/threads'
-import { isReducedMotion } from '../../../state/motion'
+import { isNew, markSeen, useReads } from '../../../data/threads'
 import { ago } from '../../../ui/foundation/ago'
-import { runCells } from '../../../ui/primitives/Appear'
-import { DURATION_MS, CELLS_SHUT } from '../../../ui/foundation/cellReveal'
-import { CommentIcon, myUid, ThreadPanel, toggleInbox, useThreadView } from './Threads'
+import { closeThread, CommentIcon, myUid, ThreadPanel, toggleInbox, useThreadView } from './Threads'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Tabs } from '../../../ui/primitives/Tabs'
-import { ResizeEdge } from '../../../ui/primitives/ResizeEdge'
-import { useEscapeLayer } from '../../../ui/foundation/useEscapeLayer'
+import { EdgeColumn } from '../../../ui/patterns/EdgeColumn'
+import { SHEET_MIN_PX } from '../../../ui/foundation/feel'
+import { useWindowWidth } from '../../../ui/foundation/useWindowWidth'
+import { tokenPx } from '../../../styles/cssToken'
 import styles from './Threads.module.css'
-import { keepLocal, readLocal } from '../../../state/local'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 type View = 'all' | 'new' | 'mentions' | 'resolved'
-type Convo = { thread: WithId<Thread> | null; draft: NewThread | null }
-
-// The panel's height, dragged from its top edge (D-197): kept per browser; never under MIN_H, never over the breadcrumb.
-const HEIGHT_KEY = 'north-star.threads-height'
-const MIN_H = 220
-const HEAD_ROOM = 64
-// Breaking apart takes 0.6 of the build-up, as `Appear`'s exit; what's leaving is kept a little past it.
-const OUT_MS = Math.round(DURATION_MS * 0.6)
-const KEEP_MS = OUT_MS + 40
-const HIDDEN = CELLS_SHUT
-
-// A value kept for `ms` after it goes, so what's leaving is still drawn while it animates out.
-function useLinger<T>(value: T | null, ms: number): [T | null, boolean] {
-  const kept = useRef(value)
-  const [, redraw] = useState(0)
-  const on = value !== null
-  if (on) kept.current = value
-  useEffect(() => {
-    if (on || kept.current === null) return
-    const t = setTimeout(() => {
-      kept.current = null
-      redraw((n) => n + 1)
-    }, isReducedMotion() ? 0 : ms)
-    return () => clearTimeout(t)
-  }, [on, ms])
-  return on ? [value, false] : [kept.current, kept.current !== null]
-}
-
 // The threads panel's scope for the canvas shown (D-302's session 4), beside a plane's id (D-193).
 const THIS_CANVAS = '#canvas'
 
@@ -93,53 +65,14 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
   const openId = useThreadView((s) => s.openId)
   const draft = useThreadView((s) => s.draft)
   const current = all.find((t) => t.id === openId) ?? null
-  // What's open now; while the tab sinks away, what was open, so nothing in it changes as it goes; and while the thread
-  // half folds shut, the thread it showed.
-  const convoNow = useMemo<Convo | null>(() => (current ? { thread: current, draft: null } : draft ? { thread: null, draft } : null), [current, draft])
-  const now = useMemo(() => (listOpen || convoNow ? { list: listOpen, convo: convoNow } : null), [listOpen, convoNow])
-  const [shown, leaving] = useLinger(now, KEEP_MS)
-  const [convo, convoLeaving] = useLinger(shown?.convo ?? null, KEEP_MS)
-  const open = !!shown?.list
-
-  // The cells (D-034, D-035): the tab builds as it opens and breaks apart as it shuts; a half opening beside the other
-  // builds on its own (a thread again when another is picked), and breaks apart as it closes.
-  const tab = useRef<HTMLElement>(null)
-  const listEl = useRef<HTMLDivElement>(null)
-  const convoEl = useRef<HTMLDivElement>(null)
-  const convoKey = convo ? (convo.thread?.id ?? 'draft') : null
-  const was = useRef({ tab: false, leaving: false, list: false, convo: null as string | null, convoLeaving: false })
-  const running = useRef(new Map<HTMLElement, () => void>())
-  useLayoutEffect(() => {
-    const cells = (el: HTMLElement | null, mode: 'enter' | 'exit') => {
-      if (!el) return
-      running.current.get(el)?.()
-      if (mode === 'enter' && !isReducedMotion()) el.style.clipPath = HIDDEN
-      running.current.set(el, runCells(el, mode, 0, mode === 'enter' ? DURATION_MS : OUT_MS))
-    }
-    const prev = was.current
-    if (shown && (!prev.tab || (prev.leaving && !leaving))) cells(tab.current, 'enter')
-    else if (leaving && !prev.leaving) cells(tab.current, 'exit')
-    else if (shown && !leaving) {
-      if (open && !prev.list) cells(listEl.current, 'enter')
-      if (convoKey && !convoLeaving && (convoKey !== prev.convo || prev.convoLeaving)) cells(convoEl.current, 'enter')
-      if (convoLeaving && !prev.convoLeaving) cells(convoEl.current, 'exit')
-    }
-    was.current = { tab: !!shown, leaving, list: open, convo: convoKey, convoLeaving }
-  })
-  useEffect(() => () => running.current.forEach((stop) => stop()), [])
+  const convo = current ? { thread: current, draft: null } : draft ? { thread: null, draft } : null
+  // A window too narrow for the list, the main screen and a conversation: the list gives way while one is open, and
+  // the conversation's `all threads` brings it back by closing itself (D-393).
+  const narrow = useWindowWidth() < tokenPx('--sheet-rail-w') + tokenPx('--size-md') + tokenPx('--panel-w') + SHEET_MIN_PX
+  const listShown = listOpen && !(narrow && convo)
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
   const [view, setView] = useState<View>('all')
-  const [height, setHeight] = useState<number | null>(() => {
-    const v = Number(readLocal(HEIGHT_KEY))
-    return v >= MIN_H ? v : null
-  })
-
-  // Escape closes it, unless a thread is open (that closes first): the one Escape stack (D-359).
-  useEscapeLayer(() => toggleInbox(false), { on: listOpen && !openId && !draft, root: tab })
-  // Where a drag of the top edge started (below).
-  const drag = useRef({ y: 0, h: 0, room: 0, to: 0 })
-
   const sorted = useMemo(() => [...threads].sort((a, b) => b.lastAt - a.lastAt), [threads])
   const fresh = (t: WithId<Thread>) => isNew(t, seen, t.id, me)
   const mentioned = (t: WithId<Thread>) => !!t.mentions?.includes(me)
@@ -154,39 +87,25 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
   )
   const markAll = () => sorted.filter(fresh).forEach((t) => void markSeen(wid, t.id, t.lastAt))
 
-  if (!shown) return null
-  // Dragging the top edge: taller up, shorter down; between MIN_H and the space under the breadcrumb (D-197).
-  const startResize = (e: React.PointerEvent<HTMLElement>) => {
-    const box = tab.current?.getBoundingClientRect()
-    const room = (tab.current?.closest('[data-app]') as HTMLElement | null)?.clientHeight ?? window.innerHeight
-    drag.current = { y: e.clientY, h: box?.height ?? MIN_H, room, to: box?.height ?? MIN_H }
-  }
-  const resize = (e: PointerEvent) => {
-    const d = drag.current
-    d.to = Math.round(Math.min(d.room - HEAD_ROOM, Math.max(MIN_H, d.h + d.y - e.clientY)))
-    setHeight(d.to)
-  }
-  const keepHeight = () => keepLocal(HEIGHT_KEY, String(drag.current.to))
   return (
-    <section
-      ref={tab}
-      className={styles.inbox}
-      aria-label="Threads"
-      data-learn="threads"
-      data-off-space
-      data-list={open || undefined}
-      data-convo={convo ? true : undefined}
-      data-leaving={leaving || undefined}
-      style={height ? { height } : undefined}
-      data-viewer-ok
-      onPointerDown={(e) => e.stopPropagation()}
-      onWheel={(e) => e.stopPropagation()}
-      onKeyDown={(e) => e.stopPropagation()}
-    >
-      {/* Its top edge sets its height (D-197), kept in this browser. */}
-      <ResizeEdge edge="top" label="The threads' height" onStart={startResize} onDrag={resize} onEnd={keepHeight} />
-      <div className={styles.listSide} inert={!open || undefined}>
-      <div ref={listEl} className={styles.listInner}>
+    <>
+      <AnimatePresence>
+        {listShown && (
+          <EdgeColumn
+            key="list"
+            side="left"
+            // Beside the HUD's tools, which keep their rail of ground (D-389).
+            offset="var(--sheet-rail-w)"
+            width="var(--threads-list-w)"
+            label="Threads"
+            // Escape closes it, unless a conversation is open (that closes first): the one Escape stack (D-359).
+            onClose={() => toggleInbox(false)}
+            escape={!openId && !draft}
+            className={styles.list}
+            data-learn="threads"
+            data-off-space
+            data-viewer-ok
+          >
       <header className={styles.head}>
         <span className={styles.title}>threads</span>
         <ButtonGroup className={styles.actions}>
@@ -282,13 +201,14 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
           </li>
         ))}
       </ol>
-      </div>
-      </div>
-      {/* The conversation picked on the left or from a chip, or one being started (D-197, D-199); with none, the tab is
-          just the list. */}
-      <div className={styles.convoSide} inert={!shown.convo || undefined}>
+          </EdgeColumn>
+        )}
+      </AnimatePresence>
+      {/* The conversation picked in the list or from a chip, or one being started (D-197, D-199): on the right, where a
+          thing's panel is; over that panel while it's open, and closing it shows the panel again. */}
+      <AnimatePresence>
         {convo && (
-          <div ref={convoEl} className={styles.convoInner}>
+          <EdgeColumn key="convo" label={`Thread: ${titleOf(convo.thread ?? convo.draft!)}`} escape={false} className={styles.convo} data-learn="thread-column" data-off-space data-viewer-ok>
             <ThreadPanel
               key={convo.thread?.id ?? 'draft'}
               wid={wid}
@@ -298,11 +218,11 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, onGo, whereOf,
               isOwner={isOwner}
               where={convo.thread ? (whereOf?.(convo.thread) ?? undefined) : undefined}
               onShow={convo.thread ? () => onShow(convo.thread!) : undefined}
-              onList={open ? undefined : () => toggleInbox(true)}
+              onList={listShown ? undefined : () => (toggleInbox(true), narrow && closeThread())}
             />
-          </div>
+          </EdgeColumn>
         )}
-      </div>
-    </section>
+      </AnimatePresence>
+    </>
   )
 }

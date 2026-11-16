@@ -128,9 +128,12 @@ feature comes back as a piece, and check them with the user then.
   under the main screen, which lifts as a round sheet and draws back for it (`foundation/sheet.ts`; closed, the screen
   fills the window). A console on a piece keeps its L's. `check:kit` refuses a corner L drawn by hand (`cornerMark`). While a
   column is docked the HUD's tools on the left edge stay where they are, on a rail of ground the sheet draws back off;
-  the breadcrumb rides the sheet (D-389). The agent closed is a tab on the sheet's foot, bottom right (D-389).
+  the breadcrumb rides the sheet (D-389). The agent closed is a tab on the sheet's foot, bottom right (D-389). The foot has three tabs of one
+  family (D-393): the threads on the left, the dock, the agent on the right. A console off the foot (a piece's, a
+  selection's bar) is a pill with a line, a gap under its piece; no corner L's are left (`--corner-mark` gone). The threads
+  lie on the ground: the list a column on the left beside the HUD's rail, a conversation a column on the right (D-393).
 - HUD (D-027): the breadcrumb top left, fixed margins; the rest becomes a left side nav. Bottom left, top to bottom:
-  people here, threads button, a rule, your square, the gear, `--space-3` from the edges, other bottom-left tools
+  people here, a rule, your square, the gear (the threads are a tab on the foot, D-393), `--space-3` from the edges, other bottom-left tools
   `--corner-h` above (D-175, D-193). The side nav's tools at the middle of the left edge, bare icons (D-384); its `+` a drawn
   20 px magenta `+`, its menu opening right (D-178).
 - Menus, pickers and right-click are a **prompt** (D-222; an empty heading is a plain rule, D-291), one set of parts
@@ -144,9 +147,9 @@ feature comes back as a piece, and check them with the user then.
     on top; inside a framed piece `--bg`/`--bg-raised`/`--grid-mark` map to that surface. In focus, beside it and
     unframed the page's black (`--bg`), what's held still `--piece-card`.
   - Console (D-264, D-275, D-347): one `Console` for every console, dock and bar; a rail (who · nouns · tools · go
-    last), a noun's drawer its upper floor; on the canvas cut into the piece's bottom edge, in focus and panes on the
-    screen's foot; past 70 % of its edge (its open drawer counted) it takes the whole edge and wraps, the drawer spanning it too (D-354); no size in edit mode; on a piece marks (faint L's,
-    cyan when pointed at) on its corners, no edge line, the selection bars too; on the screen's foot a tab with a line (D-387). Shown only while pointed at
+    last), a noun's drawer its upper floor; on the canvas a pill under the piece's bottom edge (D-393), in focus and panes on the
+    screen's foot; past 70 % of its edge (its open drawer counted) it takes the whole edge and wraps, the drawer spanning it too (D-354); no size in edit mode; off the foot a pill with a line (faint,
+    cyan when pointed at), a gap under its piece, the selection bars too (D-393); on the screen's foot a tab with a line (D-387). Shown only while pointed at
     (cells in 170 / out 90 ms), in edit mode, with its setup open or the keyboard in it; fresh comments keep a small
     tab; its cells as tall as the piece's name's row (`--cs`, D-370); on touch a first tap shows it, a second focuses.
   - `Marks` (D-265, D-270, D-272; `src/ui/primitives/Marks.tsx`) on everything selectable: three tiers in screen px (a step down
@@ -376,9 +379,9 @@ feature comes back as a piece, and check them with the user then.
 - Comments on components only (D-192, D-193, D-195): right-click a plane, card, text, link or task → `comment`; one open
   conversation per component; its chip under its bottom-right corner (mark + count, magenta new, `@` mention); a plane's
   own chip apart from what's inside it (`[💬 N inside]` on its console). Threads keep their space (`planeId`).
-- Threads panel (D-197, D-199, D-220): one wide tab on the bottom edge, right of the corner's buttons; the list and the
-  thread are two halves, each building and breaking cell by cell; a chip opens only the thread, `[all threads]` the
-  list; it says what it shows (`whole workspace` or `inside "<plane>"`); `[on the canvas ↗]` goes there. Its preview always
+- Threads (D-197, D-199, D-220; D-393): the threads tab on the foot's left opens the list, a column on the left ground
+  beside the HUD's rail; a chip or a row opens the conversation, a column on the right ground; each works alone, building and
+  breaking cell by cell; a narrow window drops the list while a conversation is open. It says what it shows (`whole workspace` or `inside "<plane>"`); `[on the canvas ↗]` goes there. Its preview always
   the newest message left, an edit changing it too; the thread deleted by its starter or the last message's writer (D-356).
 
 ## Agent (planned, docs/specs/agent.md)

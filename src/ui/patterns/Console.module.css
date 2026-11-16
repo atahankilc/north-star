@@ -2,14 +2,11 @@
    factor inside the zoomed canvas (D-264). Its own look in `:where()`, so a caller's class (a bar's place) always wins
    (D-334). */
 :where(.console) {
-  /* Its marks' colour: faint at rest, cyan while pointed at or in edit mode; `--mkt`/`--mkb` its top and bottom pair. */
+  /* Its line's colour: faint at rest, cyan while pointed at or in edit mode. */
   --mk: var(--fg-faint);
-  --mkt: var(--mk);
-  --mkb: var(--mk);
   /* Its Buttons at the console's own scale, shrinking with it too (D-370): `--cs` under 1 when the canvas is close. */
   --button-h: 2em;
   --button-pad: calc(var(--space-3) * var(--cs, 1));
-  --mark-len: calc(var(--corner-mark) * var(--cs, 1));
   --mark-w: calc(var(--line-w) * var(--cs, 1));
   /* Its ButtonGroups' gap, scaled like everything in it: the same on the screen at any zoom (D-344, D-384). */
   --seam: calc(var(--space-half) * var(--cs, 1));
@@ -47,28 +44,32 @@
   height: 1em;
 }
 
-/* The L's: on its four corners, a hair outside them. */
-.console::before {
-  content: '';
-  position: absolute;
-  inset: calc(-1 * var(--space-1) * var(--cs, 1));
-  pointer-events: none;
-  background:
-    linear-gradient(var(--mkt), var(--mkt)) left top / var(--mark-len) var(--mark-w) no-repeat,
-    linear-gradient(var(--mkt), var(--mkt)) left top / var(--mark-w) var(--mark-len) no-repeat,
-    linear-gradient(var(--mkt), var(--mkt)) right top / var(--mark-len) var(--mark-w) no-repeat,
-    linear-gradient(var(--mkt), var(--mkt)) right top / var(--mark-w) var(--mark-len) no-repeat,
-    linear-gradient(var(--mkb), var(--mkb)) left bottom / var(--mark-len) var(--mark-w) no-repeat,
-    linear-gradient(var(--mkb), var(--mkb)) left bottom / var(--mark-w) var(--mark-len) no-repeat,
-    linear-gradient(var(--mkb), var(--mkb)) right bottom / var(--mark-len) var(--mark-w) no-repeat,
-    linear-gradient(var(--mkb), var(--mkb)) right bottom / var(--mark-w) var(--mark-len) no-repeat;
+/* Off the screen's foot (a piece's, a selection's bar) it's a pill with a line (D-392): all round, the line faint at
+   rest and cyan while it's in use. A piece is square and its console isn't part of its edge any more: it stands a
+   little under it. No corner L's anywhere now. */
+.console:not([data-at='foot']):not([data-full]) {
+  padding-inline: calc(var(--space-2) * var(--cs, 1));
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 0 var(--mark-w) var(--mk);
 }
 
-/* Cut into a piece's bottom edge, half in, half out, near its right corner. */
+/* A piece's: under its bottom edge, near its right corner, a small gap off it. */
 .console[data-at='edge'] {
+  --off: calc(var(--space-2) * var(--cs, 1));
   right: calc(var(--space-4) * var(--cs, 1));
   bottom: 0;
-  transform: translateY(50%);
+  transform: translateY(calc(100% + var(--off)));
+}
+
+/* The gap is the console's too: the pointer going from the piece down to it never leaves them (the console shows only
+   while its piece is pointed at). */
+.console[data-at='edge']:not([data-full])::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: var(--off);
 }
 
 /* `under`: hanging under what it belongs to; the caller places it. */
@@ -76,7 +77,6 @@
 /* On the screen's foot, in the middle: the main screen's, which draws in and aside while a column is docked
    (`--sheet-x0`, `--sheet-x1`, `--sheet-b`, foundation/sheet.ts, D-387); it travels with it. */
 .console[data-at='foot'] {
-  --mkb: transparent;
   /* `--sheet-x1` is from the window's edge; the app's own box already stops short of the agent's column (`--ai-w`). */
   --sheet-in-x1: max(0px, var(--sheet-x1, 0px) - var(--ai-w, 0px));
   left: calc(50% + (var(--sheet-x0, 0px) - var(--sheet-in-x1)) / 2);
@@ -100,24 +100,14 @@
   --tab-line: var(--accent-cyan);
 }
 
-.console[data-at='foot']:not([data-full])::before,
-.console[data-at='foot']:not([data-full]) .floor::before {
-  content: none;
-}
-
 .console[data-at='foot']:not([data-full]) .floor {
-  border-bottom: 0;
+  bottom: 100%;
   border-radius: var(--radius-box) var(--radius-box) 0 0;
   box-shadow: 0 0 0 var(--line-w) var(--tab-line);
 }
 
 .console[data-at='foot']:not([data-full]):has(.floor:not(:empty)) {
   border-radius: 0;
-}
-
-/* A drawer open: its marks go to the floor's top. */
-.console:has(.floor:not(:empty)) {
-  --mkt: transparent;
 }
 
 /* No room (D-347): the whole edge, wrapping upward, go keeping the right end; a line along its top, no corners. */
@@ -144,10 +134,6 @@
 
 .console[data-full][data-editing] {
   border-top-color: var(--accent-cyan);
-}
-
-.console[data-full]::before {
-  content: none;
 }
 
 .console[data-full] > :last-child {
@@ -178,17 +164,18 @@
   color: var(--fg-dim);
 }
 
-/* The upper floor: a drawer over the rail, at least its width, its own top L's. */
+/* The upper floor: a drawer over the rail, at least its width. Over a pill it's a round box with the same line, a
+   small gap up (D-392); on the screen's foot it's a tab (above). */
 .floor {
-  --mkb: transparent;
   position: absolute;
   right: 0;
-  bottom: 100%;
+  bottom: calc(100% + var(--space-1) * var(--cs, 1));
   min-width: 100%;
   width: max-content;
   padding: calc(var(--space-2) * var(--cs, 1)) calc(var(--space-3) * var(--cs, 1));
+  border-radius: calc(var(--radius-box) * var(--cs, 1));
   background: var(--bg);
-  border-bottom: var(--mark-w) solid var(--line);
+  box-shadow: 0 0 0 var(--mark-w) var(--mk);
   white-space: normal;
 }
 
@@ -204,6 +191,10 @@
 
 /* Its drawer, too: the whole edge, its rows wrapping, never past it (D-354); after the floor's own rules, which it overrides. */
 .console[data-full] .floor {
+  bottom: 100%;
+  border-bottom: var(--mark-w) solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
   --col-grow: 1; /* FilterColumn's columns share the width, so none of it stays empty on the right */
   left: 0;
   right: 0;
@@ -214,18 +205,6 @@
 
 .console[data-full] .frow {
   flex-wrap: wrap;
-}
-
-.floor::before {
-  content: '';
-  position: absolute;
-  inset: calc(-1 * var(--space-1) * var(--cs, 1)) calc(-1 * var(--space-1) * var(--cs, 1)) 0;
-  pointer-events: none;
-  background:
-    linear-gradient(var(--mk), var(--mk)) left top / var(--mark-len) var(--mark-w) no-repeat,
-    linear-gradient(var(--mk), var(--mk)) left top / var(--mark-w) var(--mark-len) no-repeat,
-    linear-gradient(var(--mk), var(--mk)) right top / var(--mark-len) var(--mark-w) no-repeat,
-    linear-gradient(var(--mk), var(--mk)) right top / var(--mark-w) var(--mark-len) no-repeat;
 }
 
 .ftitle {

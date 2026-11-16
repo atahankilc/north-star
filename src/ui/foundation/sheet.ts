@@ -37,15 +37,21 @@ function make(): [HTMLElement, HTMLElement] {
 function measure() {
   let right = 0
   let left = 0
+  // A column on the left that starts past the rail stands beside the HUD's tools (the threads' list, D-392); one from
+  // the window's edge covers them, as it always did.
+  const railW = tokenPx('--sheet-rail-w')
+  let covered = false
   for (const [el, side] of columns) {
     const r = el.getBoundingClientRect()
     if (side === 'right') right = Math.max(right, window.innerWidth - r.left)
-    else left = Math.max(left, r.right)
+    else {
+      left = Math.max(left, r.right)
+      if (r.left < railW) covered = true
+    }
   }
   const open = columns.size > 0
   const gap = open ? tokenPx('--sheet-gap') : 0
-  // The rail only where no column is: a column on the left covers the HUD's tools as it always did.
-  const rail = open && rails > 0 && !left ? tokenPx('--sheet-rail-w') : 0
+  const rail = open && rails > 0 && !covered ? railW : 0
   // Written only when it changes: the root's style is watched below, and a write that changed nothing must not call back.
   const style = document.documentElement.style
   const root = { setProperty: (name: string, value: string) => void (style.getPropertyValue(name) !== value && style.setProperty(name, value)) }

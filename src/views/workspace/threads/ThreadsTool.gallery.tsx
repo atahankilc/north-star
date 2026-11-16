@@ -22,9 +22,9 @@ function Open() {
 
 export default example({
   name: 'ThreadsTool',
-  place: 'hud/corner',
+  place: 'hud/foot',
   file: 'src/views/workspace/threads/ThreadsTool.tsx',
-  note: 'the corner’s threads tool (D-193): magenta with new ones, a count with a mention, cyan while the panel is open',
+  note: 'the threads tab on the screen’s foot, at its left (D-392): a magenta count with new ones (`@n` with a mention), its lamp lit while the list is open; fixed to the window’s foot',
   states: {
     'something new': { fixture: withThreads(PAZAR), render: () => <Fresh /> },
     'nothing new': { fixture: PAZAR, render: () => <ThreadsTool wid={PAZAR.wid} threads={[]} /> },

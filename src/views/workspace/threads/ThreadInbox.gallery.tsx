@@ -16,7 +16,7 @@ export default example({
   name: 'Threads panel',
   place: 'panels/comments',
   file: 'src/views/workspace/threads/ThreadInbox.tsx',
-  note: 'every conversation in the workspace (D-197): the list and a thread, two halves',
+  note: 'every conversation in the workspace (D-197): the list a column on the left ground, a conversation a column on the right (D-393)',
   states: {
     'the list': onCanvas({ only: [P.lunch, P.product], change: withThreads, then: list() }),
     resolved: onCanvas({ only: [P.lunch, P.product], change: withThreads, then: list('resolved') }),

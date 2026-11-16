@@ -153,6 +153,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   The HUD's tools on the left edge stay where they are (D-389): the sheet draws back off them (`--sheet-rail-w`) and
   they're left on a rail of ground beside it; the breadcrumb rides the sheet. With no column the canvas fills the
   window and the HUD is on it.
+- **The foot and the ground** (D-393): the screen's foot has three tabs of one family, the threads (left), the dock
+  (middle), the agent (right). The threads' list is a column on the left ground beside the HUD's rail, a conversation a
+  column on the right ground. A console off the foot (a piece's, a selection's bar) is a pill with a line, a gap under
+  its piece; nothing draws corner L's any more.
 - Buttons are empty and round (D-384, [specs/controls.md](specs/controls.md); `src/ui/primitives/Button.tsx`, lowercase,
   D-093): a button has nothing behind it at rest, its word is enough; a round shade (`--wash-3`, `--radius-full`) comes
   under the pointer or the keyboard, and it's a little smaller while pressed (`--press-scale`). Its kind shows in its ink
@@ -270,12 +274,12 @@ Values will be tuned against contrast checks (WCAG AA for text).
   Edit mode: a cyan-framed field, a cyan `>` and `17/80`.
 - Console (D-264, D-275, D-347; docs/specs/console-preview/, option D+E): one `Console` everywhere. A rail: who (name,
   mode, readouts, a page) · nouns (`filter 2`, `view`, `linked 2`), each opening its drawer as the rail's upper floor,
-  one at a time · tools · go last; groups by role, each a ButtonGroup. On the canvas cut into the piece's bottom edge,
-  half in, half out, near the right corner (never over what the piece holds); shown only while the piece is pointed
+  one at a time · tools · go last; groups by role, each a ButtonGroup. On the canvas under the piece's bottom edge,
+  a small gap off it, near the right corner (never over what the piece holds); shown only while the piece is pointed
   at (cell by cell), in edit mode, with its setup or the keyboard in it; 11 px, growing to 1.4 × as the canvas zooms
   out; new comments keep a small magenta tab. Past 70 % of its edge's width it takes the whole edge and wraps upward,
-  go at the right end. On a piece no edge line: faint L's on its corners, cyan while pointed at or in edit mode. On the
-  screen's foot it's a tab (D-387): top corners round, a line, cyan while in use. Edit mode: marks in the kind's colour, a cyan handle on every
+  go at the right end. On a piece it's a pill under the bottom edge (D-393): a line, faint, cyan while pointed at or in
+  edit mode. On the screen's foot it's a tab (D-387): top corners round, a line, cyan while in use. Edit mode: marks in the kind's colour, a cyan handle on every
   corner and edge, the rail cyan with `delete` and `done`, no size.
 - Focus (D-185, D-189, D-297): a plane spreads over the screen like ink, cell by cell, while its own view glides to fit
   what it holds (going out it glides home while the ink draws back); its page eases from the piece's graphite to the

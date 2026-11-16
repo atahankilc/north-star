@@ -55,6 +55,18 @@
   --tab-line: var(--accent-cyan);
 }
 
+/* Closed, as tall as the dock and the threads tab beside it on the foot (D-393): a small control and its padding. */
+.box:not([data-open]) {
+  box-sizing: border-box;
+  height: calc(var(--control-sm) + 2 * var(--space-1));
+  justify-content: center;
+}
+
+.box:not([data-open]) .prompt {
+  align-items: center;
+  padding-block: 0;
+}
+
 .box[data-open] {
   width: clamp(var(--size-sm), calc(50vw - var(--panel-w) / 2 - var(--space-3)), var(--size-lg));
 }

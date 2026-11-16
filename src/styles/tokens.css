@@ -166,7 +166,6 @@
   --dot: 6px; /* status dots, small handles */
   --dot-lg: 10px; /* scale squares, bigger handles */
   --arrow: 7px; /* every CSS-triangle arrowhead */
-  --corner-mark: 7px; /* the magenta L's on a panel's, console's or dock's corners */
   --lead: 12px; /* a numbered rule's magenta lead (D-277) */
 
   /* Controls (D-384, docs/specs/controls.md): what's filled is fully round, and what's on says so with a lamp, a small

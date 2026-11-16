@@ -1,8 +1,9 @@
 // `comment` "Every conversation" (lessons.ts, D-349): the whole screen, Pazar fitted, four threads
 // in the workspace (on cards of both planes, one resolved, one mentioning you; the others new to you). The hand clicks
-// the threads button bottom left: the real panel builds cell by cell, every open thread newest first, `@` and `●` on
-// what's new; it presses `mentions`: only the one that names you; it opens it: the thread half builds beside the list
-// with its messages, and the hand rests on its `on 02 Product ↗`, what takes you there.
+// the threads tab on the foot: the real list builds cell by cell on the left, under the screen (D-393), every open
+// thread newest first, `@` and `●` on what's new; it presses `mentions`: only the one that names you; it opens it: the
+// conversation builds on the right (the stage is narrow, so the list gives way to it), and the hand rests on its
+// `on 02 Product ↗`, what takes you there.
 // The messages, what you've read and who you are are the demo's (data/threads.ts' `demoThreads`, read instead of
 // Firestore in the demo realm).
 import type { WithId } from '../../data/hooks'
@@ -46,16 +47,16 @@ const MESSAGES: Record<string, WithId<ThreadMessage>[]> = {
 const IN = '[data-learn="threads"]'
 const VIEW = (v: string) => byText(`${IN} nav button`, v, 0.5, 0.5)
 const ROW = byText(`${IN} ol button`, '@', 0.5, 0.4)
-const THERE = byText(`${IN} header button`, 'on 02 Product', 0.4, 0.5)
+const THERE = byText('[data-learn="thread-column"] header button', 'on 02 Product', 0.4, 0.5)
 
 const scene: Scene = {
   id: 'threads-panel',
   fixture: { ...base, threads: THREADS },
   view: 'canvas',
-  // Wider than the others: the list (340 px) and the thread beside it need the room.
+  // Wider than the others: the list (340 px) beside the screen needs the room.
   size: [768, 480],
   length: 7900,
-  // The thread open beside the list, the hand on `on 02 Product ↗`.
+  // The conversation open on the right, the hand on `on 02 Product ↗`.
   poster: 7800,
   cursor: onStage(560, 200),
   setup: [
@@ -79,7 +80,7 @@ const scene: Scene = {
     { do: cursor.to(ROW, 600) },
     { do: wait(300) },
     { do: cursor.press() },
-    // The thread builds beside the list; a moment, then to where it is.
+    // The conversation builds on the right; a moment, then to where it is.
     { do: wait(900) },
     { do: cursor.to(THERE, 800) },
     { do: wait(500) },
