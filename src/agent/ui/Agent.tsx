@@ -28,6 +28,7 @@ import { canvasHere, piecesOn } from '../../data/canvases'
 import { canvasCenter } from '../../state/canvasView'
 import { shownPieces } from '../../views/workspace/canvas/shownBox'
 import { isTyping, keysTaken } from '../../ui/foundation/focus'
+import { sheetRound } from '../../ui/foundation/sheet'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
 import { pickerRows } from '../models'
 import { previewOf, type Job, type JobStep } from '../job'
@@ -193,7 +194,7 @@ function useBoxRoom(box: React.RefObject<HTMLElement | null>) {
       // Room left of it: its least width, clear of the side nav and the corner's squares (a HUD tool and its margins).
       const inset = W - pushed - gap - least >= tokenPx('--control') + 2 * gap ? pushed : 0
       // While the main screen is a sheet (D-387) the tab stands clear of its round corner too (`--sheet-round`, as its CSS).
-      const round = parseFloat(document.documentElement.style.getPropertyValue('--sheet-round')) || 0
+      const round = sheetRound()
       const right = W - inset - gap - round
       // Docks standing on the foot, left of the box's right edge.
       const docks = [...document.querySelectorAll<HTMLElement>('[data-learn=dock]')].map((d) => d.getBoundingClientRect()).filter((d) => d.width && d.bottom > H - gap * 4 && d.left < right)
@@ -261,6 +262,7 @@ function Box() {
       as="aside"
       elRef={boxRef}
       className={styles.box}
+      data-sheet
       data-open={open || undefined}
       // Closed it's a region of the page (an <aside>); open, a dialog the keyboard is in.
       role={open ? 'dialog' : undefined}

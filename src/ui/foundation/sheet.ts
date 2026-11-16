@@ -1,7 +1,7 @@
 // The main screen as a sheet (D-387, docs/specs/surfaces.md): a column docked to an edge (EdgeColumn) lies on the
 // ground under the screen, and while one is there the screen lifts, goes round and draws back from it. The columns say
 // they're there (`useSheetColumn`); this measures them, keeps the two layers that draw the sheet (Sheet.module.css)
-// and tells the page how far the sheet has moved, as custom properties on the root:
+// and tells what rides the sheet how far it has moved, as custom properties on every `[data-sheet]` element (below):
 //   --sheet-x0, --sheet-x1   how far the sheet's left and right edges are from the window's: a column's reach on
 //                            its side; on a side with none, the rail if the HUD has one there (below), else the gap;
 //                            0 with no column
@@ -13,6 +13,10 @@
 // The rail (D-389): the HUD's tools on the left edge stay where they are, and while a column is docked the sheet draws
 // back off them too, so they're left on the ground beside it (`useSheetRail`, the HUD's).
 // The layers outlive the columns: when the last one leaves, the sheet still has to travel back.
+// Who reads them says so with `data-sheet` (the HUD's bar and rail, the foot's console and tabs, a docked column, the
+// layers here): the values are one rule for those in a style sheet of its own, never on the root. Written on <html>
+// they are inherited by everything, and each change had the browser work out the style of every element on the page
+// again, the canvas's thousands too, in the frame a panel opens (24 ms on a small canvas against 1).
 import { useLayoutEffect, type RefObject } from 'react'
 import { isReducedMotion } from '../../state/motion'
 import { tokenPx } from '../../styles/cssToken'
@@ -26,6 +30,24 @@ let layers: HTMLElement[] | null = null
 // Kept while the sheet travels home: the tools it drew back off are still there.
 let cut = 0
 
+const values = new Map<string, string>()
+let rule: CSSStyleRule | null = null
+// Written only when it changes.
+function put(name: string, value: string) {
+  if (values.get(name) === value) return
+  values.set(name, value)
+  if (!rule) {
+    const sheet = new CSSStyleSheet()
+    sheet.replaceSync('[data-sheet]{}')
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]
+    rule = sheet.cssRules[0] as CSSStyleRule
+  }
+  rule.style.setProperty(name, value)
+}
+
+// The sheet's corner now, in px: 0 while it fills the window (the agent's tab keeps clear of it, as its CSS does).
+export const sheetRound = () => parseFloat(values.get('--sheet-round') ?? '') || 0
+
 function make(): HTMLElement[] {
   const ground = document.createElement('div')
   const hole = document.createElement('div')
@@ -35,6 +57,7 @@ function make(): HTMLElement[] {
   rim.className = styles.rim
   ground.append(hole)
   for (const el of [ground, rim]) el.setAttribute('aria-hidden', 'true')
+  for (const el of [ground, hole, rim]) el.setAttribute('data-sheet', '')
   // The ground first in the page: a column of its layer, portalled in after it, is over it.
   document.body.prepend(ground)
   document.body.append(rim)
@@ -58,12 +81,14 @@ function measure() {
   }
   const open = columns.size > 0
   const gap = open ? tokenPx('--sheet-gap') : 0
+  // Read before anything is written: a token's first read works the page's style out.
+  const round = open ? tokenPx('--radius-window') : 0
   const rail = open && rails > 0 && !covered ? railW : 0
   if (open) cut = rail
   else if (!layers?.[0].hasAttribute('data-open')) cut = rails > 0 ? railW : 0
   if (!open && !layers) {
     // Known before the first column: the layers are made with the cut where it will be.
-    document.documentElement.style.setProperty('--sheet-cut', `${cut}px`)
+    put('--sheet-cut', `${cut}px`)
     return
   }
   // Made before the first move is written, and laid out once at rest: made in the same step they'd start where they
@@ -72,15 +97,12 @@ function measure() {
     layers = make()
     void layers[0].offsetWidth
   }
-  // Written only when it changes: the root's style is watched below, and a write that changed nothing must not call back.
-  const style = document.documentElement.style
-  const root = { setProperty: (name: string, value: string) => void (style.getPropertyValue(name) !== value && style.setProperty(name, value)) }
-  root.setProperty('--sheet-x0', `${left || rail || gap}px`)
-  root.setProperty('--sheet-x1', `${right || gap}px`)
-  root.setProperty('--sheet-b', `${gap}px`)
-  root.setProperty('--sheet-rail', `${rail}px`)
-  root.setProperty('--sheet-round', `${open ? tokenPx('--radius-window') : 0}px`)
-  root.setProperty('--sheet-cut', `${cut}px`)
+  put('--sheet-x0', `${left || rail || gap}px`)
+  put('--sheet-x1', `${right || gap}px`)
+  put('--sheet-b', `${gap}px`)
+  put('--sheet-rail', `${rail}px`)
+  put('--sheet-round', `${round}px`)
+  put('--sheet-cut', `${cut}px`)
   for (const el of layers) {
     el.toggleAttribute('data-reduced', isReducedMotion())
     el.toggleAttribute('data-open', open)

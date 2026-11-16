@@ -77,6 +77,8 @@ export function Console({ at, children, name, info, editing, floor, room, fill =
       role={role}
       className={[styles.console, className].filter(Boolean).join(' ')}
       data-at={at}
+      // On the foot it rides the main screen (foundation/sheet.ts).
+      data-sheet={at === 'foot' ? '' : undefined}
       data-editing={editing || undefined}
     >
       {floor && <ConsoleFloor>{floor}</ConsoleFloor>}

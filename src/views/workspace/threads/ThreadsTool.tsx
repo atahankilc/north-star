@@ -17,7 +17,7 @@ export function ThreadsTool({ wid, threads }: { wid: string; threads: WithId<Thr
   const fresh = threads.filter((t) => !t.resolved && isNew(t, seen, t.id, me))
   const mentions = fresh.filter((t) => t.mentions?.includes(me)).length
   return (
-    <span className={styles.footTab} data-learn="threads-tab">
+    <span className={styles.footTab} data-sheet data-learn="threads-tab">
       <Button
         pressed={open}
         aria-label={`Threads${mentions ? `, ${mentions} new mention${mentions === 1 ? '' : 's'}` : fresh.length ? `, ${fresh.length} new` : ''}`}

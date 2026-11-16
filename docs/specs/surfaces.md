@@ -207,7 +207,7 @@ the build green before the next.
    outside the sheet's box, and the sheet's rim and shadow over the column. EdgeColumn says it's there
    (`useSheetColumn`, off as soon as it starts leaving, so the sheet comes back while the column breaks apart); the
    reach is measured from the columns, so the agent's column with a document beside it, a left column and a dragged
-   width all follow. The root gets `--sheet-x0`, `--sheet-x1`, `--sheet-b`: the foot dock stays in the sheet's middle
+   width all follow. What rides the sheet says `data-sheet` and gets `--sheet-x0`, `--sheet-x1`, `--sheet-b` from one rule in a style sheet of sheet.ts's own (2026-11-17; they were on the root, where each change restyled every element on the page as a panel opened; tests/unit/sheetReaders.test.ts holds a reader to its mark): the foot dock stays in the sheet's middle
    and on its foot, the threads dock rises with it. EdgeColumn is the ground's colour, no line; Corners.module.css is
    deleted. The travel is `--dur-slow`; reduced motion: none. Tokens: `--sheet-gap`, `--ground`, `--lift`,
    `--lift-shade`, `--sheet-rim`. Seen in the gallery only (both themes, opening and closing): the real app over the

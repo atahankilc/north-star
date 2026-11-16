@@ -43,7 +43,7 @@ export function Hud({ crumbs = [], right, settings, settingsName, settingsBadge,
   useSheetRail(rail)
 
   return (
-    <header className={styles.hud}>
+    <header className={styles.hud} data-sheet>
       <nav className={styles.crumbs} aria-label="Breadcrumb">
         {atRoot ? (
           <span className={styles.current} aria-current="page">
@@ -79,7 +79,7 @@ export function Hud({ crumbs = [], right, settings, settingsName, settingsBadge,
       <div className={styles.right} data-glide>
         {right}
       </div>
-      {rail && <span className={styles.rail} aria-hidden />}
+      {rail && <span className={styles.rail} data-sheet aria-hidden />}
       {side && (
         <div className={styles.side} data-learn="sidenav">
           {/* The side nav's tools, one vertical strip (D-344). */}
