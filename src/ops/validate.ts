@@ -45,7 +45,7 @@ const DOC_OK: Record<string, (v: unknown) => boolean> = { ...Object.fromEntries(
 const DOC_NEEDED = ['kind', 'title', 'origin', 'uid', 'name', 'shared', 'size', 'createdAt', 'updatedAt']
 
 // Fields a cleaner leaves to the importer (references, who made it): checked here by type and as references instead.
-const KEPT: Record<string, Record<string, 'string' | 'number' | 'strings'>> = {
+export const KEPT: Record<string, Record<string, 'string' | 'number' | 'strings'>> = {
   card: { pieceId: 'string', memberIds: 'strings' },
   labels: { pieceId: 'string', canvasId: 'string' },
   pieces: { canvasId: 'string' },

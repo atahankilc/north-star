@@ -30,6 +30,8 @@ jobs:
       - run: npm run check:gallery
       - run: npm run check:tokens
       - run: npm run check:kit
+      # An exported name declared twice (D-391); the slow parts are the `repeats` job's.
+      - run: npm run check:repeats -- --names
       - run: npm run lint
       - run: npm ci --prefix functions
       - run: npm run build:functions
@@ -59,6 +61,19 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check:gallery:live
+
+  # Copied blocks and unused files or exports (check:repeats, D-391: jscpd and knip, installed in the job's own cache).
+  # Its own job, as gallery-live: it shows red without holding the deploy.
+  repeats:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check:repeats
 
   deploy:
     needs: build

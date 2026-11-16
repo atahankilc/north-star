@@ -1,1 +1,181 @@
-{}
+{
+  "src/agent/models.ts": {
+    "storage": 1
+  },
+  "src/agent/ui/Agent.tsx": {
+    "windowKeys": 1,
+    "rafLoop": 1,
+    "storage": 2
+  },
+  "src/agent/ui/PreviewMarks.tsx": {
+    "windowKeys": 1,
+    "rafLoop": 2
+  },
+  "src/agent/ui/settings.ts": {
+    "storage": 3
+  },
+  "src/data/documents.ts": {
+    "rawCut": 1
+  },
+  "src/data/glance.ts": {
+    "rawCut": 1
+  },
+  "src/data/importWorkspace.ts": {
+    "rawCut": 2
+  },
+  "src/data/onboarding.ts": {
+    "storage": 2
+  },
+  "src/data/presence.ts": {
+    "rawCut": 3
+  },
+  "src/data/threads.ts": {
+    "rawCut": 1
+  },
+  "src/data/workspaces.ts": {
+    "rawCut": 2
+  },
+  "src/model/clean.ts": {
+    "rawCut": 1
+  },
+  "src/model/findIndex.ts": {
+    "rawCut": 1
+  },
+  "src/model/regions.ts": {
+    "rawCut": 1
+  },
+  "src/model/tasks.ts": {
+    "rawCut": 1
+  },
+  "src/onboarding/KindGuide.tsx": {
+    "rafLoop": 1
+  },
+  "src/onboarding/busy.ts": {
+    "windowKeys": 4
+  },
+  "src/onboarding/devGuides.tsx": {
+    "rafLoop": 1
+  },
+  "src/ops/arrange.ts": {
+    "rawCut": 1
+  },
+  "src/ops/cards.ts": {
+    "rawCut": 1
+  },
+  "src/ops/deck.ts": {
+    "rawCut": 2
+  },
+  "src/ops/document.ts": {
+    "rawCut": 2
+  },
+  "src/ops/matrix.ts": {
+    "rawCut": 2
+  },
+  "src/ops/merge.ts": {
+    "rawCut": 2
+  },
+  "src/ops/newId.ts": {
+    "rawCut": 2
+  },
+  "src/ops/notes.ts": {
+    "rawCut": 3
+  },
+  "src/ops/tasks.ts": {
+    "rawCut": 1
+  },
+  "src/ops/validate.ts": {
+    "rawCut": 2
+  },
+  "src/ui/patterns/HazardConfirm.tsx": {
+    "rafLoop": 2
+  },
+  "src/ui/patterns/Menu.tsx": {
+    "kitRaw": 1
+  },
+  "src/ui/patterns/Options.tsx": {
+    "kitRaw": 1
+  },
+  "src/ui/patterns/PeopleHere.tsx": {
+    "kitRaw": 4
+  },
+  "src/ui/patterns/PieceCard.tsx": {
+    "kitRaw": 2
+  },
+  "src/ui/patterns/Select.tsx": {
+    "kitRaw": 1
+  },
+  "src/ui/patterns/Settings.tsx": {
+    "kitRaw": 2
+  },
+  "src/ui/patterns/WizardShell.tsx": {
+    "windowKeys": 1
+  },
+  "src/ui/patterns/panelWidth.ts": {
+    "storage": 2
+  },
+  "src/ui/primitives/Appear.tsx": {
+    "rafLoop": 2
+  },
+  "src/ui/primitives/AutosaveField.tsx": {
+    "kitRaw": 3
+  },
+  "src/ui/primitives/DecodeText.tsx": {
+    "rafLoop": 2
+  },
+  "src/ui/primitives/InlineEdit.tsx": {
+    "kitRaw": 3
+  },
+  "src/ui/primitives/Marks.tsx": {
+    "windowKeys": 1
+  },
+  "src/views/workspace/canvas/CanvasView.tsx": {
+    "windowKeys": 4,
+    "rafLoop": 2
+  },
+  "src/views/workspace/canvas/MoveToCanvas.tsx": {
+    "windowKeys": 1
+  },
+  "src/views/workspace/canvas/collab.tsx": {
+    "rafLoop": 4
+  },
+  "src/views/workspace/canvas/gridCursor.ts": {
+    "windowKeys": 1
+  },
+  "src/views/workspace/canvas/heldStore.ts": {
+    "storage": 1
+  },
+  "src/views/workspace/canvas/useEditKeys.ts": {
+    "windowKeys": 1
+  },
+  "src/views/workspace/deck/Kanban.tsx": {
+    "windowKeys": 4
+  },
+  "src/views/workspace/deck/Timeline.tsx": {
+    "windowKeys": 3,
+    "rafLoop": 4
+  },
+  "src/views/workspace/documents/Documents.tsx": {
+    "windowKeys": 4
+  },
+  "src/views/workspace/find/FindPreview.tsx": {
+    "rafLoop": 1
+  },
+  "src/views/workspace/find/Finder.tsx": {
+    "windowKeys": 1
+  },
+  "src/views/workspace/find/find.ts": {
+    "rafLoop": 1
+  },
+  "src/views/workspace/plane/PackPick.tsx": {
+    "windowKeys": 1
+  },
+  "src/views/workspace/plane/PlaneCards.tsx": {
+    "windowKeys": 2
+  },
+  "src/views/workspace/threads/Threads.tsx": {
+    "rafLoop": 1
+  },
+  "src/views/workspaces/Workspaces.tsx": {
+    "windowKeys": 1
+  }
+}

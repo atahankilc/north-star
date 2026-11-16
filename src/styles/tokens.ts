@@ -1,8 +1,8 @@
-// JS mirror of tokens.css for three.js materials and shaders.
+// JS mirror of tokens.css for three.js materials and shaders, held to it by tests/unit/sameLists.test.ts (D-391).
 export const colors = {
   bg: '#000000',
-  fgDim: '#6b6b6b',
-  fg: '#e8e8e8',
+  fgDim: '#8a8a8a',
+  fg: '#ededed',
   magenta: '#ff3d9a',
   cyan: '#2de2e6',
   yellow: '#ffd23f',

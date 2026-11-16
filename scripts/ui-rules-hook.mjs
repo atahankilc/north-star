@@ -1,6 +1,7 @@
 // The repo's rules, run for every agent as it writes (D-339). A Claude Code PostToolUse hook (.claude/settings.json) on
 // Write/Edit: the written file's path comes on stdin; when it's one the rules cover, the checks run (each well under a
-// second): tokens and the kit (D-325, D-326), the gallery (D-324), the lessons (D-315), the memory bank. Anything they
+// second): tokens and the kit (D-325, D-326; behaviour by hand too, D-391), the gallery (D-324), the lessons (D-315),
+// an exported name declared twice (check-repeats --names, D-391), the memory bank. Anything they
 // refuse goes back to the agent as the tool's feedback (exit 2), so it's fixed at once and no one has to ask.
 // Commits are held to the same and to the gallery and onboarding going with a changed component: scripts/commit-rules.mjs.
 import { fileURLToPath } from 'node:url'
@@ -21,19 +22,21 @@ const rel = path.relative(root, path.resolve(file)).split(path.sep).join('/')
 if (!file || rel.startsWith('..')) process.exit(0)
 
 const checks = new Set()
-if (/^src\/.*\.(tsx?|css)$/.test(rel)) for (const c of ['check-tokens', 'check-kit', 'check-gallery', 'check-lessons']) checks.add(c)
+if (/^src\/.*\.(tsx?|css)$/.test(rel)) for (const c of ['check-tokens', 'check-kit', 'check-gallery', 'check-lessons', 'check-repeats --names']) checks.add(c)
 if (/^src\/onboarding\/|^docs\/specs\/onboarding-lessons\.md$/.test(rel)) checks.add('check-lessons')
-if (/^scripts\/(kit|tokens)-baseline\.json$/.test(rel)) for (const c of ['check-tokens', 'check-kit']) checks.add(c)
+if (/^scripts\/(kit|tokens|repeats)-baseline\.json$/.test(rel)) for (const c of ['check-tokens', 'check-kit', 'check-repeats --names']) checks.add(c)
 if (/^memory-bank\//.test(rel)) checks.add('check-memory')
 if (!checks.size) process.exit(0)
 
 const refused = []
 for (const c of checks) {
   try {
-    execFileSync(process.execPath, [path.join(root, 'scripts', `${c}.mjs`)], { cwd: root, stdio: 'pipe', encoding: 'utf8' })
+    // A check may carry its arguments (`check-repeats --names`).
+    const [name, ...rest] = c.split(' ')
+    execFileSync(process.execPath, [path.join(root, 'scripts', `${name}.mjs`), ...rest], { cwd: root, stdio: 'pipe', encoding: 'utf8' })
   } catch (e) {
     const out = `${e.stdout ?? ''}${e.stderr ?? ''}`.trim().split('\n').slice(-20).join('\n')
-    refused.push(`npm run ${c.replace('check-', 'check:')} refused it:\n${out}`)
+    refused.push(`npm run ${c.replace('check-', 'check:').replace(' --', ' -- --')} refused it:\n${out}`)
   }
 }
 if (!refused.length) process.exit(0)

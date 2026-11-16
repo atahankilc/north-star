@@ -241,7 +241,8 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
 # Round 2: what a second read found (2026-11-16)
 
 A list of findings and of ways to keep repeats from coming back, for the user to pick from. Built so far: R1.1–R1.4
-and R1.10 (D-388, under *Done, round 2* at the end); the rest is not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
+and R1.10 (D-388) and the checks R4.1–R4.4 (D-391), both under *Done, round 2* at the end; the rest is not started or
+decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
 finder (knip) and four full reads (the kit, the workspace views, the logic layers, demo/onboarding/gallery/scripts).
 Line numbers are from that day. *Checked* = the drift was looked at again by hand after the read.
 
@@ -409,4 +410,28 @@ merges (R1.5–R1.7, the demo) and R3.
   - Checked: tsc; vitest 1099/0; the stub evals 59/59; check:tokens, kit, gallery, lessons 0; build; headless Chrome on
     the gallery (Escape on both filter docks' drawers, the people list, stopping a follow, a self-saving field; the
     acting examples of the filter docks and the table). Not seen in the real app; no paid eval run.
+- **R4.1–R4.4, the checks (2026-11-17, D-391).**
+  - R4.1: `check:kit` gained `code` rules, looking in .ts too and inside src/ui: `windowKeys` (a key, pointer, mouse,
+    wheel or click listener on `window`/`document` outside ui/foundation), `rafLoop` (a function handed back to
+    `requestAnimationFrame`, outside ui/foundation and src/three), `storage` (`localStorage.` outside state/local.ts),
+    `rawCut` (`.slice(0, nn)` or `.length > nn` in model/, ops/, data/, outside limits.ts), `kitRaw` (a raw
+    `<button>`/`<input>`/`<textarea>` in src/ui outside the primitives that are it). Today's 115 in 58 files are in
+    scripts/kit-baseline.json (windowKeys 31, rawCut 32, rafLoop 24, kitRaw 17, storage 11) and counted apart, so
+    "0 hand-made left" still means the UI; a new one is refused with which shared code to use; `// kit-ok: why` as before.
+  - R4.2: tests/unit/sameLists.test.ts: 14 value lists of the model against every place firestore.rules lists them;
+    the export's collections and the rules' content shapes against `WS_COLLECTIONS`; each cleaner's fields against the
+    rules' `onlyKeys` (nothing the rules refuse; every field the rules take is given, kept by the writer, or named in
+    the cleaner); tokens.ts against tokens.css. It found R1.9's stale greys: tokens.ts now `#8a8a8a`/`#ededed` (only
+    the agent's picture reads them). The table read two ways was already tests/unit/tableRead.test.ts (D-388).
+  - R4.3, R4.4: scripts/check-repeats.mjs (`npm run check:repeats`), baseline scripts/repeats-baseline.json: `names`
+    (an exported function, const or class declared in two files: 44 today), `copies` (jscpd 4.3.0 over src,
+    functions/src, scripts, evals; min 50 tokens, 6 lines; by pair of files: 22 pairs, 356 lines), `unused` (knip
+    5.88.1: 3 files, 474 exports nothing else imports). `--names` is fast (60 ms): the write hook, the commit check and
+    CI's build job run it; the whole (~10 s) is CI's own `repeats` job, which shows red without holding the deploy, as
+    gallery-live. The tools are installed in the check's own cache, not in package.json.
+  - Checked: a throwaway file breaking each rule was refused by both checks with the right hint, and passes again once
+    gone; three runs give the same counts; tsc; vitest 1149/0; the stub evals 59/59; every check; build.
+  - Left: R4.5 (scripts/lib.mjs: check-repeats has its own `walk` and baseline code, the sixth and third copy; demo and
+    gallery still outside check:kit), R4.6, R4.7. The 474 unused exports are mostly a needless `export` on something
+    used in its own file: a sweep would shrink the baseline a lot. The three unused files are R3's.
 

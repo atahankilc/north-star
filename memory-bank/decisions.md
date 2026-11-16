@@ -61,7 +61,7 @@ feature comes back as a piece, and check them with the user then.
   app and the evals.
 - The UI rules are enforced, not asked for (D-339): a Claude Code hook on every write (`scripts/ui-rules-hook.mjs`) and git
   hooks on commit (`scripts/commit-rules.mjs`; a component without its gallery or lesson needs `Gallery:`/`Lessons:` in the
-  message); check:kit also refuses `menuHost`, `bracketSpan`, `rawLimit`, CSS `counter`, `pieceSurface`.
+  message); check:kit also refuses `menuHost`, `bracketSpan`, `rawLimit`, CSS `counter`, `pieceSurface`. Repeats are refused by checks too (D-391): check:kit's `code` rules (a window key or pointer listener, a frame loop, `localStorage`, a cut at a typed number, a raw element in the kit's patterns; where a shared home exists), `check:repeats` (a name exported from two files in the hook and commits; copied blocks and unused files or exports in CI's own job), and tests/unit/sameLists.test.ts for lists kept in two layers (the rules' values and fields, collections, tokens.ts); every baseline only shrinks.
 - ESLint with only `eslint-plugin-react-hooks`, as warnings: `npm run lint` counts them, CI never fails on them (D-320).
 
 ## Accounts, sharing, roles

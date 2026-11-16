@@ -1,0 +1,987 @@
+{
+  "names": {
+    "addCard": [
+      "src/data/cards.ts",
+      "src/views/workspace/matrix/Matrix.tsx"
+    ],
+    "Choices": [
+      "src/onboarding/Choices.tsx",
+      "src/views/workspace/matrix/MatrixSetup.tsx"
+    ],
+    "effortFor": [
+      "src/agent/models.ts",
+      "src/agent/pipeline.ts"
+    ],
+    "entriesOf": [
+      "src/agent/ui/chatEntries.ts",
+      "src/model/matrix.ts"
+    ],
+    "finished": [
+      "src/agent/job.ts",
+      "src/model/tasks.ts"
+    ],
+    "folded": [
+      "src/agent/ui/PreviewMarks.tsx",
+      "src/views/workspace/find/findIndex.ts"
+    ],
+    "guide": [
+      "src/onboarding/devGuides.tsx",
+      "src/views/workspace/canvas/guides.ts"
+    ],
+    "isOpen": [
+      "src/model/matrix.ts",
+      "src/views/workspace/canvas/shownBox.ts"
+    ],
+    "landing": [
+      "src/model/placement.ts",
+      "src/views/workspace/find/find.ts"
+    ],
+    "Landing": [
+      "src/ui/primitives/Marks.tsx",
+      "src/views/landing/Landing.tsx"
+    ],
+    "matches": [
+      "src/model/source.ts",
+      "src/onboarding/guideModel.ts",
+      "src/onboarding/queue.ts"
+    ],
+    "MAX_STEPS": [
+      "src/agent/job.ts",
+      "src/model/matrix.ts"
+    ],
+    "moveCanvas": [
+      "src/data/canvases.ts",
+      "src/ops/pieces.ts"
+    ],
+    "moveTask": [
+      "src/data/tasks.ts",
+      "src/ops/tasks.ts"
+    ],
+    "moveToCanvas": [
+      "src/data/canvases.ts",
+      "src/ops/pieces.ts"
+    ],
+    "narrowing": [
+      "src/model/kanbanFilter.ts",
+      "src/model/planeFilter.ts"
+    ],
+    "nextStep": [
+      "src/agent/devStub.ts",
+      "src/agent/job.ts"
+    ],
+    "norm": [
+      "src/agent/read/text.ts",
+      "src/model/lens.ts"
+    ],
+    "onPlane": [
+      "src/model/placement.ts",
+      "src/views/workspace/canvas/selection.ts"
+    ],
+    "overlaps": [
+      "src/model/overlaps.ts",
+      "src/model/placement.ts"
+    ],
+    "pickable": [
+      "src/agent/ui/settings.ts",
+      "src/onboarding/guideModel.ts",
+      "src/ui/foundation/promptModel.ts"
+    ],
+    "PIECE_KINDS": [
+      "src/ops/pieces.ts",
+      "src/views/workspace/canvas/pieceKinds.tsx"
+    ],
+    "placesIn": [
+      "src/model/goTo.ts",
+      "src/views/workspace/canvas/goTo.ts"
+    ],
+    "plural": [
+      "src/model/words.ts",
+      "src/ops/util.ts"
+    ],
+    "requestBody": [
+      "src/agent/anthropic.ts",
+      "src/agent/openai.ts"
+    ],
+    "roleOf": [
+      "src/agent/pipeline.ts",
+      "src/data/workspaces.ts"
+    ],
+    "ROLES": [
+      "src/agent/pipeline.ts",
+      "src/data/model.ts",
+      "src/onboarding/lessons.ts"
+    ],
+    "Row": [
+      "src/ui/patterns/Settings.tsx",
+      "src/views/workspace/matrix/MatrixSetup.tsx"
+    ],
+    "show": [
+      "src/agent/ui.ts",
+      "src/onboarding/devMount.tsx"
+    ],
+    "shownTasks": [
+      "src/agent/read/derive.ts",
+      "src/model/tasks.ts"
+    ],
+    "spotRef": [
+      "src/data/canvases.ts",
+      "src/data/cards.ts"
+    ],
+    "step": [
+      "src/agent/workflow.ts",
+      "src/onboarding/guideModel.ts"
+    ],
+    "T": [
+      "src/views/workspace/deck/Timeline.tsx",
+      "src/views/workspace/table/Table.tsx",
+      "src/views/workspace/text/titleLayout.ts"
+    ],
+    "tableRows": [
+      "src/model/lens.ts",
+      "src/views/workspace/table/Table.tsx"
+    ],
+    "takeOff": [
+      "src/data/places.ts",
+      "src/ops/places.ts"
+    ],
+    "TEMPLATES": [
+      "src/model/matrix.ts",
+      "src/model/table.ts"
+    ],
+    "unmount": [
+      "src/onboarding/devGuides.tsx",
+      "src/onboarding/devMount.tsx"
+    ],
+    "updateCard": [
+      "src/data/cards.ts",
+      "src/ops/cards.ts"
+    ],
+    "updateCompetitorFeature": [
+      "src/data/competitorFeatures.ts",
+      "src/ops/features.ts"
+    ],
+    "updateEvidence": [
+      "src/data/evidence.ts",
+      "src/ops/evidence.ts"
+    ],
+    "updateTask": [
+      "src/data/tasks.ts",
+      "src/ops/tasks.ts"
+    ],
+    "usageOf": [
+      "src/agent/anthropic.ts",
+      "src/agent/openai.ts"
+    ],
+    "useMembers": [
+      "src/data/threads.ts",
+      "src/data/workspaces.ts"
+    ],
+    "within": [
+      "src/model/layout.ts",
+      "src/views/workspace/canvas/visible.ts"
+    ]
+  },
+  "copies": {
+    "evals/tasks/edit.ts <> evals/tasks/edit.ts": 12,
+    "scripts/check-repeats.mjs <> scripts/check-tokens.mjs": 7,
+    "src/agent/changeset.ts <> src/agent/preview.ts": 15,
+    "src/agent/loop.ts <> src/agent/picture.ts": 7,
+    "src/agent/read/space.ts <> src/agent/read/space.ts": 7,
+    "src/app/Crash.module.css <> src/views/workspace/canvas/WorkspaceLayout.module.css": 13,
+    "src/demo/Stage.tsx <> src/gallery/Mount.tsx": 10,
+    "src/demo/scenes/documents.ts <> src/demo/scenes/kind-documents.ts": 13,
+    "src/demo/scenes/for-filter.ts <> src/demo/scenes/plane-filter.ts": 18,
+    "src/demo/scenes/kind-section.ts <> src/demo/scenes/section.ts": 20,
+    "src/demo/scenes/table-keys.ts <> src/demo/scenes/table-setup.ts": 11,
+    "src/gallery/onboarding.tsx <> src/onboarding/devMount.tsx": 10,
+    "src/model/matrix.ts <> src/model/source.ts": 9,
+    "src/onboarding/progress.test.ts <> src/onboarding/remote.test.ts": 13,
+    "src/onboarding/queue.test.ts <> src/onboarding/queue.test.ts": 9,
+    "src/views/workspace/canvas/CanvasView.module.css <> src/views/workspace/canvas/CanvasView.module.css": 9,
+    "src/views/workspace/canvas/collab.module.css <> src/views/workspace/documents/DocEditor.module.css": 12,
+    "src/views/workspace/deck/CardKanban.tsx <> src/views/workspace/deck/Kanban.tsx": 15,
+    "src/views/workspace/matrix/MatrixSetup.tsx <> src/views/workspace/table/TableSetup.tsx": 26,
+    "src/views/workspace/plane/PlaneCards.tsx <> src/views/workspace/plane/PlaneCards.tsx": 7,
+    "src/views/workspace/text/TextItems.tsx <> src/views/workspace/text/TextItems.tsx": 102,
+    "src/views/workspaces/pieces.tsx <> src/views/workspaces/pieces.tsx": 11
+  },
+  "unused": {
+    "files": [
+      "src/data/regions.ts",
+      "src/onboarding/devGuides.tsx",
+      "src/onboarding/devMount.tsx"
+    ],
+    "exports": {
+      "src/agent/anthropic.ts": [
+        "MAX_TOKENS",
+        "fallsBack",
+        "filtersWeb",
+        "plainFailure",
+        "toClaudeTool",
+        "usageOf"
+      ],
+      "src/agent/change.ts": [
+        "COORDS_FIX",
+        "describeResult",
+        "resolveIds"
+      ],
+      "src/agent/changeset.ts": [
+        "AUTO_APPLY_MAX",
+        "agentLabel",
+        "cleared",
+        "summaryOf"
+      ],
+      "src/agent/chats.ts": [
+        "CHAT_SOURCES_MAX",
+        "CHAT_SOURCE_TITLE_MAX",
+        "CHAT_STEPS_MAX",
+        "CHAT_SUMMARY_MAX",
+        "CHAT_TEXT_MAX",
+        "CHAT_TITLE_MAX",
+        "CHAT_URL_MAX"
+      ],
+      "src/agent/contract.ts": [
+        "turnUsage"
+      ],
+      "src/agent/devStub.ts": [
+        "keywords",
+        "nextStep"
+      ],
+      "src/agent/devStubSkills.ts": [
+        "SKILL_PLAN_MARK",
+        "planOf"
+      ],
+      "src/agent/job.ts": [
+        "PREVIEWS"
+      ],
+      "src/agent/loop.ts": [
+        "CHECKS_NOTE",
+        "COMPACT_NOTE",
+        "COMPACT_TOKENS",
+        "IMAGE_TOKENS",
+        "STOPPED",
+        "argsBrief",
+        "historyTokens"
+      ],
+      "src/agent/models.ts": [
+        "ANTHROPIC",
+        "SUGGESTED_CLAUDE",
+        "bareId"
+      ],
+      "src/agent/openai.ts": [
+        "MAX_RETRY_WAIT",
+        "OPENAI_API",
+        "readResponse",
+        "sseData",
+        "toolCallOf",
+        "usageOf"
+      ],
+      "src/agent/picture.ts": [
+        "PICTURE_MAX"
+      ],
+      "src/agent/pipeline.ts": [
+        "ROLES",
+        "effortFor"
+      ],
+      "src/agent/read/derive.ts": [
+        "byReading",
+        "canvasOfLabel"
+      ],
+      "src/agent/read/ids.ts": [
+        "ID_KINDS",
+        "PREFIX",
+        "personLabel"
+      ],
+      "src/agent/read/index.ts": [
+        "ID_KINDS",
+        "ID_LEGEND",
+        "MAP_TOKENS",
+        "NEIGHBOUR_KINDS",
+        "PREFIX",
+        "QUERY_KINDS",
+        "SEARCH_KINDS",
+        "SYMBOL_LEGEND",
+        "describe",
+        "personLabel",
+        "threadLine",
+        "wrap"
+      ],
+      "src/agent/read/lines.ts": [
+        "cardHead"
+      ],
+      "src/agent/read/map.ts": [
+        "ID_LEGEND",
+        "SYMBOL_LEGEND"
+      ],
+      "src/agent/read/names.ts": [
+        "SHORT_ID"
+      ],
+      "src/agent/read/text.ts": [
+        "CHARS_PER_TOKEN",
+        "MAP_TOKENS"
+      ],
+      "src/agent/read/tools.ts": [
+        "ALL_STATUSES",
+        "CARD_KINDS",
+        "DOC_KINDS",
+        "NEIGHBOUR_KINDS",
+        "PIECE_KINDS",
+        "PRIORITIES",
+        "QUERY_KINDS",
+        "SEARCH_KINDS",
+        "TEXT_KINDS",
+        "THREAD_ON",
+        "describe",
+        "threadLine"
+      ],
+      "src/agent/research.ts": [
+        "CONTEXT_MAX",
+        "QUESTION_MAX",
+        "gate",
+        "researchOne"
+      ],
+      "src/agent/skills/checks.ts": [
+        "hasChecks"
+      ],
+      "src/agent/stubModel.ts": [
+        "researched"
+      ],
+      "src/agent/tools.ts": [
+        "BIG_CHANGE",
+        "BIG_CHANGE_AT",
+        "COORDS_FIX",
+        "agentArgs",
+        "matchNotes",
+        "sig",
+        "withOpArgs"
+      ],
+      "src/agent/ui.ts": [
+        "currentView",
+        "goTo",
+        "openPanel",
+        "show",
+        "showBeside"
+      ],
+      "src/agent/ui/Agent.tsx": [
+        "closeAgent"
+      ],
+      "src/agent/ui/PreviewMarks.tsx": [
+        "usePreview"
+      ],
+      "src/agent/ui/agentStore.ts": [
+        "KEY_REFUSED",
+        "NO_KEY",
+        "entriesOf",
+        "plainError",
+        "saveNow",
+        "turnsOf",
+        "wordsOfItem"
+      ],
+      "src/agent/ui/settings.ts": [
+        "CLAUDE_MODELS_STORE",
+        "EFFORT_STORE",
+        "MODELS_STORE",
+        "MODEL_STORE"
+      ],
+      "src/data/agentNotes.ts": [
+        "NOTES_MAX",
+        "NOTES_TITLE",
+        "isNotesDoc",
+        "notesOf"
+      ],
+      "src/data/canvases.ts": [
+        "MAIN_NAME",
+        "canvasList",
+        "canvasRef",
+        "canvasesOf",
+        "posRef",
+        "spotted"
+      ],
+      "src/data/cards.ts": [
+        "addPackageOp",
+        "cardDoc",
+        "copyCardsOp",
+        "placeRef",
+        "toCards"
+      ],
+      "src/data/changeLog.ts": [
+        "changeLogOn",
+        "setChangeLogOn"
+      ],
+      "src/data/competitorFeatures.ts": [
+        "CRITERION_SCORES",
+        "removeComparison"
+      ],
+      "src/data/documents.ts": [
+        "DOC_COLS",
+        "DOC_KINDS",
+        "DOC_TYPES",
+        "FILE_MAX_BYTES",
+        "kindOfType",
+        "mdTitle"
+      ],
+      "src/data/edges.ts": [
+        "edgeRef",
+        "edgesOn",
+        "linked"
+      ],
+      "src/data/firebase.ts": [
+        "functionsOf",
+        "storageOf"
+      ],
+      "src/data/glance.ts": [
+        "markVisited"
+      ],
+      "src/data/history.ts": [
+        "PartlyWritten",
+        "snapshotWith"
+      ],
+      "src/data/labels.ts": [
+        "snapPoint"
+      ],
+      "src/data/liveText.ts": [
+        "fromBase64",
+        "toBase64"
+      ],
+      "src/data/pieces.ts": [
+        "isLens",
+        "nearClear",
+        "sideOf"
+      ],
+      "src/data/places.ts": [
+        "landing"
+      ],
+      "src/data/presence.ts": [
+        "CURSOR_DELAY_MS"
+      ],
+      "src/data/table.ts": [
+        "addCardRow",
+        "addColumn",
+        "editColumn",
+        "setRows"
+      ],
+      "src/data/tasks.ts": [
+        "CHECKS_MAX"
+      ],
+      "src/data/threads.ts": [
+        "useMembers"
+      ],
+      "src/data/workspaces.ts": [
+        "INVITE_ALPHABET",
+        "newInviteCode",
+        "normalizeInviteCode"
+      ],
+      "src/demo/clock.ts": [
+        "sceneTime"
+      ],
+      "src/demo/demoCss.ts": [
+        "demoSelector",
+        "demoStates"
+      ],
+      "src/demo/director.ts": [
+        "HOLD_MS",
+        "current",
+        "cursor_",
+        "moveMs",
+        "sceneTimeNow"
+      ],
+      "src/demo/fixtures/kit.ts": [
+        "costs",
+        "planeF",
+        "planeFCards",
+        "without"
+      ],
+      "src/demo/fixtures/o10.ts": [
+        "shut",
+        "style"
+      ],
+      "src/demo/fixtures/o11.ts": [
+        "arrow",
+        "matrixPiece"
+      ],
+      "src/demo/fixtures/o12.ts": [
+        "firstText",
+        "wizardCss"
+      ],
+      "src/demo/fixtures/o13.ts": [
+        "peer"
+      ],
+      "src/demo/fixtures/pazar.ts": [
+        "cards",
+        "cells",
+        "competitorFeatures",
+        "documents",
+        "edges",
+        "evidence",
+        "pieces",
+        "tasks"
+      ],
+      "src/demo/fixtures/tiny.ts": [
+        "DEMO_USER"
+      ],
+      "src/demo/scenes/card-deck.ts": [
+        "CARD_DECK",
+        "cardDeck"
+      ],
+      "src/gallery/docks.tsx": [
+        "find",
+        "wait"
+      ],
+      "src/gallery/example.ts": [
+        "CATEGORY_NAME"
+      ],
+      "src/gallery/onboarding.tsx": [
+        "WhenReady",
+        "useShowNow"
+      ],
+      "src/gallery/pages.ts": [
+        "areaOf"
+      ],
+      "src/gallery/registry.ts": [
+        "MAP",
+        "entryById"
+      ],
+      "src/gallery/screens.tsx": [
+        "LAUNCH",
+        "Screen"
+      ],
+      "src/gallery/uses.ts": [
+        "nodeOf"
+      ],
+      "src/io/bundle.ts": [
+        "BundleError",
+        "cleanKanban",
+        "cleanTimeline"
+      ],
+      "src/model/cardFacts.ts": [
+        "restsOn"
+      ],
+      "src/model/cardInside.ts": [
+        "BAND_H",
+        "CATEGORY_ROW",
+        "FEATURE_ROW",
+        "INNER_TOP",
+        "PART_ROW"
+      ],
+      "src/model/changeLog.ts": [
+        "CHANGE_KINDS_MAX"
+      ],
+      "src/model/clean.ts": [
+        "cleanKanban",
+        "cleanTimeline"
+      ],
+      "src/model/edges.ts": [
+        "edgesOn",
+        "linked"
+      ],
+      "src/model/graph.ts": [
+        "BRIDGE_SIDE",
+        "CHAIN",
+        "topicsOf"
+      ],
+      "src/model/kanbanCards.ts": [
+        "appliesTo",
+        "patchFor"
+      ],
+      "src/model/layout.ts": [
+        "CLEAR",
+        "SPREADS"
+      ],
+      "src/model/lens.ts": [
+        "colNames",
+        "entryNames",
+        "matrixAxes",
+        "norm"
+      ],
+      "src/model/matrix.ts": [
+        "UNFOLDS",
+        "rollUp"
+      ],
+      "src/model/notes.ts": [
+        "isNotesDoc"
+      ],
+      "src/model/overlaps.ts": [
+        "wholly"
+      ],
+      "src/model/paging.ts": [
+        "PAGE_SIZES"
+      ],
+      "src/model/pieceMoves.ts": [
+        "sideOf"
+      ],
+      "src/model/pieces.ts": [
+        "isLens"
+      ],
+      "src/model/regions.ts": [
+        "GLOBAL",
+        "cleanRegion"
+      ],
+      "src/model/source.ts": [
+        "VALUE_MAX",
+        "matches"
+      ],
+      "src/model/table.ts": [
+        "PAGE_SIZES"
+      ],
+      "src/model/world.ts": [
+        "writeWorldCss"
+      ],
+      "src/onboarding/Demo.tsx": [
+        "DEMO_NS",
+        "STAGE",
+        "playable"
+      ],
+      "src/onboarding/Guide.tsx": [
+        "WHATS_NEW"
+      ],
+      "src/onboarding/Pages.tsx": [
+        "Btn",
+        "Words"
+      ],
+      "src/onboarding/busy.ts": [
+        "menuOpen",
+        "settingsPage"
+      ],
+      "src/onboarding/devSandbox.ts": [
+        "setSandbox"
+      ],
+      "src/onboarding/events.ts": [
+        "EMITS_PARTLY",
+        "POLL_MS",
+        "textKind"
+      ],
+      "src/onboarding/guideModel.ts": [
+        "KEYS_ID",
+        "matches",
+        "pickable"
+      ],
+      "src/onboarding/lessons.ts": [
+        "FORMATS",
+        "PAYLOADS",
+        "PLACEHOLDERS",
+        "ROLES"
+      ],
+      "src/onboarding/progress.ts": [
+        "armKey"
+      ],
+      "src/onboarding/queue.ts": [
+        "AUTOMATIC",
+        "BUSY_SOURCES",
+        "DONE_MS",
+        "OWN_LISTS",
+        "holds",
+        "whenMatches"
+      ],
+      "src/onboarding/seenMerge.ts": [
+        "MAX_ARMED",
+        "MAX_ID",
+        "MAX_RELEASE",
+        "parseArmed"
+      ],
+      "src/onboarding/words.ts": [
+        "lessonName"
+      ],
+      "src/ops/arrange.ts": [
+        "BLOCK_LAYOUTS"
+      ],
+      "src/ops/deck.ts": [
+        "BOX_NAMES_MAX",
+        "BOX_NAME_MAX",
+        "COL_NAME_MAX",
+        "KANBAN_COLS_MAX",
+        "LIMIT_MAX",
+        "movesTo"
+      ],
+      "src/ops/diff.ts": [
+        "changedFields"
+      ],
+      "src/ops/docs.ts": [
+        "bodiesOf",
+        "exists"
+      ],
+      "src/ops/document.ts": [
+        "DOC_FIELDS"
+      ],
+      "src/ops/firestore.ts": [
+        "applyUi",
+        "forFirestore",
+        "refOf",
+        "sayRefused"
+      ],
+      "src/ops/index.ts": [
+        "DECK_TEMPLATES",
+        "DELETE",
+        "GROUP_KEYS",
+        "LAYOUTS",
+        "MATRIX_TEMPLATES",
+        "OPS",
+        "PIECE_KINDS",
+        "REGISTRY",
+        "SCALE_KEYS",
+        "SIDES",
+        "TABLE_TEMPLATES",
+        "TEXT_KINDS",
+        "TEXT_NAMES",
+        "WriteError",
+        "alignTo",
+        "applyUi",
+        "arrange",
+        "arrangeAny",
+        "autoId",
+        "axisAdd",
+        "axisFrom",
+        "axisRemove",
+        "axisUpdate",
+        "boundTo",
+        "build",
+        "buildBatch",
+        "cardCascade",
+        "changedFields",
+        "columnById",
+        "columnFrom",
+        "columnIn",
+        "counterIds",
+        "createCanvas",
+        "createCard",
+        "createCompetitorFeature",
+        "createDeckColumn",
+        "createEvidence",
+        "createPackage",
+        "createPiece",
+        "createTask",
+        "createText",
+        "criterionCascade",
+        "deckIn",
+        "deckSetupFrom",
+        "deleteAny",
+        "deleteCanvasWrites",
+        "deleteColumnPlan",
+        "deletePieces",
+        "deleteTasksPlan",
+        "deleteThings",
+        "diff",
+        "docsOf",
+        "duplicate",
+        "duplicatePlan",
+        "forgetRecent",
+        "isDelete",
+        "link",
+        "matrixSetupFrom",
+        "moveCanvas",
+        "moveDeckColumn",
+        "moveTask",
+        "moveToCanvas",
+        "moveToCanvasPlan",
+        "movesTo",
+        "offPlane",
+        "ordersIn",
+        "pieceCascade",
+        "piecesOff",
+        "piecesOnPlan",
+        "place",
+        "placeOn",
+        "placeOnPlan",
+        "present",
+        "project",
+        "projectLoose",
+        "refOf",
+        "rehome",
+        "rename",
+        "resize",
+        "rulesFrom",
+        "runUi",
+        "sayRefused",
+        "serverHas",
+        "spreadTo",
+        "stepsFrom",
+        "tableSetupFrom",
+        "takeOff",
+        "takeOffPlan",
+        "tidy",
+        "toDocs",
+        "uiCtx",
+        "unlink",
+        "updateCard",
+        "updateCell",
+        "updateCompetitorFeature",
+        "updateDeck",
+        "updateDeckColumn",
+        "updateEvidence",
+        "updateLink",
+        "updateMatrix",
+        "updatePiece",
+        "updateTable",
+        "updateTask",
+        "updateText",
+        "updateTimeline",
+        "validate",
+        "writeTo"
+      ],
+      "src/ops/matrix.ts": [
+        "axisFrom"
+      ],
+      "src/ops/pieces.ts": [
+        "followerMoves",
+        "pieceCascade",
+        "pieceName"
+      ],
+      "src/ops/tasks.ts": [
+        "CHECKS_MAX",
+        "CHECK_MAX",
+        "LABELS_MAX",
+        "LABEL_MAX",
+        "NOTES_MAX",
+        "TASK_TITLE_MAX",
+        "ordersIn",
+        "taskIn"
+      ],
+      "src/state/canvasView.ts": [
+        "SPLIT_MAX",
+        "SPLIT_MIN"
+      ],
+      "src/three/AsciiEffect.ts": [
+        "GLYPH_RAMP"
+      ],
+      "src/three/Backdrop.tsx": [
+        "cellSize"
+      ],
+      "src/three/sceneClock.ts": [
+        "BACKDROP_DIM_ONE_PIECE",
+        "BACKDROP_FPS"
+      ],
+      "src/ui/foundation/feel.ts": [
+        "ZOOM_MAX"
+      ],
+      "src/ui/foundation/motionTokens.ts": [
+        "EASE_POINTS",
+        "cubicBezier",
+        "easeOut"
+      ],
+      "src/ui/patterns/WizardShell.tsx": [
+        "wizardEnter"
+      ],
+      "src/ui/primitives/Avatar.tsx": [
+        "initialOf"
+      ],
+      "src/ui/primitives/CountBadge.tsx": [
+        "countText"
+      ],
+      "src/ui/primitives/Label.tsx": [
+        "labelClass"
+      ],
+      "src/ui/primitives/Markdown.tsx": [
+        "parse"
+      ],
+      "src/ui/primitives/Marks.tsx": [
+        "tierFor"
+      ],
+      "src/views/workspace/canvas/CanvasView.tsx": [
+        "SCROLLS_ITSELF"
+      ],
+      "src/views/workspace/canvas/collab.tsx": [
+        "spaceOf"
+      ],
+      "src/views/workspace/canvas/context.ts": [
+        "getWs",
+        "subscribeWs"
+      ],
+      "src/views/workspace/canvas/planeMenu.ts": [
+        "cardItems",
+        "emptyItems",
+        "labelItems",
+        "linkItems"
+      ],
+      "src/views/workspace/canvas/selection.ts": [
+        "land",
+        "landed",
+        "othersThan"
+      ],
+      "src/views/workspace/canvas/shownBox.ts": [
+        "OPEN_FOOT",
+        "shownBox"
+      ],
+      "src/views/workspace/cards/PriorityChip.tsx": [
+        "PRIORITY_TONE"
+      ],
+      "src/views/workspace/deck/Kanban.tsx": [
+        "soonOf"
+      ],
+      "src/views/workspace/deck/KanbanSetup.tsx": [
+        "CARDS_START"
+      ],
+      "src/views/workspace/deck/Timeline.tsx": [
+        "STRIP_SCALES"
+      ],
+      "src/views/workspace/documents/DocContent.tsx": [
+        "KIND_SHORT",
+        "formatSize"
+      ],
+      "src/views/workspace/documents/DocumentPiece.tsx": [
+        "docWidth"
+      ],
+      "src/views/workspace/documents/Documents.tsx": [
+        "D",
+        "PIN",
+        "READERS_MAX",
+        "UploadAction",
+        "WriteAction",
+        "readDoc"
+      ],
+      "src/views/workspace/find/find.ts": [
+        "paint",
+        "rangesIn",
+        "revealed",
+        "unmark"
+      ],
+      "src/views/workspace/find/findIndex.ts": [
+        "pageText",
+        "snippet"
+      ],
+      "src/views/workspace/matrix/Matrix.tsx": [
+        "addCard"
+      ],
+      "src/views/workspace/matrix/MatrixSetup.tsx": [
+        "OptionsEditor"
+      ],
+      "src/views/workspace/panels/CardPanel.tsx": [
+        "LinkSection"
+      ],
+      "src/views/workspace/panels/CardTasks.tsx": [
+        "openTask"
+      ],
+      "src/views/workspace/panels/TagList.tsx": [
+        "cleanTag"
+      ],
+      "src/views/workspace/table/Table.tsx": [
+        "T",
+        "nameWidth",
+        "tableRows",
+        "widthOf"
+      ],
+      "src/views/workspace/table/TableSetup.tsx": [
+        "ViewEditor"
+      ],
+      "src/views/workspace/table/rows.ts": [
+        "GONE",
+        "NOBODY",
+        "NO_CARD",
+        "byAssignee",
+        "byCard"
+      ],
+      "src/views/workspace/text/TextItems.tsx": [
+        "COLOR_VAR"
+      ],
+      "src/views/workspace/text/titleLayout.ts": [
+        "NAME_TRACK"
+      ],
+      "src/views/workspace/threads/Threads.tsx": [
+        "withMentions"
+      ],
+      "src/views/workspaces/pieces.tsx": [
+        "HereNow",
+        "More",
+        "kindsText"
+      ]
+    }
+  }
+}

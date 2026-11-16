@@ -37,7 +37,13 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
   the app and every build (D-324); the gallery itself: `/gallery.html` on the dev server
 - `npm run check:gallery:live`: the gallery's examples that press, drag or right-click, run in headless Chrome; a step
   that finds nothing fails it (~3 min, so by hand and in CI's own job, not on every write; `-- <path part>` runs some)
-- `npm run check:kit`: hand-made UI outside src/ui no more than scripts/kit-baseline.json (D-326)
+- `npm run check:kit`: hand-made UI outside src/ui no more than scripts/kit-baseline.json (D-326); and behaviour written by hand
+  where a shared home exists (D-391: a window key or pointer listener, a frame loop, localStorage, a cut at a typed
+  number in model/ops/data, a raw element in the kit's patterns), today's in the baseline, new ones refused
+- `npm run check:repeats`: an exported name declared in two files, copied blocks (jscpd), unused files and exports
+  (knip), no more than scripts/repeats-baseline.json (D-391); `-- --names` is the fast part the hook and commits run,
+  the whole runs in CI's own job (~10 s, tools in its own cache); `-- --write` lowers the baseline, `-- --admit names`
+  takes one in on purpose
 - `npm run check:memory`: the memory bank agrees with itself (log numbering, every standing decision has a line in
   decisions.md or decisions-1.0.md, nothing superseded cited as a rule, state.md ≤ 120 lines); run after editing memory-bank/
 - Onboarding again as a new person (dev only): add `?onboarding=reset` to the address; that tab gets an empty test
@@ -46,7 +52,7 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
 
 ## Hard rules
 - The rules below are enforced, not asked for (D-339): after every Write/Edit under `src/`, `.claude/settings.json` runs
-  `scripts/ui-rules-hook.mjs` (tokens, kit, gallery, lessons, memory bank) and a refusal comes back as the tool's
+  `scripts/ui-rules-hook.mjs` (tokens, kit, gallery, lessons, a name declared twice, memory bank) and a refusal comes back as the tool's
   feedback: fix it before going on, never work round it. Commits run `scripts/commit-rules.mjs` (`.githooks/`, set by
   `npm install`): the same checks, and a staged component without its `X.gallery.tsx` or without a lesson change needs a
   `Gallery: …` / `Lessons: …` line in the message saying why. A rule the checks can't see yet: add it to the check.

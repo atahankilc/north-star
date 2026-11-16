@@ -4,6 +4,11 @@
 // allows. The baseline only shrinks: moving an area onto the kit lowers it (`--write`). A line that truly needs its own
 // says why with `// kit-ok: why` (TSX) or `/* kit-ok: why */` (CSS). `--admit <rule>` takes today's hits of a rule that's
 // new into the baseline once (the rule then only stops new ones).
+// Behaviour too (D-391, docs/specs/shared-code.md R4.1), the `code` rules: what has one shared home and got written
+// again by hand: a key or pointer listener on the window (ui/foundation: useEscapeLayer, useDismiss, dragPointer,
+// pressDrag, panPointer, keysTaken), a frame loop (motion.ts' tween), localStorage (state/local.ts), a text or list cut
+// at a typed number in model/, ops/ or data/ (model/limits.ts), a raw <button>/<input>/<textarea> inside the kit's
+// patterns (its primitives). They look in .ts too, and inside src/ui. Today's are in the baseline and counted apart.
 //   npm run check:kit            check
 //   npm run check:kit -- --list  print every hit, file by file
 //   npm run check:kit -- --write lower the baseline to today's counts (never raises it)
@@ -54,6 +59,29 @@ const RULES = {
   ],
 }
 
+// Behaviour written by hand (D-391): [name, pattern, where it's at home (exempt), where it looks (unset: all of src)].
+// A comment line is never counted.
+RULES.code = [
+  ['windowKeys', /\b(?:window|document)\.addEventListener\(\s*['"](?:key|pointer|mouse|wheel|click|contextmenu)/g, /^src\/ui\/foundation\//],
+  // A loop: the frame's own function handed back to requestAnimationFrame (a one-off passes an arrow). The backdrop's
+  // clock (src/three) is its own.
+  ['rafLoop', /requestAnimationFrame\(\s*[A-Za-z_$][\w$.]*\s*\)/g, /^src\/(?:ui\/foundation|three)\//],
+  ['storage', /\blocalStorage\./g, /^src\/state\/local\.ts$/],
+  ['rawCut', /\.slice\(0,\s*\d{2,}\)|\.length\s*(?:>=?|<=?)\s*\d{2,}/g, /^src\/model\/limits\.ts$/, /^src\/(?:model|ops|data)\//],
+  // The raw element's homes are the primitives that are it.
+  ['kitRaw', /<(?:button|input|textarea)\b/g, /^src\/ui\/primitives\/(?:Button|ToolButton|Checkbox|Chip|Field|Tabs)\.tsx$/, /^src\/ui\//],
+]
+const HINT = {
+  windowKeys: 'a key or pointer listener on the window: use ui/foundation (useEscapeLayer, useDismiss, pressDrag, dragPointer, panPointer, keysTaken)',
+  rafLoop: "a frame loop by hand: use ui/foundation/motion.ts' tween()",
+  storage: 'localStorage by hand: use state/local.ts (readLocal, readLocalJson, keepLocal)',
+  rawCut: 'a cut at a typed number: name it in model/limits.ts and import it',
+  kitRaw: 'a raw element inside the kit: build the pattern from the primitives (Button, Field, Checkbox…)',
+}
+const isCode = (name) => name in HINT
+// Where the code rules never look: the dev-only gallery, the demo realm's stage, tests.
+const codeSkip = [/^src\/gallery\//, /^src\/demo\//, /\.gallery\.tsx$/, /\.test\.tsx?$/, /\.d\.ts$/]
+
 // Rules that hold inside the kit as well, where the others don't look.
 const everywhere = new Set(['scrollbar', 'onLook', 'cornerMark'])
 
@@ -61,7 +89,7 @@ function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name)
     if (e.isDirectory()) walk(p, out)
-    else if (/\.(tsx|module\.css)$/.test(e.name)) out.push(path.relative(root, p).split(path.sep).join('/'))
+    else if (/\.(tsx?|module\.css)$/.test(e.name)) out.push(path.relative(root, p).split(path.sep).join('/'))
   }
   return out
 }
@@ -69,15 +97,19 @@ function walk(dir, out = []) {
 const skipped = (file) => skip.some((r) => r.test(file))
 
 function count(file) {
-  const kind = file.endsWith('.css') ? 'css' : 'tsx'
+  const kinds = file.endsWith('.css') ? ['css'] : file.endsWith('.tsx') ? ['tsx', 'code'] : ['code']
   const lines = fs.readFileSync(path.join(root, file), 'utf8').split('\n')
   const hits = []
   lines.forEach((line, i) => {
     if (/kit-ok/.test(line)) return
-    for (const [name, re, home] of RULES[kind]) {
-      if (home?.test(file) || (skipped(file) && !everywhere.has(name))) continue
-      for (const _ of line.matchAll(re)) hits.push({ name, line: i + 1, text: line.trim() })
-    }
+    for (const kind of kinds)
+      for (const [name, re, home, scope] of RULES[kind]) {
+        if (home?.test(file)) continue
+        if (kind === 'code') {
+          if (codeSkip.some((r) => r.test(file)) || (scope && !scope.test(file)) || /^\s*(?:\/\/|\*|\/\*)/.test(line)) continue
+        } else if (skipped(file) && !everywhere.has(name)) continue
+        for (const _ of line.matchAll(re)) hits.push({ name, line: i + 1, text: line.trim() })
+      }
   })
   return hits
 }
@@ -149,9 +181,24 @@ for (const [f, c] of Object.entries(now))
 for (const [f, c] of Object.entries(baseline))
   for (const [k, n] of Object.entries(c)) if ((now[f]?.[k] ?? 0) < n) under.push(`${f}: ${k} ${now[f]?.[k] ?? 0} (baseline ${n})`)
 
-const total = Object.values(now).reduce((s, c) => s + Object.values(c).reduce((a, b) => a + b, 0), 0)
+// Hand-made UI and behaviour by hand are counted apart: the first is at 0 and stays there.
+const sum = (pick) => {
+  let n = 0
+  const files = new Set()
+  for (const [f, c] of Object.entries(now)) for (const [k, v] of Object.entries(c)) if (pick(k)) ((n += v), files.add(f))
+  return [n, files.size]
+}
+const [ui, uiFiles] = sum((k) => !isCode(k))
+const [code, codeFiles] = sum(isCode)
 if (over.length) {
-  console.error(`check:kit: more hand-made UI than the baseline allows (use the kit in src/ui, D-326; or say why with kit-ok):\n  ${over.join('\n  ')}`)
+  const hints = [...new Set(over.map((o) => o.split(': ')[1].split(' ')[0]).filter(isCode))].map((k) => `  ${k}: ${HINT[k]}`)
+  console.error(
+    `check:kit: more by hand than the baseline allows (use the kit in src/ui, D-326, or the shared code, D-391; or say why with kit-ok):\n  ${over.join('\n  ')}` +
+      (hints.length ? `\n${hints.join('\n')}` : ''),
+  )
   process.exit(1)
 }
-console.log(`check:kit: ${total} hand-made left in ${Object.keys(now).length} files${under.length ? ` (${under.length} below the baseline: npm run check:kit -- --write)` : ''}`)
+console.log(
+  `check:kit: ${ui} hand-made left in ${uiFiles} files; behaviour by hand: ${code} in ${codeFiles} files (in the baseline, only shrinks)` +
+    (under.length ? ` (${under.length} below the baseline: npm run check:kit -- --write)` : ''),
+)

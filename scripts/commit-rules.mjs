@@ -1,5 +1,5 @@
 // The repo's rules at commit time (D-339), for people and agents alike (.githooks/, `npm install` points git at it).
-//   node scripts/commit-rules.mjs pre          pre-commit: the rule checks (tokens, kit, gallery, lessons, memory bank)
+//   node scripts/commit-rules.mjs pre          pre-commit: the rule checks (tokens, kit, gallery, lessons, names, memory bank)
 //   node scripts/commit-rules.mjs msg <file>   commit-msg: a changed component ships with its gallery and its lesson
 // The second can't know whether a change is "real" (CLAUDE.md: a new component, or a real change to one, ships with its
 // X.gallery.tsx and its lesson), so it asks the commit to say: when a component file is staged without its gallery
@@ -17,14 +17,15 @@ const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8'
 const staged = (process.env.RULES_STAGED?.split(',') ?? git('diff', '--cached', '--name-only', '--diff-filter=ACMR').split('\n')).filter(Boolean)
 
 if (mode === 'pre') {
-  const checks = ['check-tokens', 'check-kit', 'check-gallery', 'check-lessons']
+  const checks = ['check-tokens', 'check-kit', 'check-gallery', 'check-lessons', 'check-repeats --names']
   if (staged.some((f) => f.startsWith('memory-bank/'))) checks.push('check-memory')
   const refused = []
   for (const c of checks) {
     try {
-      execFileSync(process.execPath, [path.join(root, 'scripts', `${c}.mjs`)], { cwd: root, stdio: 'pipe', encoding: 'utf8' })
+      const [name, ...rest] = c.split(' ')
+      execFileSync(process.execPath, [path.join(root, 'scripts', `${name}.mjs`), ...rest], { cwd: root, stdio: 'pipe', encoding: 'utf8' })
     } catch (e) {
-      refused.push(`npm run ${c.replace('check-', 'check:')}:\n${`${e.stdout ?? ''}${e.stderr ?? ''}`.trim().split('\n').slice(-15).join('\n')}`)
+      refused.push(`npm run ${c.replace('check-', 'check:').replace(' --', ' -- --')}:\n${`${e.stdout ?? ''}${e.stderr ?? ''}`.trim().split('\n').slice(-15).join('\n')}`)
     }
   }
   if (refused.length) {
