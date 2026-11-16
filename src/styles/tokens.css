@@ -225,6 +225,7 @@
 
   /* How much of a colour goes into a color-mix (D-319). --card-tint (below) is the card face's. */
   --mix-wash: 8%;
+  --mix-pick: 22%; /* a prompt's picked row, filled with its tone (D-387) */
   --mix-soft: 40%;
   --mix-strong: 72%;
   --mix-near: 86%;

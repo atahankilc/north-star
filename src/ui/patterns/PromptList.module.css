@@ -3,7 +3,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-1) 0;
+  /* Its rows are pills, a step in from the round frame's line (D-387). */
+  padding: var(--space-1);
 }
 
 /* Its first head sits close under the `>` line. */

@@ -1,6 +1,6 @@
 # Surfaces: round with a line, marks that take the corner, panels under the screen (D-387)
 
-Status: **look agreed 2026-11-16 (D-387); steps 1–3 built 2026-11-16, steps 4–8 not.** This is the build plan for what sits on top of D-384's controls
+Status: **look agreed 2026-11-16 (D-387); steps 1–4 built 2026-11-16, steps 5–8 not.** This is the build plan for what sits on top of D-384's controls
 ([controls.md](controls.md)): modals, the hazard confirm, the selection marks, menus, the foot dock, the threads dock,
 the side panel, Settings' inside, the toast and the tip. Cards (squircle) and pieces (square) don't change.
 
@@ -98,6 +98,12 @@ the build green before the next.
 4. **Menus.** PromptFrame round with a line, cyan with the keyboard, its L's gone; PromptRow a pill, picked filled, no
    band; Menu, Select, ContextMenu, InPlaceMenu, the finder, the kind guide, Popover, PeopleHere's list checked. A menu
    in a console or dock (`plain`) too.
+   *Built 2026-11-16:* PromptFrame round (`--radius-menu`, squircle), its line `--frame-line` (cyan with the keyboard),
+   the hugging shade kept, its L's gone; so every prompt at once (PromptPanel, PromptOverlay's finder and guide, the
+   threads' `@` list, the agent's skill menu, a matrix's pickers). PromptList steps its rows `--space-1` in from the
+   line; a row is a pill, picked filled with its tone (`--mix-pick`, cyan with no tone; was a magenta band and a grey
+   wash), a two-line row a box's corners. The kind guide glued to the `+` menu carries the menu's line on: the menu
+   keeps its left corners, the guide takes the right ones.
 5. **The foot dock and the threads dock.** Console `foot` and its drawer as tabs with a line; the whole-edge case
    (`data-full`) keeps its top line; Corners.module.css's `top` pair goes with the threads dock's L's.
 6. **The side panel under the screen.** The sheet (WorkspaceLayout/CanvasView's root), the ground, EdgeColumn bare on it;

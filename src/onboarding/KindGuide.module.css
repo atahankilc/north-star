@@ -12,15 +12,19 @@
   pointer-events: auto;
 }
 
-/* ── Glued to the menu's right edge, one prompt split by a hairline: the menu's console look (PromptPanel, D-347), its
-   shade and its right corners' L's carried on round the guide ── */
+/* ── Glued to the menu's right edge, one prompt split by a hairline (D-316): the menu's round frame and its line
+   (PromptFrame, D-387) carried on round the guide. The menu keeps its left corners, the guide takes the right ones; the
+   line is the menu's own colour (`--frame-line`: cyan while the keyboard is in it). ── */
 .glued {
   position: absolute;
-  top: 0;
+  top: calc(-1 * var(--line-w));
   left: 100%;
   display: flex;
-  min-height: 100%;
-  border-left: var(--line-w) solid var(--line);
+  min-height: calc(100% + 2 * var(--line-w));
+  border: var(--line-w) solid var(--frame-line, var(--line-hover));
+  border-left-color: var(--line);
+  border-radius: 0 var(--radius-menu) var(--radius-menu) 0;
+  corner-shape: squircle;
   background: var(--bg);
   box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
   color: var(--fg-dim);
@@ -29,16 +33,10 @@
   cursor: default;
 }
 
-.glued::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(var(--fg-faint), var(--fg-faint)) right top / var(--corner-mark) var(--line-w) no-repeat,
-    linear-gradient(var(--fg-faint), var(--fg-faint)) right top / var(--line-w) var(--corner-mark) no-repeat,
-    linear-gradient(var(--fg-faint), var(--fg-faint)) right bottom / var(--corner-mark) var(--line-w) no-repeat,
-    linear-gradient(var(--fg-faint), var(--fg-faint)) right bottom / var(--line-w) var(--corner-mark) no-repeat;
+/* The menu it's glued to: its right corners square, where the guide goes on. */
+*:has(> .glued) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .gluedIn {
