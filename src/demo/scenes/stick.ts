@@ -8,7 +8,7 @@ import { CLEAR, TABLE_F, bare, lensFixture, tableF } from '../fixtures/kit'
 
 const T = `[data-target="plane:${TABLE_F}"]`
 const GRAB = aim(T, 0.45, 0.5)
-const DONE = `${T} [role="toolbar"] button[aria-pressed="true"]`
+const DONE = `${T} [role="toolbar"] button[data-tone="primary"]`
 // Narrower than Pazar's (375), so the plane and the table are both whole in view; where it starts: a little right of
 // the plane and lower, free.
 const START = { x: CLEAR.x + 600, y: CLEAR.y + 75, w: 375 }

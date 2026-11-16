@@ -9,7 +9,7 @@ import { openWizard, NO_HUD, fresh, pageStyle, wizardCss } from '../fixtures/o11
 
 const ID = 'matrix-wizard'
 const TEMPLATE = byText('[data-learn="wizard"] button', 'problems × customers', 0.3, 0.5)
-const COLUMNS = byText('[data-learn="wizard"] [role="tab"]', '3', 0.4, 0.5)
+const COLUMNS = byText('[data-learn="wizard"] [role="tab"]', '03', 0.4, 0.5)
 const COMPETITORS = byText('[data-learn="wizard"] button', 'competitors', 0.4, 0.5)
 
 const scene: Scene = {

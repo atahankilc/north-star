@@ -20,6 +20,8 @@
     "check:lessons": "node scripts/check-lessons.mjs",
     "check:gallery": "node scripts/check-gallery.mjs",
     "check:gallery:live": "node scripts/check-gallery-live.mjs",
+    "check:scenes": "node scripts/check-scenes-play.mjs",
+    "check:scenes:full": "node scripts/check-scenes.mjs",
     "check:tokens": "node scripts/check-tokens.mjs",
     "check:kit": "node scripts/check-kit.mjs",
     "check:repeats": "node scripts/check-repeats.mjs",

@@ -502,3 +502,6 @@ merges (R1.5–R1.7, the demo) and R3.
   `ease`; peers-comment on the kit's `rightClick` and `type`. Left apart on purpose: the two `NO_HUD`s and the two
   `glideTo`s (different things under one name). Not done: the made-up threads twice (another session was in both
   files), Stage and Mount's shared provider stack.
+- **The scenes (2026-11-17, D-401).** The eight scenes that had stopped part way are fixed (selectors a UI change had
+  left behind); a `Select` with drawn labels is found by `words` (a real fault: the link bar's kinds found nothing);
+  `npm run check:scenes` plays every scene to its end, in CI's own job; scripts/headless.mjs for the two browser checks.

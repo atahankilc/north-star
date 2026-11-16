@@ -62,6 +62,19 @@ jobs:
       - run: npm ci
       - run: npm run check:gallery:live
 
+  # Every lesson's scene played to its end in headless Chrome (check:scenes, D-401): a step that finds nothing fails it.
+  # Its own job, as the gallery's: red without holding the deploy.
+  scenes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check:scenes
+
   # Copied blocks and unused files or exports (check:repeats, D-391: jscpd and knip, installed in the job's own cache).
   # Its own job, as gallery-live: it shows red without holding the deploy.
   repeats:

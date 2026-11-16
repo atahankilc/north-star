@@ -12,7 +12,7 @@ const ev = (id: string, stance: Evidence['stance'], text: string, n: number): Ev
 const BEFORE = [ev('v-a', 'supports', 'The menu repeats every Monday', 1), ev('v-b', 'contradicts', 'Two like knowing what’s coming', 2)]
 const TEXT = '7 of 9 eat the same dish twice a week'
 const TESTING = byText('[data-learn="panel-status"] button', 'testing')
-const ADD = byText('[data-learn="card-panel"] section button', 'evidence')
+const ADD = byText('[data-learn="card-panel"] section button', '+ evidence')
 
 const scene: Scene = {
   id: 'evidence',

@@ -7,7 +7,7 @@ import { openWizard, NO_HUD, fresh, pageStyle, wizardCss } from '../fixtures/o11
 
 const ID = 'table-rules'
 const W = '[data-learn="wizard"]'
-const ROWS = byText(`${W} [role="tab"]`, '2', 0.4, 0.5)
+const ROWS = byText(`${W} [role="tab"]`, '02', 0.4, 0.5)
 const PLUS = (f: string) => byText(`${W} button`, `+ ${f}`, 0.5, 0.5)
 const VALUE = (v: string) => byText(`${W} button[aria-pressed]`, v, 0.5, 0.5)
 

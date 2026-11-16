@@ -8,6 +8,9 @@ const KINDS: SelectOption<string>[] = [
   { value: 'competes', label: 'competes with' },
   { value: 'depends', label: 'depends on' },
 ]
+// Labels drawn, not written: found by their `words`.
+const NAMES = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']
+const DRAWN: SelectOption<string>[] = NAMES.map((n, i) => ({ value: `o${i}`, label: <span>◆ {n}</span>, words: n }))
 const MANY: SelectOption<string>[] = Array.from({ length: 14 }, (_, i) => ({ value: `o${i}`, label: `option ${i + 1}` }))
 
 function Pick({ options = KINDS, start = 'solves', disabled }: { options?: SelectOption<string>[]; start?: string; disabled?: boolean }) {
@@ -40,6 +43,15 @@ export default example({
         await c.wait(120)
         c.type('1', 'input')
       },
+    },
+    'drawn labels, typed': {
+      render: () => <div style={{ height: 460 }}><Pick options={DRAWN} start="o3" /></div>,
+      setup: async (c) => {
+        c.click('[aria-haspopup]')
+        await c.wait(120)
+        c.type('nine', 'input')
+      },
+      note: 'a label that is drawn (a mark and a word) is found by its `words`, else by its value (D-401: it found nothing)',
     },
     disabled: () => <Pick disabled />,
   },

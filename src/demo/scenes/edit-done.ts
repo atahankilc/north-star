@@ -5,7 +5,7 @@ import { setEditing } from '../../state/canvasView'
 import { aim, camera, cursor, onStage, run, wait, type Scene } from '../director'
 import { CLEAR, PLANE_E, bare, base, planeE, planeECards, planeEEdges } from '../fixtures/kit'
 
-const DONE = `[data-target="plane:${PLANE_E}"] [role="toolbar"] button[aria-pressed="true"]`
+const DONE = `[data-target="plane:${PLANE_E}"] [role="toolbar"] button[data-tone="primary"]`
 
 const scene: Scene = {
   id: 'edit-done',

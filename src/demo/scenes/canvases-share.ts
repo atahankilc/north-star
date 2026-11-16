@@ -8,7 +8,7 @@ import { aim, camera, cursor, onStage, run, set, wait, type Scene } from '../dir
 import { AT, CLEAR, PLANE_E, bare, base, byText, planeE, planeECards, planeEEdges } from '../fixtures/kit'
 
 const LAUNCH = 'c-launch'
-const DONE = `[data-target="plane:${PLANE_E}"] [role="toolbar"] button[aria-pressed="true"]`
+const DONE = `[data-target="plane:${PLANE_E}"] [role="toolbar"] button[data-tone="primary"]`
 const ALSO = byText(`[data-target="plane:${PLANE_E}"] button`, 'also on')
 const ROW = aim(`[data-learn="prompt"] [data-key="${LAUNCH}"]`, 0.3, 0.5)
 

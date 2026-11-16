@@ -259,7 +259,7 @@ function LinkBar({ edge, zoom }: { edge: Edge; zoom: number }) {
         <Select
           className={styles.kind}
           value={edge.kind}
-          options={LINK_KINDS.map((k) => ({ value: k.kind, label: <KindOption kind={k.kind} /> }))}
+          options={LINK_KINDS.map((k) => ({ value: k.kind, label: <KindOption kind={k.kind} />, words: k.label }))}
           onChange={(kind) => void updateEdge(wid, edge.id, { kind })}
           ariaLabel="Link type"
         />

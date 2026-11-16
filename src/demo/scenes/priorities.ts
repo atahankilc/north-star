@@ -12,8 +12,14 @@ import { WID } from '../fixtures/pazar'
 
 const DECK = 'k-priorities'
 const deck = piece(DECK, { kind: 'kanban', x: 0, y: 1550, w: 1500, h: 700, name: '08 Priorities', kanban: { ...emptyKanban(), ...KANBAN_TEMPLATES[2].setup() } })
-// The fourth in the order, where the card's own P2 differs from the P1 suggested.
-const DIFFERS = aim('aside[aria-label="Suggested order"] button:nth-of-type(4) [data-differs]', 0.3, 0.5)
+// The first row of the order where the card's own priority differs from the one suggested (`P2 → P1`, in yellow): its
+// chip, at the row's right end. Found by what it says: the chip is the kit's PriorityChip and carries no mark of its own.
+const DIFFERS = () => {
+  const row = [...document.querySelectorAll('aside[aria-label="Suggested order"] button')].find((e) => (e.textContent ?? '').includes('→'))
+  if (!row) return null
+  const r = row.getBoundingClientRect()
+  return { x: r.right - 28, y: r.top + r.height / 2 }
+}
 const ORDER = aim('button[title^="the suggested order beside it"]')
 
 const scene: Scene = {

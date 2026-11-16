@@ -11,7 +11,9 @@ import { Popover } from './Popover'
 import { PromptPanel } from './PromptPanel'
 import styles from './Select.module.css'
 
-export type SelectOption<T extends string> = { value: T; label: ReactNode }
+// `words`: what typing in the list finds it by when its label is drawn, not written (a swatch and a word): without
+// them a drawn label is found by its value.
+export type SelectOption<T extends string> = { value: T; label: ReactNode; words?: string }
 
 type Props<T extends string> = {
   value: T
@@ -32,7 +34,7 @@ export function Select<T extends string>({ value, options, onChange, ariaLabel, 
   change.current = onChange
 
   const items = useMemo<PromptEntry[]>(
-    () => options.map((o) => ({ key: o.value, label: o.label, current: o.value === value, onSelect: () => o.value !== value && change.current(o.value) })),
+    () => options.map((o) => ({ key: o.value, label: o.label, words: o.words ?? (typeof o.label === 'string' ? undefined : o.value), current: o.value === value, onSelect: () => o.value !== value && change.current(o.value) })),
     [options, value],
   )
 

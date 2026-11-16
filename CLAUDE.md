@@ -37,6 +37,9 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
   the app and every build (D-324); the gallery itself: `/gallery.html` on the dev server
 - `npm run check:gallery:live`: the gallery's examples that press, drag or right-click, run in headless Chrome; a step
   that finds nothing fails it (~3 min, so by hand and in CI's own job, not on every write; `-- <path part>` runs some)
+- `npm run check:scenes`: every lesson's scene (src/demo/scenes) played to its end in headless Chrome; a step that finds
+  nothing, or an error on the page, fails it (D-401; about a minute, by hand and in CI's own job); `-- <name part>` runs
+  some; `check:scenes:full` is the long one with pictures (needs DEMO_URL and PUPPETEER_CORE)
 - `npm run check:kit`: hand-made UI outside src/ui no more than scripts/kit-baseline.json (D-326); and behaviour written by hand
   where a shared home exists (D-391: a window key or pointer listener, a frame loop, localStorage, a cut at a typed
   number in model/ops/data, a raw element in the kit's patterns), today's in the baseline, new ones refused; the dev
