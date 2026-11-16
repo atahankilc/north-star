@@ -37,7 +37,7 @@ export default example({
   place: 'text/chips',
   also: ['forms/pickers'],
   file: 'src/ui/primitives/Chip.tsx',
-  note: 'the small inline token (D-326): tag (a #tag, a framed pill), pill (a value in colour), kind (caps, a pill framed in its colour); on the canvas (`world`) square as before (D-384)',
+  note: 'the small inline token (D-326): tag (a #tag, a framed pill), pill (a value in colour), kind (caps, a pill framed in its colour), soft (a count in words on a wash of its colour, D-390); on the canvas (`world`) square as before (D-384)',
   states: {
     tags: () => wrap(['#b2c', '#supply', '#berlin', '#pilot'].map((t) => <Chip key={t}>{t}</Chip>)),
     removable: { render: () => <Removable />, note: 'point at a tag: its × shows; Tab reaches it too' },
@@ -55,6 +55,7 @@ export default example({
         ['status', wrap(<><Chip variant="pill" tone="var(--accent-green)">validated</Chip><Chip variant="pill" tone="var(--accent-yellow)">testing</Chip><Chip variant="pill">hypothesis</Chip></>)],
       ]),
     kinds: () => wrap(['solves', 'part of', 'competes', 'depends on'].map((k, i) => <Chip key={k} variant="kind" tone={['var(--link-solves)', 'var(--link-part)', 'var(--link-competes)', 'var(--link-depends)'][i]}>{k}</Chip>)),
+    soft: { render: () => wrap(<><Chip variant="soft" tone="var(--accent-yellow)">2 new tasks</Chip><Chip variant="soft" tone="var(--accent-magenta)">2 ask to join</Chip><Chip variant="soft">3 waiting</Chip></>), note: 'what waits for you on the workspaces page: words, never a bare glyph and a number' },
     'by card type': () => rows(TYPES.map((t) => [t, wrap(<><Chip tone={CARD_TONE[t]}>#{t}</Chip><Chip variant="pill" tone={CARD_TONE[t]}>{t}</Chip><Chip variant="kind" tone={CARD_TONE[t]}>{t}</Chip></>)])),
   },
 })

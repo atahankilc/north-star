@@ -423,9 +423,15 @@ feature comes back as a piece, and check them with the user then.
 
 ## Workspaces page
 - The page is for going back to work (D-338, docs/specs/workspaces-page.md): centred; the big title with its count, one
-  prompt (filter, a new name ↵, an invite code ↵, a dropped .zip imports), the continue piece (picture, since you left,
-  here now), what needs you, others as small pieces, the three ways in while you have one (D-345); a first visit on the same skeleton;
-  actions in `⋯`/right-click; pictures from one `summary/main` doc per workspace, never its content.
+  prompt as wide as the page (filter, a new name ↵, an invite code ↵; `import .zip` at its end, a dropped .zip imports),
+  the continue card (picture, since you left, here now), what needs you as one list, the others, the three ways in while
+  you have one (D-345); a first visit on the same skeleton; actions in `⋯`/right-click; pictures from one `summary/main`
+  doc per workspace, never its content.
+- Its look (D-390): cards (`PieceCard`) round with a line, no band, no number or role cut in; another workspace that
+  changed since you left is a card two columns wide saying who changed what (up to 20 changes read each); people in
+  colour (a name in theirs, who's in it now as circles with a lamp that beats); what waits for you in words on a wash
+  (`Chip` `soft`: `2 new tasks`, `2 ask to join`), in the list and on each workspace's card, never `☐ 2`; a row's
+  buttons in ink (`open →` main, `join` filled, `decline`/`withdraw` danger); nothing pictured draws faint dots.
 
 ## Settings
 - A modal from the gear or your square: YOU (account, display), WORKSPACE (general: name and "building" description;
@@ -457,6 +463,7 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
   queen with a crown"; `/nar` in the chat (D-078, D-092).
 - The threads panel sliding up from the edge, its halves sliding their width; a new kind of motion (D-199): cells only.
 - The workspaces page at full width with an activity column (D-338): too much to look over.
+- On the workspaces page (D-390): the last workspace's name as the page's big text with a small title; the prompt in a round well; lined pills for a row's buttons; a strip of cells for when things changed; pictures dim until pointed at; an empty one's picture as a window onto the backdrop; live cursors over the pictures.
 - Chat window sliding in from the right (D-081). Saving whole chats (reports instead) (D-090).
 - OpenAI deep-research models (need stored answers) (D-088). MCP for tools (no server) (D-074).
 - Comma CSV for the matrix (D-080). A copy button for the TSV (D-080).

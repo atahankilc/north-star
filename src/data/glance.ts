@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import { db, firebase, isDemo } from './firebase'
 import { useDoc, useQuery, type Live } from './hooks'
 import type { Member, Presence, ThreadReads } from './model'
+import { assignColors, presenceColor } from './presence'
 import type { WorkspaceData } from './workspaceData'
 import { piecesOn } from './canvases'
 import { MAIN } from '../model/canvases'
@@ -149,8 +150,11 @@ export function useSummaryWriter(wid: string, data: WorkspaceData, loading: bool
 }
 
 // ── Since you left ────────────────────────────────────────────────────────────────────────────────────────────────
-// Others' changes after your visit, newest first: `max` of them (20 on the continue piece, 5 on the others). Never
-// visited: nothing (it would all be new).
+// Others' changes after your visit, newest first: `max` of them. Never
+// visited: nothing (it would all be new). `SINCE_MAX` everywhere (D-390: the others' cards say what changed too): a list
+// that long was cut, so its counts are at least that (`sinceCut`).
+export const SINCE_MAX = 20
+export const sinceCut = (list: readonly ChangeEntry[]) => list.length >= SINCE_MAX
 export function useSince(wid: string, uid: string, after: number | undefined, max: number): Live<ChangeEntry[]> {
   const got = useQuery<Record<string, unknown>>(
     !isDemo && after ? query(collection(db(), 'workspaces', wid, 'changes'), where('at', '>', after), orderBy('at', 'desc'), limit(max)) : null,
@@ -191,13 +195,15 @@ export function useNewTasks(wid: string, uid: string, seen: number | undefined):
 }
 
 // ── Here now ──────────────────────────────────────────────────────────────────────────────────────────────────────
-// Members in it now (RTDB presence, D-065): not you, not away (D-331), heard from within a minute. Their names.
+// Members in it now (RTDB presence, D-065): not you, not away (D-331), heard from within a minute. Each with the colour
+// they have in there (by join order among everyone in it, D-067), stored dark: draw it with `themeAccent`.
+export type Here = { uid: string; name: string; color: string }
 const HERE_STALE_MS = 60_000
-export function useHereNow(wid: string, memberIds: readonly string[], uid: string): string[] {
-  const [here, setHere] = useState<string[]>([])
+export function useHereNow(wid: string, memberIds: readonly string[], uid: string): Here[] {
+  const [here, setHere] = useState<Here[]>([])
   const key = memberIds.join(' ')
   useEffect(() => {
-    if (isDemo) return setHere(demo[wid]?.here ?? [])
+    if (isDemo) return setHere((demo[wid]?.here ?? []).map((name) => ({ uid: name, name, color: presenceColor(name) })))
     const rtdb = firebase?.rtdb
     if (!rtdb) return
     const members = new Set(key.split(' '))
@@ -206,7 +212,9 @@ export function useHereNow(wid: string, memberIds: readonly string[], uid: strin
       (snap) => {
         const all = (snap.val() as Record<string, Presence & { away?: boolean }> | null) ?? {}
         const now = Date.now()
-        setHere(Object.entries(all).filter(([id, p]) => id !== uid && members.has(id) && !p.away && now - (p.ts ?? 0) < HERE_STALE_MS).map(([, p]) => p.name))
+        const inIt = Object.entries(all).filter(([id, p]) => members.has(id) && now - (p.ts ?? 0) < HERE_STALE_MS)
+        const colors = assignColors(inIt.map(([id, p]) => ({ uid: id, since: (p as { since?: number }).since })))
+        setHere(inIt.filter(([id, p]) => id !== uid && !p.away).map(([id, p]) => ({ uid: id, name: p.name, color: colors.get(id) ?? presenceColor(id) })))
       },
       () => setHere([]),
     )

@@ -1,8 +1,9 @@
 // A workspace's picture on the workspaces page (D-338, docs/specs/workspaces-page.md §3): its first canvas drawn from
 // the summary doc (src/model/summary.ts), shapes only: pieces on their graphite with their kind's band, a plane's grid
 // dots and its cards in their type's tint. The canvas itself has no dots (only planes have a grid, D-332). Without a
-// summary (`sample`): a made-up canvas of the same shapes, nothing to read, for a first visit and a workspace nobody
-// has pictured yet. Drawn on a 2D canvas from the tokens, again when the theme changes.
+// summary: faint dots and nothing else (an empty or not yet pictured workspace says so, D-390; it drew a made-up canvas
+// before, and a page of them all looked alike); with `sample`, a made-up canvas of the same shapes, nothing to read, for
+// a first visit's START. Drawn on a 2D canvas from the tokens, again when the theme changes.
 import { useEffect, useRef } from 'react'
 import type { PieceKind } from '../../data/model'
 import { CARD_UNITS, type Summary } from '../../model/summary'
@@ -22,8 +23,6 @@ const BAND: Record<PieceKind, `--${string}`> = {
   documents: '--link-depends',
   document: '--link-depends',
 }
-// How faint an empty workspace's made-up canvas is.
-const GHOST = 0.4
 const varName = (v: string) => v.slice(4, -1) as `--${string}` // 'var(--x)' → '--x'
 
 // The made-up canvas for `sample`: a heading, a plane with cards, a deck, a table (0–1000; cards 0–100).
@@ -46,8 +45,8 @@ const SAMPLE: Summary = {
   ],
 }
 
-// No summary (a first visit, an empty or not yet pictured workspace): the made-up canvas, shapes only; `sample` draws
-// it at full strength (the first visit's START), else faint, so an empty workspace's card looks like the others.
+// No summary: dots (an empty or not yet pictured workspace), or with `sample` the made-up canvas, shapes only (the
+// first visit's START).
 type Props = { summary: Summary | null; sample?: boolean; className?: string }
 
 export function WorkspacePicture({ summary, sample = false, className }: Props) {
@@ -83,9 +82,15 @@ function paint(cv: HTMLCanvasElement, summary: Summary | null, wantSample: boole
   g.fillStyle = tokenText('--bg')
   g.fillRect(0, 0, W, H)
   const sample = !summary || !summary.pieces.length
+  if (sample && !wantSample) {
+    // Nothing pictured: the page's dots, a step apart.
+    const step = tokenPx('--space-4')
+    g.fillStyle = tokenText('--piece-mark')
+    for (let x = (W % step) / 2 + step / 2; x < W; x += step) for (let y = (H % step) / 2 + step / 2; y < H; y += step) g.fillRect(Math.round(x), Math.round(y), 1, 1)
+    return
+  }
   const s = sample ? SAMPLE : summary
-  // An empty one's ghost: the same drawing, faint.
-  const base = sample && !wantSample ? GHOST : 1
+  const base = 1
   g.globalAlpha = base
   const shapesOnly = sample
 

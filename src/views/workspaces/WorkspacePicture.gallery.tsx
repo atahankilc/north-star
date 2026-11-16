@@ -26,7 +26,7 @@ export default example({
         <WorkspacePicture summary={SUMMARY} />
       </div>
     ),
-    'none yet (faint)': () => (
+    'none yet (dots)': () => (
       <div style={box}>
         <WorkspacePicture summary={null} />
       </div>

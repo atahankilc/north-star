@@ -1,27 +1,34 @@
-# The workspaces page (D-338)
+# The workspaces page (D-338, D-390)
 
 The page after sign-in (`/workspaces`). Its job is to take you back to work: the workspace you left, what happened
 there, what needs you. Making, joining and importing are rarer and live in the same prompt. Chosen from
 [workspaces-preview/](workspaces-preview/) (option E: D's page, B's prompt, the old big title), centred.
 
-## 1. Layout (top to bottom, `--page-w`, centred)
+## 1. Layout (top to bottom, `--page-w`, centred; the look is D-390's)
 
 ```
 Workspaces 05                                        ← hero title, count magenta mono
-> find, start a new one, or paste an invite code…    ← PromptField, the page's first line
-┌ 01 CONTINUE · OWNER ─────────────────────────────┐
-│ [picture of its first canvas] │ Pazar             │
+> find, start a new one, or paste an invite code…                    import .zip   ← PromptField, as wide as the page
+╭──────────────────────────────────────────────────╮
+│ [picture of its first canvas] │ CONTINUE · OWNER  │
+│                               │ Pazar             │
 │                               │ its description   │
-│                               │ SINCE YOU LEFT·2H │  ← only when something changed
-│                               │ Ayşe · 4 cards…   │
-│                               │ 3 people · 1 here now     ⋯ │  ← the piece itself opens it
-└──────────────────────────────────────────────────┘
-┌ FOR YOU ──┐ ┌ ASKING ───┐ ┌ INVITED ──┐ ┌ WAITING ─┐   ← only the ones that apply
+│                               │ SINCE YOU LEFT·2H │  ← only when something changed; names in their colours
+│                               │ Ayşe 8 cards…     │
+│                               │ (2 new tasks) (2 ask to join)   ← what waits for you in it, in words
+│                               │ 3 people ● Ⓐ here now       ⋯ │  ← the card itself opens it
+╰──────────────────────────────────────────────────╯
+NEEDS YOU ───────────────────────────────── 04       ← one list, a row each, only the ones that apply
+│ (3 new tasks) given to you…  2 in Pazar · 1 in …            open → │
+│ ● 2 people ask to join Pazar                                open → │
+│ ● Kitchen robots  invited you · 4 people             [join] decline │
+│ ● QRST-UVWX  you asked to join                             withdraw │
 OTHERS ─────────────────────────────────── 04
-┌02 EDITOR┐ ┌03 OWNER┐ … ┌IMPORT┐                         ← picture, name, people, here, new, last visit, ⋯;
-                                                             the import piece last once the start row is gone
+╭ picture │ name      role ╮ ╭ picture ╮ ╭ picture ╮   ← one that changed since you left is two columns wide:
+│         │ SINCE YOU LEFT │ │ name    │ │ name    │     its picture, then who changed what; the rest small
+╰─────────┴────────────────╯ ╰─────────╯ ╰─────────╯
 START ANOTHER ───────                                      ← only while you have one (D-345)
-┌ NEW ┐ ┌ JOIN ┐ ┌ IMPORT [choose file] ┐
+╭ NEW ╮ ╭ JOIN ╮ ╭ IMPORT [choose file] ╮
 ```
 
 - **Typed**: the body gives way (cell by cell) to ledger rows: `01 Name` (the match lit cyan), new-for-you, people,
@@ -42,12 +49,19 @@ START ANOTHER ───────                                      ← onl
   delete (owners, through the hazard confirm). Rename and new workspace open a Window: name (≤ 80) and, for new, "what
   are you building" (the description, D-082).
 
-## 2. Pieces
+## 2. Cards (D-390; they were drawn as the canvas's pieces until then)
 
-As on the canvas (D-263, D-266, D-265): graphite, a 2 px band (cyan on the continue piece, the kind's colour on the
-needs-you pieces: tasks yellow, asking magenta, invited cyan, waiting the line; new magenta, join cyan, import blue),
-the name cut into the top edge in mono caps with a magenta number, Marks on hover (far, dim) and on the keyboard's pick
-(close, cyan). No lift, no `┌`, no dashed boxes. Everything enters cell by cell (`Appear`).
+Round with a line (`PieceCard`: `--radius-menu`, `--bg-raised`, no shadow, no band), Marks on hover (far, dim) and on
+the keyboard's pick (close, cyan) following the round corner. A card's name, when it has one, is a mono caps label on
+top inside it, in its tone (new magenta, join cyan, import blue); no number, no role cut into an edge: a workspace's
+role stands beside its name. Everything enters cell by cell (`Appear`).
+
+- **People in colour.** A name in since-you-left is in that person's colour (their own, from their id). Who's in it now:
+  a cyan lamp that beats (still under reduced motion), up to three circles in their colours (`Avatar`), `here now`.
+- **What waits for you, in words** (`Chip` `soft`): `2 new tasks` yellow, `2 ask to join` magenta, in the list's row
+  and on the workspace's own card. Never a glyph and a number.
+- **A row's buttons in ink** (inside D-384): `open →` strong, `join` the one filled, `decline` and `withdraw` magenta.
+- **Nothing pictured**: faint dots. The made-up canvas is only the first visit's START.
 
 ## 3. Data
 
@@ -56,11 +70,11 @@ the name cut into the top edge in mono caps with a magenta number, Marks on hove
 | Your workspaces | `workspaces` where `memberIds` has you (as before) | N |
 | Your last visit, tasks seen | `workspaces/{wid}/threadReads/{you}` (`visited`, `tasks`) | N |
 | The picture | `workspaces/{wid}/summary/main` | N |
-| Since you left | `changes` where `at > visited`, newest first: 20 on the continue piece, 5 on others; others' only | ≤ 20 + 5N |
+| Since you left | `changes` where `at > visited`, newest first: 20 on every card (`SINCE_MAX`, D-390); others' only; a list cut at 20 ends `and more` | ≤ 20N |
 | New for you | `tasks` where `assignee == you`, counted with `givenAt > tasks`, `givenBy != you` | your tasks |
 | Asking to join | `joinRequests` where `workspaceId` (owners only, as before) | requests |
-| Here now | RTDB `presence/{wid}`: members only (D-317), not away (D-331) | — |
-| Names in since-you-left | `members/{uid}` for the people in it (the continue piece only) | ≤ a few |
+| Here now | RTDB `presence/{wid}`: members only (D-317), not away (D-331); each with the colour they have in it | — |
+| Names in since-you-left | `members/{uid}` for the people in it, on every card that changed | ≤ a few each |
 
 **`threadReads/{uid}.visited`** (number, ms): written when the workspace opens and again when you leave it (unmount,
 hidden tab), at most once a minute. The page orders by it, newest first; never visited → `createdAt`.
@@ -103,3 +117,9 @@ as for D-330).
   end of the others is one too, its picture `DROP A .ZIP`, its strip `choose file`), and an **info card** (name cut in,
   a title, one line, its actions in the bottom-right corner: needs-you, the three ways in). An empty or not yet
   pictured workspace's picture is the made-up canvas, faint. The import card's words the same everywhere.
+
+## 7. The round look (D-390, 2026-11-17)
+What the user picked on a port preview, and what they turned down, is in D-390. Kept from §6: no `continue` button, no
+key hints, a `⋯` on every card, the backdrop shaded only under what's read. Changed from §6: the import card is gone
+(`import .zip` at the prompt's end; the three ways in still hold `choose file` while you have one); needs-you is a list,
+not info cards; an empty workspace's picture is dots.

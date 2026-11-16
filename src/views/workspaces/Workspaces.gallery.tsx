@@ -54,9 +54,9 @@ const GLANCE: Record<string, DemoGlance> = {
     here: ['Ayşe'],
     newTasks: 2,
   },
-  'w-lunch': { visited: Date.now() - 26 * HOUR, summary: picture(7), since: [change('u3', ['pieces'], 1, 5 * HOUR)], newTasks: 1 },
+  'w-lunch': { visited: Date.now() - 26 * HOUR, summary: picture(7), since: [change('u3', ['pieces'], 1, 5 * HOUR), change('u3', ['ideas', 'features'], 6, 7 * HOUR), change('u1', ['tasks'], 3, 20 * HOUR)], names: { u3: 'Deniz', u1: 'Ayşe' }, newTasks: 1 },
   'w-pets': { visited: Date.now() - 6 * DAY, summary: picture(11) },
-  'w-audit': { visited: Date.now() - 21 * DAY, summary: picture(19), here: ['Lale'] },
+  'w-audit': { visited: Date.now() - 21 * DAY, summary: picture(19), here: ['Lale'], since: [change('u0', ['competitors'], 4, 2 * DAY)], names: { u0: 'Lale' } },
   'w-climb': { visited: Date.now() - 64 * DAY, summary: null },
 }
 const INVITES: WithId<Invite>[] = [{ id: 'i1', workspaceId: 'w-x', email: 'you@example.com', name: 'Kitchen robots', memberCount: 4, invitedBy: 'u0', at: Date.now() - DAY }]
@@ -92,11 +92,11 @@ export default example({
   name: 'Workspaces',
   place: 'screens/workspaces',
   file: 'src/views/workspaces/Workspaces.tsx',
-  note: 'the page after sign-in (D-338): the title and its count, one prompt, the workspace you left, what needs you, the others; made-up lists and glances, every write refused',
+  note: 'the page after sign-in (D-338, D-390): the title and its count, one prompt with `import .zip` at its end, the workspace you left, what needs you as one list, the others (one that changed is a wide card saying what); made-up lists and glances, every write refused',
   states: {
     'a few': page({ workspaces: FEW, invites: INVITES, requests: REQUESTS, asking: { 'w-pazar': 2 } }),
     'first visit': page({}),
-    one: { ...page({ workspaces: [FEW[2]] }), note: 'the three ways in stay while you have one; from two on, only the import piece among the others (D-345)' },
+    one: { ...page({ workspaces: [FEW[2]] }), note: 'the three ways in stay while you have one (D-345); from two on, importing is the prompt’s `import .zip`' },
     many: page({ workspaces: MANY }),
     'typed a name': page({ workspaces: FEW }, { setup: typed('pa') }),
     'typed a name you have': { ...page({ workspaces: FEW }, { setup: typed('Pazar') }), note: 'the match first (↵ opens it); `+ new` can still make a second one by that name' },

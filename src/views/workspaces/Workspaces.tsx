@@ -1,8 +1,9 @@
-// The workspaces page (D-338, docs/specs/workspaces-page.md): for going back to work. The big title with its count, one
-// prompt (it finds, starts, joins; a .zip dropped anywhere imports), and under it, with nothing typed: the workspace you
-// left (its picture, since you left, who's here), what needs you, the others; the three ways in while you have few.
-// A first visit is the same page with a START piece where the continue piece goes. Typed: ledger rows.
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
+// The workspaces page (D-338, D-390; docs/specs/workspaces-page.md): for going back to work. The big title with its
+// count, one prompt as wide as the page (it finds, starts, joins; `import .zip` at its end, and a .zip dropped anywhere
+// imports), and under it, with nothing typed: the workspace you left (its picture, since you left, who's here), what
+// needs you as one list, the others (one that changed since you left is a wide card that says what); the three ways
+// in while you have one. A first visit is the same page with a START card where the continue card goes. Typed: rows.
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { workspacePath } from '../../app/paths'
 import type { AuthUser } from '../../data/auth'
@@ -35,6 +36,7 @@ import { ago } from '../../ui/foundation/ago'
 import { Appear } from '../../ui/primitives/Appear'
 import { Button } from '../../ui/primitives/Button'
 import { ButtonGroup } from '../../ui/primitives/ButtonGroup'
+import { Chip } from '../../ui/primitives/Chip'
 import { DecodeText } from '../../ui/primitives/DecodeText'
 import { Field } from '../../ui/primitives/Field'
 import { Label } from '../../ui/primitives/Label'
@@ -47,12 +49,12 @@ import { ContextMenu } from '../../ui/patterns/ContextMenu'
 import { Dialog } from '../../ui/patterns/Dialog'
 import { learn } from '../../onboarding/learn'
 import { DESCRIPTION_MAX, WORKSPACE_NAME_MAX } from '../../model/limits'
-import { ContinuePiece, NewTasksOf, OtherPiece, People } from './pieces'
+import { ContinuePiece, NewTasksOf, OtherPiece, People, Waiting } from './pieces'
 import { PieceCard } from '../../ui/patterns/PieceCard'
 import { WorkspacePicture } from './WorkspacePicture'
 import styles from './Workspaces.module.css'
 import { keysTaken } from '../../ui/foundation/focus'
-import { codeText, people } from '../../model/words'
+import { codeText, people, plural } from '../../model/words'
 import { loadOptional } from '../../app/chunks'
 
 // The onboarding's coach (D-315), loaded apart from this page (it's shared with the workspace's chunk).
@@ -94,6 +96,10 @@ export function Workspaces({ user }: { user: AuthUser }) {
   const file = useRef<HTMLInputElement>(null)
   const [tasks, setTasks] = useState<Record<string, number>>({})
   const onTasks = useCallback((wid: string, n: number) => setTasks((t) => (t[wid] === n ? t : { ...t, [wid]: n })), [])
+  // People asking to join the ones you own (only owners may read them): said in the list and on each one's card.
+  const owned = useMemo(() => sorted.filter((w) => isOwnerOf(w, user.id)), [sorted, user.id])
+  const [asking, setAsking] = useState<Record<string, number>>({})
+  const onAsking = useCallback((wid: string, n: number) => setAsking((a) => (a[wid] === n ? a : { ...a, [wid]: n })), [])
 
   const go = (wid: string) => navigate(workspacePath(wid))
   const goNewTab = (wid: string) => window.open(new URL(workspacePath(wid), window.location.href).href, '_blank', 'noopener')
@@ -255,7 +261,9 @@ export function Workspaces({ user }: { user: AuthUser }) {
               const r = rows[pick]
               if (e.key === 'Tab' && !e.shiftKey && r?.kind === 'new') (e.preventDefault(), setAsk({ kind: 'new', name: r.name }))
             }}
-          />
+          >
+            <Button onClick={() => file.current?.click()}>import .zip</Button>
+          </PromptField>
           {note && (
             <p className={styles.note} data-tone={note.tone}>
               {note.text}
@@ -273,6 +281,9 @@ export function Workspaces({ user }: { user: AuthUser }) {
         {sorted.map((w) => (
           <NewTasksOf key={w.id} wid={w.id} uid={user.id} seen={visits.data[w.id]?.tasks} onCount={onTasks} />
         ))}
+        {owned.map((w) => (
+          <AskingOf key={w.id} wid={w.id} onCount={onAsking} />
+        ))}
 
         {q ? (
           <Found rows={rows} pick={pick} q={q} visits={visits.data} tasks={tasks} onPick={setPick} onRun={run} onMenu={openMenu} />
@@ -280,22 +291,17 @@ export function Workspaces({ user }: { user: AuthUser }) {
           <FirstVisit onFile={() => file.current?.click()} invites={invites.data} requests={requests.data} user={user} onJoined={go} onError={warn} />
         ) : workspaces.isLoading ? null : (
           <>
-            <ContinuePiece w={sorted[0]} uid={user.id} visit={visits.data[sorted[0].id]} onOpen={() => go(sorted[0].id)} onMenu={openMenu(sorted[0])} />
-            <NeedsYou user={user} workspaces={sorted} tasks={tasks} invites={invites.data} requests={requests.data} onOpen={go} onError={warn} />
+            <ContinuePiece w={sorted[0]} uid={user.id} visit={visits.data[sorted[0].id]} newTasks={tasks[sorted[0].id] ?? 0} asking={asking[sorted[0].id] ?? 0} onOpen={() => go(sorted[0].id)} onMenu={openMenu(sorted[0])} />
+            <NeedsYou user={user} workspaces={sorted} tasks={tasks} asking={asking} invites={invites.data} requests={requests.data} onOpen={go} onError={warn} />
             {sorted.length > 1 && (
               <>
                 <Rule name="others" count={numText(sorted.length - 1)} countAt="end" className={styles.rule} />
                 <div className={styles.others}>
-                  {sorted.slice(1).map((w, i) => (
+                  {sorted.slice(1).map((w) => (
                     <Appear key={w.id}>
-                      <OtherPiece w={w} n={i + 2} uid={user.id} visit={visits.data[w.id]} newTasks={tasks[w.id] ?? 0} onOpen={() => go(w.id)} onMenu={openMenu(w)} />
+                      <OtherPiece w={w} uid={user.id} visit={visits.data[w.id]} newTasks={tasks[w.id] ?? 0} asking={asking[w.id] ?? 0} onOpen={() => go(w.id)} onMenu={openMenu(w)} />
                     </Appear>
                   ))}
-                  {sorted.length > START_ROW_UNTIL && (
-                    <Appear>
-                      <ImportPiece onFile={() => file.current?.click()} />
-                    </Appear>
-                  )}
                 </div>
               </>
             )}
@@ -365,7 +371,7 @@ function Listed({ loading, empty }: { loading: boolean; empty: boolean }) {
   return null
 }
 
-// ── Typed: ledger rows ───────────────────────────────────────────────────────────────────────────────────────────
+// ── Typed: rows ──────────────────────────────────────────────────────────────────────────────────────────────────
 function Found({ rows, pick, q, visits, tasks, onPick, onRun, onMenu }: {
   rows: Row[]
   pick: number
@@ -394,13 +400,13 @@ function Found({ rows, pick, q, visits, tasks, onPick, onRun, onMenu }: {
       <ul className={styles.rows}>
         {rows.map((r, i) => (
           <li key={r.kind === 'ws' ? r.w.id : r.kind} onPointerEnter={() => onPick(i)} onContextMenu={r.kind === 'ws' ? (e) => (e.preventDefault(), onMenu(r.w)([e.clientX, e.clientY])) : undefined}>
-            <PieceCard band="transparent" name={null} tier="s" picked={i === pick} onOpen={() => onRun(r)} className={styles.rowPiece}>
+            <PieceCard tier="s" picked={i === pick} onOpen={() => onRun(r)} className={styles.rowPiece}>
               {r.kind === 'ws' ? (
                 <>
                   <Num n={i + 1} className={styles.rowN} />
                   <span className={styles.rowName}>{lit(r.w.name)}</span>
                   <span className={styles.rowMeta}>
-                    {(tasks[r.w.id] ?? 0) > 0 && <span className={styles.mine}>☐ {tasks[r.w.id]}</span>}
+                    <Waiting tasks={tasks[r.w.id] ?? 0} asking={0} />
                     <People w={r.w} />
                     <span>{visits[r.w.id]?.visited ? ago(visits[r.w.id].visited!) : ''}</span>
                   </span>
@@ -429,11 +435,14 @@ function Found({ rows, pick, q, visits, tasks, onPick, onRun, onMenu }: {
   )
 }
 
-// ── What needs you ───────────────────────────────────────────────────────────────────────────────────────────────
-function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen, onError }: {
+// ── What needs you: one list, a row each, what you can do at its end ────────────────────────────────────────────
+// A row's dot is its kind's colour; its buttons say what they do in ink (D-384, D-390): `open →` strong, `join` the
+// one filled, `decline` and `withdraw` magenta.
+function NeedsYou({ user, workspaces, tasks, asking, invites, requests, onOpen, onError }: {
   user: AuthUser
   workspaces: WithId<Workspace>[]
   tasks: Record<string, number>
+  asking: Record<string, number>
   invites: ReturnType<typeof useMyInvites>['data']
   requests: ReturnType<typeof useMyJoinRequests>['data']
   onOpen: (wid: string) => void
@@ -441,10 +450,7 @@ function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen, onError 
 }) {
   const withTasks = workspaces.filter((w) => (tasks[w.id] ?? 0) > 0)
   const total = withTasks.reduce((n, w) => n + (tasks[w.id] ?? 0), 0)
-  const owned = workspaces.filter((w) => isOwnerOf(w, user.id))
-  const [asking, setAsking] = useState<Record<string, number>>({})
-  const onAsking = useCallback((wid: string, n: number) => setAsking((a) => (a[wid] === n ? a : { ...a, [wid]: n })), [])
-  const askingIn = owned.filter((w) => (asking[w.id] ?? 0) > 0)
+  const askingIn = workspaces.filter((w) => (asking[w.id] ?? 0) > 0)
   const [busy, setBusy] = useState<string | null>(null)
   // A refusal or a lost connection is said in the page's note, never swallowed.
   const runBusy = async (key: string, failed: string, fn: () => Promise<unknown>) => {
@@ -452,68 +458,58 @@ function NeedsYou({ user, workspaces, tasks, invites, requests, onOpen, onError 
     await fn().catch(() => onError(failed))
     setBusy(null)
   }
-  const pieces = total + askingIn.length + invites.length + requests.length
+  const rows = (total > 0 ? 1 : 0) + askingIn.length + invites.length + requests.length
+  if (!rows) return null
+  const tone = (c: string) => ({ '--tone': c }) as CSSProperties
   return (
-    <>
-      {owned.map((w) => (
-        <AskingOf key={w.id} wid={w.id} onCount={onAsking} />
-      ))}
-      {pieces > 0 && (
-        <div className={styles.needs}>
-          {total > 0 && (
-            <Appear>
-              <PieceCard band="var(--accent-yellow)" name="for you" className={styles.info} onOpen={() => onOpen(withTasks[0].id)}>
-                <span className={styles.needT}>☐ {total} new {total === 1 ? 'task' : 'tasks'} for you</span>
-                <span className={styles.needS}>{withTasks.map((w) => `${tasks[w.id]} in ${w.name}`).join(' · ')}</span>
-              </PieceCard>
-            </Appear>
-          )}
-          {askingIn.map((w) => (
-            <Appear key={w.id}>
-              <PieceCard band="var(--accent-magenta)" name="asking" className={styles.info} onOpen={() => onOpen(w.id)}>
-                <span className={styles.needT}>
-                  {asking[w.id]} {asking[w.id] === 1 ? 'person asks' : 'people ask'} to join {w.name}
-                </span>
-                <span className={styles.needS}>let them in from its settings → people</span>
-              </PieceCard>
-            </Appear>
-          ))}
-          {invites.map((i) => (
-            <Appear key={i.id}>
-              <PieceCard band="var(--accent-cyan)" name="invited" className={styles.info}>
-                <span className={styles.needT}>{i.name}</span>
-                <span className={styles.needS}>
-                  invited you · {people(i.memberCount)}
-                </span>
-                <ButtonGroup className={styles.acts}>
-                  <Button tone="primary" disabled={busy !== null} onClick={() => runBusy(i.id, 'Could not join. Check your connection and try again; the invite may have been taken back.', async () => (await acceptInvite(i.workspaceId, user), onOpen(i.workspaceId)))}>
-                    join
-                  </Button>
-                  <Button disabled={busy !== null} onClick={() => runBusy(i.id, 'Could not decline the invite. Check your connection and try again.', () => declineInvite(i.workspaceId, user.email ?? ''))}>
-                    decline
-                  </Button>
-                </ButtonGroup>
-              </PieceCard>
-            </Appear>
-          ))}
-          {requests.map((r) => (
-            <Appear key={r.id} data-learn="pending-row">
-              <PieceCard band="var(--line-hover)" name="waiting" className={styles.info}>
-                <span className={styles.needT}>
-                  {codeText(r.code)}
-                </span>
-                <span className={styles.needS}>you asked to join · an owner lets you in</span>
-                <span className={styles.acts}>
-                  <Button disabled={busy !== null} onClick={() => runBusy(r.id, 'Could not withdraw the request. Check your connection and try again.', () => withdrawJoinRequest(r.workspaceId, user.id))}>
-                    withdraw
-                  </Button>
-                </span>
-              </PieceCard>
-            </Appear>
-          ))}
-        </div>
-      )}
-    </>
+    <Appear>
+      <Rule name="needs you" count={numText(rows)} countAt="end" className={styles.rule} />
+      <ul className={styles.needs}>
+        {total > 0 && (
+          <li>
+            <Chip variant="soft" tone="var(--accent-yellow)">{plural(total, 'new task')}</Chip>
+            <span className={styles.needT}>given to you since you last looked</span>
+            <span className={styles.needS}>{withTasks.map((w) => `${tasks[w.id]} in ${w.name}`).join(' · ')}</span>
+            <Button tone="main" onClick={() => onOpen(withTasks[0].id)}>open →</Button>
+          </li>
+        )}
+        {askingIn.map((w) => (
+          <li key={w.id} style={tone('var(--accent-magenta)')}>
+            <span className={styles.dot} aria-hidden />
+            <span className={styles.needT}>
+              {asking[w.id]} {asking[w.id] === 1 ? 'person asks' : 'people ask'} to join {w.name}
+            </span>
+            <span className={styles.needS}>let them in from its settings → people</span>
+            <Button tone="main" onClick={() => onOpen(w.id)}>open →</Button>
+          </li>
+        ))}
+        {invites.map((i) => (
+          <li key={i.id} style={tone('var(--accent-cyan)')}>
+            <span className={styles.dot} aria-hidden />
+            <span className={styles.needT}>{i.name}</span>
+            <span className={styles.needS}>invited you · {people(i.memberCount)}</span>
+            <ButtonGroup>
+              <Button tone="primary" disabled={busy !== null} onClick={() => runBusy(i.id, 'Could not join. Check your connection and try again; the invite may have been taken back.', async () => (await acceptInvite(i.workspaceId, user), onOpen(i.workspaceId)))}>
+                join
+              </Button>
+              <Button tone="danger" disabled={busy !== null} onClick={() => runBusy(i.id, 'Could not decline the invite. Check your connection and try again.', () => declineInvite(i.workspaceId, user.email ?? ''))}>
+                decline
+              </Button>
+            </ButtonGroup>
+          </li>
+        ))}
+        {requests.map((r) => (
+          <li key={r.id} data-learn="pending-row" style={tone('var(--fg-dim)')}>
+            <span className={styles.dot} aria-hidden />
+            <span className={styles.needT}>{codeText(r.code)}</span>
+            <span className={styles.needS}>you asked to join · an owner lets you in</span>
+            <Button tone="danger" disabled={busy !== null} onClick={() => runBusy(r.id, 'Could not withdraw the request. Check your connection and try again.', () => withdrawJoinRequest(r.workspaceId, user.id))}>
+              withdraw
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </Appear>
   )
 }
 
@@ -523,47 +519,28 @@ function AskingOf({ wid, onCount }: { wid: string; onCount: (wid: string, n: num
   return null
 }
 
-// The import card's words, the same wherever it is.
+// The import card's words.
 const IMPORT_TITLE = 'Bring one in'
 const IMPORT_LINE = 'A .zip exported from North Star: drop it anywhere on this page.'
-
-// A .zip at the end of the others, as a workspace card: its picture a drop target, its strip the words and the button.
-function ImportPiece({ onFile }: { onFile: () => void }) {
-  return (
-    <PieceCard band="var(--accent-blue)" name="import" onOpen={onFile} className={styles.mini}>
-      <div className={styles.miniPic} data-drop>
-        <Label>drop a .zip</Label>
-      </div>
-      <div className={styles.miniInfo}>
-        <span className={styles.miniName}>{IMPORT_TITLE}</span>
-        <span className={styles.row}>
-          <span className={styles.people}>from North Star</span>
-          <span className={styles.grow} />
-          <Button onClick={onFile}>choose file</Button>
-        </span>
-      </div>
-    </PieceCard>
-  )
-}
 
 // ── The three ways in (the onboarding's `workspaces-empty` choices draw over them, D-315) ────────────────────────────
 function StartRow({ small, onFile }: { small?: boolean; onFile: () => void }) {
   return (
     <div className={styles.starts} data-small={small || undefined} data-learn="workspaces-empty">
       <Appear>
-        <PieceCard band="var(--accent-magenta)" name="new" className={styles.info}>
+        <PieceCard tone="var(--accent-magenta)" name="new" className={styles.info}>
           <span className={styles.needT}>{small ? 'Another idea' : 'Start one'}</span>
           <span className={styles.needS}>Type its name in the line above.</span>
         </PieceCard>
       </Appear>
       <Appear>
-        <PieceCard band="var(--accent-cyan)" name="join" className={styles.info}>
+        <PieceCard tone="var(--accent-cyan)" name="join" className={styles.info}>
           <span className={styles.needT}>Join a teammate's</span>
           <span className={styles.needS}>Paste the code they gave you above. An owner lets you in.</span>
         </PieceCard>
       </Appear>
       <Appear>
-        <PieceCard band="var(--accent-blue)" name="import" className={styles.info}>
+        <PieceCard tone="var(--accent-blue)" name="import" className={styles.info}>
           <span className={styles.needT}>{IMPORT_TITLE}</span>
           <span className={styles.needS}>{IMPORT_LINE}</span>
           <span className={styles.acts}>
@@ -587,11 +564,12 @@ function FirstVisit({ onFile, invites, requests, user, onJoined, onError }: {
   return (
     <>
       <Appear>
-        <PieceCard band="var(--accent-magenta)" tier="l" className={styles.hero} name={<><Num n={1} /> start</>}>
+        <PieceCard tier="l" className={styles.hero}>
           <div className={styles.heroPic}>
             <WorkspacePicture summary={null} sample />
           </div>
           <div className={styles.heroSide}>
+            <Label>start</Label>
             <h2 className={styles.heroName}>Your first workspace</h2>
             <p className={styles.about}>A workspace is one startup idea: its customers, problems, rivals and plan, on a canvas you share.</p>
             <Label className={styles.caps}>how it starts</Label>
@@ -605,7 +583,7 @@ function FirstVisit({ onFile, invites, requests, user, onJoined, onError }: {
           </div>
         </PieceCard>
       </Appear>
-      <NeedsYou user={user} workspaces={[]} tasks={{}} invites={invites} requests={requests} onOpen={onJoined} onError={onError} />
+      <NeedsYou user={user} workspaces={[]} tasks={{}} asking={{}} invites={invites} requests={requests} onOpen={onJoined} onError={onError} />
       <StartRow onFile={onFile} />
     </>
   )

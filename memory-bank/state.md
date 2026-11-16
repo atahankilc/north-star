@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-16 (shared code round 2 D-388; surfaces D-387 built; the backdrop in colour, no welcome D-386; controls D-384 built; pieces' names a step under sections' D-379; writing together D-374 built; documents written in the app D-373; light theme's colours D-368; the agent's web D-360 checked on the stub and pushed; windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-17 (the workspaces page round with a line D-390; shared code round 2 D-388; surfaces D-387 built; the backdrop in colour, no welcome D-386; controls D-384 built; pieces' names a step under sections' D-379; writing together D-374 built; documents written in the app D-373; light theme's colours D-368; the agent's web D-360 checked on the stub and pushed; windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -14,8 +14,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   of lines (D-263–D-277).
 
 ## Live vs not yet
-- Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. `refactor/north-star-1.5` was merged
-  into `main` (fast-forward) and pushed 2026-10-27; Pages deployed.
+- Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. `refactor/north-star-1.5` was merged into `main` (fast-forward) and pushed 2026-10-27; Pages deployed.
 - Rules: Firestore rules + indexes and RTDB deployed 2026-10-29 (RTDB again for presence `tasks`, D-300) (latest change D-292, no `bends` check); rules tests 639/0 (2026-11-03). Until Blaze,
   deploy without Storage: `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db`.
 - Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger) and Storage
@@ -72,6 +71,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Sweep 2026-11-03 (state-history): threads' rule (pushed 0f7ddf4, deployed, 639/0), Crash boundary, loading waits for every listener; then 10, 11, 14, 12, 13, 15, 17, 18, 9, 7, 8, 16, 19, 22; 5 (D-369, pushed d41a097; a real-server try left); still open: 20, 21 and small leftovers, listed there under **Still open from the sweep**.
 - Smaller leftovers (resize everywhere D-376, D-378, state-history): each decision's *Not yet* in decisions-log.md; the 2026-11-03 test pass's fixes (pushed) and left items: state-history. .md reader crash on a bare url fixed 2026-11-04, the body read rule deployed; a document read in a window D-371. Scroll bars from one place D-377 (2026-11-05): built, the look picked (B). Backdrop by pieces (D-385): pushed 2026-11-07, the user checked it. Its waves in colour and the welcome intro taken out (D-386, 2026-11-15): built, checked headless, not committed, the user to see it live; preview: docs/specs/backdrop-preview/.
 
+- The workspaces page (D-390, 2026-11-17, docs/specs/workspaces-page.md): round cards, the prompt as wide as the page with `import .zip`, what needs you as one list, a wide card for another workspace that changed, people in colour, waiting things in words; built, checked in the gallery (dark, light), pushed; to see in the real app with real data and the backdrop, and the coach's three choices in the start row.
 ## Blockers
 - Blaze: the user's payments profile was refused once (OR_BAOOC_15, likely profile country vs German card); retrying.
 

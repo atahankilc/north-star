@@ -17,7 +17,7 @@ const GO: (() => void)[] = [
   () => document.querySelector<HTMLElement>('[data-ws-prompt]')?.focus(),
   () => document.getElementById('ws-import')?.click(),
 ]
-// Drawn as the page's own three pieces (D-338): the name cut into the edge, a band in its colour.
+// Drawn as the page's own three cards (D-338, D-390): its name on top, in its colour.
 const CUT = ['new', 'join', 'import']
 const BAND = ['var(--accent-magenta)', 'var(--accent-cyan)', 'var(--accent-blue)']
 
@@ -26,7 +26,7 @@ export function Choices({ into, choices }: { into: Element; choices: readonly Ch
     <ul className={styles.choices} data-coach aria-label="ways to start">
       {choices.map((c, i) => (
         <Appear as="li" key={c.label} className={styles.choiceItem}>
-          <PieceCard as="button" band={BAND[i]} name={CUT[i] ?? ''} onOpen={() => GO[i]?.()} className={styles.choice}>
+          <PieceCard as="button" tone={BAND[i]} name={CUT[i] ?? ''} onOpen={() => GO[i]?.()} className={styles.choice}>
             <span className={styles.choiceLabel}>{c.label}</span>
             <span className={styles.choiceLine}>{c.line}</span>
             {/* The import's verb, as the page's own card has it. */}

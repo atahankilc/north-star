@@ -1,5 +1,5 @@
-/* The workspaces page (D-338, docs/specs/workspaces-page.md): centred, the big title, one prompt, pieces as the canvas
-   draws them. */
+/* The workspaces page (D-338, D-390; docs/specs/workspaces-page.md): centred, the big title, one prompt as wide as the
+   page, cards round with a line. */
 
 .page {
   position: relative;
@@ -62,14 +62,20 @@
   color: var(--accent-magenta);
 }
 
+/* The prompt is the page's own line, as wide as the page (D-390); `import .zip` sits at its end. */
 .ask {
   display: flex;
-  width: fit-content;
-  min-width: var(--size-xl);
   flex-direction: column;
   gap: var(--space-2);
-  max-width: calc(var(--size-xl) + var(--size-sm));
   margin-bottom: var(--space-8);
+}
+
+.ask > label {
+  align-items: center;
+}
+
+.ask > label:focus-within {
+  border-bottom-color: var(--accent-cyan);
 }
 
 /* The prompt reads at the page's size: what's typed is a workspace's name. */
@@ -95,34 +101,29 @@
 }
 
 .rule {
-  margin: var(--space-12) 0 var(--space-4);
+  margin: var(--space-8) 0 var(--space-4);
 }
 
 .grow {
   flex: 1;
 }
 
-.faint {
-  color: var(--fg-faint);
-}
+/* Cards are the kit's PieceCard (round with a line, `--corner` its radius): these only lay out what's on them. What's
+   laid against a card's edge takes the corner one line in. */
 
-/* Pieces are the kit's PieceCard (src/ui/patterns): these only lay out what's on them. */
-
-.kind {
-  color: var(--fg-dim);
-}
-
-/* ── the continue piece (and a first visit's START) ── */
+/* ── the continue card (and a first visit's START) ── */
 
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  min-height: var(--size-md);
+  min-height: var(--size-sm);
 }
 
 .heroPic {
-  min-height: var(--size-md);
-  border-right: var(--line-w) solid var(--piece-edge);
+  min-height: var(--size-sm);
+  overflow: hidden;
+  border-right: var(--line-w) solid var(--line);
+  border-radius: calc(var(--corner) - var(--line-w)) 0 0 calc(var(--corner) - var(--line-w));
 }
 
 .heroSide {
@@ -169,6 +170,7 @@
   width: var(--space-4);
 }
 
+/* Who changed it: their name in their colour (set where it's drawn). */
 .who {
   color: var(--fg-strong);
   font-weight: var(--weight-medium);
@@ -181,6 +183,17 @@
   font-size: var(--text-xs);
 }
 
+li.t {
+  margin-left: 0;
+}
+
+/* What waits for you in it, as words on a wash (the kit's soft Chip). */
+.waiting {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .go {
   display: flex;
   align-items: center;
@@ -189,12 +202,10 @@
   padding-top: var(--space-4);
 }
 
-/* ── facts on a piece ── */
+/* ── facts on a card ── */
 
 .people,
-.here,
-.fresh,
-.mine {
+.here {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   white-space: nowrap;
@@ -204,31 +215,87 @@
   color: var(--fg-dim);
 }
 
+/* Here now: a lamp that beats, their circles a little over each other, the words. */
 .here {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   color: var(--accent-cyan);
 }
 
-.here::before {
-  content: '';
-  width: var(--space-1);
-  height: var(--space-1);
+.lamp {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
   background: var(--accent-cyan);
+  animation: beat var(--dur-blink) var(--ease-in-out) infinite alternate;
 }
 
-.fresh {
-  color: var(--accent-magenta);
+@keyframes beat {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-cyan) var(--mix-strong), transparent);
+  }
+
+  to {
+    box-shadow: 0 0 0 var(--space-1) transparent;
+  }
 }
 
-.mine {
-  color: var(--accent-yellow);
+.faces {
+  display: inline-flex;
 }
 
-/* ── what needs you, the three ways in ── */
+.faces > * + * {
+  margin-left: calc(-1 * var(--space-2));
+}
 
-.needs,
+/* ── what needs you: one list ── */
+
+.needs {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: var(--line-w) solid var(--line);
+  border-radius: var(--radius-menu);
+  background: var(--bg-raised);
+  list-style: none;
+}
+
+.needs li {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-xl);
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+}
+
+.needs li + li {
+  border-top: var(--line-w) solid var(--line);
+}
+
+.dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--tone);
+}
+
+.needT {
+  color: var(--fg-strong);
+  font-size: var(--text-md);
+}
+
+.needS {
+  overflow: hidden;
+  color: var(--fg-dim);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── the three ways in ── */
+
 .starts {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--size-sm), 1fr));
@@ -240,7 +307,7 @@
   margin-top: 0;
 }
 
-/* An info card (needs-you, the three ways in): a title, a line, its actions in the corner. */
+/* An info card (the three ways in): its kind on top, a title, a line, its action in the corner. */
 .info {
   height: 100%;
   display: flex;
@@ -249,18 +316,10 @@
   padding: var(--space-4);
 }
 
-.needT {
-  color: var(--fg-strong);
-  font-size: var(--text-md);
+.info .needS {
+  white-space: normal;
 }
 
-.needS {
-  color: var(--fg-dim);
-  font-size: var(--text-sm);
-}
-
-/* An info card's actions: in its bottom-right corner, on every one (needs-you, the three ways in); several are one
-   ButtonGroup (D-344), so no gap of its own. */
 .acts {
   display: flex;
   align-self: flex-end;
@@ -279,10 +338,16 @@
 
 /* ── others ── */
 
+/* One that changed since you left is two columns wide and says what (D-390); the rest fill in round it. */
 .others {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--size-sm), 1fr));
+  grid-auto-flow: dense;
   gap: var(--space-6) var(--space-4);
+}
+
+.others > :has([data-wide]) {
+  grid-column: span 2;
 }
 
 .mini {
@@ -292,26 +357,46 @@
 }
 
 .miniPic {
-  height: calc(var(--size-xs) * 0.7);
-}
-
-/* The import card's picture: where a .zip goes, on the canvas's ground. */
-.miniPic[data-drop] {
-  display: grid;
-  place-items: center;
-  background: var(--bg);
+  height: var(--size-xs);
+  overflow: hidden;
+  border-radius: calc(var(--corner) - var(--line-w)) calc(var(--corner) - var(--line-w)) 0 0;
 }
 
 .miniInfo {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-3);
-  border-top: var(--line-w) solid var(--piece-edge);
-  background: var(--piece-head);
+  border-top: var(--line-w) solid var(--line);
+}
+
+.mini[data-wide] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.mini[data-wide] .miniPic {
+  height: auto;
+  min-height: var(--size-xs);
+  border-right: var(--line-w) solid var(--line);
+  border-radius: calc(var(--corner) - var(--line-w)) 0 0 calc(var(--corner) - var(--line-w));
+}
+
+.mini[data-wide] .miniInfo {
+  padding: var(--space-4);
+  border-top: 0;
+}
+
+.nameLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
 }
 
 .miniName {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   color: var(--fg-strong);
   font-size: var(--text-md);
@@ -323,12 +408,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-height: var(--control-sm);
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
 
-/* ── typed: ledger rows ── */
+/* ── typed: rows ── */
 
 .rows {
   display: flex;
@@ -347,7 +433,7 @@
   grid-template-rows: var(--control) auto;
   align-items: center;
   gap: var(--space-1) var(--space-4);
-  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
 }
 
 .rowN {
@@ -377,6 +463,7 @@
 
 .rowMeta {
   display: flex;
+  align-items: center;
   gap: var(--space-4);
   color: var(--fg-dim);
   font-family: var(--font-mono);
@@ -412,6 +499,7 @@
 .drop span {
   padding: var(--space-12);
   border: var(--line-w) dashed var(--accent-cyan);
+  border-radius: var(--radius-window);
   color: var(--accent-cyan);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
@@ -430,24 +518,25 @@
   pointer-events: auto;
 }
 
-/* ── new workspace / rename ── */
-
 @media (max-width: 760px) {
-  .hero {
+  .hero,
+  .mini[data-wide] {
     grid-template-columns: 1fr;
   }
 
-  .heroPic {
+  .heroPic,
+  .mini[data-wide] .miniPic {
     border-right: 0;
-    border-bottom: var(--line-w) solid var(--piece-edge);
+    border-bottom: var(--line-w) solid var(--line);
+    border-radius: calc(var(--corner) - var(--line-w)) calc(var(--corner) - var(--line-w)) 0 0;
+  }
+
+  .others > :has([data-wide]) {
+    grid-column: auto;
   }
 }
 
-/* A workspace's `⋯` (its menu): a square the size of a control, the glyph in Inter (mono draws it as specks); the same
-   on every piece. */
-
-
-/* Typed: the matches right under the prompt (the continue piece's room isn't kept). */
+/* Typed: the matches right under the prompt (the continue card's room isn't kept). */
 .found > .rule:first-child {
   margin-top: 0;
 }

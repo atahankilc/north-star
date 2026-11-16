@@ -66,6 +66,16 @@
   text-transform: uppercase;
 }
 
+/* soft: words on a wash of their colour, no frame (what waits for you, D-390). The ink leans to the page's strong ink,
+   so a pale accent still reads on its own wash in the light theme. */
+.chip[data-variant='soft'] {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--chip-tone, var(--fg)) var(--mix-pick), transparent);
+  color: color-mix(in srgb, var(--chip-tone, var(--fg)) var(--mix-strong), var(--fg-strong));
+  letter-spacing: normal;
+}
+
 /* world: sized in the world's tokens, so it zooms with what it sits on (a card face's #tags; a link's kind a step
    bigger). */
 /* On the canvas nothing changes with the controls (D-384): a card's tags and a link's kind stay square and tight. */

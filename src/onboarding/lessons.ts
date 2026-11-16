@@ -229,13 +229,13 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'workspaces', v: 1, format: 'lesson', roles: ALL, area: 'start', since: 'D-338, D-345, D-349',
+    id: 'workspaces', v: 2, format: 'lesson', roles: ALL, area: 'start', since: 'D-338, D-345, D-349, D-390',
     trigger: [{ event: 'workspaces-open' }],
     pages: [
-      { title: 'Your workspaces', tab: 'workspaces', body: "A workspace is one startup: its canvases, cards, tasks and people. The one you worked in last sits on top, with what changed since you left and who's in it now." },
-      { title: 'Start, join or bring one', tab: 'start', body: "Type a name in the line at the top to start one. Paste a teammate's code there to ask to join theirs. Drop an exported .zip anywhere on the page to bring one in." },
+      { title: 'Your workspaces', tab: 'workspaces', body: "A workspace is one startup: its canvases, cards, tasks and people. The one you left sits on top, with what changed since and who's in it now. Others that changed are wider cards saying who changed what." },
+      { title: 'Start, join or bring one', tab: 'start', body: "Type a name in the line at the top to start one. Paste a teammate's code there to ask to join theirs. `import .zip` at its end brings one in; so does dropping the file anywhere." },
       { title: 'Each one', tab: 'actions', body: "Open a workspace with a click. Its `⋯`, or a right-click on it, holds the rest: open in a new tab, rename it, copy its invite code, leave it, or delete it." },
-      { title: 'What needs you', tab: 'needs', body: "Under the one you left, small pieces show what waits for you: new tasks given to you, people asking to join yours, invites to someone else's, and codes you sent that wait for an owner." },
+      { title: 'What needs you', tab: 'needs', body: "Under the one you left, a list shows what waits for you: new tasks, people asking to join yours, invites, and codes you sent that wait for an owner. Each workspace's card says its own too." },
     ],
   },
   {
