@@ -3,7 +3,7 @@ import { onCanvas, P } from '../../../gallery/canvas'
 import { threadMessages, withThreads } from '../../../gallery/panels'
 import { toggleInbox } from './Threads'
 
-// The list open, then one of its filters pressed as a person would (`[new 3]`, `[mentions 1]`, `[resolved 1]`).
+// The list open, then one of its views pressed as a person would (`new 3`, `@you 1`, `done 1`).
 const list = (filter?: string) => async () => {
   threadMessages()
   toggleInbox(true)
@@ -16,11 +16,11 @@ export default example({
   name: 'Threads panel',
   place: 'panels/comments',
   file: 'src/views/workspace/threads/ThreadInbox.tsx',
-  note: 'every conversation in the workspace (D-197): the list a column on the left ground, a conversation a column on the right (D-393)',
+  note: 'every conversation in the workspace (D-197): the list a column on the left ground, a conversation a column on the right (D-393); the threads under their place, a row leading with the thing (D-398)',
   states: {
     'the list': onCanvas({ only: [P.lunch, P.product], change: withThreads, then: list() }),
-    resolved: onCanvas({ only: [P.lunch, P.product], change: withThreads, then: list('resolved') }),
-    mentions: onCanvas({ only: [P.lunch, P.product], change: withThreads, then: list('mentions') }),
+    resolved: onCanvas({ only: [P.lunch, P.product], change: withThreads, then: list('done') }),
+    mentions: onCanvas({ only: [P.lunch, P.product], change: withThreads, then: list('@you') }),
     'inside a plane': onCanvas({ only: [P.lunch, P.product], focus: P.lunch, change: withThreads, then: () => (threadMessages(), toggleInbox(true, P.lunch)) }),
     empty: onCanvas({ only: [P.lunch], then: list() }),
   },

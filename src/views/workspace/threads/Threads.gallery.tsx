@@ -12,6 +12,7 @@ export default example({
     'chips on cards': onCanvas({ only: [P.lunch], focus: P.lunch, change: withThreads, then: threadMessages, note: 'magenta: new to you; `@`: you’re mentioned' }),
     'thread open': onCanvas({ only: [P.product], focus: P.product, change: withThreads, then: () => (threadMessages(), openThread('t-pickup')) }),
     'thread from the list': onCanvas({ only: [P.lunch, P.product], change: withThreads, then: () => (threadMessages(), toggleInbox(true), openThread('t-break')) }),
+    'yours and theirs': onCanvas({ only: [P.lunch, P.product], change: withThreads, then: () => (threadMessages(), toggleInbox(true), openThread('t-pickup')), note: 'the others’ bubbles on the left with their circle, yours on the right in cyan (D-398)' }),
     'new comment': onCanvas({
       only: [P.lunch], focus: P.lunch, change: withThreads,
       then: () => (threadMessages(), startComment({ on: 'card', targetId: 'r-same', planeId: P.lunch, at: [650, 250] })),

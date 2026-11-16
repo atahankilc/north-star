@@ -28,7 +28,8 @@ import { FocusedPlane } from './FocusedPlane'
 import { ViewMenu } from './ViewMenu'
 import { planeCtx, planeItems } from './planeMenu'
 import { PlaneDockExtras } from './FilterDock'
-import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadIn, threadOn, toggleInbox, toggleThreadPins, useThreadView } from '../threads/Threads'
+import { closeThread, CommentIcon, myUid, openThread, startComment, ThreadChip, threadIn, threadOn, toggleInbox, toggleThreadPins, useThreadView, type ThreadThing } from '../threads/Threads'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { ContextMenu } from '../../../ui/patterns/ContextMenu'
 import { MoveToCanvas, takeOffHere } from './MoveToCanvas'
 import { BringCards } from '../plane/BringCards'
@@ -428,26 +429,33 @@ export function CanvasView() {
     const p = everyPiece.find((x) => x.id === sp)
     return sp === CANVAS ? 'the canvas' : p?.name || `a ${p ? KIND_NAME[kindOfPiece(p)] : 'plane'}`
   }
-  const titleOf = (t: Pick<Thread, 'on' | 'targetId'>) => {
+  // What a thread is on (D-398): its kind, its name and its colour apart, for the threads' rows and a conversation's head.
+  const thingOf = (t: Pick<Thread, 'on' | 'targetId'>): ThreadThing => {
     if (t.on === 'card') {
       const c = cards.find((x) => x.id === t.targetId)
-      return c ? `${c.type} ${c.title ? `"${c.title}"` : ''}`.trim() : 'a deleted card'
+      return c ? { kind: c.type, name: c.title, tone: CARD_TONE[c.type] } : { kind: 'card', name: '', gone: true }
     }
     if (t.on === 'label') {
-      const l = labels.find((x) => x.id === t.targetId)
-      return l ? `${l.kind ?? (l.size === 'note' ? 'paragraph' : 'heading')} ${l.text ? `"${l.text.slice(0, 40)}"` : ''}`.trim() : 'deleted text'
+      // On another canvas too (D-302): not gone.
+      const l = labels.find((x) => x.id === t.targetId) ?? everyLabel.find((x) => x.id === t.targetId)
+      return l ? { kind: l.kind ?? (l.size === 'note' ? 'paragraph' : 'heading'), name: l.text.slice(0, 40) } : { kind: 'text', name: '', gone: true }
     }
     if (t.on === 'plane') {
       const p = everyPiece.find((x) => x.id === t.targetId)
-      return `${p ? KIND_NAME[kindOfPiece(p)] : 'plane'} ${p?.name ? `"${p.name}"` : ''}`.trim()
+      return p ? { kind: KIND_NAME[kindOfPiece(p)], name: p.name ?? '', tone: PIECE_TONE[kindOfPiece(p)] } : { kind: 'plane', name: '', gone: true }
     }
     if (t.on === 'task') {
       const k = tasks.find((x) => x.id === t.targetId)
-      return k ? `task "${k.title.slice(0, 40)}"` : 'a deleted task'
+      return k ? { kind: 'task', name: k.title.slice(0, 40) } : { kind: 'task', name: '', gone: true }
     }
     const e = edges.find((x) => x.id === t.targetId)
     const name = (id?: string) => cards.find((c) => c.id === id)?.title || 'untitled'
-    return e ? `link "${name(e.fromId)}" → "${name(e.toId)}"` : 'a deleted link'
+    return e ? { kind: 'link', name: `${name(e.fromId)} → ${name(e.toId)}` } : { kind: 'link', name: '', gone: true }
+  }
+  // The same in one line, for a label read aloud: `feature "Pre-order by 9 pm"`.
+  const titleOf = (t: Pick<Thread, 'on' | 'targetId'>) => {
+    const x = thingOf(t)
+    return x.gone ? `a deleted ${x.kind}` : `${x.kind} ${x.name ? `"${x.name}"` : ''}`.trim()
   }
   // Right-click (D-193): a menu on a plane, a card, a piece of text or a link (D-207); only `comment` for now. Elsewhere, nothing.
   const [menu, setMenu] = useState<{ at: [number, number]; what: string; items: PromptEntry[] } | null>(null)
@@ -1130,7 +1138,7 @@ export function CanvasView() {
           }}
         />
       )}
-      <ThreadInbox wid={wid} threads={threads} inside={insideOf} titleOf={titleOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={whereOf} here={spaceName(space)} goneOf={(t) => pinOf(t).gone} scopeName={(id) => `"${everyPiece.find((p) => p.id === id)?.name || 'plane'}"`} canvasScope={canvases.length > 1 ? { id: canvas, name: canvases.find((c) => c.id === canvas)?.name ?? '', has: (t) => threadCanvas(t) === canvas } : undefined} />
+      <ThreadInbox wid={wid} threads={threads} inside={insideOf} titleOf={titleOf} thingOf={thingOf} onGo={(t) => openThread(t.id)} onShow={goTo} isOwner={isOwnerOf(workspace, user?.id)} whereOf={whereOf} scopeName={(id) => `"${everyPiece.find((p) => p.id === id)?.name || 'plane'}"`} canvasScope={canvases.length > 1 ? { id: canvas, name: canvases.find((c) => c.id === canvas)?.name ?? '', has: (t) => threadCanvas(t) === canvas } : undefined} />
       <Follow focusId={focusId} focusTo={focusTo} />
       {deletingCards && (
         <HazardConfirm

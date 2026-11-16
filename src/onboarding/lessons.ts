@@ -477,12 +477,12 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'comment', v: 3, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349, D-393',
+    id: 'comment', v: 4, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349, D-393, D-398',
     trigger: [{ event: 'thread-open' }, { event: 'threads-open' }], within: 'threads',
     pages: [
       { title: 'Comments stay on things', tab: 'comments', body: 'Right-click a plane, card, text, link or task and pick `comment`. The conversation stays on that thing.', scene: 'thread' },
       { title: 'Its chip', tab: 'chip', body: 'A chip under its corner counts the messages. Magenta means something new for you; `@` means you were mentioned. Click the chip to open it.', scene: 'thread' },
-      { title: 'Every conversation', tab: 'threads', body: "The threads tab at the foot opens the list on the left: new, mentions, resolved. A conversation opens on the right; its `on the canvas ↗` takes you to what it's about.", scene: 'threads-panel' },
+      { title: 'Every conversation', tab: 'threads', body: "The threads tab at the foot opens the list on the left, each conversation under the place it's on: new, @you, done. A conversation opens on the right; its `on the canvas ↗` takes you to what it's about.", scene: 'threads-panel' },
     ],
   },
 

@@ -2,11 +2,13 @@
 // plane, a card or a piece of text, started from its right-click menu; its chip sits under the component's bottom-right
 // corner like a plane's console, at the screen's own size: the comment mark and a count (D-167), magenta when someone
 // wrote in it since you last read it, `@` when they mentioned you (D-166). Clicking it opens the thread in the threads
-// panel at the bottom left (nothing opens on the canvas itself, D-199), set like the assistant's chat:
-// who wrote each message (full name) and when, the text, a `>` prompt (Enter sends, shift+Enter a new line, `@`
-// suggests the workspace's people), resolve or reopen. Only a message's writer edits or deletes it. Resolved threads
-// leave the canvas; every thread is in the threads panel (ThreadInbox.tsx). Anyone in the workspace comments, viewers too.
-import { useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+// column on the right (nothing opens on the canvas itself, D-199). Its head says what it's on, as a thing's panel does
+// (D-398): the kind in its colour, the name big, where it is. The messages are bubbles: the others' on the left with
+// their circle and their name in their colour, yours on the right in cyan. A `>` prompt in a round well, `send` in it
+// (Enter sends, shift+Enter a new line, `@` suggests the workspace's people); resolve or reopen. Only a message's writer
+// edits or deletes it. Resolved threads leave the canvas; every thread is in the threads panel (ThreadInbox.tsx). Anyone
+// in the workspace comments, viewers too.
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import { firebase } from '../../../data/firebase'
@@ -41,6 +43,10 @@ import { PromptField } from '../../../ui/primitives/PromptField'
 import styles from './Threads.module.css'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
 import { plural } from '../../../model/words'
+import { Avatar } from '../../../ui/primitives/Avatar'
+import { Label } from '../../../ui/primitives/Label'
+import { presenceColor, usePresence } from '../../../data/presence'
+import { useThemeAccent } from '../../../state/theme'
 
 type ThreadView = {
   // Pins shown (`c`); only threads with something new (D-166); resolved ones too.
@@ -70,6 +76,20 @@ export const toggleInbox = (on?: boolean, scope: string | null = null) =>
 
 // Without Firebase (the onboarding's demo realm) the scene's made-up you, else nobody.
 export const myUid = () => (firebase ? (firebase.auth.currentUser?.uid ?? '') : demoThreads.me)
+
+// What a thread is on, apart (D-398): its kind (`feature`, `plane`, `task`), its name, its colour (a card's or a
+// piece's; none: quiet), and whether it's gone.
+export type ThreadThing = { kind: string; name: string; tone?: string; gone?: boolean }
+
+// A person's colour in the threads (D-398): the one they have here now (D-067), else their own (as the workspaces page
+// names them, D-390), in the theme's shade.
+export function usePersonColor() {
+  const peers = usePresence((s) => s.peers)
+  const mine = usePresence((s) => s.myColor)
+  const accent = useThemeAccent()
+  const me = myUid()
+  return (uid: string) => accent((uid === me ? mine : peers.find((p) => p.uid === uid)?.color) ?? presenceColor(uid))
+}
 
 // The comment mark (D-167), on the pins and the threads button: a square speech bubble, its tail at the bottom left,
 // three square dots inside, drawn like the toolbar's other icons (square corners, 1.5 stroke on a 16 grid).
@@ -161,6 +181,7 @@ type PanelProps = {
   thread: WithId<Thread> | null
   draft: NewThread | null
   title: string
+  thing: ThreadThing
   isOwner: boolean
   // In the threads panel (D-197, D-199): where it is, and the target in its header that shows it there (into its plane
   // if need be); `onList` opens the list beside it while only the thread is open.
@@ -169,7 +190,7 @@ type PanelProps = {
   onList?: () => void
 }
 
-export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow, onList }: PanelProps) {
+export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, onShow, onList }: PanelProps) {
   const messages = useMessages(wid, thread?.id ?? null)
   const members = useWorkspaceMembers(wid, useWs().workspace.memberIds)
   const reads = useReads(wid, myUid() || null).data
@@ -182,6 +203,7 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
   const field = useRef<HTMLTextAreaElement>(null)
   const list = useRef<HTMLOListElement>(null)
   const me = myUid()
+  const colorOf = usePersonColor()
 
   // The reply field takes the keys as it opens.
   useEffect(() => {
@@ -281,91 +303,92 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
       onKeyDown={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.stopPropagation()}
     >
-      {/* As the assistant's chat (D-081): what it's on and where, faint; the where is what goes there, `on … ↗`, a
-          link (D-220); the actions joined in one strip, `×` last (D-344). With the list shut, `all threads` opens it beside. */}
-      <header className={styles.head}>
-        {onList && (
-          <Button onClick={onList}>
-            all threads
+      {/* What it's on, as a thing's panel says it (D-398): the kind in its colour and how many messages, the tools with
+          `×` last (D-344); the name big; where it is, which goes there (`on … ↗`, D-220). With the list shut, `all
+          threads` opens it. */}
+      <header className={styles.head} style={thing.tone ? ({ '--tone': thing.tone } as CSSProperties) : undefined}>
+        <div className={styles.headTop}>
+          {onList && <Button onClick={onList}>all threads</Button>}
+          <Label className={styles.kind}>{thing.kind}</Label>
+          <Label className={styles.kindMore}>thread{thread ? ` · ${thread.count}` : ''}</Label>
+          <ButtonGroup className={styles.actions}>
+            {thread && <Button onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>{resolved ? 'reopen' : 'resolve'}</Button>}
+            {mayDeleteThread && (
+              <Button tone="danger" onClick={() => thread && deleteThread(wid, thread.id).then(closeThread, fail)}>
+                delete
+              </Button>
+            )}
+            <Button icon aria-label="Close thread" title="close" onClick={closeThread}>
+              <CloseIcon />
+            </Button>
+          </ButtonGroup>
+        </div>
+        <h2 className={styles.title} data-gone={thing.gone || undefined}>
+          {resolved ? '✓ ' : ''}
+          {thing.gone ? 'what it was on was deleted' : thing.name || thing.kind}
+        </h2>
+        {onShow ? (
+          <Button link className={styles.goThere} title="go there" onClick={onShow}>
+            {where ? `on ${where}` : 'go there'} ↗
           </Button>
+        ) : (
+          where && <span className={styles.where}>on {where}</span>
         )}
-        <span className={styles.title} title={where ? `${title} · on ${where}` : title}>
-          <span className={styles.titleWhat}>
-            {resolved ? '✓ ' : ''}
-            {title}
-          </span>
-          {where && !onShow && <span className={styles.titleWhere}> · on {where}</span>}
-          {onShow && (
-            <Button link className={styles.goThere} title={`go there${where ? ` (on ${where})` : ''}`} onClick={onShow}>
-              <span className={styles.goThereName}>{where ? `on ${where}` : 'go there'}</span>
-              <span className={styles.goThereMark} aria-hidden>
-                ↗
-              </span>
-            </Button>
-          )}
-        </span>
-        <ButtonGroup className={styles.actions}>
-          {thread && (
-            <Button onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>
-              {resolved ? 'reopen' : 'resolve'}
-            </Button>
-          )}
-          {mayDeleteThread && (
-            <Button tone="danger" onClick={() => thread && deleteThread(wid, thread.id).then(closeThread, fail)}>
-              delete
-            </Button>
-          )}
-          <Button icon aria-label="Close thread" title="close" onClick={closeThread}>
-            <CloseIcon />
-          </Button>
-        </ButtonGroup>
       </header>
       <ol ref={list} className={styles.log} onScroll={stick.onScroll}>
         {!thread && <li className={styles.lead}>Start a thread here: everyone in the workspace sees it, viewers too. @ mentions someone.</li>}
         {thread && messages.isLoading && <li className={styles.lead}>Loading</li>}
         {messages.data.map((m: WithId<ThreadMessage>) => (
           <li key={m.id} className={styles.msg} data-mine={m.uid === me || undefined}>
-            <div className={styles.who}>
-              <span className={styles.name}>{m.name}</span>
-              <span className={styles.when}>
-                {ago(m.createdAt)}
-                {m.editedAt && ' · edited'}
-              </span>
-              {/* Only its writer edits or deletes a message (D-166). */}
-              {m.uid === me && editing?.id !== m.id && (
-                <ButtonGroup className={styles.msgActions}>
-                  <Button onClick={() => setEditing({ id: m.id, text: m.text })}>
-                    edit
-                  </Button>
-                  <Button
-                    tone="danger"
-                    onClick={() => thread && deleteMessage(wid, thread.id, m.id, messages.data.length === 1).then(() => messages.data.length === 1 && closeThread(), fail)}
-                  >
-                    delete
-                  </Button>
-                </ButtonGroup>
+            {/* The others' circle at the foot of their bubble; yours needs none: it's on your side. */}
+            {m.uid !== me && <Avatar size="sm" name={m.name} color={colorOf(m.uid)} />}
+            <div className={styles.said}>
+              <div className={styles.who}>
+                {m.uid !== me && (
+                  <span className={styles.name} style={{ color: colorOf(m.uid) }}>
+                    {m.name}
+                  </span>
+                )}
+                <span className={styles.when}>
+                  {ago(m.createdAt)}
+                  {m.editedAt && ' · edited'}
+                </span>
+                {/* Only its writer edits or deletes a message (D-166). */}
+                {m.uid === me && editing?.id !== m.id && (
+                  <ButtonGroup className={styles.msgActions}>
+                    <Button onClick={() => setEditing({ id: m.id, text: m.text })}>
+                      edit
+                    </Button>
+                    <Button
+                      tone="danger"
+                      onClick={() => thread && deleteMessage(wid, thread.id, m.id, messages.data.length === 1).then(() => messages.data.length === 1 && closeThread(), fail)}
+                    >
+                      delete
+                    </Button>
+                  </ButtonGroup>
+                )}
+              </div>
+              {editing?.id === m.id ? (
+                <Field
+                  multiline
+                  rows={1}
+                  className={styles.editField}
+                  value={editing.text}
+                  maxLength={MESSAGE_MAX}
+                  autoFocus
+                  label="Edit your message"
+                  onChange={(v) => setEditing({ id: m.id, text: v })}
+                  onBlur={saveEdit}
+                  onKeyDown={(e) => {
+                    e.stopPropagation()
+                    if (e.key === 'Enter' && !e.shiftKey) (e.preventDefault(), saveEdit())
+                    if (e.key === 'Escape') setEditing(null)
+                  }}
+                />
+              ) : (
+                <div className={styles.text}>{withMentions(m.text, names)}</div>
               )}
             </div>
-            {editing?.id === m.id ? (
-              <Field
-                multiline
-                rows={1}
-                className={styles.editField}
-                value={editing.text}
-                maxLength={MESSAGE_MAX}
-                autoFocus
-                label="Edit your message"
-                onChange={(v) => setEditing({ id: m.id, text: v })}
-                onBlur={saveEdit}
-                onKeyDown={(e) => {
-                  e.stopPropagation()
-                  if (e.key === 'Enter' && !e.shiftKey) (e.preventDefault(), saveEdit())
-                  if (e.key === 'Escape') setEditing(null)
-                }}
-              />
-            ) : (
-              <div className={styles.text}>{withMentions(m.text, names)}</div>
-            )}
           </li>
         ))}
       </ol>
@@ -392,8 +415,10 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
               />
             </div>
           )}
+          {/* A round well with `send` in it (D-398). */}
           <PromptField
             ref={field}
+            className={styles.well}
             multiline
             value={text}
             maxLength={MESSAGE_MAX}
@@ -406,12 +431,11 @@ export function ThreadPanel({ wid, thread, draft, title, isOwner, where, onShow,
               if (mention.onKey(e)) return
               if (e.key === 'Escape') closeThread()
             }}
-          />
-          <div className={styles.bar}>
-            <Button type="submit" tone="primary" disabled={!text.trim() || busy} title="send">
+          >
+            <Button type="submit" tone="primary" className={styles.send} disabled={!text.trim() || busy} title="send">
               send
             </Button>
-          </div>
+          </PromptField>
         </form>
       )}
     </div>

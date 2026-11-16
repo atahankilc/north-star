@@ -1,7 +1,7 @@
 // `comment` "Every conversation" (lessons.ts, D-349): the whole screen, Pazar fitted, four threads
 // in the workspace (on cards of both planes, one resolved, one mentioning you; the others new to you). The hand clicks
 // the threads tab on the foot: the real list builds cell by cell on the left, under the screen (D-393), every open
-// thread newest first, `@` and `●` on what's new; it presses `mentions`: only the one that names you; it opens it: the
+// thread newest first, a magenta lamp on what's new; it presses `@you`: only the one that names you; it opens it: the
 // conversation builds on the right (the stage is narrow, so the list gives way to it), and the hand rests on its
 // `on 02 Product ↗`, what takes you there.
 // The messages, what you've read and who you are are the demo's (data/threads.ts' `demoThreads`, read instead of
@@ -46,14 +46,15 @@ const MESSAGES: Record<string, WithId<ThreadMessage>[]> = {
 }
 const IN = '[data-learn="threads"]'
 const VIEW = (v: string) => byText(`${IN} nav button`, v, 0.5, 0.5)
-const ROW = byText(`${IN} ol button`, '@', 0.5, 0.4)
+// The one row left under `@you`: it leads with its thing's kind (D-398).
+const ROW = byText(`${IN} ol button`, 'feature', 0.5, 0.4)
 const THERE = byText('[data-learn="thread-column"] header button', 'on 02 Product', 0.4, 0.5)
 
 const scene: Scene = {
   id: 'threads-panel',
   fixture: { ...base, threads: THREADS },
   view: 'canvas',
-  // Wider than the others: the list (340 px) beside the screen needs the room.
+  // Wider than the others: the list (400 px) beside the screen needs the room.
   size: [768, 480],
   length: 7900,
   // The conversation open on the right, the hand on `on 02 Product ↗`.
@@ -73,7 +74,7 @@ const scene: Scene = {
     { do: cursor.press() },
     // The panel builds; a look down its rows.
     { do: wait(900) },
-    { do: cursor.to(VIEW('mentions'), 800) },
+    { do: cursor.to(VIEW('@you'), 800) },
     { do: wait(300) },
     { do: cursor.press() },
     { do: wait(600) },

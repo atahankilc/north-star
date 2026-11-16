@@ -383,8 +383,13 @@ feature comes back as a piece, and check them with the user then.
   own chip apart from what's inside it (`[💬 N inside]` on its console). Threads keep their space (`planeId`).
 - Threads (D-197, D-199, D-220; D-393): the threads tab on the foot's left opens the list, a column on the left ground
   beside the HUD's rail; a chip or a row opens the conversation, a column on the right ground; each works alone, uncovered
-  and covered by the main screen (D-395); a narrow window drops the list while a conversation is open. It says what it shows (`whole workspace` or `inside "<plane>"`); `[on the canvas ↗]` goes there. Its preview always
+  and covered by the main screen (D-395); a narrow window drops the list while a conversation is open. It says what it shows (`whole workspace`, or a dropdown with `on <canvas>` / `in <plane>`); `on … ↗` goes there. Its preview always
   the newest message left, an edit changing it too; the thread deleted by its starter or the last message's writer (D-356).
+- Their look (D-398, docs/specs/surfaces.md): the list as wide as the right panel, one head (`Threads`, what it shows, tools), views `all new @you done`,
+  threads under their place's rule (`02 PRODUCT ── 1`), a row leading with the thing (colour bar, kind, name) over who wrote last
+  in their colour; new a magenta lamp and count. A conversation's head as a thing's panel (kind in its colour, name big),
+  messages bubbles (the others' left with their circle, yours right in cyan), the prompt a round well with `send`; a
+  person's colour the one they have here, else their own (`usePersonColor`).
 
 ## Agent (planned, docs/specs/agent.md)
 - The agent (D-312, not started): browser loop as the signed-in person over a shared `src/ops/` layer; map + read
@@ -469,6 +474,7 @@ Tried or asked for and turned down by the user. Details in the log under the D-n
 - The threads panel sliding up from the edge, its halves sliding their width (D-199).
 - A docked panel building cell by cell while the screen draws back from it (D-395): two movements at once.
 - The workspaces page at full width with an activity column (D-338): too much to look over.
+- For the threads (D-398): rows led by the writer's circle with the thing as a small tag under; each thread as a small card in its thing's colour; a conversation as a flat list with circles.
 - On the workspaces page (D-390): the last workspace's name as the page's big text with a small title; the prompt in a round well; lined pills for a row's buttons; a strip of cells for when things changed; pictures dim until pointed at; an empty one's picture as a window onto the backdrop; live cursors over the pictures.
 - Chat window sliding in from the right (D-081). Saving whole chats (reports instead) (D-090).
 - OpenAI deep-research models (need stored answers) (D-088). MCP for tools (no server) (D-074).

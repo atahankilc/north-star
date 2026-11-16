@@ -27,8 +27,8 @@ export const RELEASES: readonly Release[] = [
     items: [
       // D-387: a look, not a feature, so it arms no lesson.
       { title: 'Panels under the canvas', tab: 'look', line: 'Windows and menus are round now. A side panel opens under the canvas, which lifts and draws back for it.', lessons: [] },
-      // D-393: the threads on the ground, the foot's three tabs.
-      { title: 'Threads beside the canvas', tab: 'threads', line: 'The threads tab moved to the foot. The list opens on the left and a conversation on the right, under the canvas.', scene: 'threads-panel', lessons: ['comment'] },
+      // D-393: the threads on the ground, the foot's three tabs. D-398: the list by place, a conversation in bubbles.
+      { title: 'Threads beside the canvas', tab: 'threads', line: 'The threads tab is on the foot. The list opens left, grouped by place; a conversation right, your messages on your side.', scene: 'threads-panel', lessons: ['comment'] },
       // D-390: the workspaces page.
       { title: 'What changed, everywhere', tab: 'workspaces', line: 'Every workspace that changed while you were away says who changed what. New tasks and people asking to join are written on its card.', lessons: ['workspaces'] },
     ],
