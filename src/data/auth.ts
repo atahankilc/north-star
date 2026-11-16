@@ -53,7 +53,11 @@ const SIGN_IN_SAYS: Record<string, string | null> = {
 export async function signInWithGoogle() {
   if (!firebase) return
   try {
-    await signInWithPopup(firebase.auth, new GoogleAuthProvider())
+    // Always Google's account list: without it Google takes the account it used last, so someone who signed in
+    // with the wrong one could never pick another, even after signing out.
+    const google = new GoogleAuthProvider()
+    google.setCustomParameters({ prompt: 'select_account' })
+    await signInWithPopup(firebase.auth, google)
   } catch (e) {
     const code = (e as { code?: string }).code ?? ''
     if (!(code in SIGN_IN_SAYS)) throw e
