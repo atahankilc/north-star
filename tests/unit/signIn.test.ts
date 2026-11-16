@@ -5,7 +5,12 @@ const popup = vi.fn()
 const out = vi.fn()
 const leave = vi.fn(async () => {})
 vi.mock('firebase/auth', () => ({
-  GoogleAuthProvider: class {},
+  GoogleAuthProvider: class {
+    params: Record<string, string> = {}
+    setCustomParameters(p: Record<string, string>) {
+      this.params = p
+    }
+  },
   onAuthStateChanged: vi.fn(),
   signInWithCredential: vi.fn(),
   signInWithPopup: (...a: unknown[]) => popup(...a),
@@ -19,6 +24,12 @@ const failWith = (code: string) => popup.mockRejectedValueOnce(Object.assign(new
 
 describe('signInWithGoogle', () => {
   beforeEach(() => popup.mockReset())
+
+  it('always asks Google for its account list, so a wrong account can be changed', async () => {
+    popup.mockResolvedValueOnce({})
+    await signInWithGoogle()
+    expect(popup.mock.calls[0][1]).toMatchObject({ params: { prompt: 'select_account' } })
+  })
 
   it('says nothing when the person closes the popup', async () => {
     failWith('auth/popup-closed-by-user')
