@@ -24,7 +24,7 @@ import { useHoldCurtain } from '../../../state/curtain'
 import { Button } from '../../../ui/primitives/Button'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { DecodeText } from '../../../ui/primitives/DecodeText'
-import { InlineEdit } from '../../../ui/primitives/InlineEdit'
+import { CommitField } from '../../../ui/primitives/CommitField'
 import { Note, Row, Section, type WorkspacePage } from '../../../ui/patterns/Settings'
 import { Toast } from '../../../ui/patterns/Toast'
 import { previewCanvasName, previewHasCanvas, subscribePreview } from '../../../agent/preview'
@@ -39,6 +39,7 @@ import { Agent } from '../../../agent/ui/Agent'
 import { DocReader } from '../documents/DocReader'
 import styles from './WorkspaceLayout.module.css'
 import { plural } from '../../../model/words'
+import { WORKSPACE_NAME_MAX } from '../../../model/limits'
 
 const VIEWER = "You're a viewer in this workspace: an owner can make you an editor."
 
@@ -142,7 +143,7 @@ function WorkspaceSettings({ page, wid, workspace, requests }: SettingsProps) {
     <>
       <Section note={editor ? undefined : "You're a viewer here: an owner can make you an editor."}>
         <Row label="name" hint="Shown in the breadcrumb and on the workspaces page.">
-          {editor ? <InlineEdit label="workspace" value={workspace.name} onSave={(n) => renameWorkspace(wid, n)} /> : <span>{workspace.name}</span>}
+          {editor ? <CommitField line empty="undo" label="Workspace name" value={workspace.name} maxLength={WORKSPACE_NAME_MAX} onSave={(n) => n.trim() && void renameWorkspace(wid, n)} /> : <span>{workspace.name}</span>}
         </Row>
         <Row wide label="what we're building" hint="A sentence or two. The agent reads it first.">
           {editor ? (

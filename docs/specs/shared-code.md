@@ -509,3 +509,8 @@ merges (R1.5–R1.7, the demo) and R3.
   `useFolds`; matrix/axisAdd.ts `useAxisAdd` (the arrow keys in the dashed card too); foundation/floating.ts
   `useFloating` (a tip follows a scroll). Waiting, each for a reason outside this list: the agent's Markdown (a look
   decision), PeopleHere on Menu and the five fields (other sessions are in those files), the made-up threads.
+- **R4.6 and the last of R2 (2026-11-18, D-406).** `InlineEdit`/`InlineField` gone: `Field` has `look` (`well`,
+  `bare`, `plain`), `AutosaveField` draws it, a name typed in a head or row is `CommitField line look="bare"`; five in-place
+  fields to three behaviours on one drawn field. PeopleHere moved to views/workspace/canvas, its `+N` list the kit's
+  `Menu` (which gained `onClose`). The made-up threads: demo/fixtures/threads.ts. Left of R2: the agent's Markdown (a
+  look decision); of R4: R4.7 (a new piece kind only through `PIECE_KINDS`).

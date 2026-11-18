@@ -1,13 +1,12 @@
 // A text field that saves itself: after a pause while typing (foundation/pausedSave.ts, as canvas text does: a hidden
 // tab saves too), at once on blur or unmount.
 // Remote edits flow in, except while you're typing in it (last write wins per field).
-// It draws nothing of its own (a note typed where it reads brings its own class); `well` gives it Field's look, the
-// round well (D-384), for a setup's or the settings' fields, whose class then only places it.
-import { useEffect, useRef, useState, type InputHTMLAttributes } from 'react'
-import { useAutoGrow } from '../foundation/autoGrow'
+// It's the kit's Field (D-406: it drew its own input and textarea): nothing of its own (`plain`: a note typed where it
+// reads brings its own class), or with `well` the round well (D-384), for a setup's or the settings' fields, whose class
+// then only places it. Keys pass on as they did (`passKeys`).
+import { useEffect, useRef, useState, type InputHTMLAttributes, type KeyboardEvent } from 'react'
 import { usePausedSave } from '../foundation/pausedSave'
-import field from './Field.module.css'
-
+import { Field } from './Field'
 type Props = {
   value: string
   onSave: (value: string) => void
@@ -33,7 +32,6 @@ export function AutosaveField({ value, onSave, multiline, wrap, rows = 4, label,
   const pending = useRef<string | null>(null)
   const save = useRef(onSave)
   save.current = onSave
-  useAutoGrow(el, multiline || wrap ? draft : '')
 
   useEffect(() => {
     if (!focused.current) setDraft(value)
@@ -50,14 +48,16 @@ export function AutosaveField({ value, onSave, multiline, wrap, rows = 4, label,
     if (autoFocus) el.current?.focus()
   }, [autoFocus])
 
-  const props = {
+  const common = {
     ...rest,
-    className: [well ? field.field : undefined, className].filter(Boolean).join(' ') || undefined,
-    ref: el,
-    'aria-label': label,
+    ref: el as never,
+    look: well ? ('well' as const) : ('plain' as const),
+    className,
+    label,
     value: draft,
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const next = wrap ? e.target.value.replace(/\s*\n\s*/g, ' ') : e.target.value
+    passKeys: true,
+    onChange: (v: string) => {
+      const next = wrap ? v.replace(/\s*\n\s*/g, ' ') : v
       setDraft(next)
       pending.current = next
       later()
@@ -68,12 +68,13 @@ export function AutosaveField({ value, onSave, multiline, wrap, rows = 4, label,
       flush()
     },
   }
-  const finishOnEnter = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  // One wrapped line: Enter finishes it.
+  const finishOnEnter = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
       e.preventDefault()
       e.currentTarget.blur()
     }
   }
-  if (wrap) return <textarea rows={1} onKeyDown={finishOnEnter} {...props} />
-  return multiline ? <textarea rows={rows} {...props} /> : <input {...props} />
+  if (wrap) return <Field {...common} multiline rows={1} onKeyDown={finishOnEnter} />
+  return multiline ? <Field {...common} multiline rows={rows} /> : <Field {...common} />
 }

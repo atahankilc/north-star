@@ -16,7 +16,7 @@ export default example({
   name: 'AutosaveField',
   place: 'forms/fields',
   file: 'src/ui/primitives/AutosaveField.tsx',
-  note: 'saves as you type and on blur; it draws nothing of its own unless `well` gives it Field’s round well (D-384); the gallery keeps the value in the example only',
+  note: 'saves as you type and on blur; it is the kit’s Field (D-406), `plain` unless `well` gives it the round well (D-384); the gallery keeps the value in the example only',
   states: {
     'one line': () => <Field label="name" value="Pazar" />,
     empty: () => <Field label="name" placeholder="name this workspace" />,

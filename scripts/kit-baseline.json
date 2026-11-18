@@ -29,20 +29,20 @@
     "portal": 1
   },
   "src/gallery/Gallery.module.css": {
-    "caps": 2,
-    "pieceSurface": 1
+    "pieceSurface": 1,
+    "caps": 2
   },
   "src/gallery/Gallery.tsx": {
+    "windowKeys": 1,
     "button": 8,
-    "menuHost": 1,
-    "windowKeys": 1
+    "menuHost": 1
   },
   "src/gallery/UsesTree.tsx": {
     "button": 2
   },
   "src/gallery/onboarding.tsx": {
-    "menuHost": 1,
-    "rafLoop": 1
+    "rafLoop": 1,
+    "menuHost": 1
   },
   "src/model/clean.ts": {
     "rawCut": 1
@@ -104,9 +104,6 @@
   "src/ui/patterns/Options.tsx": {
     "kitRaw": 1
   },
-  "src/ui/patterns/PeopleHere.tsx": {
-    "kitRaw": 4
-  },
   "src/ui/patterns/PieceCard.tsx": {
     "kitRaw": 2
   },
@@ -122,17 +119,11 @@
   "src/ui/primitives/Appear.tsx": {
     "rafLoop": 2
   },
-  "src/ui/primitives/AutosaveField.tsx": {
-    "kitRaw": 3
-  },
   "src/ui/primitives/CountBadge.gallery.tsx": {
     "kitRaw": 1
   },
   "src/ui/primitives/DecodeText.tsx": {
     "rafLoop": 2
-  },
-  "src/ui/primitives/InlineEdit.tsx": {
-    "kitRaw": 3
   },
   "src/ui/primitives/Label.gallery.tsx": {
     "kitRaw": 1

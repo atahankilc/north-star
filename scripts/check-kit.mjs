@@ -52,8 +52,8 @@ const RULES = {
     // brings the system's bar back on that element. The kit too: see `everywhere`.
     ['scrollbar', /::-webkit-scrollbar|scrollbar-(?:width|color)\s*:/g],
     // D-384: "on" written again (the line under a pressed control): it's written once, in Button.module.css, and everything
-    // that can be on composes it. InlineEdit's line is a field's underline, not a state. The kit too: see `everywhere`.
-    ['onLook', /inset 0 calc\(-1 \* var\(--line-w\)\) 0 var\(--(?:accent|button-on)/g, /^src\/ui\/primitives\/InlineEdit\.module\.css$/],
+    // that can be on composes it.  The kit too: see `everywhere`.
+    ['onLook', /inset 0 calc\(-1 \* var\(--line-w\)\) 0 var\(--(?:accent|button-on)/g],
     // D-387, D-393: a corner L drawn by hand. A surface is round with a line, what's selected has Marks, a console is a
     // pill: nothing draws its own L's, and the token they were sized by is gone. The kit too: see `everywhere`.
     ['cornerMark', /var\(--corner-mark\)/g],

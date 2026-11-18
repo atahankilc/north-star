@@ -4,14 +4,16 @@
 // second click, Escape, or a pan or zoom of your own stops it. While following, the page is framed in their colour.
 // Someone away (D-331: their tab hidden, or untouched for a while) is drawn faint, last, `away` on hover; a click on them
 // starts no following (one already going goes on).
-import { useEffect, useRef, useState } from 'react'
-import { usePresence, type Peer } from '../../data/presence'
-import { useThemeAccent } from '../../state/theme'
-import { useWs } from '../../views/workspace/canvas/context'
+// Past MAX, `+N` is the kit's Menu (D-406: the list was its own, with its own outside press and Escape): everyone here
+// as its rows, their circle before the name, where they are on the right, the one followed lit.
+import { useState } from 'react'
+import { usePresence, type Peer } from '../../../data/presence'
+import { useThemeAccent } from '../../../state/theme'
+import { useEscapeLayer } from '../../../ui/foundation/useEscapeLayer'
+import { Menu } from '../../../ui/patterns/Menu'
+import { Avatar } from '../../../ui/primitives/Avatar'
+import { useWs } from './context'
 import styles from './PeopleHere.module.css'
-import { Avatar } from '../primitives/Avatar'
-import { useDismiss } from '../foundation/useDismiss'
-import { useEscapeLayer } from '../foundation/useEscapeLayer'
 
 // Squares shown before `+N`.
 const MAX = 4
@@ -28,32 +30,25 @@ export function PeopleHere() {
   const place = (p: Peer) => (p.plane ? `in ${pieces.find((x) => x.id === p.plane)?.name || 'a plane'}` : `on ${canvasName(p) ?? 'the canvas'}`)
   const where = (p: Peer) => (p.away ? `away · ${place(p)}` : place(p))
   const toggle = (p: Peer) => {
-    setListOpen(false)
     if (following === p.uid) follow(null)
     else if (!p.away) follow(p.uid)
   }
+  // The list (a Menu) closes on Escape before Escape stops following (D-191: that layer is heard first otherwise).
   const [listOpen, setListOpen] = useState(false)
-  const root = useRef<HTMLDivElement>(null)
-  // The list closes on a press outside it or Escape (useDismiss, the Escape stack), before Escape stops following.
-  useDismiss(root, () => setListOpen(false), { escape: true, on: listOpen })
-  // Escape stops following, before anything else hears it (D-191).
   useEscapeLayer(() => follow(null), { on: !!following && !listOpen, first: true })
-  useEffect(() => {
-    if (peers.length <= MAX) setListOpen(false)
-  }, [peers.length])
 
   if (peers.length === 0) return null
 
   const shown = peers.length <= MAX ? peers : peers.slice(0, MAX - 1)
   const more = peers.length - shown.length
   return (
-    <div ref={root} className={styles.root} data-learn="people" data-filled>
+    <div className={styles.root} data-learn="people" data-filled>
       <ul className={`${styles.people} ${styles.stack}`} aria-label={`${peers.length} more ${peers.length === 1 ? 'person' : 'people'} here`}>
         {shown.map((p) => {
           const on = following === p.uid
           return (
             <li key={p.uid}>
-              <button
+              <button /* kit-ok: a person's circle in the HUD's stack, overlapping the next, edged in their colour */
                 className={styles.person}
                 style={{ ['--peer' as string]: tone(p.color) }}
                 data-away={p.away || undefined}
@@ -70,34 +65,33 @@ export function PeopleHere() {
           )
         })}
         {more > 0 && (
-          <li>
-            <button
-              className={styles.more}
-              aria-expanded={listOpen}
-              aria-label={`${more} more · everyone here`}
-              onClick={() => setListOpen((o) => !o)}
-            >
-              +{more}
-            </button>
+          <li className={styles.more}>
+            <Menu
+              icon
+              quiet
+              hud
+              right
+              label={`+${more}`}
+              ariaLabel={`${more} more · everyone here`}
+              prompt="find someone…"
+              onOpen={() => setListOpen(true)}
+              onClose={() => setListOpen(false)}
+              items={peers.map((p) => ({
+                key: p.uid,
+                label: p.name,
+                glyph: <Avatar name={p.name} photo={p.photo} color={tone(p.color)} away={p.away} size="sm" />,
+                hint: following === p.uid ? 'following' : where(p),
+                current: following === p.uid,
+                faint: p.away,
+                onSelect: () => toggle(p),
+              }))}
+            />
           </li>
         )}
       </ul>
-      {listOpen && (
-        <ul className={styles.list} aria-label="Everyone here">
-          {peers.map((p) => (
-            <li key={p.uid}>
-              <button className={styles.row} style={{ ['--peer' as string]: tone(p.color) }} data-away={p.away || undefined} aria-pressed={following === p.uid} onClick={() => toggle(p)}>
-                <Avatar name={p.name} photo={p.photo} color={tone(p.color)} away={p.away} size="sm" />
-                <span className={styles.rowName}>{p.name}</span>
-                <span className={styles.where}>{following === p.uid ? 'following' : where(p)}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
       {leader && (
         <div className={styles.following} style={{ ['--peer' as string]: tone(leader.color) }}>
-          <button className={styles.followTag} data-learn="follow-label" onClick={() => follow(null)}>
+          <button /* kit-ok: the tag that says whom you follow, filled in their colour (D-191) */ className={styles.followTag} data-learn="follow-label" onClick={() => follow(null)}>
             following {leader.name} · {where(leader)} <span className={styles.stop}>stop</span>
           </button>
         </div>

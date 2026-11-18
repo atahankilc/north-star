@@ -8,7 +8,8 @@
 // (a deck column's name, a checklist's step, a document's title in its row; D-392: each had its own draft and its own
 // way to undo). There: `autoFocus`, `select` (everything selected as it opens), `clean` (what may be typed), and
 // `onEnd` once it's over (kept, put back or untouched), so the caller can stop showing it.
-// `onSave` hears the whole text, only when it changed (the caller trims or checks).
+// `look`: Field's (`bare` for a name typed where it's drawn at the world's size: a matrix's head, a table's row; D-406,
+// they were InlineField). `onSave` hears the whole text, only when it changed (the caller trims or checks).
 import { useRef, type CSSProperties, type InputHTMLAttributes, type MouseEventHandler, type PointerEventHandler } from 'react'
 import { useCommit } from '../foundation/useCommit'
 import { Field } from './Field'
@@ -23,6 +24,7 @@ type Props = {
   empty?: 'save' | 'undo'
   size?: 'sm' | 'md'
   quiet?: boolean
+  look?: 'well' | 'bare' | 'plain'
   rows?: number
   maxLength?: number
   readOnly?: boolean

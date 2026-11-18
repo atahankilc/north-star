@@ -58,7 +58,7 @@ import { useSeen, within } from '../canvas/visible'
 import { useTheme } from '../../../state/theme'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { CardFace } from '../cards/CardFace'
-import { InlineField } from '../../../ui/primitives/InlineEdit'
+import { CommitField } from '../../../ui/primitives/CommitField'
 import type { FindItem } from '../find/find'
 import { useStill } from '../canvas/still'
 import { usePeersOn } from '../canvas/collab'
@@ -556,15 +556,18 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
   const inside = (
     <>
       {open ? (
-        <InlineField
+        <CommitField
+          line
+          look="bare"
+          autoFocus
           value={entry.name}
           label={which === 'rows' ? 'Row name' : 'Column name'}
           maxLength={NAME_MAX}
           placeholder={sub ? 'what it is judged on' : 'name'}
-          onDone={(typed) => {
+          onSave={(typed) => typed.trim() !== entry.name && onRename(typed.trim())}
+          onEnd={() => {
             setEditing(false)
             useMatrixUi.setState({ naming: null })
-            if (typed !== undefined) onRename(typed)
           }}
         />
       ) : (

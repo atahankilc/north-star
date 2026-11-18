@@ -20,7 +20,7 @@ import { useKept } from '../canvas/kept'
 import { useSeen, within } from '../canvas/visible'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { CardFace } from '../cards/CardFace'
-import { InlineField } from '../../../ui/primitives/InlineEdit'
+import { CommitField } from '../../../ui/primitives/CommitField'
 import type { FindItem } from '../find/find'
 import { usePeersOn } from '../canvas/collab'
 import { Marks, useSettledZoom } from '../../../ui/primitives/Marks'
@@ -581,16 +581,19 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
   const inside = (
     <>
       {open ? (
-        <InlineField
+        <CommitField
+          line
+          look="bare"
+          autoFocus
           className={styles.nameField}
           value={row.name}
           label={row.card ? `${row.card.type} title` : 'Row name'}
           maxLength={row.card ? TITLE_MAX : 200}
           placeholder={row.card ? `untitled ${row.card.type}` : 'name'}
-          onDone={(typed) => {
+          onSave={(typed) => typed.trim() !== row.name && onRename(typed.trim())}
+          onEnd={() => {
             setEditing(false)
             useTableUi.setState({ naming: null })
-            if (typed !== undefined) onRename(typed)
           }}
         />
       ) : (

@@ -42,7 +42,7 @@
 /* Following them: the chip fills in. */
 .person[aria-pressed='true'] {
   border-color: var(--peer);
-  background: color-mix(in srgb, var(--peer) var(--card-tint), transparent);
+  background: color-mix(in srgb, var(--peer) var(--card-tint), transparent); /* kit-ok: a person followed, tinted in their colour as a card is in its type's, not a card face */
 }
 
 /* Circles only, overlapping, each edged in the page colour so they read apart. */
@@ -112,94 +112,14 @@
 
 /* Away (D-331): the square faint and grey (Avatar's `away`), the name still in their colour on hover; nothing to
    follow. */
-.person[data-away],
-.row[data-away] {
+.person[data-away] {
   cursor: default;
 }
 
-.row[data-away] .rowName {
-  opacity: var(--o-soft);
-}
-
+/* `+N`, the kit's Menu (D-406): placed under the circles; its trigger is a HUD icon's size, its list the prompt's
+   rows, everyone here with their circle. */
 .more {
-  display: grid;
-  place-items: center;
-  /* As big as the circles and the HUD's tools (D-344), empty and round like them (D-384). */
-  min-width: var(--hud-tool);
-  height: var(--hud-tool);
   margin-top: var(--space-1);
-  padding: 0 var(--space-1);
-  border: 0;
-  border-radius: var(--radius-full);
-  background: none;
-  color: var(--fg-dim);
-  font: inherit;
-  font-size: var(--text-xs);
-  cursor: pointer;
-  transition:
-    border-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
-}
-
-.more:hover,
-.more:focus-visible,
-.more[aria-expanded='true'] {
-  background: var(--wash-3);
-  color: var(--fg-strong);
-}
-
-/* Everyone here: a framed list right of the squares, its foot level with theirs. */
-.list {
-  composes: frame from '../foundation/Frame.module.css';
-  position: absolute;
-  bottom: 0;
-  left: calc(100% + var(--space-2));
-  z-index: var(--z-popover);
-  width: var(--menu-w);
-  max-height: min(50vh, var(--list-h));
-  margin: 0;
-  /* Round with a line, its rows pills a step in, as a menu (D-387). */
-  padding: var(--space-1);
-  border-color: var(--line-hover);
-  border-radius: var(--radius-menu);
-  overflow-y: auto;
-  list-style: none;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  padding: var(--space-1) var(--space-2);
-  border: 0;
-  border-radius: var(--radius-full);
-  background: none;
-  color: var(--peer);
-  font: inherit;
-  font-size: var(--text-sm);
-  text-align: left;
-  cursor: pointer;
-}
-
-.row:hover,
-.row:focus-visible,
-.row[aria-pressed='true'] {
-  outline: none;
-  background: var(--wash-3);
-}
-
-.rowName {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.row .where {
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
 }
 
 /* While following: the whole page framed in their colour, with a tag at the top middle that stops it (the bottom middle

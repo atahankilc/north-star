@@ -1,6 +1,7 @@
 import { example } from '../../gallery/example'
 import { Button } from '../primitives/Button'
 import { Choice } from '../primitives/Choice'
+import { CommitField } from '../primitives/CommitField'
 import { Field } from '../primitives/Field'
 import { Note, Row, Section, SettingsButton } from './Settings'
 
@@ -35,7 +36,7 @@ export default example({
       <div style={{ width: 640, display: 'grid', gap: 'var(--space-6)' }}>
         <Section n={1} label="general" count={4} note="Only owners change the name.">
           <Row label="name" hint="Shown to everyone in it.">
-            Pazar
+            <CommitField line empty="undo" label="Workspace name" value="Pazar" onSave={() => {}} />
           </Row>
           <Row label="theme" hint="This browser.">
             <Choice label="theme" bare options={['dark', 'light', 'system'] as const} value="dark" onChange={() => {}} />

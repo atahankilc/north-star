@@ -139,7 +139,6 @@
   },
   "copies": {
     "evals/tasks/edit.ts <> evals/tasks/edit.ts": 12,
-    "src/agent/changeset.ts <> src/agent/preview.ts": 15,
     "src/agent/read/space.ts <> src/agent/read/space.ts": 7,
     "src/app/Crash.module.css <> src/views/workspace/canvas/WorkspaceLayout.module.css": 13,
     "src/demo/Stage.tsx <> src/gallery/Mount.tsx": 10,
@@ -153,7 +152,6 @@
     "src/onboarding/queue.test.ts <> src/onboarding/queue.test.ts": 9,
     "src/views/workspace/canvas/CanvasView.module.css <> src/views/workspace/canvas/CanvasView.module.css": 9,
     "src/views/workspace/canvas/collab.module.css <> src/views/workspace/documents/DocEditor.module.css": 12,
-    "src/views/workspace/deck/CardKanban.tsx <> src/views/workspace/deck/Kanban.tsx": 15,
     "src/views/workspace/matrix/MatrixSetup.tsx <> src/views/workspace/table/TableSetup.tsx": 16,
     "src/views/workspace/plane/PlaneCards.tsx <> src/views/workspace/plane/PlaneCards.tsx": 7,
     "src/views/workspace/text/TextItems.tsx <> src/views/workspace/text/TextItems.tsx": 102,

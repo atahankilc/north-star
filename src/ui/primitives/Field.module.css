@@ -62,3 +62,17 @@ textarea.field {
   border-radius: var(--radius-well);
   line-height: var(--lh-body);
 }
+
+/* `bare` (D-406; it was InlineEdit.module.css' InlineField): a name typed where it's drawn, in the caller's own font, a
+   cyan line under it (what you can do). */
+.bare {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: var(--line-w) solid var(--accent-cyan);
+  outline: none;
+  background: none;
+  color: var(--fg-strong);
+  font: inherit;
+}

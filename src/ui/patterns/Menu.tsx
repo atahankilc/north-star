@@ -46,13 +46,20 @@ type Props = {
   'data-learn'?: string
   panelLearn?: { 'data-learn': string }
   onOpen?: () => void
+  // It closed (D-406: who owns an Escape layer under it, people here's follow, waits while it's open).
+  onClose?: () => void
 }
 
-export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, hud, plain, active, ariaLabel, empty, prompt, 'data-learn': learnAs, panelLearn, onOpen }: Props) {
+export function Menu({ label, summary, items, up, right, alignEnd, primary, icon, quiet, hud, plain, active, ariaLabel, empty, prompt, 'data-learn': learnAs, panelLearn, onOpen, onClose }: Props) {
   const [open, setOpen] = useState(false)
-  const onOpenRef = useRef(onOpen)
-  onOpenRef.current = onOpen
-  useEffect(() => void (open && onOpenRef.current?.()), [open])
+  const said = useRef({ onOpen, onClose, was: false })
+  said.current = { ...said.current, onOpen, onClose }
+  useEffect(() => {
+    const s = said.current
+    if (open) s.onOpen?.()
+    else if (s.was) s.onClose?.()
+    s.was = open
+  }, [open])
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
   const id = useId()

@@ -24,6 +24,7 @@ export default example({
     'title, ⇧↵ a new line, never empty': () => <Live start="Call the office park" label="Title" enter="shift" empty="undo" />,
     'a name typed over (line, selected, never empty)': () => <Live start="TODO" label="Column name" line select empty="undo" size="sm" maxLength={40} />,
     'a number typed over (line, digits only)': () => <Live start="3" label="Limit" line select inputMode="numeric" placeholder="–" size="sm" clean={(v) => v.replace(/\D/g, '').slice(0, 2)} />,
+    'a name where it’s drawn (line, bare)': { render: () => <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)' }}><Live start="Office workers" label="Row name" line look="bare" autoFocus /></div>, note: 'a matrix’s head, a table’s row: in their font, a cyan line under it (D-406: it was InlineField)' },
     'notes (↵ a new line, Escape keeps)': () => <Live start="" label="Notes" placeholder="What it takes, what done looks like." enter="newline" escape="keep" rows={2} />,
   },
 })

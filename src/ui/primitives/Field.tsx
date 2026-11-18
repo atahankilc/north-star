@@ -3,6 +3,9 @@
 // textarea as tall as its text (autoGrow.ts). `quiet` shows its well only on hover and focus (a value that reads as text until touched,
 // the card panel's fields). Enter and Escape have their own callbacks (Enter in a textarea only with ⌘ or Ctrl); keys
 // stay inside it unless `passKeys`, so the canvas's shortcuts never fire while typing. Every other input prop passes on.
+// `look` (D-406: the kit's other fields drew their own): `well` (the default); `bare`, a name typed where it's drawn, in
+// the caller's font with a cyan line under it (a matrix's head, a table's row, at the world's size); `plain`, nothing of
+// its own (a note typed where it reads: the caller's class is its look).
 import { forwardRef, useImperativeHandle, useRef, type InputHTMLAttributes, type KeyboardEvent } from 'react'
 import { useAutoGrow } from '../foundation/autoGrow'
 import styles from './Field.module.css'
@@ -15,6 +18,7 @@ type Base = {
   placeholder?: string
   size?: 'sm' | 'md'
   quiet?: boolean
+  look?: 'well' | 'bare' | 'plain'
   onEnter?: (value: string) => void
   onEscape?: () => void
   passKeys?: boolean
@@ -24,7 +28,7 @@ type Multi = Base & { multiline: true; rows?: number } & Omit<InputHTMLAttribute
 export type FieldProps = Single | Multi
 
 export const Field = forwardRef<HTMLInputElement | HTMLTextAreaElement | null, FieldProps>(function Field(props, ref) {
-  const { value, onChange, label, size = 'md', quiet, onEnter, onEscape, passKeys, className, onKeyDown, ...rest } = props
+  const { value, onChange, label, size = 'md', quiet, look = 'well', onEnter, onEscape, passKeys, className, onKeyDown, ...rest } = props
   const el = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
   useImperativeHandle(ref, () => el.current as HTMLInputElement & HTMLTextAreaElement)
   const multiline = props.multiline === true
@@ -37,7 +41,7 @@ export const Field = forwardRef<HTMLInputElement | HTMLTextAreaElement | null, F
   }
   const common = {
     ref: el,
-    className: [styles.field, className].filter(Boolean).join(' '),
+    className: [look === 'well' ? styles.field : look === 'bare' ? styles.bare : undefined, className].filter(Boolean).join(' ') || undefined,
     'data-size': size,
     'data-quiet': quiet || undefined,
     'aria-label': label,
