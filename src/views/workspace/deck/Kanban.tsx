@@ -48,17 +48,17 @@ import { useWs } from '../canvas/context'
 import { alikeProps } from '../canvas/kept'
 import { DockAction } from '../canvas/FocusDock'
 import { DrawerPick } from '../../../ui/patterns/Console'
-import { loadFolds, saveFolds, taskRows, type Lane } from '../table/rows'
+import { taskRows, type Lane } from '../table/rows'
 import { setPresenceDrag } from '../../../data/presence'
 import { PeerTaskDrags } from '../canvas/collab'
-import { CARRIED, Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
+import { Marks, useSettledZoom } from '../../../ui/primitives/Marks'
 import { ThreadChip, threadOn } from '../threads/Threads'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { boxDrag, type DragBox } from '../../../ui/foundation/dragPointer'
 import { dueText } from '../../../model/tasks'
 import { hasMeta, TaskSheet } from '../cards/TaskSheet'
 import { Assignee } from '../cards/Assignee'
-import { holdOnBoard, useBoardDrag, type Held } from './boardDrag'
+import { ghostStyle, holdOnBoard, nearestTo, useBoardDrag, useFolds, type Held } from './boardDrag'
 import { learnable } from '../panels/TaskPanel'
 import { CardKanbanView, toggleOrder, useOrderOn } from './CardKanban'
 import { FIELD_NAME, isPriorities, rowFieldOf } from '../../../model/kanbanCards'
@@ -76,6 +76,7 @@ import { DECK_PX } from '../../../model/world'
 import { keysTaken } from '../../../ui/foundation/focus'
 import { CheckIcon, CloseIcon, LimitIcon, NextIcon, PrevIcon } from '../../../ui/primitives/hudIcons'
 import { plural } from '../../../model/words'
+import { PieceLayer } from '../canvas/PieceLayer'
 
 // Its parts in its own px: model/world.ts (D-325).
 export const K = DECK_PX
@@ -206,11 +207,9 @@ function TaskKanbanView({ piece, view, live, editor, onCanvas = false, onTask }:
   // Marks, chips and handles at screen size take the zoom once it settles (D-278), so a wheel step restyles none of them.
   const settled = useSettledZoom(view.zoom, live)
   return (
-    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
-        <TaskBoard piece={piece} zoom={settled} live={live} editor={editor} onTask={onTask} />
-      </div>
-    </div>
+    <PieceLayer layer={styles.layer} world={styles.world} view={view} settled={settled} live={live} onCanvas={onCanvas}>
+      <TaskBoard piece={piece} zoom={settled} live={live} editor={editor} onTask={onTask} />
+    </PieceLayer>
   )
 }
 
@@ -251,12 +250,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
     }
     return m
   }, [cols, byCol, field])
-  const [folds, setFolds] = useState(() => loadFolds(piece.id))
-  const fold = (lane: string) => {
-    const next = folds.includes(lane) ? folds.filter((x) => x !== lane) : [...folds, lane]
-    setFolds(next)
-    saveFolds(piece.id, next)
-  }
+  const { folds, fold } = useFolds(piece.id)
   const selected = useKanbanUi((s) => (live && s.selected?.piece === piece.id ? s.selected.task : null))
   const many = useKanbanUi((s) => (live && s.many?.piece === piece.id ? s.many.tasks : null))
   const adding = useKanbanUi((s) => (live ? s.adding : null))
@@ -331,15 +325,8 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
   // Where tasks held under the pointer would land, read off what's drawn: the cell (a column in an open lane that takes
   // them) under the pointer or the nearest, and the place among its other tasks by their middles.
   const landing = (x: number, y: number, ids: string[]): Over | null => {
-    const cellsAt = [...(board.current?.querySelectorAll<HTMLElement>('[data-cell][data-drop]') ?? [])]
-    if (!cellsAt.length) return null
-    const dist = (c: HTMLElement) => {
-      const r = c.getBoundingClientRect()
-      const dx = x < r.left ? r.left - x : x > r.right ? x - r.right : 0
-      const dy = y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0
-      return Math.hypot(dx, dy)
-    }
-    const cell = cellsAt.reduce((a, b) => (dist(b) < dist(a) ? b : a))
+    const cell = nearestTo([...(board.current?.querySelectorAll<HTMLElement>('[data-cell][data-drop]') ?? [])], x, y)
+    if (!cell) return null
     const rows = [...cell.querySelectorAll<HTMLElement>('[data-task]')].filter((t) => !ids.includes(t.dataset.task!))
     const index = rows.filter((t) => {
       const r = t.getBoundingClientRect()
@@ -557,7 +544,7 @@ const TaskBoard = memo(function TaskBoard({ piece, zoom, live, editor, onTask }:
         )
       })}
       {held && drag && (
-        <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: `${CARRIED}`, transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
+        <div className={styles.ghost} style={ghostStyle(drag)} aria-hidden>
           <TaskSheet className={styles.task} task={held} card={cardOf(held)} finished={!!cols.find((c) => c.id === (drag.over?.col ?? held.col))?.done} selected={false} live lifted />
           {heldIds.length > 1 && <span className={styles.more}>+{heldIds.length - 1}</span>}
         </div>

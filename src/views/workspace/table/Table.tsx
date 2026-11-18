@@ -23,7 +23,7 @@ import { CardFace } from '../cards/CardFace'
 import { InlineField } from '../../../ui/primitives/InlineEdit'
 import type { FindItem } from '../find/find'
 import { usePeersOn } from '../canvas/collab'
-import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
+import { Marks, useSettledZoom } from '../../../ui/primitives/Marks'
 import styles from './Table.module.css'
 import { DUR } from '../../../ui/foundation/motion'
 import { Button } from '../../../ui/primitives/Button'
@@ -35,6 +35,7 @@ import { openSetup, useSetupClosesOnLeave } from '../canvas/setupStore'
 import { CellInput } from '../canvas/CellInput'
 import { PageArrows, PageSize } from '../canvas/Pager'
 import { CloseIcon, PlusIcon } from '../../../ui/primitives/hudIcons'
+import { PieceLayer } from '../canvas/PieceLayer'
 
 // Its parts in its own px: the head, a row, the name column, the `+` column and row.
 const T = { head: 40, row: 32, name: 260, add: 40 }
@@ -386,33 +387,31 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
 
 
   return (
-    <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
-        <div className={styles.table} style={{ width: width + (live && editor ? T.add : 0), height: bottom + T.add }} role="grid" aria-label={piece.name || 'table'}>
-          {headsShown}
+    <PieceLayer layerRef={layer} layer={styles.layer} world={styles.world} view={view} settled={settled} live={live} onCanvas={onCanvas}>
+      <div className={styles.table} style={{ width: width + (live && editor ? T.add : 0), height: bottom + T.add }} role="grid" aria-label={piece.name || 'table'}>
+        {headsShown}
 
-          {live && editor &&
-            [{ id: NAME_COL, x: nameW, w: nameWidth(setup) }, ...cols.map((c, i) => ({ id: c.id, x: xs[i] + ws[i], w: widthOf(c) }))].map((g) => (
-              <WidthGrip
-                key={g.id}
-                x={g.x}
-                height={bottom}
-                // Open on the canvas (D-228) its view stays at 1 under the canvas's zoom: the piece's `--z` (CSS) sizes it.
-                zoom={onCanvas ? undefined : view.zoom}
-                sizing={sizing?.col === g.id ? sizing.w : null}
-                onMove={(dx) => setSizing({ col: g.id, w: Math.round(Math.min(COL_W.max, Math.max(COL_W.min, g.w + dx))) })}
-                onDone={(dx) => {
-                  setSizing(null)
-                  if (dx) void setColumnWidth(wid, piece.id, setup, g.id, g.w + dx)
-                }}
-                onReset={() => void setColumnWidth(wid, piece.id, setup, g.id, undefined)}
-              />
-            ))}
+        {live && editor &&
+          [{ id: NAME_COL, x: nameW, w: nameWidth(setup) }, ...cols.map((c, i) => ({ id: c.id, x: xs[i] + ws[i], w: widthOf(c) }))].map((g) => (
+            <WidthGrip
+              key={g.id}
+              x={g.x}
+              height={bottom}
+              // Open on the canvas (D-228) its view stays at 1 under the canvas's zoom: the piece's `--z` (CSS) sizes it.
+              zoom={onCanvas ? undefined : view.zoom}
+              sizing={sizing?.col === g.id ? sizing.w : null}
+              onMove={(dx) => setSizing({ col: g.id, w: Math.round(Math.min(COL_W.max, Math.max(COL_W.min, g.w + dx))) })}
+              onDone={(dx) => {
+                setSizing(null)
+                if (dx) void setColumnWidth(wid, piece.id, setup, g.id, g.w + dx)
+              }}
+              onReset={() => void setColumnWidth(wid, piece.id, setup, g.id, undefined)}
+            />
+          ))}
 
-          {rowsShown}
-        </div>
+        {rowsShown}
       </div>
-    </div>
+    </PieceLayer>
   )
 }
 

@@ -242,7 +242,7 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
 
 A list of findings and of ways to keep repeats from coming back, for the user to pick from. Built so far: R1.1–R1.4
 and R1.10 (D-388), the checks R4.1–R4.4 (D-391), R1.5–R1.7 (D-392) and R1.8–R1.16 (D-394), under *Done, round 2* at
-the end; then R3 and R2's small logic twins (D-396) and more of R2 (D-397, D-399), R4.5 and the demo (D-400). What D-400 lists as left, R4.6 and R4.7 are not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
+the end; then R3 and R2's small logic twins (D-396) and more of R2 (D-397, D-399), R4.5 and the demo (D-400). D-403 made the last merges that needed no look decision and says why the rest wait; R4.6 and R4.7 are not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
 finder (knip) and four full reads (the kit, the workspace views, the logic layers, demo/onboarding/gallery/scripts).
 Line numbers are from that day. *Checked* = the drift was looked at again by hand after the read.
 
@@ -505,3 +505,7 @@ merges (R1.5–R1.7, the demo) and R3.
 - **The scenes (2026-11-17, D-401).** The eight scenes that had stopped part way are fixed (selectors a UI change had
   left behind); a `Select` with drawn labels is found by `words` (a real fault: the link bar's kinds found nothing);
   `npm run check:scenes` plays every scene to its end, in CI's own job; scripts/headless.mjs for the two browser checks.
+- **The last merges (2026-11-18, D-403).** `PieceLayer` (six views); deck/boardDrag.ts `nearestTo`, `ghostStyle`,
+  `useFolds`; matrix/axisAdd.ts `useAxisAdd` (the arrow keys in the dashed card too); foundation/floating.ts
+  `useFloating` (a tip follows a scroll). Waiting, each for a reason outside this list: the agent's Markdown (a look
+  decision), PeopleHere on Menu and the five fields (other sessions are in those files), the made-up threads.

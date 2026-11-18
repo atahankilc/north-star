@@ -13,7 +13,7 @@
 // dock (`[order]`, yours, per kanban per browser; on to start): rated cards best first, their score, `!` when they rest
 // on something invalidated, the suggested P1–P3, `P2 → P1` in yellow where the card's own priority differs; a row picks
 // the card (its panel). Boxes sort by score too.
-import { memo, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import { updateCards, type Card } from '../../../data/cards'
@@ -28,14 +28,14 @@ import { useMeasuredSize } from '../canvas/useMeasuredSize'
 import { CardSheet } from '../cards/CardSheet'
 import { PriorityChip } from '../cards/PriorityChip'
 import { CardRow } from '../cards/CardRow'
-import { holdOnBoard, useBoardDrag, type Held } from './boardDrag'
+import { ghostStyle, holdOnBoard, nearestTo, useBoardDrag, useFolds, type Held } from './boardDrag'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Rule } from '../../../ui/primitives/Rule'
-import { CARRIED, Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
-import { loadFolds, saveFolds } from '../table/rows'
+import { Marks, useSettledZoom } from '../../../ui/primitives/Marks'
 import styles from './Kanban.module.css'
 import { cardName } from '../../../model/cardName'
 import { keepLocal, readLocal } from '../../../state/local'
+import { PieceLayer } from '../canvas/PieceLayer'
 
 
 type Over = { col: string; row: string }
@@ -50,11 +50,9 @@ export function CardKanbanView({ piece, view, live, editor, onCanvas = false, on
   // Marks, chips and handles at screen size take the zoom once it settles (D-278), so a wheel step restyles none of them.
   const settled = useSettledZoom(view.zoom, live)
   return (
-    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
-        <CardBoard piece={piece} live={live} editor={editor} onCard={onCard} />
-      </div>
-    </div>
+    <PieceLayer layer={styles.layer} world={styles.world} view={view} settled={settled} live={live} onCanvas={onCanvas}>
+      <CardBoard piece={piece} live={live} editor={editor} onCard={onCard} />
+    </PieceLayer>
   )
 }
 
@@ -78,12 +76,7 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
   const board = useRef<HTMLDivElement>(null)
   const bd = useBoardDrag<Drag>(board)
   const { drag, setDrag, dragRef } = bd
-  const [folds, setFolds] = useState(() => loadFolds(piece.id))
-  const fold = (row: string) => {
-    const next = folds.includes(row) ? folds.filter((x) => x !== row) : [...folds, row]
-    setFolds(next)
-    saveFolds(piece.id, next)
-  }
+  const { folds, fold } = useFolds(piece.id)
   // Whether a box takes the held card: its column and its row both.
   const boxTakes = (col: CardCol, row: CardCol, card: Card) => takes(col, card) && (!rowField || takes(row, card))
 
@@ -97,15 +90,8 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
       const row = rows.find((k) => k.id === (c.dataset.crow ?? ''))
       return !!col && !!row && boxTakes(col, row, card)
     })
-    if (!at.length) return null
-    const dist = (c: HTMLElement) => {
-      const r = c.getBoundingClientRect()
-      const dx = x < r.left ? r.left - x : x > r.right ? x - r.right : 0
-      const dy = y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0
-      return Math.hypot(dx, dy)
-    }
-    const best = at.reduce((a, b) => (dist(b) < dist(a) ? b : a))
-    return { col: best.dataset.ccol!, row: best.dataset.crow ?? '' }
+    const best = nearestTo(at, x, y)
+    return best && { col: best.dataset.ccol!, row: best.dataset.crow ?? '' }
   }
 
   const pick = (card: Card) => {
@@ -224,7 +210,7 @@ const CardBoard = memo(function CardBoard({ piece, live, editor, onCard }: Board
       </div>
       {orderOn && <OrderList order={order} unrated={held.length - order.length} live={live} selected={selected} onPick={(c) => live && pick(c)} onPress={own} />}
       {lifted && drag && (
-        <div className={styles.ghost} style={{ left: drag.at[0] - drag.grab[0], top: drag.at[1] - drag.grab[1], width: drag.size[0], scale: `${CARRIED}`, transformOrigin: `${drag.grab[0]}px ${drag.grab[1]}px` }} aria-hidden>
+        <div className={styles.ghost} style={ghostStyle(drag)} aria-hidden>
           {sheet(lifted, cols.find((c) => c.id === drag.over?.col), { lifted: true })}
         </div>
       )}

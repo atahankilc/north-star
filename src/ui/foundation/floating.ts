@@ -3,13 +3,14 @@
 // window, D-081). Inside a modal <dialog> it goes in the dialog (the top layer would hide it otherwise), measured from the
 // dialog's padding box, since a filtered dialog is the containing block for fixed children.
 import { tokenPx } from '../../styles/cssToken'
+import { useLayoutEffect, useState, type RefObject } from 'react'
 
 export type Floating = {
   host: HTMLElement
   style: { left: number; top: number | 'auto'; bottom: number | 'auto'; width?: number; minWidth?: number }
 }
 
-export function floatFrom(
+function floatFrom(
   anchor: HTMLElement,
   { height, width, minWidth = tokenPx('--size-xs') }: { height: number; width?: number; minWidth?: number },
 ): Floating {
@@ -43,4 +44,29 @@ export function placeAt(el: HTMLElement, at: [number, number]) {
   const m = tokenPx('--space-2')
   el.style.left = `${Math.max(m, Math.min(at[0], box.width - el.offsetWidth - m))}px`
   el.style.top = `${Math.max(m, Math.min(at[1], box.height - el.offsetHeight - m))}px`
+}
+
+// Something floating at an anchor while `on` (D-403: a popover and a tip each measured and placed themselves, and only
+// the popover followed a scroll): first drawn unseen (`null`), measured by its own height, then placed; it follows its
+// anchor when the page or a panel scrolls or the window resizes. `fit`: the width floatFrom keeps it within.
+export function useFloating(anchor: RefObject<HTMLElement | null>, box: RefObject<HTMLElement | null>, on: boolean, fit: { width?: number; minWidth?: number } = {}): Floating | null {
+  const [at, setAt] = useState<Floating | null>(null)
+  const { width, minWidth } = fit
+  useLayoutEffect(() => {
+    if (!on) return setAt(null)
+    const place = () => {
+      if (!anchor.current) return
+      setAt(floatFrom(anchor.current, { height: box.current?.offsetHeight ?? 0, width, minWidth }))
+    }
+    place()
+    // Not a scroll inside the floating thing itself.
+    const onMove = (e: Event) => !(e.target instanceof Node && box.current?.contains(e.target)) && place()
+    window.addEventListener('scroll', onMove, true)
+    window.addEventListener('resize', onMove)
+    return () => {
+      window.removeEventListener('scroll', onMove, true)
+      window.removeEventListener('resize', onMove)
+    }
+  }, [anchor, box, on, width, minWidth])
+  return at
 }

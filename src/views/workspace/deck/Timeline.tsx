@@ -35,7 +35,7 @@ import { CardPicker } from '../panels/CardPanel'
 import { cardsOn } from '../../../data/places'
 import type { Card } from '../../../data/cards'
 import { taskRows, type Lane } from '../table/rows'
-import { CARRIED, Landing, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
+import { CARRIED, Landing, useSettledZoom } from '../../../ui/primitives/Marks'
 import { OPEN_PAD } from '../canvas/shownBox'
 import { useOpenSize } from '../canvas/sizes'
 import { registerStrip } from './stripReveal'
@@ -49,6 +49,7 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { cardName } from '../../../model/cardName'
 import { NextIcon, PrevIcon } from '../../../ui/primitives/hudIcons'
+import { PieceLayer } from '../canvas/PieceLayer'
 
 // A press that only picks (a viewer's, a finished task's): on its release, never on a cancel.
 const released = (then: () => void) => pressDrag(() => undefined, (ev) => void (ev.type === 'pointerup' && then()))
@@ -236,11 +237,9 @@ export function TimelineView({ piece, view, live, editor, onCanvas = false, onTa
   if (live && !onCanvas && piece.w && Math.abs(z - 1) > 0.001) w = Math.max(w, piece.w - 26)
   const h = onCanvas ? undefined : live ? (box.h - view.oy - Math.max(view.oy, 64)) / z : (box.h - 2 * view.oy) / z
   return (
-    <div ref={layer} className={styles.layer} data-timeline data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }}>
-        {(onCanvas || box.w > 0) && <Days piece={piece} zoom={settled} live={live} editor={editor} onCanvas={onCanvas} onTask={onTask} w={Math.round(Math.max(360, Math.min(8000, w)))} h={h === undefined ? undefined : Math.round(Math.max(TOP + 120, h))} />}
-      </div>
-    </div>
+    <PieceLayer layerRef={layer} layer={styles.layer} world={styles.world} view={view} settled={settled} live={live} onCanvas={onCanvas} data-timeline>
+      {(onCanvas || box.w > 0) && <Days piece={piece} zoom={settled} live={live} editor={editor} onCanvas={onCanvas} onTask={onTask} w={Math.round(Math.max(360, Math.min(8000, w)))} h={h === undefined ? undefined : Math.round(Math.max(TOP + 120, h))} />}
+    </PieceLayer>
   )
 }
 

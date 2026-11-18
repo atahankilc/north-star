@@ -54,6 +54,7 @@ import { Options } from '../../../ui/patterns/Options'
 import { AXIS_NOUN_MAX, UNIT_MAX } from '../../../model/limits'
 import { cardName } from '../../../model/cardName'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
+import { axisKey, useAxisAdd, type AxisOption } from './axisAdd'
 
 const ANY = 'any'
 const TAB_NAME: Record<SetupTab, string> = { rows: 'rows', cols: 'columns', cells: 'cells', options: 'options' }
@@ -212,22 +213,13 @@ function Unfold({ axis, onChange }: { axis: Axis; onChange: (a: Axis, key?: stri
 // the axis's type's cards not on it yet are offered. The list opens upward: the setup sits at the screen's bottom.
 // Without `onName`, cards only (a kanban holding cards, D-268).
 export function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<string>; prefer?: CardType; onCard: (c: Card) => void; onName?: (n: string) => void }) {
-  const { cards } = useWs()
-  const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
-  const [lit, setLit] = useState(0)
   const field = useRef<HTMLInputElement>(null)
-  const query = q.trim().toLowerCase()
-  const free = cards.filter((c) => !exclude.has(c.id))
-  const matches = (query ? free.filter((c) => c.title.toLowerCase().includes(query)) : free.filter((c) => c.type === prefer))
-    .sort((a, b) => Number(b.type === prefer) - Number(a.type === prefer))
-    .slice(0, 6)
-  const options: ({ name: string } | { card: Card })[] = [...(query && onName ? [{ name: q.trim().slice(0, NAME_MAX) }] : []), ...matches.map((card) => ({ card }))]
-  const take = (o: (typeof options)[number]) => {
+  const { q, setQ, query, options, lit, onKey, point } = useAxisAdd({ taken: (id) => exclude.has(id), prefer, names: !!onName, whenEmpty: true })
+  const take = (o: AxisOption) => {
     if ('card' in o) onCard(o.card)
     else onName?.(o.name)
     setQ('')
-    setLit(0)
     field.current?.focus()
   }
   return (
@@ -246,18 +238,10 @@ export function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<stri
         aria-expanded={open && options.length > 0}
         onFocus={() => setOpen(true)}
         onBlur={(e) => !e.currentTarget.parentElement?.contains(e.relatedTarget as Node) && setOpen(false)}
-        onChange={(v) => {
-          setQ(v)
-          setLit(0)
-        }}
+        onChange={setQ}
         onKeyDown={(e) => {
           e.stopPropagation()
-          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault()
-            const n = options.length
-            if (n) setLit((lit + (e.key === 'ArrowDown' ? 1 : n - 1)) % n)
-          }
-          if (e.key === 'Enter' && options[lit]) take(options[lit])
+          if (onKey(e, take)) return
           if (e.key === 'Escape') {
             setQ('')
             e.currentTarget.blur()
@@ -271,10 +255,10 @@ export function AddPill({ exclude, prefer, onCard, onName }: { exclude: Set<stri
             role="listbox"
             label={onName ? 'Cards or a name' : 'Cards'}
             entries={options.map((o) => ('card' in o ? cardEntry(o.card, () => take(o), { hint: o.card.type }) : { key: '+name', label: `“${o.name}” as a name`, glyph: '+', onSelect: () => take(o) }))}
-            picked={options[lit] ? ('card' in options[lit] ? options[lit].card.id : '+name') : null}
+            picked={options[lit] ? axisKey(options[lit]) : null}
             q={query}
             onPick={(i) => i.onSelect({ shift: false, alt: false })}
-            onPoint={(k) => setLit(Math.max(0, options.findIndex((o) => ('card' in o ? o.card.id : '+name') === k)))}
+            onPoint={point}
             idOf={(k) => `add-${k}`}
           />
         </span>

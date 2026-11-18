@@ -4,7 +4,7 @@
 // canvas a picture; unframed, live there, a row's `↗` places it (or drags it out onto the canvas on its own, DocPlace); in
 // focus live: a click opens the document beside the list (DocReader), a right-click has the rest (open, place on the
 // canvas, share, download, delete). Paged like a table (D-213); which page is yours. Files dropped on it are uploaded.
-import { memo, useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
@@ -23,7 +23,7 @@ import { KindMark, lengthOf } from './DocContent'
 import { useOpenSize } from '../canvas/shownBox'
 import { useMeasuredSize } from '../canvas/useMeasuredSize'
 import type { FindItem } from '../find/find'
-import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
+import { Marks, useSettledZoom } from '../../../ui/primitives/Marks'
 import styles from './Documents.module.css'
 import { DOCS_PX } from '../../../model/world'
 import { Button } from '../../../ui/primitives/Button'
@@ -37,6 +37,7 @@ import { BinIcon, DownloadIcon, EditIcon, PlaceIcon, ShareIcon, WriteIcon } from
 import { cut, authorName } from '../../../model/words'
 import { NOTES_ID } from '../../../model/notes'
 import { DOC_VIEWS } from '../../../model/shapes'
+import { PieceLayer } from '../canvas/PieceLayer'
 
 // Its parts in its own px: model/world.ts (D-325).
 const D = DOCS_PX
@@ -227,13 +228,10 @@ export function DocumentsView({ piece, view, live, editor, onCanvas = false, onO
   const world = useRef<HTMLDivElement>(null)
   const settled = useSettledZoom(view.zoom, live)
   useMeasuredSize(world, useOpenSize, piece.id, onCanvas)
-  const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !live) }
   return (
-    <div className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div ref={world} className={styles.world} data-zooming={view.zoom !== settled || undefined} style={style}>
-        <DocumentsBoard piece={piece} live={live} editor={editor} onCanvas={onCanvas} onOpen={onOpen} page={page} />
-      </div>
-    </div>
+    <PieceLayer worldRef={world} layer={styles.layer} world={styles.world} view={view} settled={settled} live={live} onCanvas={onCanvas}>
+      <DocumentsBoard piece={piece} live={live} editor={editor} onCanvas={onCanvas} onOpen={onOpen} page={page} />
+    </PieceLayer>
   )
 }
 

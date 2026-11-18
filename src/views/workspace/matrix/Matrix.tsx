@@ -62,7 +62,7 @@ import { InlineField } from '../../../ui/primitives/InlineEdit'
 import type { FindItem } from '../find/find'
 import { useStill } from '../canvas/still'
 import { usePeersOn } from '../canvas/collab'
-import { Marks, useSettledZoom, zsIn } from '../../../ui/primitives/Marks'
+import { Marks, useSettledZoom } from '../../../ui/primitives/Marks'
 import { learn } from '../../../onboarding/learn'
 import styles from './Matrix.module.css'
 import { DUR } from '../../../ui/foundation/motion'
@@ -77,6 +77,8 @@ import { cellSel, useGridCursor, type CellAt } from '../canvas/gridCursor'
 import { useSetupClosesOnLeave } from '../canvas/setupStore'
 import { CellInput } from '../canvas/CellInput'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
+import { PieceLayer } from '../canvas/PieceLayer'
+import { useAxisAdd } from './axisAdd'
 
 // The matrix's parts in its own px: model/world.ts (D-325).
 export const M = MATRIX_PX
@@ -407,82 +409,93 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false, onView
   const added = () => followAdded(piece.id)
 
   return (
-    <div ref={layer} className={styles.layer} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !(live || still)) }}>
-        <div className={styles.table} style={{ width: L.w, height: L.h }} role="grid" aria-label={piece.name || 'matrix'} onPointerLeave={() => setHot(null)}>
-          {cellsShown}
-          {far && <CellDots setup={setup} rows={rows} cols={cols} cellAt={shownAt} L={L} live={live} acts={acts} />}
-
-          {/* The totals at the ends: a column after the cells, a row under them. */}
-          {endsShown}
-
-          {/* The row heads, and what closes their column, held in from the left when panned past (D-214). */}
-          <div className={styles.stick} data-stuck={dx > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateX(${dx}px)`, clipPath: `inset(${dy + M.top}px ${UNCLIPPED} ${UNCLIPPED} ${UNCLIPPED})` }}>
-            {/* Paper under them out to the screen's edge, so the cells pass under. */}
-            {dx > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, stickLeft / view.zoom + M.head + M.gap, L.h + stickTop / view.zoom)} />}
-            {rowHeads}
-            {L.ends && (
-              <div className={styles.endHead} data-row style={box(0, L.endY, M.head, M.endRow)}>
-                total
-              </div>
-            )}
-            {live && editor && <AddEntry which="rows" label={oneOf(setup.rows, 'rows')} style={box(0, L.addY, M.head, M.row)} piece={piece} setup={setup} shown={shown} onPress={own} onAdded={added} />}
-          </div>
-          {/* The column heads, held in from the top. */}
-          {/* Each layer cut where the other's heads begin, so neither shows past the corner. */}
-          <div className={styles.stick} data-stuck={dy > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateY(${dy}px)`, clipPath: `inset(${UNCLIPPED} ${UNCLIPPED} ${UNCLIPPED} ${dx + M.head}px)` }}>
-            {dy > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, L.w + stickLeft / view.zoom, stickTop / view.zoom + M.top + M.gap)} />}
-            {colHeads}
-            {L.ends && (
-              <div className={styles.endHead} style={box(L.endX, 0, M.end, M.top)}>
-                total
-              </div>
-            )}
-            {live && editor && <AddEntry which="cols" label={oneOf(setup.cols, 'cols')} style={box(L.addX, 0, M.cell, M.top)} piece={piece} setup={setup} shown={shown} onPress={own} onAdded={added} />}
-          </div>
-          {/* The corner, held in both ways, over both. */}
-          <div className={styles.stick} style={{ width: L.w, height: L.h, transform: `translate(${dx}px, ${dy}px)` }}>
-            {(dx > 0 || dy > 0) && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, stickLeft / view.zoom + M.head + M.gap, stickTop / view.zoom + M.top + M.gap)} />}
-            <div className={styles.corner} data-stuck={dx > 0 || dy > 0 || undefined} style={box(0, 0, M.head, M.top)}>
-              <span>{nounOf(setup.rows)}</span>
-              <span className={styles.cross}>×</span>
-              <span>{nounOf(setup.cols)}</span>
-            </div>
-          </div>
-          {!rows.length && !cols.length && !(live && editor) && (
-            <Empty className={styles.empty} style={box(0, M.top, L.w, M.row * 2)}>
-              Nothing to cross yet
-            </Empty>
+    <PieceLayer
+      layerRef={layer}
+      layer={styles.layer}
+      world={styles.world}
+      view={view}
+      settled={settled}
+      live={live}
+      onCanvas={onCanvas}
+      still={still}
+      over={
+        <>
+          {/* Not while the cell is under the held heads. */}
+          {live && !far && selected && selBox && !((dx > 0 && selBox.x < dx + M.head) || (dy > 0 && selBox.y < dy + M.top)) && (
+            <CellBar
+              key={selKey(piece.id, rows[selected.r].key, cols[selected.c].key)}
+              setup={setup}
+              cell={shownAt(rows[selected.r], cols[selected.c])}
+              row={rows[selected.r]}
+              col={cols[selected.c]}
+              editor={editor}
+              onFold={(() => {
+                const r = rows[selected.r]
+                const c = cols[selected.c]
+                const which = r.subs ? 'rows' : c.subs ? 'cols' : null
+                if (!which || !editor) return undefined
+                const e = which === 'rows' ? r : c
+                const shown = !!setup[which].open?.includes(e.key)
+                return { shown, toggle: () => fold(which, e, !shown) }
+              })()}
+              // Under the cell, at screen size, kept on the screen.
+              at={[view.ox + selBox.x * view.zoom, view.oy + (selBox.y + M.row) * view.zoom]}
+              // On the canvas (D-228) it's counter-scaled in CSS and not kept in: the canvas pans.
+              room={onCanvas ? 0 : (layer.current?.clientWidth ?? 0)}
+              write={(fields) => write(rows[selected.r].key, cols[selected.c].key, fields)}
+              onType={() => setTyping(selKey(piece.id, rows[selected.r].key, cols[selected.c].key))}
+            />
           )}
+        </>
+      }
+    >
+      <div className={styles.table} style={{ width: L.w, height: L.h }} role="grid" aria-label={piece.name || 'matrix'} onPointerLeave={() => setHot(null)}>
+        {cellsShown}
+        {far && <CellDots setup={setup} rows={rows} cols={cols} cellAt={shownAt} L={L} live={live} acts={acts} />}
+
+        {/* The totals at the ends: a column after the cells, a row under them. */}
+        {endsShown}
+
+        {/* The row heads, and what closes their column, held in from the left when panned past (D-214). */}
+        <div className={styles.stick} data-stuck={dx > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateX(${dx}px)`, clipPath: `inset(${dy + M.top}px ${UNCLIPPED} ${UNCLIPPED} ${UNCLIPPED})` }}>
+          {/* Paper under them out to the screen's edge, so the cells pass under. */}
+          {dx > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, stickLeft / view.zoom + M.head + M.gap, L.h + stickTop / view.zoom)} />}
+          {rowHeads}
+          {L.ends && (
+            <div className={styles.endHead} data-row style={box(0, L.endY, M.head, M.endRow)}>
+              total
+            </div>
+          )}
+          {live && editor && <AddEntry which="rows" label={oneOf(setup.rows, 'rows')} style={box(0, L.addY, M.head, M.row)} piece={piece} setup={setup} shown={shown} onPress={own} onAdded={added} />}
         </div>
+        {/* The column heads, held in from the top. */}
+        {/* Each layer cut where the other's heads begin, so neither shows past the corner. */}
+        <div className={styles.stick} data-stuck={dy > 0 || undefined} style={{ width: L.w, height: L.h, transform: `translateY(${dy}px)`, clipPath: `inset(${UNCLIPPED} ${UNCLIPPED} ${UNCLIPPED} ${dx + M.head}px)` }}>
+          {dy > 0 && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, L.w + stickLeft / view.zoom, stickTop / view.zoom + M.top + M.gap)} />}
+          {colHeads}
+          {L.ends && (
+            <div className={styles.endHead} style={box(L.endX, 0, M.end, M.top)}>
+              total
+            </div>
+          )}
+          {live && editor && <AddEntry which="cols" label={oneOf(setup.cols, 'cols')} style={box(L.addX, 0, M.cell, M.top)} piece={piece} setup={setup} shown={shown} onPress={own} onAdded={added} />}
+        </div>
+        {/* The corner, held in both ways, over both. */}
+        <div className={styles.stick} style={{ width: L.w, height: L.h, transform: `translate(${dx}px, ${dy}px)` }}>
+          {(dx > 0 || dy > 0) && <div className={styles.band} style={box(-stickLeft / view.zoom, -stickTop / view.zoom, stickLeft / view.zoom + M.head + M.gap, stickTop / view.zoom + M.top + M.gap)} />}
+          <div className={styles.corner} data-stuck={dx > 0 || dy > 0 || undefined} style={box(0, 0, M.head, M.top)}>
+            <span>{nounOf(setup.rows)}</span>
+            <span className={styles.cross}>×</span>
+            <span>{nounOf(setup.cols)}</span>
+          </div>
+        </div>
+        {!rows.length && !cols.length && !(live && editor) && (
+          <Empty className={styles.empty} style={box(0, M.top, L.w, M.row * 2)}>
+            Nothing to cross yet
+          </Empty>
+        )}
       </div>
-      {/* Not while the cell is under the held heads. */}
-      {live && !far && selected && selBox && !((dx > 0 && selBox.x < dx + M.head) || (dy > 0 && selBox.y < dy + M.top)) && (
-        <CellBar
-          key={selKey(piece.id, rows[selected.r].key, cols[selected.c].key)}
-          setup={setup}
-          cell={shownAt(rows[selected.r], cols[selected.c])}
-          row={rows[selected.r]}
-          col={cols[selected.c]}
-          editor={editor}
-          onFold={(() => {
-            const r = rows[selected.r]
-            const c = cols[selected.c]
-            const which = r.subs ? 'rows' : c.subs ? 'cols' : null
-            if (!which || !editor) return undefined
-            const e = which === 'rows' ? r : c
-            const shown = !!setup[which].open?.includes(e.key)
-            return { shown, toggle: () => fold(which, e, !shown) }
-          })()}
-          // Under the cell, at screen size, kept on the screen.
-          at={[view.ox + selBox.x * view.zoom, view.oy + (selBox.y + M.row) * view.zoom]}
-          // On the canvas (D-228) it's counter-scaled in CSS and not kept in: the canvas pans.
-          room={onCanvas ? 0 : (layer.current?.clientWidth ?? 0)}
-          write={(fields) => write(rows[selected.r].key, cols[selected.c].key, fields)}
-          onType={() => setTyping(selKey(piece.id, rows[selected.r].key, cols[selected.c].key))}
-        />
-      )}
-    </div>
+    </PieceLayer>
   )
 }
 
@@ -672,20 +685,13 @@ type AddProps = {
 // The dashed card that closes an axis (D-212): click, type a name and Enter (the field stays for the next), or pick one
 // of the cards that match; Escape or leaving it closes it.
 function AddEntry({ which, label, style, piece, setup, shown, onPress, onAdded }: AddProps) {
-  const { wid, cards } = useWs()
+  const { wid } = useWs()
   const [open, setOpen] = useState(false)
-  const [q, setQ] = useState('')
-  const [pointed, setPointed] = useState<string | null>(null)
   const field = useRef<HTMLInputElement>(null)
-  const query = q.trim().toLowerCase()
-  const type = setup[which].type
-  // Cards not on the matrix yet that match what's typed, the axis's own type first.
-  const matches = query
-    ? cards
-        .filter((c) => !shown.includes(c.id) && c.title.toLowerCase().includes(query))
-        .sort((a, b) => Number(b.type === type) - Number(a.type === type))
-        .slice(0, 6)
-    : []
+  // Cards not on the matrix yet that match what's typed, the axis's own type first; the name as typed is what Enter
+  // takes until an arrow lights a card (D-403: the arrows as in the setup's pill).
+  const { q, setQ, options, lit, onKey, point } = useAxisAdd({ taken: (id) => shown.includes(id), prefer: setup[which].type, names: true })
+  const matches = options.flatMap((o) => ('card' in o ? [o.card] : []))
   const done = () => {
     setQ('')
     field.current?.focus()
@@ -710,11 +716,8 @@ function AddEntry({ which, label, style, piece, setup, shown, onPress, onAdded }
         onKeyDown={(e) => {
           e.stopPropagation()
           if (e.key === 'Escape') return setOpen(false)
-          if (e.key === 'Enter' && q.trim()) {
-            // Before the write: the local copy shows it before the promise settles.
-            onAdded?.(which)
-            void addNamed(wid, piece.id, setup, which, q.trim()).then(done)
-          }
+          // Before the write: the local copy shows it before the promise settles.
+          onKey(e, (o) => (onAdded?.(which), void ('card' in o ? addCardEntry(wid, piece.id, setup, which, o.card) : addNamed(wid, piece.id, setup, which, o.name)).then(done)))
         }}
         onBlur={(e) => {
           // Not when picking a card from the list under it.
@@ -728,10 +731,10 @@ function AddEntry({ which, label, style, piece, setup, shown, onPress, onAdded }
             role="listbox"
             label="Cards that match"
             entries={matches.map((c) => cardEntry(c, () => (onAdded?.(which), void addCardEntry(wid, piece.id, setup, which, c).then(done)), { hint: c.type }))}
-            picked={pointed}
+            picked={options[lit] && 'card' in options[lit] ? options[lit].card.id : null}
             q={q.trim()}
             onPick={(i) => i.onSelect({ shift: false, alt: false })}
-            onPoint={setPointed}
+            onPoint={point}
             idOf={(k) => `pick-${k}`}
           />
         </div>
