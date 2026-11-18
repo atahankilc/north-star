@@ -1,9 +1,9 @@
 // `comment` "Every conversation" (lessons.ts, D-349): the whole screen, Pazar fitted, four threads
 // in the workspace (on cards of both planes, one resolved, one mentioning you; the others new to you). The hand clicks
-// the threads tool in the HUD's corner (D-402): the real list builds cell by cell on the left, under the screen (D-393), every open
-// thread newest first, a magenta lamp on what's new; it presses `@you`: only the one that names you; it opens it: the
-// conversation builds on the right (the stage is narrow, so the list gives way to it), and the hand rests on its
-// `on 02 Product ↗`, what takes you there.
+// the threads tool in the HUD's corner (D-402): the real list is uncovered on the left, under the screen (D-393), what's
+// new on top under `NEW` (D-405), the resolved one behind a word at its foot; it opens the one that names you: the
+// conversation builds on the right (the stage is narrow, so the list gives way to it), and the hand rests on its head,
+// the card it's on, which takes you there.
 // The messages, what you've read and who you are are the demo's (data/threads.ts' `demoThreads`, read instead of
 // Firestore in the demo realm).
 import type { WithId } from '../../data/hooks'
@@ -45,10 +45,10 @@ const MESSAGES: Record<string, WithId<ThreadMessage>[]> = {
   ],
 }
 const IN = '[data-learn="threads"]'
-const VIEW = (v: string) => byText(`${IN} nav button`, v, 0.5, 0.5)
-// The one row left under `@you`: it leads with its thing's kind (D-398).
-const ROW = byText(`${IN} ol button`, 'feature', 0.5, 0.4)
-const THERE = byText('[data-learn="thread-column"] header button', 'on 02 Product', 0.4, 0.5)
+// The row that names you, under `NEW`: it leads with its thing's kind (D-398).
+const ROW = byText(`${IN} ol button`, 'feature', 0.5, 0.3)
+// The conversation's head, the card it's on (D-405): where it is, on its last line.
+const THERE = byText('[data-learn="thread-column"] header [role="button"]', 'feature', 0.3, 0.8)
 
 const scene: Scene = {
   id: 'threads-panel',
@@ -57,7 +57,7 @@ const scene: Scene = {
   // Wider than the others: the list (400 px) beside the screen needs the room.
   size: [768, 480],
   length: 7900,
-  // The conversation open on the right, the hand on `on 02 Product ↗`.
+  // The conversation open on the right, the hand on the card it's on.
   poster: 7800,
   cursor: onStage(560, 200),
   setup: [
@@ -72,13 +72,9 @@ const scene: Scene = {
     { at: 300, do: cursor.to('[aria-label^="Threads"]', 1000) },
     { do: wait(400) },
     { do: cursor.press() },
-    // The panel builds; a look down its rows.
-    { do: wait(900) },
-    { do: cursor.to(VIEW('@you'), 800) },
-    { do: wait(300) },
-    { do: cursor.press() },
-    { do: wait(600) },
-    { do: cursor.to(ROW, 600) },
+    // The panel opens; a look down what's new.
+    { do: wait(1500) },
+    { do: cursor.to(ROW, 900) },
     { do: wait(300) },
     { do: cursor.press() },
     // The conversation builds on the right; a moment, then to where it is.

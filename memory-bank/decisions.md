@@ -385,11 +385,13 @@ feature comes back as a piece, and check them with the user then.
   beside the HUD's rail; a chip or a row opens the conversation, a column on the right ground; each works alone, uncovered
   and covered by the main screen (D-395); a narrow window drops the list while a conversation is open. It says what it shows (`everywhere`, or a dropdown with `this canvas` / `in <plane>`); `on … ↗` goes there. Its preview always
   the newest message left, an edit changing it too; the thread deleted by its starter or the last message's writer (D-356).
-- Their look (D-398, docs/specs/surfaces.md): the list as wide as the right panel, one head (`Threads`, what it shows, tools), views `all new @you done`,
-  threads under their place's rule (`02 PRODUCT ── 1`), a row leading with the thing (colour bar, kind, name) over who wrote last
-  in their colour; new a magenta lamp and count. A conversation's head as a thing's panel (kind in its colour, name big),
-  messages bubbles (the others' left with their circle, yours right in cyan; one writer's in a row one run), the prompt a round well with `send`; a
-  person's colour the one they have here, else their own (`usePersonColor`).
+- Their look (D-398, D-405, docs/specs/surfaces.md): the list as wide as the right panel, one head (`Threads`, what it shows, tools), no views:
+  what's new on top under a magenta `NEW` rule (who wrote last, how it began), the read ones one line under their place's rule
+  (`02 PRODUCT ── 1`), the resolved behind `resolved · N` at the foot; a row leads with the thing (colour bar, kind, name).
+  A conversation's head is the thing's card (`CardFace`, a press goes there), the tools a row above; bubbles washed in their
+  writer's colour (the others' left with their circle, yours right; one writer's in a row one run), a `NEW` line over what you
+  hadn't read, day rules and the clock when it runs over days; the prompt a round well with `@` and `send`; a
+  person's colour the one they have here, else their own (`usePersonColor`). A HUD menu is drawn in the page's top layer (D-405).
 
 ## Agent (planned, docs/specs/agent.md)
 - The agent (D-312, not started): browser loop as the signed-in person over a shared `src/ops/` layer; map + read

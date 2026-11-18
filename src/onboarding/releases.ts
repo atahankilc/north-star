@@ -21,6 +21,15 @@ export type Release = { id: string; date: string; title: string; items: readonly
 
 export const RELEASES: readonly Release[] = [
   {
+    id: '2026-11-18',
+    date: '2026-11-18',
+    title: 'Threads, new first',
+    items: [
+      // D-405: the threads' list and a conversation drawn anew.
+      { title: 'New first', tab: 'threads', line: 'The threads list puts what’s new on top, resolved ones at its foot. A conversation shows its card, each message in its writer’s colour.', scene: 'threads-panel', lessons: ['comment'] },
+    ],
+  },
+  {
     id: '2026-11-16',
     date: '2026-11-16',
     title: 'Rounder, with a line',

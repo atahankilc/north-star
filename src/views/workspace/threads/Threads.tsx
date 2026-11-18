@@ -8,7 +8,11 @@
 // (Enter sends, shift+Enter a new line, `@` suggests the workspace's people); resolve or reopen. Only a message's writer
 // edits or deletes it. Resolved threads leave the canvas; every thread is in the threads panel (ThreadInbox.tsx). Anyone
 // in the workspace comments, viewers too.
-import { useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
+// Its look since D-405: the head is the thing itself, its card face (CardFace) in its colour, which goes there; a bubble
+// is washed in its writer's colour, yours stronger; a `NEW` line over the first message you hadn't read when it opened;
+// across days, each day's rule (`20 TODAY ──`) and the clock instead of how long ago; one writer's run under one name;
+// your own message's `edit · delete` beside its bubble while pointed at; the messages gather at the foot, by the prompt.
+import { Fragment, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import { firebase } from '../../../data/firebase'
@@ -47,6 +51,8 @@ import { Avatar } from '../../../ui/primitives/Avatar'
 import { Label } from '../../../ui/primitives/Label'
 import { presenceColor, usePresence } from '../../../data/presence'
 import { useThemeAccent } from '../../../state/theme'
+import { CardFace } from '../cards/CardFace'
+import { Rule } from '../../../ui/primitives/Rule'
 
 type ThreadView = {
   // Pins shown (`c`); only threads with something new (D-166); resolved ones too.
@@ -176,6 +182,19 @@ function ChipOf({ wid, thread, zoom }: { wid: string; thread: WithId<Thread>; zo
 const MENTION_AT = /(^|\s)@([\p{L}\p{N}._ -]{0,30})$/u
 const pickedIn = (text: string, picked: Map<string, string>) => [...picked].filter(([, name]) => text.includes(`@${name}`)).map(([uid]) => uid)
 
+// A day's name over its messages (D-405): today, yesterday, else the month and the weekday (the day's number is the
+// rule's own, magenta); the clock for a message's time once a thread runs over days.
+const DAY_MS = 24 * 60 * 60 * 1000
+const dayStart = (t: number) => new Date(t).setHours(0, 0, 0, 0)
+function dayName(t: number) {
+  const gone = Math.round((dayStart(Date.now()) - dayStart(t)) / DAY_MS)
+  if (gone === 0) return 'TODAY'
+  if (gone === 1) return 'YESTERDAY'
+  const d = new Date(t)
+  return `${d.toLocaleDateString('en-GB', { month: 'short' })} · ${d.toLocaleDateString('en-GB', { weekday: 'short' })}`.toUpperCase()
+}
+const clock = (t: number) => new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+
 type PanelProps = {
   wid: string
   thread: WithId<Thread> | null
@@ -214,6 +233,13 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
     }
     go()
   }, [thread?.id])
+  // What you had read when it opened: the first message someone else wrote after it has the `NEW` line over it (D-405).
+  const seenAtOpen = useRef<{ id: string; at: number } | null>(null)
+  if (thread && reads && seenAtOpen.current?.id !== thread.id) seenAtOpen.current = { id: thread.id, at: reads.seen?.[thread.id] ?? 0 }
+  const seenAt = thread && seenAtOpen.current?.id === thread.id ? seenAtOpen.current.at : null
+  const firstNew = seenAt ? messages.data.find((m) => m.createdAt > seenAt && m.uid !== me)?.id : undefined
+  // Over more than one day: each day's rule, and the clock (D-405).
+  const days = messages.data.length > 0 && dayStart(messages.data[0].createdAt) !== dayStart(messages.data[messages.data.length - 1].createdAt)
   // The newest message in view, unless you scrolled up to read (then a new one doesn't pull you down); another thread
   // opens at its newest.
   const stick = useStickToBottom(list, [messages.data.length], thread?.id)
@@ -306,12 +332,9 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
       {/* What it's on, as a thing's panel says it (D-398): the kind in its colour and how many messages, the tools with
           `×` last (D-344); the name big; where it is, which goes there (`on … ↗`, D-220). With the list shut, `all
           threads` opens it. */}
-      <header className={styles.head} style={thing.tone ? ({ '--tone': thing.tone } as CSSProperties) : undefined}>
+      <header className={styles.head}>
         <div className={styles.headTop}>
           {onList && <Button onClick={onList}>all threads</Button>}
-          <Label className={styles.kind}>{thing.kind}</Label>
-          {/* With `all threads` on the row there's no room for the word: the count alone. */}
-          <Label className={styles.kindMore}>{onList ? (thread ? `· ${thread.count}` : '') : `thread${thread ? ` · ${thread.count}` : ''}`}</Label>
           <ButtonGroup className={styles.actions}>
             {thread && <Button onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>{resolved ? 'reopen' : 'resolve'}</Button>}
             {mayDeleteThread && (
@@ -324,17 +347,28 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
             </Button>
           </ButtonGroup>
         </div>
-        <h2 className={styles.title} data-gone={thing.gone || undefined}>
-          {resolved ? '✓ ' : ''}
-          {thing.gone ? 'what it was on was deleted' : thing.name || thing.kind}
-        </h2>
-        {onShow ? (
-          <Button link className={styles.goThere} title="go there" onClick={onShow}>
-            {where ? `on ${where}` : 'go there'} ↗
-          </Button>
-        ) : (
-          where && <span className={styles.where}>on {where}</span>
-        )}
+        {/* The thing itself (D-405): its card face in its colour, its kind, its name, where it is and how many messages;
+            a press goes there (D-220). */}
+        <CardFace
+          tone={thing.tone}
+          tint={!!thing.tone}
+          button={onShow ? true : undefined}
+          label={onShow ? `Go to ${title}` : undefined}
+          title={onShow ? 'go there' : undefined}
+          className={styles.thing}
+          data-goes={onShow ? true : undefined}
+          onClick={onShow}
+          onKeyDown={(e) => onShow && (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onShow())}
+        >
+          <Label className={styles.kind}>{thing.kind}</Label>
+          <h2 className={styles.title} data-gone={thing.gone || undefined}>
+            {resolved ? '✓ ' : ''}
+            {thing.gone ? 'what it was on was deleted' : thing.name || thing.kind}
+          </h2>
+          <span className={styles.where}>
+            {[where && `on ${where}${onShow ? ' ↗' : ''}`, thread && plural(thread.count, 'message')].filter(Boolean).join(' · ') || 'new thread'}
+          </span>
+        </CardFace>
       </header>
       <ol ref={list} className={styles.log} onScroll={stick.onScroll}>
         {!thread && <li className={styles.lead}>Start a thread here: everyone in the workspace sees it, viewers too. @ mentions someone.</li>}
@@ -342,13 +376,40 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
         {messages.data.map((m: WithId<ThreadMessage>, i) => {
           // One writer's messages in a row are one run: their name once on top, their circle once at its foot, the
           // bubbles closer together.
-          const follows = messages.data[i - 1]?.uid === m.uid
-          const goesOn = messages.data[i + 1]?.uid === m.uid
+          const before = messages.data[i - 1]
+          const after = messages.data[i + 1]
+          const newDay = days && (!before || dayStart(before.createdAt) !== dayStart(m.createdAt))
+          const follows = before?.uid === m.uid && !newDay && m.id !== firstNew
+          const goesOn = after?.uid === m.uid && !(days && dayStart(after.createdAt) !== dayStart(m.createdAt)) && after.id !== firstNew
           return (
-          <li key={m.id} className={styles.msg} data-mine={m.uid === me || undefined} data-follows={follows || undefined}>
+          <Fragment key={m.id}>
+          {newDay && (
+            <li className={styles.day}>
+              <Rule as="div" n={new Date(m.createdAt).getDate()} name={dayName(m.createdAt)} />
+            </li>
+          )}
+          {m.id === firstNew && (
+            <li className={styles.newLine}>
+              <Label>new</Label>
+            </li>
+          )}
+          <li className={styles.msg} data-mine={m.uid === me || undefined} data-follows={follows || undefined}>
             {/* The others' circle at the foot of their last bubble; yours needs none: it's on your side. */}
             {m.uid !== me && (goesOn ? <span className={styles.noCircle} aria-hidden /> : <Avatar size="sm" name={m.name} color={colorOf(m.uid)} />)}
             <div className={styles.said}>
+              {/* Only its writer edits or deletes a message (D-166): beside its bubble while pointed at (D-405). */}
+              {m.uid === me && editing?.id !== m.id && (
+                <ButtonGroup className={styles.tools}>
+                  <Button onClick={() => setEditing({ id: m.id, text: m.text })}>edit</Button>
+                  <Button
+                    tone="danger"
+                    onClick={() => thread && deleteMessage(wid, thread.id, m.id, messages.data.length === 1).then(() => messages.data.length === 1 && closeThread(), fail)}
+                  >
+                    delete
+                  </Button>
+                </ButtonGroup>
+              )}
+              {!follows && (
               <div className={styles.who}>
                 {m.uid !== me && !follows && (
                   <span className={styles.name} style={{ color: colorOf(m.uid) }}>
@@ -356,24 +417,11 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
                   </span>
                 )}
                 <span className={styles.when}>
-                  {ago(m.createdAt)}
+                  {days ? clock(m.createdAt) : ago(m.createdAt)}
                   {m.editedAt && ' · edited'}
                 </span>
-                {/* Only its writer edits or deletes a message (D-166). */}
-                {m.uid === me && editing?.id !== m.id && (
-                  <ButtonGroup className={styles.msgActions}>
-                    <Button onClick={() => setEditing({ id: m.id, text: m.text })}>
-                      edit
-                    </Button>
-                    <Button
-                      tone="danger"
-                      onClick={() => thread && deleteMessage(wid, thread.id, m.id, messages.data.length === 1).then(() => messages.data.length === 1 && closeThread(), fail)}
-                    >
-                      delete
-                    </Button>
-                  </ButtonGroup>
-                )}
               </div>
+              )}
               {editing?.id === m.id ? (
                 <Field
                   multiline
@@ -392,10 +440,17 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
                   }}
                 />
               ) : (
-                <div className={styles.text}>{withMentions(m.text, names)}</div>
+                <div
+                  className={styles.text}
+                  style={{ '--who': colorOf(m.uid) } as CSSProperties}
+                  title={new Date(m.createdAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+                >
+                  {withMentions(m.text, names)}
+                </div>
               )}
             </div>
           </li>
+          </Fragment>
           )
         })}
       </ol>
@@ -429,7 +484,7 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
             multiline
             value={text}
             maxLength={MESSAGE_MAX}
-            placeholder={thread ? 'reply · @ mentions' : 'say something · @ mentions'}
+            placeholder={thread ? 'reply' : 'say something'}
             label={thread ? 'Reply' : 'First message'}
             onChange={(v) => onType(v, field.current?.selectionStart ?? v.length)}
             // Enter sends, unless it's picking a mention (the keys below take it).
@@ -439,6 +494,20 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
               if (e.key === 'Escape') closeThread()
             }}
           >
+            {/* `@` without the keyboard: puts one at the caret, the people come up (D-405). */}
+            <Button
+              className={styles.send}
+              title="mention someone"
+              onClick={() => {
+                const at = field.current?.selectionStart ?? text.length
+                const lead = text.slice(0, at)
+                const put = `${lead}${lead && !/\s$/.test(lead) ? ' ' : ''}@`
+                onType(put + text.slice(at), put.length)
+                requestAnimationFrame(() => (field.current?.focus(), field.current?.setSelectionRange(put.length, put.length)))
+              }}
+            >
+              @
+            </Button>
             <Button type="submit" tone="primary" className={styles.send} disabled={!text.trim() || busy} title="send">
               send
             </Button>

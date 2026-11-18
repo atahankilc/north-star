@@ -1,5 +1,7 @@
 // The threads (D-166): every conversation in the workspace in one place, opened from the threads tool in the
-// HUD's corner (D-402). Two columns on the ground under the main screen (D-393, EdgeColumn, foundation/sheet.ts): the list on the left,
+// HUD's corner (D-402). Its look since D-405: no views to pick; what's new to you stands on top under a magenta `NEW`
+// rule, each row with who wrote last and how it began; under it the read ones, one line each, under the place they're
+// on; the resolved ones behind `resolved · N` at the foot. Two columns on the ground under the main screen (D-393, EdgeColumn, foundation/sheet.ts): the list on the left,
 // beside the HUD's rail (people and what they say are the left's); the conversation on the right, where a thing's panel
 // is (it's about a thing). The list (D-398): one head (`Threads`, what it shows, `mark all read`, `×`), the views as
 // tabs under it (all · new · @you · done, D-344), then the threads under the name of the place they're on
@@ -18,7 +20,6 @@ import { ago } from '../../../ui/foundation/ago'
 import { closeThread, CommentIcon, myUid, ThreadPanel, toggleInbox, usePersonColor, useThreadView, type ThreadThing } from './Threads'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
-import { Tabs } from '../../../ui/primitives/Tabs'
 import { Rule } from '../../../ui/primitives/Rule'
 import { Label } from '../../../ui/primitives/Label'
 import { Select } from '../../../ui/patterns/Select'
@@ -30,9 +31,6 @@ import styles from './Threads.module.css'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
 import { leadingNumber } from '../../../model/words'
 
-type View = 'all' | 'new' | 'mentions' | 'resolved'
-// The views' words on their tabs, short enough for all four in one row.
-const VIEW_WORD: Record<View, string> = { all: 'all', new: 'new', mentions: '@you', resolved: 'done' }
 // The threads panel's scope for the canvas shown (D-302's session 4), beside a plane's id (D-193).
 const THIS_CANVAS = '#canvas'
 
@@ -82,20 +80,16 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
   const listShown = listOpen && !(narrow && convo)
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
-  const [view, setView] = useState<View>('all')
+  // The resolved ones, behind a word at the list's foot (D-405), instead of the open ones.
+  const [done, setDone] = useState(false)
   const sorted = useMemo(() => [...threads].sort((a, b) => b.lastAt - a.lastAt), [threads])
   const fresh = (t: WithId<Thread>) => isNew(t, seen, t.id, me)
   const mentioned = (t: WithId<Thread>) => !!t.mentions?.includes(me)
-  const counts = {
-    all: sorted.filter((t) => !t.resolved).length,
-    new: sorted.filter((t) => !t.resolved && fresh(t)).length,
-    mentions: sorted.filter((t) => mentioned(t)).length,
-    resolved: sorted.filter((t) => t.resolved).length,
-  }
-  const rows = sorted.filter((t) =>
-    view === 'resolved' ? t.resolved : view === 'mentions' ? mentioned(t) : !t.resolved && (view === 'all' || fresh(t)),
-  )
-  const markAll = () => sorted.filter(fresh).forEach((t) => void markSeen(wid, t.id, t.lastAt))
+  const open = sorted.filter((t) => !t.resolved)
+  const newRows = done ? [] : open.filter(fresh)
+  const rows = done ? sorted.filter((t) => t.resolved) : open.filter((t) => !fresh(t))
+  const counts = { new: newRows.length, resolved: sorted.length - open.length }
+  const markAll = () => newRows.forEach((t) => void markSeen(wid, t.id, t.lastAt))
   const colorOf = usePersonColor()
   // Under the place they're on, in the list's order: the place with the newest thread first. A card on more planes
   // (`01 Lunch +1`) stands under the one it's seen on.
@@ -111,6 +105,47 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
     // `whereOf` is made anew each draw; it reads what `rows` came from.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows])
+  // One thread's row (D-398): the thing first, when; `said`, under it who wrote last and how it began (what's new, D-405).
+  const rowOf = (t: WithId<Thread>, said: boolean) => {
+                        const thing = thingOf(t)
+                        const isFresh = fresh(t)
+                        return (
+                          <li key={t.id}>
+                            <button /* kit-ok: a thread's whole row (the thing, when, the last words) that opens it */
+                              className={styles.row}
+                              style={thing.tone ? ({ '--tone': thing.tone } as CSSProperties) : undefined}
+                              data-new={isFresh || undefined}
+                              data-said={said || undefined}
+                              data-open={t.id === openId || undefined}
+                              onClick={() => onGo(t)}
+                            >
+                              <span className={styles.rowBar} aria-hidden />
+                              <span className={styles.rowHead}>
+                                <Label className={styles.rowKind}>{thing.kind}</Label>
+                                <span className={styles.rowTitle} data-gone={thing.gone || undefined}>
+                                  {t.resolved ? '✓ ' : ''}
+                                  {thing.gone ? 'what it was on was deleted' : thing.name || 'untitled'}
+                                </span>
+                                {isFresh && <span className={styles.rowLamp} aria-label="new" />}
+                                <span className={styles.when}>{ago(t.lastAt)}</span>
+                              </span>
+                              {said && (
+                              <span className={styles.rowSaid}>
+                                <span className={styles.rowWho} style={{ color: colorOf(t.lastUid ?? t.uid) }}>
+                                  {firstName(t.lastName ?? t.name)}
+                                </span>
+                                <span className={styles.rowText}>{t.lastText ?? ''}</span>
+                                <span className={styles.rowCount}>
+                                  {isFresh && mentioned(t) ? <span>@</span> : <CommentIcon size={11} />}
+                                  {t.count}
+                                </span>
+                              </span>
+                              )}
+                            </button>
+                          </li>
+                        )
+  }
+
   // What the list shows (D-195): the whole workspace, this canvas (with several, D-302), or what's inside the plane whose
   // console opened it. One picker beside the title; plain words (`everywhere`) while there's nothing to pick.
   const planeScope = scope && scope !== THIS_CANVAS ? scope : null
@@ -160,28 +195,14 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
                 </Button>
               </ButtonGroup>
             </header>
-            <nav className={styles.views}>
-              <Tabs<View>
-                label="Which threads"
-                value={view}
-                onChange={setView}
-                options={(['all', 'new', 'mentions', 'resolved'] as const).map((v) => ({
-                  value: v,
-                  label: VIEW_WORD[v],
-                  count: counts[v] > 0 ? <span className={v === 'new' ? styles.lit : undefined}>{counts[v]}</span> : undefined,
-                }))}
-              />
-            </nav>
             <ol className={styles.rows}>
-              {rows.length === 0 && (
-                <li className={styles.lead}>
-                  {view === 'all'
-                    ? 'No open threads. Right-click anything → comment.'
-                    : view === 'new'
-                      ? 'Nothing new: you have read everything.'
-                      : view === 'mentions'
-                        ? 'Nobody has mentioned you yet.'
-                        : 'No resolved threads.'}
+              {rows.length === 0 && newRows.length === 0 && (
+                <li className={styles.lead}>{done ? 'No resolved threads.' : 'No open threads. Right-click anything → comment.'}</li>
+              )}
+              {newRows.length > 0 && (
+                <li>
+                  <Rule as="div" className={styles.fresh} name="NEW" count={newRows.length} countAt="end" />
+                  <ol className={styles.group}>{newRows.map((t) => rowOf(t, true))}</ol>
                 </li>
               )}
               {groups.map((g) => {
@@ -190,46 +211,16 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
                   <li key={g.where}>
                     {g.where && <Rule as="div" className={styles.place} n={numbered?.num} name={numbered?.rest || g.where} count={g.rows.length} countAt="end" />}
                     <ol className={styles.group}>
-                      {g.rows.map((t) => {
-                        const thing = thingOf(t)
-                        const isFresh = fresh(t)
-                        return (
-                          <li key={t.id}>
-                            <button /* kit-ok: a thread's whole row (the thing, when, the last words) that opens it */
-                              className={styles.row}
-                              style={thing.tone ? ({ '--tone': thing.tone } as CSSProperties) : undefined}
-                              data-new={isFresh || undefined}
-                              data-open={t.id === openId || undefined}
-                              onClick={() => onGo(t)}
-                            >
-                              <span className={styles.rowBar} aria-hidden />
-                              <span className={styles.rowHead}>
-                                <Label className={styles.rowKind}>{thing.kind}</Label>
-                                <span className={styles.rowTitle} data-gone={thing.gone || undefined}>
-                                  {t.resolved ? '✓ ' : ''}
-                                  {thing.gone ? 'what it was on was deleted' : thing.name || 'untitled'}
-                                </span>
-                                {isFresh && <span className={styles.rowLamp} aria-label="new" />}
-                                <span className={styles.when}>{ago(t.lastAt)}</span>
-                              </span>
-                              <span className={styles.rowSaid}>
-                                <span className={styles.rowWho} style={{ color: colorOf(t.lastUid ?? t.uid) }}>
-                                  {firstName(t.lastName ?? t.name)}
-                                </span>
-                                <span className={styles.rowText}>{t.lastText ?? ''}</span>
-                                <span className={styles.rowCount}>
-                                  {isFresh && mentioned(t) ? <span>@</span> : <CommentIcon size={11} />}
-                                  {t.count}
-                                </span>
-                              </span>
-                            </button>
-                          </li>
-                        )
-                      })}
+                      {g.rows.map((t) => rowOf(t, false))}
                     </ol>
                   </li>
                 )
               })}
+              {(counts.resolved > 0 || done) && (
+                <li className={styles.doneFoot}>
+                  <Button onClick={() => setDone(!done)}>{done ? '‹ open threads' : `resolved · ${counts.resolved}`}</Button>
+                </li>
+              )}
             </ol>
           </EdgeColumn>
         )}

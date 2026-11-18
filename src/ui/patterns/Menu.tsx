@@ -1,8 +1,12 @@
 // A dropdown menu (D-053): a trigger, the one dropdown trigger (D-344), opening the prompt (PromptPanel, D-222) under it,
 // above it (`up`) or beside it (`right`). Tick rows keep it open; anything else runs and closes it. Escape closes it
-// and gives focus back to the trigger, a press outside closes it.
+// and gives focus back to the trigger, a press outside closes it. A HUD's menu (`hud`) is drawn in the page's top layer,
+// fixed beside its trigger: inside the HUD it would be under a column docked on the left (the threads' list), however
+// high its own layer, since the HUD is inside the app's.
 import { AnimatePresence } from 'motion/react'
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { tokenPx } from '../../styles/cssToken'
 import { Appear } from '../primitives/Appear'
 import { useDismiss } from '../foundation/useDismiss'
 import type { PromptEntry } from '../foundation/promptModel'
@@ -58,8 +62,50 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
     if (refocus) trigger.current?.focus()
   }
 
+  // A HUD's menu in the top layer: where its trigger is, kept inside the window's height.
+  const panel = useRef<HTMLElement>(null)
+  const [at, setAt] = useState<CSSProperties | null>(null)
+  useLayoutEffect(() => {
+    if (!open || !hud) return setAt(null)
+    const place = () => {
+      const r = trigger.current?.getBoundingClientRect()
+      if (!r) return
+      const edge = tokenPx('--space-2')
+      const h = panel.current?.offsetHeight ?? 0
+      setAt(
+        right
+          ? { position: 'fixed', left: r.right + edge, top: Math.max(edge, Math.min(r.top, window.innerHeight - h - edge)) }
+          : up
+            ? { position: 'fixed', left: r.left, top: 'auto', bottom: window.innerHeight - r.top + edge }
+            : { position: 'fixed', left: r.left, top: r.bottom + tokenPx('--space-1') },
+      )
+    }
+    place()
+    window.addEventListener('resize', place)
+    return () => window.removeEventListener('resize', place)
+  }, [open, hud, right, up])
+
   // Escape on the one stack (D-359): over a window or a panel it closes first, the focus back on the trigger.
-  useDismiss(root, (why) => close(why === 'escape'), { on: open, escape: true })
+  useDismiss(root, (why) => close(why === 'escape'), { on: open, escape: true, inside: [panel] })
+
+  const menu = (
+    <AnimatePresence>
+      {open && (
+        <Appear
+          key="menu"
+          elRef={panel}
+          className={styles.panel}
+          style={hud ? (at ?? { position: 'fixed', visibility: 'hidden' }) : undefined}
+          data-up={up}
+          data-right={right}
+          data-end={alignEnd}
+          {...panelLearn}
+        >
+          <PromptPanel id={id} items={items} ariaLabel={ariaLabel} empty={empty} prompt={prompt} onClose={close} />
+        </Appear>
+      )}
+    </AnimatePresence>
+  )
 
   return (
     <div ref={root} className={styles.root}>
@@ -89,13 +135,7 @@ export function Menu({ label, summary, items, up, right, alignEnd, primary, icon
           </span>
         )}
       </button>
-      <AnimatePresence>
-        {open && (
-          <Appear key="menu" className={styles.panel} data-up={up} data-right={right} data-end={alignEnd} {...panelLearn}>
-            <PromptPanel id={id} items={items} ariaLabel={ariaLabel} empty={empty} prompt={prompt} onClose={close} />
-          </Appear>
-        )}
-      </AnimatePresence>
+      {hud ? createPortal(menu, document.body) : menu}
     </div>
   )
 }

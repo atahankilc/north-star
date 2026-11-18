@@ -238,12 +238,13 @@ Values will be tuned against contrast checks (WCAG AA for text).
   comment icon (a square speech bubble, three square dots) and a count; magenta when someone else wrote since you read
   it, `@` when it mentions you. Nothing opens on the canvas (D-199): the threads are two columns on the ground (D-393),
   the list left and the conversation right. The list (D-398): one head (`Threads`, what it shows, D-195: `everywhere`,
-  or a dropdown with `this canvas` / `in <plane>`), the views as tabs (`all new @you done`), the threads under
-  their place's rule (`02 PRODUCT ── 1`); a row leads with the thing (its colour a bar, its kind, its name), under it who
-  wrote last in their colour and how it began; new: a magenta lamp and count. A conversation (D-398): its head as a
-  thing's panel (the kind in its colour, the name big, `on … ↗`, D-220), messages as bubbles (the others' left with
-  their circle and their name in their colour, yours right in cyan, `@Name` cyan, `edit` `delete` on your own), a `>`
-  prompt in a round well with `send`.
+  or a dropdown with `this canvas` / `in <plane>`); no views (D-405): what's new on top under a magenta `NEW` rule, the
+  read ones one line under their place's rule (`02 PRODUCT ── 1`), the resolved behind `resolved · N` at the foot; a row
+  leads with the thing (its colour a bar, its kind, its name), a new one with who wrote last in their colour and how it
+  began, a magenta lamp and count. A conversation (D-398, D-405): its head the thing's card (`CardFace` in its colour, a
+  press goes there, D-220), the tools a row above it; messages as bubbles washed in their writer's colour (the others'
+  left with their circle and name, yours right, `@Name` cyan, `edit` `delete` beside your own), a magenta `NEW` line
+  over what you hadn't read, day rules over days; a `>` prompt in a round well with `@` and `send`.
 - Connections (D-059, D-147, D-154): straight, edge to edge, an arrowhead, the kind on a small framed chip at the middle
   (solid `--bg`, a thin border in the link's colour, mono at a card's small size). One colour per kind, all solid, from
   `--link-*`: violet solves, sky part of, orange competes, raspberry contradicts, gold inspired by, moss depends on, grey

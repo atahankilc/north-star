@@ -42,3 +42,17 @@ _Q-033 (the backdrop faint on some screens) was closed by D-348: background stre
 _Q-034 (where the HUD's tools sit) was answered by D-343: the decks tool stays in the side nav._
 
 _Q-035 (modals, dropdown panels, docked panels) was answered by D-387._
+
+### Q-036 · soon · The app's shell: what's a panel, what's a page, left or right
+The user, 2026-11-18, while the threads were being redrawn as a messaging place (channels, the talk preview): North
+Star is the canvas first, but also a Slack (threads, channels), a deck and timeline, an AI chat and, later, a Notion or
+Google Drive of documents. Panels open on the left and on the right; how much of the HUD is the canvas's; the deck,
+the timeline, the threads and the agent's chat might become pages of their own. Each needs a compact form (beside
+the canvas) and a whole one (alone), and which side each opens on should be planned, not grown one at a time.
+Seen in the talk preview (scratch, port 5193): the threads' list with the conversation in its place beside the canvas,
+list + conversation on the whole page, the column's width dragged; the HUD as an island flush with the left edge only
+while a column stands on the left, the open tool a tab of the ground joining it to its column.
+Step 1 (the look) built as D-405, 2026-11-18. **Recommendation:** first build the threads' look the user picked (`cesur`: what's new on top, resolved behind a word,
+read rows one line, the thing as its card in a conversation's head, bubbles in their writer's colour, day rules, a
+`new` line) on today's layout, since it doesn't depend on where things live; then plan the shell as one piece
+(every surface's compact and whole form, its side, the HUD's part) with a preview before building more layout.

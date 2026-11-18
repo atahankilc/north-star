@@ -75,13 +75,13 @@
   font-size: var(--text-sm);
 }
 
-/* What it's on: the kind in its colour with the tools on its row, the name big under it, then where it is. */
+/* What it's on (D-405): the tools on a row, `×` last; under them the thing itself, its card face in its colour, a press
+   going there. */
 .head {
   display: grid;
   flex: none;
   gap: var(--space-2);
-  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
-  border-bottom: var(--line-w) solid var(--line);
+  padding: var(--space-3) var(--space-4) var(--space-2);
 }
 
 .headTop {
@@ -89,27 +89,29 @@
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
-}
-
-/* The kit's Label twice: the kind in the thing's colour, then `thread · 4`, quiet. */
-.kind,
-.kindMore {
-  white-space: nowrap;
-}
-
-.kind {
-  color: var(--tone, var(--fg-dim));
-}
-
-.kindMore {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-height: var(--control-sm);
 }
 
 .actions {
   flex: none;
   margin-left: auto;
+}
+
+/* The thing's card: its kind in its colour, the name big, where it is and how long the thread is. */
+.thing {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-6);
+  text-align: left;
+}
+
+.thing[data-goes] {
+  cursor: pointer;
+}
+
+.kind {
+  color: var(--tone, var(--fg-dim));
+  white-space: nowrap;
 }
 
 .title {
@@ -126,11 +128,8 @@
   color: var(--fg-dim);
 }
 
-/* Go there (D-220): where it is, a Button link (D-344). */
-.goThere,
 .where {
-  justify-self: start;
-  max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   color: var(--fg-dim);
   font-size: var(--text-xs);
@@ -142,7 +141,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
   min-height: 0;
   margin: 0;
   padding: var(--space-6) var(--space-4) var(--space-4);
@@ -154,6 +153,31 @@
 .lead {
   color: var(--fg-dim);
   line-height: var(--lh-body);
+}
+
+/* The messages gather at the foot, by the prompt, while there are few (D-405). */
+.log > :first-child {
+  margin-top: auto;
+}
+
+/* A day's rule over its messages (D-405, the kit's Rule: `20 TODAY ──`). */
+.day {
+  color: var(--fg);
+}
+
+/* Where what you hadn't read starts (D-405): a magenta line, its word at the end. */
+.newLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--accent-magenta);
+}
+
+.newLine::before {
+  flex: 1;
+  height: var(--line-w);
+  background: color-mix(in srgb, var(--accent-magenta) var(--mix-soft), transparent);
+  content: '';
 }
 
 /* A message is a bubble (D-398). Someone else's on the left: their circle at its foot, their name in their colour and
@@ -171,7 +195,7 @@
 
 /* The next one of a run by the same writer: close under the one before, in line with it (no circle of its own). */
 .msg[data-follows] {
-  margin-top: calc(-1 * var(--space-4));
+  margin-top: calc(-1 * var(--space-3));
 }
 
 .noCircle {
@@ -180,6 +204,7 @@
 }
 
 .said {
+  position: relative;
   display: grid;
   gap: var(--space-1);
   min-width: 0;
@@ -189,7 +214,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: var(--control-sm);
   padding: 0 var(--space-1);
   font-size: var(--text-xs);
 }
@@ -209,22 +233,29 @@
   font-size: var(--text-xs);
 }
 
-.msgActions {
+/* Your own message's tools (D-405): beside its bubble, only while pointed at or with the keyboard in them. */
+.tools {
+  position: absolute;
+  right: 100%;
+  bottom: 0;
+  margin-right: var(--space-2);
   opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
 
-.msg:hover .msgActions,
-.msgActions:focus-within {
+.msg:hover .tools,
+.tools:focus-within {
   opacity: 1;
 }
 
-/* The bubble: round, the corner by its writer small (theirs bottom left, yours bottom right). */
+/* The bubble: round, the corner by its writer small (theirs bottom left, yours bottom right), washed in its writer's
+   colour (`--who`, D-405): who said it reads before the name does; yours stronger. */
 .text {
   justify-self: start;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-menu);
   border-bottom-left-radius: var(--space-1);
-  background: var(--wash-3);
+  background: color-mix(in srgb, var(--who, var(--fg)) var(--mix-wash), var(--wash-3));
   color: var(--fg);
   line-height: var(--lh-body);
   white-space: pre-wrap;
@@ -235,7 +266,7 @@
   justify-self: end;
   border-bottom-right-radius: var(--space-1);
   border-bottom-left-radius: var(--radius-menu);
-  background: color-mix(in srgb, var(--accent-cyan) var(--mix-pick), transparent);
+  background: color-mix(in srgb, var(--who, var(--accent-cyan)) var(--mix-pick), transparent);
   color: var(--fg-strong);
 }
 
@@ -306,7 +337,8 @@
   flex: none;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-4) var(--space-3) var(--space-1) var(--space-6);
+  padding: var(--space-4) var(--space-3) var(--space-3) var(--space-6);
+  border-bottom: var(--line-w) solid var(--line);
 }
 
 .listTitle {
@@ -333,18 +365,6 @@
   min-width: 0;
 }
 
-.views {
-  display: flex;
-  flex: none;
-  padding: var(--space-1) var(--space-4) var(--space-2);
-  border-bottom: var(--line-w) solid var(--line);
-}
-
-/* Its count when there are new threads: magenta, as a mention's (D-166). */
-.lit {
-  color: var(--accent-magenta);
-}
-
 .rows {
   flex: 1;
   min-height: 0;
@@ -359,10 +379,23 @@
   padding: var(--space-2) var(--space-4);
 }
 
+/* What's new to you, on top (D-405): its rule magenta, as everything new is. */
+.fresh {
+  --rule-line: color-mix(in srgb, var(--accent-magenta) var(--mix-soft), transparent);
+  padding: var(--space-4) var(--space-3) var(--space-2);
+  color: var(--accent-magenta);
+}
+
 /* A place's threads under its name (`02 PRODUCT ──── 1`, the kit's Rule). */
 .place {
-  padding: var(--space-4) var(--space-3) var(--space-2);
+  padding: var(--space-6) var(--space-3) var(--space-2);
   color: var(--fg);
+}
+
+/* The resolved ones, behind a word at the foot (D-405). */
+.doneFoot {
+  display: flex;
+  padding: var(--space-6) var(--space-3) var(--space-2);
 }
 
 .group {
@@ -409,6 +442,12 @@
   background: var(--tone, var(--fg-dim));
 }
 
+/* A read row is one line: the thing, when (D-405). */
+.row:not([data-said]) .rowHead {
+  align-items: center;
+  min-height: var(--control-sm);
+}
+
 .rowHead,
 .rowSaid {
   display: flex;
@@ -417,10 +456,10 @@
   min-width: 0;
 }
 
-/* The kit's Label, in the thing's colour. */
+/* The kit's Label, quiet: the bar carries the thing's colour (D-405). */
 .rowKind {
   flex: none;
-  color: var(--tone, var(--fg-dim));
+  color: var(--fg-dim);
 }
 
 /* Read, its name is quiet; with something new it's the row's brightest. */

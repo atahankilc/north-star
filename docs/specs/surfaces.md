@@ -147,6 +147,32 @@ thing on top, **B bubbles**), built the same day. The columns, the foot tab and 
   colours, the runs, an edit, the scope's dropdown, the light theme.
 - *Not yet:* the conversation as a tab of the thing's own panel (D-393's); touch.
 
+## The threads, new first (D-405)
+
+Picked 2026-11-18 on a port preview (`bugünkü`, `sade`, **`cesur`**), its first step: what doesn't depend on where
+things live (Q-036). Changes D-398's list and conversation above.
+
+- **No views:** `all new @you done` are gone. What's new to you is on top under a magenta `NEW ── 3` rule
+  (`.fresh`), each row as D-398's (the thing, when; who wrote last and how it began; `@` when it names you). Under it
+  the read ones, **one line** (the thing and when), under their place's rule. The resolved ones are behind
+  `resolved · N` at the list's foot, `‹ open threads` back. The head has a line under it; a row's kind is quiet (the bar
+  carries the colour).
+- **A conversation's head is the thing:** the tools a row (`all threads` first while the list is shut; `resolve`,
+  `delete`, `×` at the right), then its `CardFace` (tinted in its colour when it has one): the kind, the name big, `on
+  02 Product ↗ · 4 messages`. A press or Enter on the card goes there.
+- **Bubbles in their writer's colour:** `--mix-wash` of it over `--wash-3`; yours `--mix-pick` of your colour.
+- **`NEW` line:** over the first message someone else wrote after what you had read when it opened; none on a thread
+  you never opened.
+- **Days:** a thread over more than one day has each day's rule (`20 TODAY ──`, `18 OCT · SUN ──`, the number
+  magenta) and the clock; one day keeps `2h`.
+- **Runs:** one writer's messages in a row under one name line; a new day or the `NEW` line starts a new run. Your own
+  message's `edit · delete` sit beside its bubble while pointed at. The messages gather at the foot by the prompt.
+- **The prompt:** `reply`, `@` (puts one at the caret, the people come up), `send`.
+- A HUD menu (the side nav's `+`) is drawn in the page's top layer, fixed beside its trigger: inside the HUD it was
+  under the threads' list.
+- *Not yet:* channels, a card named in a message, the conversation in the list's place, the whole page, the HUD as an
+  island: Q-036.
+
 ## Tokens
 
 New, in `src/styles/tokens.css` (names to settle in step 1; values from the demo):

@@ -22,7 +22,7 @@ export const THREADS = [
     lastUid: PEOPLE.jonas.uid, lastName: 'Jonas Weber', lastText: 'Ten minutes from order to desk, or they stay with the canteen.',
   }),
   thread('t-cooks', {
-    on: 'card', targetId: 'c-cooks', planeId: P.lunch, count: 2, lastAt: DEMO_DAY - 3 * 60 * MIN, uid: PEOPLE.jonas.uid, name: 'Jonas Weber',
+    on: 'card', targetId: 'c-cooks', planeId: P.lunch, count: 3, lastAt: DEMO_DAY - 3 * 60 * MIN, uid: PEOPLE.jonas.uid, name: 'Jonas Weber',
     lastUid: PEOPLE.lena.uid, lastName: 'Lena Hoffmann', lastText: 'Six of the twelve cooks cook for a living already.',
   }),
   thread('t-qr', {
@@ -38,6 +38,12 @@ const MESSAGES: Record<string, WithId<ThreadMessage>[]> = {
     msg('m2', PEOPLE.jonas, 'Office orders mostly come in between 8 and 9 anyway.', 150),
     msg('m3', { uid: DEMO_USER.uid, name: 'You' }, 'Then 10 pm costs us nothing. Let’s ask the pilot group.', 60),
     msg('m4', PEOPLE.ayla, '@You can the cut-off move to 10 pm? Cooks asked twice.', 12, [DEMO_USER.uid]),
+  ],
+  // Over two days (D-405): each day's rule, the clock.
+  't-cooks': [
+    msg('k1', PEOPLE.jonas, 'Asked the cooks group how many cook for a living.', 26 * 60),
+    msg('k2', { uid: DEMO_USER.uid, name: 'You' }, 'And?', 25 * 60),
+    msg('k3', PEOPLE.lena, 'Six of the twelve cooks cook for a living already.', 3 * 60),
   ],
   't-break': [
     msg('b1', PEOPLE.jonas, 'Asked five people at Factory how long their break really is.', 120),
