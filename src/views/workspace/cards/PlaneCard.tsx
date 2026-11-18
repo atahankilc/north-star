@@ -4,6 +4,8 @@
 // words; `far` its lines as bars. Inside (D-225, D-245): an open competitor's features as small cards by category (a
 // strip of cells while closed), a folded card's or package's members as rows, `+ 3 parts` to fold or unfold. Its place,
 // drag, link handle, marks and landing are the plane's (PlaneCards.tsx); this is what it looks like.
+// Its look (D-409): a bare face (no bar, no outer line), its kind a badge in its colour, a status a lamp before its
+// word; zoomed out the badge stays as a pill of colour over the title; rows inside start with a dot of their colour.
 // Also the unfolded package's band (D-239): the same face, a line tall, its name, rating, a cell per member, `− N`.
 import { useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type Ref } from 'react'
 import { WORLD } from '../../../model/world'
@@ -53,7 +55,7 @@ type Props = {
 
 export function PlaneCard({ card, facts, detail, editor, parts, rows, inPkg, features, matched, open, className, style, ref, onFeature, onMember, onFold }: Props) {
   return (
-    <CardFace ref={ref} className={[styles.card, className].filter(Boolean).join(' ')} style={style} tone={CARD_TONE[card.type]} tint data-detail={detail} data-type={card.type}>
+    <CardFace ref={ref} className={[styles.card, className].filter(Boolean).join(' ')} style={style} tone={CARD_TONE[card.type]} tint bare data-detail={detail} data-type={card.type} data-validation={card.validation}>
       {detail === 'full' ? (
         <FullCard card={card} facts={facts} editor={editor} parts={parts} rows={rows} inPkg={inPkg} features={features} matched={matched} open={open} onFeature={onFeature} onMember={onMember} onFold={onFold} />
       ) : (
@@ -79,7 +81,7 @@ type BandProps = {
 // per member in their colours, `− N` to fold them in.
 export function PackageBand({ card, facts, members, editor, onFold, className, onPointerDown, onPointerEnter, onPointerLeave, ...data }: BandProps) {
   return (
-    <CardFace {...data} className={[styles.band, className].filter(Boolean).join(' ')} tone={CARD_TONE.package} tint onPointerDown={onPointerDown} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave}>
+    <CardFace {...data} className={[styles.band, className].filter(Boolean).join(' ')} tone={CARD_TONE.package} tint bare onPointerDown={onPointerDown} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave}>
       <span className={styles.kind}>package</span>
       <span className={styles.bandName} data-empty={!card.title || undefined}>
         {card.title || cardPlaceholder('package')}

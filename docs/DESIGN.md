@@ -214,6 +214,11 @@ Values will be tuned against contrast checks (WCAG AA for text).
   tone of it (`--card-tint` of the colour over `--bg-raised`: 16 %, light too, D-368; a matrix's card heads and a package's
   band too, D-291; a kanban's card sheets and a table's card names, D-294; inside it the greys and the type's label lean to the ink so every line reads ≥ 4.5, D-295), no edge of their own (D-148); never lift or tilt (D-061). Type colours are only for type: tags are white `#chips` (D-056). Inside: a
   squircle corners (16, 8 on a face a line tall; flat ones square) and the colour as a 3 px bar inside the left edge (D-380);
+  a card on a plane and a package's band are bare (D-409): no bar, no outer line, a lighter tint (`--mix-wash`), the type a
+  badge (a pill of its colour, the word in the page's ink), a status a lamp before its word (ring hypothesis, half testing,
+  lit validated, `×` invalidated); zoomed out the badge stays a pill of colour over the title (bigger far out); rows
+  inside (a competitor's features, a fold's parts and members) lead with a dot of their colour; an unfolded package's
+  members lie on a wash of blue under its band, no line round them; decks, timeline, matrix and table keep the bar;
   header (type label; the status, regions, priority or rating, then evidence cells: filled supports, outlined against,
   magenta when they disagree with the status), the title (≤ 3 lines), a dim mono facts line, tag chips. Smaller on
   screen (D-111, D-153): the title alone, whole words, `…`; then each line a `--fg-dim` bar. A hovered card shows a dim

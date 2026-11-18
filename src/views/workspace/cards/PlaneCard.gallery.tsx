@@ -10,7 +10,9 @@ import { PackageBand, PlaneCard, type Detail } from './PlaneCard'
 import { TITLE } from '../../../gallery/samples'
 
 // Cards at their plane size (200 × 100, taller when they hold something), as in a focused plane at 100 %.
-const of = (type: Card['type'], more: Partial<Card> = {}): Card => ({ id: `c-${type}`, type, pieceId: 'p', title: TITLE[type], x: 0, y: 0, ...more })
+// A status for the three that have one, so each lamp shows (D-409).
+const SURE: Partial<Record<Card['type'], Card['validation']>> = { customer: 'testing', problem: 'validated', idea: 'hypothesis' }
+const of = (type: Card['type'], more: Partial<Card> = {}): Card => ({ id: `c-${type}`, type, pieceId: 'p', title: TITLE[type], x: 0, y: 0, validation: SURE[type], ...more })
 const FACTS: Record<string, Facts> = {
   customer: { head: 'testing', proof: { supports: 2, contradicts: 1, clash: false }, meta: 'for 3 problems' },
   problem: { head: 'validated', proof: { supports: 0, contradicts: 2, clash: true }, clash: true, meta: '[Office workers]' },
@@ -48,11 +50,17 @@ export default example({
   place: 'canvas/cards',
   also: ['canvas/pieces'],
   file: 'src/views/workspace/cards/PlaneCard.tsx',
-  note: 'a card on a plane (D-187, D-358): on the card face, tinted in its type; full, compact (the title) or far (bars) by its size on screen',
+  note: 'a card on a plane (D-187, D-358, D-409): a bare face lightly tinted in its type, the type a badge, a status a lamp; full, compact (the title under a pill of its colour) or far (bars) by its size on screen',
   states: {
     'every type, full': () => every('full'),
     'compact (zoomed out)': () => every('compact'),
     'far (bars)': () => every('far'),
+    'every status (its lamp)': () =>
+      grid(
+        (['hypothesis', 'testing', 'validated', 'invalidated'] as const).map((v) =>
+          card(of('problem', { id: `c-${v}`, validation: v }), { facts: { head: v, meta: '[Office workers]' } }),
+        ),
+      ),
     'empty (its question)': () => grid(ALL_TYPES.map((t) => card(of(t, { title: '' }), { facts: undefined }))),
     'long title, tags': () =>
       grid(

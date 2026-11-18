@@ -1,12 +1,12 @@
 /* A card on a plane and an unfolded package's band (D-187, D-239, D-358): what's on the face. */
-/* A card as on the board (D-152): flat, no grey edge, its type as the left edge and the label; 7 px round the inside.
-   Its face a dark tone of that edge (a pale one in light), so the type reads from the whole card (D-291).
+/* A card as on the board (D-152, D-409): a bare face (no bar, no line), a light tint of its type; its type a badge.
+   7 px round the inside, a step more on the left.
    Dragged, it goes small under the pointer (`scale`, `translate` set inline); let go, it grows into its marks. */
 .card {
   --small: var(--w-text-2xs);
   display: flex;
   flex-direction: column;
-  padding: var(--w-card-pad) var(--w-card-pad) var(--w-card-pad) calc(2 * var(--w-card-pad) + var(--w-card-edge));
+  padding: var(--w-card-pad) var(--w-card-pad) var(--w-card-pad) calc(var(--w-card-pad) + var(--space-1));
   overflow: hidden;
 }
 
@@ -27,6 +27,51 @@
   letter-spacing: var(--track-label);
   font-family: var(--font-mono);
   text-transform: uppercase; /* kit-ok: the type on a card's face, at the world's size (a Label is text-xs) */
+}
+
+/* Its type a badge (D-409): a pill of its colour, the word in the page's ink. */
+.card .kind,
+.band .kind {
+  padding: var(--space-half) var(--w-card-pad);
+  border-radius: var(--radius-full);
+  background: var(--tone);
+  color: var(--bg);
+  font-weight: var(--weight-bold);
+}
+
+/* A status a lamp before its word (D-384's lamp, D-409): a ring for a hypothesis, half for testing, lit validated, a
+   cross invalidated. */
+.card[data-validation] .status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.card[data-validation] .status::before {
+  content: '';
+  flex: none;
+  box-sizing: border-box;
+  width: var(--dot);
+  height: var(--dot);
+  border: var(--line-w) solid var(--type-ink);
+  border-radius: var(--radius-full);
+}
+
+.card[data-validation='testing'] .status::before {
+  background: linear-gradient(90deg, var(--type-ink) 50%, transparent 50%);
+}
+
+.card[data-validation='validated'] .status::before {
+  background: var(--type-ink);
+}
+
+.card[data-validation='invalidated'] .status::before {
+  content: '×';
+  width: auto;
+  height: auto;
+  border: 0;
+  color: var(--clash-ink);
+  line-height: var(--lh-none);
 }
 
 .status {
@@ -127,6 +172,33 @@
   overflow-wrap: anywhere;
 }
 
+/* Zoomed out its badge stays as a pill of its colour over the title (D-409); far out, a bigger one. */
+.card[data-detail='compact'] {
+  padding-top: calc(var(--w-card-pad) + var(--dot-lg) + var(--space-2));
+}
+
+.card[data-detail='far'] {
+  padding-top: calc(var(--w-card-pad) + var(--w-grid) + var(--space-1));
+}
+
+.card[data-detail='compact']::after,
+.card[data-detail='far']::after {
+  content: '';
+  position: absolute;
+  top: var(--w-card-pad);
+  left: calc(var(--w-card-pad) + var(--space-1));
+  width: calc(2 * var(--w-grid));
+  height: var(--dot-lg);
+  border-radius: var(--radius-full);
+  background: var(--tone);
+  pointer-events: none;
+}
+
+.card[data-detail='far']::after {
+  width: calc(4 * var(--w-grid));
+  height: var(--w-grid);
+}
+
 /* Far out: each line a bar as long as the line, 0.6 of its height. */
 .compact[data-bars='true'] > span {
   background: linear-gradient(var(--fg-dim), var(--fg-dim)) 0 50% / 100% 60% no-repeat;
@@ -163,12 +235,26 @@
   color: var(--fg-faint);
 }
 
-/* A competitor's feature: a small card, its accent strip cyan when it matches ours. */
+/* A competitor's feature: a small pill, a dot of its colour first, cyan when it matches ours (D-409). */
 .mini {
   align-items: center;
   height: calc(var(--w-row-feature) - calc(var(--space-1) - var(--line-w)));
   margin-bottom: calc(var(--space-1) - var(--line-w));
-  padding: 0 var(--space-2);
+  padding: 0 var(--space-2) 0 calc(2 * var(--space-1) + var(--dot));
+  border-radius: var(--radius-full);
+  box-shadow: none;
+}
+
+.mini::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: var(--space-1);
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: var(--radius-full);
+  background: var(--tone);
+  translate: 0 -50%;
 }
 
 .miniAv {
@@ -198,6 +284,7 @@
 .cells i {
   width: var(--space-2);
   height: var(--space-1);
+  border-radius: var(--radius-full);
   background: var(--line-hover);
 }
 
@@ -255,6 +342,7 @@
   margin-left: auto;
   padding: 0.3em 0.6em;
   border: 0;
+  border-radius: var(--radius-full);
   background: var(--wash-2);
   color: var(--link-part);
   font-family: var(--font-mono);
@@ -274,16 +362,15 @@
   cursor: default;
 }
 
-/* An unfolded package's band (D-239): a line of the card face. */
+/* An unfolded package's band (D-239): a line of the card face, its kind a badge (D-409). */
 .band {
   --corner: var(--w-card-radius-sm);
-  --edge-in: var(--space-1);
 
   display: flex;
   align-items: center;
   gap: var(--space-2);
   height: var(--w-grid);
-  padding: 0 var(--space-2) 0 var(--space-3);
+  padding: 0 var(--space-2) 0 var(--space-1);
   color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--w-text-2xs);
@@ -327,7 +414,7 @@
   color: var(--type-ink);
 }
 
-/* A row in a folded card (D-245): a bar in its own card's colour, its name, its status (cardInside's PART_ROW). */
+/* A row in a folded card (D-245): a dot in its own card's colour (D-409), its name, its status (cardInside's PART_ROW). */
 .memberRow {
   align-items: center;
   height: var(--w-row-part);
@@ -336,8 +423,10 @@
 
 .memberRow > i {
   flex: none;
-  width: var(--line-w-bold);
-  height: calc(var(--w-row-part) - var(--space-1));
+  align-self: center;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: var(--radius-full);
   background: var(--tone);
 }
 

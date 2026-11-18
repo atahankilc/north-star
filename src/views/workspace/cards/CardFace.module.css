@@ -41,6 +41,20 @@
   background: color-mix(in srgb, var(--tone) var(--card-tint), var(--bg-raised));
 }
 
+/* Bare (D-409): no bar and no outer line, a lighter tint; its colour is said by what's on it (a plane card's kind as a
+   badge). */
+.face[data-bare='true'] {
+  box-shadow: none;
+}
+
+.face[data-bare='true']::before {
+  content: none;
+}
+
+.face[data-bare='true'][data-tint='true'] {
+  background: color-mix(in srgb, var(--tone) var(--mix-wash), var(--bg-raised));
+}
+
 /* Flat: no paper of its own, the tint over what's under it and its edge only (a table's row name: its row lines show
    through): square, its edge flush. */
 .face[data-flat='true'] {

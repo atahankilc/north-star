@@ -122,15 +122,19 @@
   transition: scale var(--dur-quick) var(--ease-out);
 }
 
+/* No line round its members (D-409): a wash of its colour under the band, rounded as a card is. */
 .frame {
   position: absolute;
   inset: var(--w-grid) 0 0;
-  border: var(--line-w) solid color-mix(in srgb, var(--type) var(--mix-soft), transparent);
-  border-top: 0;
+  border-radius: 0 0 var(--w-card-radius) var(--w-card-radius);
+  corner-shape: squircle;
+  background: color-mix(in srgb, var(--type) var(--mix-wash), transparent);
 }
 
 /* The band over an unfolded package's frame (cards/PlaneCard's PackageBand): it takes the pointer like a card. */
 .pkg > .band {
+  --corner: var(--w-card-radius);
+  border-radius: var(--corner) var(--corner) 0 0;
   position: absolute;
   top: 0;
   right: 0;

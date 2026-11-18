@@ -7583,3 +7583,23 @@ end (D-407), startled as it rises (1.0's cue). Escape folds the box away and the
 - *Checked:* headless Chrome on the emulators (the orb alone, a press opens the box under it, Escape back, Enter on it
   and the focus coming back), typecheck, check:tokens, check:kit, check:gallery, check:repeats.
 - *Not yet:* the user to see it live; light; touch; where it goes once the chat's place is decided (Q-036).
+
+### D-409 · 2026-11-18 · Accepted (the user, of the card preview on port 5196: "sekme de type ı yukarı yanastırmak yerıne badge olarak gösterebilir miyiz?", "rozet güzel olmuş. Bir de cardın borderını bi kaldır", "harika oldu, rozet olsun ve kenar çizgisi olmasın", then with the cards that hold something "tamam onaylıyorum, uygula"; changes D-380's bar on a plane card): a plane card's type is a badge, no bar, no line
+**A card on a plane says its type with a badge, not with a bar; it has no outer line.** Four looks were shown on the
+real `PlaneCard` at 160 %, 100 %, 55 %, 30 % and 14 % (A colour leads, B the material says how sure, C a tab hanging
+from the top edge, D a badge inside), then D with and without its edge line, then with what cards hold.
+- *Close:* the kind a pill of its colour with the word in the page's ink (`.kind`), the status a lamp before its word
+  (D-384's lamp: a ring for a hypothesis, half for testing, lit validated, `×` invalidated), the face bare (`CardFace`
+  `bare`: no bar, no `--piece-card-edge` line, the tint `--mix-wash` instead of `--card-tint`), the left padding a
+  step less (11 px).
+- *Far:* compact keeps a small pill of the type's colour over the title, far a bigger one over the bars, so a plane far
+  out still reads by type.
+- *Inside:* a competitor's features and a fold's parts and members lead with a dot of their colour (no edge); the fold
+  buttons and a closed competitor's cells round; an unfolded package's band bare with its badge, its members on a wash
+  of blue with round bottom corners, no line round them.
+- *Kept:* task and card sheets, timeline bars, matrix heads, table names, the threads' head keep the bar (not asked).
+- *Rejected for now:* B (sure as material: dashed, hatched, solid) and C (a tab on the top edge); A (a gradient tint).
+- *Checked:* the gallery in headless Chrome (PlaneCard every type, every status, compact, far, competitor open,
+  feature folded, package band; CardFace's `bare`; the plane in focus), dark and light; typecheck, unit 1002,
+  check:tokens, check:kit, check:gallery, check:repeats --names.
+- *Not yet:* the user to see it live (emulators); whether the decks, timeline, matrix and table follow; touch.

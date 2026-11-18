@@ -28,6 +28,14 @@ Anything that stands for **one card or one task** and shows its type's colour: a
 
 **Corners and colour (D-380):** a face has squircle corners and its colour is a bar inside its left edge, not the edge. The counts below are from before that.
 
+**Plane cards bare, the type a badge (D-409, 2026-11-18):** `CardFace` gained `bare` (no bar, no outer line, the tint
+`--mix-wash`). A plane card (`PlaneCard`) and an unfolded package's band are bare: the kind a badge (PlaneCard.module.css
+`.kind`), the status a lamp (`data-validation` on the face), zoomed out a pill of the type's colour over the title
+(`compact` small, `far` bigger), rows inside with a dot instead of an edge (`.mini`, `.memberRow > i`), the fold buttons
+and a closed competitor's cells round; the unfolded package's frame a wash with round bottom corners
+(PlaneCards.module.css `.frame`). Task sheets, card sheets, timeline bars, matrix heads, table names and the threads'
+head keep the bar (not asked; to decide after seeing it live). Picked on port 5196's preview (look D, edge off).
+
 ## What repeats (counted 2026-11-02)
 
 1. **The face is written 6 times in CSS:** a tint of the type (`--card-tint`), a coloured left edge, a thin outer line

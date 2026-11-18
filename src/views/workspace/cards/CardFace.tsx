@@ -4,7 +4,7 @@
 // (D-294) with the greys and colours inside leaning to the ink so every line reads (D-295: `--fg-dim`, `--fg-faint`,
 // `--placeholder`, `--type-ink`, `--clash-ink`). Its states are data attributes for its contents to read (`selected`,
 // `finished`, `lifted`, `pressed`, `dim`), and with `marks` it draws its Marks (D-265) in its tone, with the L's of
-// others who have `peersOf` picked. A shell only: its layout, drag and data are its caller's.
+// others who have `peersOf` picked. `bare` (D-409): no bar and no outer line, a lighter tint; what's on it says its colour. A shell only: its layout, drag and data are its caller's.
 import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent as ReactPointerEvent, ReactNode, Ref } from 'react'
 import { Marks, type Tier } from '../../../ui/primitives/Marks'
 import { usePeersOn } from '../canvas/collab'
@@ -16,6 +16,8 @@ type Props = {
   // No paper of its own: the tint over what's under it and its edge only, no outer line (a table's row name, whose row
   // lines must show through it).
   flat?: boolean
+  // No bar and no outer line: its colour is said by what's on it (a plane card's kind as a badge, D-409); a lighter tint.
+  bare?: boolean
   selected?: boolean
   finished?: boolean
   lifted?: boolean
@@ -50,7 +52,7 @@ type Props = {
   children: ReactNode
 } & Record<`data-${string}`, string | number | boolean | undefined>
 
-export function CardFace({ tone, tint, flat, selected, finished, lifted, pressed, dim, marks, markTone, markTier, peersOf, button, label, title, hidden, className, style, ref, onPointerDown, onPointerEnter, onPointerLeave, onClick, onDoubleClick, onKeyDown, extra, children, ...data }: Props) {
+export function CardFace({ tone, tint, flat, bare, selected, finished, lifted, pressed, dim, marks, markTone, markTier, peersOf, button, label, title, hidden, className, style, ref, onPointerDown, onPointerEnter, onPointerLeave, onClick, onDoubleClick, onKeyDown, extra, children, ...data }: Props) {
   const peers = usePeersOn(peersOf ?? '')
   return (
     <div
@@ -61,6 +63,7 @@ export function CardFace({ tone, tint, flat, selected, finished, lifted, pressed
       data-edge={tone ? true : undefined}
       data-tint={(tone && tint) || undefined}
       data-flat={flat || undefined}
+      data-bare={bare || undefined}
       data-selected={selected || undefined}
       data-finished={finished || undefined}
       data-lifted={lifted || undefined}
