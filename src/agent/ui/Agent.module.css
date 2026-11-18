@@ -30,21 +30,34 @@
 
 /* ---- The box */
 
-/* Closed, and opened small: a tab rising from the main screen's foot at the bottom right (D-389), the threads dock's
-   twin: top corners round, a line that goes cyan while the keyboard is in it, no foot line. The screen is a sheet
-   while a column is docked (D-387, foundation/sheet.ts): the tab stands on its foot (`--sheet-b`) and clear of its
-   round corner (`--sheet-round`), and travels with it. */
+/* Closed, the orb alone in the bottom-right corner (D-408; it was a tab on the foot, D-389). Opened small, a box rising
+   from the main screen's foot under it, the orb riding its top edge: top corners round, a line that goes cyan while the
+   keyboard is in it, no foot line. The screen is a sheet while a column is docked (D-387, foundation/sheet.ts): it
+   stands on its foot (`--sheet-b`) and clear of its round corner (`--sheet-round`), and travels with it. */
 .box {
-  --tab-line: var(--line-hover);
   position: fixed;
-  /* Left of a column docked on the right and clear of a pane's dock (`--box-*`, measured: Agent.tsx useBoxRoom). */
   right: calc(var(--box-inset, 0px) + var(--space-3) + var(--sheet-round, 0px));
   bottom: calc(var(--box-lift, 0px) + var(--sheet-b, 0px));
   z-index: var(--z-panel);
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
+  transition:
+    right var(--dur-slow) var(--ease-out),
+    bottom var(--dur-slow) var(--ease-out);
+}
+
+.box:not([data-open]) {
+  padding-bottom: var(--space-3);
+}
+
+.panel {
+  --tab-line: var(--line-hover);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
   /* Clear of the focus dock at the bottom's middle on narrower windows (≈ 360 px wide round the middle). */
-  width: clamp(var(--size-xs), calc(50vw - var(--panel-w) / 2 - var(--space-3)), var(--size-md));
+  width: clamp(var(--size-sm), calc(50vw - var(--panel-w) / 2 - var(--space-3)), var(--size-lg));
   max-width: var(--box-room, none);
   border: var(--line-w) solid var(--tab-line);
   border-bottom: 0;
@@ -54,30 +67,11 @@
   font-family: var(--font-display);
   font-size: var(--text-xs);
   line-height: var(--space-4);
-  transition:
-    right var(--dur-slow) var(--ease-out),
-    bottom var(--dur-slow) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 
-.box:focus-within {
+.panel:focus-within {
   --tab-line: var(--accent-cyan);
-}
-
-/* Closed, as tall as the dock beside it on the foot (D-393): a small control and its padding. */
-.box:not([data-open]) {
-  box-sizing: border-box;
-  height: calc(var(--control-sm) + 2 * var(--space-1));
-  justify-content: center;
-}
-
-.box:not([data-open]) .prompt {
-  align-items: center;
-  padding-block: 0;
-}
-
-.box[data-open] {
-  width: clamp(var(--size-sm), calc(50vw - var(--panel-w) / 2 - var(--space-3)), var(--size-lg));
 }
 
 .boxTop {
@@ -111,8 +105,7 @@
 }
 
 @media (max-width: 760px) {
-  .box,
-  .box[data-open] {
+  .panel {
     width: calc(100vw - 2 * var(--space-3) - var(--control-lg) - var(--space-6));
   }
 
@@ -738,6 +731,25 @@
 }
 
 /* ---- Small things */
+
+/* The mascot (D-407): the orb, alone in the corner while closed (D-408), riding the box's top edge at its right end
+   while open. Only the orb's own square takes the pointer; its canvas bleeds past it with nothing to press. */
+.perch {
+  flex: none;
+  width: var(--orb);
+  height: var(--orb);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+.box[data-open] .perch {
+  margin-right: var(--space-3);
+}
+
+.perch:focus-visible {
+  outline: var(--line-w) solid var(--accent-cyan);
+  outline-offset: var(--space-1);
+}
 
 /* The agent's mark: a small cyan square with a dark `>` notch. */
 .mark {

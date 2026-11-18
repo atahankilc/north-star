@@ -1,6 +1,6 @@
-// The agent in the screen's bottom-right corner (S14, D-312; docs/specs/agent.md §4.6, §6 Phase 6). Closed: a small
-// framed box with the `>` prompt (`ask about Pazar…`). Focused (a click, ⌘J, or `/` when nothing has the keyboard): the
-// first asks above it. The first message grows it, cell by cell, into a full-height column on the right; the app
+// The agent in the screen's bottom-right corner (S14, D-312; docs/specs/agent.md §4.6, §6 Phase 6). Closed: its orb
+// alone (D-407, D-408). Opened (a press on the orb, ⌘J, or `/` when nothing has the keyboard): a small framed box under
+// it with the first asks and the `>` prompt (`ask about Pazar…`). The first message grows it, cell by cell, into a full-height column on the right; the app
 // narrows beside it (`html[data-agent-in]` sets `--ai-w`, which WorkspaceLayout's `[data-app]` box and the right
 // panel read), so the canvas, the card panel, beside and the tasks side view are never under it. ≤ 760 px it covers the
 // screen. `[×] esc` folds it back to the box, the chat kept. Chats are saved (S16): `[chats]` lists them (yours and
@@ -42,6 +42,7 @@ import { pickable, suggested, useAgentSettings } from './settings'
 import { firstAsks } from './suggest'
 import { agentUi } from '../ui'
 import { AgentGhost } from './AgentGhost'
+import { AgentOrb, type OrbCue, type OrbMood } from './AgentOrb'
 import { PreviewMarks } from './PreviewMarks'
 import { ChatsView, NotesDiff, NotesView } from './AgentMemory'
 import styles from './Agent.module.css'
@@ -152,10 +153,18 @@ function openAndFocus() {
   requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-agent-input]')?.focus())
 }
 
+// Opened from the orb (D-408), closing gives the keyboard back to it: it is inside the agent, so `remember` skips it.
+let fromOrb = false
+function openFromOrb() {
+  fromOrb = true
+  openAndFocus()
+}
+
 function closeAgent() {
   agentActions.close()
-  const back = before
+  const back = before ?? (fromOrb ? document.querySelector<HTMLElement>('[data-learn=agent-orb]') : null)
   before = null
+  fromOrb = false
   requestAnimationFrame(() => {
     const a = document.activeElement
     if (back?.isConnected) back.focus({ preventScroll: true })
@@ -192,7 +201,8 @@ function useBoxRoom(box: React.RefObject<HTMLElement | null>) {
       const W = window.innerWidth
       const H = window.innerHeight
       const gap = tokenPx('--space-3')
-      const least = tokenPx('--size-xs')
+      // Closed it's the orb alone (D-408): its own width is all it needs.
+      const least = el.hasAttribute('data-open') ? tokenPx('--size-xs') : el.getBoundingClientRect().width
       // Only a column over the box's own corner moves it (one docked further left, in a part of the screen, doesn't),
       // and only while there's still room left of it (else it stays in the corner: the HUD's bottom left is never covered).
       // Its own width, not the one narrowed last time (that would let it slip out from under what it cleared).
@@ -270,6 +280,10 @@ function Box() {
     }
   }
 
+  // The box rising under the orb startles it (1.0's cue, D-095).
+  const [rose, setRose] = useState(0)
+  useEffect(() => void (open && setRose((n) => n + 1)), [open])
+
   return (
     <Appear
       as="aside"
@@ -277,7 +291,7 @@ function Box() {
       className={styles.box}
       data-sheet
       data-open={open || undefined}
-      // Closed it's a region of the page (an <aside>); open, a dialog the keyboard is in.
+      // Closed it's the orb alone (D-408), a region of the page; open, a dialog the keyboard is in.
       role={open ? 'dialog' : undefined}
       aria-label="The agent"
       data-agent
@@ -285,49 +299,59 @@ function Box() {
       data-learn="agent-box"
       onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
     >
+      <Perch
+        mood={running ? 'thinking' : pending ? 'talking' : open ? 'open' : 'idle'}
+        cue={rose ? { kind: 'startled', n: rose } : undefined}
+        control={!open}
+        label={running ? 'The agent, working' : pending ? 'The agent, changes waiting' : 'Ask the agent'}
+        onPress={() => (open ? input.current?.focus() : openFromOrb())}
+      />
       {open && (
-        <div className={styles.boxTop}>
-          <PanelHead
-            className={styles.boxHead}
-            tone="var(--accent-cyan)"
-            kind={
-              <>
-                <AgentMark /> agent
-              </>
-            }
-            onClose={() => closeAgent()}
+        <Appear className={styles.panel}>
+          <div className={styles.boxTop}>
+            <PanelHead
+              className={styles.boxHead}
+              tone="var(--accent-cyan)"
+              kind={
+                <>
+                  <AgentMark /> agent
+                </>
+              }
+              onClose={() => closeAgent()}
+            >
+              <span className={styles.boxModel}>{chatModel()}</span>
+            </PanelHead>
+            <FirstAsks focus={focus} onAsk={(t) => agentActions.send(t)} compact />
+            <p className={styles.note}>changes are shown first · one undo step</p>
+            {viewer && <p className={styles.viewer}>you're a viewer here: the agent reads and answers, it changes nothing</p>}
+          </div>
+          <div className={styles.skillAnchor}>{skills.menu}</div>
+          {/* The kit's `>` line (PromptField, D-326): the agent's own keys decide (the / menu, Enter), so its submit does
+              nothing; every key still reaches the column (passKeys). */}
+          <PromptField
+            ref={input as never}
+            className={styles.prompt}
+            multiline
+            passKeys
+            running={running}
+            data={{ 'data-agent-input': true }}
+            value={text}
+            placeholder={running ? 'working…' : pending ? 'changes are waiting: open the chat' : entries ? 'go on with the chat…' : `ask about ${ask}… (/ for skills)`}
+            label="Ask the agent"
+            onFocus={(e) => {
+              remember(e.relatedTarget)
+              if (entries) {
+                agentActions.open()
+                requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-agent-input]')?.focus())
+              }
+            }}
+            onChange={setText}
+            onSubmit={() => {}}
+            onKeyDown={onKey as never}
           >
-            <span className={styles.boxModel}>{chatModel()}</span>
-          </PanelHead>
-          <FirstAsks focus={focus} onAsk={(t) => agentActions.send(t)} compact />
-          <p className={styles.note}>changes are shown first · one undo step</p>
-          {viewer && <p className={styles.viewer}>you're a viewer here: the agent reads and answers, it changes nothing</p>}
-        </div>
+          </PromptField>
+        </Appear>
       )}
-      {open && <div className={styles.skillAnchor}>{skills.menu}</div>}
-      {/* The kit's `>` line (PromptField, D-326): the agent's own keys decide (the / menu, Enter), so its submit does
-          nothing; every key still reaches the column (passKeys). */}
-      <PromptField
-        ref={input as never}
-        className={styles.prompt}
-        multiline
-        passKeys
-        running={running}
-        data={{ 'data-agent-input': true }}
-        value={text}
-        placeholder={running ? 'working…' : pending ? 'changes are waiting: open the chat' : entries ? 'go on with the chat…' : `ask about ${ask}… (/ for skills)`}
-        label="Ask the agent"
-        onFocus={(e) => {
-          remember(e.relatedTarget)
-          if (entries) agentActions.open()
-          else if (!open) agentActions.open()
-          if (entries) requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-agent-input]')?.focus())
-        }}
-        onChange={setText}
-        onSubmit={() => {}}
-        onKeyDown={onKey as never}
-      >
-      </PromptField>
     </Appear>
   )
 }
@@ -1239,6 +1263,39 @@ function NoList({ docs }: { docs: { id: string }[] }) {
 // ---- Small things
 
 // The agent's own mark: a small cyan square with a `>` cut in (its colour wherever it shows, D-312's participant).
+// The mascot (D-407): the orb. Closed, it is the agent in the corner, alone (D-408): no tab, a press (or Enter) opens
+// the box under it, as ⌘J and `/` do. Open, it rides the box's top edge at its right end, as 1.0 had it (D-073), a press
+// putting the keyboard in the prompt; there it's decoration, the box being the dialog. Only the mascot: where the
+// agent's chat lives is still open (Q-036).
+function Perch({ mood, cue, control, label, onPress }: { mood: OrbMood; cue?: OrbCue; control: boolean; label: string; onPress: () => void }) {
+  const [hover, setHover] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const lit = (hover || focused) && mood === 'idle'
+  return (
+    <div
+      className={styles.perch}
+      data-learn="agent-orb"
+      role={control ? 'button' : undefined}
+      tabIndex={control ? 0 : -1}
+      aria-label={control ? label : undefined}
+      aria-hidden={control ? undefined : true}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => setHover(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onClick={onPress}
+      onKeyDown={(e) => {
+        if (control && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          onPress()
+        }
+      }}
+    >
+      <AgentOrb size={tokenPx('--orb')} mood={lit ? 'hover' : mood} cue={cue} />
+    </div>
+  )
+}
+
 function AgentMark({ running }: { running?: boolean }) {
   return <span className={styles.mark} data-running={running || undefined} aria-hidden />
 }

@@ -7387,7 +7387,7 @@ Seen by the user in the real app after the shader fix (2026-11-07): "oldu". Comm
 ### D-389 · 2026-11-16 · Accepted (the user, of D-387's sheet: "altta açılan side panelleri daha iyi uygulmaya yedirmemiz lazım … Ya hud elemanları da altta kalsın yada onlar da içeri girsin. Ayrıca agent kutusu ve panelini de iyileştirmemiz lazım"; of three ways on a port, their own fourth: "zeminde yaşarı sadece side panel açıkken yapsak? normalde canvas tam alanken hud da canvas üstünde olsa ama bir panel açıldığında canvas yukarı yükseldiğinde hud aşşağıda kalsa"; then "HUD için D, ajan için sekme"; adds to D-387): the HUD's tools stay on the ground while a panel is docked; the agent closed is a tab
 - The spec: docs/specs/surfaces.md, "The HUD while a column is docked".
 - **The HUD.** With no column docked nothing changes: the canvas fills the window, the HUD is on it. While one is docked the sheet draws back from the left too (`--sheet-rail-w`, 60 px), off the tools on the left edge (the side nav, who's here, the threads button, you, the gear): they don't move, and are left on a rail of ground beside the sheet. The breadcrumb rides the sheet. Shown and not taken: the HUD riding the sheet whole (A); a rail kept always, the canvas always a sheet (B, my first recommendation); the people on a rail and the canvas's tools on the sheet (C, dropped before it was shown again); the bar staying too, the sheet drawing down off it (D2).
-- **The agent.** Closed, a tab rising from the sheet's foot at the bottom right, the threads dock's twin (not the square box); shown and not taken: the box as it is, an icon among the left tools. Opened small it's the same tab grown; as a column it lies on the ground (D-387), beside a card's panel when both are open.
+- **The agent.** Closed, a tab rising from the sheet's foot at the bottom right, the threads dock's twin (not the square box); shown and not taken: the box as it is, an icon among the left tools. Opened small it's the same tab grown; as a column it lies on the ground (D-387), beside a card's panel when both are open. (Closed, the agent is now the orb alone, no tab: D-408.)
 - How the HUD part is built: `useSheetRail` (foundation/sheet.ts), called by the HUD while it has tools on the left; the ground layer is cut over the rail (`clip-path`, travelling with the sheet's edge) and the HUD paints the rail's ground under its own tools, since the ground layer is over the app; the rim's shadow is cut on its left. `--sheet-rail`, `--sheet-round` (the threads dock keeps clear of the round corner). A column on the left: no rail.
 - **Verified** 2026-11-16, headless Chrome on a dev server, the Workspace screen in the gallery, dark and light: a card's panel open (tools on the rail, the breadcrumb 60 px in), closing and opening mid-travel, closed (as before); the threads dock; a left column (no rail). Checks and unit tests green.
 - The agent's tab, built the same day in Agent.module.css only: `.box` a tab on the sheet's foot (`--sheet-b`), clear of its round corner (`--sheet-round`), a line cyan while the keyboard is in it; its cyan lead on the top edge gone. Seen in the real app on the emulators, headless (Alice, a new workspace): closed, opened small, sent a line (the column on the ground over the full backdrop, the HUD's tools on the rail, the breadcrumb 60 px in), folded back.
@@ -7427,7 +7427,7 @@ Seen by the user in the real app after the shader fix (2026-11-07): "oldu". Comm
 ### D-393 · 2026-11-17 · Accepted (the user, of the page's consoles and the threads panel: "bu sayfa console larını ve thread panelini de iyileştirmek istiyorum. acaba yeni design a nasıl entegre olabilirler bi kapsamlı düşün", then of three on a port: "1- ayrı hap. 2- üç sekme tek aile. 3-liste solda zeminde,konuşma sağ panelde"; adds to D-387 and D-389, changes D-347's console on a piece, D-193's threads button and D-197's/D-199's threads tab): a piece's console is a pill, the foot has three tabs, the threads lie on the ground
 - The spec: docs/specs/surfaces.md, "Consoles and threads (D-393)".
 - **A piece's console is a pill.** Under the piece's bottom edge, a small gap off it, all round, a line (faint, cyan in use); a selection's bar (text, a link) the same; its drawer a round box over it. The last corner L's are gone: `--corner-mark` is deleted and `check:kit`'s `cornerMark` has no exception. Shown and not taken: a tab hanging from the piece's edge (my recommendation); as it was.
-- **The foot's tabs are one family:** the dock in the middle, the agent on the right; the same height, line and top corners. (The threads were a third tab on the left; their button went back to the HUD's corner, D-402.)
+- **The foot's tabs are one family:** the dock in the middle, the agent on the right; the same height, line and top corners. (The threads were a third tab on the left; their button went back to the HUD's corner, D-402.) (Closed, the agent is now the orb alone, no tab: D-408.)
 - **The threads lie on the ground under the main screen** (D-387's sheet): the list a column on the left, beside the HUD's rail (people and what they say are the left's); a conversation a column on the right, where a thing's panel is (it's about a thing). The tab with two halves over the canvas is gone, and its dragged height with it. A window too narrow for both and the screen: the list gives way while a conversation is open.
 - How it's built: `ThreadInbox` renders two `EdgeColumn`s in `AnimatePresence` (their cells, their Escape); `sheet.ts` keeps the rail when a left column starts past it; `ThreadsTool` is drawn from the HUD's corner (a `ToolButton` there since D-402); the list's rows are round shades, the open one stronger (no line on their side).
 - *Not yet:* the conversation as a tab of the thing's own panel (`card · thread`): today it's a column over that panel, and closing it shows the panel again. A dock's drawer as a round menu card, panes beside as two sheets, one column with tabs when narrow: listed, not asked for.
@@ -7545,3 +7545,41 @@ Seen by the user in the real app after the shader fix (2026-11-07): "oldu". Comm
 - Lesson `comment` v6 (its third page's words), the demo scene `threads-panel` (no `@you`: the hand opens the row under `NEW`, then rests on the head's card), release 2026-11-18. Gallery: `some read`, `resolved`; `new since you looked`, `over days`.
 - Rejected on the way: a line, a lifted sheet or a darker ground to tell the list from the HUD's tools ("hiçbir şeyi beğenmedim"); kept for Q-036: the HUD as an island flush with the left edge only while a column is on the left, the open tool a tab of the ground.
 - *Not yet:* the real app (real people, long threads, a viewer); touch.
+
+### D-407 · 2026-11-18 · Accepted (the user: "artık eski agent maskotumuzu geri getirmek istiyorum buraya… Sadece maskot olarak getir, şu anda ui a overall bi improvement çekiyoruz ve agent chat view ının nerede nasıl gözükceğine hala karar vermedik"; brings back 1.0's D-073, D-078, D-092): the agent's mascot, the orb, is back
+**The orb comes back as the agent's mascot, and only that.** 1.0's ASCII sphere with its rounded-square eyes, moods,
+antics and the pomegranate (D-078, D-092), in `src/agent/ui/AgentOrb.tsx` (1.0's `AiOrb` from `493bf87`, its drawing
+unchanged). None of 1.0's chat around it came back: where and how the agent's chat shows is still open (Q-036).
+- *Where:* perched on the agent's closed box (the tab at the sheet's foot, bottom right, D-389), at its right end, as
+  1.0 had it; it rides with the box wherever `useBoxRoom` moves it. Gone while the agent is a column.
+- *Moods from the agent:* `idle`; `hover` under the pointer; `open` while the box has the keyboard; `thinking` while a
+  job runs or applies. `talking`, the cues and `peek` (1.0's D-095, D-121 perch) are kept in the component but nothing
+  sends them yet: they belong to the chat's placement.
+- *A press* on it puts the keyboard in the box's prompt, the same as pressing the box. Decoration to a screen reader
+  (`aria-hidden`): the box is the control.
+- *Size:* `--orb` 72 px (1.0 had 88), the canvas bleeding past it for what floats round it.
+- *Today's rules:* its glyphs in `--font-mono` (JetBrains Mono, D-337); colours from tokens, the pomegranate's
+  `--pom-*` back in tokens.css (dark and light, 1.0's values); its own 30 fps clock, the pointer and the `nar` keys read
+  on the window, each with a `kit-ok` (a character alive as long as it's shown; `tween()` ends; nothing is taken).
+  Reduced motion: still, drawn once per mood, no `nar`. Dev hooks as 1.0: `__orbAntic`, `__orbFace`, `__orbReact`, `__orbPom`.
+- *Gallery:* `AgentOrb.gallery.tsx` (idle, big, hover, open, thinking, talking, pomegranate). Lessons: none; the agent's
+  wait for its redesign (D-312).
+- *Checked:* headless Chrome, the gallery in dark and light (the pomegranate too) and the app on the emulators (perched,
+  hearts under the pointer, curious with the box open); typecheck, check:tokens, check:kit, check:gallery, check:repeats.
+- *Not yet:* the user to see it live; where it goes when the chat's place is decided (Q-036); touch.
+
+### D-408 · 2026-11-18 · Accepted (the user, of D-407's orb on the closed tab: "orb varken sağ alttaki panele gerek var mı? tıklayınca bişi açılcak o doğru ama sadece orb yeterli"; changes D-389's and D-393's closed agent tab): closed, the agent is the orb alone
+**No tab at the bottom right any more: closed, the agent is the orb alone in that corner.** A press (or Enter on it, ⌘J,
+`/`) opens what the tab opened: the small box rising from the sheet's foot, the orb riding its top edge at its right
+end (D-407), startled as it rises (1.0's cue). Escape folds the box away and the orb is alone again (sad, then fine).
+- *The foot:* one tab left, the dock in the middle; D-393's "two tabs of one family" is the dock alone.
+- *The orb is the control while closed:* `role="button"`, in the tab order, `Ask the agent` (`working`, `changes
+  waiting` while it has them), a cyan ring with the keyboard; its mood says the state (thinking while a job runs,
+  talking while changes wait). Open, it's decoration (the box is the dialog), still pressable to put the keyboard in
+  the prompt. Opened from it, closing gives the keyboard back to it.
+- *Code:* `Box` in Agent.tsx is a frameless corner (`.box`) holding the `Perch` and, open, a `.panel` (the old tab's
+  frame, built cell by cell by `Appear`); `useBoxRoom` measures the orb's own width while closed, so it needs only that
+  much room beside a pane's dock.
+- *Checked:* headless Chrome on the emulators (the orb alone, a press opens the box under it, Escape back, Enter on it
+  and the focus coming back), typecheck, check:tokens, check:kit, check:gallery, check:repeats.
+- *Not yet:* the user to see it live; light; touch; where it goes once the chat's place is decided (Q-036).

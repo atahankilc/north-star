@@ -92,8 +92,8 @@ Agreed 2026-11-17 on a port, built the same day.
   new). A selection's bar (text, a link) the same. Its drawer is a round box over it. The whole-edge case keeps its top
   line. No corner L's are left anywhere: `--corner-mark` is deleted, `check:kit`'s `cornerMark` has no exception.
   Shown and not taken: a tab hanging from the piece's edge; as it was.
-- **The foot has two tabs of one family:** the dock in the middle, the agent on the right: 32 px, the same line and
-  top corners, both travelling with the sheet. The threads had a third on the left; D-402 took their button back to the
+- **The foot's tab is the dock** in the middle (32 px, a line, top corners, travelling with the sheet). The agent had a
+  second on the right; closed it is now its orb alone in that corner (D-408), its box rising there when opened. The threads had a third on the left; D-402 took their button back to the
   HUD's corner: `ThreadsTool` is a `ToolButton` above your square (lit while the list is open, a magenta dot with
   something new, a count with a mention).
 - **The threads lie on the ground:** the list is a column on the left, beside the HUD's rail (which stays: sheet.ts

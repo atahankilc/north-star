@@ -153,8 +153,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   The HUD's tools on the left edge stay where they are (D-389): the sheet draws back off them (`--sheet-rail-w`) and
   they're left on a rail of ground beside it; the breadcrumb rides the sheet. With no column the canvas fills the
   window and the HUD is on it.
-- **The foot and the ground** (D-393, D-402): the screen's foot has two tabs of one family, the dock (middle) and the
-  agent (right); the threads' button is a tool in the HUD's corner. The threads' list is a column on the left ground beside the HUD's rail, a conversation a
+- **The foot and the ground** (D-393, D-402, D-408): the screen's foot has one tab, the dock (middle); closed, the
+  agent is its orb alone at the bottom right (D-407); the threads' button is a tool in the HUD's corner. The threads' list is a column on the left ground beside the HUD's rail, a conversation a
   column on the right ground. A console off the foot (a piece's, a selection's bar) is a pill with a line, a gap under
   its piece; nothing draws corner L's any more.
 - Buttons are empty and round (D-384, [specs/controls.md](specs/controls.md); `src/ui/primitives/Button.tsx`, lowercase,

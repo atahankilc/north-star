@@ -128,8 +128,8 @@ feature comes back as a piece, and check them with the user then.
   under the main screen, which lifts as a round sheet and draws back for it (`foundation/sheet.ts`; closed, the screen
   fills the window). A console on a piece keeps its L's. `check:kit` refuses a corner L drawn by hand (`cornerMark`). While a
   column is docked the HUD's tools on the left edge stay where they are, on a rail of ground the sheet draws back off;
-  the breadcrumb rides the sheet (D-389). The agent closed is a tab on the sheet's foot, bottom right (D-389). The foot has two tabs of one
-  family (D-393, D-402): the dock, the agent on the right; the threads' button is a tool in the HUD's corner. A console off the foot (a piece's, a
+  the breadcrumb rides the sheet (D-389). Closed, the agent is its orb alone in the bottom-right corner, no tab (D-408). The foot has one tab, the dock
+  (D-393, D-402, D-408); the threads' button is a tool in the HUD's corner. A console off the foot (a piece's, a
   selection's bar) is a pill with a line, a gap under its piece; no corner L's are left (`--corner-mark` gone). The threads
   lie on the ground: the list a column on the left beside the HUD's rail, a conversation a column on the right (D-393). A docked
   column has no entrance of its own (D-395): it's whole under the screen, whose edge uncovers it in 600 ms and covers it
@@ -394,6 +394,7 @@ feature comes back as a piece, and check them with the user then.
   person's colour the one they have here, else their own (`usePersonColor`). A HUD menu is drawn in the page's top layer (D-405).
 
 ## Agent (planned, docs/specs/agent.md)
+- Its mascot (D-407, D-408): 1.0's orb (`AgentOrb`: ASCII sphere, eyes, moods, antics, the `nar` pomegranate), 72 px (`--orb`); closed it's the orb alone in the bottom-right corner (a press, ⌘J or `/` opens the box), open it rides the box's top edge; the chat's place still open (Q-036).
 - The agent (D-312, not started): browser loop as the signed-in person over a shared `src/ops/` layer; map + read
   tools, no vector DB; OpenAI first, the person picks the model, own keys only (no Blaze); every change previewed on
   the real components, one undo step; in the bottom-right corner growing into a column; knowledge base as wide as it

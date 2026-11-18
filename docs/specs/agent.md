@@ -211,7 +211,8 @@ agent's own new things). Until the user turns it on, everything previews.
 As in 1.0 (D-081, D-094): a **small box in the screen's bottom-right corner** (that corner is free today: the bottom
 left holds people/threads/gear, the focus dock is at the bottom's middle, a plane's console is on the plane, not the
 screen). It's there on every canvas and in every focus, so it never has to be found.
-- Closed: the small box with the `>` prompt (and the orb, if the user wants it back, D-073/D-078; design session).
+- Closed: the orb alone in the corner (D-407, D-408; 1.0's D-078 face and moods); a press, ⌘J or `/` opens the small box
+  with the `>` prompt under it, the orb riding its top edge.
 - First message: it grows into a column on the right, full height; the app narrows beside it (`[data-app]`, as 1.0),
   so the canvas is never under it. What already uses the right side (a card's panel D-219, beside D-211, the tasks
   side view D-300) sits **left of** the chat column, never under it.

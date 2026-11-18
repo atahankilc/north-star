@@ -111,7 +111,7 @@ feature comes back, its line moves to decisions.md (rewritten for the canvas) an
 - Usage log for every call through `callAi`, never message text; who sees what per D-079; no prices in the UI (D-079).
 - Models belong to the key that pays: own key default + per-workspace overrides; owners pick and allow models on the
   workspace key, enforced by the proxy; per-chat switch in the header; tasks chat / web / deep research (D-104).
-- Orb: ASCII sphere with rounded-square eyes, moods, antics, chat reactions; pomegranate easter egg (`nar`) (D-073, D-078, D-092).
+- Orb: ASCII sphere with rounded-square eyes, moods, antics, chat reactions; pomegranate easter egg (`nar`) (D-073, D-078, D-092). Back as the agent's mascot, only that: D-407.
 - Orb pushed off the small chat box's end by a wide side panel: falls, crashes on the floor (dizzy, then cross), peeks
   around the box's left side, hops back up when there's room (`perch.ts`) (D-121).
 - Chat: terminal log look; empty = small box with the orb perched; first message grows it into a column beside the app
