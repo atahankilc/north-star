@@ -25,7 +25,8 @@
   border-left-color: var(--line);
   border-radius: 0 var(--radius-menu) var(--radius-menu) 0;
   corner-shape: squircle;
-  background: var(--bg);
+  background: color-mix(in srgb, var(--bg) var(--menu-solid), transparent);
+  backdrop-filter: var(--menu-blur, none);
   box-shadow: var(--menu-shade, var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent));
   color: var(--fg-dim);
   font-family: var(--font-display);

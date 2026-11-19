@@ -97,6 +97,7 @@
   --wash-magenta: rgba(255, 61, 154, 0.14); /* a danger button's hover (D-344) */
   --scrim: rgba(0, 0, 0, 0.7);
   --menu: rgba(22, 22, 22, 0.92);
+  --menu-solid: 100%; /* a prompt's, a tip's background, the page's own (light's is glass, D-421) */
 
   /* Two voices (D-337): Inter for what people read and most of the UI (the page's default), JetBrains Mono only for the
      system's bits: caps labels, numbers, keys, the prompt's `>`, cells, readouts. */
@@ -338,7 +339,6 @@
   --feather: 0 0 calc(16px * var(--ui)) calc(10px * var(--ui)); /* the hugging shade behind ink on the page (D-277) */
   --ink-feather: 0 0 calc(18px * var(--ui)) calc(12px * var(--ui)); /* the same, round the onboarding's ink (--ink-shade) */
   --lift: 0 calc(18px * var(--ui)) calc(50px * var(--ui)) 0; /* the main screen lifted over the ground (D-387), with --lift-shade */
-  --float: 0 calc(8px * var(--ui)) calc(28px * var(--ui)) 0; /* a prompt's shadow in light (--menu-shade, D-421) */
   /* Marks (D-265, src/ui/primitives/Marks.tsx): the four L's of anything selectable, in screen px, by tier (the thing's short side
      on screen: < 48 S, < 240 M, else L). len / stroke; how far out hovered, selected, at rest (where they leave to);
      pressed, the L's length on the corners. */
@@ -373,9 +373,13 @@
   color-scheme: light;
   --bg: #f3f3f3; /* D-342: a step down from #f5f5f5, which glared; pieces stay white on it */
   --lift-shade: rgba(0, 0, 0, 0.22);
-  /* A prompt (the `+`, the finder, the kind guide) casts a soft shadow here instead of dark's hugging shade, which in the
-     page's light grey glowed over the dark ground (D-421). Dark has none: its frames keep the hugging shade. */
-  --menu-shade: var(--float) rgba(0, 0, 0, 0.18);
+  /* What floats over the page (a prompt: the `+`, a list, the finder; the kind guide; a tip) is glass here, no shade
+     round it (D-421): the page's grey at --menu-solid over a blur, so what's under it (the dark ground, a piece) tints it
+     and no light halo glows over the ground. Dark keeps it solid on its hugging shade (its own --menu-solid; no
+     --menu-shade, the fallback). 86 %: --fg-dim stays ≥ 4.5 even over the ground. */
+  --menu-solid: 86%;
+  --menu-shade: 0 0 transparent;
+  --menu-blur: var(--surface-blur);
   --sheet-rim: rgba(0, 0, 0, 0.12);
   --bg-raised: #ffffff;
   --piece: #ffffff;

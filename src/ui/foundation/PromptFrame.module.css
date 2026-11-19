@@ -1,6 +1,6 @@
 /* The prompt's frame (D-350; D-387: a surface is round with a line): the page's black, round, a line round it that goes
-   cyan while the keyboard is in it, on a hugging shade so it reads over a busy canvas (in light a soft shadow,
-   `--menu-shade`, D-421). No box of its own, no corner
+   cyan while the keyboard is in it, on a hugging shade so it reads over a busy canvas (in light glass with no
+   shade, `--menu-solid`, D-421). No box of its own, no corner
    marks. PromptPanel's, the finder's and the guide's: `composes: frame`. It sets no `position` (a composing class's
    own may load before it and lose): each sets its own, never static. It doesn't clip (what scrolls in it is inset by
    its list), so nothing square may paint up to its corners. */
@@ -9,7 +9,8 @@
 
   border-radius: var(--radius-menu);
   corner-shape: squircle;
-  background: var(--bg);
+  background: color-mix(in srgb, var(--bg) var(--menu-solid), transparent);
+  backdrop-filter: var(--menu-blur, none);
   box-shadow:
     0 0 0 var(--line-w) var(--frame-line),
     var(--menu-shade, var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent));

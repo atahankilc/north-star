@@ -7789,10 +7789,14 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
   agent, a document's dock); `data-rail-tools` on the HUD's side nav and corner; sheet.ts puts `data-rail-ground` on the
   root while the rail shows, at once, and takes it off `DUR.slow` after (the sheet home over the tools), at once under
   reduced motion. TaskPanel's date keeps light's picker only off the ground.
-- **Prompts cast a shadow in light** (the user, after: "'+' ya basınca açılan panelin etrafında çok glow var"): the
-  prompt's frame and the kind guide hugged themselves in a shade of the page's light grey, which glowed over the dark
-  rail. In light they cast a soft shadow instead (`--menu-shade`: `--float` 0 8 28 px, black 18 %); dark keeps the
-  hugging shade (no `--menu-shade` there, the fallback).
+- **What floats is glass in light, no shade** (the user, after: "'+' ya basınca açılan panelin etrafında çok glow var";
+  then, of a soft shadow tried in its place (7243181): "panelların etrafındaki glowu hiçbir türlü beğenmiyorum. Kaldır
+  bu glowu. Ayrıca paneller de semi transparent olsun ki altındaki renk onun bgsini biraz belirlesin… textler okunmaz
+  olmasın"): the prompt's frame (the `+`, a list, the finder), the kind guide and a tip hugged themselves in a shade of
+  the page's light grey, which glowed over the dark rail. In light they have no shade (`--menu-shade` empty) and are
+  glass: the page's grey at `--menu-solid` 86 % over `--menu-blur`, so what's under them tints them; `--fg-dim` stays
+  ≥ 4.5 even over the ground. Dark keeps them solid (`--menu-solid` 100 % in dark's block, also what stands on the
+  ground in light) on the hugging shade.
 - **Why:** the three near-whites (ground #e2e2e5, page #f3f3f3, pieces white) barely differed and read dull. A preview
   (docs/specs/light-bg-preview/, the gallery's real screens with the tokens swapped) showed 11 options: six that stay
   white (star chart blue, gallery greys, ice, dusk, drawing paper with ink lines) and five bolder (desk lamp, sky blue,

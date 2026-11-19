@@ -157,7 +157,8 @@ Values will be tuned against contrast checks (WCAG AA for text).
   pieces and menus white) and the ground under it dark's `#121215`. What stands on the ground reads dark's colours: a
   docked column (`data-ground`, EdgeColumn) and the HUD's tools while the rail shows (`data-rail-tools`, under the root's
   `data-rail-ground`, kept until the sheet is home). A menu opened inside a column is on the ground too, so dark. In
-  light a prompt (the `+`, the finder, the kind guide) casts a soft shadow (`--menu-shade`), not dark's hugging shade.
+  light what floats (a prompt: the `+`, a list, the finder; the kind guide; a tip) is glass with no shade round it
+  (`--menu-solid` 86 %, `--menu-blur`), where dark has it solid on its hugging shade.
 - **The foot and the ground** (D-393, D-402, D-408): the screen's foot has one tab, the dock (middle); closed, the
   agent is its orb alone at the bottom right (D-407); the threads' button is a tool in the HUD's corner. The threads' list is a column on the left ground beside the HUD's rail, a conversation a
   column on the right ground. A console off the foot (a piece's, a selection's bar) is a pill with a line, a gap under
