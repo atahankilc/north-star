@@ -59,6 +59,8 @@ export type Doc = {
   topic?: string
   model?: string
   reportKind?: ReportKind
+  // The folder it's in (D-415, folders.ts); none: at the top.
+  folderId?: string
   createdAt: number
   updatedAt: number
 }

@@ -7682,3 +7682,19 @@ part, `cards/TypeBadge` (PlaneCard uses it too).
 - *Checked:* the gallery in headless Chrome (a conversation open, the list, some read; dark and light), typecheck, unit
   1189, check:tokens, check:kit, check:gallery, check:repeats --names, check:gallery:live and check:scenes for threads.
 - *Not yet:* the user to see it live; Talk as a page (D-412) to look at with it.
+
+### D-415 · 2026-11-19 · Accepted (the user, of D-412's next steps: "hepsini sırası ile yap"; earlier, of the preview: "artık tek bir folder içinde file lar olmalı. File-folder ayrımı iyi yapılabilmeli"): folders in Docs
+- **Data:** `folders/{id}` (name ≤ 80, `parent`: the folder it's in, never itself; who made it), the workspace's content: every member reads them, owners and editors make, rename, move and delete them (the rules' shared content shapes). A document says its folder (`folderId`); its author moves it, or an owner or editor once it's shared; the agent notes stay at the top.
+- **Delete:** a folder deleted, its folders and the documents you may move go up to where it was, in one batch, one undo step. A document or folder whose folder is gone stands at the top.
+- **Docs beside the canvas:** the path (`All files / Research`), the folder's folders first (yellow, how many files, rename and delete while pointed at), then its documents; a document opens in the list's place with `‹ <folder>`, its folder a dropdown (who may move it), `open ↗`. **As the page:** the folders' tree on the left, the folder's files, and the document read beside them once one is picked. The page's tools: a new folder (into the folder open, its name typed at once), write, upload (what's made goes into the folder open).
+- **Export/import:** folders travel (bundle collection `folders`; a file without them has its documents at the top), a document's folder following its new id.
+- Lesson `docs` v2, release line. Rules tests 715/0.
+- *Not yet:* dragging a document onto a folder; a documents piece on the canvas showing one folder; the rules deployed (asked first: until then the live app can't read folders, so this isn't pushed).
+
+### D-416 · 2026-11-19 · Accepted (the user, of D-412's next steps: "hepsini sırası ile yap"; the first ask: "proper bir mesajlaşma sayfasına dönüşebilsin"): channels in Talk
+- **Data:** a thread `on: 'channel'`, its name in `targetId` (lowercase words joined by `-`, at most 40: the rules' pattern; `CHANNEL_NAME_MAX`), its space `talk`, no place on the canvas. Started like any thread: the first message makes it (the rules' count of 1 stands). Any member, viewers too, as for comments.
+- **Talk's list:** CHANNELS on top (`# name`, a magenta lamp when something's new, in every scope), `+ channel` on its rule opens a name field; Enter starts a draft (`# launch-week`, "Your first message starts #launch-week"), or opens the channel with that name if there is one. Then NEW (comment threads only), then the threads by place, resolved at the foot. The list's title is the place's: `Talk`.
+- **A channel's conversation:** its head the channel (kind `channel`, `# name`, how many messages), no `on … ↗` (it's on nothing), no `resolve` (a channel is never done), `delete` as a thread's. No chip anywhere on the canvas.
+- Lesson `comment` +1 (a Channels page), release line. Rules tests 719/0.
+- *Not yet:* a channel's purpose line, renaming a channel, paging a long channel's messages (300 load today), the rules deployed (with D-415's, asked first: done together).
+

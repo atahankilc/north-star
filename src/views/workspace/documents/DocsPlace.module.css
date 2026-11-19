@@ -43,15 +43,28 @@
 }
 
 /* As the page: the list on the left, the reading on the rest. */
+/* As the page: the folders' tree, the folder's files, and the document read once one is picked. */
 .split {
   display: grid;
-  grid-template-columns: var(--panel-w) 1fr;
+  grid-template-columns: var(--size-sm) 1fr;
   flex: 1;
   min-height: 0;
 }
 
-.split > .list {
-  border-right: var(--line-w) solid var(--line);
+.split[data-reading] {
+  grid-template-columns: var(--size-sm) var(--panel-w) 1fr;
+}
+
+.middle {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: var(--line-w) solid var(--line);
+}
+
+.split[data-reading] .page {
+  border-left: var(--line-w) solid var(--line);
 }
 
 .page {
@@ -72,4 +85,113 @@
 /* The upload tool's file picker: never drawn (a tool strip's layout would show it). */
 .picker {
   display: none !important;
+}
+
+/* Where you are in Docs: All files / Research / … */
+.crumbs {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4) var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.crumbs [data-here] {
+  color: var(--fg-strong);
+}
+
+.crumb {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+.sep {
+  color: var(--fg-dim);
+}
+
+/* A folder's row: its icon, its name, how many files; rename and delete while pointed at. */
+.row[data-folder] svg {
+  flex: none;
+  width: var(--space-4);
+  height: var(--space-4);
+  color: var(--accent-yellow);
+}
+
+.rowTools {
+  display: inline-flex;
+  margin-left: var(--space-2);
+  opacity: 0;
+}
+
+.row:hover .rowTools,
+.rowTools:focus-within {
+  opacity: 1;
+}
+
+.folderEdit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+}
+
+.folderEdit svg,
+.treeName svg {
+  flex: none;
+  width: var(--space-4);
+  height: var(--space-4);
+  color: var(--accent-yellow);
+}
+
+.docTools {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+/* The folders as a tree. */
+.tree {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.split > .tree {
+  padding: var(--space-3) var(--space-2);
+  overflow-y: auto;
+}
+
+.treeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-left: calc(var(--depth, 0) * var(--space-3));
+  border-radius: var(--radius-box);
+}
+
+.treeRow[data-here] {
+  background: var(--wash-3);
+}
+
+.fold {
+  flex: none;
+  width: var(--control-sm);
+}
+
+.fold[data-none] {
+  visibility: hidden;
+}
+
+.treeName {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

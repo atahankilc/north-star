@@ -36,6 +36,8 @@ export const WS_COLLECTIONS = [
   'threads',
   'tasks',
   'places',
+  // Folders of documents (D-415).
+  'folders',
 ] as const
 export type WsCollection = (typeof WS_COLLECTIONS)[number]
 export type Docs = Record<WsCollection, RawDoc[]>
@@ -147,5 +149,6 @@ export function fromDocs(docs: Docs, documents: WorkspaceData['documents'] = [])
     documents,
     tasks: docs.tasks as unknown as WorkspaceData['tasks'],
     places,
+    folders: (docs.folders ?? []) as unknown as WorkspaceData['folders'],
   }
 }

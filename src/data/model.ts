@@ -130,7 +130,8 @@ export type Presence = {
 // may start one or answer, viewers too; it's not content, so it's not undone, copied, exported or filtered. `x`/`y` is
 // where the thing was when the thread began, used when the thing is gone. `count` and `lastAt` follow its messages.
 // 'task' (D-260): a kanban's task; its thread's `planeId` is the kanban.
-export const THREAD_TARGETS = ['card', 'label', 'link', 'plane', 'task'] as const
+// 'channel' (D-416): a conversation on nothing, in Talk; its name is `targetId`.
+export const THREAD_TARGETS = ['card', 'label', 'link', 'plane', 'task', 'channel'] as const
 export type ThreadTarget = (typeof THREAD_TARGETS)[number]
 
 export type Thread = {

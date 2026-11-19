@@ -3,6 +3,7 @@
 // the comment threads and the documents you may see.
 import { useMemo, useRef } from 'react'
 import { CARD_COLLECTION, type Card, type CardFields } from './cards'
+import type { Folder } from './folders'
 import type { WithId } from './hooks'
 import { useWorkspaceCollection } from './hooks'
 import type { Label } from './labels'
@@ -44,6 +45,8 @@ export type WorkspaceData = {
   documents: WithId<Doc>[]
   // Every kanban's tasks (D-251).
   tasks: Task[]
+  // Folders of documents (D-415).
+  folders: WithId<Folder>[]
   // Cards on planes besides their home (D-281); one whose card or plane is gone is skipped.
   places: Place[]
 }
@@ -85,6 +88,7 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   const threadDocs = useWorkspaceCollection<Thread>(wid, 'threads')
   const tasks = useWorkspaceCollection<Omit<Task, 'id'>>(wid, 'tasks')
   const placeDocs = useWorkspaceCollection<Omit<Place, 'id'>>(wid, 'places')
+  const folders = useWorkspaceCollection<Folder>(wid, 'folders')
   const threads = useSame(useMemo(() => threadsFrom(threadDocs.data as unknown as RawDoc[]), [threadDocs.data]))
   const { user } = useAuth()
   const documents = useDocuments(wid, user?.id)
@@ -106,11 +110,11 @@ export function useWorkspaceData(wid: string): { data: WorkspaceData; isLoading:
   // Every listener: the canvas shows once all of them have answered (links, tasks and threads too, so they don't pop in
   // after it, and a delete in the first moments sees what hangs off a card), and any one's error is the workspace's.
   const all = [canvasDocs, spotDocs, pieces, customers, problems, competitors, ideas, features, packages, labelDocs, cells, placeDocs,
-    evidence, competitorFeatures, comparisons, edges, threadDocs, tasks, documents]
+    evidence, competitorFeatures, comparisons, edges, threadDocs, tasks, documents, folders]
   // The same object while nothing in it changed (the workspace's context is built from it).
   const data = useMemo(
-    () => ({ canvases, spots, pieces: shared, cards: placed, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data, tasks: tasks.data, places }),
-    [canvases, spots, shared, placed, labels, threads, cells.data, evidence.data, competitorFeatures.data, comparisons.data, edges.data, documents.data, tasks.data, places],
+    () => ({ canvases, spots, pieces: shared, cards: placed, labels, threads, cells: cells.data, evidence: evidence.data, competitorFeatures: competitorFeatures.data, comparisons: comparisons.data, edges: edges.data, documents: documents.data, tasks: tasks.data, places, folders: folders.data }),
+    [folders.data, canvases, spots, shared, placed, labels, threads, cells.data, evidence.data, competitorFeatures.data, comparisons.data, edges.data, documents.data, tasks.data, places],
   )
   return {
     data,

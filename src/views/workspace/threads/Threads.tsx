@@ -126,7 +126,7 @@ function threadsByTarget(threads: readonly WithId<Thread>[]) {
   if (!m) {
     m = new Map()
     for (const t of threads) {
-      if (t.resolved) continue
+      if (t.resolved || t.on === 'channel') continue
       const had = m.get(t.targetId)
       if (!had || t.lastAt > had.lastAt) m.set(t.targetId, t)
     }
@@ -342,7 +342,8 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
         <div className={styles.headTop}>
           {onList && <Button onClick={onList}>‹ threads</Button>}
           <ButtonGroup className={styles.actions}>
-            {thread && <Button onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>{resolved ? 'reopen' : 'resolve'}</Button>}
+            {/* A channel (D-416) is never done: no resolve. */}
+            {thread && thread.on !== 'channel' && <Button onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>{resolved ? 'reopen' : 'resolve'}</Button>}
             {mayDeleteThread && (
               <Button tone="danger" onClick={() => thread && deleteThread(wid, thread.id).then(closeThread, fail)}>
                 delete
@@ -373,12 +374,18 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
             {thing.gone ? 'what it was on was deleted' : thing.name || thing.kind}
           </h2>
           <span className={styles.where}>
-            {[where && `on ${where}${onShow ? ' ↗' : ''}`, thread && plural(thread.count, 'message')].filter(Boolean).join(' · ') || 'new thread'}
+            {[where && `on ${where}${onShow ? ' ↗' : ''}`, thread && plural(thread.count, 'message')].filter(Boolean).join(' · ') || (draft?.on === 'channel' ? 'new channel' : 'new thread')}
           </span>
         </CardFace>
       </header>
       <ol ref={list} className={styles.log} onScroll={stick.onScroll}>
-        {!thread && <li className={styles.lead}>Start a thread here: everyone in the workspace sees it, viewers too. @ mentions someone.</li>}
+        {!thread && (
+          <li className={styles.lead}>
+            {draft?.on === 'channel'
+              ? `Your first message starts #${draft.targetId}. Everyone in the workspace sees it, viewers too. @ mentions someone.`
+              : 'Start a thread here: everyone in the workspace sees it, viewers too. @ mentions someone.'}
+          </li>
+        )}
         {thread && messages.isLoading && <li className={styles.lead}>Loading</li>}
         {messages.data.map((m: WithId<ThreadMessage>, i) => {
           // One writer's messages in a row are one run: their name once on top, their circle once at its foot, the

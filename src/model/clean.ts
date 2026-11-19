@@ -3,7 +3,7 @@
 import { CARD_TYPES, FEATURE_EFFORTS, FEATURE_IMPACTS, FEATURE_PRIORITIES, FEATURE_STATUSES, PRIORITIES, VALIDATIONS, type AnyType } from './cards'
 import { AVAILABILITIES, CARD_FIELDS, CELL_KINDS, COL_W, CONFIDENCES, CRITERION_SCORES, DOC_COLS, DOC_KINDS, DOC_LIMITS, EVIDENCE_KINDS, FIELDS, OWN_KINDS, TONES, TOTALS_AS, TOTALS_AT, UNFOLDS, STANCES, HEADING_SIZES, TEXT_SCALES, DOC_VIEWS, TIMELINE_ROWS, KANBAN_ROWS, BOX_TONES } from './shapes'
 import { bytesOf as bytes } from './notes'
-import { AUTHOR_NAME_MAX, AXIS_NOUN_MAX, BOX_NAMES_MAX, BOX_NAME_MAX, CANVAS_NAME_MAX, CATEGORY_MAX, CELL_NOTES_MAX, CELL_TEXT_MAX, CHECKS_MAX, CHECK_MAX, COL_NAME_MAX, CRITERION_MAX, EVIDENCE_TEXT_MAX, FACT_MAX, GLYPH_MAX, KANBAN_COLS_MAX, KICKER_MAX, LABELS_MAX, LIMIT_MAX, REGIONS_MAX, REGION_MAX, TAGS_MAX, TAG_MAX, LABEL_MAX, LINK_LABEL_MAX, LONG_TEXT_MAX, MATRIX_NAME_MAX, PIECE_NAME_MAX, SOURCE_MAX, STEP_LABEL_MAX, TABLE_COL_NAME_MAX, TASK_NOTES_MAX, TASK_TITLE_MAX, TITLE_MAX, UNIT_MAX, URL_MAX } from './limits'
+import { AUTHOR_NAME_MAX, AXIS_NOUN_MAX, BOX_NAMES_MAX, BOX_NAME_MAX, CANVAS_NAME_MAX, FOLDER_NAME_MAX, CATEGORY_MAX, CELL_NOTES_MAX, CELL_TEXT_MAX, CHECKS_MAX, CHECK_MAX, COL_NAME_MAX, CRITERION_MAX, EVIDENCE_TEXT_MAX, FACT_MAX, GLYPH_MAX, KANBAN_COLS_MAX, KICKER_MAX, LABELS_MAX, LIMIT_MAX, REGIONS_MAX, REGION_MAX, TAGS_MAX, TAG_MAX, LABEL_MAX, LINK_LABEL_MAX, LONG_TEXT_MAX, MATRIX_NAME_MAX, PIECE_NAME_MAX, SOURCE_MAX, STEP_LABEL_MAX, TABLE_COL_NAME_MAX, TASK_NOTES_MAX, TASK_TITLE_MAX, TITLE_MAX, UNIT_MAX, URL_MAX } from './limits'
 import { newId } from './scales'
 import { textMax } from './labels'
 import { RULE_FIELDS } from './source'
@@ -23,6 +23,8 @@ export type Ids = {
   card: (old: unknown) => { id: string; type: AnyType | 'competitorFeature' } | undefined
   piece: (old: unknown) => string | undefined
   doc: (old: unknown) => string | undefined
+  // Folders of documents (D-415); none in a file from before them.
+  folder?: (old: unknown) => string | undefined
 }
 
 export function str(v: unknown, max: number): string | undefined {
@@ -400,6 +402,13 @@ export function cleanCanvas(d: Raw, now: number) {
   return { name, order: num(d.order) ?? 0, createdAt: num(d.createdAt) ?? now }
 }
 
+// A folder of documents (D-415), without the folder it's in (its new id is the importer's) and who made it.
+export function cleanFolder(d: Raw, now: number) {
+  const name = typeof d.name === 'string' ? d.name.trim().slice(0, FOLDER_NAME_MAX) : ''
+  if (!name) return null
+  return { name, ...times(d, now) }
+}
+
 // A piece's spot on a canvas besides its own (D-302), without the two (their new ids are the importer's).
 export function cleanSpot(d: Raw, now: number) {
   const x = num(d.x)
@@ -465,6 +474,7 @@ export function cleanDocument(d: BundleDocument, now: number, ids: Ids) {
     topic: str(d.topic, 500),
     model: str(d.model, 100),
     reportKind: kind === 'report' ? (oneOf(d.reportKind, ['research', 'chat', 'upload'] as const) ?? 'research') : undefined,
+    folderId: ids.folder?.(d.folderId),
     ...times(d, now),
   })
   return { summary, body }

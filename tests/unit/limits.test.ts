@@ -26,6 +26,8 @@ const list = (path: string) => new RegExp(`${path.replace('.', '\\.')}\\.size\\(
 
 const CASES: [keyof typeof L, () => number][] = [
   ['TITLE_MAX', () => num(body('validCard'), text('title'))],
+  ['CHANNEL_NAME_MAX', () => num(rules, /\[a-z0-9\]\[a-z0-9-\]\{0,(\d+)\}/) + 1],
+  ['FOLDER_NAME_MAX', () => num(rules.slice(rules.indexOf('function validFolder(')), text('name'))],
   ['LONG_TEXT_MAX', () => num(body('validCard'), opt('d', 'body'))],
   ['TAGS_MAX', () => num(body('validCard'), list('d.tags'))],
   ['REGIONS_MAX', () => num(body('validCompetitor'), list('d.regions'))],

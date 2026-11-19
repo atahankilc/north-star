@@ -48,6 +48,13 @@ export const DeckIcon = () => (
   </Icon>
 )
 
+// A folder (D-415): its tab on the left, its body under it.
+export const FolderIcon = () => (
+  <Icon>
+    <path d="M1.75 3.75h5l1.5 1.75h8v9.75H1.75z" />
+  </Icon>
+)
+
 // Docs (D-412): a sheet with its corner folded, two lines of text on it.
 export const DocsIcon = () => (
   <Icon>

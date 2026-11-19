@@ -399,7 +399,17 @@ service cloud.firestore {
         || (collection == 'tasks' && validTask(d))
         || (collection == 'places' && validPlace(id, d))
         || (collection == 'canvases' && validCanvas(d))
-        || (collection == 'pieceSpots' && validSpot(id, d));
+        || (collection == 'pieceSpots' && validSpot(id, d))
+        || (collection == 'folders' && validFolder(id, d));
+    }
+
+    // A folder of documents (D-415, src/data/folders.ts): a name and the folder it's in, never itself; who made it.
+    function validFolder(id, d) {
+      return onlyKeys(d, ['name', 'parent', 'uid', 'createdAt', 'updatedAt'])
+        && isText(d.name, 80) && d.name.size() > 0
+        && optText(d, 'parent', 128) && d.get('parent', '') != id
+        && isText(d.uid, 128)
+        && d.createdAt is number && d.updatedAt is number;
     }
 
     // A workspace's name: text, 1–200 characters.
@@ -535,7 +545,7 @@ service cloud.firestore {
         function validDoc(d) {
           return d.keys().hasOnly(['kind', 'title', 'excerpt', 'origin', 'uid', 'name', 'shared', 'contentType', 'size',
               'words', 'pages', 'sections', 'sources', 'width', 'height', 'path', 'thumbPath', 'topic', 'model', 'reportKind',
-              'role', 'createdAt', 'updatedAt'])
+              'role', 'folderId', 'createdAt', 'updatedAt'])
             // The agent notes (S16): one per workspace, under its fixed id (and only it), always a shared markdown document.
             && ((id == 'agent-notes') == ('role' in d))
             && (!('role' in d) || (d.role == 'agent-notes' && d.kind == 'markdown' && d.shared == true))
@@ -554,6 +564,8 @@ service cloud.firestore {
             && (!('thumbPath' in d) || (isText(d.thumbPath, 400) && d.thumbPath.matches('workspaces/' + wid + '/documents/' + id + '/.+')))
             && optText(d, 'topic', 500) && optText(d, 'model', 100)
             && optIn(d, 'reportKind', ['research', 'chat', 'upload'])
+            // The folder it's in (D-415, folders/ below); the notes stay at the top.
+            && optText(d, 'folderId', 128) && !(('role' in d) && ('folderId' in d))
             && d.createdAt is number && d.updatedAt is number;
         }
         function optCount(d, key) {
@@ -593,7 +605,10 @@ service cloud.firestore {
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'excerpt', 'size', 'words', 'origin', 'updatedAt']))
             : (!('role' in request.resource.data)
               && ((resource.data.uid == request.auth.uid
-                  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shared', 'title', 'updatedAt']))
+                  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shared', 'title', 'folderId', 'updatedAt']))
+                // Into a folder (D-415): its author (above), or any owner or editor once it's shared; nothing else.
+                || (resource.data.shared == true && canEdit(wid)
+                  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['folderId', 'updatedAt']))
                 // A .md written in the app (D-373): its author, or any owner or editor once it's shared; only its counts.
                 || (mayWrite(resource.data) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['excerpt', 'size', 'words', 'updatedAt'])))));
         allow delete: if mayDelete(resource.data);
@@ -780,8 +795,10 @@ service cloud.firestore {
           return d.keys().hasOnly(['on', 'targetId', 'planeId', 'x', 'y', 'uid', 'name', 'count', 'lastAt', 'lastUid', 'lastName', 'lastText', 'lastMid', 'takenMid', 'mentions', 'resolved', 'resolvedBy', 'createdAt', 'updatedAt'])
             // 'plane' (D-193): a comment on a plane on the canvas.
             // 'task' (D-260): one of a kanban's tasks.
-            && d.on in ['card', 'label', 'link', 'plane', 'task']
+            // 'channel' (D-416): a conversation on nothing, its name in `targetId` (lowercase words joined by `-`).
+            && d.on in ['card', 'label', 'link', 'plane', 'task', 'channel']
             && isText(d.targetId, 128)
+            && (d.on != 'channel' || d.targetId.matches('[a-z0-9][a-z0-9-]{0,39}'))
             && isText(d.planeId, 128)
             && d.x is number && d.y is number
             && isText(d.uid, 128) && isText(d.name, 200)
@@ -908,7 +925,7 @@ service cloud.firestore {
       // Shapes mirror src/data/model.ts; change both together.
       match /{collection}/{docId} {
         function known() {
-          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'evidence', 'packages', 'pieces', 'cells', 'tasks', 'places', 'canvases', 'pieceSpots'];
+          return collection in ['labels', 'customers', 'problems', 'ideas', 'features', 'competitors', 'competitorFeatures', 'comparisons', 'edges', 'evidence', 'packages', 'pieces', 'cells', 'tasks', 'places', 'canvases', 'pieceSpots', 'folders'];
         }
         allow read: if isMember(wid) && known();
         allow delete: if canEdit(wid) && known();

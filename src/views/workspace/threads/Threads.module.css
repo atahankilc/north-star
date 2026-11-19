@@ -651,3 +651,8 @@
 .panel[data-lines] .log > :first-child {
   margin-top: auto;
 }
+
+/* A new channel's name, under the CHANNELS rule (D-416). */
+.channelField {
+  margin: 0 var(--space-3) var(--space-2);
+}

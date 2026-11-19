@@ -17,10 +17,11 @@ import type { WithId } from '../../../data/hooks'
 import type { Thread } from '../../../data/model'
 import { isNew, markSeen, useReads } from '../../../data/threads'
 import { ago } from '../../../ui/foundation/ago'
-import { closeThread, CommentIcon, myUid, ThreadPanel, toggleInbox, usePersonColor, useThreadView, type ThreadThing } from './Threads'
+import { closeThread, openThread, startComment, CommentIcon, myUid, ThreadPanel, toggleInbox, usePersonColor, useThreadView, type ThreadThing } from './Threads'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Rule } from '../../../ui/primitives/Rule'
+import { AddField } from '../../../ui/primitives/AddField'
 import { Label } from '../../../ui/primitives/Label'
 import { Select } from '../../../ui/patterns/Select'
 import { EdgeColumn } from '../../../ui/patterns/EdgeColumn'
@@ -32,10 +33,16 @@ import { tokenPx } from '../../../styles/cssToken'
 import styles from './Threads.module.css'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
 import { leadingNumber } from '../../../model/words'
+import { CHANNEL_NAME_MAX } from '../../../model/limits'
 import { TypeBadge } from '../cards/TypeBadge'
 
 // The threads panel's scope for the canvas shown (D-302's session 4), beside a plane's id (D-193).
 const THIS_CANVAS = '#canvas'
+// A channel's space (D-416): Talk's own, no plane or canvas.
+const TALK = 'talk'
+// What's typed for a channel's name, as the rules take it: lowercase words joined by `-`, at most 40.
+const channelName = (typed: string) =>
+  typed.toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, CHANNEL_NAME_MAX)
 
 // A row has room for one name: the first.
 const firstName = (name: string) => name.trim().split(/\s+/)[0] || name
@@ -86,7 +93,18 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
   const seen = useReads(wid, me || null).data?.seen
   // The resolved ones, behind a word at the list's foot (D-405), instead of the open ones.
   const [done, setDone] = useState(false)
-  const sorted = useMemo(() => [...threads].sort((a, b) => b.lastAt - a.lastAt), [threads])
+  // Channels (D-416) stand apart, in every scope, by name; the rest by when they were last written in.
+  const channels = useMemo(() => all.filter((t) => t.on === 'channel').sort((a, b) => a.targetId.localeCompare(b.targetId)), [all])
+  const sorted = useMemo(() => threads.filter((t) => t.on !== 'channel').sort((a, b) => b.lastAt - a.lastAt), [threads])
+  const [naming, setNaming] = useState<string | null>(null)
+  const newChannel = (typed: string) => {
+    const name = channelName(typed)
+    setNaming(null)
+    if (!name) return
+    const had = channels.find((c) => c.targetId === name)
+    if (had) return openThread(had.id)
+    startComment({ on: 'channel', targetId: name, planeId: TALK, at: [0, 0] })
+  }
   const fresh = (t: WithId<Thread>) => isNew(t, seen, t.id, me)
   const mentioned = (t: WithId<Thread>) => !!t.mentions?.includes(me)
   const open = sorted.filter((t) => !t.resolved)
@@ -171,7 +189,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
   const list = (
     <>
             <header className={styles.listHead}>
-              <span className={styles.listTitle}>Threads</span>
+              <span className={styles.listTitle}>Talk</span>
               {scopes.length > 1 ? (
                 <Select
                   ariaLabel="Which threads the list shows"
@@ -194,6 +212,15 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
             <ol className={styles.rows}>
               {rows.length === 0 && newRows.length === 0 && (
                 <li className={styles.lead}>{done ? 'No resolved threads.' : 'No open threads. Right-click anything → comment.'}</li>
+              )}
+              {!done && (
+                <li>
+                  <Rule as="div" className={styles.place} name="CHANNELS" count={channels.length || undefined} countAt="end" add={naming === null ? { label: 'channel', onClick: () => setNaming('') } : undefined} />
+                  {naming !== null && (
+                    <AddField className={styles.channelField} value={naming} onChange={setNaming} onAdd={newChannel} onClose={() => setNaming(null)} label="A new channel's name" placeholder="name, e.g. pilot" maxLength={CHANNEL_NAME_MAX} />
+                  )}
+                  <ol className={styles.group}>{channels.map((t) => rowOf(t, false))}</ol>
+                </li>
               )}
               {newRows.length > 0 && (
                 <li>
@@ -229,8 +256,8 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
       title={titleOf(convo.thread ?? convo.draft!)}
       thing={thingOf(convo.thread ?? convo.draft!)}
       isOwner={isOwner}
-      where={convo.thread ? (whereOf?.(convo.thread) ?? undefined) : undefined}
-      onShow={convo.thread ? () => onShow(convo.thread!) : undefined}
+      where={convo.thread && convo.thread.on !== 'channel' ? (whereOf?.(convo.thread) ?? undefined) : undefined}
+      onShow={convo.thread && convo.thread.on !== 'channel' ? () => onShow(convo.thread!) : undefined}
       // Beside the canvas it's in the list's place: back to the list. As the page the list is beside it.
       onList={asPage ? undefined : () => (closeThread(), toggleInbox(true))}
       onClose={asPage ? closeThread : closePlace}
@@ -262,7 +289,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
           // Beside the HUD's tools, which keep their rail of ground (D-389).
           offset="var(--sheet-rail-w)"
           width={placeWidth ? `${placeWidth}px` : 'var(--panel-w)'}
-          label={convo ? `Thread: ${titleOf(convo.thread ?? convo.draft!)}` : 'Threads'}
+          label={convo ? `Thread: ${titleOf(convo.thread ?? convo.draft!)}` : 'Talk'}
           // Escape closes the list; a conversation's own Escape closes it first (the one Escape stack, D-359).
           onClose={closePlace}
           escape={!convo}

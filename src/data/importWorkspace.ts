@@ -6,6 +6,7 @@
 import { collection, doc, getDoc, type DocumentReference } from 'firebase/firestore'
 import {
   cleanCanvas,
+  cleanFolder,
   cleanCard,
   cleanCell,
   cleanComparison,
@@ -56,11 +57,14 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
   for (const type of ALL_TYPES) for (const d of bundle[CARD_COLLECTION[type] as 'customers']) cardIds.set(d.id, { id: doc(col(CARD_COLLECTION[type])).id, type })
   for (const d of bundle.competitorFeatures) cardIds.set(d.id, { id: doc(col('competitorFeatures')).id, type: 'competitorFeature' })
   const docIds = new Map(bundle.documents.map((d) => [d.id, doc(col('documents')).id]))
+  // Folders (D-415): a file from before them has none.
+  const folderIds = new Map((bundle.folders ?? []).map((d) => [d.id, doc(col('folders')).id]))
   const key = (v: unknown) => (typeof v === 'string' ? v : '')
   const ids: Ids = {
     card: (v) => cardIds.get(key(v)),
     piece: (v) => pieceIds.get(key(v)),
     doc: (v) => docIds.get(key(v)),
+    folder: (v) => folderIds.get(key(v)),
   }
 
   const put = (ref: DocumentReference, fields: object | null) => (fields ? writes.push([ref, fields]) : skipped++)
@@ -230,6 +234,13 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
     const column = cols.some((c) => c.id === d.col) ? (d.col as string) : cols[0].id
     const card = ids.card(d.cardId)
     writes.push([doc(col('tasks')), { ...fields, pieceId: on, col: column, uid, ...(card && card.type !== 'competitorFeature' && { cardId: card.id, cardType: card.type }) }])
+  }
+
+  // Folders (D-415): yours now, in the folder they were in when it came over.
+  for (const d of bundle.folders ?? []) {
+    const fields = cleanFolder(d, now)
+    const parent = folderIds.get(key(d.parent))
+    put(doc(col('folders'), folderIds.get(d.id)!), fields && { ...fields, ...(parent && parent !== folderIds.get(d.id) && { parent }), uid })
   }
 
   // Documents (D-232): yours now, shared as they were, under the name of whoever added them. The summary first, as its

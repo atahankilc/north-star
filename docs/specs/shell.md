@@ -39,10 +39,11 @@ to keep documents; the agent beside all of it. This is where each opens.
    the side nav's decks button gone, Talk's conversation in the list's place, Tasks and Docs as columns, `full` as the
    page in the main sheet, the page's actions in the middle.
 2. Talk's page in lines; its look on touch and narrow windows.
-3. **Folders and files** for Docs (a data change: `folders/`, a document's `folderId`, rules, export/import): not
-   started, needs the user's yes for the rules deploy.
-4. **Channels** for Talk (a thread `on: 'channel'`, its name and what it's for; rules, a channel's messages paged): not
-   started, needs the user's yes for the rules deploy.
+3. **Folders and files** for Docs (D-415, built 2026-11-19): `folders/` (a name, the folder it's in), a document's
+   `folderId`, rules (content shapes), export/import; Docs' path, folder rows, the page's tree, a new folder, a
+   document's folder as a dropdown. Pushed only once the rules are deployed (the user's yes first).
+4. **Channels** for Talk (D-416, built 2026-11-19): a thread `on: 'channel'` named by its `targetId`; CHANNELS on top
+   of Talk's list, `+ channel`, the first message makes it; no resolve, no chip. Its rules go live with D-415's.
 5. The side view (D-300) folded into Tasks for a plane's linked deck too, once Tasks has its own `linked` strip.
 
 ## Not yet

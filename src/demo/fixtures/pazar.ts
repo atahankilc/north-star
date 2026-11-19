@@ -275,8 +275,8 @@ const docOf = (id: string, title: string, excerpt: string, words: number, n: num
   updatedAt: AT + n * 3600_000,
 })
 const documents: WithId<Doc>[] = [
-  docOf('doc-interviews', 'Interviews: Kreuzberg offices', 'Twelve people, three offices, one question: what did you eat yesterday, and why?', 2140, 2),
-  docOf('doc-pilot', 'Pilot, week one: 31 pre-orders', 'Two cooks, one WhatsApp group, a shelf at Factory. What sold, what didn’t, what we’d change.', 980, 30, PEOPLE.ayla),
+  { ...docOf('doc-interviews', 'Interviews: Kreuzberg offices', 'Twelve people, three offices, one question: what did you eat yesterday, and why?', 2140, 2), folderId: 'f-research' },
+  { ...docOf('doc-pilot', 'Pilot, week one: 31 pre-orders', 'Two cooks, one WhatsApp group, a shelf at Factory. What sold, what didn’t, what we’d change.', 980, 30, PEOPLE.ayla), folderId: 'f-pilot' },
 ]
 
 export const pazar: WorkspaceData = {
@@ -294,4 +294,10 @@ export const pazar: WorkspaceData = {
   documents,
   tasks,
   places: [],
+  // Folders of documents (D-415): research, the pilot, and its receipts inside it.
+  folders: [
+    { id: 'f-research', name: 'Research', uid: PEOPLE.lena.uid, createdAt: AT, updatedAt: AT },
+    { id: 'f-pilot', name: 'Pilot', uid: PEOPLE.ayla.uid, createdAt: AT, updatedAt: AT },
+    { id: 'f-receipts', name: 'Receipts', parent: 'f-pilot', uid: PEOPLE.ayla.uid, createdAt: AT, updatedAt: AT },
+  ],
 }

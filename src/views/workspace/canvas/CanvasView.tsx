@@ -432,6 +432,8 @@ export function CanvasView() {
   }
   // What a thread is on (D-398): its kind, its name and its colour apart, for the threads' rows and a conversation's head.
   const thingOf = (t: Pick<Thread, 'on' | 'targetId'>): ThreadThing => {
+    // A channel (D-416): its name, on nothing.
+    if (t.on === 'channel') return { kind: 'channel', name: `# ${t.targetId}` }
     if (t.on === 'card') {
       const c = cards.find((x) => x.id === t.targetId)
       return c ? { kind: c.type, name: c.title, tone: CARD_TONE[c.type] } : { kind: 'card', name: '', gone: true }

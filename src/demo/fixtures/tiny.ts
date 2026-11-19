@@ -75,4 +75,5 @@ export const tiny: WorkspaceData = {
   documents: [],
   tasks: [],
   places: [],
+  folders: [],
 }

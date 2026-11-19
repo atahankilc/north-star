@@ -2,7 +2,7 @@ import { example } from '../../../gallery/example'
 import { screen } from '../../../gallery/screens'
 import { docTexts, P } from '../../../gallery/canvas'
 import { threadMessages, withThreads } from '../../../gallery/panels'
-import { openThread } from '../threads/Threads'
+import { openThread, startComment } from '../threads/Threads'
 import { openPlace, usePlace, type Place } from './placeStore'
 
 const open = (place: Place, page = false) => () => {
@@ -21,6 +21,8 @@ export default example({
     'nothing open': screen({ only: [P.lunch, P.product, P.deck] }),
     'talk beside': screen({ only: [P.lunch, P.product], change: withThreads, then: open('talk') }),
     'a conversation in its place': screen({ only: [P.lunch, P.product], change: withThreads, then: () => (open('talk')(), openThread('t-pickup')) }),
+    'a channel as the page': screen({ only: [P.lunch, P.product], change: withThreads, then: () => (open('talk', true)(), openThread('ch-general')) }),
+    'a new channel': screen({ only: [P.lunch, P.product], change: withThreads, then: () => (open('talk')(), startComment({ on: 'channel', targetId: 'launch-week', planeId: 'talk', at: [0, 0] })) }),
     'talk as the page': screen({ only: [P.lunch, P.product], change: withThreads, then: () => (open('talk', true)(), openThread('t-pickup')) }),
     'tasks beside': screen({ only: [P.lunch, P.product, P.deck], then: open('tasks') }),
     'tasks as the page': screen({ only: [P.lunch, P.product, P.deck, P.days], then: open('tasks', true) }),

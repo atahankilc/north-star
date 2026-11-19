@@ -35,6 +35,10 @@ export const WORKSPACE_NAME_KEPT_MAX = 200
 // Pieces, canvases and text (D-176, D-302, D-194).
 export const PIECE_NAME_MAX = 80
 export const CANVAS_NAME_MAX = 60
+// A folder of documents (D-415).
+export const FOLDER_NAME_MAX = 80
+// A channel's name in Talk (D-416), lowercase words joined by `-`.
+export const CHANNEL_NAME_MAX = 40
 export const KICKER_MAX = 60
 
 // A workspace's "building" description.

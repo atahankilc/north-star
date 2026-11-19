@@ -25,6 +25,10 @@ export const RELEASES: readonly Release[] = [
     date: '2026-11-18',
     title: 'Threads, new first',
     items: [
+      // D-416: channels in Talk.
+      { title: 'Channels', tab: 'channels', line: 'Talk has channels now: conversations on nothing, for the whole team, on top of the list. `+ channel` starts one.', scene: 'threads-panel', lessons: ['comment'] },
+      // D-415: folders in Docs.
+      { title: 'Folders', tab: 'folders', line: 'Docs keeps documents in folders: make one, rename it, move a document into it. Deleting a folder moves what was in it up.', scene: 'side-view', lessons: ['docs'] },
       // D-412: the places beside the canvas.
       { title: 'Talk, Tasks, Docs', tab: 'places', line: 'Bottom left: Talk, Tasks and Docs open beside the canvas; `full` makes one the page. The canvas fills the window until something docks.', scene: 'side-view', lessons: ['comment', 'side-view', 'docs'] },
       // D-405: the threads' list and a conversation drawn anew.

@@ -1,7 +1,7 @@
 import { example } from '../../gallery/example'
 import { ToolButton } from './ToolButton'
 import { Button } from './Button'
-import { BinIcon, CheckIcon, CloseIcon, CompassIcon, DeckIcon, DocsIcon, DownloadIcon, EditIcon, FitIcon, GearIcon, GuideIcon, LimitIcon, MinusIcon, MoreIcon, NextIcon, PlaceIcon, PlusIcon, PrevIcon, ShareIcon, ThreadsIcon, TurnLeftIcon, TurnRightIcon, WriteIcon } from './hudIcons'
+import { BinIcon, CheckIcon, CloseIcon, CompassIcon, DeckIcon, DocsIcon, DownloadIcon, FolderIcon, EditIcon, FitIcon, GearIcon, GuideIcon, LimitIcon, MinusIcon, MoreIcon, NextIcon, PlaceIcon, PlusIcon, PrevIcon, ShareIcon, ThreadsIcon, TurnLeftIcon, TurnRightIcon, WriteIcon } from './hudIcons'
 import { none } from '../../gallery/samples'
 
 const GLYPHS = [
@@ -16,6 +16,7 @@ const SET = [
   ['decks', DeckIcon],
   ['threads', ThreadsIcon],
   ['docs', DocsIcon],
+  ['folder', FolderIcon],
   ['settings', GearIcon],
 ] as const
 

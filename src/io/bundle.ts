@@ -32,6 +32,8 @@ export const BUNDLE_COLLECTIONS = [
   // The canvases (D-302) and the pieces on more than their own (its session 3); a file without them is all on the first.
   'canvases',
   'pieceSpots',
+  // Folders of documents (D-415); a file without them has its documents at the top.
+  'folders',
 ] as const
 export type BundleCollection = (typeof BUNDLE_COLLECTIONS)[number]
 
@@ -107,7 +109,7 @@ export async function readBundle(file: File): Promise<Bundle> {
 }
 
 // ---- Cleaning (every clean* below) lives in src/model/clean.ts, without Firebase (S3); re-exported here.
-export { cleanCard, cleanCompetitorFeature, cleanComparison, cleanEvidence, cleanEdge, cleanLabel, cleanPiece, cleanPlace, cleanTask, cleanCell, cleanDocument, cleanCanvas, cleanSpot } from '../model/clean'
+export { cleanCard, cleanCompetitorFeature, cleanComparison, cleanEvidence, cleanEdge, cleanLabel, cleanPiece, cleanPlace, cleanTask, cleanCell, cleanDocument, cleanCanvas, cleanSpot, cleanFolder } from '../model/clean'
 export type { Ids } from '../model/clean'
 
 // A file name safe on every system: "Example: Tablebook" → "example-tablebook".
