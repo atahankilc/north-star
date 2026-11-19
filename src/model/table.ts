@@ -121,8 +121,10 @@ export function readOwn(col: Column, cell: Cell | undefined): { step?: Step; num
 // ---- What a table reads, for everyone who reads one (the app's view, the finder, the agent): one text per field and
 // one order, so the agent sees the rows as the person does (D-388).
 
-// A table's cells by `row|col` (a matrix's too: `matrixId` holds either's id).
-export const cellsByKey = (cells: Cell[], pieceId: string) => new Map(cells.filter((c) => c.matrixId === pieceId).map((c) => [`${c.row}|${c.col}`, c]))
+// A table's cells by `row|col` (a matrix's too: `matrixId` holds either's id), and the one at a row and a column.
+const cellKey = (row: string, col: string) => `${row}|${col}`
+export const cellsByKey = (cells: Cell[], pieceId: string) => new Map(cells.filter((c) => c.matrixId === pieceId).map((c) => [cellKey(c.row, c.col), c]))
+export const cellAt = (byKey: Map<string, Cell>, row: string, col: string) => byKey.get(cellKey(row, col))
 
 // What the field's text needs from outside the card: the names of the planes it's on (its home first, D-281), and its
 // evidence counted (cardFacts.ts' `proof`).
@@ -158,7 +160,7 @@ export function fieldText(ctx: FieldCtx, c: Card | undefined, field: Field): str
 export function sortKey(col: Column | typeof NAME_COL, row: Row, text: (row: Row, field: Field) => string, byKey: Map<string, Cell>): string | number {
   if (col === NAME_COL) return row.name.toLowerCase()
   if (col.field) return text(row, col.field).toLowerCase()
-  const v = readOwn(col, byKey.get(`${row.key}|${col.id}`))
+  const v = readOwn(col, cellAt(byKey, row.key, col.id))
   if (v.step) return (col.steps ?? DEFAULT_STEPS).indexOf(v.step)
   if (v.number !== undefined) return v.number
   if (v.checked) return 1

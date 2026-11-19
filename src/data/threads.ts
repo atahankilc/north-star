@@ -9,6 +9,7 @@ import { db, firebase } from './firebase'
 import { useQuery, type Live, type WithId } from './hooks'
 import { MENTIONS_MAX, MESSAGE_MAX, type Thread, type ThreadMessage, type ThreadReads, type ThreadTarget } from './model'
 import { authorName } from '../model/words'
+import { AUTHOR_NAME_MAX } from '../model/limits'
 
 const threadsOf = (wid: string) => collection(db(), 'workspaces', wid, 'threads')
 const messagesOf = (wid: string, tid: string) => collection(db(), 'workspaces', wid, 'threads', tid, 'messages')
@@ -17,7 +18,7 @@ const readsRef = (wid: string, uid: string) => doc(db(), 'workspaces', wid, 'thr
 function me() {
   const user = firebase?.auth.currentUser
   if (!user) throw new Error('Not signed in')
-  return { uid: user.uid, name: authorName({ name: user.displayName, email: user.email }).slice(0, 200) }
+  return { uid: user.uid, name: authorName({ name: user.displayName, email: user.email }).slice(0, AUTHOR_NAME_MAX) }
 }
 
 // The onboarding's demo realm (D-315: no Firebase at all): a scene's made-up messages, what "you" have read and who

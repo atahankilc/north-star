@@ -13,17 +13,8 @@
   "src/data/glance.ts": {
     "rawCut": 1
   },
-  "src/data/importWorkspace.ts": {
-    "rawCut": 2
-  },
   "src/data/presence.ts": {
     "rawCut": 3
-  },
-  "src/data/threads.ts": {
-    "rawCut": 1
-  },
-  "src/data/workspaces.ts": {
-    "rawCut": 2
   },
   "src/demo/Stage.tsx": {
     "portal": 1
@@ -44,13 +35,7 @@
     "rafLoop": 1,
     "menuHost": 1
   },
-  "src/model/clean.ts": {
-    "rawCut": 1
-  },
   "src/model/findIndex.ts": {
-    "rawCut": 1
-  },
-  "src/model/regions.ts": {
     "rawCut": 1
   },
   "src/model/tasks.ts": {
@@ -74,12 +59,6 @@
   "src/ops/arrange.ts": {
     "rawCut": 1
   },
-  "src/ops/cards.ts": {
-    "rawCut": 1
-  },
-  "src/ops/deck.ts": {
-    "rawCut": 2
-  },
   "src/ops/matrix.ts": {
     "rawCut": 2
   },
@@ -89,11 +68,8 @@
   "src/ops/notes.ts": {
     "rawCut": 3
   },
-  "src/ops/tasks.ts": {
-    "rawCut": 1
-  },
   "src/ops/validate.ts": {
-    "rawCut": 2
+    "rawCut": 1
   },
   "src/ui/patterns/HazardConfirm.tsx": {
     "rafLoop": 2

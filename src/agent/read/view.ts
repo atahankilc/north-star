@@ -6,7 +6,7 @@
 import { kindOf } from '../../model/labels'
 import { kindOfPiece, KIND_NAME } from '../../model/pieces'
 import { cellView, entriesOf, isOpen, nounOf, readCell, readingOf, tops, CONFIDENCE_MARK, type Cell, type Entry, type MatrixSetup } from '../../model/matrix'
-import { cellsByKey, colName, fieldText, readOwn, sortedRows, type Column, type FieldCtx, type TableSetup } from '../../model/table'
+import { cellAt, cellsByKey, colName, fieldText, readOwn, sortedRows, type Column, type FieldCtx, type TableSetup } from '../../model/table'
 import { axisEntries, tableRows } from '../../model/lens'
 import type { Row } from '../../model/source'
 import { axisOf, byBox, byColumn, heldCards, rowFieldOf, scorer, boxKey } from '../../model/kanbanCards'
@@ -152,8 +152,8 @@ function matrixView(ws: ReadWs, ids: Ids, d: Derived, p: P, page = 1, colPage = 
   if (!m) return { text: `${title(ids, d, p)} · not set up` }
   const rows = entriesOf(m.rows, ws.cards)
   const cols = entriesOf(m.cols, ws.cards)
-  const at = new Map(ws.cells.filter((c) => c.matrixId === p.id).map((c) => [`${c.row}|${c.col}`, c]))
-  const get = (r: string, c: string) => at.get(`${r}|${c}`)
+  const at = cellsByKey(ws.cells, p.id)
+  const get = (r: string, c: string) => cellAt(at, r, c)
   const shown = (r: Entry, c: Entry) => cellView(p.id, m, get, r, c)
   const rp = pageOf(rows, page, ROWS_PAGE)
   const cp = pageOf(cols, colPage, COLS_PAGE)
@@ -221,7 +221,7 @@ export function tableValues(ws: ReadWs, ids: Ids, p: P): { cols: string[]; rows:
   // In the order the person sees (sortedRows, the app's own).
   const rows = sortedRows(t, tableRows(t, ws.cards), (r, f) => fieldText(plain, r.card, f), at).map((row) => {
     const values = [row.card ? `${ids.short('card', row.card.id)} ${oneLine(row.name, 40)}` : oneLine(row.name, 40) || '(unnamed)']
-    for (const col of t.cols) values.push(col.field ? fieldText(shown, row.card, col.field) : ownText(col, at.get(`${row.key}|${col.id}`)))
+    for (const col of t.cols) values.push(col.field ? fieldText(shown, row.card, col.field) : ownText(col, cellAt(at, row.key, col.id)))
     return { row, values }
   })
   return { cols: ['name', ...t.cols.map((c) => colName(c) + (c.unit ? ` (${c.unit})` : '') + (c.field ? '' : ''))], rows }

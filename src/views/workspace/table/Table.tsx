@@ -11,7 +11,7 @@ import type { Piece } from '../../../data/model'
 import { retitleCard, TITLE_MAX, type Card } from '../../../data/cards'
 import { setCell, TEXT_MAX, TONE_VAR, type Cell } from '../../../data/matrix'
 import { rowsOf, type Row } from '../../../data/source'
-import { addNamedRow, cellsByKey, CHECKED, COL_W, colName, DEFAULT_STEPS, emptyTable, fieldText, NAME_COL, readOwn, sortedRows, type FieldCtx, removeRow, renameRow, setColumnWidth, setTablePart, type Column, type TableSetup } from '../../../data/table'
+import { addNamedRow, cellAt, cellsByKey, CHECKED, COL_W, colName, DEFAULT_STEPS, emptyTable, fieldText, NAME_COL, readOwn, sortedRows, type FieldCtx, removeRow, renameRow, setColumnWidth, setTablePart, type Column, type TableSetup } from '../../../data/table'
 import { kindOfPiece } from '../../../data/pieces'
 import { glide, useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
 import { followAdded, useFollowAdded } from '../canvas/followAdded'
@@ -123,7 +123,7 @@ export function tableFindItems(piece: WithId<Piece>, cards: Card[], cells: Cell[
     const y = T.head + (i - (page ?? 0) * (size ?? 0)) * T.row
     out.push({ key: `n|${r.key}`, text: r.name, box: { x: 0, y, w: nameW, h: T.row }, page })
     cols.forEach((c, ci) => {
-      const v = c.field ? null : readOwn(c, byKey.get(`${r.key}|${c.id}`))
+      const v = c.field ? null : readOwn(c, cellAt(byKey, r.key, c.id))
       const text = c.field ? fieldText(r, c.field) : (v!.step?.label ?? (v!.number !== undefined ? fmt(v!.number) : v!.text) ?? '')
       out.push({ key: selKey(piece.id, r.key, c.id), text, box: { x: xs[ci], y, w: ws[ci], h: T.row }, page })
     })
@@ -144,8 +144,8 @@ export function TableView({ piece, view, live, editor, onCard, onView, onCanvas 
   const setup = tableOf(piece)
   const fieldText = useFieldText()
   const mine = useMemo(() => cells.filter((c) => c.matrixId === piece.id), [cells, piece.id])
-  const byKey = useMemo(() => new Map(mine.map((c) => [`${c.row}|${c.col}`, c])), [mine])
-  const at = (row: string, col: string) => byKey.get(`${row}|${col}`)
+  const byKey = useMemo(() => cellsByKey(mine, piece.id), [mine, piece.id])
+  const at = (row: string, col: string) => cellAt(byKey, row, col)
   // The rows, in the source's order or sorted by a column.
   const all = useMemo(() => tableRows(setup, cards, fieldText, byKey), [setup, cards, fieldText, byKey])
   // The page shown (D-213); the rest wait on their pages.

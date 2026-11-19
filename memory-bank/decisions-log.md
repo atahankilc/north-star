@@ -7750,3 +7750,19 @@ Not yet: CSS breakpoints (760, 640) stay in the window's px; a few icon sizes wr
 a deck in the decks side view and a focused piece keep canvas px (their view's zoom, not this). Checked in the gallery
 headless (workspace screen at 100 and 130 %, Settings, the workspaces page at 150 % light, the slider dragged, a key,
 `reset`), the landing's first paint with a saved size and with D-348's old `large`.
+
+### D-420 · 2026-11-19 · Accepted (the user, of what round 2 left: "önerdiğin sırayla yap"; D-361, docs/specs/shared-code.md R1.1's and R1.2's leftovers): the last raw limits named, one cell lookup
+**The numbers the rules hold have a name in model/limits.ts too, and a cell at a row and column is read one way.**
+- *Limits:* `ID_MAX` (128: a piece's plane, a sticky note's writer, a sorted column, an imported id, an evidence id),
+  `PACKAGE_MEMBERS_MAX` (60), `EMAIL_MAX` (320) and `PHOTO_MAX` (2000) for a member's entry, `COL_KEY_MAX` (40: a
+  task's column, a deck box's col and row); each tested against its rule in tests/unit/limits.test.ts. clean.ts,
+  regions.ts (a region cut at `REGION_MAX`), importWorkspace.ts, data/workspaces.ts, data/threads.ts (the author at
+  `AUTHOR_NAME_MAX`), ops/validate.ts, cards.ts, deck.ts, tasks.ts import them; ops/pieces.ts' refusal names
+  `CANVAS_NAME_MAX`. check:kit's rawCut 9 fewer.
+- *Cells:* model/table.ts `cellAt(byKey, row, col)` beside `cellsByKey`; the matrix (its find, its view, a cell as
+  shown), the table and the agent's reading of both stand on them (the `row|col` key was built in eight places).
+- *Left on purpose:* a report's sizes in clean.ts (a document's own format, no rule), ids of a matrix's steps, the
+  presence node's own caps (RTDB's rules), names cut for a message or a file name.
+- *Checked:* typecheck, unit 1196 (limits 43), check:kit, check:repeats (names 33, copies 297), check:gallery:live and
+  check:scenes for matrix and table; the matrix's and table's 9 gallery states the same DOM old (a frozen worktree) and
+  new in headless Chrome.

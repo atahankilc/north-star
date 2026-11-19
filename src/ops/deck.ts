@@ -22,7 +22,7 @@ import { cardIn, find, handleOf, refuse } from './util'
 import { rulesFrom, type RuleSpec } from './table'
 import { shortId } from './matrix'
 import { colsOf, columnIn, deckIn, tasksOf } from './tasks'
-import { KANBAN_COLS_MAX, COL_NAME_MAX, LIMIT_MAX, BOX_NAMES_MAX, BOX_NAME_MAX } from '../model/limits'
+import { KANBAN_COLS_MAX, COL_NAME_MAX, LIMIT_MAX, BOX_NAMES_MAX, BOX_NAME_MAX, COL_KEY_MAX } from '../model/limits'
 import { plural } from '../model/words'
 
 type P = Piece & { id: string }
@@ -70,7 +70,7 @@ function boxNamesFrom(op: string, v: unknown): BoxName[] {
     if (b.tone !== undefined && b.tone !== 'good' && b.tone !== 'bad') refuse(op, `${String(b.tone)} isn't a tone`, "use 'good' or 'bad', or leave it out")
     const name = typeof b.name === 'string' ? b.name.slice(0, BOX_NAME_MAX) : ''
     if (!name.trim() && !b.tone) refuse(op, 'a box name needs a name or a tone', 'give name, tone or both')
-    return { col: b.col.slice(0, 40), row: b.row.slice(0, 40), name, ...(b.tone ? { tone: b.tone } : {}) }
+    return { col: b.col.slice(0, COL_KEY_MAX), row: b.row.slice(0, COL_KEY_MAX), name, ...(b.tone ? { tone: b.tone } : {}) }
   })
 }
 

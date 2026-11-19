@@ -10,6 +10,13 @@ export const TAG_MAX = 40
 export const REGION_MAX = 60
 export const TAGS_MAX = 30
 export const REGIONS_MAX = 20
+// A document's id where another names it (a piece's plane, a sticky note's writer, a column's id).
+export const ID_MAX = 128
+// A package's members (D-239).
+export const PACKAGE_MEMBERS_MAX = 60
+// A member's entry (D-098): the address and picture their sign-in gave.
+export const EMAIL_MAX = 320
+export const PHOTO_MAX = 2000
 // A competitor's short facts (pricing, audience) and any card's web address (D-164).
 export const FACT_MAX = 2000
 export const URL_MAX = 2000
@@ -49,6 +56,8 @@ export const KANBAN_COLS_MAX = 12
 export const COL_NAME_MAX = 40
 export const LIMIT_MAX = 99
 export const BOX_NAMES_MAX = 40
+// A deck's column key: a column's id, or a field's value a column or row stands for (a task's `col`, a box's col and row).
+export const COL_KEY_MAX = 40
 export const BOX_NAME_MAX = 40
 
 // Tasks (D-251, D-256): a title, notes, a checklist and its items, #labels and each label.

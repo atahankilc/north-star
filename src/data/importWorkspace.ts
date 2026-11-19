@@ -34,6 +34,7 @@ import { spotId } from '../model/canvases'
 import { placeId } from '../model/placement'
 import { comparisonId } from '../model/shapes'
 import { cellKey } from '../model/matrix'
+import { ID_MAX, PACKAGE_MEMBERS_MAX } from '../model/limits'
 
 // A document's content rule reads its summary (getAfter), and a batch's rules may read at most 20 documents.
 const DOCUMENTS_PER_BATCH = 6
@@ -123,7 +124,7 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
         continue
       }
       // A package's members (D-239) that came over.
-      const members = type === 'package' && { memberIds: (Array.isArray(d.memberIds) ? d.memberIds : []).flatMap((m) => ids.card(m)?.id ?? []).slice(0, 60) }
+      const members = type === 'package' && { memberIds: (Array.isArray(d.memberIds) ? d.memberIds : []).flatMap((m) => ids.card(m)?.id ?? []).slice(0, PACKAGE_MEMBERS_MAX) }
       writes.push([doc(col(CARD_COLLECTION[type]), cardIds.get(d.id)!.id), { ...fields, pieceId: on, ...members }])
       homes.set(cardIds.get(d.id)!.id, on)
     }
@@ -209,7 +210,7 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
       const [card, sub] = v.split(SUB)
       return sub === undefined ? (ids.card(v)?.id ?? v) : subKey(ids.card(card)?.id ?? card, sub)
     }
-    const at = (v: unknown) => (typeof v === 'string' && v && v.length <= 128 && !v.includes('/') ? one(v) : undefined)
+    const at = (v: unknown) => (typeof v === 'string' && v && v.length <= ID_MAX && !v.includes('/') ? one(v) : undefined)
     const row = at(d.row)
     const column = at(d.col)
     const id = cellKey(matrix ?? '', row ?? '', column ?? '')

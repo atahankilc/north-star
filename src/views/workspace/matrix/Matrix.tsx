@@ -80,6 +80,7 @@ import { CellInput } from '../canvas/CellInput'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
 import { PieceLayer } from '../canvas/PieceLayer'
 import { useAxisAdd } from './axisAdd'
+import { cellAt, cellsByKey } from '../../../model/table'
 
 // The matrix's parts in its own px: model/world.ts (D-325).
 export const M = MATRIX_PX
@@ -124,8 +125,8 @@ export function matrixFindItems(piece: WithId<Piece>, cards: Card[], cells: Cell
   const setup = setupOf(piece)
   const rows = entriesOf(setup.rows, cards)
   const cols = entriesOf(setup.cols, cards)
-  const byKey = new Map(cells.filter((c) => c.matrixId === piece.id).map((c) => [`${c.row}|${c.col}`, c]))
-  const at = (row: string, col: string) => byKey.get(`${row}|${col}`)
+  const byKey = cellsByKey(cells, piece.id)
+  const at = (row: string, col: string) => cellAt(byKey, row, col)
   const L = layout(setup, rows.length, cols.length)
   const out: FindItem[] = cols.map((c, i) => ({ key: `cols|${c.key}`, text: c.name, box: { x: L.colX(i), y: 0, w: M.cell, h: M.top } }))
   rows.forEach((r, ri) => {
@@ -168,13 +169,13 @@ export function MatrixView({ piece, view, live, editor, onCanvas = false, onView
   const rows = useKept(useMemo(() => entriesOf(setup.rows, cards), [setup.rows, cards]))
   const cols = useKept(useMemo(() => entriesOf(setup.cols, cards), [setup.cols, cards]))
   const mine = useMemo(() => cells.filter((c) => c.matrixId === piece.id), [cells, piece.id])
-  const byKey = useMemo(() => new Map(mine.map((c) => [`${c.row}|${c.col}`, c])), [mine])
-  const at = (row: string, col: string) => byKey.get(`${row}|${col}`)
+  const byKey = useMemo(() => cellsByKey(mine, piece.id), [mine, piece.id])
+  const at = (row: string, col: string) => cellAt(byKey, row, col)
   // A cell as shown: a card that unfolds reads from its parts (D-249).
   // Kept while the cells and the setup are, so the far canvas (CellDots) isn't drawn again on every pan.
   const shownAt = useCallback(
     (r: Entry, c: Entry): Shown | undefined => {
-      const get = (row: string, col: string) => byKey.get(`${row}|${col}`)
+      const get = (row: string, col: string) => cellAt(byKey, row, col)
       return r.subs || c.subs ? cellView(piece.id, setup, get, r, c) : get(r.key, c.key)
     },
     [byKey, setup, piece.id],

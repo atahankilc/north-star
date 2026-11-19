@@ -16,6 +16,7 @@ import { criterionCascade } from './lens'
 import { DELETE, OpsRefused, type OpCtx, type Plan, type Write } from './types'
 import { cardColl, cardData, cardIn, checkCardFields, handleOf, once, one, plural, refuse, titleField } from './util'
 import { evidenceData, type EvidenceInput } from './evidence'
+import { PACKAGE_MEMBERS_MAX } from '../model/limits'
 
 // ---- create_card
 
@@ -198,7 +199,7 @@ export function createPackage(ctx: OpCtx, args: CreatePackageArgs): Plan {
   const n = ctx.ws.cards.filter((c) => c.type === 'package').length + 1
   const id = ctx.newId()
   const now = ctx.now
-  const set: Record<string, unknown> = { title: (args.name ?? `Package ${n}`).slice(0, TITLE_MAX), pieceId: plane, memberIds: members.map((m) => m.id).slice(0, 60), x: snap(x), y: snap(y), createdAt: now, updatedAt: now }
+  const set: Record<string, unknown> = { title: (args.name ?? `Package ${n}`).slice(0, TITLE_MAX), pieceId: plane, memberIds: members.map((m) => m.id).slice(0, PACKAGE_MEMBERS_MAX), x: snap(x), y: snap(y), createdAt: now, updatedAt: now }
   const writes: Write[] = [{ coll: 'packages', id, set }]
   // Its frame (padding and the band on top, packageBox) mustn't cut what's round its members (agent.md §2 point 4,
   // §4.4): when it would, the package moves clear as one, its members with it, in this same plan (one undo step).

@@ -1,6 +1,8 @@
 // Where a competitor operates (D-145): place names (`US`, `Germany`, `Europe`), free text with a known list so the same
 // place gets the same name, and which place lies inside which, so the region filter for Europe also keeps a German
 // competitor and one for Germany keeps a Europe-wide or global one. Brought back from the old board for planes (D-233).
+import { REGION_MAX } from './limits'
+
 const GLOBAL = 'Global'
 
 // Each place → the bigger places it lies in (every top place lies in Global).
@@ -88,7 +90,7 @@ const KNOWN = new Map([GLOBAL, ...Object.keys(PARENTS)].map((p) => [p.toLowerCas
 
 // What's typed → the list's name for it when there is one (`usa` → `US`), else the text as written.
 function cleanRegion(s: string): string {
-  const t = s.trim().replace(/,/g, '').replace(/\s+/g, ' ').slice(0, 60)
+  const t = s.trim().replace(/,/g, '').replace(/\s+/g, ' ').slice(0, REGION_MAX)
   const low = t.toLowerCase()
   return ALIASES[low] ?? KNOWN.get(low) ?? t
 }

@@ -521,5 +521,8 @@ merges (R1.5–R1.7, the demo) and R3.
 - **Small leftovers (2026-11-19, D-418).** `Toggle` and `Choices` gone (the kit's `Checkbox` and `Options`); text
   fields grow by `useAutoGrow`; sessionStorage through state/local.ts (`readSession`, `keepSession`), the agent's usage
   log too; Claude's model test `claudeModern` in agent/provider.ts. Left: Matrix.tsx' two cell maps, the numbers with
-  no name, Stage and Mount's provider stack, `kindSwitch`'s 31. Round 2 is done but for the agent's Markdown, which waits for the
+  no name, Stage and Mount's provider stack, `kindSwitch`'s 31.
+- **The last limits and cells (2026-11-19, D-420).** `ID_MAX`, `PACKAGE_MEMBERS_MAX`, `EMAIL_MAX`, `PHOTO_MAX`,
+  `COL_KEY_MAX` in model/limits.ts, tested against the rules; `cellAt` in model/table.ts for the matrix, the table and
+  the agent. Left, not worth it: Stage and Mount's provider stack, `kindSwitch`'s 31. Round 2 is done but for the agent's Markdown, which waits for the
   agent's redesign (the user).

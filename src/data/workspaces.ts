@@ -20,7 +20,7 @@ import { useDoc, usePaged, useQuery, type WithId } from './hooks'
 import type { AuthUser } from './auth'
 import { deleteThread } from './threads'
 import type { Invite, InviteCode, JoinRequest, Member, Role, Workspace } from './model'
-import { AUTHOR_NAME_MAX, DESCRIPTION_MAX, MEMBERS_LISTED, WORKSPACE_NAME_KEPT_MAX } from '../model/limits'
+import { AUTHOR_NAME_MAX, DESCRIPTION_MAX, MEMBERS_LISTED, WORKSPACE_NAME_KEPT_MAX, EMAIL_MAX, PHOTO_MAX } from '../model/limits'
 import { WS_COLLECTIONS } from '../model/fromDocs'
 import { inBatches } from './batches'
 import { authorName } from '../model/words'
@@ -166,8 +166,8 @@ const memberRef = (wid: string, uid: string) => doc(db(), 'workspaces', wid, 'me
 
 const memberEntry = (name: string, email?: string | null, photo?: string | null): Member => ({
   name: authorName({ name, email }).slice(0, AUTHOR_NAME_MAX),
-  ...(email && { email: email.slice(0, 320) }),
-  ...(photo && { photo: photo.slice(0, 2000) }),
+  ...(email && { email: email.slice(0, EMAIL_MAX) }),
+  ...(photo && { photo: photo.slice(0, PHOTO_MAX) }),
   joinedAt: Date.now(),
 })
 

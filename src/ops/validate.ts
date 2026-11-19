@@ -19,7 +19,7 @@ import { a } from './util'
 import { DOC_COLLS, isDelete, type Coll, type OpActor, type OpError, type Plan, type Verdict, type Write } from './types'
 import { NOTES_ID, NOTES_MAX, NOTES_ROLE } from '../model/notes'
 import { DOC_LIMITS } from '../model/shapes'
-import { AUTHOR_NAME_MAX, CANVAS_NAME_MAX, DESCRIPTION_MAX, WORKSPACE_NAME_KEPT_MAX } from '../model/limits'
+import { AUTHOR_NAME_MAX, CANVAS_NAME_MAX, DESCRIPTION_MAX, WORKSPACE_NAME_KEPT_MAX, ID_MAX } from '../model/limits'
 
 const COLLS = new Set<string>([...WS_COLLECTIONS, 'workspace', ...DOC_COLLS])
 
@@ -30,7 +30,7 @@ const NOTES_FIELDS: Record<string, (v: unknown) => boolean> = {
   title: (v) => typeof v === 'string' && !!v.trim() && v.length <= DOC_LIMITS.title,
   excerpt: (v) => typeof v === 'string' && v.length <= DOC_LIMITS.excerpt,
   origin: (v) => v === 'assistant' || v === 'upload',
-  uid: (v) => typeof v === 'string' && !!v && v.length <= 128,
+  uid: (v) => typeof v === 'string' && !!v && v.length <= ID_MAX,
   name: (v) => typeof v === 'string' && v.length <= AUTHOR_NAME_MAX,
   shared: (v) => v === true,
   contentType: (v) => v === 'text/markdown',

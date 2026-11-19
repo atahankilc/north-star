@@ -430,7 +430,7 @@ export type CreateCanvasArgs = { name: string; handle?: string }
 export function createCanvas(ctx: OpCtx, args: CreateCanvasArgs): Plan {
   const op = 'create_canvas'
   const name = typeof args.name === 'string' ? args.name.trim().slice(0, CANVAS_NAME_MAX) : ''
-  if (!name) refuse(op, 'a canvas needs a name', 'give it a name (≤ 60 characters)')
+  if (!name) refuse(op, 'a canvas needs a name', `give it a name (≤ ${CANVAS_NAME_MAX} characters)`)
   const h = handleOf(args)
   const id = ctx.newId()
   const now = ctx.now

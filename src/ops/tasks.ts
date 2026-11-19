@@ -10,7 +10,7 @@ import type { Piece } from '../data/model'
 import type { Check, KanbanCol, KanbanSetup, Task, TaskPriority } from '../data/tasks'
 import { DELETE, type OpCtx, type Plan, type Write } from './types'
 import { cardIn, find, handleOf, refuse } from './util'
-import { AUTHOR_NAME_MAX, TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, TASK_NOTES_MAX as NOTES_MAX } from '../model/limits'
+import { AUTHOR_NAME_MAX, TASK_TITLE_MAX, CHECKS_MAX, CHECK_MAX, LABELS_MAX, LABEL_MAX, TASK_NOTES_MAX as NOTES_MAX, ID_MAX } from '../model/limits'
 import { PRIORITIES } from '../model/cards'
 
 type P = Piece & { id: string }
@@ -190,7 +190,7 @@ function taskFields(ctx: OpCtx, op: string, input: TaskInput, patch: boolean, wa
   }
   if (has('learned')) {
     if (gone(input.learned)) clear('learned')
-    else if (typeof input.learned !== 'string' || !input.learned || input.learned.length > 128) refuse(op, "learned is 'skip' or the evidence it logged", "say learned: 'skip' (not logged), or log it with create_evidence from_task")
+    else if (typeof input.learned !== 'string' || !input.learned || input.learned.length > ID_MAX) refuse(op, "learned is 'skip' or the evidence it logged", "say learned: 'skip' (not logged), or log it with create_evidence from_task")
     else out.learned = input.learned
   }
   return out
