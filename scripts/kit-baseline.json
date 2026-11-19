@@ -133,7 +133,8 @@
   },
   "src/views/workspace/canvas/CanvasView.tsx": {
     "windowKeys": 4,
-    "rafLoop": 2
+    "rafLoop": 2,
+    "kindSwitch": 17
   },
   "src/views/workspace/canvas/MoveToCanvas.tsx": {
     "windowKeys": 1
@@ -143,6 +144,9 @@
   },
   "src/views/workspace/canvas/gridCursor.ts": {
     "windowKeys": 1
+  },
+  "src/views/workspace/canvas/shownBox.ts": {
+    "kindSwitch": 3
   },
   "src/views/workspace/canvas/useEditKeys.ts": {
     "windowKeys": 1
@@ -166,10 +170,20 @@
     "dialog": 1
   },
   "src/views/workspace/find/Finder.tsx": {
-    "windowKeys": 1
+    "windowKeys": 1,
+    "kindSwitch": 2
   },
   "src/views/workspace/find/find.ts": {
     "rafLoop": 1
+  },
+  "src/views/workspace/find/findIndex.ts": {
+    "kindSwitch": 7
+  },
+  "src/views/workspace/panels/CardPanelKinds.tsx": {
+    "kindSwitch": 2
+  },
+  "src/views/workspace/panels/CardTasks.tsx": {
+    "kindSwitch": 1
   },
   "src/views/workspace/plane/PackPick.tsx": {
     "windowKeys": 1
@@ -179,6 +193,9 @@
   },
   "src/views/workspace/threads/Threads.tsx": {
     "rafLoop": 1
+  },
+  "src/views/workspaces/WorkspacePicture.tsx": {
+    "kindSwitch": 2
   },
   "src/views/workspaces/Workspaces.tsx": {
     "windowKeys": 1

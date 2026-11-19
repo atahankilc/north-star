@@ -8,7 +8,8 @@
 // again by hand: a key or pointer listener on the window (ui/foundation: useEscapeLayer, useDismiss, dragPointer,
 // pressDrag, panPointer, keysTaken), a frame loop (motion.ts' tween), localStorage (state/local.ts), a text or list cut
 // at a typed number in model/, ops/ or data/ (model/limits.ts), a raw <button>/<input>/<textarea> inside the kit's
-// patterns (its primitives). They look in .ts too, and inside src/ui. Today's are in the baseline and counted apart.
+// patterns (its primitives), a view telling a piece kind apart by name outside its folder (the kind record, R4.7). They
+// look in .ts too, and inside src/ui. Today's are in the baseline and counted apart.
 //   npm run check:kit            check
 //   npm run check:kit -- --list  print every hit, file by file
 //   npm run check:kit -- --write lower the baseline to today's counts (never raises it)
@@ -71,6 +72,10 @@ RULES.code = [
   ['rawCut', /\.slice\(0,\s*\d{2,}\)|\.length\s*(?:>=?|<=?)\s*\d{2,}/g, /^src\/model\/limits\.ts$/, /^src\/(?:model|ops|data)\//],
   // The raw element's homes are the primitives that are it.
   ['kitRaw', /<(?:button|input|textarea)\b/g, /^src\/ui\/primitives\/(?:Button|ToolButton|Checkbox|Chip|Field|Tabs)\.tsx$/, /^src\/ui\//],
+  // R4.7: a view telling a piece kind apart by its name, outside that kind's own folder and the kind record
+  // (canvas/pieceKinds.tsx): what a kind draws, its dock, setup, console, box and finder are the record's, so a new kind
+  // is one entry there and not a hunt through the views.
+  ['kindSwitch', /[!=]==\s*'(?:matrix|table|documents|document|kanban|timeline)'(?!\w)|case\s+'(?:matrix|table|documents|document|kanban|timeline)'\s*:/g, /^src\/views\/workspace\/(?:matrix|table|deck|documents)\/|^src\/views\/workspace\/canvas\/pieceKinds\.tsx$/, /^src\/views\//],
 ]
 const HINT = {
   windowKeys: 'a key or pointer listener on the window: use ui/foundation (useEscapeLayer, useDismiss, pressDrag, dragPointer, panPointer, keysTaken)',
@@ -78,6 +83,7 @@ const HINT = {
   storage: 'localStorage by hand: use state/local.ts (readLocal, readLocalJson, keepLocal)',
   rawCut: 'a cut at a typed number: name it in model/limits.ts and import it',
   kitRaw: 'a raw element inside the kit: build the pattern from the primitives (Button, Field, Checkbox…)',
+  kindSwitch: "a piece kind told apart by its name in a view: read it from the kind record (canvas/pieceKinds.tsx: PIECE_KINDS, kindRecord, LensTools, LensSetup), or say why with kit-ok",
 }
 const isCode = (name) => name in HINT
 // Where the code rules never look: tests.

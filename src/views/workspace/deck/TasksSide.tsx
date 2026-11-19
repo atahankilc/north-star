@@ -19,14 +19,12 @@ import { finished, overdue, shownTasks, timelineOf, type Task } from '../../../d
 import { heldCards } from '../../../model/kanbanCards'
 import { markTasksSeen, useReads } from '../../../data/threads'
 import { setSplit, useCanvasView, type Bounds } from '../../../state/canvasView'
-import { toggleSetup, useSetupOn } from '../canvas/setupStore'
 import { useWs, useWsNow } from '../canvas/context'
 import { glidePlaneTo, usePaneView } from '../canvas/Beside'
-import { kanbanBounds,
- KanbanDockTools, KanbanLanes, KanbanView, kanbanOf, selectTask, useKanbanUi } from './Kanban'
+import { kanbanBounds, KanbanView, kanbanOf, selectTask, useKanbanUi } from './Kanban'
 import { dueText } from '../../../model/tasks'
 import { KanbanFilterDock } from './KanbanFilterDock'
-import { KanbanSetupPanel } from './KanbanSetup'
+import { LensSetup, LensTools } from '../canvas/pieceKinds'
 import { T, timelineBounds, TimelineDockTools, TimelineView, WeekTools } from './Timeline'
 import { DockAction, FocusDock } from '../canvas/FocusDock'
 import { closeTasksSide, useTasksSide } from './sideState'
@@ -244,24 +242,13 @@ type PartProps = { box: Bounds; editor: boolean; onTask: (t: Task) => void; dock
 function Board({ box, deck, editor, onTask, onCard, dock, close }: PartProps & { deck: WithId<Piece>; onCard: (c: Card) => void; close: ReactNode }) {
   const { tasks } = useWs()
   const { el, view, pan } = usePaneView(kanbanBounds(deck, tasks), box, true, 0.85)
-  const setupOpen = useSetupOn(deck.id)
   return (
     <div ref={el} className={styles.part} style={{ left: box.x, top: box.y, width: box.w, height: box.h }} onPointerDown={pan}>
       <KanbanView piece={deck} view={view} live editor={editor} onTask={onTask} onCard={onCard} />
-      {setupOpen && editor && <KanbanSetupPanel piece={deck} />}
+      <LensSetup piece={deck} editor={editor} />
       <FocusDock label="Deck" name={<Name deck={deck} />}>
         {dock}
-        <KanbanFilterDock piece={deck} />
-        <KanbanLanes piece={deck} editor={editor} />
-        <KanbanDockTools piece={deck} editor={editor} />
-        {editor && (
-          <DockAction
-            label="setup"
-            pressed={setupOpen}
-            title="what it holds: tasks, or cards by a field"
-            onClick={() => toggleSetup(deck.id)}
-          />
-        )}
+        <LensTools piece={deck} editor={editor} />
         {close}
       </FocusDock>
     </div>

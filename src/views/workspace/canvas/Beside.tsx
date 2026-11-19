@@ -19,8 +19,7 @@ import { DragLine } from '../../../ui/primitives/DragLine'
 import { useWs } from './context'
 import { } from '../matrix/Matrix'
 import { } from '../table/Table'
-import { PIECE_KINDS } from './pieceKinds'
-import { toggleSetup, useSetupOn } from './setupStore'
+import { LensSetup, LensTools, PIECE_KINDS, type LensKind } from './pieceKinds'
 import { DockAction, FocusDock } from './FocusDock'
 import styles from './Beside.module.css'
 import { DUR } from '../../../ui/foundation/motion'
@@ -154,8 +153,8 @@ export function glidePlaneTo(picked: Pick<Card, 'id'>, plane: string, cards: Car
 function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
   const { cards, places, tasks, pieces, documents } = useWs()
   const kind = kindOfPiece(piece)
-  // A matrix or a table (what sticks to a plane and opens beside it): its record (pieceKinds.tsx).
-  const rec = PIECE_KINDS[kind as 'matrix' | 'table']
+  // What sticks to a plane and opens beside it (a matrix, a table): its record (pieceKinds.tsx).
+  const rec = PIECE_KINDS[kind as LensKind]
   const content = rec.bounds(piece, { cards, tasks, pieces, documents })
   const { el, view, setView, pan } = usePaneView(content, box)
 
@@ -164,9 +163,6 @@ function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
     useCanvasView.setState({ cardSelected: card.id, labelSelected: null })
     glidePlaneTo(card, plane.id, cards, places)
   }
-
-  const setupOpen = useSetupOn(piece.id)
-  const { setup, dock: Tools } = rec
 
   return (
     <div
@@ -180,7 +176,7 @@ function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
     >
       {/* Its own view, live: a row or column added is glided to in this pane (`onView`); a card's row goes to the plane. */}
       <rec.Shown piece={piece} view={view} live editor={editor} onView={setView} onCard={toCard} />
-      {setup && setupOpen && editor && <setup.Panel piece={piece} />}
+      <LensSetup piece={piece} editor={editor} />
       {/* Its dock: the focus dock itself, at the bottom middle of its part, named (D-189, D-211). */}
       <FocusDock
         label={`${KIND_NAME[kind]} beside`}
@@ -191,8 +187,7 @@ function Pane({ piece, plane, box, editor, first, onClose }: PaneProps) {
           </>
         }
       >
-        {Tools && <Tools piece={piece} editor={editor} />}
-        {setup && editor && <DockAction label="setup" pressed={setupOpen} title={setup.title} onClick={() => toggleSetup(piece.id)} />}
+        <LensTools piece={piece} editor={editor} />
         <DockAction label="close" main title="close it; it stays stuck to the plane" onClick={onClose} />
       </FocusDock>
     </div>

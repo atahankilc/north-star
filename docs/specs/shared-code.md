@@ -242,7 +242,7 @@ vs agent chat; rule checking in ops vs cleaning on import (share limits, not cod
 
 A list of findings and of ways to keep repeats from coming back, for the user to pick from. Built so far: R1.1–R1.4
 and R1.10 (D-388), the checks R4.1–R4.4 (D-391), R1.5–R1.7 (D-392) and R1.8–R1.16 (D-394), under *Done, round 2* at
-the end; then R3 and R2's small logic twins (D-396) and more of R2 (D-397, D-399), R4.5 and the demo (D-400). D-403 made the last merges that needed no look decision and says why the rest wait; R4.6 and R4.7 are not started or decided. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
+the end; then R3 and R2's small logic twins (D-396) and more of R2 (D-397, D-399), R4.5 and the demo (D-400). D-403 made the last merges that needed no look decision and says why the rest wait; R4.6 and R4.7 were done by D-406 and D-411. Found by a copy-paste detector (jscpd: exact copies are 0.3 % of TS, 0.5 % of CSS), an unused-code
 finder (knip) and four full reads (the kit, the workspace views, the logic layers, demo/onboarding/gallery/scripts).
 Line numbers are from that day. *Checked* = the drift was looked at again by hand after the read.
 
@@ -512,5 +512,9 @@ merges (R1.5–R1.7, the demo) and R3.
 - **R4.6 and the last of R2 (2026-11-18, D-406).** `InlineEdit`/`InlineField` gone: `Field` has `look` (`well`,
   `bare`, `plain`), `AutosaveField` draws it, a name typed in a head or row is `CommitField line look="bare"`; five in-place
   fields to three behaviours on one drawn field. PeopleHere moved to views/workspace/canvas, its `+N` list the kit's
-  `Menu` (which gained `onClose`). The made-up threads: demo/fixtures/threads.ts. Left of R2: the agent's Markdown (a
-  look decision); of R4: R4.7 (a new piece kind only through `PIECE_KINDS`).
+  `Menu` (which gained `onClose`). The made-up threads: demo/fixtures/threads.ts.
+- **R4.7 (2026-11-19, D-411).** A kind's dock tools and setup are `LensTools` and `LensSetup` (canvas/pieceKinds.tsx)
+  in its focus, beside a plane and in the decks side view (`LensPane`'s part that had drifted; the views themselves
+  stay each place's own). check:kit's `kindSwitch` refuses a view naming a piece kind by hand outside its folder and
+  the record; today's 34 in 7 files in the baseline. Round 2 is done but for the agent's Markdown, which waits for the
+  agent's redesign (the user).

@@ -56,7 +56,7 @@ import { canvasParams } from '../../../app/paths'
 import { PlaneCards } from '../plane/PlaneCards'
 import { LensCardPanel } from '../panels/CardPanel'
 import { DockAction, FocusDock } from './FocusDock'
-import { kindRecord, LensLive, type BoundsCtx } from './pieceKinds'
+import { kindRecord, LensLive, LensSetup, LensTools, type BoundsCtx } from './pieceKinds'
 import { closeOneSetup, closeSetup, toggleSetup, useOpenSetup, useSetupOn } from './setupStore'
 import { deleteCards, isOnPlane, type Card } from '../../../data/cards'
 import { deleteEdge } from '../../../data/edges'
@@ -1025,7 +1025,7 @@ export function CanvasView() {
           {focusArrived && !focusLeaving && (
             <Beside plane={focused} open={besideOpen} editor={editor} onClose={(id) => setBeside(besideIds.filter((x) => x !== id))} />
           )}
-          {focusedRec?.setup && editor && openSetup === focused.id && focusArrived && !focusLeaving && <focusedRec.setup.Panel piece={focused} />}
+          {focusArrived && !focusLeaving && <LensSetup piece={focused} editor={editor} />}
           {/* A card picked from a matrix's or a table's head, in its focus or beside the plane: its panel. */}
           {focusArrived && !focusLeaving && <LensCardPanel space={focused.id} editor={editor} />}
           {/* A kanban's task picked (D-251), or a task from a card's panel (D-254): its panel. */}
@@ -1037,10 +1037,7 @@ export function CanvasView() {
           {focusArrived && !focusLeaving && !listHidden && !focusedDocument && (
             <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length || sideOpen ? (size.w * split) / 2 : undefined}>
               {/* Its kind's own tools, then its setup (pieceKinds.tsx). */}
-              {focusedRec?.dock && <focusedRec.dock piece={focused} editor={editor} />}
-              {focusedRec?.setup && editor && (
-                <DockAction label="setup" pressed={openSetup === focused.id} title={focusedRec.setup.title} onClick={() => toggleSetup(focused.id)} />
-              )}
+              <LensTools piece={focused} editor={editor} />
               {/* A timeline stuck to the deck (D-262): its days in the tasks side view, the deck on the left (D-300). */}
               {focusedKanban &&
                 stuckHere.map((p) => (
@@ -1089,7 +1086,7 @@ export function CanvasView() {
       )}
       {drawing === CANVAS && !focused && <DrawSection space={CANVAS} toSpace={canvasToSpace} />}
       {/* The setup of a matrix or table open on the canvas (D-228), from its console, at the bottom of the screen. */}
-      {!focused && editor && canvasSetup && <CanvasSetup piece={canvasSetup} />}
+      {!focused && canvasSetup && <LensSetup piece={canvasSetup} editor={editor} />}
       {/* And from one open on the canvas (D-228). */}
       {!focused && <LensCardPanel space={null} editor={editor} />}
       {/* The tasks side view (D-300): one, over the canvas and any focus, so going in or out never redraws it. */}
@@ -2031,12 +2028,6 @@ function OpenTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean })
       )}
     </>
   )
-}
-
-// The setup of a matrix or table open on the canvas (D-228), as in its focus.
-function CanvasSetup({ piece }: { piece: WithId<Piece> }) {
-  const Panel = kindRecord(piece)?.setup?.Panel
-  return Panel ? <Panel piece={piece} /> : null
 }
 
 // What's in a piece, drawn again only when it changes, not as the camera moves (its view is the same object meanwhile).

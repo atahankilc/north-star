@@ -1,7 +1,8 @@
 // One record per piece kind (D-361): what each kind that isn't a plane draws (in its window, open on the canvas, in
 // focus), how big its contents are, how its focus fits them, its setup panel (whose is open: setupStore.ts), and
-// its tools in the focus dock and on its console. CanvasView and Beside read the record; a new kind is one more entry
-// here, and TypeScript refuses it until every part is given. A plane is the canvas's own (its cards and text), not here.
+// its tools in the focus dock and on its console. CanvasView, Beside and the decks side view read the record (its dock
+// through `LensTools`, its setup through `LensSetup`); a new kind is one more entry here, and TypeScript refuses it
+// until every part is given. check:kit's `kindSwitch` refuses a view naming a kind by hand outside its own folder (R4.7). A plane is the canvas's own (its cards and text), not here.
 import { memo, type ComponentType, type ReactNode } from 'react'
 import type { WithId } from '../../../data/hooks'
 import type { Piece, PieceKind } from '../../../data/model'
@@ -23,6 +24,7 @@ import { timelineBounds, TimelineDockTools, TimelineView, TimelineWeeks } from '
 import { documentsBounds, documentsFindItems, documentsOf, DocumentsTools, DocumentsView, listed, useDocUi } from '../documents/Documents'
 import { DocFocus, documentBounds, DocumentPieceView } from '../documents/DocumentPiece'
 import { DockAction } from './FocusDock'
+import { toggleSetup, useSetupOn } from './setupStore'
 
 export type LensKind = Exclude<PieceKind, 'plane'>
 
@@ -159,6 +161,28 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
 export function kindRecord(p: Pick<Piece, 'kind'>): KindRecord | null {
   const kind = kindOfPiece(p as Piece)
   return kind === 'plane' ? null : PIECE_KINDS[kind]
+}
+
+// A kind's tools in a dock (its focus, a pane beside a plane, the decks side view): its own, then its setup's toggle.
+// One component, so a new kind's tools are the same wherever it opens (R4.7).
+export function LensTools({ piece, editor }: PieceProps) {
+  const rec = kindRecord(piece)
+  const on = useSetupOn(piece.id)
+  if (!rec) return null
+  const { dock: Tools, setup } = rec
+  return (
+    <>
+      {Tools && <Tools piece={piece} editor={editor} />}
+      {setup && editor && <DockAction label="setup" pressed={on} title={setup.title} onClick={() => toggleSetup(piece.id)} />}
+    </>
+  )
+}
+
+// Its setup panel while it's open (setupStore.ts), for an editor.
+export function LensSetup({ piece, editor }: PieceProps) {
+  const Panel = kindRecord(piece)?.setup?.Panel
+  const on = useSetupOn(piece.id)
+  return Panel && on && editor ? <Panel piece={piece} /> : null
 }
 
 // A focus's (or a pane's) own view of a kind, live.

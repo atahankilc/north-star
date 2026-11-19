@@ -7626,3 +7626,22 @@ part, `cards/TypeBadge` (PlaneCard uses it too).
   check:gallery, check:repeats --names, check:gallery:live and check:scenes for decks.
 - *Not yet:* the user to see it live; touch.
 
+### D-411 · 2026-11-19 · Accepted (the user: "R4.7'yi yap, Markdown ajanın tasarımına kalsın"; shared-code.md R4.7, the last of round 2): a piece kind only through its record
+**What a kind shows in a dock is read from its record, and a view naming a kind by hand is refused by a check.**
+- *One dock part:* `LensTools` (its own tools, then its setup's toggle) and `LensSetup` (its setup panel while open) in
+  canvas/pieceKinds.tsx. A focus's dock, a pane beside a plane and the decks side view's board read them; each had its
+  own copy (the side view's board listed a deck's three tools and its setup's title by hand, Beside cast the kind to
+  `'matrix' | 'table'`, CanvasView drew the setup panel twice). A new kind's tools and setup now show wherever it opens.
+- *The check:* check:kit's `kindSwitch` (a `code` rule, D-391): a view in src/views comparing a piece kind by name
+  (`=== 'matrix'`, `case 'deck':`…) outside that kind's own folder (matrix/, table/, deck/, documents/) and
+  pieceKinds.tsx. Today's 34 in 7 files are in the baseline (most say what's special about a kind: a deck's tasks, a
+  document's title, the finder's per-kind rows); a new one reads the record, or says why with `kit-ok`. ops/, agent/,
+  model/ and onboarding are left out: they work on a kind's data, which is per kind by nature.
+- *Left:* the console's tools on a piece open on the canvas stay `OpenTools` (a console's look, not a dock's);
+  shownBox.ts still works out a matrix's and a table's box by name (in the baseline).
+- *Kept for the shell preview (north-star-1c):* TasksSide's `Board`, `Days`, `Mine` keep their props.
+- *Checked:* typecheck, unit 1188, check:kit (the rule refuses a new switch), check:repeats, check:gallery,
+  check:gallery:live for canvas and deck; the docks of ten gallery states (five kinds in focus, three beside, two in the
+  side view) old (a frozen worktree) and new in headless Chrome: the same buttons in the same order, `setup` opening
+  and closing the same panel, no page errors.
+- *Not yet:* the agent's Markdown waits for the agent's redesign (the user, 2026-11-19).
