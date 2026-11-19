@@ -437,6 +437,7 @@ feature comes back as a piece, and check them with the user then.
 ## The shell (D-412, docs/specs/shell.md)
 - The canvas is home, filling the window until something docks; Talk, Tasks and Docs open beside it as a column on the left ground, `full` makes one the page in the canvas's place; the right is the thing selected and the agent at the far right; the HUD bare buttons on the left edge: the page's actions in the middle, the places at the foot.
 
+- The places alike (D-419): one head (`PlaceHead`), an opened item under it with one back row, one find (`PlaceFind`); the places are the workspace's (Tasks every deck, what each is on); on a page the breadcrumb ends with it and the canvases' switch is gone; `full` grows the page from its column.
 - Folders in Docs (D-415): `folders/` (a name, the folder it's in), content owners and editors change; a document's `folderId`, moved by its author or, shared, by an owner or editor; a folder deleted, what's in it goes up.
 
 - Channels in Talk (D-416): a thread `on: 'channel'`, its name its `targetId` (`[a-z0-9-]`, ≤ 40), on top of Talk's list, `+ channel`, never resolved, no chip.

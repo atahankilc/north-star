@@ -7698,29 +7698,6 @@ part, `cards/TypeBadge` (PlaneCard uses it too).
 - Lesson `comment` +1 (a Channels page), release line. Rules tests 719/0.
 - *Not yet:* a channel's purpose line, renaming a channel, paging a long channel's messages (300 load today), the rules deployed (with D-415's, asked first: done together).
 
-### D-418 · 2026-11-19 · Accepted (the user, of round 2's small leftovers: "önerdiğin sırayla yap"; D-361, docs/specs/shared-code.md): the setups on the kit's own parts, text grows by one hook, storage and Claude's model test in one place
-**Four leftovers of round 2, each a copy that had a home already.**
-- *Setups:* MatrixSetup's `Toggle` and `Choices` are gone (they only renamed `Checkbox` and `Options`); the matrix's,
-  the table's and the deck's setups use the kit's parts directly. `Options` with `pick="one"` hands `onChange` a value
-  (never undefined) unless it's `clearable`, so callers need no guard. The table column's kind picker is read out
-  `Kind` (was `Pick one`).
-- *Text:* a paragraph's or sticky note's field and the project title's description grow by `useAutoGrow` (each had
-  its own height code; the hook also grows when the width changes); the title's name is capped by
-  `WORKSPACE_NAME_MAX`, not a typed 80. TitleFields' own `saved` ref stays: it is that field's own record of what it
-  wrote, not a copy.
-- *Storage:* state/local.ts reads and keeps sessionStorage too (`readSession`, `keepSession`; `keep*` say whether it
-  was kept); the reload guard (app/chunks.ts), the onboarding's test copy and dev switches (data/onboarding.ts,
-  onboarding/devSandbox.ts, Coach.tsx) and the agent's usage log (agent/usage.ts, its test standing in a storage) go
-  through it. check:kit's `storage` rule counts sessionStorage too (0 left).
-- *Claude's models:* which Claude models take today's request surface is `claudeModern` in agent/provider.ts, read by
-  anthropic.ts and models.ts (the same regex was in both; models.ts can't load Claude's SDK).
-- *Checked:* typecheck, unit 1191, check:kit, check:repeats, check:gallery, check:tokens, check:gallery:live (matrix,
-  table, deck, text); in headless Chrome, old (a frozen worktree) and new: the 27 states of the setups, Options and
-  Checkbox the same DOM but the one read-out label; a paragraph's, a sticky note's and the title's field the same
-  heights as text is typed (120 → 144 → 192, 25 → 63 → 88, 78 → 117 → 195).
-- *Left:* Matrix.tsx' two cell maps and the numbers with no name (other sessions are in those files); Stage and
-  Mount's provider stack; check:kit's `kindSwitch` 31.
-
 ### D-417 · 2026-11-19 · Accepted (the user: "şu anda hud ın büyüklüğünü küçük orta büyük diye seçebiliyoruz ancak bunun huddan da öteye her şey için yapılıyor olması lazım. Bana tek bir ayar verir misin, ekrandaki her şeyin büyüklüğünü ortak bir şekilde arttırıp azaltmamı sağlayan. Bir de şu anki 3 basamak hiç yeterli değil gibi, belki bir slider yaparız"; replaces D-348's hud size): one interface size, a slider
 Settings → display's first row is **interface size**, a slider from 75 to 150 % in steps of 5 (`UI_SIZE` in
 ui/foundation/feel.ts), 100 by default, with `reset`; saved in this browser (`north-star.ui-size`), D-348's old
@@ -7750,6 +7727,42 @@ Not yet: CSS breakpoints (760, 640) stay in the window's px; a few icon sizes wr
 a deck in the decks side view and a focused piece keep canvas px (their view's zoom, not this). Checked in the gallery
 headless (workspace screen at 100 and 130 %, Settings, the workspaces page at 150 % light, the slider dragged, a key,
 `reset`), the landing's first paint with a saved size and with D-348's old `large`.
+Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi".
+
+### D-418 · 2026-11-19 · Accepted (the user, of round 2's small leftovers: "önerdiğin sırayla yap"; D-361, docs/specs/shared-code.md): the setups on the kit's own parts, text grows by one hook, storage and Claude's model test in one place
+**Four leftovers of round 2, each a copy that had a home already.**
+- *Setups:* MatrixSetup's `Toggle` and `Choices` are gone (they only renamed `Checkbox` and `Options`); the matrix's,
+  the table's and the deck's setups use the kit's parts directly. `Options` with `pick="one"` hands `onChange` a value
+  (never undefined) unless it's `clearable`, so callers need no guard. The table column's kind picker is read out
+  `Kind` (was `Pick one`).
+- *Text:* a paragraph's or sticky note's field and the project title's description grow by `useAutoGrow` (each had
+  its own height code; the hook also grows when the width changes); the title's name is capped by
+  `WORKSPACE_NAME_MAX`, not a typed 80. TitleFields' own `saved` ref stays: it is that field's own record of what it
+  wrote, not a copy.
+- *Storage:* state/local.ts reads and keeps sessionStorage too (`readSession`, `keepSession`; `keep*` say whether it
+  was kept); the reload guard (app/chunks.ts), the onboarding's test copy and dev switches (data/onboarding.ts,
+  onboarding/devSandbox.ts, Coach.tsx) and the agent's usage log (agent/usage.ts, its test standing in a storage) go
+  through it. check:kit's `storage` rule counts sessionStorage too (0 left).
+- *Claude's models:* which Claude models take today's request surface is `claudeModern` in agent/provider.ts, read by
+  anthropic.ts and models.ts (the same regex was in both; models.ts can't load Claude's SDK).
+- *Checked:* typecheck, unit 1191, check:kit, check:repeats, check:gallery, check:tokens, check:gallery:live (matrix,
+  table, deck, text); in headless Chrome, old (a frozen worktree) and new: the 27 states of the setups, Options and
+  Checkbox the same DOM but the one read-out label; a paragraph's, a sticky note's and the title's field the same
+  heights as text is typed (120 → 144 → 192, 25 → 63 → 88, 78 → 117 → 195).
+- *Left:* Matrix.tsx' two cell maps and the numbers with no name (other sessions are in those files); Stage and
+  Mount's provider stack; check:kit's `kindSwitch` 31.
+
+### D-419 · 2026-11-19 · Accepted (the user, away: "o pageleri adam edene kadar çalış… designer gibi judge ettir… Düzgün bir şey istiyorum"; and the list: how every page is run, each canvas part shown right in them, the canvases' switch's scope, the way from the canvas to a page, each page's parts; commits 63d85a8 and 57aae68 say D-418 by mistake, D-418 being round 2's leftovers): the places made consistent
+- **Judged:** a subagent reviewed ten screenshots of the places as a senior designer (heads, rows, opened items, empty states, the HUD); its top fixes were built, the rest are listed below.
+- **One head for every place** beside the canvas and as the page (`PlaceHead`): its name big, what it shows beside it (Talk's scope, Tasks' tabs in the same row: no second bar), its tools, `full` / `beside the canvas`, `×`. An item opened in the column keeps that head, with one back row under it (`‹ threads`, `‹ Research`); a conversation there has no `×` of its own.
+- **One find field** under the head in Talk and Docs (`PlaceFind`); Docs' finds cross folders, each found document with its folder's path.
+- **Every part where it belongs:** Talk, Tasks and Docs are the workspace's, not a canvas's: Tasks shows every deck (this canvas's first), each tab with one number (its own) and what it's on (the plane it's linked to, another canvas); Docs marks a document shown on the canvas; channels stand in every scope of Talk. **The canvases' switch is the canvas's:** on a page the breadcrumb reads `workspaces / <name> / <place>`, the name going back to the canvas.
+- **From the canvas to a page:** `full` grows the page out of its column (a clip from the column to the sheet); `×`, Escape or the breadcrumb's name go back.
+- **Docs as the page:** name · by · changed · size, sorted by their heads, while nothing is read beside it; a document's folder is changed on the page (beside the canvas the back row names it already); `open in a window ↗`. A folder row's rename and delete beside it, not in it.
+- **Talk:** a channel's head one line (`# general  4 messages`); `new channel` in the HUD's middle on Talk's page.
+- **A second review** (the same subagent, fresh): Tasks' tabs under the head beside the canvas (no room in its row at 400 px), one number in mine's rules, the board about two thirds of the page; Docs as the page without a path over the list (the tree says where); `+ folder` and `write` in Docs' head beside the canvas; an empty folder offers `write a document`; `‹ talk` for the back row; no `channel` word on a channel's row.
+- **The small ones** (the user: "kalan küçük işleri de yap"): a find in Tasks (the deck filter's `text`, also counted by `narrowing`; mine's rows); Docs' list name · by · changed beside a document read; a channel's head a thing's three lines without a face; the days pane's scale a dropdown (`WeekTools compact`), its dock one row.
+- Left: touch; the side view (D-300) folded into Tasks (its own plan: the agent's preview, following and a task's `show on board` use it).
 
 ### D-420 · 2026-11-19 · Accepted (the user, of what round 2 left: "önerdiğin sırayla yap"; D-361, docs/specs/shared-code.md R1.1's and R1.2's leftovers): the last raw limits named, one cell lookup
 **The numbers the rules hold have a name in model/limits.ts too, and a cell at a row and column is read one way.**

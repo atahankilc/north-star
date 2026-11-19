@@ -455,7 +455,7 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'side-view', v: 4, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314, D-349, D-412',
+    id: 'side-view', v: 4, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314, D-349, D-412, D-419',
     trigger: [{ event: 'side-view' }],
     pages: [
       { title: 'Tasks, beside you', tab: 'tasks', body: "Tasks opens beside the canvas from anywhere, or with `t`. The tabs are the canvas's decks, each under its tab. `full` makes Tasks the page, the deck's days beside it.", scene: 'side-view' },
