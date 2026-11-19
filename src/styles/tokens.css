@@ -380,6 +380,7 @@
   --menu-solid: 86%;
   --menu-shade: 0 0 transparent;
   --menu-blur: var(--surface-blur);
+  --window-dim: var(--scrim); /* behind a window: dimmed, not veiled in the page's grey (D-421) */
   --sheet-rim: rgba(0, 0, 0, 0.12);
   --bg-raised: #ffffff;
   --piece: #ffffff;

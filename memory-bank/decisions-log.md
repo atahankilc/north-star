@@ -7797,6 +7797,10 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
   glass: the page's grey at `--menu-solid` 86 % over `--menu-blur`, so what's under them tints them; `--fg-dim` stays
   ≥ 4.5 even over the ground. Dark keeps them solid (`--menu-solid` 100 % in dark's block, also what stands on the
   ground in light) on the hugging shade.
+- **Behind a window, dimmed in light** (the user: "Ayarlar penceresinin etrafındaki glowu da kaldır"): the scrim behind
+  every `Window` (Settings, the wizards, a lesson) was the page's own colour at 72 %, which in light laid a milky grey
+  over the dark ground and the columns round the window. In light it is now `--window-dim` (`--scrim`, black 30 %), so
+  the page dims and the ground stays dark; dark keeps its own black at 72 %; a caller's `--window-scrim` still wins.
 - **Why:** the three near-whites (ground #e2e2e5, page #f3f3f3, pieces white) barely differed and read dull. A preview
   (docs/specs/light-bg-preview/, the gallery's real screens with the tokens swapped) showed 11 options: six that stay
   white (star chart blue, gallery greys, ice, dusk, drawing paper with ink lines) and five bolder (desk lamp, sky blue,

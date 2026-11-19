@@ -1,5 +1,6 @@
 /* The one window (src/ui/patterns/Window.tsx, D-326). The scrim: over the whole screen, the page dimmed behind, the window in its
-   middle (the wizards' and the welcome's shade, D-212, D-316). `--window-z` and `--window-scrim` move it from outside. */
+   middle (the wizards' and the welcome's shade, D-212, D-316). `--window-z` and `--window-scrim` move it from outside. In light the page is
+   dimmed, not veiled in its own grey, which hung over the dark ground like a glow (`--window-dim`, D-421). */
 .scrim {
   position: fixed;
   inset: 0;
@@ -7,7 +8,7 @@
   display: grid;
   place-items: center;
   padding: var(--space-4);
-  background: var(--window-scrim, color-mix(in srgb, var(--bg) var(--mix-strong), transparent));
+  background: var(--window-scrim, var(--window-dim, color-mix(in srgb, var(--bg) var(--mix-strong), transparent)));
   font-family: var(--font-display);
 }
 
