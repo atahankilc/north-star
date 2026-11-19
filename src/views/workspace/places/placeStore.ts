@@ -15,9 +15,11 @@ type State = {
   page: boolean
   // A column's width, dragged at its right edge (null: the right panel's, `--panel-w`); this tab's.
   width: number | null
+  // What Tasks shows (its tab: a deck's id, `mine`, `all`; with a deck's days beside it on the page); null: its own pick.
+  tasks: { tab: string; days: boolean } | null
 }
 
-export const usePlace = create<State>(() => ({ open: null, page: false, width: null }))
+export const usePlace = create<State>(() => ({ open: null, page: false, width: null, tasks: null }))
 
 const talking = (s: { inbox: boolean; openId: string | null; draft: unknown }) => s.inbox || !!s.openId || !!s.draft
 
@@ -47,6 +49,13 @@ export function openPlace(place: Place) {
 }
 
 export const setPage = (page: boolean) => usePlace.setState({ page })
+
+// Tasks opened on a deck (D-419: a task's `show on board` / `show on days`, in place of the old side view): the board
+// beside the canvas, its days as the page (where the days stand beside the board).
+export function openTasks(tab: string, days = false) {
+  if (usePlace.getState().open === 'talk') toggleInbox(false)
+  usePlace.setState((s) => ({ open: 'tasks', page: days || (s.open === 'tasks' && s.page), tasks: { tab, days } }))
+}
 
 // A column's right edge dragged to `right` (screen x), from the rail's edge `from`.
 export const dragWidth = (from: number, right: number) => usePlace.setState({ width: Math.round(Math.min(PANEL_W.max, Math.max(PANEL_W.min, right - from))) })

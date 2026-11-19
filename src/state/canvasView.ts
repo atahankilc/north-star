@@ -192,6 +192,22 @@ export function fitCanvas(wid: string, pieces: Bounds[], instant = false) {
   else glide(camOf(wid), to, DUR.glide, (c) => setCam(wid, c))
 }
 
+// What was just made, brought into sight (the 2026-11-19 pass: a new piece put in the nearest clear spot could land off
+// screen, and nothing seemed to happen): where it's already in view, nothing moves; else the camera glides to its middle,
+// keeping the zoom unless it doesn't fit.
+export function bringIntoView(wid: string, b: Bounds) {
+  const { size } = useCanvasView.getState()
+  const area = planeArea()
+  const c = camOf(wid)
+  const sx = (x: number) => size.w / 2 + c.x + x * c.zoom
+  const sy = (y: number) => size.h / 2 + c.y + y * c.zoom
+  const pad = 64
+  if (sx(b.x) >= pad && sx(b.x + b.w) <= area.w - pad && sy(b.y) >= pad && sy(b.y + b.h) <= size.h - pad) return
+  const fit = fitInto(b, area.w, area.h, 96)
+  const zoom = Math.min(c.zoom, fit.zoom)
+  glide(c, { x: (area.w - size.w) / 2 - fit.cx * zoom, y: -fit.cy * zoom, zoom }, DUR.glide, (v) => setCam(wid, v))
+}
+
 // Fit as the canvas does it (D-186): the side nav's button calls what CanvasView set here, the same as `0`.
 let fitter: () => void = () => {}
 export const setFitter = (f: () => void) => void (fitter = f)

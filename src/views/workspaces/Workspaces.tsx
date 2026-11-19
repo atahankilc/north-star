@@ -83,11 +83,17 @@ export function Workspaces({ user }: { user: AuthUser }) {
   )
   const invites = useMyInvites(user.email)
   const requests = useMyJoinRequests(user.id)
+  // A request's note is over once the request is (let in: the workspace is in the list now).
+  const askedFor = requests.data.map((r) => r.workspaceId).join()
+  useEffect(() => {
+    setNote((n) => (n?.asked && !askedFor.split(',').includes(n.asked) ? null : n))
+  }, [askedFor])
   const none = !workspaces.isLoading && sorted.length === 0
 
   const [typed, setTyped] = useState('')
   const [pick, setPick] = useState(0)
-  const [note, setNote] = useState<{ text: string; tone?: 'ok' | 'warn'; open?: string } | null>(null)
+  // `asked`: the workspace a request was sent to; the note goes once that request is gone (let in, denied, withdrawn).
+  const [note, setNote] = useState<{ text: string; tone?: 'ok' | 'warn'; open?: string; asked?: string } | null>(null)
   const [ask, setAsk] = useState<Ask | null>(null)
   const [menu, setMenu] = useState<{ at: [number, number]; w: WithId<Workspace> } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -141,7 +147,7 @@ export function Workspaces({ user }: { user: AuthUser }) {
       const result = await requestToJoin(code, user)
       if (result.status === 'member') return go(result.workspaceId)
       setTyped('')
-      setNote({ text: 'Request sent. An owner lets you in from their settings; it waits below until then.', tone: 'ok' })
+      setNote({ text: 'Request sent. An owner lets you in from their settings; it waits below until then.', tone: 'ok', asked: result.workspaceId })
       learn('join-requested')
     } catch (e) {
       setNote({ text: e instanceof JoinError ? e.message : 'Could not send the request. Check the code and try again.', tone: 'warn' })

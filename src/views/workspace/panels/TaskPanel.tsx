@@ -43,7 +43,8 @@ const TONE = 'var(--accent-cyan)'
 const SIDE_TASK_W = 330
 
 // The side view open on a deck, its days or not (the task stays picked, lit there).
-const showIn = (deck: string, days: boolean) => useTasksSide.setState({ open: true, linked: null, tab: deck, days })
+// Loaded when pressed: placeStore reads the threads' store, which leads back here (an import cycle at start).
+const showIn = (deck: string, days: boolean) => void import('../places/placeStore').then((m) => m.openTasks(deck, days))
 
 export function TaskPanel({ editor }: { editor: boolean }) {
   const { wid, tasks, pieces } = useWs()
@@ -120,8 +121,8 @@ export function TaskPanel({ editor }: { editor: boolean }) {
           actions={
             <>
               {/* Where it is, on purpose (D-300): its deck's board, or the deck with its days open. */}
-              <PanelAction label="show on board" title="its deck's board in the side view, the task lit" onClick={() => showIn(piece.id, false)} />
-              <PanelAction label="show on days" title="its deck's days in the side view, the task lit" onClick={() => showIn(piece.id, true)} />
+              <PanelAction label="show on board" title="its deck's board in Tasks, the task lit" onClick={() => showIn(piece.id, false)} />
+              <PanelAction label="show on days" title="its deck with its days in Tasks, the task lit" onClick={() => showIn(piece.id, true)} />
               {editor && (
                 <PanelAction
                   label="delete"

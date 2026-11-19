@@ -21,7 +21,8 @@ export function loadTasksSide(wid: string) {
   const saved = readLocalJson<Partial<Kept> | null>(KEY(wid), {}) ?? {}
   useTasksSide.setState({
     wid,
-    open: !!saved.open,
+    // Never open on arrival (D-419): it opens from a plane's dock, and Tasks is the place for decks now.
+    open: false,
     tab: typeof saved.tab === 'string' && saved.tab !== 'days' ? saved.tab : NONE.tab,
     days: !!saved.days,
     splitDays: share(saved.splitDays, 0.15, 0.6, NONE.splitDays),

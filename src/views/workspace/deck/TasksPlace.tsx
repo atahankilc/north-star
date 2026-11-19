@@ -15,6 +15,7 @@ import { learn } from '../../../onboarding/events'
 import { kanbanOf } from './Kanban'
 import { setKanbanFilter, useKanbanFilter } from './kanbanFilter'
 import { PlaceFind } from '../places/Places'
+import { usePlace } from '../places/placeStore'
 import { BoardAndDays, Days, deckTab, Mine } from './TasksSide'
 import styles from './TasksPlace.module.css'
 
@@ -53,7 +54,10 @@ export function TasksPlace({ page = false, editor, head }: { page?: boolean; edi
     return canvases.length > 1 && !piecesOn(canvas, pieces, spots).some((p) => p.id === d.id) ? canvases.find((x) => x.id === c)?.name : undefined
   }
   const taskDecks = decks.filter((d) => kanbanOf(d).holds !== 'cards')
-  const [tab, setTab] = useState<Tab>(() => (page ? (decks[0]?.id ?? 'mine') : 'mine'))
+  // The tab: asked for (a task's `show on…`, openTasks), else the first deck as the page and `mine` beside the canvas.
+  const asked = usePlace((s) => s.tasks)
+  const tab: Tab = asked?.tab ?? (page ? (decks[0]?.id ?? 'mine') : 'mine')
+  const setTab = (t: Tab) => usePlace.setState({ tasks: { tab: t, days: false } })
   const [withDays, setWithDays] = useState(page)
   // The board's share of the page: room for its columns, its days beside them.
   const [inner, setInner] = useState(0.68)

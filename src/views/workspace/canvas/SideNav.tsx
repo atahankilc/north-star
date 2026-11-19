@@ -10,7 +10,7 @@ import { addCard, CARD_TYPES, type CardType } from '../../../data/cards'
 import { cardsOn } from '../../../data/places'
 import { addLabel, CANVAS, PARA_W, STICKY_H, STICKY_W, TITLE_W } from '../../../data/labels'
 import { snap } from '../../../data/grid'
-import { canvasCenter, planeMiddle, setEditing, useCanvasView } from '../../../state/canvasView'
+import { bringIntoView, canvasCenter, planeMiddle, setEditing, useCanvasView } from '../../../state/canvasView'
 import { Menu } from '../../../ui/patterns/Menu'
 import { learn } from '../../../onboarding/learn'
 import { GuideTool } from '../../../onboarding/GuideTool'
@@ -29,7 +29,7 @@ import { newChannel } from '../threads/ThreadInbox'
 import { ToolButton } from '../../../ui/primitives/ToolButton'
 import { PlusIcon } from '../../../ui/primitives/hudIcons'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
-import { useWs } from './context'
+import { useWs, useWsNow } from './context'
 import { FitTool } from './FitTool'
 import { FinderTool } from './FinderTool'
 
@@ -70,6 +70,7 @@ const CARD_LETTER: Record<CardType, string> = { customer: 'c', problem: 'r', com
 // Viewers make nothing (D-098).
 function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
   const { pieces, cards, labels, places } = useWs()
+  const now = useWsNow()
   const me = useAuthor()
   const hasTitle = labels.some((l) => l.kind === 'title')
   // The middle of the screen in the open space's px.
@@ -103,6 +104,12 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
     const id = await addPiece(wid, kind, canvasCenter(wid), shownPieces(pieces, cards), template?.setup(), template?.name)
     // Where you're looking, in edit mode, to be moved where you want it.
     setEditing(id, true)
+    // Put in the nearest clear spot, it may be past the screen's edge: the view goes to it (once it's in the data).
+    for (let i = 0; i < 30 && id; i++) {
+      const p = now().pieces.find((x) => x.id === id)
+      if (p) return bringIntoView(wid, p)
+      await new Promise((r) => setTimeout(r, 50)) // tokens-ok: a short wait for the write to land
+    }
   }
   const bringHere = () => {
     const r = document.querySelector('[aria-label="Add to the plane"]')?.getBoundingClientRect()

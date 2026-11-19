@@ -93,7 +93,7 @@ export async function createWorkspace(name: string, uid: string, description?: s
 
 export class JoinError extends Error {}
 
-export type JoinResult = { status: 'member'; workspaceId: string } | { status: 'requested' }
+export type JoinResult = { status: 'member' | 'requested'; workspaceId: string }
 
 const requestId = (wid: string, uid: string) => `${wid}_${uid}`
 
@@ -126,7 +126,7 @@ export async function requestToJoin(rawCode: string, user: AuthUser): Promise<Jo
     if (mine?.exists()) throw new JoinError('You already asked to join. The owner has not answered yet.')
     throw new JoinError('This invite code is no longer valid.', { cause: e })
   }
-  return { status: 'requested' }
+  return { status: 'requested', workspaceId }
 }
 
 // Requests you sent that are still waiting.

@@ -19,6 +19,7 @@ import { useAuth } from '../../../data/auth'
 import { authorName } from '../../../model/words'
 import { useWs } from '../canvas/context'
 import { ago } from '../../../ui/foundation/ago'
+import { useEscapeLayer } from '../../../ui/foundation/useEscapeLayer'
 import { Button } from '../../../ui/primitives/Button'
 import { Label } from '../../../ui/primitives/Label'
 import { Empty } from '../../../ui/primitives/Empty'
@@ -239,6 +240,8 @@ export function DocsPlace({ page = false }: { page?: boolean }) {
   const subs = k ? [] : folders.filter((f) => (f.parent ?? null) === at || (at === null && f.parent && !folders.some((x) => x.id === f.parent))).sort((a, b) => a.name.localeCompare(b.name))
   const open = docs.find((d) => d.id === openId)
   const where = at ? (folders.find((f) => f.id === at)?.name ?? 'All files') : 'All files'
+  // Escape steps back (D-419): a document open goes back to its list before Docs closes.
+  useEscapeLayer(() => useDocsAt.setState({ open: null }), { on: !!open })
 
   // Columns on the page: all of them with nothing read beside it, name · by · changed beside a document read.
   const cols = page ? (open ? 'narrow' : 'full') : undefined

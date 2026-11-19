@@ -217,7 +217,8 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
     <>
       <PlaceFind value={q} onChange={setQ} label="Find in Talk" />
             <ol className={styles.rows}>
-              {rows.length === 0 && newRows.length === 0 && (
+              {/* Empty only when nothing at all is here: channels with talk in them are something. */}
+              {rows.length === 0 && newRows.length === 0 && (done || channels.length === 0) && (
                 <li className={styles.lead}>{done ? 'No resolved threads.' : 'No open threads. Right-click anything → comment.'}</li>
               )}
               {!done && (

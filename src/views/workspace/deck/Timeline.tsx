@@ -218,7 +218,7 @@ type Props = { piece: WithId<Piece>; view: PlaneCam; live: boolean; editor: bool
 
 // It fills what it's drawn in: framed, its window; live, the screen (or its pane) less the view's margin; unframed, its
 // width. Its view moves only the world's transform; the days are drawn again when the zoom settles, never as it pans.
-export function TimelineView({ piece, view, live, editor, onCanvas = false, onTask }: Props) {
+export function TimelineView({ piece, view, live, editor, onCanvas = false, onTask, span }: Props) {
   const settled = useSettledZoom(view.zoom, live)
   const layer = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState({ w: 0, h: 0 })
@@ -239,12 +239,13 @@ export function TimelineView({ piece, view, live, editor, onCanvas = false, onTa
   const h = onCanvas ? undefined : live ? (box.h - view.oy - Math.max(view.oy, 64)) / z : (box.h - 2 * view.oy) / z
   return (
     <PieceLayer layerRef={layer} layer={styles.layer} world={styles.world} view={view} settled={settled} live={live} onCanvas={onCanvas} data-timeline>
-      {(onCanvas || box.w > 0) && <Days piece={piece} zoom={settled} live={live} editor={editor} onCanvas={onCanvas} onTask={onTask} w={Math.round(Math.max(360, Math.min(8000, w)))} h={h === undefined ? undefined : Math.round(Math.max(TOP + 120, h))} />}
+      {(onCanvas || box.w > 0) && <Days piece={piece} zoom={settled} live={live} editor={editor} onCanvas={onCanvas} onTask={onTask} top={span !== undefined} w={Math.round(Math.max(360, Math.min(8000, w)))} h={h === undefined ? undefined : Math.round(Math.max(TOP + 120, h))} />}
     </PieceLayer>
   )
 }
 
-type DaysProps = { piece: WithId<Piece>; zoom: number; live: boolean; editor: boolean; onCanvas: boolean; onTask?: (t: Task) => void; w: number; h?: number }
+// `top`: in a pane (Tasks, D-419) the strip starts at the top; in its window it stands in the middle (D-314).
+type DaysProps = { piece: WithId<Piece>; zoom: number; live: boolean; editor: boolean; onCanvas: boolean; onTask?: (t: Task) => void; w: number; h?: number; top?: boolean }
 
 // A task held: how (moved, or one of its days), where the press began (screen), the day under it then, the days it
 // had; now: the days it would get, the row it would go to, the pointer (its time layer's px) and where in the sheet
@@ -255,7 +256,7 @@ type Draft = { row: string; d0: number; s: number; e: number; naming: boolean }
 // Where the `+` shows: an empty day in a row's lane.
 type Ghost = { row: string; day: number; lane: number }
 
-const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w, h }: DaysProps) {
+const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w, h, top = false }: DaysProps) {
   const { wid, pieces, tasks, cards } = useWs()
   const now = useWsNow()
   const { user } = useAuth()
@@ -282,7 +283,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
   // What it's given; shorter than that, the strip stands in its middle (D-314), not at its top.
   const room = h ?? fullH
   const boardH = Math.min(room, fullH)
-  const lift = Math.max(0, Math.round((room - boardH) / 2))
+  const lift = top ? 0 : Math.max(0, Math.round((room - boardH) / 2))
   // The rows' height on screen: all of them, or what fits above the tray (then they scroll); the tray right under them.
   const rowsShown = Math.min(layout.rowsH, Math.max(40, boardH - TOP - 8 - 16 - T.tray))
   const maxTop = Math.max(0, layout.rowsH - rowsShown)

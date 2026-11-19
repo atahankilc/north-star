@@ -65,6 +65,8 @@ export function DocReaderView({ d, body, loading, failed, me, onClose, onDownloa
   // Only on its own text, once it's read: what the page opens with seeds the shared text (D-374).
   const writing = editing && !!onSave && !!body
   const { head, rest } = splitTitle(body?.text ?? '', d.title)
+  // Just written (`untitled`, nothing in it yet): the keys start in its name, picked, so a name typed replaces it.
+  const fresh = writing && d.title === 'untitled' && !rest.trim()
   const editor = writing ? (
     <Suspense fallback={<p className={content.note}>loading the editor…</p>}>
       <DocEditor
@@ -72,7 +74,7 @@ export function DocReaderView({ d, body, loading, failed, me, onClose, onDownloa
         key={d.id}
         text={rest}
         label={`${d.title}: text`}
-        autoFocus
+        autoFocus={!fresh}
         live={live}
         // The title's heading stays in front, as it came (renamed: the new title).
         onSave={(t) => onSave?.((head ? `# ${d.title}\n\n` : '') + t)}
@@ -81,7 +83,7 @@ export function DocReaderView({ d, body, loading, failed, me, onClose, onDownloa
   ) : undefined
   const title =
     writing && onRename ? (
-      <CommitField className={styles.titleField} value={d.title} onSave={(v) => v.trim() && onRename(v)} label="Document title" empty="undo" maxLength={DOC_LIMITS.title} />
+      <CommitField className={styles.titleField} value={d.title} onSave={(v) => v.trim() && onRename(v)} label="Document title" empty="undo" maxLength={DOC_LIMITS.title} autoFocus={fresh} select={fresh} />
     ) : undefined
   const page = (
     <div className={styles.page} data-scrolls>
