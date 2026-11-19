@@ -63,8 +63,7 @@ import { deleteEdge } from '../../../data/edges'
 import { GRID } from '../../../data/grid'
 import { goToPlace, useGoTo, type Place } from './goTo'
 import { Beside } from './Beside'
-import { TasksSide } from '../deck/TasksSide'
-import { closeTasksSide, escapeTasksSide, toggleDaysOf, toggleFromPlane, useTasksSide } from '../deck/sideState'
+import { toggleTasksFrom, usePlace } from '../places/placeStore'
 import { openPlace } from '../places/placeStore'
 import { isOpen, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
 import { deleteDocument, docRights, downloadDocument, unshareDocument, type Doc } from '../../../data/documents'
@@ -197,9 +196,8 @@ export function CanvasView() {
   const split = useCanvasView((s) => s.split)
   const setBeside = (ids: string[]) => focusId && setParams(canvasParams(canvas, ids.length ? { focus: focusId, beside: ids.join(',') } : { focus: focusId }))
   const toggleBeside = (id: string) => setBeside(besideIds.includes(id) ? besideIds.filter((x) => x !== id) : [...besideIds, id])
-  const sideOpen = useTasksSide((s) => s.open)
-  // What it shows, for the docks' `⇆` buttons that open it (D-300).
-  const sideAt = useTasksSide((s) => (s.open ? `${s.linked ?? ''}|${s.tab}|${s.days ? 'days' : ''}` : ''))
+  // What Tasks shows, for the docks' `⇆` buttons that open it there (a plane's deck, a deck's days: D-300 → D-419).
+  const tasksAt = usePlace((s) => (s.open === 'tasks' && s.tasks ? `${s.tasks.linked ?? ''}|${s.tasks.tab}|${s.tasks.days ? 'days' : ''}` : ''))
   const setBesideRef = useRef(setBeside)
   setBesideRef.current = setBeside
   // Whose setup is open (a matrix's, a table's, a deck's, D-268; setupStore.ts).
@@ -723,37 +721,7 @@ export function CanvasView() {
 
   // The plane's part of the screen follows what's open beside it (D-211); its contents fit there again.
   // A document open beside its list (D-232) takes the right part the same way.
-  // The tasks side view too (D-300), on the canvas as in a focus; opened, what was beside closes.
-  const besideCount = sideOpen ? 1 : besideOpen.length + (readerOpen ? 1 : 0)
-  // The right part is the last opened's: the side view opened closes what's beside; something opened beside (a link, the
-  // back button) or a document beside its list closes the side view.
-  const sideWas = useRef(sideOpen)
-  useEffect(() => {
-    if (sideOpen && !sideWas.current) {
-      if (besideRef.current.length) setBesideRef.current([])
-      if (useDocUi.getState().readers.length) closeDocs()
-    }
-    sideWas.current = sideOpen
-  }, [sideOpen])
-  // The canvas keeps the left part: what was in the screen's middle goes to that part's middle as the side view opens,
-  // closes or widens for a deck's days, and back (glided as it opens or closes on the canvas, else at once).
-  const leftShare = sideOpen ? split : 1
-  const shareWas = useRef(leftShare)
-  useEffect(() => {
-    const { size } = useCanvasView.getState()
-    const d = ((leftShare - shareWas.current) * size.w) / 2
-    const toggled = (leftShare === 1) !== (shareWas.current === 1)
-    shareWas.current = leftShare
-    if (!d || !size.w) return
-    const c = camOf(wid)
-    if (toggled && !focusId) glide(c, { ...c, x: c.x + d }, 320, (v) => setCam(wid, v))
-    else setCam(wid, { ...c, x: c.x + d })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leftShare])
-  const besideKey = besideOpen.map((p) => p.id).join(',')
-  useEffect(() => {
-    if ((besideKey || readerOpen) && useTasksSide.getState().open) closeTasksSide()
-  }, [besideKey, readerOpen])
+  const besideCount = besideOpen.length + (readerOpen ? 1 : 0)
   useEffect(() => {
     useCanvasView.setState({ beside: besideCount })
     if (focusId && useCanvasView.getState().focusArrived) fitRef.current()
@@ -885,8 +853,7 @@ export function CanvasView() {
           // framed list comes back (they all close), an unframed one goes straight to the canvas.
           else if (useDocUi.getState().readers.length && !useDocUi.getState().listHidden) useDocUi.setState((s) => ({ readers: s.readers.slice(0, -1) }))
           else if (useDocUi.getState().readers.length && !focusedUnframedRef.current) closeDocs()
-          // Then the tasks side view (D-300), or what's open beside the plane, the last opened first (D-211).
-          else if (useTasksSide.getState().open) escapeTasksSide(useTasksSide.getState().tab === focusIdRef.current)
+          // Then what's open beside the plane, the last opened first (D-211).
           else if (besideRef.current.length) setBesideRef.current(besideRef.current.slice(0, -1).map((p) => p.id))
           else unfocusRef.current()
         }
@@ -901,7 +868,6 @@ export function CanvasView() {
       if (e.key === 'Escape') {
         if (closeOneSetup()) return
         if (useCanvasView.getState().cardSelected) return useCanvasView.setState({ cardSelected: null })
-        if (useTasksSide.getState().open && !useCanvasView.getState().selected) return escapeTasksSide(false)
       }
       const id = useCanvasView.getState().selected
       if (!id) return
@@ -1038,7 +1004,7 @@ export function CanvasView() {
           {/* With the list put away its dock goes too; unfocus is in the bar top-left (DocReaders). */}
           {/* A document's focus has the page's own dock (DocFocus). */}
           {focusArrived && !focusLeaving && !listHidden && !focusedDocument && (
-            <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length || sideOpen ? (size.w * split) / 2 : undefined}>
+            <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length ? (size.w * split) / 2 : undefined}>
               {/* Its kind's own tools, then its setup (pieceKinds.tsx). */}
               <LensTools piece={focused} editor={editor} />
               {/* A timeline stuck to the deck (D-262): its days in the tasks side view, the deck on the left (D-300). */}
@@ -1047,9 +1013,9 @@ export function CanvasView() {
                   <DockAction
                     key={p.id}
                     label={`⇆ ${KIND_NAME[kindOfPiece(p)]}${p.name ? ` · ${p.name}` : ''}`}
-                    pressed={sideAt === `|${focused.id}|days`}
-                    title={sideAt === `|${focused.id}|days` ? 'close its days' : 'its days in the side view'}
-                    onClick={() => toggleDaysOf(focused.id)}
+                    pressed={tasksAt === `${focused.id}|${focused.id}|days`}
+                    title={tasksAt === `${focused.id}|${focused.id}|days` ? 'close its days' : 'its days in Tasks'}
+                    onClick={() => toggleTasksFrom(focused.id, focused.id, true)}
                   />
                 ))}
               {/* What the plane shows (D-233) and what's stuck to it (D-210), each a strip over the dock (D-235): a stuck
@@ -1066,14 +1032,14 @@ export function CanvasView() {
                       const deckOf = p.kind === 'timeline' ? timelineKanbans(p, pieces) : []
                       const tab = kindOfPiece(p) === 'kanban' ? p.id : deckOf.length === 1 && pieces.includes(deckOf[0]) ? deckOf[0].id : 'all'
                       const days = p.kind === 'timeline' && tab !== 'all'
-                      const on = inSide(p) ? sideAt === `${focused.id}|${tab}|${days ? 'days' : ''}` || (!days && sideAt.startsWith(`${focused.id}|${tab}|`)) : besideIds.includes(p.id)
+                      const on = inSide(p) ? tasksAt.startsWith(`${focused.id}|${tab}|`) : besideIds.includes(p.id)
                       return (
                         <DockAction
                           key={p.id}
                           label={`⇆ ${KIND_NAME[kindOfPiece(p)]}${p.name ? ` · ${p.name}` : ''}`}
                           pressed={on}
-                          title={on ? 'close it' : inSide(p) ? 'open it in the side view' : 'open it beside the plane'}
-                          onClick={() => (inSide(p) ? toggleFromPlane(focused.id, tab, days) : toggleBeside(p.id))}
+                          title={on ? 'close it' : inSide(p) ? 'open it in Tasks' : 'open it beside the plane'}
+                          onClick={() => (inSide(p) ? toggleTasksFrom(focused.id, tab, days) : toggleBeside(p.id))}
                         />
                       )
                     }),
@@ -1092,8 +1058,6 @@ export function CanvasView() {
       {!focused && canvasSetup && <LensSetup piece={canvasSetup} editor={editor} />}
       {/* And from one open on the canvas (D-228). */}
       {!focused && <LensCardPanel space={null} editor={editor} />}
-      {/* The tasks side view (D-300): one, over the canvas and any focus, so going in or out never redraws it. */}
-      {sideOpen && <TasksSide editor={editor} focusedId={focused && focusArrived && !focusLeaving ? focused.id : null} plane={focused && focusArrived && !focusLeaving && kindOfPiece(focused) === 'plane' ? focused : null} />}
       {/* And a task picked on a kanban open on the canvas (D-251), or from a card's panel there (D-254). */}
       {!focused && <TaskPanel editor={editor} />}
       <PeerCursors space={space} toScreen={toScreen} />

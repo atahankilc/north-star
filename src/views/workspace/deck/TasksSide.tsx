@@ -1,208 +1,30 @@
-// The tasks side view (D-300): decks and their days, from anywhere, on the canvas or in any focus; the one place they
-// open (a plane's linked deck too). Left to right it reads plane → deck → days: the side nav's icon or `t` opens it on
-// the right, split from what's left by beside's line (D-211); a deck's `[days ›]` adds its days as a third column (the
-// left part narrowing to its own share), `[‹ close]` takes them away. Below 1300 px there's no room for three: the days
-// slide over the deck, `‹ back to the board`. In a deck's own focus the deck is on the left already: only its days.
-// Tabs on top: each deck on this canvas (reading order, its number magenta, `⇆` when linked to a plane, how many
-// unfinished tasks it shows, or how many cards: a deck holding cards is a tab too, its board only, D-314); in the corner, apart, what goes across them: `MINE` (given to you, new ones `●`) and
-// `ALL · DAYS` (every deck's days, as a timeline linked to nothing). Opened from a plane's dock it's that plane's linked
-// deck, a strip under the tabs saying so (`[all decks]` lets go). Days are the deck's linked timeline's when it has one,
-// else rows by who it's given to. A task picked opens its panel inside the side view (TaskPanel), and in a plane's
-// focus the plane glides to its card; nothing switches view by itself.
-import { useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react'
+// Tasks' parts (D-412, D-419): a deck's board and its days (BoardAndDays, Board, Days), the tasks given to you (Mine)
+// and a deck as a tab (deckTab), drawn in Tasks (TasksPlace.tsx). They were the tasks side view's (D-300), gone with
+// D-419: a plane's linked deck and a deck's days open in Tasks now. A deck's board and its days are each a view of
+// their own (as beside a plane), with a dock at their part's foot.
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useAuth } from '../../../data/auth'
 import { piecesOn } from '../../../data/canvases'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import type { Card } from '../../../data/cards'
-import { finished, overdue, shownTasks, timelineOf, type Task } from '../../../data/tasks'
-import { heldCards } from '../../../model/kanbanCards'
+import { finished, overdue, timelineOf, type Task } from '../../../data/tasks'
 import { markTasksSeen, useReads } from '../../../data/threads'
-import { setSplit, useCanvasView, type Bounds } from '../../../state/canvasView'
-import { useWs, useWsNow } from '../canvas/context'
-import { glidePlaneTo, usePaneView } from '../canvas/Beside'
+import type { Bounds } from '../../../state/canvasView'
+import { useWs } from '../canvas/context'
+import { usePaneView } from '../canvas/Beside'
 import { kanbanBounds, KanbanView, kanbanOf, selectTask, useKanbanUi } from './Kanban'
 import { dueText } from '../../../model/tasks'
 import { leadingNumber } from '../../../model/words'
 import { KanbanFilterDock } from './KanbanFilterDock'
 import { LensSetup, LensTools } from '../canvas/pieceKinds'
 import { T, timelineBounds, TimelineDockTools, TimelineView, WeekTools } from './Timeline'
-import { DockAction, FocusDock } from '../canvas/FocusDock'
-import { closeTasksSide, useTasksSide } from './sideState'
+import { FocusDock } from '../canvas/FocusDock'
 import pane from '../canvas/Beside.module.css'
 import styles from './TasksSide.module.css'
-import { Tabs } from '../../../ui/primitives/Tabs'
 import { DragLine } from '../../../ui/primitives/DragLine'
 import { Empty } from '../../../ui/primitives/Empty'
-import { Button } from '../../../ui/primitives/Button'
 import { Num, Rule } from '../../../ui/primitives/Rule'
-import { tokenPx } from '../../../styles/cssToken'
-
-// The tabs' row at the top, a side panel's padding over it (`--space-4`, SidePanel's `.top`), the HUD's shade stopping
-// at the split line so it never dims it (`--hud-shade-w`, below); the linked strip under it.
-// Read at draw time (tokenPx keeps what it read; at import the stylesheet may not be in yet).
-const tabsH = () => tokenPx('--space-4') + tokenPx('--head-h')
-const STRIP_H = 30
-// Narrower than this, the days slide over the deck instead of standing beside it.
-const WIDE = 1300
-
-type Props = {
-  editor: boolean
-  // What Escape closes next (in a focus); on the canvas Escape closes it first.
-  // The piece in focus, if any: its deck isn't drawn again here.
-  focusedId: string | null
-  // The plane in focus, if one is: a task picked glides it to its card.
-  plane: WithId<Piece> | null
-}
-
-// The left part's share before the days took some (given back when they close).
-let splitBefore: number | null = null
-
-export function TasksSide({ editor, focusedId, plane }: Props) {
-  const { pieces, tasks, cards, canvas, spots } = useWs()
-  const now = useWsNow()
-  const { user } = useAuth()
-  const size = useCanvasView((s) => s.size)
-  const split = useCanvasView((s) => s.split)
-  const tab = useTasksSide((s) => s.tab)
-  const daysOpen = useTasksSide((s) => s.days)
-  const linkedTo = useTasksSide((s) => s.linked)
-  const inner = useTasksSide((s) => s.inner)
-
-  // The decks on this canvas, in reading order (holding tasks or cards).
-  const decks = useMemo(() => piecesOn(canvas, pieces, spots).filter((p) => p.kind === 'kanban').sort((a, b) => a.y - b.y || a.x - b.x), [pieces, canvas, spots])
-  const deck = decks.find((d) => d.id === tab) ?? (focusedId === tab ? pieces.find((p) => p.id === tab && p.kind === 'kanban') : undefined)
-  // A deck gone (deleted, elsewhere, holding cards now): MINE.
-  const shown = deck ? 'deck' : tab === 'all' ? 'all' : 'mine'
-  const deckOnLeft = !!deck && focusedId === deck.id
-  // A deck holding cards has no days.
-  const ofCards = !!deck && kanbanOf(deck).holds === 'cards'
-  const days = daysOpen && !ofCards
-  const wide = size.w >= WIDE
-  const twoCols = !!deck && days && wide && !deckOnLeft
-  const plane2 = linkedTo ? pieces.find((p) => p.id === linkedTo) : undefined
-  const strip = plane2 && (shown === 'all' || (deck && deck.stuckTo === plane2.id)) ? plane2 : undefined
-
-  // The days as a third column take the left part down to its own share; closing them gives it back.
-  useEffect(() => {
-    const cv = useCanvasView.getState()
-    if (twoCols) {
-      if (splitBefore === null) splitBefore = cv.split
-      useCanvasView.setState({ split: useTasksSide.getState().splitDays })
-    } else if (splitBefore !== null) {
-      useCanvasView.setState({ split: splitBefore })
-      splitBefore = null
-    }
-  }, [twoCols])
-  useEffect(
-    () => () => {
-      if (splitBefore === null) return
-      useCanvasView.setState({ split: splitBefore })
-      splitBefore = null
-    },
-    [],
-  )
-
-  const left = Math.round(size.w * split)
-  const width = size.w - left
-  // The breadcrumb's bar shades only what's left of the side view: its tabs sit at the very top, under nothing.
-  useLayoutEffect(() => {
-    const root = document.documentElement.style
-    root.setProperty('--hud-shade-w', `${left}px`)
-    return () => void root.removeProperty('--hud-shade-w')
-  }, [left])
-  const top = tabsH() + (strip ? STRIP_H : 0)
-  const deckW = twoCols ? Math.round(width * inner) : width
-
-  // The line between the left part and the side view drags (the days' share kept apart from beside's).
-  // The split lines (DragLine, D-359): the side view's width, the line between the deck and its days.
-  const drag = (ev: PointerEvent) => {
-    const at = ev.clientX / Math.max(1, size.w)
-    if (!twoCols) return setSplit(at)
-    const v = Math.min(0.6, Math.max(0.15, at))
-    useTasksSide.setState({ splitDays: v })
-    useCanvasView.setState({ split: v })
-  }
-  const dragInner = (ev: PointerEvent) => useTasksSide.setState({ inner: Math.min(0.7, Math.max(0.3, (ev.clientX - left) / Math.max(1, width))) })
-
-  const count = (d: WithId<Piece>) => (kanbanOf(d).holds === 'cards' ? `${heldCards(d, cards).length} cards` : shownTasks(tasks.filter((t) => t.pieceId === d.id), d, cards).filter((t) => !finished(t, pieces)).length)
-  const me = user?.id ?? null
-  const taskDecks = decks.filter((d) => kanbanOf(d).holds !== 'cards')
-  const mine = tasks.filter((t) => me && t.assignee === me && !finished(t, pieces) && taskDecks.some((d) => d.id === t.pieceId))
-
-  const close = <DockAction label="close" main title="close decks and days (t)" onClick={closeTasksSide} />
-  const closeDays = (
-    <DockAction label={wide ? '‹ close' : '‹ back to the board'} title="the board without its days" onClick={() => useTasksSide.setState({ days: false })} />
-  )
-  const daysToggle = !deckOnLeft && !ofCards && <DockAction label={days ? 'days ‹' : 'days ›'} pressed={days} title={days ? 'close its days' : 'its days beside it'} onClick={() => useTasksSide.setState({ days: !days })} />
-  const onTask = (t: Task) => {
-    const card = plane && t.cardId ? cards.find((c) => c.id === t.cardId) : undefined
-    if (card && plane) glidePlaneTo(card, plane.id, cards, now().places, true)
-  }
-  // A card picked on a deck holding cards: its panel, and in a plane's focus the plane glides to it (as beside, D-211).
-  const onCard = (c: Card) => {
-    useCanvasView.setState({ cardSelected: c.id, labelSelected: null })
-    if (plane) glidePlaneTo(c, plane.id, cards, now().places)
-  }
-
-  if (!size.w) return null
-  const colH = size.h - top
-  return (
-    <>
-      <DragLine at="x" data-off-space className={styles.outerLine} style={{ left }} onDrag={drag} label="The side view's width" />
-      <aside className={styles.side} data-off-space data-learn="side-view" style={{ left, width }} aria-label="Decks and days" onPointerDown={(e) => e.stopPropagation()}>
-        <div className={styles.tabs}>
-          {/* The decks and, in the corner, across them (D-300): two rows of tabs sharing one choice (Tabs, D-326). */}
-          {decks.length ? (
-            <Tabs
-              className={styles.decks}
-              label="Decks"
-              value={tab ?? ''}
-              onChange={(id) => useTasksSide.setState({ tab: id, linked: null })}
-              options={decks.map((d, i) => deckTab(d, i, `· ${count(d)}`))}
-            />
-          ) : (
-            <Empty as="span">
-              no deck on this canvas yet
-            </Empty>
-          )}
-          <Tabs
-            className={styles.corner}
-            label="Across decks"
-            value={shown === 'mine' || shown === 'all' ? shown : ''}
-            onChange={(t) => useTasksSide.setState({ tab: t, linked: null })}
-            options={[
-              { value: 'mine', title: 'given to you, across decks', count: `· ${mine.length}`, label: <>mine<NewMark /></> },
-              { value: 'all', title: "every deck's tasks on days", label: 'all · days' },
-            ]}
-          />
-        </div>
-        {strip && (
-          <div className={styles.strip} style={{ top: tabsH(), height: STRIP_H }}>
-            <span>
-              ⇆ linked to <b>{strip.name || 'a plane'}</b> <span className={styles.dim}>· its cards only</span>
-            </span>
-            <Button onClick={() => useTasksSide.setState({ linked: null })} title="the side view's tabs as from the side nav">
-              all decks
-            </Button>
-          </div>
-        )}
-        {shown === 'mine' ? (
-          <Mine decks={taskDecks} top={top}>
-            {close}
-          </Mine>
-        ) : shown === 'all' ? (
-          <Days key={`all:${strip?.id ?? ''}`} box={{ x: 0, y: top, w: width, h: colH }} deck={null} plane={strip ?? null} editor={editor} onTask={onTask} dock={close} />
-        ) : deck && !ofCards && (deckOnLeft || (days && !wide)) ? (
-          <Days key={`days:${deck.id}`} box={{ x: 0, y: top, w: width, h: colH }} deck={deck} plane={null} editor={editor} onTask={onTask} dock={deckOnLeft ? close : <>{closeDays}{close}</>} />
-        ) : deck ? (
-          <BoardAndDays deck={deck} top={top} width={width} height={colH} deckW={deckW} days={twoCols} editor={editor} onTask={onTask} onCard={onCard} boardDock={<>{daysToggle}</>} close={close} daysDock={closeDays} onDrag={dragInner} />
-        ) : null}
-      </aside>
-    </>
-  )
-}
-
 
 // A deck's board and, with `days`, its days beside it, the line between them dragged (the side view's and Tasks', D-412).
 export function BoardAndDays(p: { deck: WithId<Piece>; top: number; width: number; height: number; deckW: number; days: boolean; editor: boolean; onTask: (t: Task) => void; onCard: (c: Card) => void; boardDock: ReactNode; close: ReactNode; daysDock: ReactNode; onDrag: (e: PointerEvent) => void }) {
@@ -238,17 +60,6 @@ export const deckTab = (d: WithId<Piece>, i: number, count?: ReactNode, on?: str
     </>
   ),
 })
-
-// MINE's `●N`: tasks given to you since you last looked.
-function NewMark() {
-  const { wid, tasks, pieces } = useWs()
-  const { user } = useAuth()
-  const me = user?.id ?? null
-  const reads = useReads(wid, me)
-  if (reads.isLoading) return null
-  const n = tasks.filter((t) => me && t.assignee === me && !finished(t, pieces) && (t.givenAt ?? 0) > (reads.data?.tasks ?? 0) && t.givenBy !== me).length
-  return n ? <span className={styles.new}> ●{n}</span> : null
-}
 
 type PartProps = { box: Bounds; editor: boolean; onTask: (t: Task) => void; dock: ReactNode }
 

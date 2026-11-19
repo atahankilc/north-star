@@ -17,7 +17,7 @@ import { firebase } from '../../../data/firebase'
 import { useWs } from './context'
 import { useSearchParams } from 'react-router-dom'
 import { canvasParams } from '../../../app/paths'
-import { useTasksSide } from '../deck/sideState'
+import { closePlace, openTasks, usePlace } from '../places/placeStore'
 import styles from './collab.module.css'
 import type { PeerMark } from '../../../ui/primitives/Marks'
 
@@ -95,10 +95,9 @@ export function PeerCursors({ space, toScreen }: { space: string; toScreen: ToSc
   const { canvas } = useWs()
   const here = peers.filter((p) => spaceOf(p) === space && (space !== CANVAS || (p.canvas ?? 'main') === canvas) && p.x !== undefined && p.y !== undefined)
   const tone = useThemeAccent()
-  // Only over your space's own part of the screen: with the tasks side view open, or something beside the plane, the
-  // part left of the split line (a cursor there is on the canvas, never over the deck you're looking at).
-  const sideOpen = useTasksSide((s) => s.open)
-  const share = useCanvasView((s) => (sideOpen || s.beside ? s.split : 1))
+  // Only over your space's own part of the screen: with something beside the plane, the part left of the split line
+  // (a cursor there is on the canvas, never over what's beside it).
+  const share = useCanvasView((s) => (s.beside ? s.split : 1))
   const els = useRef(new Map<string, HTMLDivElement>())
   const toScreenRef = useRef(toScreen)
   toScreenRef.current = toScreen
@@ -182,14 +181,15 @@ export function Follow({ focusId, focusTo }: FollowProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theirSpace, focusId, leaving, away])
 
-  // Their tasks side view (D-300): open on their tab (a deck, with its days or not; MINE; every deck's days), or closed,
-  // as theirs is.
+  // Their Tasks (D-419; the tasks side view's before, D-300): open on their tab (a deck, with its days or not; mine;
+  // every deck's days), or closed, as theirs is.
   const theirSide = leader ? (leader.tasks ?? '') : null
   useEffect(() => {
     if (theirSide === null) return
-    if (!theirSide) return void useTasksSide.setState({ open: false })
+    if (!theirSide) return void (usePlace.getState().open === 'tasks' && closePlace())
     const [tab, days] = theirSide.split(' ')
-    useTasksSide.setState({ open: true, linked: null, tab, days: !!days })
+    openTasks(tab, false)
+    usePlace.setState((s) => ({ tasks: { tab, days: !!days, linked: null }, page: s.page }))
   }, [theirSide])
 
   // Their selection becomes yours, several too (D-230).

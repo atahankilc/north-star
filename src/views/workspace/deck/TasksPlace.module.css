@@ -20,3 +20,27 @@
 .none {
   padding: var(--space-4);
 }
+
+/* Opened from a plane (D-419): what it's linked to, and the way back to every deck. */
+.linked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: var(--line-w) solid var(--line);
+  font-size: var(--text-sm);
+}
+
+.linkedWord {
+  color: var(--accent-cyan);
+}
+
+.linked b {
+  color: var(--fg-strong);
+  font-weight: var(--weight-medium);
+}
+
+.dim {
+  color: var(--fg-dim);
+}

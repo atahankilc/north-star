@@ -152,7 +152,7 @@ export type Page = {
   audience?: Audience
   // Only while this is true when shown.
   if?: (typeof PAGE_IFS)[number]
-  // Only when the trigger's `kind` is one of these (a stuck table opens beside, a stuck deck in the side view).
+  // Only when the trigger's `kind` is one of these (a stuck table opens beside, a stuck deck in Tasks).
   kinds?: readonly string[]
   // A line added after the body for these roles (the viewer's on the welcome's last page).
   extra?: { roles: readonly Role[]; line: string }
@@ -455,10 +455,10 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'side-view', v: 4, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314, D-349, D-412, D-419',
+    id: 'side-view', v: 5, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314, D-349, D-412, D-419, D-422',
     trigger: [{ event: 'side-view' }],
     pages: [
-      { title: 'Tasks, beside you', tab: 'tasks', body: "Tasks opens beside the canvas from anywhere, or with `t`. The tabs are the canvas's decks, each under its tab. `full` makes Tasks the page, the deck's days beside it.", scene: 'side-view' },
+      { title: 'Tasks, beside you', tab: 'tasks', body: "Tasks opens beside the canvas from anywhere, or with `t`. The tabs are the workspace's decks. A plane's `⇆ deck` opens its deck here, linked to it. `full` makes Tasks the page, the deck's days beside it.", scene: 'side-view' },
       { title: 'Yours', tab: 'mine', body: '`mine` lists the tasks given to you, from every deck. The find under the tabs narrows it, or a deck, to the tasks with your words.', scene: 'side-mine' },
       { title: 'Every deck on days', tab: 'days', body: '`all · days` puts the tasks of every deck on one strip of days.', scene: 'side-mine' },
     ],
@@ -472,9 +472,9 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'tasks-given', v: 2, format: 'lesson', roles: ALL, area: 'decks', since: 'D-261, D-349',
+    id: 'tasks-given', v: 3, format: 'lesson', roles: ALL, area: 'decks', since: 'D-261, D-349, D-422',
     trigger: [{ event: 'task-given', when: { byOther: true } }],
-    pages: [{ title: 'A task for you', body: "Someone gave you a task. The count by the decks button is tasks given to you since you last looked; `MINE` in the side view lists them all." }],
+    pages: [{ title: 'A task for you', body: "Someone gave you a task. The count by the decks button is tasks given to you since you last looked; `mine` in Tasks lists them all." }],
   },
 
   // 8. Together

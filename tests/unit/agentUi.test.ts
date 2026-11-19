@@ -37,7 +37,7 @@ vi.mock('../../src/views/workspace/find/find', async () => {
 vi.mock('../../src/views/workspace/panels/CardPanel', () => ({ goToCard: () => {} }))
 vi.mock('../../src/views/workspace/deck/Kanban', () => ({ goToTask: () => {}, selectTask: () => {}, selectTasks: () => {}, useKanbanUi: { getState: () => ({ selected: null, many: null }) } }))
 vi.mock('../../src/views/workspace/canvas/selection', () => ({ selectedIds: () => [], setSelection: (ids: string[]) => env.log.push(`select ${ids.join(',')}`) }))
-vi.mock('../../src/views/workspace/deck/sideState', () => ({ useTasksSide: { getState: () => ({ open: false }), setState: () => {} } }))
+vi.mock('../../src/views/workspace/places/placeStore', () => ({ usePlace: { getState: () => ({ open: null, tasks: null }) }, openTasks: () => {} }))
 
 import { makeStore, registerStore } from '../../src/state/wsStore'
 import { fixtureWs, ID } from './fixtures/ws'

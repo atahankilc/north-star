@@ -7799,3 +7799,10 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
   typecheck, unit 1010 (sameLists finds the light block by its own line now), check:tokens 0, check:kit, check:gallery.
 - **Not yet:** the real app (a menu opened inside a column is dark now, on the ground; the agent's column and a
   document's dock not seen), the closing moment of the rail's tools on a real screen, touch.
+
+### D-422 · 2026-11-19 · Accepted (the user picked, for shell step 5: "Tasks column, left (Recommended)" and "Yes, follow into Tasks (Recommended)"; then "Baştan sonra her fonksiyonalitenin çalıştığına emin ol"): the decks side view folded into Tasks
+- **Why:** the end-to-end pass on the emulators found the old side view (D-300) breaking the shell: a task's `show on board|days` opened it over the canvas (its tabs over the breadcrumb, its dock squeezed, the same deck in the Tasks column too), it came back open after a reload, it left the canvas zoomed out when it closed, and a plane's dock drawer lay over the HUD with it open.
+- **Now:** Tasks is the one place for decks. A plane's `⇆ deck` / `⇆ timeline` open Tasks beside the canvas, linked to the plane (`⇆ linked to <plane> · its cards only`, `all decks` lets go; the column starts at 45 % of the window); a task or card picked there glides the plane in focus to the card. A deck's own focus `⇆ days` puts its days in the Tasks column. A task's `show on board` opens Tasks on its deck, `show on days` Tasks as the page with the deck's days. The task panel is the thing selected on the right (no narrow or `full` of its own). Following follows into Tasks (presence `tasks`, the same field and format; no rules change). The agent's `showBeside` for a deck or timeline opens Tasks (`openTasks`).
+- **Gone:** `TasksSide` (the component), `sideState.ts`, CanvasView's split, Escape and shade code for it, the cursors' `sideOpen`. Kept in TasksSide.tsx: `Days`, `Mine`, `BoardAndDays`, `deckTab`, drawn by TasksPlace.
+- Supersedes D-300's side view (its tabs, MINE and ALL · DAYS live on in Tasks) and shell.md's step 5.
+

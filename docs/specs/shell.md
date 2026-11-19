@@ -44,7 +44,7 @@ to keep documents; the agent beside all of it. This is where each opens.
    document's folder as a dropdown. Pushed only once the rules are deployed (the user's yes first).
 4. **Channels** for Talk (D-416, built 2026-11-19): a thread `on: 'channel'` named by its `targetId`; CHANNELS on top
    of Talk's list, `+ channel`, the first message makes it; no resolve, no chip. Its rules go live with D-415's.
-5. The side view (D-300) folded into Tasks (planned 2026-11-19; the user picked: a plane's linked deck opens in the
+5. **The side view (D-300) folded into Tasks** (D-422, built 2026-11-19; planned the same day; the user picked: a plane's linked deck opens in the
    Tasks column on the left, and following follows into Tasks). One commit each:
    1. Tasks' state in one store (tab, days, `linked`) and one opener `openTasks({ deck, days, linked })`.
    2. The `linked` strip in Tasks (`⇆ linked to 01 Pazar · its cards only  [all decks]`): a task picked glides the

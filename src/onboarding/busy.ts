@@ -8,7 +8,6 @@ import { onTracked, useHistory } from '../data/history'
 import { usePresence } from '../data/presence'
 import { firebase } from '../data/firebase'
 import { timelineKanbans } from '../data/tasks'
-import { useTasksSide } from '../views/workspace/deck/sideState'
 import { useFind } from '../views/workspace/find/find'
 import { useThreadView } from '../views/workspace/threads/Threads'
 import { usePlaneFilter } from '../views/workspace/canvas/planeFilter'
@@ -131,7 +130,6 @@ export function realSources(): Sources {
     ws: wsSource,
     history: useHistory as unknown as StoreLike<HistoryLike>,
     onTracked,
-    side: useTasksSide,
     presence: usePresence,
     find: useFind,
     threads: useThreadView,

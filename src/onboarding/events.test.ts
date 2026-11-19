@@ -38,7 +38,6 @@ function fakes() {
     ws: { get: () => ws, subscribe: (fn) => (wsSubs.add(fn), () => void wsSubs.delete(fn)) },
     history,
     onTracked: (fn) => (tracked.add(fn), () => void tracked.delete(fn)),
-    side: store({ open: false }),
     presence: store({ peers: [] as { uid: string }[], following: null as string | null }),
     find: store({ open: false }),
     threads: store({ inbox: false, openId: null, draft: null }),

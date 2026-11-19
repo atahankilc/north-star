@@ -338,10 +338,7 @@ feature comes back as a piece, and check them with the user then.
   tested offers `+ test it`, and its finished task `+ log what it taught` → evidence.
 - Tasks never hidden (D-300): a deck with tasks switched to cards asks first (a new deck for the cards, or move them);
   one hiding them says `☐ N tasks from before`.
-- Decks and days (D-300, D-314): one side view from anywhere (the side nav's columns-over-a-bar icon, shown with a deck
-  or timeline on the canvas, or `t`), left to right plane → deck → days (`[days ›]` a third column; under 1300 px over
-  the deck); tabs the canvas's decks (cards ones too, board only), `MINE` and `ALL · DAYS` in the corner; a plane's `⇆ deck` opens it there with a
-  `LINKED TO` strip; a task's panel inside it (`[full]`, `‹ back`, `[show on board|days]`); never beside a plane; its tabs at its top, the HUD's shade stopping at the split (D-354).
+- Decks and days (D-300, D-314, D-422): Tasks shows them (the side view folded in, D-422): a deck's tabs, `mine`, `all · days`; as the page a deck's board with its days beside it; a plane's `⇆ deck` opens it linked, with a `LINKED TO` strip.
 - A timeline is always the days of something (D-314): its deck; its plane's deck (stuck to a plane, read, not written);
   a plane with no deck, every deck's tasks for its cards; nothing, every deck on its canvas. Drawing days opens the card prompt.
 - Stuck to a plane (D-255, D-303): only that plane's tasks until unlinked (no switch, no note: the link shows it),
@@ -437,6 +434,7 @@ feature comes back as a piece, and check them with the user then.
 ## The shell (D-412, docs/specs/shell.md)
 - The canvas is home, filling the window until something docks; Talk, Tasks and Docs open beside it as a column on the left ground, `full` makes one the page in the canvas's place; the right is the thing selected and the agent at the far right; the HUD bare buttons on the left edge: the page's actions in the middle, the places at the foot.
 
+- The decks side view is Tasks now (D-422): a plane's `⇆ deck`/`⇆ timeline` open Tasks linked to it, a task's `show on…` too; following follows into Tasks; the agent opens decks there.
 - The places alike (D-419): one head (`PlaceHead`), an opened item under it with one back row, one find (`PlaceFind`); the places are the workspace's (Tasks every deck, what each is on); on a page the breadcrumb ends with it and the canvases' switch is gone; `full` grows the page from its column.
 - Folders in Docs (D-415): `folders/` (a name, the folder it's in), content owners and editors change; a document's `folderId`, moved by its author or, shared, by an owner or editor; a folder deleted, what's in it goes up.
 

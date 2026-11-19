@@ -95,7 +95,6 @@ export type Sources = {
   ws: { get(): WsLike | null; subscribe(fn: () => void): () => void }
   history: StoreLike<HistoryLike>
   onTracked(fn: (label: string, meta?: TrackedMetaLike) => void): () => void
-  side: StoreLike<{ open: boolean }>
   presence: StoreLike<{ peers: { uid: string }[]; following: string | null }>
   find: StoreLike<{ open: boolean }>
   threads: StoreLike<{ inbox: boolean; openId: string | null; draft: { on: string } | null }>
@@ -439,7 +438,6 @@ export function attach(s: Sources): () => void {
 
   // Other stores.
   offs.push(
-    s.side.subscribe((n, p) => void (n.open && !p.open && learn('side-view'))),
     s.presence.subscribe((n, p) => {
       if (n.following && n.following !== p.following) learn('following')
       for (const uid of new Set(n.peers.map((x) => x.uid))) {

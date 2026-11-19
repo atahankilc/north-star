@@ -6,7 +6,11 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import { MAIN, piecesOn } from '../../../data/canvases'
-import { useWs } from '../canvas/context'
+import { useWs, useWsNow } from '../canvas/context'
+import { glidePlaneTo } from '../canvas/Beside'
+import type { Card } from '../../../data/cards'
+import { Label } from '../../../ui/primitives/Label'
+import type { Task } from '../../../data/tasks'
 import { useCanvasView } from '../../../state/canvasView'
 import { Tabs } from '../../../ui/primitives/Tabs'
 import { Button } from '../../../ui/primitives/Button'
@@ -40,6 +44,7 @@ function useBox() {
 // `head`: the place's head, given what goes in it (the tabs: one row, D-419).
 export function TasksPlace({ page = false, editor, head }: { page?: boolean; editor: boolean; head: (tabs: ReactNode) => ReactNode }) {
   const { pieces, canvas, spots, canvases } = useWs()
+  const now = useWsNow()
   // Every deck in the workspace (D-419: Tasks is the workspace's, as Talk and Docs are): this canvas's first, then the
   // others' by their canvas's order.
   const decks = useMemo(() => {
@@ -57,7 +62,9 @@ export function TasksPlace({ page = false, editor, head }: { page?: boolean; edi
   // The tab: asked for (a task's `show on…`, openTasks), else the first deck as the page and `mine` beside the canvas.
   const asked = usePlace((s) => s.tasks)
   const tab: Tab = asked?.tab ?? (page ? (decks[0]?.id ?? 'mine') : 'mine')
-  const setTab = (t: Tab) => usePlace.setState({ tasks: { tab: t, days: false } })
+  // Opened from a plane (D-419, the old side view's `linked`): its deck, or every deck's days for its cards.
+  const linked = asked?.linked ? pieces.find((p) => p.id === asked.linked) : undefined
+  const setTab = (t: Tab) => usePlace.setState({ tasks: { tab: t, days: false, linked: linked && (t === 'all' || decks.find((d) => d.id === t)?.stuckTo === linked.id) ? linked.id : null } })
   const [withDays, setWithDays] = useState(page)
   // The board's share of the page: room for its columns, its days beside them.
   const [inner, setInner] = useState(0.68)
@@ -77,7 +84,18 @@ export function TasksPlace({ page = false, editor, head }: { page?: boolean; edi
   const ofCards = !!deck && kanbanOf(deck).holds === 'cards'
   const two = !!deck && !ofCards && withDays && page
   const deckW = two ? Math.round(box.w * inner) : box.w
-  const onCard = (c: { id: string }) => useCanvasView.setState({ cardSelected: c.id, labelSelected: null })
+  // A task or a card picked while its plane is in focus glides the plane to the card (as the side view did, D-300).
+  const inFocus = () => !!linked && linked.kind === 'plane' && new URLSearchParams(window.location.search).get('focus') === linked.id
+  const onTask = (t: Task) => {
+    const card = t.cardId ? now().cards.find((c) => c.id === t.cardId) : undefined
+    if (card && linked && inFocus()) glidePlaneTo(card, linked.id, now().cards, now().places, true)
+  }
+  const onCard = (c: Card) => {
+    useCanvasView.setState({ cardSelected: c.id, labelSelected: null })
+    if (linked && inFocus()) glidePlaneTo(c, linked.id, now().cards, now().places)
+  }
+  // Beside the canvas a deck's days (from a plane's timeline, or its deck's `⇆ days`) take the column.
+  const daysAlone = !page && !!deck && !ofCards && !!asked?.days
   const drag = (e: PointerEvent) => {
     const r = box.ref.current?.getBoundingClientRect()
     if (r) setInner(Math.min(0.75, Math.max(0.3, (e.clientX - r.left) / r.width)))
@@ -102,7 +120,17 @@ export function TasksPlace({ page = false, editor, head }: { page?: boolean; edi
         <Tabs label="Across decks" value={deck ? '' : tab} onChange={setTab} options={[{ value: 'mine', label: 'mine' }, { value: 'all', label: 'all · days' }]} />
       </div>,
       )}
-      {tab !== 'all' && <PlaceFind value={find} onChange={setFind} label="Find in Tasks" />}
+      {linked && (tab === 'all' || deck?.stuckTo === linked.id) && (
+        <div className={styles.linked}>
+          <span>
+            <Label className={styles.linkedWord}>⇆ linked to</Label> <b>{linked.name || 'a plane'}</b> <span className={styles.dim}>· its cards only</span>
+          </span>
+          <Button onClick={() => usePlace.setState({ tasks: { tab, days: false, linked: null } })} title="every deck, as from the HUD">
+            all decks
+          </Button>
+        </div>
+      )}
+      {tab !== 'all' && !daysAlone && <PlaceFind value={find} onChange={setFind} label="Find in Tasks" />}
       <div ref={box.ref} className={styles.area}>
         {box.w > 0 &&
           (tab === 'mine' ? (
@@ -110,9 +138,11 @@ export function TasksPlace({ page = false, editor, head }: { page?: boolean; edi
               {null}
             </Mine>
           ) : tab === 'all' ? (
-            <Days key="all" box={{ x: 0, y: 0, w: box.w, h: box.h }} deck={null} plane={null} editor={editor} onTask={() => {}} dock={null} />
+            <Days key={`all:${linked?.id ?? ''}`} box={{ x: 0, y: 0, w: box.w, h: box.h }} deck={null} plane={linked ?? null} editor={editor} onTask={onTask} dock={null} />
+          ) : deck && daysAlone ? (
+            <Days key={`days:${deck.id}`} box={{ x: 0, y: 0, w: box.w, h: box.h }} deck={deck} plane={null} editor={editor} onTask={onTask} dock={null} />
           ) : deck ? (
-            <BoardAndDays deck={deck} top={0} width={box.w} height={box.h} deckW={deckW} days={two} editor={editor} onTask={() => {}} onCard={onCard} boardDock={daysToggle} close={null} daysDock={null} onDrag={drag} />
+            <BoardAndDays deck={deck} top={0} width={box.w} height={box.h} deckW={deckW} days={two} editor={editor} onTask={onTask} onCard={onCard} boardDock={daysToggle} close={null} daysDock={null} onDrag={drag} />
           ) : (
             <Empty className={styles.none}>No deck yet: the canvas’s + makes one (deck…).</Empty>
           ))}

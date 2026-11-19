@@ -7,7 +7,6 @@ import { useKanbanUi } from '../views/workspace/deck/Kanban'
 import { useMatrixUi } from '../views/workspace/matrix/Matrix'
 import { useTableUi } from '../views/workspace/table/Table'
 import { useFind } from '../views/workspace/find/find'
-import { useTasksSide } from '../views/workspace/deck/sideState'
 import { usePlaneFilter } from '../views/workspace/canvas/planeFilter'
 import { useThreadView } from '../views/workspace/threads/Threads'
 import { useDocUi } from '../views/workspace/documents/Documents'
@@ -21,7 +20,7 @@ import { useHistory } from '../data/history'
 import { usePlace } from '../views/workspace/places/placeStore'
 import { useDocsAt } from '../views/workspace/documents/DocsPlace'
 
-const stores = [useCanvasView, useKanbanUi, useMatrixUi, useTableUi, useSetup, useFind, useTasksSide, usePlaneFilter, useThreadView, useDocUi, useShelf, useGoTo, useGuides, useOpenSize, useKanbanSizes, usePresence, usePlace, useDocsAt]
+const stores = [useCanvasView, useKanbanUi, useMatrixUi, useTableUi, useSetup, useFind, usePlaneFilter, useThreadView, useDocUi, useShelf, useGoTo, useGuides, useOpenSize, useKanbanSizes, usePresence, usePlace, useDocsAt]
 const KEEP = ['north-star.theme', 'north-star.motion']
 
 export function fresh() {

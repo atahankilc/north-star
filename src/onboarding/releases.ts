@@ -27,6 +27,8 @@ export const RELEASES: readonly Release[] = [
     items: [
       // D-417: one interface size for everything, replacing the hud size.
       { title: 'One size for everything', tab: 'size', line: 'Settings → display → interface size makes the text, buttons, panels and menus bigger or smaller together, 75 to 150 %.', lessons: ['settings'] },
+      // D-422: the decks side view folded into Tasks.
+      { title: "A plane's deck in Tasks", tab: 'tasks', line: "A plane's `⇆ deck` opens its deck in Tasks, beside the canvas, linked to the plane. Follow someone and you see their Tasks too.", lessons: ['side-view'] },
     ],
   },
   {

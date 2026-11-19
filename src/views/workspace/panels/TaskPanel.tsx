@@ -20,7 +20,6 @@ import { useWs } from '../canvas/context'
 import { kanbanOf, selectTask, useKanbanUi } from '../deck/Kanban'
 import { dueText } from '../../../model/tasks'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
-import { useTasksSide } from '../deck/sideState'
 import styles from './CardPanel.module.css'
 import own from './TaskPanel.module.css'
 import { Checkbox } from '../../../ui/primitives/Checkbox'
@@ -39,9 +38,6 @@ import { CloseIcon } from '../../../ui/primitives/hudIcons'
 
 const TONE = 'var(--accent-cyan)'
 
-// A task's panel in the tasks side view (D-300): its width there, unless it fills it.
-const SIDE_TASK_W = 330
-
 // The side view open on a deck, its days or not (the task stays picked, lit there).
 // Loaded when pressed: placeStore reads the threads' store, which leads back here (an import cycle at start).
 const showIn = (deck: string, days: boolean) => void import('../places/placeStore').then((m) => m.openTasks(deck, days))
@@ -58,16 +54,8 @@ export function TaskPanel({ editor }: { editor: boolean }) {
   const close = () => selectTask('', null)
   // Beside a plane, over the plane's part of the screen (as a card's, D-211).
   const beside = useBesideW()
-  // Inside the tasks side view (D-300): flush with its right edge, narrow or filling it.
-  const inSide = useTasksSide((s) => s.open)
-  const full = useTasksSide((s) => s.taskFull)
-  const right = inSide ? 0 : beside
-  const width = inSide ? (full ? beside : Math.min(SIDE_TASK_W, beside)) : undefined
-  const tools = inSide && (
-    <Button onClick={() => useTasksSide.setState({ taskFull: !full })} title={full ? 'narrow again, the board beside it' : 'fill the side view'}>
-      {full ? '‹ back' : 'full'}
-    </Button>
-  )
+  // On the right, the thing selected (D-412): the old side view's narrow and `full` went with it (D-419).
+  const right = beside
   // A card picked closes it (its panel takes the place). Going into a space or out of one lets go (CanvasView's focus
   // and unfocus), not this panel going: it's mounted per space, and remounted in development.
   const card = useCanvasView((s) => s.cardSelected)
@@ -86,8 +74,6 @@ export function TaskPanel({ editor }: { editor: boolean }) {
           label={`${many.length} tasks selected`}
           title={`${many.length} selected`}
           right={right}
-          width={width}
-          tools={tools}
           onClose={close}
           actions={
             editor && (
@@ -115,8 +101,6 @@ export function TaskPanel({ editor }: { editor: boolean }) {
           label={`task ${task.title}`}
           title={<Title key={task.id} task={task} editor={editor} />}
           right={right}
-          width={width}
-          tools={tools}
           onClose={close}
           actions={
             <>

@@ -13,7 +13,6 @@
 // across days, each day's rule (`20 TODAY ──`) and the clock instead of how long ago; one writer's run under one name;
 // your own message's `edit · delete` beside its bubble while pointed at; the messages gather at the foot, by the prompt.
 import { Fragment, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
-import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import { firebase } from '../../../data/firebase'
 import { MESSAGE_MAX, type Member, type Thread, type ThreadMessage } from '../../../data/model'
@@ -55,31 +54,10 @@ import { CardFace } from '../cards/CardFace'
 import { TypeBadge } from '../cards/TypeBadge'
 import { Rule } from '../../../ui/primitives/Rule'
 
-type ThreadView = {
-  // Pins shown (`c`); only threads with something new (D-166); resolved ones too.
-  show: boolean
-  newOnly: boolean
-  resolvedToo: boolean
-  // The open thread, or one being started (no messages yet).
-  openId: string | null
-  draft: NewThread | null
-  // The threads panel's list (D-166), bottom left (D-193); `scope`: only a plane's (on it, or in it), from its console.
-  // The panel has two halves that work apart (D-199): the list and the open thread. Either opens the other; closing the
-  // list closes both, closing the thread leaves the list open.
-  inbox: boolean
-  scope: string | null
-}
-
-export const useThreadView = create<ThreadView>(() => ({ show: true, newOnly: false, resolvedToo: false, openId: null, draft: null, inbox: false, scope: null }))
-export const toggleThreadPins = () => useThreadView.setState((s) => ({ show: !s.show }))
-export const openThread = (id: string) => useThreadView.setState({ openId: id, draft: null })
-export const startComment = (draft: NewThread) => useThreadView.setState({ draft, openId: null, show: true })
-export const closeThread = () => useThreadView.setState({ openId: null, draft: null })
-export const toggleInbox = (on?: boolean, scope: string | null = null) =>
-  useThreadView.setState((s) => {
-    const inbox = on ?? !s.inbox
-    return inbox ? { inbox, scope } : { inbox, scope, openId: null, draft: null }
-  })
+// Talk's own store (which thread is open, the list, the pins) lives in threadView.ts, apart from this big file, so the
+// places' store can read it without an import cycle (D-422).
+import { closeThread, openThread, startComment, toggleInbox, toggleThreadPins, useThreadView } from './threadView'
+export { closeThread, openThread, startComment, toggleInbox, toggleThreadPins, useThreadView }
 
 // Without Firebase (the onboarding's demo realm) the scene's made-up you, else nobody.
 export const myUid = () => (firebase ? (firebase.auth.currentUser?.uid ?? '') : demoThreads.me)

@@ -9,8 +9,8 @@
 // - to another canvas, and what's beside a plane: the address (`?canvas=`, `beside=`), pushed as react-router pushes it
 //   and announced with a popstate, which BrowserRouter listens to;
 // - picks: the selection stores (selection.ts' setSelection, Kanban's task picks, the canvas's `selected`), a card
-//   brought into view by CardPanel's goToCard, a task by Kanban's goToTask; decks and timelines open in the tasks side
-//   view (sideState.ts).
+//   brought into view by CardPanel's goToCard, a task by Kanban's goToTask; decks and timelines open in Tasks
+//   (placeStore.ts' openTasks, D-419).
 // Each call is async (it waits for the view to get there), queued behind the one before (one at a time, a failure not
 // stopping the next), and counted by agentDriving (driving.ts) from being asked until half a second after it settles,
 // for onboarding. Dev only: `window.__agentUi` holds the facade once this module is loaded.
@@ -21,7 +21,7 @@ import { clearFound, findGo } from '../views/workspace/find/find'
 import { goToCard } from '../views/workspace/panels/CardPanel'
 import { goToTask, selectTask, selectTasks, useKanbanUi } from '../views/workspace/deck/Kanban'
 import { selectedIds, setSelection } from '../views/workspace/canvas/selection'
-import { useTasksSide } from '../views/workspace/deck/sideState'
+import { openTasks, usePlace } from '../views/workspace/places/placeStore'
 import { CANVAS, kindOf } from '../model/labels'
 import { labelBox } from '../model/labelBox'
 import { canvasOf, MAIN } from '../model/canvases'
@@ -47,7 +47,7 @@ export type View = {
   tasks: string[]
   // The card or task whose panel is open.
   panel: { card: string } | { task: string } | null
-  // What's open beside the focused plane (`beside=`), and the tasks side view.
+  // What's open beside the focused plane (`beside=`), and what Tasks shows (D-419; the tasks side view's before).
   beside: string[]
   side: { tab: string; days: boolean; linked: string | null } | null
 }
@@ -251,7 +251,7 @@ async function showBesideNow(id: string) {
   const p = pieceOf(id)
   if (!p) throw new Error(`agent ui: there is no piece ${id}`)
   const kind = kindOfPiece(p)
-  // Decks and timelines open in the tasks side view (D-300, D-314), never beside a plane.
+  // Decks and timelines open in Tasks (D-419; the tasks side view, D-300, D-314, before), never beside a plane.
   if (kind === 'kanban' || kind === 'timeline') {
     const host = p.stuckTo ? pieceOf(p.stuckTo) : undefined
     let tab = 'all'
@@ -262,8 +262,8 @@ async function showBesideNow(id: string) {
     const plane = kind === 'kanban' ? host : host?.kind === 'kanban' ? (host.stuckTo ? pieceOf(host.stuckTo) : undefined) : host
     const linked = plane && focusNow() === plane.id ? plane.id : null
     if (tab === 'all') days = true
-    useTasksSide.setState({ open: true, tab, days, linked, taskFull: false })
-    await until(() => useTasksSide.getState().open, 'the tasks side view')
+    openTasks(tab, days, linked)
+    await until(() => usePlace.getState().open === 'tasks', 'Tasks')
     return
   }
   if (!sticks(p) || !p.stuckTo) throw new Error(`agent ui: ${id} isn't stuck to a plane, so it has nowhere to open beside (focus it instead)`)
@@ -332,7 +332,8 @@ function currentView(): View {
   const w = ws()
   const s = useCanvasView.getState()
   const k = useKanbanUi.getState()
-  const side = useTasksSide.getState()
+  const place = usePlace.getState()
+  const side = place.open === 'tasks' ? place.tasks : null
   const sel = selectedIds()
   return {
     wid: w.wid,
@@ -344,7 +345,7 @@ function currentView(): View {
     tasks: k.many?.tasks ?? (k.selected ? [k.selected.task] : []),
     panel: s.cardSelected && !s.panelShut ? { card: s.cardSelected } : k.selected ? { task: k.selected.task } : null,
     beside: (params().get('beside') ?? '').split(',').filter(Boolean),
-    side: side.open ? { tab: side.tab, days: side.days, linked: side.linked } : null,
+    side: place.open === 'tasks' ? { tab: side?.tab ?? 'mine', days: !!side?.days, linked: side?.linked ?? null } : null,
   }
 }
 

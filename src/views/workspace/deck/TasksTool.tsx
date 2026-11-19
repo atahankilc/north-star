@@ -10,7 +10,6 @@ import { setPresenceTasks } from '../../../data/presence'
 import { finished } from '../../../data/tasks'
 import { useReads } from '../../../data/threads'
 import { useWs } from '../canvas/context'
-import { loadTasksSide, sideShared, useTasksSide } from './sideState'
 import { openPlace, usePlace } from '../places/placeStore'
 import { ToolButton } from '../../../ui/primitives/ToolButton'
 import { DeckIcon } from '../../../ui/primitives/hudIcons'
@@ -23,8 +22,8 @@ export function TasksTool() {
   const reads = useReads(wid, me)
   const lookedAt = reads.data?.tasks ?? 0
   const open = usePlace((s) => s.open === 'tasks')
-  useEffect(() => loadTasksSide(wid), [wid])
-  const shared = useTasksSide(sideShared)
+  // What Tasks shows, for whoever follows you (presence `tasks`, D-300's field): its tab, ` days` with a deck's days.
+  const shared = usePlace((s) => (s.open === 'tasks' ? `${s.tasks?.tab ?? 'mine'}${s.tasks?.days ? ' days' : ''}` : null))
   useEffect(() => setPresenceTasks(shared), [shared])
 
   const mine = tasks.filter((t) => me && t.assignee === me && !finished(t, pieces) && pieces.some((p) => p.id === t.pieceId))
