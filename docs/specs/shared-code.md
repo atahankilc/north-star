@@ -516,5 +516,6 @@ merges (R1.5–R1.7, the demo) and R3.
 - **R4.7 (2026-11-19, D-411).** A kind's dock tools and setup are `LensTools` and `LensSetup` (canvas/pieceKinds.tsx)
   in its focus, beside a plane and in the decks side view (`LensPane`'s part that had drifted; the views themselves
   stay each place's own). check:kit's `kindSwitch` refuses a view naming a piece kind by hand outside its folder and
-  the record; today's 34 in 7 files in the baseline. Round 2 is done but for the agent's Markdown, which waits for the
+  the record; today's 31 in 6 files in the baseline. A piece's box opened on the canvas is its record's `opened`
+  (shownBox.ts no longer names a kind). Round 2 is done but for the agent's Markdown, which waits for the
   agent's redesign (the user).

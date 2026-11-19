@@ -145,9 +145,6 @@
   "src/views/workspace/canvas/gridCursor.ts": {
     "windowKeys": 1
   },
-  "src/views/workspace/canvas/shownBox.ts": {
-    "kindSwitch": 3
-  },
   "src/views/workspace/canvas/useEditKeys.ts": {
     "windowKeys": 1
   },

@@ -7637,8 +7637,12 @@ part, `cards/TypeBadge` (PlaneCard uses it too).
   pieceKinds.tsx. Today's 34 in 7 files are in the baseline (most say what's special about a kind: a deck's tasks, a
   document's title, the finder's per-kind rows); a new one reads the record, or says why with `kit-ok`. ops/, agent/,
   model/ and onboarding are left out: they work on a kind's data, which is per kind by nature.
-- *Left:* the console's tools on a piece open on the canvas stay `OpenTools` (a console's look, not a dock's);
-  shownBox.ts still works out a matrix's and a table's box by name (in the baseline).
+- *Left:* the console's tools on a piece open on the canvas stay `OpenTools` (a console's look, not a dock's).
+- *Then (2026-11-19, the user: "shownBox.ts'i de tür kaydına taşı"):* a piece's box opened onto the canvas reads its
+  record's `opened` (worked out for a matrix and a table, measured for the rest); `OPEN_PAD` and `OPEN_FOOT` moved to
+  the leaf sizes.ts, so the record and shownBox.ts import no cycle; the baseline 34 → 31 (shownBox.ts out). Checked:
+  typecheck, unit 1189, check:kit, the split build, no import path from pieceKinds.tsx back to shownBox.ts,
+  check:gallery:live (canvas, documents, deck), check:scenes.
 - *Kept for the shell preview (north-star-1c):* TasksSide's `Board`, `Days`, `Mine` keep their props.
 - *Checked:* typecheck, unit 1188, check:kit (the rule refuses a new switch), check:repeats, check:gallery,
   check:gallery:live for canvas and deck; the docks of ten gallery states (five kinds in focus, three beside, two in the

@@ -24,6 +24,7 @@ import { timelineBounds, TimelineDockTools, TimelineView, TimelineWeeks } from '
 import { documentsBounds, documentsFindItems, documentsOf, DocumentsTools, DocumentsView, listed, useDocUi } from '../documents/Documents'
 import { DocFocus, documentBounds, DocumentPieceView } from '../documents/DocumentPiece'
 import { DockAction } from './FocusDock'
+import { useKanbanSizes, useOpenSize } from './sizes'
 import { toggleSetup, useSetupOn } from './setupStore'
 
 export type LensKind = Exclude<PieceKind, 'plane'>
@@ -50,6 +51,9 @@ export type KindRecord = {
   // Fitted whole in its window, a little room round it (a matrix, a timeline: two weeks are wider than any window), or at
   // its own size from the top-left (D-208, D-214).
   fitted: boolean
+  // Its contents' size opened onto the canvas (D-228, shownBox.ts): worked out from the data, or as it came out when
+  // drawn (sizes.ts; undefined until then).
+  opened: (piece: WithId<Piece>, cards: Card[]) => { w: number; h: number } | undefined
   // Its setup panel (SetupShell round its editors); whose is open is setupStore.ts'.
   setup?: { title: string; Panel: ComponentType<{ piece: WithId<Piece> }> }
   // Its tools in the focus dock (and beside a plane), before its setup.
@@ -60,6 +64,9 @@ export type KindRecord = {
   // it is, and the heads its landing keeps clear of (a matrix's stay on the screen when panned past).
   find?: { items: (piece: WithId<Piece>, ctx: FindCtx) => FindItem[]; hint: (it: FindItem) => string; heads?: { top: number; left: number } }
 }
+
+// A kind whose contents' size is only known once drawn (rows of text, a document's length, the days' rows).
+const measured = (p: WithId<Piece>) => useOpenSize.getState()[p.id]
 
 const pageOf = (it: FindItem) => (it.page !== undefined ? ` · page ${it.page + 1}` : '')
 
@@ -103,6 +110,7 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
     Shown: MatrixShown,
     bounds: (p, c) => matrixBounds(p, c.cards),
     fitted: true,
+    opened: (p, cards) => matrixBounds(p, cards),
     setup: { title: 'its rows, columns and cells', Panel: MatrixSetupPanel },
     find: {
       items: (p, c) => matrixFindItems(p, c.cards, c.cells),
@@ -114,6 +122,7 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
     Shown: TableShown,
     bounds: (p, c) => tableBounds(p, c.cards),
     fitted: false,
+    opened: (p, cards) => tableBounds(p, cards),
     setup: { title: 'where its rows come from, its columns', Panel: TableSetupPanel },
     dock: pager,
     console: pager,
@@ -126,6 +135,7 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
     Shown: DocumentsShown,
     bounds: (p, c) => documentsBounds(p, listed(c.documents, documentsOf(p), c.me).length),
     fitted: false,
+    opened: measured,
     dock: DocumentsDock,
     console: ({ piece, editor, toolClass }) => <DocumentsTools piece={piece} editor={editor} toolClass={toolClass} />,
     find: {
@@ -139,11 +149,14 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
     Focused: DocFocus,
     bounds: (p) => documentBounds(p),
     fitted: false,
+    opened: measured,
   },
   kanban: {
     Shown: KanbanShown,
     bounds: (p, c) => kanbanBounds(p, c.tasks),
     fitted: false,
+    // Its tasks are as tall as their text: measured, framed or not.
+    opened: (p) => useKanbanSizes.getState()[p.id],
     setup: { title: 'what it holds: tasks, or cards by a field', Panel: KanbanSetupPanel },
     dock: KanbanDock,
   },
@@ -151,6 +164,7 @@ export const PIECE_KINDS: Record<LensKind, KindRecord> = {
     Shown: TimelineShown,
     bounds: (p, c) => timelineBounds(p, c.pieces, c.tasks, c.cards),
     fitted: true,
+    opened: measured,
     dock: TimelineDockTools,
     // Its weeks (D-289); its filter and rows are in its focus.
     console: ({ piece, toolClass }) => <TimelineWeeks piece={piece} toolClass={toolClass} />,
