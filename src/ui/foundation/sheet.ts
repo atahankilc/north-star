@@ -28,13 +28,16 @@ let rails = 0
 let layers: HTMLElement[] | null = null
 // Kept while the sheet travels home: the tools it drew back off are still there.
 let cut = 0
-// How far a left column reaches now, and who hears it change (D-422: the canvas moves its view by half of it, so what
-// was in the middle of the screen stays in the middle of what's left; a left place no longer covers it).
+// How far the columns reach on each side now, and who hears it change (D-422: the canvas moves its view by half of the
+// difference, so what was in the middle of the screen stays in the middle of what's left; no column covers it).
 let leftWas = 0
-const leftMoves = new Set<(by: number) => void>()
-export function onSheetLeft(fn: (by: number) => void) {
-  leftMoves.add(fn)
-  return () => void leftMoves.delete(fn)
+let rightWas = 0
+// Heard with each side's move and where the columns now reach (from the window's left and right edges).
+type Move = (left: number, right: number, reach: { left: number; right: number }) => void
+const moves = new Set<Move>()
+export function onSheetMove(fn: Move) {
+  moves.add(fn)
+  return () => void moves.delete(fn)
 }
 
 // The sheet's corner now, in px: 0 while it fills the window (the agent's tab keeps clear of it, as its CSS does).
@@ -90,10 +93,12 @@ function measure() {
     void layers[0].offsetWidth
   }
   setPageValue('--sheet-x0', `${left || rail || gap}px`)
-  if (left !== leftWas) {
-    const by = left - leftWas
+  if (left !== leftWas || right !== rightWas) {
+    const l = left - leftWas
+    const r = right - rightWas
     leftWas = left
-    for (const fn of leftMoves) fn(by)
+    rightWas = right
+    for (const fn of moves) fn(l, r, { left, right })
   }
   setPageValue('--sheet-x1', `${right || gap}px`)
   setPageValue('--sheet-b', `${gap}px`)

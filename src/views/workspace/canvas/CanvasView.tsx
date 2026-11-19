@@ -36,8 +36,9 @@ import { BringCards } from '../plane/BringCards'
 import { isNew, useReads } from '../../../data/threads'
 import { ThreadInbox } from '../threads/ThreadInbox'
 import { CARD } from '../../../data/cards'
+import { getWs } from '../../../state/wsStore'
 import { glide, planeArea, stopGlide } from '../../../state/canvasView'
-import { onSheetLeft } from '../../../ui/foundation/sheet'
+import { onSheetMove } from '../../../ui/foundation/sheet'
 import { isReducedMotion } from '../../../state/motion'
 import { isOwnerOf, roleOf } from '../../../data/workspaces'
 import type { Thread } from '../../../data/model'
@@ -45,7 +46,7 @@ import { Follow, PeerCursors, stopFollowing, useCursorReport, usePeersOn, usePre
 import { usePresenceMembers } from '../../../data/presence'
 import { deleteHere, heldAt } from './selection'
 import { alikeProps } from './kept'
-import { cardsByPlane, elsewhere } from '../../../data/places'
+import { cardsByPlane, cardsOn, elsewhere } from '../../../data/places'
 import { runCells } from '../../../ui/primitives/Appear'
 import { CARRIED, carriedStyle, EVERY_HANDLE, Landing, Marks, ZOOM_SETTLE_MS } from '../../../ui/primitives/Marks'
 import { DrawSection } from './DrawSection'
@@ -723,14 +724,29 @@ export function CanvasView() {
   // The plane's part of the screen follows what's open beside it (D-211); its contents fit there again.
   // A document open beside its list (D-232) takes the right part the same way.
   const besideCount = besideOpen.length + (readerOpen ? 1 : 0)
-  // A place docked on the left (Talk, Tasks, Docs; D-422): the view moves over by half the sheet's move, so what was
-  // in the screen's middle stays in the middle of what's left of it, never under the column; and back as it goes.
+  // A column docked on either side (Talk, Tasks, Docs on the left; a card's or task's panel, the agent on the right;
+  // D-422): the view moves over by half the sheet's move, so what was in the screen's middle stays in the middle of
+  // what's left of it, never under the column; and back as it goes.
   useEffect(
     () =>
-      onSheetLeft((by) => {
-        const half = by / 2
-        const { planeCam, focusArrived } = useCanvasView.getState()
-        if (focusIdRef.current && planeCam && focusArrived) return glide(planeCam, { ...planeCam, ox: planeCam.ox + half }, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
+      onSheetMove((left, right, reach) => {
+        let half = (left - right) / 2
+        if (!half) return
+        const { planeCam, focusArrived, cardSelected } = useCanvasView.getState()
+        if (focusIdRef.current && planeCam && focusArrived) {
+          // The card whose panel opened stays whole in sight, past half the move if it has to (a card at the edge).
+          const ws = getWs()
+          const card = cardSelected && ws ? cardsOn(ws.cards, ws.places, focusIdRef.current).find((c) => c.id === cardSelected) : undefined
+          if (card) {
+            const pad = tokenPx('--space-4')
+            const x0 = planeCam.ox + half + card.x * planeCam.zoom
+            const x1 = x0 + CARD.w * planeCam.zoom
+            const room = window.innerWidth - reach.right - pad
+            if (x1 > room) half -= x1 - room
+            else if (x0 < reach.left + pad) half += reach.left + pad - x0
+          }
+          return glide(planeCam, { ...planeCam, ox: planeCam.ox + half }, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
+        }
         if (focusIdRef.current) return
         const c = camOf(wid)
         glide(c, { ...c, x: c.x + half }, DUR.glide, (v) => setCam(wid, v))
