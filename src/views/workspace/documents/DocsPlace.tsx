@@ -87,35 +87,27 @@ function FolderRow({ f, count, editor }: { f: WithId<Folder>; count: number; edi
         <CommitField line autoFocus select value={f.name} label="Folder name" maxLength={FOLDER_NAME_MAX} empty="undo" onSave={(v) => void renameFolder(wid, f.id, v)} onEnd={() => useDocsAt.setState({ renaming: null })} />
       </div>
     )
+  // Its tools beside the row, not in it: a button holds no button.
   return (
-    <CardRow
-      className={styles.row}
-      data-folder
-      title={f.name}
-      lead={<FolderIcon />}
-      end={
-        <span className={styles.meta}>
-          {plural(count, 'file')}
-          {editor && (
-            <span className={styles.rowTools}>
-              <Button icon aria-label={`Rename ${f.name}`} title="rename" onClick={(e) => (e.stopPropagation(), useDocsAt.setState({ renaming: f.id }))}>
-                <EditIcon />
-              </Button>
-              <Button
-                icon
-                tone="danger"
-                aria-label={`Delete ${f.name}`}
-                title="delete the folder: what's in it goes up a level (undo brings it back)"
-                onClick={(e) => (e.stopPropagation(), void deleteFolder(wid, f.id, folders, documents, (d) => mayMoveDoc(d, user?.id, role)))}
-              >
-                <BinIcon />
-              </Button>
-            </span>
-          )}
+    <div className={styles.folderRow}>
+      <CardRow className={styles.row} data-folder title={f.name} lead={<FolderIcon />} end={<span className={styles.meta}>{plural(count, 'file')}</span>} onClick={() => useDocsAt.setState({ folder: f.id, open: null })} />
+      {editor && (
+        <span className={styles.rowTools}>
+          <Button icon aria-label={`Rename ${f.name}`} title="rename" onClick={() => useDocsAt.setState({ renaming: f.id })}>
+            <EditIcon />
+          </Button>
+          <Button
+            icon
+            tone="danger"
+            aria-label={`Delete ${f.name}`}
+            title="delete the folder: what's in it goes up a level (undo brings it back)"
+            onClick={() => void deleteFolder(wid, f.id, folders, documents, (d) => mayMoveDoc(d, user?.id, role))}
+          >
+            <BinIcon />
+          </Button>
         </span>
-      }
-      onClick={() => useDocsAt.setState({ folder: f.id, open: null })}
-    />
+      )}
+    </div>
   )
 }
 

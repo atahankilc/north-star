@@ -119,13 +119,23 @@
   color: var(--accent-yellow);
 }
 
-.rowTools {
-  display: inline-flex;
-  margin-left: var(--space-2);
-  opacity: 0;
+.folderRow {
+  position: relative;
 }
 
-.row:hover .rowTools,
+/* Rename and delete over the row's right end (where its count is), while pointed at. */
+.rowTools {
+  position: absolute;
+  top: 50%;
+  right: var(--space-2);
+  display: inline-flex;
+  padding-left: var(--space-2);
+  background: var(--bg);
+  opacity: 0;
+  transform: translateY(-50%);
+}
+
+.folderRow:hover .rowTools,
 .rowTools:focus-within {
   opacity: 1;
 }
