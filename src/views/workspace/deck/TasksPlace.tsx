@@ -2,10 +2,10 @@
 // deck's real board (the tasks side view's Board: KanbanView with its dock), the tasks given to you (Mine), or every
 // deck's days (Days). Beside the canvas, one at a time; as the page, a deck's board with its days beside it, the line
 // between them dragged. A plane's linked deck still opens in the side view (D-300), beside the plane.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
-import { piecesOn } from '../../../data/canvases'
+import { MAIN, piecesOn } from '../../../data/canvases'
 import { useWs } from '../canvas/context'
 import { useCanvasView } from '../../../state/canvasView'
 import { Tabs } from '../../../ui/primitives/Tabs'
@@ -34,9 +34,22 @@ function useBox() {
   return { ref, ...size }
 }
 
-export function TasksPlace({ page = false, editor }: { page?: boolean; editor: boolean }) {
-  const { pieces, canvas, spots } = useWs()
-  const decks = useMemo(() => piecesOn(canvas, pieces, spots).filter((p) => p.kind === 'kanban') as WithId<Piece>[], [canvas, pieces, spots])
+// `head`: the place's head, given what goes in it (the tabs: one row, D-418).
+export function TasksPlace({ page = false, editor, head }: { page?: boolean; editor: boolean; head: (tabs: ReactNode) => ReactNode }) {
+  const { pieces, canvas, spots, canvases } = useWs()
+  // Every deck in the workspace (D-418: Tasks is the workspace's, as Talk and Docs are): this canvas's first, then the
+  // others' by their canvas's order.
+  const decks = useMemo(() => {
+    const here = new Set(piecesOn(canvas, pieces, spots).map((p) => p.id))
+    const order = (p: WithId<Piece>) => (here.has(p.id) ? -1 : (canvases.find((c) => c.id === (p.canvasId ?? MAIN))?.order ?? 0))
+    return (pieces.filter((p) => p.kind === 'kanban') as WithId<Piece>[]).sort((a, b) => order(a) - order(b))
+  }, [canvas, pieces, spots, canvases])
+  // What a deck's tab says it's on: the plane it's linked to; another canvas's name.
+  const onOf = (d: WithId<Piece>) => {
+    if (d.stuckTo) return pieces.find((p) => p.id === d.stuckTo)?.name || 'a plane'
+    const c = d.canvasId ?? MAIN
+    return canvases.length > 1 && !piecesOn(canvas, pieces, spots).some((p) => p.id === d.id) ? canvases.find((x) => x.id === c)?.name : undefined
+  }
   const taskDecks = decks.filter((d) => kanbanOf(d).holds !== 'cards')
   const [tab, setTab] = useState<Tab>(() => (page ? (decks[0]?.id ?? 'mine') : 'mine'))
   const [withDays, setWithDays] = useState(page)
@@ -60,17 +73,19 @@ export function TasksPlace({ page = false, editor }: { page?: boolean; editor: b
   )
   return (
     <>
+      {head(
       <div className={styles.tabs}>
         {decks.length > 0 && (
           <Tabs
             label="Decks"
             value={deck ? tab : ''}
             onChange={setTab}
-            options={decks.map((d, i) => deckTab(d, i))}
+            options={decks.map((d, i) => deckTab(d, i, undefined, onOf(d)))}
           />
         )}
         <Tabs label="Across decks" value={deck ? '' : tab} onChange={setTab} options={[{ value: 'mine', label: 'mine' }, { value: 'all', label: 'all · days' }]} />
-      </div>
+      </div>,
+      )}
       <div ref={box.ref} className={styles.area}>
         {box.w > 0 &&
           (tab === 'mine' ? (

@@ -212,9 +212,12 @@ type PanelProps = {
   onClose?: () => void
   // Talk as the page (D-416): the messages as lines down the left (who, when, what), no bubbles, yours like everyone's.
   lines?: boolean
+  // Under a place's own head (Talk, D-418): its `×` is the place's, so the conversation has none of its own.
+  underHead?: boolean
 }
 
-export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, onShow, onList, onClose, lines = false }: PanelProps) {
+export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, onShow, onList, onClose, lines = false, underHead = false }: PanelProps) {
+  const channel = (thread?.on ?? draft?.on) === 'channel'
   const messages = useMessages(wid, thread?.id ?? null)
   const members = useWorkspaceMembers(wid, useWs().workspace.memberIds)
   const reads = useReads(wid, myUid() || null).data
@@ -349,13 +352,22 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
                 delete
               </Button>
             )}
-            <Button icon aria-label="Close thread" title="close" onClick={onClose ?? closeThread}>
-              <CloseIcon />
-            </Button>
+            {!underHead && (
+              <Button icon aria-label="Close thread" title="close" onClick={onClose ?? closeThread}>
+                <CloseIcon />
+              </Button>
+            )}
           </ButtonGroup>
         </div>
-        {/* The thing itself (D-405): its card face in its colour, its kind a badge (D-414), its name, where it is and how many messages;
-            a press goes there (D-220). */}
+        {/* A channel (D-416, D-418): one line, its name and how many messages; it's on nothing. */}
+        {channel ? (
+          <h2 className={styles.channelTitle}>
+            {thing.name}
+            <span className={styles.where}>{thread ? plural(thread.count, 'message') : 'new channel'}</span>
+          </h2>
+        ) : (
+        // The thing itself (D-405): its card face in its colour, its kind a badge (D-414), its name, where it is and how
+        // many messages; a press goes there (D-220).
         <CardFace
           tone={thing.tone}
           tint={!!thing.tone}
@@ -377,6 +389,7 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
             {[where && `on ${where}${onShow ? ' ↗' : ''}`, thread && plural(thread.count, 'message')].filter(Boolean).join(' · ') || (draft?.on === 'channel' ? 'new channel' : 'new thread')}
           </span>
         </CardFace>
+        )}
       </header>
       <ol ref={list} className={styles.log} onScroll={stick.onScroll}>
         {!thread && (

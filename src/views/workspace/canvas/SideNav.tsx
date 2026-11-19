@@ -25,6 +25,9 @@ import { useAuthor } from '../text/TextItems'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { usePlace } from '../places/placeStore'
 import { DocsTools } from '../documents/DocsPlace'
+import { newChannel } from '../threads/ThreadInbox'
+import { ToolButton } from '../../../ui/primitives/ToolButton'
+import { PlusIcon } from '../../../ui/primitives/hudIcons'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import { useWs } from './context'
 import { FitTool } from './FitTool'
@@ -38,6 +41,11 @@ export function SideNav({ wid, focused, editor }: { wid: string; focused?: WithI
     return (
       <>
         {page === 'docs' && <DocsTools />}
+        {page === 'talk' && (
+          <ToolButton label="New channel" title="a new channel in Talk" onClick={newChannel}>
+            <PlusIcon />
+          </ToolButton>
+        )}
         <FinderTool />
         <GuideTool />
       </>

@@ -8,7 +8,9 @@
 //   page's host).
 import { useRef, type ReactNode } from 'react'
 import { EdgeColumn } from '../../../ui/patterns/EdgeColumn'
-import { PanelHead } from '../../../ui/patterns/PanelHead'
+import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
+import { Field } from '../../../ui/primitives/Field'
+import { CloseIcon } from '../../../ui/primitives/hudIcons'
 import { Button } from '../../../ui/primitives/Button'
 import { DragLine } from '../../../ui/primitives/DragLine'
 import { stopCanvas } from '../../../ui/foundation/canvasGuard'
@@ -22,7 +24,37 @@ import { usePageHost } from './pageHost'
 import styles from './Places.module.css'
 
 
-function PlaceColumn({ place, tools, children }: { place: Place; tools?: ReactNode; children: ReactNode }) {
+// One head for every place, beside the canvas and as the page (D-418): its name big, what it shows beside it (`after`),
+// its own tools, then `full` or `beside the canvas` and `×` at the right.
+export function PlaceHead({ place, after, tools }: { place: Place; after?: ReactNode; tools?: ReactNode }) {
+  const page = usePlace((s) => s.open === place && s.page)
+  return (
+    <header className={styles.head}>
+      <h2 className={styles.title}>{PLACE_NAME[place]}</h2>
+      {after}
+      <ButtonGroup className={styles.tools}>
+        {tools}
+        <Button onClick={() => setPage(!page)} title={page ? 'beside the canvas again' : "as the page, in the canvas's place"}>
+          {page ? 'beside the canvas' : 'full'}
+        </Button>
+        <Button icon aria-label={`Close ${PLACE_NAME[place]}`} title="close" onClick={closePlace}>
+          <CloseIcon />
+        </Button>
+      </ButtonGroup>
+    </header>
+  )
+}
+
+// What's found in a place (D-418): one field under its head, the same in every place; Escape empties it.
+export function PlaceFind({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
+  return (
+    <div className={styles.find}>
+      <Field size="sm" value={value} onChange={onChange} onEscape={() => onChange('')} label={label} placeholder={label.toLowerCase()} />
+    </div>
+  )
+}
+
+function PlaceColumn({ place, tools, head = true, children }: { place: Place; tools?: ReactNode; head?: boolean; children: ReactNode }) {
   const width = usePlace((s) => s.width)
   return (
     <EdgeColumn
@@ -37,18 +69,7 @@ function PlaceColumn({ place, tools, children }: { place: Place; tools?: ReactNo
       data-viewer-ok
     >
       <DragLine at="right" label={`${PLACE_NAME[place]}'s width`} onDrag={(e) => dragWidth(tokenPx('--sheet-rail-w'), e.clientX)} />
-      <PanelHead
-        kind={PLACE_NAME[place]}
-        tools={
-          <>
-            {tools}
-            <Button onClick={() => setPage(true)} title="as the page, in the canvas's place">
-              full
-            </Button>
-          </>
-        }
-        onClose={closePlace}
-      />
+      {head && <PlaceHead place={place} tools={tools} />}
       {children}
     </EdgeColumn>
   )
@@ -69,20 +90,7 @@ function PlacePage({ place, head = true, tools, children }: { place: Place; head
       data-off-space
       data-viewer-ok
     >
-      {head && (
-        <PanelHead
-          kind={PLACE_NAME[place]}
-          tools={
-            <>
-              {tools}
-              <Button onClick={() => setPage(false)} title="beside the canvas again">
-                beside the canvas
-              </Button>
-            </>
-          }
-          onClose={closePlace}
-        />
-      )}
+      {head && <PlaceHead place={place} tools={tools} />}
       <div className={styles.pageBody}>{children}</div>
     </section>
   )
@@ -107,14 +115,14 @@ export function Places({ editor }: { editor: boolean }) {
   return (
     <>
       {open && page && (
-        <PlacePage place={open} head={open !== 'talk'}>
-          {open === 'talk' ? <TalkHost /> : open === 'tasks' ? <TasksPlace page editor={editor} /> : <DocsPlace page />}
+        <PlacePage place={open} head={open === 'docs'}>
+          {open === 'talk' ? <TalkHost /> : open === 'tasks' ? <TasksPlace page editor={editor} head={(tabs) => <PlaceHead place="tasks" after={tabs} />} /> : <DocsPlace page />}
         </PlacePage>
       )}
       <AnimatePresence>
         {open === 'tasks' && !page && (
-          <PlaceColumn key="tasks" place="tasks">
-            <TasksPlace editor={editor} />
+          <PlaceColumn key="tasks" place="tasks" head={false}>
+            <TasksPlace editor={editor} head={(tabs) => <PlaceHead place="tasks" after={tabs} />} />
           </PlaceColumn>
         )}
         {open === 'docs' && !page && (

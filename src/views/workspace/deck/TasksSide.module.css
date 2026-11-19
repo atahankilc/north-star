@@ -187,3 +187,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* What a deck's tab says it's on (Tasks, D-418): the plane it's linked to, another canvas. */
+.tabOn {
+  color: var(--fg-dim);
+  text-transform: none;
+}

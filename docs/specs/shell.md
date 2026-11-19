@@ -46,6 +46,24 @@ to keep documents; the agent beside all of it. This is where each opens.
    of Talk's list, `+ channel`, the first message makes it; no resolve, no chip. Its rules go live with D-415's.
 5. The side view (D-300) folded into Tasks for a plane's linked deck too, once Tasks has its own `linked` strip.
 
+## Consistency (D-418, 2026-11-19)
+
+After a design review of every place (a subagent judging screenshots against the three):
+- **One head for every place**, beside the canvas and as the page (`PlaceHead`): its name big, what it shows beside it
+  (Talk's scope, Tasks' tabs: one row, no second bar), its tools, `full` / `beside the canvas`, `×`.
+- **An item opened in the column keeps the place's head**; under it one back row (`‹ threads`, `‹ Research`) and the
+  item's own actions. The conversation has no `×` of its own there.
+- **One find field** under the head in Talk and Docs (`PlaceFind`); Docs' finds cross folders, each with its path.
+- **Workspace-wide places:** Tasks shows every deck in the workspace (this canvas's first), a tab saying the plane it's
+  linked to or the canvas it's on; Docs marks a document shown on the canvas; Talk's channels stand in every scope.
+- **The breadcrumb on a page:** `workspaces / <name> / <place>`, the name going back to the canvas; the canvases'
+  switch is the canvas's only.
+- **The page grows out of its column** as `full` is pressed (clip from the left column to the sheet).
+- **Docs as the page:** columns name · by · changed · size, sorted by their heads, while nothing is read beside it.
+- **A channel's head is one line** (`# general  4 messages`); a deck's tab shows one number (its own).
+- Talk's page has `new channel` in the HUD's middle, as Docs has write and upload.
+- Left for later: a Tasks find; one foot console for the board and its days; touch.
+
 ## Not yet
 
 - Folders and channels (steps 3, 4). The preview's folder tree and channels were made up.

@@ -19,6 +19,8 @@ import { ThreadsTool } from '../threads/ThreadsTool'
 import { TasksTool } from '../deck/TasksTool'
 import { DocsTool } from '../documents/DocsTool'
 import { CanvasBehind, Places } from '../places/Places'
+import { closePlace, PLACE_NAME, usePlace } from '../places/placeStore'
+import { Button } from '../../../ui/primitives/Button'
 import { CanvasCrumb } from './CanvasSwitch'
 import { CanvasView } from './CanvasView'
 import { useWs } from './context'
@@ -48,10 +50,20 @@ export function WorkspaceScreen({ shown, loading = false, editor, canvasName, se
   // With one canvas the workspace's name opens the canvases (D-302); with more, the canvas's own crumb does.
   const several = canvases.length > 1
   const name = canvases.find((c) => c.id === shown)?.name ?? canvasName ?? ''
+  const placePage = usePlace((s) => (s.page ? s.open : null))
   return (
     <div className={styles.app} data-app>
       <Hud
-        crumbs={[
+        crumbs={
+          // A place as the page (D-418): the workspace's name goes back to the canvas, the place's name ends it; the
+          // canvases' switch is the canvas's own, not shown on a page.
+          placePage
+            ? [
+                { label: 'workspaces', to: WORKSPACES },
+                { label: <Button link onClick={closePlace} title="back to the canvas">{workspace.name}</Button> },
+                { label: PLACE_NAME[placePage] },
+              ]
+            : [
           { label: 'workspaces', to: WORKSPACES },
           several
             ? { label: workspace.name, to: canvasPath(wid, MAIN) }

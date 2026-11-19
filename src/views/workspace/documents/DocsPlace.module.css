@@ -195,3 +195,59 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.placed {
+  margin-right: var(--space-2);
+  color: var(--accent-cyan);
+}
+
+/* The page's list in columns (D-418): what it is, who added it, when it changed, how long; the heads sort it. The
+   heads are a row as the rows are: the same widths and gaps. */
+.heads {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0 var(--space-2);
+  border-bottom: var(--line-w) solid var(--line);
+}
+
+.heads > * {
+  flex: none;
+  width: calc(2 * var(--space-12));
+  color: var(--fg-dim);
+  text-align: left;
+}
+
+.heads > [data-col='name'] {
+  flex: 1;
+}
+
+.heads > [data-col='changed'],
+.heads > [data-col='size'] {
+  width: calc(var(--space-12) + var(--space-6));
+}
+
+/* Over the column that says whether it's shared or placed: no head. */
+.heads > [data-col='by'] {
+  margin-left: calc(2 * var(--space-12) + var(--space-2));
+}
+
+.heads [data-on] {
+  color: var(--fg-strong);
+}
+
+.col,
+.colNum {
+  flex: none;
+  width: calc(2 * var(--space-12));
+  overflow: hidden;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.colNum {
+  width: calc(var(--space-12) + var(--space-6));
+  font-family: var(--font-mono);
+}

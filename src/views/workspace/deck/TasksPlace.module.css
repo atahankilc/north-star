@@ -1,13 +1,11 @@
 /* Tasks as a place (TasksPlace.tsx, D-412). */
 .tabs {
   display: flex;
-  flex: none;
+  flex: 1;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-4);
   min-width: 0;
-  padding: var(--space-2) var(--space-4);
-  border-bottom: var(--line-w) solid var(--line);
+  overflow: hidden;
 }
 
 /* The parts are placed in it by their box (TasksSide.module.css .part). */

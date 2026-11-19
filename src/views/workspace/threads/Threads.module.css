@@ -336,24 +336,7 @@
   font-size: var(--text-sm);
 }
 
-/* The list (D-166, D-193; D-393: a column on the left ground; D-398). One head: the title, what the list shows, its
-   tools. */
-.listHead {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-4) var(--space-3) var(--space-3) var(--space-6);
-  border-bottom: var(--line-w) solid var(--line);
-}
 
-.listTitle {
-  flex: none;
-  color: var(--fg-strong);
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: var(--weight-medium);
-}
 
 /* Which threads it shows (D-195): quiet words, or the one dropdown trigger while there's something to pick. */
 .scope {
@@ -655,4 +638,24 @@
 /* A new channel's name, under the CHANNELS rule (D-416). */
 .channelField {
   margin: 0 var(--space-3) var(--space-2);
+}
+
+/* Talk as the page: its head across, the list and the conversation under it. */
+.talkPageBox {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* A channel's head (D-416, D-418): one line, its name and how many messages. */
+.channelTitle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--fg-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
 }

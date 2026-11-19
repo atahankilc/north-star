@@ -15,7 +15,8 @@ const day = (n: number) => new Date(DEMO_DAY + n * DAY).toISOString().slice(0, 1
 const tasks = calmTasks(base.tasks).map((t) =>
   t.id === 'tk-cutoff' ? { ...t, title: 'Order cut-off at 9 pm', start: day(-2), due: day(8) } : t.id === 'tk-counter' ? { ...t, title: 'Portion counter at 9 pm', start: day(-1), due: day(9) } : t,
 )
-const DECK = byText('[data-learn="place-tasks"] [role="tab"]', '01', 0.5, 0.5)
+// The launch deck's tab: its own number, `05` (D-418).
+const DECK = byText('[data-learn="place-tasks"] [role="tab"]', '05', 0.5, 0.5)
 
 const scene: Scene = {
   id: 'side-view',

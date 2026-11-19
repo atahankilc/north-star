@@ -23,6 +23,7 @@ import { useWs, useWsNow } from '../canvas/context'
 import { glidePlaneTo, usePaneView } from '../canvas/Beside'
 import { kanbanBounds, KanbanView, kanbanOf, selectTask, useKanbanUi } from './Kanban'
 import { dueText } from '../../../model/tasks'
+import { leadingNumber } from '../../../model/words'
 import { KanbanFilterDock } from './KanbanFilterDock'
 import { LensSetup, LensTools } from '../canvas/pieceKinds'
 import { T, timelineBounds, TimelineDockTools, TimelineView, WeekTools } from './Timeline'
@@ -219,18 +220,21 @@ export function BoardAndDays(p: { deck: WithId<Piece>; top: number; width: numbe
 }
 
 // A deck as a tab (D-300; Tasks' too, D-412): its number, its name, `⇆` when it's linked to a plane, what it counts.
-export const deckTab = (d: WithId<Piece>, i: number, count?: ReactNode) => ({
+// `on`: what it's on, said after it (Tasks, D-418: the plane it's linked to, the canvas it's on when that's another).
+export const deckTab = (d: WithId<Piece>, i: number, count?: ReactNode, on?: string) => ({
   value: d.id,
-  title: d.name || 'deck',
+  title: [d.name || 'deck', on].filter(Boolean).join(' · '),
   count,
   label: (
     <>
-      <Num n={i + 1} /> <span className={styles.tabName}>{d.name || 'deck'}</span>
+      {/* One number: the deck's own when its name leads with one (`05 Launch`), else its place in the row. */}
+      <Num n={leadingNumber(d.name ?? '')?.num ?? i + 1} /> <span className={styles.tabName}>{leadingNumber(d.name ?? '')?.rest || d.name || 'deck'}</span>
       {d.stuckTo && (
         <span className={styles.link} title="linked to a plane: only its cards' tasks">
           {' '}⇆
         </span>
       )}
+      {on && <span className={styles.tabOn}> {on}</span>}
     </>
   ),
 })
@@ -358,7 +362,6 @@ export function Mine({ decks, top, children }: { decks: WithId<Piece>[]; top: nu
             })}
           </section>
         ))}
-        {groups.length > 0 && <p className={styles.foot}>● new since you last looked (the count on Tasks&apos; button). A row opens its task here.</p>}
       </div>
       <FocusDock label="Mine" name={<span className={pane.kind}>mine</span>}>
         {children}

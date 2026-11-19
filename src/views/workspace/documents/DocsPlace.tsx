@@ -25,6 +25,7 @@ import { Empty } from '../../../ui/primitives/Empty'
 import { ToolButton } from '../../../ui/primitives/ToolButton'
 import { BinIcon, DownloadIcon, EditIcon, FolderIcon, WriteIcon } from '../../../ui/primitives/hudIcons'
 import { CardRow } from '../cards/CardRow'
+import { PlaceFind } from '../places/Places'
 import { DocContent } from './DocContent'
 import { readDoc, uploadFiles } from './Documents'
 import styles from './DocsPlace.module.css'
@@ -118,7 +119,9 @@ function FolderRow({ f, count, editor }: { f: WithId<Folder>; count: number; edi
   )
 }
 
-function DocRow({ d, picked }: { d: WithId<Doc>; picked?: boolean }) {
+function DocRow({ d, picked, wide, path }: { d: WithId<Doc>; picked?: boolean; wide?: boolean; path?: string }) {
+  // Shown on a canvas on its own (a document piece, D-234): said, as the threads say where they are.
+  const placed = useWs().pieces.some((p) => p.kind === 'document' && p.docId === d.id)
   return (
     <CardRow
       className={styles.row}
@@ -127,10 +130,21 @@ function DocRow({ d, picked }: { d: WithId<Doc>; picked?: boolean }) {
       selected={picked}
       lead={<Label className={styles.kind}>{KIND_WORD[d.kind]}</Label>}
       end={
-        <span className={styles.meta}>
-          {d.name} · {ago(d.createdAt)}
-          {d.shared ? '' : ' · only you'}
-        </span>
+        wide ? (
+          <>
+            <span className={styles.col}>{placed && <Label className={styles.placed}>on the canvas</Label>}{d.shared ? '' : 'only you'}</span>
+            <span className={styles.col}>{d.name}</span>
+            <span className={styles.colNum}>{ago(d.updatedAt)}</span>
+            <span className={styles.colNum}>{d.words ? `${d.words} w` : ''}</span>
+          </>
+        ) : (
+          <span className={styles.meta}>
+            {placed && <Label className={styles.placed}>on the canvas</Label>}
+            {path ? `${path} · ` : ''}
+            {d.name} · {ago(d.createdAt)}
+            {d.shared ? '' : ' · only you'}
+          </span>
+        )
       }
       onClick={() => useDocsAt.setState({ open: d.id })}
     />
@@ -139,6 +153,7 @@ function DocRow({ d, picked }: { d: WithId<Doc>; picked?: boolean }) {
 
 // A document's own head in Docs: back, its folder (moved by who may), its window.
 function DocHead({ d, back }: { d: WithId<Doc>; back?: string }) {
+  // Beside the canvas the back row names the folder already; its folder is changed on the page.
   const { wid, folders, workspace } = useWs()
   const { user } = useAuth()
   const may = mayMoveDoc(d, user?.id, roleOf(workspace, user?.id) ?? undefined)
@@ -147,11 +162,11 @@ function DocHead({ d, back }: { d: WithId<Doc>; back?: string }) {
     <div className={styles.back}>
       {back && <Button onClick={() => useDocsAt.setState({ open: null })}>‹ {back}</Button>}
       <span className={styles.docTools}>
-        {may && folders.length > 0 && (
+        {may && !back && folders.length > 0 && (
           <Select ariaLabel="The folder it's in" value={folderOf(d, folders) ?? ''} options={options} onChange={(v) => void moveDocument(wid, d.id, v || null)} />
         )}
-        <Button onClick={() => readDoc(d.id)} title="open it in its window: edit, share, place, download">
-          open ↗
+        <Button onClick={() => readDoc(d.id)} title="its window: edit, share, place on the canvas, download">
+          open in a window ↗
         </Button>
       </span>
     </div>
@@ -215,22 +230,53 @@ export function DocsPlace({ page = false }: { page?: boolean }) {
   // Its lesson (onboarding: `docs`).
   useEffect(() => learn('docs-open'), [])
   const { folder: atRaw, open: openId } = useDocsAt()
+  // Find (D-418): every folder's documents whose title has it, each with its folder's path; and the page's sort.
+  const [q, setQ] = useState('')
+  const [sort, setSort] = useState<{ by: 'name' | 'by' | 'changed' | 'size'; desc: boolean }>({ by: 'changed', desc: true })
   const at = atRaw && folders.some((f) => f.id === atRaw) ? atRaw : null
   const docs = useMemo(() => [...(documents ?? [])].sort((a, b) => b.createdAt - a.createdAt), [documents])
-  const here = docs.filter((d) => folderOf(d, folders) === at)
-  const subs = folders.filter((f) => (f.parent ?? null) === at || (at === null && f.parent && !folders.some((x) => x.id === f.parent))).sort((a, b) => a.name.localeCompare(b.name))
+  const k = q.trim().toLowerCase()
+  const order = (a: WithId<Doc>, b: WithId<Doc>) => {
+    const v = sort.by === 'name' ? (a.title || '').localeCompare(b.title || '') : sort.by === 'by' ? a.name.localeCompare(b.name) : sort.by === 'size' ? (a.words ?? a.size) - (b.words ?? b.size) : a.updatedAt - b.updatedAt
+    return sort.desc ? -v : v
+  }
+  const here = (k ? docs.filter((d) => (d.title || '').toLowerCase().includes(k)) : docs.filter((d) => folderOf(d, folders) === at)).sort(order)
+  const pathOf = (d: WithId<Doc>) => folderPath(folderOf(d, folders), folders).map((f) => f.name).join(' / ') || 'All files'
+  const subs = k ? [] : folders.filter((f) => (f.parent ?? null) === at || (at === null && f.parent && !folders.some((x) => x.id === f.parent))).sort((a, b) => a.name.localeCompare(b.name))
   const open = docs.find((d) => d.id === openId)
   const where = at ? (folders.find((f) => f.id === at)?.name ?? 'All files') : 'All files'
 
+  // Columns only while the list has the room: on the page with nothing read beside it.
+  const wide = page && !open
+  const heads = wide && (
+    <div className={styles.heads} role="row">
+      {(['name', 'by', 'changed', 'size'] as const).map((c) => (
+        <Button
+          key={c}
+          link
+          data-col={c}
+          data-on={sort.by === c || undefined}
+          onClick={() => setSort((s) => ({ by: c, desc: s.by === c ? !s.desc : c === 'changed' }))}
+          title={`sort by ${c}`}
+        >
+          <Label>
+            {c}
+            {sort.by === c ? (sort.desc ? ' ↓' : ' ↑') : ''}
+          </Label>
+        </Button>
+      ))}
+    </div>
+  )
   const list = (
     <div className={styles.list} data-scrolls>
+      {heads}
       {subs.map((f) => (
         <FolderRow key={f.id} f={f} count={countIn(f.id, folders, docs)} editor={editor} />
       ))}
       {here.map((d) => (
-        <DocRow key={d.id} d={d} picked={page && d.id === open?.id} />
+        <DocRow key={d.id} d={d} picked={page && d.id === open?.id} wide={wide} path={k ? pathOf(d) : undefined} />
       ))}
-      {subs.length === 0 && here.length === 0 && <Empty>{at ? 'Nothing in this folder yet.' : 'No documents yet: write one, or upload a .md.'}</Empty>}
+      {subs.length === 0 && here.length === 0 && <Empty>{k ? `No document named “${q.trim()}”.` : at ? 'Nothing in this folder yet.' : 'No documents yet: write one, or upload a .md.'}</Empty>}
     </div>
   )
 
@@ -244,7 +290,8 @@ export function DocsPlace({ page = false }: { page?: boolean }) {
       </div>
     ) : (
       <>
-        <Crumbs at={at} folders={folders} />
+        <PlaceFind value={q} onChange={setQ} label="Find in Docs" />
+        {!k && <Crumbs at={at} folders={folders} />}
         {list}
       </>
     )
@@ -253,7 +300,8 @@ export function DocsPlace({ page = false }: { page?: boolean }) {
     <div className={styles.split} data-reading={open ? true : undefined}>
       <Tree at={at} />
       <div className={styles.middle}>
-        <Crumbs at={at} folders={folders} />
+        <PlaceFind value={q} onChange={setQ} label="Find in Docs" />
+        {!k && <Crumbs at={at} folders={folders} />}
         {list}
       </div>
       {open && (

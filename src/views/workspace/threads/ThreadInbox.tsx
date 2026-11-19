@@ -12,6 +12,7 @@
 // list; closing the list leaves the conversation, and the other way round. Each is uncovered by the main screen drawing
 // back, and covered as it comes back (EdgeColumn, D-395).
 import { useMemo, useState, type CSSProperties } from 'react'
+import { create } from 'zustand'
 import { AnimatePresence } from 'motion/react'
 import type { WithId } from '../../../data/hooks'
 import type { Thread } from '../../../data/model'
@@ -19,7 +20,6 @@ import { isNew, markSeen, useReads } from '../../../data/threads'
 import { ago } from '../../../ui/foundation/ago'
 import { closeThread, openThread, startComment, CommentIcon, myUid, ThreadPanel, toggleInbox, usePersonColor, useThreadView, type ThreadThing } from './Threads'
 import { Button } from '../../../ui/primitives/Button'
-import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Rule } from '../../../ui/primitives/Rule'
 import { AddField } from '../../../ui/primitives/AddField'
 import { Label } from '../../../ui/primitives/Label'
@@ -27,17 +27,20 @@ import { Select } from '../../../ui/patterns/Select'
 import { EdgeColumn } from '../../../ui/patterns/EdgeColumn'
 import { createPortal } from 'react-dom'
 import { DragLine } from '../../../ui/primitives/DragLine'
-import { closePlace, dragWidth, setPage, usePlace } from '../places/placeStore'
+import { PlaceFind, PlaceHead } from '../places/Places'
+import { closePlace, dragWidth, usePlace } from '../places/placeStore'
 import { usePageHost } from '../places/pageHost'
 import { tokenPx } from '../../../styles/cssToken'
 import styles from './Threads.module.css'
-import { CloseIcon } from '../../../ui/primitives/hudIcons'
 import { leadingNumber } from '../../../model/words'
 import { CHANNEL_NAME_MAX } from '../../../model/limits'
 import { TypeBadge } from '../cards/TypeBadge'
 
 // The threads panel's scope for the canvas shown (D-302's session 4), beside a plane's id (D-193).
 const THIS_CANVAS = '#canvas'
+// A new channel's name while it's typed; `newChannel()` (Talk's page tool) opens the field.
+const useChannelNaming = create<{ name: string | null }>(() => ({ name: null }))
+export const newChannel = () => useChannelNaming.setState({ name: '' })
 // A channel's space (D-416): Talk's own, no plane or canvas.
 const TALK = 'talk'
 // What's typed for a channel's name, as the rules take it: lowercase words joined by `-`, at most 40.
@@ -95,9 +98,18 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
   const [done, setDone] = useState(false)
   // Channels (D-416) stand apart, in every scope, by name; the rest by when they were last written in.
   const channels = useMemo(() => all.filter((t) => t.on === 'channel').sort((a, b) => a.targetId.localeCompare(b.targetId)), [all])
+  // What's typed in Talk's find (D-418): a thread or channel whose thing, last words or last writer have it.
+  const [q, setQ] = useState('')
+  const found = (t: WithId<Thread>) => {
+    const k = q.trim().toLowerCase()
+    if (!k) return true
+    return [thingOf(t).name, t.lastText, t.lastName, t.targetId].some((x) => x?.toLowerCase().includes(k))
+  }
   const sorted = useMemo(() => threads.filter((t) => t.on !== 'channel').sort((a, b) => b.lastAt - a.lastAt), [threads])
-  const [naming, setNaming] = useState<string | null>(null)
-  const newChannel = (typed: string) => {
+  // A new channel's name being typed (D-416); Talk's page tool starts it too (D-418).
+  const naming = useChannelNaming((s) => s.name)
+  const setNaming = (name: string | null) => useChannelNaming.setState({ name })
+  const makeChannel = (typed: string) => {
     const name = channelName(typed)
     setNaming(null)
     if (!name) return
@@ -107,10 +119,10 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
   }
   const fresh = (t: WithId<Thread>) => isNew(t, seen, t.id, me)
   const mentioned = (t: WithId<Thread>) => !!t.mentions?.includes(me)
-  const open = sorted.filter((t) => !t.resolved)
+  const open = sorted.filter((t) => !t.resolved && found(t))
   const newRows = done ? [] : open.filter(fresh)
-  const rows = done ? sorted.filter((t) => t.resolved) : open.filter((t) => !fresh(t))
-  const counts = { new: newRows.length, resolved: sorted.length - open.length }
+  const rows = done ? sorted.filter((t) => t.resolved && found(t)) : open.filter((t) => !fresh(t))
+  const counts = { new: newRows.length, resolved: sorted.filter((t) => t.resolved).length }
   const markAll = () => newRows.forEach((t) => void markSeen(wid, t.id, t.lastAt))
   const colorOf = usePersonColor()
   // Under the place they're on, in the list's order: the place with the newest thread first. A card on more planes
@@ -181,34 +193,28 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
     ...(planeScope ? [{ value: planeScope, label: `in ${(scopeName?.(planeScope) ?? 'a plane').replace(/^"|"$/g, '')}` }] : []),
   ]
 
-  const fullButton = (
-    <Button onClick={() => setPage(!asPage)} title={asPage ? 'beside the canvas again' : "as the page, in the canvas's place"}>
-      {asPage ? 'beside the canvas' : 'full'}
-    </Button>
+  const listHead = (
+            <PlaceHead
+              place="talk"
+              after={
+                scopes.length > 1 ? (
+                  <Select
+                    ariaLabel="Which threads the list shows"
+                    className={styles.scopePick}
+                    value={onCanvas ? THIS_CANVAS : (planeScope ?? 'all')}
+                    options={scopes}
+                    onChange={(v) => useThreadView.setState({ scope: v === 'all' ? null : v })}
+                  />
+                ) : (
+                  <span className={styles.scope}>everywhere</span>
+                )
+              }
+              tools={counts.new > 0 && <Button onClick={markAll}>mark all read</Button>}
+            />
   )
   const list = (
     <>
-            <header className={styles.listHead}>
-              <span className={styles.listTitle}>Talk</span>
-              {scopes.length > 1 ? (
-                <Select
-                  ariaLabel="Which threads the list shows"
-                  className={styles.scopePick}
-                  value={onCanvas ? THIS_CANVAS : (planeScope ?? 'all')}
-                  options={scopes}
-                  onChange={(v) => useThreadView.setState({ scope: v === 'all' ? null : v })}
-                />
-              ) : (
-                <span className={styles.scope}>everywhere</span>
-              )}
-              <ButtonGroup className={styles.actions}>
-                {counts.new > 0 && <Button onClick={markAll}>mark all read</Button>}
-                {fullButton}
-                <Button icon aria-label="Close threads" title="close" onClick={closePlace}>
-                  <CloseIcon />
-                </Button>
-              </ButtonGroup>
-            </header>
+      <PlaceFind value={q} onChange={setQ} label="Find in Talk" />
             <ol className={styles.rows}>
               {rows.length === 0 && newRows.length === 0 && (
                 <li className={styles.lead}>{done ? 'No resolved threads.' : 'No open threads. Right-click anything → comment.'}</li>
@@ -217,9 +223,9 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
                 <li>
                   <Rule as="div" className={styles.place} name="CHANNELS" count={channels.length || undefined} countAt="end" add={naming === null ? { label: 'channel', onClick: () => setNaming('') } : undefined} />
                   {naming !== null && (
-                    <AddField className={styles.channelField} value={naming} onChange={setNaming} onAdd={newChannel} onClose={() => setNaming(null)} label="A new channel's name" placeholder="name, e.g. pilot" maxLength={CHANNEL_NAME_MAX} />
+                    <AddField className={styles.channelField} value={naming} onChange={setNaming} onAdd={makeChannel} onClose={() => setNaming(null)} label="A new channel's name" placeholder="name, e.g. pilot" maxLength={CHANNEL_NAME_MAX} />
                   )}
-                  <ol className={styles.group}>{channels.map((t) => rowOf(t, false))}</ol>
+                  <ol className={styles.group}>{channels.filter(found).map((t) => rowOf(t, false))}</ol>
                 </li>
               )}
               {newRows.length > 0 && (
@@ -262,18 +268,22 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
       onList={asPage ? undefined : () => (closeThread(), toggleInbox(true))}
       onClose={asPage ? closeThread : closePlace}
       lines={asPage}
+      underHead
     />
   )
 
   if (asPage)
     return host
       ? createPortal( // kit-ok: Talk as the page (D-412) draws into the page's host in the main sheet
-          <div className={styles.talkPage}>
+          <div className={styles.talkPageBox}>
+            {listHead}
+            <div className={styles.talkPage}>
             <div className={styles.list} data-learn="threads" data-viewer-ok>
               {list}
             </div>
             <div className={styles.convo} data-learn="thread-column" data-viewer-ok>
               {panel ?? <p className={styles.lead}>Pick a thread.</p>}
+            </div>
             </div>
           </div>,
           host,
@@ -299,6 +309,8 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
           data-viewer-ok
         >
           <DragLine at="right" label="Talk's width" onDrag={(e) => dragWidth(tokenPx('--sheet-rail-w'), e.clientX)} />
+          {/* The place's head stays; a conversation opens under it, in the list's place (D-418). */}
+          {listHead}
           {panel ?? list}
         </EdgeColumn>
       )}
