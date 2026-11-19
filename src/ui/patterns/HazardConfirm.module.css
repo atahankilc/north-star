@@ -12,7 +12,8 @@
   --enter-timing: var(--ease-out);
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--bg) var(--mix-strong), transparent);
+  /* In light the page dims, not veiled in its own grey (--window-dim, D-421). */
+  background: var(--window-dim, color-mix(in srgb, var(--bg) var(--mix-strong), transparent));
 }
 
 .tape {

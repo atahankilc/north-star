@@ -7801,6 +7801,10 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
   every `Window` (Settings, the wizards, a lesson) was the page's own colour at 72 %, which in light laid a milky grey
   over the dark ground and the columns round the window. In light it is now `--window-dim` (`--scrim`, black 30 %), so
   the page dims and the ground stays dark; dark keeps its own black at 72 %; a caller's `--window-scrim` still wins.
+  Then (the user: "Light moddaki diğer pencerelerdeki glowu da kaldır"): the hazard confirm's own veil, the page's colour
+  too, dims the same way (`--window-dim`). Every window now dims in light: Settings, the wizards, a lesson, a document's
+  window, the finder and the `?` guide (PromptOverlay's `--scrim`), the hazard confirm. Checked in headless Chrome,
+  light with Talk docked (the matrix wizard, the finder) and the hazard confirm in both themes.
 - **Why:** the three near-whites (ground #e2e2e5, page #f3f3f3, pieces white) barely differed and read dull. A preview
   (docs/specs/light-bg-preview/, the gallery's real screens with the tokens swapped) showed 11 options: six that stay
   white (star chart blue, gallery greys, ice, dusk, drawing paper with ink lines) and five bolder (desk lamp, sky blue,
