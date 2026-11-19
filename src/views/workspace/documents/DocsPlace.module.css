@@ -261,3 +261,11 @@
   width: calc(var(--space-12) + var(--space-6));
   font-family: var(--font-mono);
 }
+
+/* Empty: one line and its first step. */
+.empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-1);
+}

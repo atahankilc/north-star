@@ -268,7 +268,13 @@ export function DocsPlace({ page = false }: { page?: boolean }) {
       {here.map((d) => (
         <DocRow key={d.id} d={d} picked={page && d.id === open?.id} wide={wide} path={k ? pathOf(d) : undefined} />
       ))}
-      {subs.length === 0 && here.length === 0 && <Empty>{k ? `No document named “${q.trim()}”.` : at ? 'Nothing in this folder yet.' : 'No documents yet: write one, or upload a .md.'}</Empty>}
+      {subs.length === 0 && here.length === 0 && (
+        <div className={styles.empty}>
+          <Empty>{k ? `No document named “${q.trim()}”.` : at ? 'Nothing in this folder yet.' : 'No documents yet.'}</Empty>
+          {/* Empty, its first step is here (D-419): write one into the folder open. */}
+          {!k && <FirstDoc />}
+        </div>
+      )}
     </div>
   )
 
@@ -305,6 +311,18 @@ export function DocsPlace({ page = false }: { page?: boolean }) {
         </div>
       )}
     </div>
+  )
+}
+
+// An empty folder's (or Docs') first step: write a document into it.
+function FirstDoc() {
+  const { wid } = useWs()
+  const { user } = useAuth()
+  if (!user) return null
+  return (
+    <Button tone="main" onClick={() => void newDocument(wid, { uid: user.id, name: authorName(user) }).then(async (id) => (await placeNew(wid, id), readDoc(id, true)))}>
+      write a document
+    </Button>
   )
 }
 

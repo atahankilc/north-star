@@ -97,7 +97,7 @@ export function TasksPlace({ page = false, editor, head }: { page?: boolean; edi
           ) : deck ? (
             <BoardAndDays deck={deck} top={0} width={box.w} height={box.h} deckW={deckW} days={two} editor={editor} onTask={() => {}} onCard={onCard} boardDock={daysToggle} close={null} daysDock={null} onDrag={drag} />
           ) : (
-            <Empty className={styles.none}>no deck on this canvas yet</Empty>
+            <Empty className={styles.none}>No deck yet: the canvas’s + makes one (deck…).</Empty>
           ))}
       </div>
     </>
