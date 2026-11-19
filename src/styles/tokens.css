@@ -338,6 +338,7 @@
   --feather: 0 0 calc(16px * var(--ui)) calc(10px * var(--ui)); /* the hugging shade behind ink on the page (D-277) */
   --ink-feather: 0 0 calc(18px * var(--ui)) calc(12px * var(--ui)); /* the same, round the onboarding's ink (--ink-shade) */
   --lift: 0 calc(18px * var(--ui)) calc(50px * var(--ui)) 0; /* the main screen lifted over the ground (D-387), with --lift-shade */
+  --float: 0 calc(8px * var(--ui)) calc(28px * var(--ui)) 0; /* a prompt's shadow in light (--menu-shade, D-421) */
   /* Marks (D-265, src/ui/primitives/Marks.tsx): the four L's of anything selectable, in screen px, by tier (the thing's short side
      on screen: < 48 S, < 240 M, else L). len / stroke; how far out hovered, selected, at rest (where they leave to);
      pressed, the L's length on the corners. */
@@ -372,6 +373,9 @@
   color-scheme: light;
   --bg: #f3f3f3; /* D-342: a step down from #f5f5f5, which glared; pieces stay white on it */
   --lift-shade: rgba(0, 0, 0, 0.22);
+  /* A prompt (the `+`, the finder, the kind guide) casts a soft shadow here instead of dark's hugging shade, which in the
+     page's light grey glowed over the dark ground (D-421). Dark has none: its frames keep the hugging shade. */
+  --menu-shade: var(--float) rgba(0, 0, 0, 0.18);
   --sheet-rim: rgba(0, 0, 0, 0.12);
   --bg-raised: #ffffff;
   --piece: #ffffff;

@@ -7789,6 +7789,10 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
   agent, a document's dock); `data-rail-tools` on the HUD's side nav and corner; sheet.ts puts `data-rail-ground` on the
   root while the rail shows, at once, and takes it off `DUR.slow` after (the sheet home over the tools), at once under
   reduced motion. TaskPanel's date keeps light's picker only off the ground.
+- **Prompts cast a shadow in light** (the user, after: "'+' ya basınca açılan panelin etrafında çok glow var"): the
+  prompt's frame and the kind guide hugged themselves in a shade of the page's light grey, which glowed over the dark
+  rail. In light they cast a soft shadow instead (`--menu-shade`: `--float` 0 8 28 px, black 18 %); dark keeps the
+  hugging shade (no `--menu-shade` there, the fallback).
 - **Why:** the three near-whites (ground #e2e2e5, page #f3f3f3, pieces white) barely differed and read dull. A preview
   (docs/specs/light-bg-preview/, the gallery's real screens with the tokens swapped) showed 11 options: six that stay
   white (star chart blue, gallery greys, ice, dusk, drawing paper with ink lines) and five bolder (desk lamp, sky blue,
