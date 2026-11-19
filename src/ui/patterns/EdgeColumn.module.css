@@ -10,7 +10,9 @@
   z-index: var(--column-z, calc(var(--z-panel) - 1));
   display: flex;
   flex-direction: column;
-  width: min(var(--column-w, var(--panel-w)), 100%);
+  /* Never past the window from where it starts (a phone: the rest beside the HUD's rail; D-422), so its head's close
+     stays in reach. */
+  width: min(var(--column-w, var(--panel-w)), 100%, calc(100vw - var(--column-off, 0px)));
   background: var(--ground);
   color: var(--fg);
   font-family: var(--font-display);

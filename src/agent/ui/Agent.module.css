@@ -51,6 +51,14 @@
   padding-bottom: var(--space-3);
 }
 
+/* A narrow window with a place beside the canvas (Talk, Tasks, Docs; D-422): the column reaches the right edge, its
+   prompt and foot under the corner, so the closed orb steps aside until it goes. */
+@media (max-width: 760px) {
+  :global(html[data-place-beside]) .box:not([data-open]) {
+    display: none;
+  }
+}
+
 .panel {
   --tab-line: var(--line-hover);
   display: flex;

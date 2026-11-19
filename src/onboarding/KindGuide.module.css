@@ -40,6 +40,19 @@
   border-bottom-right-radius: 0;
 }
 
+/* A narrow window (a phone; D-422): no room beside the menu, so the guide stays out and the menu keeps its corners; the
+   lessons and `?` still teach each kind. */
+@media (max-width: 760px) {
+  .glued {
+    display: none;
+  }
+
+  *:has(> .glued) {
+    border-top-right-radius: var(--radius-menu);
+    border-bottom-right-radius: var(--radius-menu);
+  }
+}
+
 .gluedIn {
   display: flex;
   flex: 1;

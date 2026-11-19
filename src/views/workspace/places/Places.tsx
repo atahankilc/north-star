@@ -6,7 +6,7 @@
 //   the canvas. The canvas stays mounted under it, hidden (CanvasBehind), so its camera and selection are as they were.
 // - Places: what WorkspaceScreen mounts: Tasks' and Docs' column or page (Talk draws its own, ThreadInbox, into the
 //   page's host).
-import { useRef, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { EdgeColumn } from '../../../ui/patterns/EdgeColumn'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
@@ -112,6 +112,12 @@ function TalkHost() {
 
 export function Places({ editor }: { editor: boolean }) {
   const { open, page } = usePlace()
+  // Said on the root while a place is open beside the canvas: on a narrow window the agent's closed orb steps aside
+  // (Agent.module.css), as the column then reaches the window's right edge, its prompt under the orb.
+  useEffect(() => {
+    document.documentElement.toggleAttribute('data-place-beside', !!open && !page)
+    return () => document.documentElement.removeAttribute('data-place-beside')
+  }, [open, page])
   return (
     <>
       {open && page && (

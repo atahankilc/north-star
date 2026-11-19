@@ -11,6 +11,16 @@
   padding: 0;
 }
 
+/* A finger (D-422): the HUD's tools are 30 px, under a fingertip; on a touch screen each answers a little round it, a
+   bit wider than tall so neighbours above and below stay apart. Drawn the same. */
+@media (pointer: coarse) {
+  .tool::after {
+    content: '';
+    position: absolute;
+    inset: calc(-1 * var(--space-1)) calc(-1 * var(--space-2));
+  }
+}
+
 .tool > svg {
   /* Every HUD icon one size (D-343): the icon never sets its own. */
   width: var(--tool-icon);
