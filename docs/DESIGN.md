@@ -218,7 +218,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   badge (a pill of its colour, the word in the page's ink), a status a lamp before its word (ring hypothesis, half testing,
   lit validated, `×` invalidated); zoomed out the badge stays a pill of colour over the title (bigger far out); rows
   inside (a competitor's features, a fold's parts and members) lead with a dot of their colour; an unfolded package's
-  members lie on a wash of blue under its band, no line round them; decks, timeline, matrix and table keep the bar;
+  members lie on a wash of blue under its band, no line round them; a deck's sheets and a timeline's bars too (D-410): a
+  card's sheet its badge on top, a task's sheet its card's badge before the card's name (small, 8 px), a timeline bar and a
+  tray task a short pill of the card's colour (no word) before the name; an untinted sheet keeps its outer line (a white
+  sheet on a white piece); the matrix, the table and the threads' head keep the bar; the badge is one `TypeBadge`;
   header (type label; the status, regions, priority or rating, then evidence cells: filled supports, outlined against,
   magenta when they disagree with the status), the title (≤ 3 lines), a dim mono facts line, tag chips. Smaller on
   screen (D-111, D-153): the title alone, whole words, `…`; then each line a `--fg-dim` bar. A hovered card shows a dim

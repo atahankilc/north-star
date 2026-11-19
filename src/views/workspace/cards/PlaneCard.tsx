@@ -19,6 +19,7 @@ import { cardPlaceholder } from '../../../model/cardName'
 import { CardFace } from './CardFace'
 import { Progress } from './Progress'
 import { CardRow } from './CardRow'
+import { TypeBadge } from './TypeBadge'
 import styles from './PlaneCard.module.css'
 import { plural } from '../../../model/words'
 
@@ -82,7 +83,7 @@ type BandProps = {
 export function PackageBand({ card, facts, members, editor, onFold, className, onPointerDown, onPointerEnter, onPointerLeave, ...data }: BandProps) {
   return (
     <CardFace {...data} className={[styles.band, className].filter(Boolean).join(' ')} tone={CARD_TONE.package} tint bare onPointerDown={onPointerDown} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave}>
-      <span className={styles.kind}>package</span>
+      <TypeBadge type="package" className={styles.kind} />
       <span className={styles.bandName} data-empty={!card.title || undefined}>
         {card.title || cardPlaceholder('package')}
       </span>
@@ -123,7 +124,7 @@ function FullCard({ card, facts, editor, parts, rows, inPkg, features, matched, 
   return (
     <>
       <span className={styles.head}>
-        <span className={styles.kind}>{card.type}</span>
+        <TypeBadge type={card.type} className={styles.kind} />
         {head && (
           <span className={styles.status} data-clash={facts?.clash || undefined}>
             {head}

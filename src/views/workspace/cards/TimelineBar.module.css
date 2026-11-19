@@ -92,6 +92,10 @@
   font-size: var(--text-xs);
 }
 
+.badge {
+  margin-right: var(--space-2);
+}
+
 .ok {
   margin-right: var(--space-1);
   color: var(--accent-green);

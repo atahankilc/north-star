@@ -1,0 +1,22 @@
+/* A card's type as a badge (D-409): a pill of its colour, the word in the page's ink; without the word a short pill. */
+.badge {
+  display: inline-block;
+  flex: none;
+  padding: var(--space-half) var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--badge);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-bold);
+  line-height: var(--lh-none);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase; /* kit-ok: a card's type on its badge, at the size of the text it sits in (a Label is text-xs) */
+  white-space: nowrap;
+}
+
+.badge:not([data-word]) {
+  width: var(--space-4);
+  height: var(--space-2);
+  padding: 0;
+  vertical-align: middle;
+}

@@ -1,5 +1,5 @@
-// A card on a deck (D-252, D-268, D-358): a sheet as a task's, on the card face tinted in its type (D-294). Its type in
-// that colour and its priority on top, its title (Inter, up to three lines), then how sure we are (`◆ high`, `! broken`
+// A card on a deck (D-252, D-268, D-358, D-409): a sheet as a task's, on the bare card face lightly tinted in its type. Its
+// type a badge and its priority on top, its title (Inter, up to three lines), then how sure we are (`◆ high`, `! broken`
 // magenta) and the values it has other than the columns' own.
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Card } from '../../../data/cards'
@@ -7,6 +7,7 @@ import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { cardName } from '../../../model/cardName'
 import { CardFace } from './CardFace'
 import { PriorityChip } from './PriorityChip'
+import { TypeBadge } from './TypeBadge'
 import styles from './Sheet.module.css'
 
 export type Sure = 'high' | 'medium' | 'low' | 'broken'
@@ -39,6 +40,7 @@ export function CardSheet({ card, field, rowField, sure, finished, selected, liv
       className={[styles.sheet, className].filter(Boolean).join(' ')}
       tone={CARD_TONE[card.type]}
       tint
+      bare
       selected={selected}
       finished={finished}
       lifted={lifted}
@@ -54,7 +56,7 @@ export function CardSheet({ card, field, rowField, sure, finished, selected, liv
       onKeyDown={live && onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
     >
       <span className={styles.head}>
-        <span className={styles.type}>{card.type}</span>
+        <TypeBadge type={card.type} />
         <span className={styles.push} />
         {shown('priority') && card.priority && <PriorityChip priority={card.priority} />}
       </span>

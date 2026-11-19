@@ -36,6 +36,12 @@ and a closed competitor's cells round; the unfolded package's frame a wash with 
 (PlaneCards.module.css `.frame`). Task sheets, card sheets, timeline bars, matrix heads, table names and the threads'
 head keep the bar (not asked; to decide after seeing it live). Picked on port 5196's preview (look D, edge off).
 
+**Decks and timelines too (D-410, 2026-11-18):** the badge is one part, `cards/TypeBadge` (a pill of its type's colour, the
+word in the page's ink; `word={false}` a short pill alone), used by PlaneCard, the package's band, `CardSheet` (on top),
+`TaskSheet` (before its card's name, at 8 px so the day, steps and person still fit), `TimelineBar` and `TrayTask` (the
+pill alone before the name). All four are `bare`; an untinted bare face (a task's sheet, a tray task) keeps its outer
+line, only a tinted one loses it. The matrix's heads, the table's names and the threads' head keep the bar.
+
 ## What repeats (counted 2026-11-02)
 
 1. **The face is written 6 times in CSS:** a tint of the type (`--card-tint`), a coloured left edge, a thin outer line

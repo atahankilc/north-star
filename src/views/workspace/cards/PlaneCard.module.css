@@ -21,22 +21,9 @@
   line-height: var(--lh-none);
 }
 
+/* Its type a badge (TypeBadge, D-409). */
 .kind {
   flex: none;
-  color: var(--type-ink);
-  letter-spacing: var(--track-label);
-  font-family: var(--font-mono);
-  text-transform: uppercase; /* kit-ok: the type on a card's face, at the world's size (a Label is text-xs) */
-}
-
-/* Its type a badge (D-409): a pill of its colour, the word in the page's ink. */
-.card .kind,
-.band .kind {
-  padding: var(--space-half) var(--w-card-pad);
-  border-radius: var(--radius-full);
-  background: var(--tone);
-  color: var(--bg);
-  font-weight: var(--weight-bold);
 }
 
 /* A status a lamp before its word (D-384's lamp, D-409): a ring for a hypothesis, half for testing, lit validated, a

@@ -1,9 +1,10 @@
-// A task waiting in a timeline's no-day tray (D-262, D-358): a small sheet on the card face, edged in its card's
-// colour, `☐` and its title on one line; dragged onto a day it gets that day. `lifted`: the copy under the pointer.
+// A task waiting in a timeline's no-day tray (D-262, D-358, D-409): a small sheet on the bare card face, a short pill of
+// its card's colour first, `☐` and its title on one line; dragged onto a day it gets that day. `lifted`: the copy under the pointer.
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react'
 import type { Task } from '../../../data/tasks'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { CardFace } from './CardFace'
+import { TypeBadge } from './TypeBadge'
 import styles from './TrayTask.module.css'
 
 type Props = {
@@ -20,6 +21,7 @@ export function TrayTask({ task, selected, live, lifted, style, onPointerDown }:
     <CardFace
       className={styles.pill}
       tone={task.cardType ? CARD_TONE[task.cardType] : undefined}
+      bare
       selected={selected}
       lifted={lifted}
       marks={live && !lifted}
@@ -31,7 +33,9 @@ export function TrayTask({ task, selected, live, lifted, style, onPointerDown }:
       style={style}
       onPointerDown={onPointerDown}
     >
-      <span className={styles.line}>☐ {task.title}</span>
+      <span className={styles.line}>
+        {task.cardType && <TypeBadge type={task.cardType} word={false} className={styles.badge} />}☐ {task.title}
+      </span>
     </CardFace>
   )
 }

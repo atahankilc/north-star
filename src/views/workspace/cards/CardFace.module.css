@@ -41,18 +41,15 @@
   background: color-mix(in srgb, var(--tone) var(--card-tint), var(--bg-raised));
 }
 
-/* Bare (D-409): no bar and no outer line, a lighter tint; its colour is said by what's on it (a plane card's kind as a
-   badge). */
-.face[data-bare='true'] {
-  box-shadow: none;
-}
-
+/* Bare (D-409): no bar; its colour is said by what's on it (its type as a badge). Tinted, no outer line either and a
+   lighter tint; untinted (a task's sheet) it keeps the line, so a white sheet still shows on a white piece. */
 .face[data-bare='true']::before {
   content: none;
 }
 
 .face[data-bare='true'][data-tint='true'] {
   background: color-mix(in srgb, var(--tone) var(--mix-wash), var(--bg-raised));
+  box-shadow: none;
 }
 
 /* Flat: no paper of its own, the tint over what's under it and its edge only (a table's row name: its row lines show

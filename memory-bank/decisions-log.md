@@ -7609,3 +7609,20 @@ from the top edge, D a badge inside), then D with and without its edge line, the
   feature folded, package band; CardFace's `bare`; the plane in focus), dark and light; typecheck, unit 1002,
   check:tokens, check:kit, check:gallery, check:repeats --names.
 - *Not yet:* the user to see it live (emulators); whether the decks, timeline, matrix and table follow; touch.
+
+### D-410 · 2026-11-18 · Accepted (the user, after D-409 went live: "deck ve timeline'ı da rozetli yap"; extends D-409 to D-358's sheets and bars): decks and timelines badged too
+**A deck's sheets and a timeline's bars say their card's type with D-409's badge, not a bar.** The badge became one
+part, `cards/TypeBadge` (PlaneCard uses it too).
+- *Deck:* a card's sheet is bare with its type's badge on top (where the coloured word was); a task's sheet is bare with
+  its card's badge before the card's name, at 8 px (a plane card badge's size) so the day, the steps and the person still
+  fit in a column; the card's name gives way first. The sheet's left padding a step less (no bar to clear).
+- *Timeline:* a bar is bare (its light tint stays, grey with no card) with a short pill of its card's colour (no word)
+  before its name; a ◆ unchanged; the no-day tray's task the same pill before `☐`.
+- *Kept:* an untinted bare face (a task's sheet, a tray task) keeps its outer line, so a white sheet still shows on a
+  white piece in light; only a tinted face loses it. The matrix's heads, the table's names and the threads' head keep
+  the bar (not asked).
+- *Checked:* the gallery in headless Chrome (a deck in focus dark and light, its task and card sheets, timeline bars
+  late and finished, the tray, the timeline unframed, TypeBadge), typecheck, unit 1002, check:tokens, check:kit,
+  check:gallery, check:repeats --names, check:gallery:live and check:scenes for decks.
+- *Not yet:* the user to see it live; touch.
+

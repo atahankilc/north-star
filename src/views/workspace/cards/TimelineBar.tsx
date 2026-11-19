@@ -1,5 +1,5 @@
 // A task on a timeline (D-262, D-304, D-358): a bar on the card face from its first day to its due day, tinted in its
-// card's colour with that colour on its left edge (no card: a grey tint and edge, so it still shows on the strip). Its
+// card's colour, a short pill of that colour before its name (D-409; no card: a grey tint, so it still shows on the strip). Its
 // name inside it, cut with `…` (D-354), or beside it when the bar is too short (`out`); a `✓` when finished, its
 // priority as the one pill; a line along its foot filled as far as its checklist is done. Late: a magenta outline (the
 // hatch to today is the timeline's). Only a due day (`point`): no sheet, a ◆ with its name beside it. Picked by an
@@ -9,6 +9,7 @@ import type { Task } from '../../../data/tasks'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { CardFace } from './CardFace'
 import { PriorityChip } from './PriorityChip'
+import { TypeBadge } from './TypeBadge'
 import styles from './TimelineBar.module.css'
 
 export type GripSide = 'start' | 'due' | 'give'
@@ -47,6 +48,7 @@ export function TimelineBar({ task, finished, late, point, out, selected, presse
       // A ◆ has no sheet: no face colour, no edge; its tone only for the ◆. For no card: grey, so it still shows on the strip.
       tone={point ? undefined : (tone ?? 'var(--fg-dim)')}
       tint
+      bare
       style={point && tone ? ({ ['--tone' as string]: tone, ...style } as CSSProperties) : style}
       selected={selected}
       pressed={pressed}
@@ -66,6 +68,7 @@ export function TimelineBar({ task, finished, late, point, out, selected, presse
     >
       {point && <span className={styles.dia} />}
       <span className={styles.label} data-out={out || undefined} {...(sticky && { 'data-sticky': sticky.left, 'data-w': sticky.w })}>
+        {!point && task.cardType && <TypeBadge type={task.cardType} word={false} className={styles.badge} />}
         {finished && <span className={styles.ok}>✓</span>}
         {task.priority && (
           <>

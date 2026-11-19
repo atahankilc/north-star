@@ -1,5 +1,5 @@
-// A task on a deck (D-251, D-358): on the card face, as tall as its title (Inter, up to three lines), edged in the colour
-// of the card it's for. Under the title, only when there's something: its #labels, then the card's name, and on the
+// A task on a deck (D-251, D-358, D-409): on the bare card face, as tall as its title (Inter, up to three lines); the card
+// it's for a badge of its type before its name. Under the title, only when there's something: its #labels, then the card's name, and on the
 // right its due day (magenta once past, unless finished), its checklist as cells, who it's given to (a square with
 // their initials). Finished: a green `✓` before the title, the title grey. Hover and selection are its marks (D-265),
 // in its card's colour (cyan with none); others who have it picked, theirs in their colours.
@@ -14,6 +14,7 @@ import { PriorityChip } from './PriorityChip'
 import { Assignee } from './Assignee'
 import { DueMark } from './DueMark'
 import { Progress } from './Progress'
+import { TypeBadge } from './TypeBadge'
 import styles from './Sheet.module.css'
 
 // What a task shows under its title (a deck guesses its height from it before it's measured).
@@ -44,6 +45,7 @@ export function TaskSheet({ task, card, finished, selected, live, lifted, learn,
     <CardFace
       className={[styles.sheet, className].filter(Boolean).join(' ')}
       tone={task.cardType ? CARD_TONE[task.cardType] : undefined}
+      bare
       selected={selected}
       finished={finished}
       lifted={lifted}
@@ -72,6 +74,7 @@ export function TaskSheet({ task, card, finished, selected, live, lifted, learn,
       {!!task.labels?.length && <span className={styles.labels}>{task.labels.map((l) => `#${l}`).join(' ')}</span>}
       {hasMeta(task) && (
         <span className={styles.meta}>
+          {task.cardId && task.cardType && <TypeBadge type={task.cardType} className={styles.badge} />}
           {task.cardId && (
             <span className={styles.for} title={card?.title ?? 'its card is gone'}>
               {card ? cardName(card) : 'its card is gone'}
