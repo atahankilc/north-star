@@ -101,8 +101,14 @@
 .thing {
   display: grid;
   gap: var(--space-1);
-  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-6);
+  justify-items: start;
+  padding: var(--space-3) var(--space-4);
   text-align: left;
+}
+
+/* Its kind as a badge in its colour (D-414), as a card's on a plane. */
+.badge {
+  font-size: var(--text-xs);
 }
 
 .thing[data-goes] {
@@ -411,7 +417,7 @@
   display: grid;
   gap: var(--space-half);
   width: 100%;
-  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-6);
+  padding: var(--space-2) var(--space-3);
   border: 0;
   border-radius: var(--radius-box);
   background: none;
@@ -432,16 +438,6 @@
   background: var(--wash-3);
 }
 
-.rowBar {
-  position: absolute;
-  top: var(--space-2);
-  bottom: var(--space-2);
-  left: var(--space-3);
-  width: var(--line-w-bold);
-  border-radius: var(--radius-full);
-  background: var(--tone, var(--fg-dim));
-}
-
 /* A read row is one line: the thing, when (D-405). */
 .row:not([data-said]) .rowHead {
   align-items: center;
@@ -457,6 +453,13 @@
 }
 
 /* The kit's Label, quiet: the bar carries the thing's colour (D-405). */
+/* A row's thing: its kind as a badge in its colour (D-414), a step smaller than the head's, so the name leads. */
+.rowBadge {
+  flex: none;
+  padding: var(--space-half) var(--space-1);
+  font-size: var(--w-text-xs);
+}
+
 .rowKind {
   flex: none;
   color: var(--fg-dim);

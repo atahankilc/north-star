@@ -222,7 +222,7 @@ Values will be tuned against contrast checks (WCAG AA for text).
   card's sheet its badge on top, a task's sheet its card's badge before the card's name (small, 8 px), a timeline bar and a
   tray task a short pill of the card's colour (no word) before the name; an untinted sheet keeps its outer line (a white
   sheet on a white piece); a matrix's card heads their badge over a column's name and before a row's, a table's card names the short pill
-  (D-413); the threads' head keeps the bar; the badge is one `TypeBadge`;
+  (D-413); a thread's head and its rows in the list the thing's kind as a badge, no bar (D-414); the badge is one `TypeBadge`;
   header (type label; the status, regions, priority or rating, then evidence cells: filled supports, outlined against,
   magenta when they disagree with the status), the title (≤ 3 lines), a dim mono facts line, tag chips. Smaller on
   screen (D-111, D-153): the title alone, whole words, `…`; then each line a `--fg-dim` bar. A hovered card shows a dim

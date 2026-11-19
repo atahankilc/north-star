@@ -52,6 +52,7 @@ import { Label } from '../../../ui/primitives/Label'
 import { presenceColor, usePresence } from '../../../data/presence'
 import { useThemeAccent } from '../../../state/theme'
 import { CardFace } from '../cards/CardFace'
+import { TypeBadge } from '../cards/TypeBadge'
 import { Rule } from '../../../ui/primitives/Rule'
 
 type ThreadView = {
@@ -349,11 +350,12 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
             </Button>
           </ButtonGroup>
         </div>
-        {/* The thing itself (D-405): its card face in its colour, its kind, its name, where it is and how many messages;
+        {/* The thing itself (D-405): its card face in its colour, its kind a badge (D-414), its name, where it is and how many messages;
             a press goes there (D-220). */}
         <CardFace
           tone={thing.tone}
           tint={!!thing.tone}
+          bare
           button={onShow ? true : undefined}
           label={onShow ? `Go to ${title}` : undefined}
           title={onShow ? 'go there' : undefined}
@@ -362,7 +364,7 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
           onClick={onShow}
           onKeyDown={(e) => onShow && (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onShow())}
         >
-          <Label className={styles.kind}>{thing.kind}</Label>
+          {thing.tone && !thing.gone ? <TypeBadge kind={thing.kind} tone={thing.tone} className={styles.badge} /> : <Label className={styles.kind}>{thing.kind}</Label>}
           <h2 className={styles.title} data-gone={thing.gone || undefined}>
             {resolved ? '✓ ' : ''}
             {thing.gone ? 'what it was on was deleted' : thing.name || thing.kind}

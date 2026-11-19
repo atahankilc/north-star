@@ -7619,8 +7619,8 @@ part, `cards/TypeBadge` (PlaneCard uses it too).
 - *Timeline:* a bar is bare (its light tint stays, grey with no card) with a short pill of its card's colour (no word)
   before its name; a ◆ unchanged; the no-day tray's task the same pill before `☐`.
 - *Kept:* an untinted bare face (a task's sheet, a tray task) keeps its outer line, so a white sheet still shows on a
-  white piece in light; only a tinted face loses it. The threads' head keeps the bar (not asked); the matrix's heads and
-  the table's names were badged by D-413.
+  white piece in light; only a tinted face loses it. The matrix's heads and the table's names were badged by D-413, the
+  threads' head by D-414.
 - *Checked:* the gallery in headless Chrome (a deck in focus dark and light, its task and card sheets, timeline bars
   late and finished, the tray, the timeline unframed, TypeBadge), typecheck, unit 1002, check:tokens, check:kit,
   check:gallery, check:repeats --names, check:gallery:live and check:scenes for decks.
@@ -7670,4 +7670,15 @@ part, `cards/TypeBadge` (PlaneCard uses it too).
   `NameCell` use `TypeBadge`.
 - *Checked:* the gallery in headless Chrome (matrix unframed and in focus, table unframed; dark and light), typecheck,
   unit 1188, check:tokens, check:kit, check:gallery, check:repeats --names, check:gallery:live for matrix and table.
-- *Not yet:* the user to see it live; the threads' head still has the bar (not asked).
+- *Not yet:* the user to see it live; the threads' head badged by D-414.
+
+### D-414 · 2026-11-19 · Accepted (the user, after D-413 went live: "threads'i de rozetli yap"; extends D-409/D-410/D-413 to D-405's threads): the threads badged too
+**A conversation's head and a thread's row in the list say what the thing is with `TypeBadge`, not a bar.**
+- *Head:* the thing's card is a bare `CardFace` (no bar, no line, the light wash), its kind a badge in its colour (12 px)
+  over its name; the left padding no longer clears a bar.
+- *Rows:* no colour bar; the kind a badge (9 px, a step under the head's, so the name leads) before the name.
+- *What has no colour* (text, a task, a link) or is gone keeps the grey caps word, as before.
+- *Code:* `TypeBadge` takes `kind` + `tone` for what isn't a card (a piece's kind and `PIECE_TONE`); its gallery shows them.
+- *Checked:* the gallery in headless Chrome (a conversation open, the list, some read; dark and light), typecheck, unit
+  1189, check:tokens, check:kit, check:gallery, check:repeats --names, check:gallery:live and check:scenes for threads.
+- *Not yet:* the user to see it live; Talk as a page (D-412) to look at with it.

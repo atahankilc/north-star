@@ -6,7 +6,7 @@
 // is (it's about a thing). The list (D-398): one head (`Threads`, what it shows, `mark all read`, `×`), the views as
 // tabs under it (all · new · @you · done, D-344), then the threads under the name of the place they're on
 // (`02 PRODUCT ── 1`, the place with the newest first, D-168: going to one switches to its place). A row leads with the
-// thing: its colour as a bar, its kind, its name; under it who wrote last (in their colour) and how it began, when, how
+// thing: its kind as a badge in its colour (D-414), its name; under it who wrote last (in their colour) and how it began, when, how
 // many messages. New ones (someone else wrote since you last read it) carry a magenta lamp and count, `@` where you're
 // mentioned. The two work apart (D-199): a chip on the canvas opens only its conversation, `all threads` there opens the
 // list; closing the list leaves the conversation, and the other way round. Each is uncovered by the main screen drawing
@@ -32,6 +32,7 @@ import { tokenPx } from '../../../styles/cssToken'
 import styles from './Threads.module.css'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
 import { leadingNumber } from '../../../model/words'
+import { TypeBadge } from '../cards/TypeBadge'
 
 // The threads panel's scope for the canvas shown (D-302's session 4), beside a plane's id (D-193).
 const THIS_CANVAS = '#canvas'
@@ -122,9 +123,12 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
                               data-open={t.id === openId || undefined}
                               onClick={() => onGo(t)}
                             >
-                              <span className={styles.rowBar} aria-hidden />
                               <span className={styles.rowHead}>
-                                <Label className={styles.rowKind}>{thing.kind}</Label>
+                                {thing.tone && !thing.gone ? (
+                                  <TypeBadge kind={thing.kind} tone={thing.tone} className={styles.rowBadge} />
+                                ) : (
+                                  <Label className={styles.rowKind}>{thing.kind}</Label>
+                                )}
                                 <span className={styles.rowTitle} data-gone={thing.gone || undefined}>
                                   {t.resolved ? '✓ ' : ''}
                                   {thing.gone ? 'what it was on was deleted' : thing.name || 'untitled'}
