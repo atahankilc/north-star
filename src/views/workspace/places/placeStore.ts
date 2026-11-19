@@ -4,6 +4,7 @@
 // conversation is, however it was opened (the HUD's button, a chip on the canvas, the finder).
 import { create } from 'zustand'
 import { PANEL_W } from '../../../ui/foundation/feel'
+import { tokenPx } from '../../../styles/cssToken'
 import { useThreadView, toggleInbox } from '../threads/threadView'
 
 export type Place = 'talk' | 'tasks' | 'docs'
@@ -61,7 +62,7 @@ export function openTasks(tab: string, days = false, linked: string | null = nul
     page: (days && !linked) || (s.open === 'tasks' && s.page),
     tasks: { tab, days, linked },
     // From a plane, room for its deck's columns beside it.
-    width: linked ? Math.round(Math.min(PANEL_W.max, Math.max(s.width ?? 0, window.innerWidth * LINKED_SHARE))) : s.width,
+    width: linked ? linkedWidth(s.width) : s.width,
   }))
 }
 
@@ -72,6 +73,14 @@ export function toggleTasksFrom(plane: string, tab: string, days = false) {
   openTasks(tab, days && tab === 'all' ? false : days, plane)
 }
 const LINKED_SHARE = 0.45 // tokens-ok: a share of the window, not a size
+// Wide enough for a deck's columns, never so wide the plane beside it has too little left once a task's panel opens on
+// the right (the 2026-11-19 pass: the plane was a strip with its dock cut).
+const PLANE_LEAST = 520 // tokens-ok: the least a plane in focus keeps beside Tasks, in px
+function linkedWidth(now: number | null) {
+  const room = window.innerWidth - tokenPx('--panel-w') - PLANE_LEAST
+  const want = Math.max(now ?? 0, Math.min(window.innerWidth * LINKED_SHARE, room))
+  return Math.round(Math.min(PANEL_W.max, Math.max(PANEL_W.min, want)))
+}
 
 // A column's right edge dragged to `right` (screen x), from the rail's edge `from`.
 export const dragWidth = (from: number, right: number) => usePlace.setState({ width: Math.round(Math.min(PANEL_W.max, Math.max(PANEL_W.min, right - from))) })

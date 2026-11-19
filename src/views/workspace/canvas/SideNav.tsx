@@ -3,14 +3,14 @@
 // same one the workspace does.
 import type { WithId } from '../../../data/hooks'
 import type { Piece, PieceKind } from '../../../data/model'
-import { addPiece, isBare } from '../../../data/pieces'
+import { isBare } from '../../../data/pieces'
 import type { MatrixSetup } from '../../../data/matrix'
 import type { TableSetup } from '../../../data/table'
 import { addCard, CARD_TYPES, type CardType } from '../../../data/cards'
 import { cardsOn } from '../../../data/places'
 import { addLabel, CANVAS, PARA_W, STICKY_H, STICKY_W, TITLE_W } from '../../../data/labels'
 import { snap } from '../../../data/grid'
-import { bringIntoView, canvasCenter, planeMiddle, setEditing, useCanvasView } from '../../../state/canvasView'
+import { bringIntoView, canvasCenter, planeMiddle, useCanvasView } from '../../../state/canvasView'
 import { Menu } from '../../../ui/patterns/Menu'
 import { learn } from '../../../onboarding/learn'
 import { GuideTool } from '../../../onboarding/GuideTool'
@@ -29,7 +29,9 @@ import { newChannel } from '../threads/ThreadInbox'
 import { ToolButton } from '../../../ui/primitives/ToolButton'
 import { PlusIcon } from '../../../ui/primitives/hudIcons'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
-import { useWs, useWsNow } from './context'
+import { useWs } from './context'
+import { nearClearIn } from '../../../model/pieceMoves'
+import { makeNewPiece } from './useDraftWizard'
 import { FitTool } from './FitTool'
 import { FinderTool } from './FinderTool'
 
@@ -70,7 +72,6 @@ const CARD_LETTER: Record<CardType, string> = { customer: 'c', problem: 'r', com
 // Viewers make nothing (D-098).
 function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
   const { pieces, cards, labels, places } = useWs()
-  const now = useWsNow()
   const me = useAuthor()
   const hasTitle = labels.some((l) => l.kind === 'title')
   // The middle of the screen in the open space's px.
@@ -88,7 +89,14 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
             ? { kind: 'sticky' as const, w: STICKY_W.initial, color: 'yellow' as const, ...me, dx: STICKY_W.initial / 2, dy: STICKY_H / 2 }
             : { kind: 'title' as const, w: TITLE_W.initial, dx: TITLE_W.initial / 2, dy: 80 }
     const { dx, dy, ...rest } = fields
-    const id = await addLabel(wid, { pieceId: space, text: '', ...rest, x: snap(at[0] - dx), y: snap(at[1] - dy) })
+    // Not on what's there already (the 2026-11-19 pass: a heading made over a sticky over a plane's edge): the nearest
+    // clear spot round the middle, among the space's text (and on the canvas its pieces); the view goes there if it's
+    // out of sight.
+    const box = { x: snap(at[0] - dx), y: snap(at[1] - dy), w: 2 * dx, h: 2 * dy }
+    const textHere = labels.filter((l) => l.pieceId === space).map((l) => ({ x: l.x, y: l.y, w: l.w ?? 2 * dx, h: l.kind === 'sticky' ? STICKY_H : 2 * dy }))
+    const spot = nearClearIn(box, plane ? textHere : [...textHere, ...shownPieces(pieces, cards)])
+    const id = await addLabel(wid, { pieceId: space, text: '', ...rest, x: snap(spot.x), y: snap(spot.y) })
+    if (!plane) bringIntoView(wid, { ...box, ...spot })
     useCanvasView.setState({ labelSelected: id, labelEditing: id, fresh: id, cardSelected: null, selected: null })
   }
   const text = [
@@ -100,17 +108,7 @@ function AddToCanvas({ wid, plane }: { wid: string; plane: string | null }) {
     // The project title goes on the canvas only, once (D-190).
     ...(hasTitle || plane ? [] : [{ key: 'title', label: 'project title', glyph: TEXT_GLYPH.title, letter: 'i', onSelect: () => void addText('title') }]),
   ]
-  const add = async (kind: PieceKind, template?: { name: string; setup: () => MatrixSetup | TableSetup }) => {
-    const id = await addPiece(wid, kind, canvasCenter(wid), shownPieces(pieces, cards), template?.setup(), template?.name)
-    // Where you're looking, in edit mode, to be moved where you want it.
-    setEditing(id, true)
-    // Put in the nearest clear spot, it may be past the screen's edge: the view goes to it (once it's in the data).
-    for (let i = 0; i < 30 && id; i++) {
-      const p = now().pieces.find((x) => x.id === id)
-      if (p) return bringIntoView(wid, p)
-      await new Promise((r) => setTimeout(r, 50)) // tokens-ok: a short wait for the write to land
-    }
-  }
+  const add = (kind: PieceKind, template?: { name: string; setup: () => MatrixSetup | TableSetup }) => makeNewPiece(wid, kind, shownPieces(pieces, cards), template?.setup(), template?.name)
   const bringHere = () => {
     const r = document.querySelector('[aria-label="Add to the plane"]')?.getBoundingClientRect()
     if (plane && r) useCanvasView.setState({ bringing: { plane, at: null, screen: [r.right + 8, r.top] } })

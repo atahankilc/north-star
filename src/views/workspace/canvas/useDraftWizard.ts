@@ -3,10 +3,12 @@
 // `base` fills what a template leaves out (a deck's empty columns). `make` closes it, puts the piece at the middle of
 // the canvas and leaves it in edit mode there, to be moved where you want it.
 import { useState } from 'react'
-import { addPiece } from '../../../data/pieces'
+import { addPiece, type Box } from '../../../data/pieces'
+import { getWs } from '../../../state/wsStore'
+import { CANVAS, STICKY_H } from '../../../data/labels'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
-import { canvasCenter, setEditing } from '../../../state/canvasView'
+import { bringIntoView, canvasCenter, setEditing } from '../../../state/canvasView'
 
 export type WizardTemplate<S> = { key: string; name: string; hint: string; setup: () => S }
 
@@ -38,8 +40,24 @@ export function useDraftWizard<S extends object, T = S>(templates: WizardTemplat
 
 export async function makeFromWizard(close: () => void, wid: string, kind: Piece['kind'], pieces: WithId<Piece>[], setup: object, name?: string) {
   close()
-  const id = await addPiece(wid, kind, canvasCenter(wid), pieces, setup as never, name)
+  await makeNewPiece(wid, kind, pieces, setup, name)
+}
+
+// A text's box when it has no width of its own (a heading's): about a heading's line, to keep clear of it.
+const TEXT_GUESS = { w: 300, h: 60 } // tokens-ok: a rough box for clearing, never drawn
+
+// A piece made from the canvas's + or a wizard (D-238, D-422): at the screen's middle or the nearest clear spot, the
+// canvas's text in the way too (a new piece never covers a note or a heading), in edit mode, and the view goes to it
+// when that spot is out of sight.
+export async function makeNewPiece(wid: string, kind: Piece['kind'], pieces: Box[], setup?: object, name?: string) {
+  const text = (getWs()?.labels ?? []).filter((l) => l.pieceId === CANVAS).map((l) => ({ x: l.x, y: l.y, w: l.w ?? TEXT_GUESS.w, h: l.kind === 'sticky' ? STICKY_H : TEXT_GUESS.h, text: true }))
+  const id = await addPiece(wid, kind, canvasCenter(wid), [...pieces, ...text], setup as never, name)
   setEditing(id, true)
+  for (let i = 0; i < 30 && id; i++) {
+    const p = getWs()?.pieces.find((x) => x.id === id)
+    if (p) return bringIntoView(wid, p)
+    await new Promise((r) => setTimeout(r, 50)) // tokens-ok: a short wait for the write to land
+  }
 }
 
 // The preview's foot says when it shows only some.

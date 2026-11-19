@@ -44,7 +44,9 @@ function nearClear(box: Box, all: Box[], canvas = canvasHere()): Pick<Box, 'x' |
   // On the canvas shown, what's drawn there (through spots too, D-307); elsewhere, the list given.
   const here = canvas === canvasHere() ? shownHere() : null
   const others = here ?? (all as (Box & { canvasId?: string; spot?: string })[]).filter((o) => (o.spot ? o.spot === canvas : onCanvas(canvas)(o)))
-  return nearClearIn(box, others)
+  // The canvas's text given with them (`text`, the + menu's: a new piece never lands on a note or a heading, D-422).
+  const text = (all as (Box & { text?: boolean })[]).filter((o) => o.text)
+  return nearClearIn(box, [...others, ...text])
 }
 
 // A piece centred on `at` (canvas pixels), or the nearest clear place round it (nearClear): one undo step.

@@ -28,6 +28,14 @@ let rails = 0
 let layers: HTMLElement[] | null = null
 // Kept while the sheet travels home: the tools it drew back off are still there.
 let cut = 0
+// How far a left column reaches now, and who hears it change (D-422: the canvas moves its view by half of it, so what
+// was in the middle of the screen stays in the middle of what's left; a left place no longer covers it).
+let leftWas = 0
+const leftMoves = new Set<(by: number) => void>()
+export function onSheetLeft(fn: (by: number) => void) {
+  leftMoves.add(fn)
+  return () => void leftMoves.delete(fn)
+}
 
 // The sheet's corner now, in px: 0 while it fills the window (the agent's tab keeps clear of it, as its CSS does).
 export const sheetRound = () => parseFloat(pageValue('--sheet-round') ?? '') || 0
@@ -82,6 +90,11 @@ function measure() {
     void layers[0].offsetWidth
   }
   setPageValue('--sheet-x0', `${left || rail || gap}px`)
+  if (left !== leftWas) {
+    const by = left - leftWas
+    leftWas = left
+    for (const fn of leftMoves) fn(by)
+  }
   setPageValue('--sheet-x1', `${right || gap}px`)
   setPageValue('--sheet-b', `${gap}px`)
   setPageValue('--sheet-rail', `${rail}px`)

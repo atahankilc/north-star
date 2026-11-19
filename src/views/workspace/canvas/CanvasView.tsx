@@ -37,6 +37,7 @@ import { isNew, useReads } from '../../../data/threads'
 import { ThreadInbox } from '../threads/ThreadInbox'
 import { CARD } from '../../../data/cards'
 import { glide, planeArea, stopGlide } from '../../../state/canvasView'
+import { onSheetLeft } from '../../../ui/foundation/sheet'
 import { isReducedMotion } from '../../../state/motion'
 import { isOwnerOf, roleOf } from '../../../data/workspaces'
 import type { Thread } from '../../../data/model'
@@ -722,6 +723,20 @@ export function CanvasView() {
   // The plane's part of the screen follows what's open beside it (D-211); its contents fit there again.
   // A document open beside its list (D-232) takes the right part the same way.
   const besideCount = besideOpen.length + (readerOpen ? 1 : 0)
+  // A place docked on the left (Talk, Tasks, Docs; D-422): the view moves over by half the sheet's move, so what was
+  // in the screen's middle stays in the middle of what's left of it, never under the column; and back as it goes.
+  useEffect(
+    () =>
+      onSheetLeft((by) => {
+        const half = by / 2
+        const { planeCam, focusArrived } = useCanvasView.getState()
+        if (focusIdRef.current && planeCam && focusArrived) return glide(planeCam, { ...planeCam, ox: planeCam.ox + half }, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
+        if (focusIdRef.current) return
+        const c = camOf(wid)
+        glide(c, { ...c, x: c.x + half }, DUR.glide, (v) => setCam(wid, v))
+      }),
+    [wid],
+  )
   useEffect(() => {
     useCanvasView.setState({ beside: besideCount })
     if (focusId && useCanvasView.getState().focusArrived) fitRef.current()
