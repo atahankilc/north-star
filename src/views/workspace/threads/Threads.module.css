@@ -559,3 +559,95 @@
 .talkPage > .convo > .lead {
   margin: auto;
 }
+
+/* Talk as the page (D-416): the messages as lines, as a chat app reads them. Each a row as wide as the page, a faint
+   shade under the pointer; the writer's circle and name start a run, its next lines show when only while pointed at;
+   no bubbles, yours on the left like everyone's. */
+.panel[data-lines] .log {
+  gap: 0;
+  padding-inline: 0;
+}
+
+.panel[data-lines] .day,
+.panel[data-lines] .newLine {
+  margin: var(--space-4) var(--space-6) var(--space-1);
+}
+
+.panel[data-lines] .msg,
+.panel[data-lines] .msg[data-mine] {
+  position: relative;
+  align-self: stretch;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: none;
+  margin-top: var(--space-3);
+  padding: var(--space-1) var(--space-6);
+}
+
+.panel[data-lines] .msg[data-follows] {
+  margin-top: 0;
+  padding-block: var(--space-half);
+}
+
+.panel[data-lines] .msg:hover {
+  background: var(--wash-1);
+}
+
+.panel[data-lines] .face,
+.gutter {
+  flex: none;
+  width: var(--hud-tool);
+}
+
+/* A run's next lines: when, where the circle would be, only while pointed at. */
+.gutter {
+  align-self: center;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-align: right;
+  opacity: 0;
+}
+
+.panel[data-lines] .msg:hover .gutter {
+  opacity: 1;
+}
+
+.panel[data-lines] .said {
+  flex: 1;
+  gap: 0;
+}
+
+.panel[data-lines] .who,
+.panel[data-lines] .msg[data-mine] .who {
+  flex-direction: row;
+  padding: 0;
+}
+
+.panel[data-lines] .text,
+.panel[data-lines] .msg[data-mine] .text {
+  justify-self: start;
+  max-width: var(--measure);
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--fg);
+}
+
+/* Your own line's tools: a small pill at the row's top right while pointed at. */
+.panel[data-lines] .tools {
+  top: calc(-1 * var(--space-3));
+  right: 0;
+  bottom: auto;
+  margin: 0;
+}
+
+.panel[data-lines] .composer,
+.panel[data-lines] .head {
+  padding-inline: var(--space-6);
+}
+
+/* As in a chat app, a short conversation sits at the foot, by the prompt. */
+.panel[data-lines] .log > :first-child {
+  margin-top: auto;
+}

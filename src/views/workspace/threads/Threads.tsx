@@ -210,9 +210,11 @@ type PanelProps = {
   onList?: () => void
   // Its `×` (D-412: beside the canvas it closes Talk; as the page, only the conversation).
   onClose?: () => void
+  // Talk as the page (D-416): the messages as lines down the left (who, when, what), no bubbles, yours like everyone's.
+  lines?: boolean
 }
 
-export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, onShow, onList, onClose }: PanelProps) {
+export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, onShow, onList, onClose, lines = false }: PanelProps) {
   const messages = useMessages(wid, thread?.id ?? null)
   const members = useWorkspaceMembers(wid, useWs().workspace.memberIds)
   const reads = useReads(wid, myUid() || null).data
@@ -323,6 +325,7 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
     <div
       ref={box}
       className={styles.panel}
+      data-lines={lines || undefined}
       role="dialog" /* kit-ok: the threads panel's half, built and broken cell by cell (D-199), docked, not a Window */
       aria-label={`Thread on ${title}`}
       data-learn="thread"
@@ -399,7 +402,17 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
           )}
           <li className={styles.msg} data-mine={m.uid === me || undefined} data-follows={follows || undefined}>
             {/* The others' circle at the foot of their last bubble; yours needs none: it's on your side. */}
-            {m.uid !== me && (goesOn ? <span className={styles.noCircle} aria-hidden /> : <Avatar size="sm" name={m.name} color={colorOf(m.uid)} />)}
+            {lines ? (
+              follows ? (
+                <span className={styles.gutter} aria-hidden>
+                  {clock(m.createdAt)}
+                </span>
+              ) : (
+                <Avatar size="hud" name={m.name} color={colorOf(m.uid)} className={styles.face} />
+              )
+            ) : (
+              m.uid !== me && (goesOn ? <span className={styles.noCircle} aria-hidden /> : <Avatar size="sm" name={m.name} color={colorOf(m.uid)} />)
+            )}
             <div className={styles.said}>
               {/* Only its writer edits or deletes a message (D-166): beside its bubble while pointed at (D-405). */}
               {m.uid === me && editing?.id !== m.id && (
@@ -415,13 +428,13 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
               )}
               {!follows && (
               <div className={styles.who}>
-                {m.uid !== me && !follows && (
+                {(lines || m.uid !== me) && !follows && (
                   <span className={styles.name} style={{ color: colorOf(m.uid) }}>
                     {m.name}
                   </span>
                 )}
                 <span className={styles.when}>
-                  {days ? clock(m.createdAt) : ago(m.createdAt)}
+                  {days || lines ? clock(m.createdAt) : ago(m.createdAt)}
                   {m.editedAt && ' · edited'}
                 </span>
               </div>

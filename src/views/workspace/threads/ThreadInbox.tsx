@@ -234,6 +234,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
       // Beside the canvas it's in the list's place: back to the list. As the page the list is beside it.
       onList={asPage ? undefined : () => (closeThread(), toggleInbox(true))}
       onClose={asPage ? closeThread : closePlace}
+      lines={asPage}
     />
   )
 
