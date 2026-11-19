@@ -3,6 +3,10 @@
 // they differ.
 import type { AgentModel, ModelEvent, ModelRequest, ModelResponse } from './contract'
 
+// Claude's models with today's request surface (adaptive thinking, effort): the 4.6+ generation; older ones get
+// neither. Here, not in anthropic.ts, so the model list (models.ts) reads it without loading Claude's SDK.
+export const claudeModern = (model: string) => /^claude-(opus|sonnet|haiku|fable|mythos)-(4-[6-9]|[5-9])/.test(model)
+
 export type ProviderErrorKind = 'auth' | 'forbidden' | 'not_found' | 'bad_request' | 'rate_limit' | 'quota' | 'server' | 'network' | 'stream'
 
 // A failure a person can read: what went wrong (never a key in it), its kind, the HTTP status when there was one.

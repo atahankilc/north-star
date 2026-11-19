@@ -29,17 +29,18 @@ type Common<T extends string> = {
   cards?: boolean
   className?: string
 }
-type One<T extends string> = Common<T> & { pick: 'one'; value: T | undefined; onChange: (value: T | undefined) => void; clearable?: boolean }
+// One of them: `onChange` gets undefined only when the picked one can be clicked off (`clearable`).
+type One<T extends string, C extends boolean> = Common<T> & { pick: 'one'; value: T | undefined; clearable?: C; onChange: (value: C extends true ? T | undefined : T) => void }
 type Many<T extends string> = Common<T> & { pick: 'many'; values: readonly T[]; onChange: (values: T[]) => void }
 type Act<T extends string> = Common<T> & { pick: 'act'; onPick: (value: T) => void }
 
-export function Options<T extends string>(props: One<T> | Many<T> | Act<T>) {
+export function Options<T extends string, C extends boolean = false>(props: One<T, C> | Many<T> | Act<T>) {
   const { options, label, cards, className } = props
   const row = useRef<HTMLDivElement>(null)
   const one = props.pick === 'one'
   const on = (v: T) => (props.pick === 'one' ? props.value === v : props.pick === 'many' ? props.values.includes(v) : false)
   const click = (v: T) => {
-    if (props.pick === 'one') props.onChange(props.value === v && props.clearable ? undefined : v)
+    if (props.pick === 'one') (props.onChange as (value: T | undefined) => void)(props.value === v && props.clearable ? undefined : v)
     else if (props.pick === 'many') props.onChange(props.values.includes(v) ? props.values.filter((x) => x !== v) : [...props.values, v])
     else props.onPick(v)
   }

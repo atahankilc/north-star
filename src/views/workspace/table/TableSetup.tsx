@@ -32,7 +32,7 @@ import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { Select } from '../../../ui/patterns/Select'
 import { AutosaveField } from '../../../ui/primitives/AutosaveField'
 import { useWs } from '../canvas/context'
-import { AddPill, Choices, Toggle } from '../matrix/MatrixSetup'
+import { AddPill } from '../matrix/MatrixSetup'
 import { SetupRow as Row, SetupShell } from '../canvas/SetupShell'
 import { followAdded } from '../canvas/followAdded'
 import { tableOf, TABLE_TABS, type TableTab } from './Table'
@@ -43,6 +43,7 @@ import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Options } from '../../../ui/patterns/Options'
+import { Checkbox } from '../../../ui/primitives/Checkbox'
 import { UNIT_MAX, VALUE_MAX } from '../../../model/limits'
 import { cardName } from '../../../model/cardName'
 import { pageSizesWith } from '../../../model/paging'
@@ -105,7 +106,7 @@ export function RowsEditor({ setup, onChange, onRemoveItem, cardsOnly }: EditorP
   return (
     <>
       <Row label="cards" hint="they join and leave by themselves as cards are made, changed or deleted">
-        {cardsOnly ? <span className={m.checkHint}>{rows.rules.length ? 'the cards that meet these rules: every rule must hold' : 'no rules: every card on every plane'}</span> : <Toggle on={!setup.manual} label="the cards that meet these rules" hint={rows.rules.length ? 'every rule must hold' : 'no rules: every card on every plane'} onChange={(v) => onChange('manual', v ? undefined : true)} />}
+        {cardsOnly ? <span className={m.checkHint}>{rows.rules.length ? 'the cards that meet these rules: every rule must hold' : 'no rules: every card on every plane'}</span> : <Checkbox checked={!setup.manual} label="the cards that meet these rules" hint={rows.rules.length ? 'every rule must hold' : 'no rules: every card on every plane'} onChange={(v) => onChange('manual', v ? undefined : true)} />}
         {hidden > 0 && (
           <Button title="bring back the cards taken out" onClick={() => set({ ...rows, hide: undefined })}>
             {hidden} hidden · show
@@ -268,9 +269,11 @@ export function ColumnsEditor({ setup, onChange, onRemoveCol }: EditorProps & { 
                 <span className={m.checkHint}>the card's</span>
               ) : (
                 <>
-                  <Choices<OwnKind>
+                  <Options<OwnKind>
+                    pick="one"
+                    label="Kind"
                     value={c.kind ?? 'text'}
-                    options={OWN_KINDS.map((k) => ({ value: k, label: OWN_NAME[k].sample, hint: OWN_NAME[k].label }))}
+                    options={OWN_KINDS.map((k) => ({ value: k, label: OWN_NAME[k].sample, title: OWN_NAME[k].label }))}
                     onChange={(k) => edit(c, { kind: k, ...(k === 'scale' && !c.steps ? { steps: DEFAULT_STEPS } : {}) })}
                   />
                   {c.kind === 'number' && (
@@ -308,7 +311,8 @@ function ViewEditor({ setup, onChange }: EditorProps) {
   return (
     <>
       <Row label="rows a page" hint="the dock pages through them">
-        <Choices<string>
+        <Options<string>
+          pick="one"
           label="Rows a page"
           value={setup.pageSize ? String(setup.pageSize) : ALL}
           options={[{ value: ALL, label: 'all' }, ...pageSizesWith(setup.pageSize).map((n) => ({ value: String(n), label: String(n) }))]}
@@ -324,7 +328,8 @@ function ViewEditor({ setup, onChange }: EditorProps) {
             onChange={(v) => onChange('sort', v === NONE ? undefined : { col: v, ...(setup.sort?.desc ? { desc: true } : {}) })}
           />
           {setup.sort && (
-            <Choices<string>
+            <Options<string>
+          pick="one"
               label="Order"
               value={setup.sort.desc ? 'down' : 'up'}
               options={[

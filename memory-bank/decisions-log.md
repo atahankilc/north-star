@@ -7698,3 +7698,25 @@ part, `cards/TypeBadge` (PlaneCard uses it too).
 - Lesson `comment` +1 (a Channels page), release line. Rules tests 719/0.
 - *Not yet:* a channel's purpose line, renaming a channel, paging a long channel's messages (300 load today), the rules deployed (with D-415's, asked first: done together).
 
+### D-418 · 2026-11-19 · Accepted (the user, of round 2's small leftovers: "önerdiğin sırayla yap"; D-361, docs/specs/shared-code.md): the setups on the kit's own parts, text grows by one hook, storage and Claude's model test in one place
+**Four leftovers of round 2, each a copy that had a home already.**
+- *Setups:* MatrixSetup's `Toggle` and `Choices` are gone (they only renamed `Checkbox` and `Options`); the matrix's,
+  the table's and the deck's setups use the kit's parts directly. `Options` with `pick="one"` hands `onChange` a value
+  (never undefined) unless it's `clearable`, so callers need no guard. The table column's kind picker is read out
+  `Kind` (was `Pick one`).
+- *Text:* a paragraph's or sticky note's field and the project title's description grow by `useAutoGrow` (each had
+  its own height code; the hook also grows when the width changes); the title's name is capped by
+  `WORKSPACE_NAME_MAX`, not a typed 80. TitleFields' own `saved` ref stays: it is that field's own record of what it
+  wrote, not a copy.
+- *Storage:* state/local.ts reads and keeps sessionStorage too (`readSession`, `keepSession`; `keep*` say whether it
+  was kept); the reload guard (app/chunks.ts), the onboarding's test copy and dev switches (data/onboarding.ts,
+  onboarding/devSandbox.ts, Coach.tsx) and the agent's usage log (agent/usage.ts, its test standing in a storage) go
+  through it. check:kit's `storage` rule counts sessionStorage too (0 left).
+- *Claude's models:* which Claude models take today's request surface is `claudeModern` in agent/provider.ts, read by
+  anthropic.ts and models.ts (the same regex was in both; models.ts can't load Claude's SDK).
+- *Checked:* typecheck, unit 1191, check:kit, check:repeats, check:gallery, check:tokens, check:gallery:live (matrix,
+  table, deck, text); in headless Chrome, old (a frozen worktree) and new: the 27 states of the setups, Options and
+  Checkbox the same DOM but the one read-out label; a paragraph's, a sticky note's and the title's field the same
+  heights as text is typed (120 → 144 → 192, 25 → 63 → 88, 78 → 117 → 195).
+- *Left:* Matrix.tsx' two cell maps and the numbers with no name (other sessions are in those files); Stage and
+  Mount's provider stack; check:kit's `kindSwitch` 31.

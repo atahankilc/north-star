@@ -3,6 +3,7 @@
 // the new version. Not again within a minute, so a chunk that really can't load shows its error (App's `Crash`)
 // instead of looping.
 import type { ComponentType } from 'react'
+import { keepSession, readSession } from '../state/local'
 
 const RELOADED = 'north-star.chunk-reload'
 const RELOAD_GAP_MS = 60_000 // tokens-ok: how long a reload counts as just done, not a design value
@@ -10,13 +11,9 @@ const RELOAD_GAP_MS = 60_000 // tokens-ok: how long a reload counts as just done
 // Reloads the tab unless it did so a moment ago; says whether it did. With storage blocked it can't tell, so it never
 // reloads by itself (it could loop): the error shows, with its own reload button.
 function reloaded(): boolean {
-  try {
-    const last = Number(sessionStorage.getItem(RELOADED) ?? 0)
-    if (Date.now() - last <= RELOAD_GAP_MS) return false
-    sessionStorage.setItem(RELOADED, String(Date.now()))
-  } catch {
-    return false
-  }
+  const last = Number(readSession(RELOADED) ?? 0)
+  if (Date.now() - last <= RELOAD_GAP_MS) return false
+  if (!keepSession(RELOADED, String(Date.now()))) return false
   location.reload()
   return true
 }

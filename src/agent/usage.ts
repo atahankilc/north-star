@@ -4,6 +4,7 @@
 // content, or the key: an entry is built field by field from counts and names (`usageEntry`), and `record` checks the
 // shape again before it writes, so nothing else can slip in.
 import type { AgentTurn } from './contract'
+import { keepLocal, readLocalJson } from '../state/local'
 
 export const USAGE_KEY = 'northstar.agentUsage.v1'
 export const USAGE_MAX = 500
@@ -25,7 +26,6 @@ export type UsageEntry = {
   end: AgentTurn['end']
 }
 
-type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem' | 'removeItem'>
 
 const ENDS: AgentTurn['end'][] = ['answered', 'budget', 'length', 'refused', 'stopped', 'error']
 const NAME = /^[a-z][a-z0-9_]{0,39}$/
@@ -77,47 +77,21 @@ function sanitize(e: UsageEntry): UsageEntry {
   }
 }
 
-const store = (s?: Storage): Storage | null => {
-  if (s) return s
-  try {
-    return typeof localStorage !== 'undefined' ? localStorage : null
-  } catch {
-    return null
-  }
+// Through state/local.ts: storage blocked, full or missing (node) reads nothing and keeps nothing.
+export function readUsage(): UsageEntry[] {
+  const v = readLocalJson<unknown>(USAGE_KEY, [])
+  return Array.isArray(v) ? v.map((e) => sanitize(e as UsageEntry)) : []
 }
 
-export function readUsage(s?: Storage): UsageEntry[] {
-  const st = store(s)
-  if (!st) return []
-  try {
-    const v = JSON.parse(st.getItem(USAGE_KEY) ?? '[]') as unknown
-    return Array.isArray(v) ? v.map((e) => sanitize(e as UsageEntry)) : []
-  } catch {
-    return []
-  }
+// Adds one answer's entry (the newest last; the oldest dropped past USAGE_MAX). A full or blocked storage drops it:
+// the log is a convenience, never in the way.
+export function recordUsage(entry: UsageEntry): void {
+  keepLocal(USAGE_KEY, JSON.stringify([...readUsage(), sanitize(entry)].slice(-USAGE_MAX)))
 }
 
-// Adds one answer's entry (the newest last; the oldest dropped past USAGE_MAX). A full or blocked storage drops it.
-export function recordUsage(entry: UsageEntry, s?: Storage): void {
-  const st = store(s)
-  if (!st) return
-  const list = [...readUsage(st), sanitize(entry)].slice(-USAGE_MAX)
-  try {
-    st.setItem(USAGE_KEY, JSON.stringify(list))
-  } catch {
-    // Storage full or blocked: the log is a convenience, never in the way.
-  }
-}
+export const recordTurn = (turn: AgentTurn, model: string) => recordUsage(usageEntry(turn, model))
 
-export const recordTurn = (turn: AgentTurn, model: string, s?: Storage) => recordUsage(usageEntry(turn, model), s)
-
-export function clearUsage(s?: Storage): void {
-  try {
-    store(s)?.removeItem(USAGE_KEY)
-  } catch {
-    // Nothing to do.
-  }
-}
+export const clearUsage = () => keepLocal(USAGE_KEY, null)
 
 export type UsageSum = { answers: number; input: number; cached: number; output: number; reasoning: number; steps: number; ms: number }
 

@@ -35,6 +35,7 @@ import { Guide, useGuideRole, useGuideShown } from './Guide'
 import { AREA_NAME } from './guideModel'
 import { isTyping } from '../ui/foundation/focus'
 import { firstName } from '../model/words'
+import { keepSession, readSession } from '../state/local'
 
 // Off the queue (see above).
 const OFF_QUEUE = (l: LessonData) => l.format === 'guide' || l.format === 'empty'
@@ -64,13 +65,9 @@ const devRelease: Promise<void> | null = import.meta.env.DEV ? sampleIfAsked() :
 function sampleIfAsked(): Promise<void> | null {
   if (typeof location === 'undefined') return null
   const q = new URLSearchParams(location.search).get('release')
-  try {
-    if (q === 'sample') sessionStorage.setItem(DEV_RELEASE_KEY, 'sample')
-    else if (q === 'off') sessionStorage.removeItem(DEV_RELEASE_KEY)
-    if (sessionStorage.getItem(DEV_RELEASE_KEY) !== 'sample') return null
-  } catch {
-    if (q !== 'sample') return null
-  }
+  if (q === 'sample' || q === 'off') keepSession(DEV_RELEASE_KEY, q === 'sample' ? 'sample' : null)
+  // Storage blocked: only while the address asks for it.
+  if (readSession(DEV_RELEASE_KEY) !== 'sample' && q !== 'sample') return null
   return import('./releases.sample').then((m) => setReleases(m.SAMPLE_RELEASES))
 }
 

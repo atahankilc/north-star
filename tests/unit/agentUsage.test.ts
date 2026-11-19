@@ -1,7 +1,7 @@
 // S12's usage log (D-312, src/agent/usage.ts; CLAUDE.md's hard rule, agent.md §7.2 point 5): per answer only counts
 // and names (tokens in/cached/out/reasoning, web searches, tool names, steps, ms, model, how it ended), in the person's own browser.
 // Never the message, the answer, tool arguments or results, workspace text, or the key.
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { clearUsage, readUsage, recordTurn, recordUsage, sumUsage, usageEntry, USAGE_KEY, USAGE_MAX, type UsageEntry } from '../../src/agent/usage'
 import { runTurn } from '../../src/agent/loop'
 import { stubModel } from '../../src/agent/stubModel'
@@ -12,8 +12,12 @@ import { loadFixture } from '../../evals/fixtures'
 
 const memory = () => {
   const m = new Map<string, string>()
-  return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k), raw: () => [...m.values()].join('\n'), m }
+  const s = { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k), raw: () => [...m.values()].join('\n'), m }
+  // The log reads the browser's storage through state/local.ts: this one stands in for it.
+  vi.stubGlobal('localStorage', s)
+  return s
 }
+afterEach(() => vi.unstubAllGlobals())
 
 const SECRET_ASK = 'SECRET-ASK our pricing is 4.99 for Ayşe'
 const SECRET_ANSWER = 'SECRET-ANSWER c15 is about bread'
@@ -41,12 +45,12 @@ describe('the usage log', () => {
 
   it('stores no text: not the ask, the answer, step text, args, results, a made-up tool name, an error or the key', () => {
     const s = memory()
-    recordTurn(turn, 'gpt-5.6-terra', s)
+    recordTurn(turn, 'gpt-5.6-terra')
     // A hand-made entry with text slipped in: dropped on the way in.
-    recordUsage({ ...usageEntry(turn, 'gpt-5.6-terra'), model: `gpt ${KEY} ${SECRET_ASK}`, tools: ['search', SECRET_ARG, KEY], note: SECRET_ANSWER } as UsageEntry & { note: string }, s)
+    recordUsage({ ...usageEntry(turn, 'gpt-5.6-terra'), model: `gpt ${KEY} ${SECRET_ASK}`, tools: ['search', SECRET_ARG, KEY], note: SECRET_ANSWER } as UsageEntry & { note: string })
     const raw = s.raw()
     for (const secret of [SECRET_ASK, SECRET_ANSWER, SECRET_ARG, KEY, 'SECRET', 'Ayşe', 'Ignore previous', 'bread', 'note']) expect(raw, secret).not.toContain(secret)
-    const list = readUsage(s)
+    const list = readUsage()
     expect(list).toHaveLength(2)
     expect(list[1]).toMatchObject({ model: 'unknown', tools: ['search'] })
     expect(Object.keys(list[0]).sort()).toEqual(['at', 'cached', 'calls', 'end', 'input', 'model', 'ms', 'output', 'reasoning', 'searches', 'steps', 'tools'])
@@ -56,24 +60,25 @@ describe('the usage log', () => {
     const env = makeEnv(loadFixture('medium'))
     const { turn: t } = await runTurn(stubModel([{ calls: [{ name: 'search', args: { query: 'SECRET-WORDS bread' } }] }, { answer: 'SECRET-REPLY c15' }]), env, AGENT_TOOLS, [], 'SECRET-QUESTION about bread')
     const s = memory()
-    recordTurn(t, 'stub', s)
+    recordTurn(t, 'stub')
     expect(s.raw()).not.toMatch(/SECRET|bread|c15/)
-    expect(readUsage(s)[0]).toMatchObject({ model: 'stub', tools: ['search'], steps: 2, end: 'answered' })
+    expect(readUsage()[0]).toMatchObject({ model: 'stub', tools: ['search'], steps: 2, end: 'answered' })
   })
 
   it('keeps the newest USAGE_MAX, sums since a time, survives bad storage, clears', () => {
     const s = memory()
-    for (let i = 0; i < USAGE_MAX + 5; i++) recordUsage({ ...usageEntry(turn, 'm'), at: i }, s)
-    const list = readUsage(s)
+    for (let i = 0; i < USAGE_MAX + 5; i++) recordUsage({ ...usageEntry(turn, 'm'), at: i })
+    const list = readUsage()
     expect([list.length, list[0].at]).toEqual([USAGE_MAX, 5])
     expect(sumUsage(list, USAGE_MAX)).toMatchObject({ answers: 5, input: 60000, cached: 45000 })
     s.m.set(USAGE_KEY, '{not json')
-    expect(readUsage(s)).toEqual([])
-    const full = { ...memory(), setItem: () => { throw new Error('quota') } }
-    expect(() => recordUsage(usageEntry(turn, 'm'), full)).not.toThrow()
-    clearUsage(s)
-    expect(readUsage(s)).toEqual([])
+    expect(readUsage()).toEqual([])
+    clearUsage()
+    expect(readUsage()).toEqual([])
+    vi.stubGlobal('localStorage', { ...memory(), setItem: () => { throw new Error('quota') } })
+    expect(() => recordUsage(usageEntry(turn, 'm'))).not.toThrow()
     // No storage at all (node): nothing happens.
+    vi.unstubAllGlobals()
     expect(() => recordTurn(turn, 'm')).not.toThrow()
   })
 })

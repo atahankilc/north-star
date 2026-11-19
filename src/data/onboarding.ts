@@ -7,7 +7,7 @@ import { deleteField, doc, onSnapshot, setDoc, type DocumentSnapshot } from 'fir
 import { firebase } from './firebase'
 import { cleanSeenState, mergeSeenState, type SeenState } from '../onboarding/seenMerge'
 import { SANDBOX_KEY } from '../onboarding/devSandbox'
-import { keepLocal, readLocal } from '../state/local'
+import { keepLocal, keepSession, readLocal, readSession } from '../state/local'
 
 const localKey = (uid: string) => `north-star:onboarding:${uid}`
 
@@ -35,8 +35,8 @@ export function writeLocalSeen(uid: string, s: SeenState): SeenState {
 
 // Dev only: the test copy of the seen-state while src/onboarding/devSandbox.ts has this tab in test mode.
 export function readSandboxSeen(): SeenState | null {
+  const raw = readSession(SANDBOX_KEY)
   try {
-    const raw = sessionStorage.getItem(SANDBOX_KEY)
     return raw ? cleanSeenState(JSON.parse(raw)) : null
   } catch {
     return null
@@ -44,11 +44,8 @@ export function readSandboxSeen(): SeenState | null {
 }
 
 export function writeSandboxSeen(s: SeenState): void {
-  try {
-    sessionStorage.setItem(SANDBOX_KEY, JSON.stringify(s))
-  } catch {
-    // Not kept: the test copy lasts for this page only.
-  }
+  // Not kept (storage blocked): the test copy lasts for this page only.
+  keepSession(SANDBOX_KEY, JSON.stringify(s))
 }
 
 // Another tab of this browser changed the kept copy (the `storage` event fires only in the other tabs).

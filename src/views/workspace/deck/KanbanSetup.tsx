@@ -15,7 +15,7 @@ import { setEditing } from '../../../state/canvasView'
 import { findGo } from '../find/find'
 import type { Source } from '../../../data/source'
 import type { TableSetup } from '../../../data/table'
-import { Choices } from '../matrix/MatrixSetup'
+import { Options } from '../../../ui/patterns/Options'
 import { SetupRow as Row, SetupShell } from '../canvas/SetupShell'
 import { openSetup } from '../canvas/setupStore'
 import { RowsEditor } from '../table/TableSetup'
@@ -69,12 +69,13 @@ export function KanbanEditor({ tab, setup, onChange, onHoldCards }: { tab: Kanba
   if (tab === 'holds')
     return (
       <Row label="it holds" hint="a deck holds tasks or cards, never both">
-        <Choices<'tasks' | 'cards'>
+        <Options<'tasks' | 'cards'>
+          pick="one"
           label="It holds"
           value={cardsHere ? 'cards' : 'tasks'}
           options={[
-            { value: 'tasks', label: 'tasks', hint: 'the team’s work, in its own columns; given to, due, a checklist' },
-            { value: 'cards', label: 'cards', hint: 'cards from the planes, in columns from one of their fields; dragging one sets it' },
+            { value: 'tasks', label: 'tasks', title: 'the team’s work, in its own columns; given to, due, a checklist' },
+            { value: 'cards', label: 'cards', title: 'cards from the planes, in columns from one of their fields; dragging one sets it' },
           ]}
           onChange={(v) =>
             v === 'cards' && !cardsHere && onHoldCards
@@ -106,19 +107,21 @@ export function KanbanEditor({ tab, setup, onChange, onHoldCards }: { tab: Kanba
   return (
     <>
       <Row label="columns from" hint="no value comes first: its cards haven't got one yet; drag them out to set it">
-        <Choices<CardField>
+        <Options<CardField>
+          pick="one"
           label="Columns from"
           value={field}
-          options={CARD_FIELDS.map((f) => ({ value: f, label: FIELD_NAME[f], hint: HINT[f] }))}
+          options={CARD_FIELDS.map((f) => ({ value: f, label: FIELD_NAME[f], title: HINT[f] }))}
           // The rows' field can't be the columns' too: it goes.
           onChange={(f) => onChange({ colField: f, ...(f === setup.rowField ? { rowField: undefined } : {}) }, `a deck’s columns by ${FIELD_NAME[f]}`)}
         />
       </Row>
       <Row label="rows from" hint="none, or another field: then each box is a column × a row, and dropping a card in one sets both">
-        <Choices<CardField | 'none'>
+        <Options<CardField | 'none'>
+          pick="one"
           label="Rows from"
           value={row ?? 'none'}
-          options={[{ value: 'none' as const, label: 'none', hint: 'one row' }, ...CARD_FIELDS.filter((f) => f !== field).map((f) => ({ value: f, label: FIELD_NAME[f], hint: HINT[f] }))]}
+          options={[{ value: 'none' as const, label: 'none', title: 'one row' }, ...CARD_FIELDS.filter((f) => f !== field).map((f) => ({ value: f, label: FIELD_NAME[f], title: HINT[f] }))]}
           onChange={(f) => onChange({ rowField: f === 'none' ? undefined : f }, f === 'none' ? 'no rows on a deck' : `a deck’s rows by ${FIELD_NAME[f]}`)}
         />
       </Row>

@@ -36,7 +36,7 @@ import Anthropic, { APIConnectionError, APIUserAbortError, AuthenticationError, 
 import type { BetaContentBlock, BetaContentBlockParam, BetaMessage, BetaMessageParam, BetaTool } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import type { ImagePart, ModelEvent, ModelMessage, ModelRequest, ModelResponse, StopReason, ToolCall, ToolDef, Usage } from './contract'
 import { addUsage, joinSources, type Source, type WebUse } from './contract'
-import { abortError, ProviderError, respondFrom, type ProviderErrorKind, type StreamingModel } from './provider'
+import { abortError, claudeModern, ProviderError, respondFrom, type ProviderErrorKind, type StreamingModel } from './provider'
 import { fitsStrict, redact, type Effort } from './openai'
 import { WEB_SEARCHES } from './web'
 
@@ -68,8 +68,6 @@ const MAX_TOKENS = 64_000
 const BETA_FALLBACK = 'server-side-fallback-2026-07-01'
 const BETA_BINDING = 'thinking-binding-controls-2026-08-01'
 
-// The models with today's request surface (adaptive thinking, effort): the 4.6+ generation. Older ones get neither.
-export const modern = (model: string) => /^claude-(opus|sonnet|haiku|fable|mythos)-(4-[6-9]|[5-9])/.test(model)
 // Mid-conversation system messages (no beta): not Sonnet 5, not the 4.6/4.7 generation.
 export const nativeSystem = (model: string) => /^claude-(opus-5|opus-4-8|fable-5|mythos-5|sonnet-5-5|haiku-5-5)/.test(model)
 // Server-side fallbacks on a refusal, the `default` form: the models Anthropic offers it for.
@@ -184,7 +182,7 @@ const previousId = (messages: ModelMessage[]) => {
 
 export function requestBody(req: ModelRequest, o: Pick<AnthropicOptions, 'model' | 'effort' | 'maxTokens' | 'diagnose'>, binding?: 'drop_block') {
   const { system, messages } = toClaude(req.messages, o.model)
-  const now = modern(o.model)
+  const now = claudeModern(o.model)
   const betas = [...(fallsBack(o.model) ? [BETA_FALLBACK] : []), ...(binding ? [BETA_BINDING] : [])]
   return {
     model: o.model,
@@ -348,7 +346,7 @@ export function anthropicModel(o: AnthropicOptions): AnthropicModel {
     } catch (e) {
       if (req.signal?.aborted) throw abortError()
       // A stale thinking block refused before any output: once more, dropping the stale blocks.
-      if (!sent && bindingRefused(e) && modern(o.model)) {
+      if (!sent && bindingRefused(e) && claudeModern(o.model)) {
         try {
           yield* once(req, 'drop_block')
           return

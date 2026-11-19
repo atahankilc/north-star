@@ -17,6 +17,7 @@ import type { AgentEnv, AgentModel, Usage } from './contract'
 import { openaiModel, type Effort } from './openai'
 import { SEARCH_PRICE } from './web'
 import { readLocal } from '../state/local'
+import { claudeModern } from './provider'
 
 // `well`: passes the eval suite; `struggles`: answers well, may struggle with big changes; `unknown`: not measured.
 export type Fit = 'well' | 'struggles' | 'unknown'
@@ -70,9 +71,9 @@ const known = (id: string) => KNOWN_MODELS.find((m) => m.id === id)
 
 // OpenAI's reasoning models: the gpt-5 family and the o-series. Others (gpt-4.1, gpt-4o) get no reasoning block.
 // The `*-chat-latest` models (what ChatGPT runs) take no reasoning block.
-// Claude's 4.6+ models always think (adaptive; anthropic.ts' `modern`), so they take an effort too.
+// Claude's 4.6+ models always think (adaptive; provider.ts' `claudeModern`), so they take an effort too.
 export const reasons = (id: string) =>
-  providerOf(id) === 'anthropic' ? /^claude-(opus|sonnet|haiku|fable|mythos)-(4-[6-9]|[5-9])/.test(bareId(id)) : /^(gpt-5|o\d)/.test(id) && !/-chat(-latest)?$/.test(id)
+  providerOf(id) === 'anthropic' ? claudeModern(bareId(id)) : /^(gpt-5|o\d)/.test(id) && !/-chat(-latest)?$/.test(id)
 
 // The effort to send for a model: what we know, else medium for a reasoning model, else none.
 export function effortFor(id: string): Effort | null {

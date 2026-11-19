@@ -1,27 +1,22 @@
 // Dev only: a tab that sees the onboarding as a new person (`?onboarding=reset`), on a test copy of the seen-state in
 // this tab's sessionStorage; the real one (localStorage, Firestore) is never read or written meanwhile (progress.ts).
 // Wiping the real one instead doesn't hold: any other tab of the person, the live site's too, writes its copy back.
-// No imports, so main.tsx reads the address before the router or any redirect can drop it. Production: sandboxOn()
+// No imports but state/local.ts (itself none), so main.tsx reads the address before the router or any redirect can
+// drop it. Production: sandboxOn()
 // is false and nothing reads the address.
+import { keepSession, readSession } from '../state/local'
+
 export const SANDBOX_KEY = 'north-star:dev-onboarding-sandbox'
 
 export function sandboxOn(): boolean {
   if (!import.meta.env.DEV) return false
-  try {
-    return sessionStorage.getItem(SANDBOX_KEY) !== null
-  } catch {
-    return false
-  }
+  return readSession(SANDBOX_KEY) !== null
 }
 
 // On: a fresh, empty test copy (again if one was on); off: back to the real seen-state.
 function setSandbox(on: boolean): void {
-  try {
-    if (on) sessionStorage.setItem(SANDBOX_KEY, '')
-    else sessionStorage.removeItem(SANDBOX_KEY)
-  } catch {
-    // sessionStorage blocked: no test copy.
-  }
+  // Storage blocked: no test copy.
+  keepSession(SANDBOX_KEY, on ? '' : null)
 }
 
 // `?onboarding=reset` / `?onboarding=real` in the address: applied, then taken out of the address (the rest kept), so

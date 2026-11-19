@@ -4,7 +4,8 @@
 // thinking blocks replayed verbatim and only to Claude, the same history rendered to the same bytes, a binding refusal
 // retried once with drop_block, errors in plain words with no key in them, and the loop's append-only mode.
 import { describe, expect, it } from 'vitest'
-import { anthropicModel, cacheMissOf, listClaudeModels, modern, nativeSystem, requestBody, responseOf, toClaude, AnthropicError } from '../../src/agent/anthropic'
+import { claudeModern as modern } from '../../src/agent/provider'
+import { anthropicModel, cacheMissOf, listClaudeModels, nativeSystem, requestBody, responseOf, toClaude, AnthropicError } from '../../src/agent/anthropic'
 import { makeModel, pickerRows, providerOf, reasons, canChat, claudeId, costOf } from '../../src/agent/models'
 import { plainError } from '../../src/agent/ui/errors'
 import { runTurn, FINAL_STEP_NOTE } from '../../src/agent/loop'

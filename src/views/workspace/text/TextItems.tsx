@@ -61,6 +61,8 @@ import { ThreadChip, useThreadOn } from '../threads/Threads'
 import { ABOUT_HINT, DESC_SHARE, FOLD_BELOW_PX, foldIndent, foldStar, T, titleLayout } from './titleLayout'
 import { headingSize, kickPx, labelBox, STICKY_TEXT_TOP, type HeadingSize } from '../../../model/labelBox'
 import { useWhilePaused } from '../../../ui/foundation/pausedSave'
+import { useAutoGrow } from '../../../ui/foundation/autoGrow'
+import { WORKSPACE_NAME_MAX } from '../../../model/limits'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Console } from '../../../ui/patterns/Console'
@@ -582,13 +584,7 @@ function Field({ l }: { l: Label }) {
     ref.current?.select()
   }, [])
   // As tall as what's in it.
-  useEffect(() => {
-    const el = ref.current
-    if (el) {
-      el.style.height = '0px'
-      el.style.height = `${el.scrollHeight}px`
-    }
-  }, [draft])
+  useAutoGrow(ref, draft)
   const finish = () => {
     const end = typed.end()
     if (!end) return
@@ -783,12 +779,7 @@ function TitleFields({ wid, id, name, description }: { wid: string; id: string; 
   const about = useRef<HTMLTextAreaElement>(null)
   useEffect(() => root.current?.querySelector('input')?.focus(), [])
   // As tall as what's written, like the line it stands in for.
-  useEffect(() => {
-    const el = about.current
-    if (!el) return
-    el.style.height = '0px'
-    el.style.height = `${el.scrollHeight}px`
-  }, [d])
+  useAutoGrow(about, d)
   // Kept as it's typed, like the other text (useWhilePaused); Escape, Enter or leaving ends it.
   const saved = useRef({ name, description })
   const keep = () => {
@@ -822,7 +813,7 @@ function TitleFields({ wid, id, name, description }: { wid: string; id: string; 
       }}
     >
       {/* Laid out as it reads (name, rule, what it's building), so typing doesn't change how it looks. */}
-      <input /* kit-ok: the project title typed in place, as it reads */ className={`${styles.field} ${styles.titleName}`} style={{ fontSize: T.name }} aria-label="Workspace name" value={n} maxLength={80} onChange={(e) => setN(e.target.value)} />
+      <input /* kit-ok: the project title typed in place, as it reads */ className={`${styles.field} ${styles.titleName}`} style={{ fontSize: T.name }} aria-label="Workspace name" value={n} maxLength={WORKSPACE_NAME_MAX} onChange={(e) => setN(e.target.value)} />
       <i className={styles.spacer} style={{ height: T.gap }} />
       <span className={styles.titleRule} style={{ height: T.rule }} aria-hidden />
       <i className={styles.spacer} style={{ height: T.gap }} />

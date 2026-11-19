@@ -6,7 +6,7 @@
 // new into the baseline once (the rule then only stops new ones).
 // Behaviour too (D-391, docs/specs/shared-code.md R4.1), the `code` rules: what has one shared home and got written
 // again by hand: a key or pointer listener on the window (ui/foundation: useEscapeLayer, useDismiss, dragPointer,
-// pressDrag, panPointer, keysTaken), a frame loop (motion.ts' tween), localStorage (state/local.ts), a text or list cut
+// pressDrag, panPointer, keysTaken), a frame loop (motion.ts' tween), local or session storage (state/local.ts), a text or list cut
 // at a typed number in model/, ops/ or data/ (model/limits.ts), a raw <button>/<input>/<textarea> inside the kit's
 // patterns (its primitives), a view telling a piece kind apart by name outside its folder (the kind record, R4.7). They
 // look in .ts too, and inside src/ui. Today's are in the baseline and counted apart.
@@ -68,7 +68,7 @@ RULES.code = [
   // A loop: the frame's own function handed back to requestAnimationFrame (a one-off passes an arrow). The backdrop's
   // clock (src/three) is its own.
   ['rafLoop', /requestAnimationFrame\(\s*[A-Za-z_$][\w$.]*\s*\)/g, /^src\/(?:ui\/foundation|three)\//],
-  ['storage', /\blocalStorage\./g, /^src\/state\/local\.ts$/],
+  ['storage', /\b(?:local|session)Storage\./g, /^src\/state\/local\.ts$/],
   ['rawCut', /\.slice\(0,\s*\d{2,}\)|\.length\s*(?:>=?|<=?)\s*\d{2,}/g, /^src\/model\/limits\.ts$/, /^src\/(?:model|ops|data)\//],
   // The raw element's homes are the primitives that are it.
   ['kitRaw', /<(?:button|input|textarea)\b/g, /^src\/ui\/primitives\/(?:Button|ToolButton|Checkbox|Chip|Field|Tabs)\.tsx$/, /^src\/ui\//],
@@ -80,7 +80,7 @@ RULES.code = [
 const HINT = {
   windowKeys: 'a key or pointer listener on the window: use ui/foundation (useEscapeLayer, useDismiss, pressDrag, dragPointer, panPointer, keysTaken)',
   rafLoop: "a frame loop by hand: use ui/foundation/motion.ts' tween()",
-  storage: 'localStorage by hand: use state/local.ts (readLocal, readLocalJson, keepLocal)',
+  storage: 'local or session storage by hand: use state/local.ts (readLocal, readLocalJson, keepLocal, readSession, keepSession)',
   rawCut: 'a cut at a typed number: name it in model/limits.ts and import it',
   kitRaw: 'a raw element inside the kit: build the pattern from the primitives (Button, Field, Checkbox…)',
   kindSwitch: "a piece kind told apart by its name in a view: read it from the kind record (canvas/pieceKinds.tsx: PIECE_KINDS, kindRecord, LensTools, LensSetup), or say why with kit-ok",

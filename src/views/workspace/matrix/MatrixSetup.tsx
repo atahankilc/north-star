@@ -90,16 +90,6 @@ export function MatrixSetupPanel({ piece }: { piece: WithId<Piece> }) {
   )
 }
 
-// A setup's switch with a line under it saying what it does: the kit's Checkbox, in the setup's size.
-export function Toggle({ on, label, hint, onChange }: { on: boolean; label: string; hint: string; onChange: (v: boolean) => void }) {
-  return <Checkbox checked={on} label={label} hint={hint} onChange={onChange} />
-}
-
-// Pick one of a few: the kit's framed options (src/ui/patterns/Options.tsx), the picked one cyan.
-export function Choices<T extends string>({ value, options, onChange, label = 'Pick one' }: { value: T; options: { value: T; label: ReactNode; hint?: string }[]; onChange: (v: T) => void; label?: string }) {
-  return <Options pick="one" label={label} value={value} options={options.map((o) => ({ value: o.value, label: o.label, title: o.hint }))} onChange={(v) => v !== undefined && onChange(v)} />
-}
-
 type AxisProps = {
   which: 'rows' | 'cols'
   axis: Axis
@@ -186,8 +176,8 @@ function Unfold({ axis, onChange }: { axis: Axis; onChange: (a: Axis, key?: stri
   const shown = all.filter((k) => axis.open?.includes(k)).length
   return (
     <Row label="unfold" hint="a card's cells read from what it's made of">
-      <Toggle
-        on={on}
+      <Checkbox
+        checked={on}
         label="features into what they're judged on"
         hint={`their criteria as rows of their own; the feature's cells read from them${features.length ? ` · ${features.length} have some` : ''}`}
         onChange={(v) => onChange({ ...axis, unfold: v ? 'criteria' : undefined, open: undefined })}
@@ -305,7 +295,8 @@ export function CellsEditor({ setup, onChange }: { setup: MatrixSetup; onChange:
           </Row>
           <StepsEditor steps={setup.steps} marks={!!setup.marks} onChange={(steps, key) => onChange('steps', steps, key)} />
           <Row label="show as" hint="squares filled to the step, or the steps' own glyphs">
-            <Choices
+            <Options
+              pick="one"
               label="Show as"
               value={setup.marks ? 'marks' : 'squares'}
               options={[
@@ -376,20 +367,21 @@ function OptionsEditor({ setup, onChange }: { setup: MatrixSetup; onChange: SetP
   return (
     <>
       <Row label="cells">
-        <Toggle on={!!setup.notRelevant} label={'allow "doesn\'t apply" (—)'} hint="the two can't be compared; left out of the totals. Key -" onChange={(v) => onChange('notRelevant', v || undefined)} />
-        <Toggle on={!!setup.confidence} label="mark guesses" hint="~ inferred, ? a guess, in the cell's corner; documented has no mark" onChange={(v) => onChange('confidence', v || undefined)} />
+        <Checkbox checked={!!setup.notRelevant} label={'allow "doesn\'t apply" (—)'} hint="the two can't be compared; left out of the totals. Key -" onChange={(v) => onChange('notRelevant', v || undefined)} />
+        <Checkbox checked={!!setup.confidence} label="mark guesses" hint="~ inferred, ? a guess, in the cell's corner; documented has no mark" onChange={(v) => onChange('confidence', v || undefined)} />
       </Row>
       <Row label="totals">
-        <Toggle on={!!setup.reading} label="show totals" hint="each row and column summed up" onChange={(v) => onChange('reading', v || undefined)} />
+        <Checkbox checked={!!setup.reading} label="show totals" hint="each row and column summed up" onChange={(v) => onChange('reading', v || undefined)} />
       </Row>
       {setup.reading && (
         <>
           <Row label="where">
-            <Choices label="Totals where" value={setup.totalsAt ?? 'head'} options={TOTALS_AT.map((v) => ({ value: v, label: AT_NAME[v] }))} onChange={(v) => onChange('totalsAt', v === 'head' ? undefined : v)} />
+            <Options pick="one" label="Totals where" value={setup.totalsAt ?? 'head'} options={TOTALS_AT.map((v) => ({ value: v, label: AT_NAME[v] }))} onChange={(v) => onChange('totalsAt', v === 'head' ? undefined : v)} />
           </Row>
           <Row label="as" hint={setup.cell === 'scale' ? undefined : 'numbers show their average, words how many are written'}>
             {setup.cell === 'scale' ? (
-              <Choices
+              <Options
+              pick="one"
                 label="Totals as"
                 value={setup.totalsAs ?? 'squares'}
                 options={TOTALS_AS.map((v) => ({
