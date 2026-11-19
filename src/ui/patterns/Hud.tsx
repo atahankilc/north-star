@@ -81,7 +81,7 @@ export function Hud({ crumbs = [], right, settings, settingsName, settingsBadge,
       </div>
       {rail && <span className={styles.rail} data-sheet aria-hidden />}
       {side && (
-        <div className={styles.side} data-learn="sidenav">
+        <div className={styles.side} data-learn="sidenav" data-rail-tools>
           {/* The side nav's tools, one vertical strip (D-344). */}
           <ButtonGroup vertical label="Tools">
             {side}
@@ -91,7 +91,7 @@ export function Hud({ crumbs = [], right, settings, settingsName, settingsBadge,
       {/* You and settings (motion, theme, background) in the bottom-left corner (D-175), only once signed in; the
           landing has no controls. */}
       {user && (
-        <div className={styles.corner}>
+        <div className={styles.corner} data-rail-tools>
           {/* One vertical strip (D-344), its gaps the strip's own (D-402): who's here, the workspace's threads, then
               yours, your square and the gear. */}
           <ButtonGroup vertical label="People, threads, you and settings">

@@ -139,7 +139,7 @@ describe("a cleaner's fields are the rules' fields", () => {
 // ---- Tokens: src/styles/tokens.ts is what WebGL and the agent's picture read; tokens.css is the truth (D-325).
 describe('tokens.ts mirrors tokens.css', () => {
   const css = read('src/styles/tokens.css')
-  const lightAt = css.indexOf(":root[data-theme='light']")
+  const lightAt = css.indexOf("\n:root[data-theme='light'] {")
   const dark = css.slice(0, lightAt)
   const light = css.slice(lightAt)
   const token = (block: string, name: string) => block.match(new RegExp(`^\\s*--${name}:\\s*([^;]+);`, 'm'))?.[1].trim()

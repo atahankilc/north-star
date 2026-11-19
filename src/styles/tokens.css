@@ -1,5 +1,9 @@
 /* Design tokens: docs/DESIGN.md §3–4. Mirror any change in src/styles/tokens.ts. */
-:root {
+/* Dark's values are also what lies on the ground in light (D-421): the ground is dark in both themes, a desk under the lit
+   sheet, so what stands on it (a docked column, `data-ground`; the HUD's tools while the rail shows, `data-rail-tools`)
+   reads dark's colours. `:where` keeps it at no weight: a component's own value (EdgeColumn's `--bg`) still wins. */
+:root,
+:where(:root[data-theme='light'] [data-ground], :root[data-theme='light'][data-rail-ground] [data-rail-tools]) {
   color-scheme: dark;
   --bg: #000000;
   --bg-raised: #0b0b0b;
@@ -367,7 +371,6 @@
 :root[data-theme='light'] {
   color-scheme: light;
   --bg: #f3f3f3; /* D-342: a step down from #f5f5f5, which glared; pieces stay white on it */
-  --ground: #e2e2e5;
   --lift-shade: rgba(0, 0, 0, 0.22);
   --sheet-rim: rgba(0, 0, 0, 0.12);
   --bg-raised: #ffffff;

@@ -7779,3 +7779,23 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
 - *Checked:* typecheck, unit 1196 (limits 43), check:kit, check:repeats (names 33, copies 297), check:gallery:live and
   check:scenes for matrix and table; the matrix's and table's 9 gallery states the same DOM old (a frozen worktree) and
   new in headless Chrome.
+
+### D-421 · 2026-11-19 · Accepted (the user: "şu an light moddaki farklı 3 beyaz bg rengi hiç hoşumuza gitmiyor… İlla light mode diye beyaz olcak da değil"; of the options: "masa lambası harika olmuş dostum. sadece kanvas rengini ve parça menü rengini koru ama zemin rengini dediğin gibi değiştir"): light's ground is dark, a desk under a lit sheet
+- **What:** in light the page (`--bg` #f3f3f3) and the pieces, cards and menus (white) stay; the ground under the
+  sheet (D-387) is dark's `#121215` (light's own `--ground` line removed, so dark's applies). What stands on it reads
+  dark's colours: tokens.css's first block is also `:where(:root[data-theme='light'] [data-ground], …[data-rail-ground]
+  [data-rail-tools])`, at no weight so a component's own value (EdgeColumn's `--bg: var(--ground)`) still wins.
+  `data-ground` on EdgeColumn (every docked column: the card and task panels, Talk, Tasks, Docs, the threads, the
+  agent, a document's dock); `data-rail-tools` on the HUD's side nav and corner; sheet.ts puts `data-rail-ground` on the
+  root while the rail shows, at once, and takes it off `DUR.slow` after (the sheet home over the tools), at once under
+  reduced motion. TaskPanel's date keeps light's picker only off the ground.
+- **Why:** the three near-whites (ground #e2e2e5, page #f3f3f3, pieces white) barely differed and read dull. A preview
+  (docs/specs/light-bg-preview/, the gallery's real screens with the tokens swapped) showed 11 options: six that stay
+  white (star chart blue, gallery greys, ice, dusk, drawing paper with ink lines) and five bolder (desk lamp, sky blue,
+  engineer's green paper, risograph pink, concrete). The user picked the desk lamp, keeping today's page and pieces.
+- **Alternatives:** the other ten options in the preview; tinting the page (warm stays rejected, D-069).
+- **Checked:** the gallery in headless Chrome, light: the card panel, Talk beside, a conversation, Tasks beside, the
+  canvas with nothing docked (unchanged, no `data-rail-ground`); dark unchanged (the selector is light's only);
+  typecheck, unit 1010 (sameLists finds the light block by its own line now), check:tokens 0, check:kit, check:gallery.
+- **Not yet:** the real app (a menu opened inside a column is dark now, on the ground; the agent's column and a
+  document's dock not seen), the closing moment of the rail's tools on a real screen, touch.

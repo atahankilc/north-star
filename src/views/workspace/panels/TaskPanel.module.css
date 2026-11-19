@@ -11,7 +11,8 @@
   font-family: var(--font-mono);
 }
 
-:global([data-theme='light']) .date {
+/* Light's own picker, except on the ground, which is dark in both themes (D-421). */
+:global([data-theme='light']) .date:not(:global([data-ground]) *) {
   color-scheme: light;
 }
 

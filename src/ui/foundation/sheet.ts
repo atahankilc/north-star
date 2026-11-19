@@ -16,6 +16,7 @@
 // Who reads them says so with `data-sheet`, and they are a rule for those, never on the root (pageValues.ts).
 import { useLayoutEffect, type RefObject } from 'react'
 import { isReducedMotion } from '../../state/motion'
+import { DUR } from './motionTokens'
 import { tokenPx } from '../../styles/cssToken'
 import { pageValue, setPageValue } from './pageValues'
 import styles from './Sheet.module.css'
@@ -86,10 +87,21 @@ function measure() {
   setPageValue('--sheet-rail', `${rail}px`)
   setPageValue('--sheet-round', `${round}px`)
   setPageValue('--sheet-cut', `${cut}px`)
+  railGround(rail > 0)
   for (const el of layers) {
     el.toggleAttribute('data-reduced', isReducedMotion())
     el.toggleAttribute('data-open', open)
   }
+}
+
+// While the HUD's tools stand on the ground they read its colours (`data-rail-ground` on the root, tokens.css, D-421):
+// at once as the sheet leaves them, and back only once it has come home over them.
+let railTimer: ReturnType<typeof setTimeout> | undefined
+function railGround(on: boolean) {
+  clearTimeout(railTimer)
+  const root = document.documentElement
+  if (on || isReducedMotion()) root.toggleAttribute('data-rail-ground', on)
+  else railTimer = setTimeout(() => root.removeAttribute('data-rail-ground'), DUR.slow)
 }
 
 const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)

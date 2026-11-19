@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Light mod arka planları · önizleme</title>
+    <style>
+      /* The preview's own controls: not part of the app. The screen below is the real app (the gallery's mounts). */
+      html, body { margin: 0; height: 100%; background: #111; color: #ddd; font: 13px/1.35 system-ui, sans-serif; }
+      body { display: grid; grid-template-rows: auto auto 1fr; }
+      .opts { display: flex; gap: 6px; padding: 8px; flex-wrap: wrap; border-bottom: 1px solid #333; }
+      .opts button { all: unset; cursor: pointer; padding: 7px 11px; border-radius: 10px; max-width: 220px; color: #bbb; border: 1px solid #333; }
+      .opts button b { display: block; color: #fff; font-weight: 600; }
+      .opts button[aria-pressed='true'] { background: #2de2e6; color: #003b3d; border-color: #2de2e6; }
+      .opts button[aria-pressed='true'] b { color: #000; }
+      .round { align-self: center; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; padding: 0 4px 0 8px; }
+      .round.two { margin-left: 10px; border-left: 1px solid #444; padding-left: 14px; color: #ff3d9a; }
+      .row { display: flex; gap: 18px; align-items: center; padding: 6px 10px; border-bottom: 1px solid #333; flex-wrap: wrap; }
+      .scenes { display: flex; gap: 4px; }
+      .scenes button { all: unset; cursor: pointer; padding: 4px 10px; border-radius: 999px; color: #bbb; border: 1px solid #333; }
+      .scenes button[aria-pressed='true'] { background: #fff; color: #000; }
+      .sw { display: flex; gap: 14px; }
+      .sw span { display: flex; gap: 6px; align-items: center; }
+      .sw i { width: 22px; height: 22px; border-radius: 6px; border: 1px solid #555; display: inline-block; }
+      .sw code { color: #888; }
+      .about { color: #9a9a9a; flex: 1; min-width: 260px; }
+      iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+    </style>
+  </head>
+  <body>
+    <div class="opts" id="opts"></div>
+    <div class="row">
+      <div class="scenes" id="scenes"></div>
+      <div class="sw" id="sw"></div>
+      <div class="about" id="about"></div>
+    </div>
+    <iframe id="app" title="app"></iframe>
+    <script type="module">
+      // Each option: the light theme's three levels (ground under a docked panel, the page/canvas, the pieces)
+      // and what follows from them (lines, dots, heads, menus). Applied over the real tokens in the frame.
+      const OPTIONS = [
+        { id: 'now', name: 'Şimdi', what: 'bugünkü hâli: üç gri-beyaz', about: 'Bugünkü değerler: zemin #e2e2e5, sayfa #f3f3f3, parçalar beyaz. Aradaki fark çok az, hepsi aynı gri.', t: {} },
+        {
+          id: 'star', name: 'Yıldız haritası', what: 'soğuk mavi kâğıt, adımlar net',
+          about: 'North Star bir gök haritası gibi: sayfa açık mavi-gri bir harita kâğıdı, zemin daha koyu gece mavisi-gri, parçalar temiz beyaz. Çizgiler ve noktalar da maviye kayar.',
+          t: { ground: '#cfd6e2', bg: '#e9edf4', head: '#f4f6fa', edge: '#c7cfdc', cardEdge: '#dfe4ec', mark: '#b9c2d1', line: '#d0d7e2', lineHover: '#a9b3c4', grid: '#a3aec0', behind: '#dde3ec', chip: '#f6f8fb', dim: '#4f5866', muted: '#3c4350', rim: 'rgba(30, 50, 90, 0.16)', lift: 'rgba(20, 40, 80, 0.22)' },
+        },
+        {
+          id: 'gal', name: 'Galeri', what: 'nötr gri, ama üç açık basamak',
+          about: 'Renk yok, sadece basamaklar büyür: sayfa belirgin gri, zemin bir ton daha koyu, parçalar bembeyaz. Beyaz parçalar duvardaki tablolar gibi öne çıkar.',
+          t: { ground: '#cdcdd0', bg: '#e6e6e6', head: '#f6f6f6', edge: '#c4c4c8', cardEdge: '#e0e0e0', mark: '#b5b5b9', line: '#cfcfcf', lineHover: '#a9a9a9', grid: '#a8a8a8', behind: '#dadada', chip: '#f7f7f7', dim: '#505050', muted: '#3e3e3e', rim: 'rgba(0, 0, 0, 0.16)', lift: 'rgba(0, 0, 0, 0.26)' },
+        },
+        {
+          id: 'ice', name: 'Buz', what: 'camgöbeği bir iz, uygulamanın rengi',
+          about: 'Uygulamanın ana rengi camgöbeği; light modda sayfaya çok hafif bir camgöbeği karışır, zemin daha derin. Seçim ve klavye halkası da aynı aileden olduğu için bir bütün gibi okunur.',
+          t: { ground: '#cbdfe2', bg: '#e8f1f2', head: '#f2f8f9', edge: '#bfd5d9', cardEdge: '#dbe9eb', mark: '#a9c7cc', line: '#cde0e3', lineHover: '#9fbcc1', grid: '#9ebfc5', behind: '#d9e7e9', chip: '#f4fafa', dim: '#45575a', muted: '#344447', rim: 'rgba(0, 80, 95, 0.16)', lift: 'rgba(0, 60, 70, 0.22)' },
+        },
+        {
+          id: 'dusk', name: 'Alacakaranlık', what: 'lavanta, gün batımından sonra',
+          about: 'Sayfa hafif lavanta, zemin daha koyu mor-gri, parçalar beyaz. Sıcak değil (krem reddedilmişti, D-069) ama griden daha yumuşak ve canlı.',
+          t: { ground: '#d8d3e6', bg: '#eeebf5', head: '#f6f4fa', edge: '#cdc6de', cardEdge: '#e2deec', mark: '#bdb5d2', line: '#dad5e6', lineHover: '#aea6c4', grid: '#aea6c4', behind: '#e2dded', chip: '#f8f7fb', dim: '#524c63', muted: '#3e3950', rim: 'rgba(60, 40, 110, 0.16)', lift: 'rgba(50, 30, 90, 0.22)' },
+        },
+        {
+          id: 'ink', name: 'Çizim kâğıdı', what: 'cesur: renk yerine mürekkep çizgisi',
+          about: 'Cesur olan: sayfa ve parçalar aynı saf beyaz, onları ayıran ton değil siyah ince çizgi (teknik çizim / baskı gibi), gölge yok. Zemin açık gri kalır. ASCII ve terminal diline en yakın olan.',
+          t: { ground: '#e9e9ec', bg: '#ffffff', head: '#ffffff', edge: '#1a1a1a', cardEdge: '#bdbdbd', mark: '#9a9a9a', line: '#d4d4d4', lineHover: '#8a8a8a', grid: '#c4c4c4', behind: '#ececec', chip: '#ffffff', dim: '#595959', muted: '#444444', rim: 'rgba(0, 0, 0, 0.55)', lift: 'rgba(0, 0, 0, 0)', shadow: 'none' },
+        },
+        // Round 2: bolder, not white.
+        {
+          id: 'lamp', round: 2, name: 'Masa lambası', what: 'koyu masa, üstünde aydınlık kâğıt',
+          about: 'Gece masada lamba altında çalışmak: zemin (paneller, sol şerit) koyu gece rengi ve içindeki yazı açık, ortadaki ekran aydınlık bir kâğıt gibi parlıyor. Light ve dark aynı anda: göz hep ortaya gider. Bir panel açınca fark edilir (Kart paneli, Talk, Tasks).',
+          t: { ground: '#15171c', bg: '#eef0f3', head: '#f6f7f9', edge: '#cfd3da', cardEdge: '#e2e5ea', mark: '#bfc4cc', line: '#d5d9df', lineHover: '#a7adb6', grid: '#b4bac4', behind: '#e2e5ea', chip: '#f7f8fa', dim: '#575c64', muted: '#41454c', rim: 'rgba(255, 255, 255, 0.10)', lift: 'rgba(0, 0, 0, 0.55)' },
+          extra: `
+            html:root[data-theme='light'] aside[class*='_column_'],
+            html:root[data-theme='light'] header:has([class*='_rail_']) :is([class*='_side_'], [class*='_corner_']) {
+              --fg: #ececec; --fg-strong: #ffffff; --fg-dim: #8f939b; --fg-muted: #b4b8bf; --fg-faint: #6b6f77; --placeholder: #5d6168;
+              --line: #2c2f36; --line-hover: #3d414a; --edge: #6a6e76; --chip: #1d2026; --bg-raised: #1b1e24; --piece: #1b1e24; --piece-card: #1b1e24;
+              --wash-1: rgba(255,255,255,.03); --wash-2: rgba(255,255,255,.05); --wash-3: rgba(255,255,255,.08); --wash-4: rgba(255,255,255,.14); --wash-5: rgba(255,255,255,.2);
+              --accent-magenta: #ff3d9a; --accent-cyan: #2de2e6; --accent-yellow: #ffd23f; --accent-blue: #3d7bff; --accent-green: #3dff8a;
+              --panel-tint: 0%; --menu: rgba(29, 32, 38, 0.96); --surface: rgba(27, 30, 36, 0.9);
+              color-scheme: dark;
+            }`,
+        },
+        {
+          id: 'peri', round: 2, name: 'Gök mavisi', what: 'açık gökyüzü, cesur mavi sayfa',
+          about: 'Gündüz gökyüzü: sayfa belirgin, doygun bir açık mavi (periwinkle), zemin bir ton koyu mavi, parçalar bembeyaz bulutlar gibi. Beyazdan en uzak, ama yazılar rahat okunuyor.',
+          t: { ground: '#aebfe6', bg: '#d3def5', head: '#f3f6fc', edge: '#b3c2e3', cardEdge: '#dde5f5', mark: '#9fb0d8', line: '#bccbea', lineHover: '#8ea2d0', grid: '#8ea2d0', behind: '#c5d3ef', chip: '#f4f7fd', placeholder: '#5d6a8a', dim: '#37425e', muted: '#28314a', rim: 'rgba(30, 50, 120, 0.2)', lift: 'rgba(20, 40, 110, 0.28)' },
+        },
+        {
+          id: 'mint', round: 2, name: 'Mühendis defteri', what: 'yeşil kareli defter kâğıdı',
+          about: 'Eski mühendislik defterlerinin açık yeşil kâğıdı: sayfa nane yeşili, ızgara noktaları yeşil, zemin adaçayı. Göz yormayan, "çalışma kâğıdı" hissi; kartların renkleri üstünde canlı durur.',
+          t: { ground: '#bfd9c7', bg: '#e3f0e6', head: '#f4faf5', edge: '#bcd6c3', cardEdge: '#d9e9dc', mark: '#a3c6ad', line: '#c9dfcf', lineHover: '#93b79e', grid: '#8fb79b', behind: '#d3e6d8', chip: '#f5faf6', placeholder: '#5c7564', dim: '#3f5a48', muted: '#2f4637', rim: 'rgba(20, 80, 40, 0.18)', lift: 'rgba(10, 60, 30, 0.24)' },
+        },
+        {
+          id: 'riso', round: 2, name: 'Risograf', what: 'pembe baskı kâğıdı, fanzin gibi',
+          about: 'Risograf baskı makinesinin renkli kâğıdı: sayfa açık pembe, zemin gül rengi, parçalar beyaz. Uygulamanın macentası ile aynı aileden. En "kişilikli" olan; tasarım stüdyosu havası.',
+          t: { ground: '#e8bfd2', bg: '#f6e1ea', head: '#fcf3f7', edge: '#e3c3d1', cardEdge: '#f0dbe4', mark: '#d6a8bd', line: '#ebcbd8', lineHover: '#c995ad', grid: '#d19ab4', behind: '#efd2de', chip: '#fdf6f9', placeholder: '#7f6370', dim: '#5a4450', muted: '#45323c', rim: 'rgba(120, 20, 70, 0.18)', lift: 'rgba(100, 10, 60, 0.24)' },
+        },
+        {
+          id: 'beton', round: 2, name: 'Beton', what: 'orta ton gri, beyaz kâğıtlar parlar',
+          about: 'Light mod ama sayfa açık değil: orta ton beton grisi. Üstündeki beyaz parçalar ve kartlar kâğıt gibi parlıyor, aralarındaki fark çok net. Ne açık ne koyu; en sakin ve "ciddi" olan.',
+          t: { ground: '#a6a9b0', bg: '#c4c6cb', head: '#f5f5f6', edge: '#b0b3b9', cardEdge: '#e0e1e4', mark: '#9a9da4', line: '#b3b6bc', lineHover: '#868990', grid: '#8e9198', behind: '#b8bbc1', chip: '#f2f2f3', placeholder: '#55585e', dim: '#2e3136', muted: '#22252a', rim: 'rgba(0, 0, 0, 0.2)', lift: 'rgba(0, 0, 0, 0.32)' },
+        },
+      ]
+      const SCENES = [
+        { name: 'Kanvas', hash: 'c=workspace-screen&s=canvas' },
+        { name: 'Kart paneli açık', hash: 'c=workspace-screen&s=card-picked' },
+        { name: 'Talk yanda', hash: 'c=places&s=talk-beside' },
+        { name: 'Tasks yanda', hash: 'c=places&s=tasks-beside' },
+        { name: 'Docs sayfa', hash: 'c=places&s=docs-as-the-page' },
+      ]
+      const rgba = (hex, a) => `rgba(${parseInt(hex.slice(1, 3), 16)}, ${parseInt(hex.slice(3, 5), 16)}, ${parseInt(hex.slice(5, 7), 16)}, ${a})`
+      function css(t) {
+        if (!t.bg) return ''
+        return `html:root[data-theme='light'] {
+          --ground: ${t.ground}; --bg: ${t.bg}; --ink-shade: ${rgba(t.bg, 0.92)};
+          --piece-head: ${t.head}; --piece-edge: ${t.edge}; --piece-card-edge: ${t.cardEdge}; --piece-mark: ${t.mark};
+          --line: ${t.line}; --line-hover: ${t.lineHover}; --grid-mark: ${t.grid}; --card-behind: ${t.behind}; --chip: ${t.chip};
+          --fg-dim: ${t.dim}; --fg-muted: ${t.muted}; ${t.placeholder ? `--placeholder: ${t.placeholder};` : ''} --sheet-rim: ${t.rim}; --lift-shade: ${t.lift};
+          ${t.shadow ? `--piece-shadow: ${t.shadow};` : ''}
+        }`
+      }
+      const cssOf = (o) => css(o.t) + (o.extra ?? '')
+      const KEYS = ['1', '2', '3', '4', '5', '6', 'q', 'w', 'e', 'r', 't']
+      const state = { opt: location.hash.match(/o=(\w+)/)?.[1] ?? 'now', scene: Number(location.hash.match(/s=(\d)/)?.[1] ?? 0) }
+      const frame = document.getElementById('app')
+      const now = { ground: '#e2e2e5', bg: '#f3f3f3' }
+      function inject() {
+        const d = frame.contentDocument
+        if (!d?.head) return
+        let s = d.getElementById('bg-option')
+        if (!s) { s = d.createElement('style'); s.id = 'bg-option'; d.head.append(s) }
+        s.textContent = cssOf(OPTIONS.find((o) => o.id === state.opt))
+      }
+      function draw() {
+        location.hash = `o=${state.opt}&s=${state.scene}`
+        const o = OPTIONS.find((x) => x.id === state.opt)
+        const btn = (x, i) => `<button data-o="${x.id}" aria-pressed="${x.id === state.opt}"><b>${KEYS[i]} · ${x.name}</b>${x.what}</button>`
+        document.getElementById('opts').innerHTML =
+          `<span class="round">1. tur<br>beyaz kalır</span>` + OPTIONS.map((x, i) => (x.round === 2 ? '' : btn(x, i))).join('') +
+          `<span class="round two">2. tur<br>cesur</span>` + OPTIONS.map((x, i) => (x.round === 2 ? btn(x, i) : '')).join('')
+        document.getElementById('scenes').innerHTML = SCENES.map((x, i) => `<button data-s="${i}" aria-pressed="${i === state.scene}">${x.name}</button>`).join('')
+        const g = o.t.ground ?? now.ground, b = o.t.bg ?? now.bg
+        document.getElementById('sw').innerHTML = [['zemin (panelin altı)', g], ['sayfa / kanvas', b], ['parçalar, kartlar, menüler', '#ffffff']]
+          .map(([n, c]) => `<span><i style="background:${c}"></i>${n} <code>${c}</code></span>`).join('')
+        document.getElementById('about').textContent = o.about
+        inject()
+      }
+      function load() {
+        frame.src = `/gallery.html#${SCENES[state.scene].hash}&theme=light&alone`
+      }
+      frame.addEventListener('load', () => { inject(); setTimeout(inject, 300) })
+      document.addEventListener('click', (e) => {
+        const b = e.target.closest('button')
+        if (!b) return
+        if (b.dataset.o) { state.opt = b.dataset.o; draw() }
+        if (b.dataset.s) { state.scene = Number(b.dataset.s); draw(); load() }
+      })
+      document.addEventListener('keydown', (e) => {
+        const n = KEYS.indexOf(e.key)
+        if (n >= 0 && n < OPTIONS.length) { state.opt = OPTIONS[n].id; draw() }
+      })
+      draw()
+      load()
+    </script>
+  </body>
+</html>

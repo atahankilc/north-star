@@ -153,6 +153,10 @@ Values will be tuned against contrast checks (WCAG AA for text).
   The HUD's tools on the left edge stay where they are (D-389): the sheet draws back off them (`--sheet-rail-w`) and
   they're left on a rail of ground beside it; the breadcrumb rides the sheet. With no column the canvas fills the
   window and the HUD is on it.
+- **The ground is dark in both themes** (D-421, "a desk lamp"): in light the sheet is the lit paper (`--bg` #f3f3f3,
+  pieces and menus white) and the ground under it dark's `#121215`. What stands on the ground reads dark's colours: a
+  docked column (`data-ground`, EdgeColumn) and the HUD's tools while the rail shows (`data-rail-tools`, under the root's
+  `data-rail-ground`, kept until the sheet is home). A menu opened inside a column is on the ground too, so dark.
 - **The foot and the ground** (D-393, D-402, D-408): the screen's foot has one tab, the dock (middle); closed, the
   agent is its orb alone at the bottom right (D-407); the threads' button is a tool in the HUD's corner. The threads' list is a column on the left ground beside the HUD's rail, a conversation a
   column on the right ground. A console off the foot (a piece's, a selection's bar) is a pill with a line, a gap under

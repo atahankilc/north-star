@@ -60,6 +60,7 @@ export function EdgeColumn({ side = 'right', offset = '0px', width, label, onClo
       aria-label={label}
       data-side={side}
       data-sheet
+      data-ground
       data-leaving={present ? undefined : ''}
       className={[styles.column, className].filter(Boolean).join(' ')}
       style={{ [side]: offset, '--column-off': offset, ...(width !== undefined ? { '--column-w': typeof width === 'number' ? `${width}px` : width } : {}), ...style } as CSSProperties}
