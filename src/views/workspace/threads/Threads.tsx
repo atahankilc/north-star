@@ -343,7 +343,7 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
           threads` opens it. */}
       <header className={styles.head}>
         <div className={styles.headTop}>
-          {onList && <Button onClick={onList}>‹ threads</Button>}
+          {onList && <Button onClick={onList}>‹ talk</Button>}
           <ButtonGroup className={styles.actions}>
             {/* A channel (D-416) is never done: no resolve. */}
             {thread && thread.on !== 'channel' && <Button onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>{resolved ? 'reopen' : 'resolve'}</Button>}

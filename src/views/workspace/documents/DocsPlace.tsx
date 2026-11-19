@@ -298,8 +298,8 @@ export function DocsPlace({ page = false }: { page?: boolean }) {
     <div className={styles.split} data-reading={open ? true : undefined}>
       <Tree at={at} />
       <div className={styles.middle}>
+        {/* On the page the tree says where you are: no path over the list. */}
         <PlaceFind value={q} onChange={setQ} label="Find in Docs" />
-        {!k && <Crumbs at={at} folders={folders} />}
         {list}
       </div>
       {open && (
@@ -314,13 +314,37 @@ export function DocsPlace({ page = false }: { page?: boolean }) {
   )
 }
 
+// What makes things in Docs, for its head, its empty state and the HUD's middle: a document written into the folder
+// open (opened to be written), and for owners and editors a folder there (its name typed at once).
+function useDocMakers() {
+  const { wid, workspace } = useWs()
+  const { user } = useAuth()
+  const role = roleOf(workspace, user?.id)
+  return {
+    user,
+    write: () => user && void newDocument(wid, { uid: user.id, name: authorName(user) }).then(async (id) => (await placeNew(wid, id), readDoc(id, true))),
+    folder: role === 'owner' || role === 'editor' ? () => user && void makeFolder(wid, useDocsAt.getState().folder, 'untitled folder', user.id).then((id) => useDocsAt.setState({ renaming: id })) : null,
+  }
+}
+
+// Docs' own tools in its head beside the canvas (D-419; on the page they're the HUD's middle): a new folder, write.
+export function DocsHeadTools() {
+  const make = useDocMakers()
+  if (!make.user) return null
+  return (
+    <>
+      {make.folder && <Button onClick={make.folder}>+ folder</Button>}
+      <Button onClick={make.write}>write</Button>
+    </>
+  )
+}
+
 // An empty folder's (or Docs') first step: write a document into it.
 function FirstDoc() {
-  const { wid } = useWs()
-  const { user } = useAuth()
-  if (!user) return null
+  const make = useDocMakers()
+  if (!make.user) return null
   return (
-    <Button tone="main" onClick={() => void newDocument(wid, { uid: user.id, name: authorName(user) }).then(async (id) => (await placeNew(wid, id), readDoc(id, true)))}>
+    <Button tone="main" onClick={make.write}>
       write a document
     </Button>
   )
@@ -335,23 +359,19 @@ const placeNew = async (wid: string, id: string) => {
 // The page's actions (the HUD's middle while Docs is the page): write a new document (private until shared), upload.
 export function DocsTools() {
   const { wid } = useWs()
-  const { user } = useAuth()
+  const make = useDocMakers()
   const input = useRef<HTMLInputElement>(null)
-  const role = roleOf(useWs().workspace, user?.id) ?? undefined
+  const user = make.user
   if (!user) return null
   const who = { uid: user.id, name: authorName(user) }
   return (
     <>
-      {(role === 'owner' || role === 'editor') && (
-        <ToolButton
-          label="New folder"
-          title="a new folder here"
-          onClick={() => void makeFolder(wid, useDocsAt.getState().folder, 'untitled folder', user.id).then((id) => useDocsAt.setState({ renaming: id }))}
-        >
+      {make.folder && (
+        <ToolButton label="New folder" title="a new folder here" onClick={make.folder}>
           <FolderIcon />
         </ToolButton>
       )}
-      <ToolButton label="Write a document" title="write a new document (only you see it until you share it)" onClick={() => void newDocument(wid, who).then(async (id) => (await placeNew(wid, id), readDoc(id, true)))}>
+      <ToolButton label="Write a document" title="write a new document (only you see it until you share it)" onClick={make.write}>
         <WriteIcon />
       </ToolButton>
       <ToolButton label="Upload documents" title="add .md files (images and PDFs come with Storage)" onClick={() => input.current?.click()}>

@@ -19,7 +19,7 @@ import { tokenPx } from '../../../styles/cssToken'
 import { AnimatePresence } from 'motion/react'
 import { closePlace, dragWidth, PLACE_NAME, setPage, usePlace, type Place } from './placeStore'
 import { TasksPlace } from '../deck/TasksPlace'
-import { DocsPlace } from '../documents/DocsPlace'
+import { DocsHeadTools, DocsPlace } from '../documents/DocsPlace'
 import { usePageHost } from './pageHost'
 import styles from './Places.module.css'
 
@@ -122,11 +122,20 @@ export function Places({ editor }: { editor: boolean }) {
       <AnimatePresence>
         {open === 'tasks' && !page && (
           <PlaceColumn key="tasks" place="tasks" head={false}>
-            <TasksPlace editor={editor} head={(tabs) => <PlaceHead place="tasks" after={tabs} />} />
+            {/* Beside the canvas the tabs have no room in the head's row: their own row under it. */}
+            <TasksPlace
+              editor={editor}
+              head={(tabs) => (
+                <>
+                  <PlaceHead place="tasks" />
+                  <div className={styles.subRow}>{tabs}</div>
+                </>
+              )}
+            />
           </PlaceColumn>
         )}
         {open === 'docs' && !page && (
-          <PlaceColumn key="docs" place="docs">
+          <PlaceColumn key="docs" place="docs" tools={<DocsHeadTools />}>
             <DocsPlace />
           </PlaceColumn>
         )}

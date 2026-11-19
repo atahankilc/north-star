@@ -348,7 +348,7 @@ export function Mine({ decks, top, children }: { decks: WithId<Piece>[]; top: nu
         )}
         {groups.map(({ d, list }) => (
           <section key={d.id} className={styles.group} aria-label={d.name || 'deck'}>
-            <Rule className={styles.groupHead} n={decks.indexOf(d) + 1} name={d.name || 'deck'} count={list.length} countAt="end" />
+            <Rule className={styles.groupHead} n={leadingNumber(d.name ?? '')?.num ?? decks.indexOf(d) + 1} name={leadingNumber(d.name ?? '')?.rest || d.name || 'deck'} count={list.length} countAt="end" />
             {list.map((t) => {
               const late = overdue(t, false)
               return (

@@ -53,7 +53,8 @@ export function TasksPlace({ page = false, editor, head }: { page?: boolean; edi
   const taskDecks = decks.filter((d) => kanbanOf(d).holds !== 'cards')
   const [tab, setTab] = useState<Tab>(() => (page ? (decks[0]?.id ?? 'mine') : 'mine'))
   const [withDays, setWithDays] = useState(page)
-  const [inner, setInner] = useState(0.58)
+  // The board's share of the page: room for its columns, its days beside them.
+  const [inner, setInner] = useState(0.68)
   const box = useBox()
   // Its lesson, as the side view's was (onboarding: `side-view`).
   useEffect(() => learn('side-view'), [])

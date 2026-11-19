@@ -94,3 +94,12 @@
   flex: none;
   padding: var(--space-3) var(--space-4) var(--space-1);
 }
+
+/* A place's second row beside the canvas (Tasks' tabs): what it shows, under its head. */
+.subRow {
+  display: flex;
+  flex: none;
+  min-width: 0;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: var(--line-w) solid var(--line);
+}

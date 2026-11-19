@@ -154,7 +154,8 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
                               onClick={() => onGo(t)}
                             >
                               <span className={styles.rowHead}>
-                                {thing.tone && !thing.gone ? (
+                                {/* A channel's row needs no kind: it stands under CHANNELS (D-419). */}
+                                {t.on === 'channel' ? null : thing.tone && !thing.gone ? (
                                   <TypeBadge kind={thing.kind} tone={thing.tone} className={styles.rowBadge} />
                                 ) : (
                                   <Label className={styles.rowKind}>{thing.kind}</Label>
