@@ -43,7 +43,7 @@ import { registerStrip } from './stripReveal'
 import styles from './Timeline.module.css'
 import { DUR, lerp, tween } from '../../../ui/foundation/motion'
 import { STRIP_PX } from '../../../model/world'
-import { tokenPx, tokenText } from '../../../styles/cssToken'
+import { tokenText, worldPx } from '../../../styles/cssToken'
 import { Label } from '../../../ui/primitives/Label'
 import { Empty } from '../../../ui/primitives/Empty'
 import { Button } from '../../../ui/primitives/Button'
@@ -123,7 +123,7 @@ function textW(s: string) {
   if (known !== undefined) return known
   measure ??= document.createElement('canvas').getContext('2d')
   if (!measure) return s.length * 7
-  measure.font = `${tokenText('--text-sm')} ${tokenText('--font-display') || 'sans-serif'}`
+  measure.font = `${worldPx('--text-sm')}px ${tokenText('--font-display') || 'sans-serif'}`
   const w = measure.measureText(s).width
   widths.set(s, w)
   return w
@@ -830,7 +830,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
         </div>
       </div>
       {/* No day yet: a tray under the rows. */}
-      <div className={styles.tray} style={{ top: TOP + tokenPx('--space-2') + rowsShown + tokenPx('--space-4') }}>
+      <div className={styles.tray} style={{ top: TOP + worldPx('--space-2') + rowsShown + worldPx('--space-4') }}>
         <Label tone="dim" className={styles.trayLabel}>
           no day · {layout.tray.length}
         </Label>
@@ -846,7 +846,7 @@ const Days = memo(function Days({ piece, zoom, live, editor, onCanvas, onTask, w
         (() => {
           const t = layout.tray.find((x) => x.id === trayHeld.id)
           return t ? (
-            <TrayTask task={t} selected={false} live={live} lifted style={{ left: trayHeld.at[0] - tokenPx('--space-3'), top: trayHeld.at[1] - tokenPx('--space-3') }} />
+            <TrayTask task={t} selected={false} live={live} lifted style={{ left: trayHeld.at[0] - worldPx('--space-3'), top: trayHeld.at[1] - worldPx('--space-3') }} />
           ) : null
         })()}
     </div>

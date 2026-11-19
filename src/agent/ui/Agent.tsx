@@ -31,6 +31,7 @@ import { isTyping, keysTaken } from '../../ui/foundation/focus'
 import { sheetRound } from '../../ui/foundation/sheet'
 import { DUR } from '../../ui/foundation/motionTokens'
 import { isReducedMotion } from '../../state/motion'
+import { useDisplay } from '../../state/display'
 import { onPageValue, pageValue, setPageValue } from '../../ui/foundation/pageValues'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
 import { pickerRows } from '../models'
@@ -1271,6 +1272,8 @@ function Perch({ mood, cue, control, label, onPress }: { mood: OrbMood; cue?: Or
   const [hover, setHover] = useState(false)
   const [focused, setFocused] = useState(false)
   const lit = (hover || focused) && mood === 'idle'
+  // Drawn again when the interface's size changes (D-417): the orb's canvas is sized in px.
+  useDisplay((s) => s.size)
   return (
     <div
       className={styles.perch}

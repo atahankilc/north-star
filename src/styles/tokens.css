@@ -99,15 +99,6 @@
   --font-display: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  --text-xs: 12px; /* D-337: was 11 */
-  --text-sm: 14px; /* D-337: was 13 */
-  --text-md: 15px;
-  --text-lg: 18px; /* card and list titles */
-  --text-title: 22px; /* the right panel's title (D-219) */
-  --text-heading: 26px; /* page and report titles; 20px on phones */
-  --text-xl: clamp(28px, 4vw, 44px);
-  --text-hero: clamp(48px, 8vw, 112px); /* the workspaces page title */
-  --text-display: clamp(48px, 10vw, 168px); /* D-340: the landing's mono name, one line on a phone */
   /* Code and list markers inside Markdown: relative to the text around them. */
   --text-code: 0.88em;
 
@@ -142,101 +133,31 @@
   --weight-medium: 500;
   --weight-bold: 600;
 
-  /* Reading width: the report screen and the reports list. */
-  --measure: 760px;
 
-  /* Spacing (D-319): one scale on screen and in the world (a 4 px rhythm in canvas px there). Off-scale values snap to it. */
-  --space-half: 2px;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-12: 48px;
-
-  /* HUD: the one set of screen-edge margins for the top bar and every corner element. */
-  --hud-x: var(--space-6);
-  --hud-y: var(--space-4);
-  --hud-h: 56px;
-  /* The HUD's size (D-348, Settings → display): its tools' and squares' cell, the breadcrumb's text (its icons, the
-     side nav's drawn `+` too: `--tool-icon`). `normal` here; `small` and `large` under [data-hud] below. */
-  --hud-tool: var(--control);
-  --hud-text: var(--text-sm);
-  /* Height the bottom-left corner takes (you + settings stacked, D-175) and a gap. Things there sit above it. */
-  --corner-h: calc(3 * var(--hud-tool) + var(--line-w) + 4 * var(--space-2) + var(--space-3));
-  /* Column headers of the table-like views (TableHead.module.css). */
-  --head-h: 40px;
 
   /* Lines and small shapes (D-319). A 1 px border is --line-w; a band, drop line or inset bar --line-w-bold. */
   --line-w: 1px;
   --line-w-bold: 2px;
-  --dot: 6px; /* status dots, small handles */
-  --dot-lg: 10px; /* scale squares, bigger handles */
-  --arrow: 7px; /* every CSS-triangle arrowhead */
-  --lead: 12px; /* a numbered rule's magenta lead (D-277) */
 
   /* Controls (D-384, docs/specs/controls.md): what's filled is fully round, and what's on says so with a lamp, a small
      round light before its word. The lamp is in em, so it grows with a console's text as the canvas zooms (D-264). */
   --radius-full: 999px; /* every pill and circle */
-  --radius-well: var(--space-4); /* a <textarea>'s well: too tall for a pill */
-  /* Surfaces (D-387, docs/specs/surfaces.md): round with a line. */
-  --radius-window: 24px; /* a modal, the hazard box, the main screen as a sheet */
-  --radius-menu: 16px; /* a menu's frame, a popover */
-  --radius-box: 14px; /* a tab's top corners, a box inside a window, a tip */
-  --sheet-gap: var(--space-2); /* how far the main screen draws in from the window while a column is docked */
-  --sheet-rail-w: 60px; /* and from the left, off the HUD's tools: their strip and its margins (D-389) */
   --ground: #121215; /* what a docked column lies on, under the main screen */
   --lift-shade: rgba(0, 0, 0, 0.7);
   --sheet-rim: rgba(255, 255, 255, 0.16); /* the lifted screen's lit edge */
   --lamp: 0.5em; /* its width and height */
   --lamp-gap: 0.55em; /* lamp to word */
   --lamp-glow: 0.55em; /* its glow while on */
-  --tick-lamp: 8px; /* a tick row's lamp */
 
   /* Scroll bars (D-105, D-377): the one place their look is set, for every scrolling area; drawn in global.css. */
-  --scroll-size: var(--space-2); /* the bar's width, its track */
   --scroll-inset: var(--line-w-bold); /* the thumb's clear space each side, at rest */
   --scroll-inset-on: var(--line-w); /* the same, pointed at: the thumb grows */
   --scroll-inset-held: 0; /* held: the whole track's width */
   --scroll-thumb: var(--fg-dim);
   --scroll-thumb-hover: var(--accent-cyan);
   --scroll-thumb-held: var(--accent-cyan);
-  --underline-offset: 3px;
 
-  /* Screen sizes (D-325). Squares and rows: a badge, an avatar or small button, a button or row, the side nav's tools,
-     a big avatar. Breakpoints can't be variables: they are 760 and 640 px only. */
-  --control-xs: 16px;
-  --control-sm: 24px;
-  --control: 30px;
-  --control-lg: 36px;
-  --control-xl: 48px;
-  /* The agent's mascot, the orb (D-407): its sphere's size; its canvas bleeds past it for what floats round it. */
-  --orb: 72px;
-  --tool-icon: 18px; /* a HUD tool's icon (src/ui/primitives/hudIcons.tsx, D-343) */
-  /* One ladder for screen boxes' widths (and a few heights): off-ladder sizes snap to it. */
-  --size-xs: 160px;
-  --size-sm: 260px;
-  --size-md: 340px;
-  --size-lg: 420px;
-  --size-xl: 560px;
-  --page-w: 1100px; /* the workspaces page */
-  --panel-w: 400px; /* the right panel (D-219) */
-  --menu-w: var(--size-sm); /* a menu's, a popover's and a settings label's width */
-  --menu-max-w: var(--size-md);
-  --menu-h: 460px; /* the prompt's tallest */
-  --list-h: 320px; /* a Select's or people list's tallest */
-  --confirm-w: var(--size-lg); /* the hazard confirm */
-  --modal-w: 960px; /* settings */
-  --modal-h: 720px;
-  --modal-nav-w: 216px;
-  --name-max-w: var(--size-xs); /* a person's chip */
 
-  /* Shadows (D-319): what a shadow is, the colour given where it's used, so it follows a piece's own --bg:
-     box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent). */
-  --feather: 0 0 16px 10px; /* the hugging shade behind ink on the page (D-277) */
-  --ink-feather: 0 0 18px 12px; /* the same, round the onboarding's ink (--ink-shade) */
-  --lift: 0 18px 50px 0; /* the main screen lifted over the ground (D-387), with --lift-shade */
 
   /* How much of a colour goes into a color-mix (D-319). --card-tint (below) is the card face's. */
   --mix-wash: 8%;
@@ -282,27 +203,6 @@
   --dur-slow: 600ms;
   --dur-blink: 1s; /* a caret's or a pulse's beat */
 
-  /* Marks (D-265, src/ui/primitives/Marks.tsx): the four L's of anything selectable, in screen px, by tier (the thing's short side
-     on screen: < 48 S, < 240 M, else L). len / stroke; how far out hovered, selected, at rest (where they leave to);
-     pressed, the L's length on the corners. */
-  --mark-s-len: 6px;
-  --mark-s-th: 1.5px;
-  --mark-s-hover: 3px;
-  --mark-s-sel: 1px;
-  --mark-s-rest: 8px;
-  --mark-s-press: 9px;
-  --mark-m-len: 12px;
-  --mark-m-th: 2px;
-  --mark-m-hover: 7px;
-  --mark-m-sel: 3px;
-  --mark-m-rest: 13px;
-  --mark-m-press: 18px;
-  --mark-l-len: 18px;
-  --mark-l-th: 2px;
-  --mark-l-hover: 10px;
-  --mark-l-sel: 4px;
-  --mark-l-rest: 16px;
-  --mark-l-press: 26px;
   --mark-spring: cubic-bezier(0.3, 1.8, 0.5, 1);
 
   /* A piece's surface (D-263): graphite, a step off the page, so a piece reads as a window on the canvas, not a hole in
@@ -316,11 +216,6 @@
   --piece-hi: rgba(255, 255, 255, 0.05);
   --piece-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(0, 0, 0, 0.6);
   --piece-band: 2px;
-  /* A piece's name on the screen (D-365, D-379): the first at 100 % and closer, growing to the second as the canvas zooms out. */
-  --piece-name-near: 14px;
-  --piece-name-far: 18px;
-  /* A section's name on a canvas is never smaller on the screen than this, always a step over the pieces' it holds (D-379). */
-  --section-name-far: 24px;
   /* Its kind's tab: dark ink on the kind's colour; the light theme's white ink needs the colour a step darker. */
   --piece-tab-ink: #000000;
   --piece-tab-mix: 100%;
@@ -335,6 +230,136 @@
   /* What the onboarding's ink sits on when it floats over pieces (D-315, onboarding.md §4): the page at 90 %, fed to the
      hugging, feathered shade (background + box-shadow 0 0 18px 12px), one layer under all the text. */
   --ink-shade: rgba(0, 0, 0, 0.9);
+}
+
+/* The interface's size (D-417, Settings → display): every size on the screen is its number times `--ui`, from 75 % to
+   150 %. `--ui-page` is the person's choice, written on <html> by src/state/display.ts (index.html before the first
+   paint). Inside a world (a canvas, a plane, a piece's contents: `data-world`) `--ui` is 1, since the world's geometry is
+   canvas px measured in TS (model/world.ts) and its zoom is the camera's; what's held at screen size in it
+   (`data-screen-sized`: names, consoles, marks, chips) takes the page's again. `data-ui` sets one by hand (the gallery).
+   Custom properties resolve where they're declared, so these are declared again on each of those elements. */
+:root {
+  --ui-page: 1;
+  --ui: var(--ui-page);
+}
+
+[data-world] {
+  --ui: 1;
+}
+
+[data-screen-sized] {
+  --ui: var(--ui-page);
+}
+
+:root,
+[data-world],
+[data-screen-sized],
+[data-ui] {
+  --text-xs: calc(12px * var(--ui)); /* D-337: was 11 */
+  --text-sm: calc(14px * var(--ui)); /* D-337: was 13 */
+  --text-md: calc(15px * var(--ui));
+  --text-lg: calc(18px * var(--ui)); /* card and list titles */
+  --text-title: calc(22px * var(--ui)); /* the right panel's title (D-219) */
+  --text-heading: calc(26px * var(--ui)); /* page and report titles; 20px on phones */
+  --text-xl: calc(clamp(28px, 4vw, 44px) * var(--ui));
+  --text-hero: calc(clamp(48px, 8vw, 112px) * var(--ui)); /* the workspaces page title */
+  --text-display: calc(clamp(48px, 10vw, 168px) * var(--ui)); /* D-340: the landing's mono name, one line on a phone */
+  /* Reading width: the report screen and the reports list. */
+  --measure: calc(760px * var(--ui));
+  /* Spacing (D-319): one scale on screen and in the world (a 4 px rhythm in canvas px there). Off-scale values snap to it. */
+  --space-half: calc(2px * var(--ui));
+  --space-1: calc(4px * var(--ui));
+  --space-2: calc(8px * var(--ui));
+  --space-3: calc(12px * var(--ui));
+  --space-4: calc(16px * var(--ui));
+  --space-6: calc(24px * var(--ui));
+  --space-8: calc(32px * var(--ui));
+  --space-12: calc(48px * var(--ui));
+
+  /* HUD: the one set of screen-edge margins for the top bar and every corner element. */
+  --hud-x: var(--space-6);
+  --hud-y: var(--space-4);
+  --hud-h: calc(56px * var(--ui));
+  /* The HUD's size (D-348): its tools' and squares' cell, the breadcrumb's text (its icons, the
+     side nav's drawn `+` too: `--tool-icon`). Grows and shrinks with the interface size (D-417). */
+  --hud-tool: var(--control);
+  --hud-text: var(--text-sm);
+  /* Height the bottom-left corner takes (you + settings stacked, D-175) and a gap. Things there sit above it. */
+  --corner-h: calc(3 * var(--hud-tool) + var(--line-w) + 4 * var(--space-2) + var(--space-3));
+  /* Column headers of the table-like views (TableHead.module.css). */
+  --head-h: calc(40px * var(--ui));
+  --dot: calc(6px * var(--ui)); /* status dots, small handles */
+  --dot-lg: calc(10px * var(--ui)); /* scale squares, bigger handles */
+  --arrow: calc(7px * var(--ui)); /* every CSS-triangle arrowhead */
+  --lead: calc(12px * var(--ui)); /* a numbered rule's magenta lead (D-277) */
+  --radius-well: var(--space-4); /* a <textarea>'s well: too tall for a pill */
+  /* Surfaces (D-387, docs/specs/surfaces.md): round with a line. */
+  --radius-window: calc(24px * var(--ui)); /* a modal, the hazard box, the main screen as a sheet */
+  --radius-menu: calc(16px * var(--ui)); /* a menu's frame, a popover */
+  --radius-box: calc(14px * var(--ui)); /* a tab's top corners, a box inside a window, a tip */
+  --sheet-gap: var(--space-2); /* how far the main screen draws in from the window while a column is docked */
+  --sheet-rail-w: calc(60px * var(--ui)); /* and from the left, off the HUD's tools: their strip and its margins (D-389) */
+  --tick-lamp: calc(8px * var(--ui)); /* a tick row's lamp */
+  --scroll-size: var(--space-2); /* the bar's width, its track */
+  --underline-offset: calc(3px * var(--ui));
+  /* Screen sizes (D-325). Squares and rows: a badge, an avatar or small button, a button or row, the side nav's tools,
+     a big avatar. Breakpoints can't be variables: they are 760 and 640 px only. */
+  --control-xs: calc(16px * var(--ui));
+  --control-sm: calc(24px * var(--ui));
+  --control: calc(30px * var(--ui));
+  --control-lg: calc(36px * var(--ui));
+  --control-xl: calc(48px * var(--ui));
+  /* The agent's mascot, the orb (D-407): its sphere's size; its canvas bleeds past it for what floats round it. */
+  --orb: calc(72px * var(--ui));
+  --tool-icon: calc(18px * var(--ui)); /* a HUD tool's icon (src/ui/primitives/hudIcons.tsx, D-343) */
+  /* One ladder for screen boxes' widths (and a few heights): off-ladder sizes snap to it. */
+  --size-xs: calc(160px * var(--ui));
+  --size-sm: calc(260px * var(--ui));
+  --size-md: calc(340px * var(--ui));
+  --size-lg: calc(420px * var(--ui));
+  --size-xl: calc(560px * var(--ui));
+  --page-w: calc(1100px * var(--ui)); /* the workspaces page */
+  --panel-w: calc(400px * var(--ui)); /* the right panel (D-219) */
+  --menu-w: var(--size-sm); /* a menu's, a popover's and a settings label's width */
+  --menu-max-w: var(--size-md);
+  --menu-h: calc(460px * var(--ui)); /* the prompt's tallest */
+  --list-h: calc(320px * var(--ui)); /* a Select's or people list's tallest */
+  --confirm-w: var(--size-lg); /* the hazard confirm */
+  --modal-w: calc(960px * var(--ui)); /* settings */
+  --modal-h: calc(720px * var(--ui));
+  --modal-nav-w: calc(216px * var(--ui));
+  --name-max-w: var(--size-xs); /* a person's chip */
+  /* Shadows (D-319): what a shadow is, the colour given where it's used, so it follows a piece's own --bg:
+     box-shadow: var(--feather) color-mix(in srgb, var(--bg) var(--mix-strong), transparent). */
+  --feather: 0 0 calc(16px * var(--ui)) calc(10px * var(--ui)); /* the hugging shade behind ink on the page (D-277) */
+  --ink-feather: 0 0 calc(18px * var(--ui)) calc(12px * var(--ui)); /* the same, round the onboarding's ink (--ink-shade) */
+  --lift: 0 calc(18px * var(--ui)) calc(50px * var(--ui)) 0; /* the main screen lifted over the ground (D-387), with --lift-shade */
+  /* Marks (D-265, src/ui/primitives/Marks.tsx): the four L's of anything selectable, in screen px, by tier (the thing's short side
+     on screen: < 48 S, < 240 M, else L). len / stroke; how far out hovered, selected, at rest (where they leave to);
+     pressed, the L's length on the corners. */
+  --mark-s-len: calc(6px * var(--ui));
+  --mark-s-th: calc(1.5px * var(--ui));
+  --mark-s-hover: calc(3px * var(--ui));
+  --mark-s-sel: calc(1px * var(--ui));
+  --mark-s-rest: calc(8px * var(--ui));
+  --mark-s-press: calc(9px * var(--ui));
+  --mark-m-len: calc(12px * var(--ui));
+  --mark-m-th: calc(2px * var(--ui));
+  --mark-m-hover: calc(7px * var(--ui));
+  --mark-m-sel: calc(3px * var(--ui));
+  --mark-m-rest: calc(13px * var(--ui));
+  --mark-m-press: calc(18px * var(--ui));
+  --mark-l-len: calc(18px * var(--ui));
+  --mark-l-th: calc(2px * var(--ui));
+  --mark-l-hover: calc(10px * var(--ui));
+  --mark-l-sel: calc(4px * var(--ui));
+  --mark-l-rest: calc(16px * var(--ui));
+  --mark-l-press: calc(26px * var(--ui));
+  /* A piece's name on the screen (D-365, D-379): the first at 100 % and closer, growing to the second as the canvas zooms out. */
+  --piece-name-near: calc(14px * var(--ui));
+  --piece-name-far: calc(18px * var(--ui));
+  /* A section's name on a canvas is never smaller on the screen than this, always a step over the pieces' it holds (D-379). */
+  --section-name-far: calc(24px * var(--ui));
 }
 
 /* Light theme (D-069), set on <html> by src/state/theme.ts. Mirror a change to what WebGL also draws (bg, accents, night)
@@ -443,29 +468,21 @@
 /* Registered as a colour so it can be eased: the page goes graphite ↔ black with a focus's ink (CanvasView, D-297). */
 @property --bg { syntax: '<color>'; inherits: true; initial-value: #000000; }
 
-/* The HUD's size (D-348), set on <html> from Settings → display (any element in the gallery); the side nav and the
-   corner keep their lane. */
-[data-hud='small'] {
-  --hud-tool: var(--control-sm);
-  --tool-icon: 14px;
-  --hud-text: var(--text-xs);
-}
-
-[data-hud='large'] {
-  --hud-tool: var(--control-lg);
-  --tool-icon: 22px;
-  --hud-text: var(--text-md);
-}
-
 @media (max-width: 760px) {
-  :root {
+  :root,
+  [data-world],
+  [data-screen-sized],
+  [data-ui] {
     --hud-x: var(--space-4);
     --hud-y: var(--space-3);
   }
 }
 
 @media (max-width: 640px) {
-  :root {
-    --text-heading: 20px;
+  :root,
+  [data-world],
+  [data-screen-sized],
+  [data-ui] {
+    --text-heading: calc(20px * var(--ui));
   }
 }

@@ -1276,6 +1276,8 @@ function World({ wid, size, zoom, children }: { wid: string; size: { w: number; 
       className={styles.world}
       // The finder's preview copies it (D-236).
       data-canvas-world
+      // Its contents are canvas px: the interface's size stops here (D-417, tokens.css).
+      data-world
       data-zooming={cam.zoom !== zoom || undefined}
       style={{ transform: `translate(${onPixel(size.w / 2 + cam.x)}px, ${onPixel(size.h / 2 + cam.y)}px) scale(${cam.zoom})` }}
     >

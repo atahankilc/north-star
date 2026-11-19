@@ -313,10 +313,11 @@ Values will be tuned against contrast checks (WCAG AA for text).
   name on hover), the ⚙ (a cyan count when people wait to join). The side nav and the corner are each one
   `ButtonGroup vertical`, and the gaps are its own (D-402): a circle filled to its edge (`data-filled`) gets outside
   the air an icon keeps inside its cell, so every seen gap is one (14 px at the normal size); nothing else sets a gap. Anything else bottom left stays `--corner-h` above.
-- Its size (D-348): Settings → display → `hud size` small / normal / large: the tools', squares' and `+N`'s cell 24 / 30
-  / 36 px (`--hud-tool`), icons, the drawn `+` among them, 14 / 18 / 22 (`--tool-icon`), the breadcrumb
-  12 / 14 / 15 (`--hud-text`); `data-hud` on `<html>`, set before the first paint; normal by default. Panels, menus and
-  pieces keep their size.
+- Its size is the interface's (D-417, replacing D-348's hud size): Settings → display → `interface size`, a slider from
+  75 to 150 % in steps of 5, 100 by default, sizes everything on the screen together (text, buttons, the HUD, panels,
+  menus, windows, consoles, the marks and the pieces' names), through `--ui` (tokens.css). What's in the world (a
+  canvas's, a plane's, a piece's contents) keeps canvas px and the camera's zoom. It's set when the knob is let go
+  (the page would grow under the hand mid-drag); `--ui-page` on `<html>`, set before the first paint.
 - Settings (D-064, D-097): your square opens it on the account page, the gear on the last page used. A modal with a side
   menu in groups, `YOU` (account, display) and `WORKSPACE <name>` (general, people, export; only inside a workspace),
   the current page a filled pill; on the right a head that never scrolls (the page's title, one line about it, the

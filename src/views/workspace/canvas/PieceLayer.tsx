@@ -29,7 +29,7 @@ export function PieceLayer({ layer, world, view, settled, live, onCanvas, still 
   const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})`, ...zsIn(settled, onCanvas || !(live || still)) }
   return (
     <div ref={layerRef} className={layer} {...rest} data-live={live || undefined} data-on-canvas={onCanvas || undefined}>
-      <div ref={worldRef} className={world} data-zooming={view.zoom !== settled || undefined} style={style}>
+      <div ref={worldRef} className={world} data-world data-zooming={view.zoom !== settled || undefined} style={style}>
         {children}
       </div>
       {over}

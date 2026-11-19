@@ -71,7 +71,7 @@ RULES.code = [
   ['storage', /\b(?:local|session)Storage\./g, /^src\/state\/local\.ts$/],
   ['rawCut', /\.slice\(0,\s*\d{2,}\)|\.length\s*(?:>=?|<=?)\s*\d{2,}/g, /^src\/model\/limits\.ts$/, /^src\/(?:model|ops|data)\//],
   // The raw element's homes are the primitives that are it.
-  ['kitRaw', /<(?:button|input|textarea)\b/g, /^src\/ui\/primitives\/(?:Button|ToolButton|Checkbox|Chip|Field|Tabs)\.tsx$/, /^src\/ui\//],
+  ['kitRaw', /<(?:button|input|textarea)\b/g, /^src\/ui\/primitives\/(?:Button|ToolButton|Checkbox|Chip|Field|Tabs|Slider)\.tsx$/, /^src\/ui\//],
   // R4.7: a view telling a piece kind apart by its name, outside that kind's own folder and the kind record
   // (canvas/pieceKinds.tsx): what a kind draws, its dock, setup, console, box and finder are the record's, so a new kind
   // is one entry there and not a hunt through the views.

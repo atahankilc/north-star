@@ -509,11 +509,11 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'settings', v: 3, format: 'lesson', roles: ALL, area: 'settings', since: 'D-097, D-348, D-349',
+    id: 'settings', v: 4, format: 'lesson', roles: ALL, area: 'settings', since: 'D-097, D-349, D-417',
     // Shown once Settings closes: a modal Window, nothing shows over it (D-349, D-359).
     trigger: [{ event: 'settings-open' }],
     pages: [
-      { title: 'Settings', tab: 'you', body: 'YOU holds your account and the display: theme, motion, the background, the size of the tools. It is kept in this browser.' },
+      { title: 'Settings', tab: 'you', body: 'YOU holds your account and the display: how big everything on the screen is, theme, motion, the background. It is kept in this browser.' },
       { title: 'This workspace', tab: 'workspace', body: 'WORKSPACE holds its name and what you are building, the people in it, and export: the whole workspace as a .zip.' },
     ],
   },

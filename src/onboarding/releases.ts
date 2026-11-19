@@ -21,6 +21,15 @@ export type Release = { id: string; date: string; title: string; items: readonly
 
 export const RELEASES: readonly Release[] = [
   {
+    id: '2026-11-19',
+    date: '2026-11-19',
+    title: 'Bigger or smaller',
+    items: [
+      // D-417: one interface size for everything, replacing the hud size.
+      { title: 'One size for everything', tab: 'size', line: 'Settings → display → interface size makes the text, buttons, panels and menus bigger or smaller together, 75 to 150 %.', lessons: ['settings'] },
+    ],
+  },
+  {
     id: '2026-11-18',
     date: '2026-11-18',
     title: 'Threads, new first',

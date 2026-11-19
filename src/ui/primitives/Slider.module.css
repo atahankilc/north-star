@@ -1,0 +1,116 @@
+/* The one slider (src/ui/primitives/Slider.tsx, D-417): a faint line, the part up to the knob in ink, the knob an empty
+   circle with a line (D-384) on the page's colour; a round shade under the pointer, a cyan ring with the keyboard. The
+   value beside it in mono. `--at-share` is where the knob is (0–1 along the line), `--mark-share` the tick under where it starts. */
+.slider {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.track {
+  --knob: var(--control-xs);
+  --line: var(--line-w-bold);
+  --at: calc(var(--knob) / 2 + (100% - var(--knob)) * var(--at-share, 0));
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: var(--size-xs);
+  height: var(--control-sm);
+}
+
+/* A small tick under where it starts: what `normal` is. */
+.mark {
+  position: absolute;
+  left: calc(var(--knob) / 2 + (100% - var(--knob)) * var(--mark-share, 0));
+  top: calc(50% + var(--space-2));
+  width: var(--line-w);
+  height: var(--space-1);
+  background: var(--fg-dim);
+  pointer-events: none;
+}
+
+/* The line and the knob are drawn once, here; the input lies over them, its own track and knob invisible (each browser's
+   pseudo-element only gives the knob its hit size). */
+.track::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--line);
+  border-radius: var(--radius-full);
+  background: linear-gradient(to right, var(--fg) var(--at), var(--line-hover) var(--at));
+  pointer-events: none;
+}
+
+.knob {
+  position: absolute;
+  left: calc(var(--at) - var(--knob) / 2);
+  width: var(--knob);
+  height: var(--knob);
+  border: var(--line-w) solid var(--fg);
+  border-radius: var(--radius-full);
+  background: var(--bg);
+  pointer-events: none;
+  transition:
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+
+.input {
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.input:focus-visible {
+  outline: none;
+}
+
+.input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--knob);
+  height: var(--knob);
+  opacity: 0;
+}
+
+.input::-moz-range-thumb {
+  width: var(--knob);
+  height: var(--knob);
+  opacity: 0;
+}
+
+.input:hover:not(:disabled) + .knob {
+  box-shadow: 0 0 0 var(--space-1) var(--wash-3);
+}
+
+.input:active:not(:disabled) + .knob {
+  transform: scale(var(--press-scale));
+}
+
+.input:focus-visible + .knob {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 var(--line-w) var(--accent-cyan);
+}
+
+.value {
+  min-width: 6ch;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.slider[data-disabled] {
+  opacity: var(--o-dim);
+}
+
+.slider[data-disabled] .input {
+  cursor: default;
+}
+

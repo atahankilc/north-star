@@ -119,7 +119,7 @@ export function DocumentPieceView({ piece, view, live, onCanvas = false, onMore 
   const style: CSSProperties = { transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }
   return (
     <div ref={layer} className={styles.layer} data-live={live || undefined} data-cut={(!live && !onCanvas) || undefined} data-on-canvas={onCanvas || undefined}>
-      <div className={styles.world} style={style}>
+      <div className={styles.world} data-world style={style}>
         {!d ? (
           <p className={styles.gone} style={{ width, margin: PAD }}>
             This document is gone, or only its author sees it now.

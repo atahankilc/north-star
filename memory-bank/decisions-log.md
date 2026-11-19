@@ -6662,7 +6662,7 @@ its floor, faint L's on its top, a line under it, the dock's own top L's gone me
 
 ### D-348 · 2026-11-01 · Accepted (the user: "hud ın büyüklüğünü ayarlara geçirmek istiyorum, display ayarlarına geçebilir. Eğer başka önerilerin varsa da dinlemek isterim"; picked "small / normal / large" and, of the other ideas, "Arka plan yoğunluğu")
 Settings → display gets two rows, saved in this browser like theme, motion and background:
-- **hud size** `small | normal | large` (default normal, today's size): the HUD's tools (every ToolButton), the side
+- **hud size** (replaced by D-417's interface size, a slider for everything) `small | normal | large` (default normal, today's size): the HUD's tools (every ToolButton), the side
   nav's `+` (Menu's new `hud` prop), people's squares and `+N`, your square, and the breadcrumb's text, through
   `--hud-tool` (24 / 30 / 36 px), `--tool-icon` (14 / 18 / 22), `--hud-plus` (16 / 20 / 24) and `--hud-text`
   (12 / 14 / 15) under `[data-hud]` on `<html>` (tokens.css); `--corner-h` follows. index.html sets it before the first
@@ -7720,3 +7720,33 @@ part, `cards/TypeBadge` (PlaneCard uses it too).
   heights as text is typed (120 → 144 → 192, 25 → 63 → 88, 78 → 117 → 195).
 - *Left:* Matrix.tsx' two cell maps and the numbers with no name (other sessions are in those files); Stage and
   Mount's provider stack; check:kit's `kindSwitch` 31.
+
+### D-417 · 2026-11-19 · Accepted (the user: "şu anda hud ın büyüklüğünü küçük orta büyük diye seçebiliyoruz ancak bunun huddan da öteye her şey için yapılıyor olması lazım. Bana tek bir ayar verir misin, ekrandaki her şeyin büyüklüğünü ortak bir şekilde arttırıp azaltmamı sağlayan. Bir de şu anki 3 basamak hiç yeterli değil gibi, belki bir slider yaparız"; replaces D-348's hud size): one interface size, a slider
+Settings → display's first row is **interface size**, a slider from 75 to 150 % in steps of 5 (`UI_SIZE` in
+ui/foundation/feel.ts), 100 by default, with `reset`; saved in this browser (`north-star.ui-size`), D-348's old
+`small`/`large` read once as 90 / 115. It sizes everything on the screen together: text, buttons, the HUD, the
+breadcrumb, panels, menus, windows, the agent's orb, consoles, Marks and the pieces' and sections' names.
+- **How:** every screen size token in tokens.css is `calc(Npx * var(--ui))`; `--ui` is `--ui-page` (written on <html>
+  by state/display.ts, by index.html before the first paint). A custom property resolves where it's declared, so the
+  size tokens sit in one block declared on `:root, [data-world], [data-screen-sized], [data-ui]`: `[data-world]` (the
+  canvas's World, `PieceLayer`'s world, a focused plane's `PlaneCards`, `DocumentPiece`) sets `--ui: 1`, since the
+  world's geometry is canvas px measured in TS and its zoom is the camera's; `[data-screen-sized]` inside it takes the
+  page's again; `[data-ui]` lets the gallery show one by hand. Lines (`--line-w*`), `--w-*`, `--radius-full` and em
+  sizes don't scale.
+- **TS:** `tokenPx()` now measures a token on a probe (getPropertyValue hands `calc()` back unevaluated) and forgets
+  what it kept when the size changes; `worldPx()` is the same at `--ui` 1 (the timeline's text measure and tray);
+  `uiScale()` reads the factor. The agent's orb redraws on a change.
+- **The kit:** a new `Slider` (src/ui/primitives, with its gallery): a range input, a faint line with ink up to the
+  knob, the knob an empty circle (D-384), cyan with the keyboard, the value beside it in mono, a tick under where it
+  starts. It sets its value when the knob is let go (or at once from a key): a setting that resizes the page would
+  move the line away from the hand mid-drag; meanwhile only the number follows. check:kit lets `Slider.tsx` hold the
+  raw `<input>`.
+- `[data-hud]` and its three steps are gone; `--hud-tool` is `--control`, `--hud-text` `--text-sm`. The settings
+  lesson bumped to v4; a release line (2026-11-19, `Bigger or smaller`).
+Alternatives: CSS `zoom` on <html> (one line, but every pointer-to-world sum, `innerWidth` and `vw` would need the
+factor: ~100 places); a size only for the HUD and panels (the user asked for everything); applying while dragging
+(the slider moves under the pointer).
+Not yet: CSS breakpoints (760, 640) stay in the window's px; a few icon sizes written in TSX (`size={11}`) don't scale;
+a deck in the decks side view and a focused piece keep canvas px (their view's zoom, not this). Checked in the gallery
+headless (workspace screen at 100 and 130 %, Settings, the workspaces page at 150 % light, the slider dragged, a key,
+`reset`), the landing's first paint with a saved size and with D-348's old `large`.

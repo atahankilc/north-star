@@ -98,14 +98,14 @@ feature comes back as a piece, and check them with the user then.
   Text greys: dim, muted, fg ≥ 4.5:1 on the page and on a piece, both themes; faint only for quiet marks, never words or numbers read (D-366). The world's smallest text 8 px, `WORLD.smallText` (D-366).
 - Tokens only, no raw colours, sizes or tracking (D-069, D-093, D-097); every CSS value a token from one set of short
   scales, consistency first (off-scale snaps), screen `--text-*` vs the world's `--w-*`, `npm run check:tokens` (CSS and
-  TS/TSX) at 0 in CI (D-325, docs/specs/tokens.md); constants that aren't tokens by kind in one module each:
+  TS/TSX) at 0 in CI (D-325, docs/specs/tokens.md); screen size tokens are `calc(Npx * var(--ui))`, `--ui` 1 inside `[data-world]` (D-417); constants that aren't tokens by kind in one module each:
   model/world.ts (geometry), model/limits.ts (data limits, tested against firestore.rules), ui/feel.ts (DRAG_PX 5,
   zoom), motionTokens.ts (D-326); `Frame.module.css` is the one framed
   surface (D-024); shared `Page.module.css`, `fieldLabel` (D-093). Actions lowercase, labels uppercase; no
   native `<select>` (`src/ui/patterns/Select.tsx`) (D-093). `▸`/`▾` only open or fold something, never lead a row of actions (D-189).
 - Scroll bars (D-105, D-377): one look, thin and square (a 4 px `--fg-dim` thumb, 6 px cyan on hover, 8 px held), set only by the `--scroll-*` tokens and drawn only in global.css; `data-scrollbar='none'` for a row with no bar; check:kit refuses any other, the kit too (`scrollbar-width` on an element brings Chrome's system bar back).
 - Defaults always dark theme, full motion, background on, whatever the OS; changed only in Settings → display (D-063,
-  D-069), which also holds the HUD's size (small / normal / large), normal by default (D-348); no background strength (D-385). Light theme via tokens under `[data-theme='light']` and `usePalette()` (three.js too;
+  D-069), which also holds the interface's size, a slider 75–150 % (100 by default) for everything on the screen, the world keeping canvas px (D-417, replacing D-348's hud size); no background strength (D-385). Light theme via tokens under `[data-theme='light']` and `usePalette()` (three.js too;
   `Palette` only what WebGL reads, D-321), bg `#f3f3f3` (D-342), no-flash script (D-069); the backdrop prints bolder, darker glyphs in light (D-342). Light's accents the strongest of each hue that reads no worse on white; its cards have their own `--type-*` colours (idea violet); a card's colour tints its panel head and rows there (`--panel-tint`, none in dark) (D-368).
 - Controls are empty and round, a lamp says what's on (D-384, docs/specs/controls.md, DESIGN.md §6; built 2026-11-15,
   replacing D-344's cells): nothing behind a button at rest, a round shade under the pointer or the keyboard; its kind

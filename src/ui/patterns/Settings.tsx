@@ -7,13 +7,16 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { signOut, useAuth } from '../../data/auth'
 import { safePhoto, usePresence } from '../../data/presence'
-import { useDisplay, type BackgroundPref, type HudSizePref } from '../../state/display'
+import { useDisplay, type BackgroundPref } from '../../state/display'
+import { UI_SIZE } from '../foundation/feel'
 import { useMotion, type MotionPref } from '../../state/motion'
 import { themeAccent, useTheme, type ThemePref } from '../../state/theme'
 import { AgentSettings } from '../../agent/ui/AgentSettings'
 import { Button } from '../primitives/Button'
 import { Avatar } from '../primitives/Avatar'
 import { Choice } from '../primitives/Choice'
+import { Slider } from '../primitives/Slider'
+import { ButtonGroup } from '../primitives/ButtonGroup'
 import { CountBadge } from '../primitives/CountBadge'
 import { Rule } from '../primitives/Rule'
 import { SettingsTool } from './SettingsTool'
@@ -23,7 +26,6 @@ import { CloseIcon } from '../primitives/hudIcons'
 
 const MOTION: readonly MotionPref[] = ['full', 'reduced', 'system']
 const BACKGROUND: readonly BackgroundPref[] = ['on', 'off']
-const HUD_SIZE: readonly HudSizePref[] = ['small', 'normal', 'large']
 const THEME: readonly ThemePref[] = ['dark', 'light', 'system']
 
 // The workspace's own pages; WorkspaceLayout renders each (D-097).
@@ -154,10 +156,10 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
 
                 {current.id === 'display' && (
                   <Section>
+                    <SizeChoice />
                     <ThemeChoice />
                     <MotionChoice />
                     <BackgroundChoice />
-                    <HudSizeChoice />
                   </Section>
                 )}
 
@@ -226,13 +228,19 @@ function BackgroundChoice() {
   )
 }
 
-// The HUD's size (D-348): the side nav, the bottom-left corner, people's squares and the breadcrumb.
-function HudSizeChoice() {
-  const hud = useDisplay((s) => s.hud)
-  const setHud = useDisplay((s) => s.setHud)
+// The interface's size (D-417, replacing D-348's hud size): everything on the screen, 75–150 % in steps of 5; what's on
+// the canvas keeps its own zoom. Set when the knob is let go, so the page doesn't grow under the hand mid-drag.
+function SizeChoice() {
+  const size = useDisplay((s) => s.size)
+  const setSize = useDisplay((s) => s.setSize)
   return (
-    <Row label="hud size" hint="The tools on the left edge, the corner and the path at the top.">
-      <Choice label="hud size" bare options={HUD_SIZE} value={hud} onChange={setHud} />
+    <Row label="interface size" hint="Text, buttons, panels and menus, all at once. What's on the canvas keeps its own zoom.">
+      <ButtonGroup>
+        <Slider label="interface size" min={UI_SIZE.min} max={UI_SIZE.max} step={UI_SIZE.step} mark={UI_SIZE.normal} format={(n) => `${n} %`} value={size} onChange={setSize} />
+        <Button disabled={size === UI_SIZE.normal} onClick={() => setSize(UI_SIZE.normal)}>
+          reset
+        </Button>
+      </ButtonGroup>
     </Row>
   )
 }

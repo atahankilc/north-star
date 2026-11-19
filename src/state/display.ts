@@ -1,49 +1,58 @@
-// Display preferences (D-063, D-348), saved per browser. `background: off` removes the flowing ASCII field behind the
+// Display preferences (D-063, D-417), saved per browser. `background: off` removes the flowing ASCII field behind the
 // signed-in pages (the landing always keeps it) and stops its canvas, which saves most of the app's GPU work. How
-// bright it is follows the page and the canvas's pieces, not a setting (D-385). `hud` sizes the HUD's tools, squares
-// and breadcrumb, through `data-hud` on <html> (tokens.css; index.html sets it before the first paint).
+// bright it is follows the page and the canvas's pieces, not a setting (D-385). `size` is the interface's size, 75–150 %
+// (D-417, replacing D-348's hud size): every size token on the screen is multiplied by it, through `--ui-page` on <html>
+// (tokens.css; index.html sets it before the first paint).
 import { create } from 'zustand'
+import { forgetTokens } from '../styles/cssToken'
+import { UI_SIZE } from '../ui/foundation/feel'
 import { keepLocal, readLocal } from './local'
 
 export type BackgroundPref = 'on' | 'off'
-export type HudSizePref = 'small' | 'normal' | 'large'
 
 const KEY = 'north-star.background'
-const HUD_KEY = 'north-star.hud-size'
+const SIZE_KEY = 'north-star.ui-size'
+// D-348's old steps, read once so a choice made there carries over.
+const OLD_HUD_KEY = 'north-star.hud-size'
+const OLD_HUD: Record<string, number> = { small: 90, large: 115 }
 
-function read<T extends string>(key: string, allowed: readonly T[], fallback: T): T {
-  const v = readLocal(key)
-  return v && (allowed as readonly string[]).includes(v) ? (v as T) : fallback
+const clampSize = (n: number) =>
+  Math.min(UI_SIZE.max, Math.max(UI_SIZE.min, Math.round(n / UI_SIZE.step) * UI_SIZE.step))
+
+function readSize(): number {
+  const v = Number(readLocal(SIZE_KEY))
+  if (Number.isFinite(v) && v > 0) return clampSize(v)
+  return OLD_HUD[readLocal(OLD_HUD_KEY) ?? ''] ?? UI_SIZE.normal
 }
 
-const save = (key: string, value: string) => keepLocal(key, value)
-
-function applyHud(size: HudSizePref) {
+function applySize(size: number) {
   const root = document.documentElement
-  if (size === 'normal') delete root.dataset.hud
-  else root.dataset.hud = size
+  if (size === UI_SIZE.normal) root.style.removeProperty('--ui-page')
+  else root.style.setProperty('--ui-page', String(size / 100))
+  forgetTokens()
 }
 
 type DisplayState = {
   background: BackgroundPref
-  hud: HudSizePref
+  size: number
   setBackground: (pref: BackgroundPref) => void
-  setHud: (pref: HudSizePref) => void
+  setSize: (percent: number) => void
 }
 
-const initialHud = read<HudSizePref>(HUD_KEY, ['small', 'normal', 'large'], 'normal')
-applyHud(initialHud)
+const initialSize = readSize()
+applySize(initialSize)
 
 export const useDisplay = create<DisplayState>((set) => ({
-  background: read<BackgroundPref>(KEY, ['on', 'off'], 'on'),
-  hud: initialHud,
+  background: readLocal(KEY) === 'off' ? 'off' : 'on',
+  size: initialSize,
   setBackground: (background) => {
-    save(KEY, background)
+    keepLocal(KEY, background)
     set({ background })
   },
-  setHud: (hud) => {
-    save(HUD_KEY, hud)
-    applyHud(hud)
-    set({ hud })
+  setSize: (percent) => {
+    const size = clampSize(percent)
+    keepLocal(SIZE_KEY, String(size))
+    applySize(size)
+    set({ size })
   },
 }))

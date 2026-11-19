@@ -44,6 +44,12 @@ the 940 raw px and the inconsistency really are.
 4. **Snap, don't add.** An off-scale value moves to the nearest step; a new step is added only when a value is used in
    many places for one clear purpose. Ties round up, unless the before/after shot looks wrong.
 5. **Checked by a script:** `npm run check:tokens` fails on any raw value left (rule 1), like `check:memory`.
+6. **The interface's size (D-417).** Every screen size token is its number times `--ui` (`calc(14px * var(--ui))`),
+   the person's choice in Settings → display (75–150 %, `--ui-page` on <html>). `--ui` is 1 inside `[data-world]` (the
+   canvas's world, `PieceLayer`'s, a focused plane's, a document piece's) and the page's again on `[data-screen-sized]`;
+   since a custom property resolves where it's declared, the size tokens are declared on all of those (one block in
+   tokens.css). Lines (`--line-w*`), the world's `--w-*`, radius-full and em sizes don't scale. A new size token goes in
+   that block, as `calc(Npx * var(--ui))`.
 
 ## 1. Type
 
@@ -242,7 +248,8 @@ Durations written in TS (cellReveal, the focus ink, the curtain) are not CSS: th
 
 ## 8. TS and constants that aren't tokens
 - **In TS, a design number reads its token.** A style writes the token (`'var(--space-2)'`, `calc(${n} * var(--space-3))`);
-  pixel math that needs the number calls `tokenPx('--space-4')` (src/styles/cssToken.ts reads it from <html> once).
+  pixel math that needs the number calls `tokenPx('--space-4')` (src/styles/cssToken.ts measures it on the page and keeps
+  it until the interface's size changes); inside a world, `worldPx()` (the same at `--ui` 1).
 - **Constants that aren't tokens live in one module by kind**, not inside components:
   - `src/model/world.ts`: the canvas's and pieces' geometry (grid, card rows, a deck's `K`, a matrix's `M`, a timeline's
     `T`, documents' `D`, the project title), which also writes the CSS's `--w-*` vars.

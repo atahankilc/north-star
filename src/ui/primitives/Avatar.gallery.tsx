@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { example } from '../../gallery/example'
 import { Avatar } from './Avatar'
 import { Button } from './Button'
@@ -32,12 +33,12 @@ export default example({
         </div>
       </div>
     ),
-    'hud sizes': () => (
+    'interface sizes': () => (
       <div style={row}>
-        {(['small', 'normal', 'large'] as const).map((s) => (
-          <div key={s} data-hud={s} style={row}>
+        {([0.75, 1, 1.5] as const).map((s) => (
+          <div key={s} data-ui style={{ ...row, '--ui': s } as CSSProperties}>
             <Avatar name="Ayla" color="var(--accent-cyan)" />
-            <ToolButton label={`settings, ${s}`} onClick={none}>
+            <ToolButton label={`settings, ${s * 100} %`} onClick={none}>
               <GearIcon />
             </ToolButton>
           </div>

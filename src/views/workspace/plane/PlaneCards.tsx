@@ -98,7 +98,7 @@ export function PlaneCards({ cards, labels, view, live, editor }: Props) {
   }
   return (
     <div className={styles.layer} data-live={live || undefined} data-packing={packing || undefined} onPointerDown={boxSelect}>
-      <div className={styles.world} data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
+      <div className={styles.world} data-world data-zooming={view.zoom !== settled || undefined} style={{ transform: `translate(${view.ox}px, ${view.oy}px) scale(${view.zoom})` }}>
         <Inside cards={cards} labels={labels} zoom={settled} detail={detail} live={live} editor={editor} still={still} box={box} />
       </div>
       {live && !packing && <Panel cards={cards} labels={labels} editor={editor} />}

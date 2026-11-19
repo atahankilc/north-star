@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { example } from '../../gallery/example'
 import { ToolButton } from './ToolButton'
 import { CompassIcon } from './hudIcons'
@@ -20,17 +21,17 @@ export default example({
         <ToolButton label="decks, 3 new" badge={3} onClick={none}>{icon}</ToolButton>
       </div>
     ),
-    'hud sizes': {
+    'interface sizes': {
       render: () => (
         <div style={{ display: 'flex', gap: 'var(--space-8)', alignItems: 'center' }}>
-          {(['small', 'normal', 'large'] as const).map((s) => (
-            <div key={s} data-hud={s}>
-              <ToolButton label={`find, ${s}`} onClick={none}>{icon}</ToolButton>
+          {([0.75, 1, 1.5] as const).map((s) => (
+            <div key={s} data-ui style={{ '--ui': s } as CSSProperties}>
+              <ToolButton label={`find, ${s * 100} %`} onClick={none}>{icon}</ToolButton>
             </div>
           ))}
         </div>
       ),
-      note: 'Settings → display → hud size (D-348): 24, 30, 36 px, the icon 14, 18, 22',
+      note: 'Settings → display → interface size (D-417): 75, 100, 150 %; 30 px and an 18 px icon at 100',
     },
     hover: { render: () => <ToolButton label="find" data-g="t" onClick={none}>{icon}</ToolButton>, hover: '[data-g="t"]' },
   },

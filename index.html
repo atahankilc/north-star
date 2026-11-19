@@ -13,9 +13,9 @@
         var t = localStorage.getItem('north-star.theme')
         if (t === 'system') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
         if (t === 'light') document.documentElement.dataset.theme = 'light'
-        // The HUD's size (D-348), so its tools don't jump; src/state/display.ts takes over.
-        var h = localStorage.getItem('north-star.hud-size')
-        if (h === 'small' || h === 'large') document.documentElement.dataset.hud = h
+        // The interface's size (D-417), so nothing jumps; src/state/display.ts takes over (and reads D-348's old hud size).
+        var s = Number(localStorage.getItem('north-star.ui-size'))
+        if (s >= 75 && s <= 150 && s !== 100) document.documentElement.style.setProperty('--ui-page', String(s / 100))
       } catch (e) {}
     </script>
   </head>

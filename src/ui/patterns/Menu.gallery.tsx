@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { example } from '../../gallery/example'
 import { Menu } from './Menu'
 import type { PromptEntry } from '../foundation/promptModel'
@@ -48,14 +48,14 @@ export default example({
     'icon in the hud': {
       render: () => (
         <div style={{ display: 'flex', gap: 'var(--space-8)', alignItems: 'center' }}>
-          {(['small', 'normal', 'large'] as const).map((s) => (
-            <div key={s} data-hud={s}>
-              <Menu label={<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden><path d="M10 2v16M2 10h16" stroke="currentColor" strokeWidth="1.5" /></svg>} icon hud items={ADD} ariaLabel={`add, ${s}`} />
+          {([0.75, 1, 1.5] as const).map((s) => (
+            <div key={s} data-ui style={{ '--ui': s } as CSSProperties}>
+              <Menu label={<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden><path d="M10 2v16M2 10h16" stroke="currentColor" strokeWidth="1.5" /></svg>} icon hud items={ADD} ariaLabel={`add, ${s * 100} %`} />
             </div>
           ))}
         </div>
       ),
-      note: 'the side nav’s `+`: `hud` sizes it with the HUD’s tools (D-348)',
+      note: 'the side nav’s `+`: `hud` sizes it with the HUD’s tools; shown at 75, 100, 150 % (D-417)',
     },
   },
 })

@@ -56,3 +56,7 @@ export const SELECT_FIND_PAST = 7
 // (what the reader, the agent and export read) is written again after a pause this long in your typing.
 export const LIVE_SEND_MS = 200
 export const LIVE_TEXT_PAUSE_MS = 2000
+
+// The interface's size in percent (D-417, Settings → display): its range, its step and where it starts. Every size token
+// on the screen is multiplied by it (tokens.css `--ui`).
+export const UI_SIZE = { min: 75, max: 150, step: 5, normal: 100 } as const
