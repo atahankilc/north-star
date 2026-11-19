@@ -727,6 +727,8 @@ export function CanvasView() {
   // A column docked on either side (Talk, Tasks, Docs on the left; a card's or task's panel, the agent on the right;
   // D-422): the view moves over by half the sheet's move, so what was in the screen's middle stays in the middle of
   // what's left of it, never under the column; and back as it goes.
+  // What a card at the edge took past half (its panel opening), given back as that panel goes: the view comes home.
+  const owed = useRef<{ plane: string; by: number } | null>(null)
   useEffect(
     () =>
       onSheetMove((left, right, reach) => {
@@ -734,6 +736,14 @@ export function CanvasView() {
         if (!half) return
         const { planeCam, focusArrived, cardSelected } = useCanvasView.getState()
         if (focusIdRef.current && planeCam && focusArrived) {
+          // A right column going: what was taken past half for its card comes back with it.
+          if (right < 0 && owed.current?.plane === focusIdRef.current) {
+            half -= owed.current.by
+            owed.current = null
+            return glide(planeCam, { ...planeCam, ox: planeCam.ox + half }, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
+          }
+          owed.current = null
+          const plain = half
           // The card whose panel opened stays whole in sight, past half the move if it has to (a card at the edge).
           const ws = getWs()
           const card = cardSelected && ws ? cardsOn(ws.cards, ws.places, focusIdRef.current).find((c) => c.id === cardSelected) : undefined
@@ -745,6 +755,7 @@ export function CanvasView() {
             if (x1 > room) half -= x1 - room
             else if (x0 < reach.left + pad) half += reach.left + pad - x0
           }
+          if (half !== plain) owed.current = { plane: focusIdRef.current, by: half - plain }
           return glide(planeCam, { ...planeCam, ox: planeCam.ox + half }, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
         }
         if (focusIdRef.current) return
