@@ -58,6 +58,7 @@ import { useSeen, within } from '../canvas/visible'
 import { useTheme } from '../../../state/theme'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { CardFace } from '../cards/CardFace'
+import { TypeBadge } from '../cards/TypeBadge'
 import { CommitField } from '../../../ui/primitives/CommitField'
 import type { FindItem } from '../find/find'
 import { useStill } from '../canvas/still'
@@ -524,7 +525,7 @@ type HeadProps = {
   children?: ReactNode
 }
 
-// A row's or a column's head: a card's (its title, its type's colour down the left, as on a plane), or a typed name in
+// A row's or a column's head: a card's (its type a badge before its title, no bar or line, as on a plane, D-413), or a typed name in
 // mono over a dashed rule (a double-click renames it). Its totals under the name (a column's) or at its end (a row's).
 // What a card unfolded into (D-249) is a step in under it, numbered, in mono, `◇` when nobody meets it; renamed by a
 // double-click (on the card), never taken out here; a click opens the card's panel.
@@ -538,7 +539,7 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
   const tone = entry.card ? CARD_TONE[entry.card.type] : undefined
   // Others who have its card selected, wherever (D-265): their L's on its head.
   const peers = usePeersOn(entry.card && !sub ? entry.card.id : '')
-  // A card's head stands on the card face (D-358: its type's tint and edge, D-295's ink); a typed name's is no paper.
+  // A card's head stands on the card face (D-358: its type's tint, D-295's ink; bare, its type a badge, D-413); a typed name's is no paper.
   const face = !!entry.card && !sub
   const shell = {
     className: which === 'rows' ? styles.rowHead : styles.colHead,
@@ -577,6 +578,7 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
               {entry.n}
             </span>
           )}
+          {face && <TypeBadge type={entry.card!.type} className={styles.badge} />}
           <span className={styles.name} data-unnamed={!entry.name || undefined} data-find={`${which}|${entry.key}`}>
             {entry.name || (sub ? 'unnamed' : entry.card ? `untitled ${entry.card.type}` : 'name')}
           </span>
@@ -614,7 +616,7 @@ const Head = memo(function Head({ entry, which, style, at, hot: hotStore, lit, c
     </>
   )
   return face ? (
-    <CardFace {...shell} style={{ ...style, ['--type' as string]: tone }} tone={tone} tint data-card>
+    <CardFace {...shell} style={{ ...style, ['--type' as string]: tone }} tone={tone} tint bare data-card>
       {inside}
     </CardFace>
   ) : (

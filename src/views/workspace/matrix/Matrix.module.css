@@ -142,6 +142,17 @@
   font-size: var(--text-xs);
 }
 
+/* A card head's type as a badge (D-413), as on a plane card: over a column's name, before a row's. */
+.badge {
+  align-self: flex-start;
+  padding: var(--space-half) var(--space-1);
+  font-size: var(--w-text-xs);
+}
+
+.rowHead .badge {
+  align-self: center;
+}
+
 .name[data-unnamed='true'] {
   color: var(--fg-faint);
 }

@@ -20,6 +20,7 @@ import { useKept } from '../canvas/kept'
 import { useSeen, within } from '../canvas/visible'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
 import { CardFace } from '../cards/CardFace'
+import { TypeBadge } from '../cards/TypeBadge'
 import { CommitField } from '../../../ui/primitives/CommitField'
 import type { FindItem } from '../find/find'
 import { usePeersOn } from '../canvas/collab'
@@ -597,9 +598,12 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
           }}
         />
       ) : (
+        <>
+          {row.card && <TypeBadge type={row.card.type} word={false} className={styles.badge} />}
         <span className={styles.nameText} data-unnamed={!row.name || undefined} data-find={`n|${row.key}`}>
           {row.name || (row.card ? `untitled ${row.card.type}` : 'name')}
         </span>
+        </>
       )}
       {live && editor && !open && (
         <Button icon tone="danger" className={styles.remove} title={row.auto ? `take it out of the table (it stays a ${row.card!.type})` : 'take it out'} aria-label="Take it out" onClick={onRemove}>
@@ -609,9 +613,9 @@ function NameCell({ row, style, live, editor, naming, onPress, onRename, onRemov
       <Marks tier="s" tone={tone} live={live && !!onPick} peers={live ? peers : undefined} />
     </>
   )
-  // A card's name stands on the card face (D-358: its type's tint and edge, D-295's ink); a typed name's is no paper.
+  // A card's name stands on the card face (D-358: its type's tint, D-295's ink; bare, its colour a pill before it, D-413); a typed name's is no paper.
   return row.card ? (
-    <CardFace {...shell} style={style} tone={tone} tint flat data-card>
+    <CardFace {...shell} style={style} tone={tone} tint flat bare data-card>
       {inside}
     </CardFace>
   ) : (

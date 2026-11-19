@@ -40,7 +40,11 @@ head keep the bar (not asked; to decide after seeing it live). Picked on port 51
 word in the page's ink; `word={false}` a short pill alone), used by PlaneCard, the package's band, `CardSheet` (on top),
 `TaskSheet` (before its card's name, at 8 px so the day, steps and person still fit), `TimelineBar` and `TrayTask` (the
 pill alone before the name). All four are `bare`; an untinted bare face (a task's sheet, a tray task) keeps its outer
-line, only a tinted one loses it. The matrix's heads, the table's names and the threads' head keep the bar.
+line, only a tinted one loses it. The threads' head keeps the bar.
+
+**Matrix and table too (D-413, 2026-11-19):** a matrix's card head is bare with its type's badge (9 px) over a column's
+name and before a row's; a table's card name is flat and bare (no inset edge, the lighter wash over its row) with the
+short pill (no word) before it, since a row has no room for the word.
 
 ## What repeats (counted 2026-11-02)
 

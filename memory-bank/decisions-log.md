@@ -7619,8 +7619,8 @@ part, `cards/TypeBadge` (PlaneCard uses it too).
 - *Timeline:* a bar is bare (its light tint stays, grey with no card) with a short pill of its card's colour (no word)
   before its name; a ◆ unchanged; the no-day tray's task the same pill before `☐`.
 - *Kept:* an untinted bare face (a task's sheet, a tray task) keeps its outer line, so a white sheet still shows on a
-  white piece in light; only a tinted face loses it. The matrix's heads, the table's names and the threads' head keep
-  the bar (not asked).
+  white piece in light; only a tinted face loses it. The threads' head keeps the bar (not asked); the matrix's heads and
+  the table's names were badged by D-413.
 - *Checked:* the gallery in headless Chrome (a deck in focus dark and light, its task and card sheets, timeline bars
   late and finished, the tray, the timeline unframed, TypeBadge), typecheck, unit 1002, check:tokens, check:kit,
   check:gallery, check:repeats --names, check:gallery:live and check:scenes for decks.
@@ -7645,3 +7645,16 @@ part, `cards/TypeBadge` (PlaneCard uses it too).
   side view) old (a frozen worktree) and new in headless Chrome: the same buttons in the same order, `setup` opening
   and closing the same panel, no page errors.
 - *Not yet:* the agent's Markdown waits for the agent's redesign (the user, 2026-11-19).
+
+### D-413 · 2026-11-19 · Accepted (the user, after D-410 went live: "matrix ve tabloyu da rozetli yap"; extends D-409/D-410): a matrix's and a table's cards badged too
+**A matrix's card heads and a table's card names say their type with `TypeBadge`, not a bar.**
+- *Matrix:* a card's head (row or column) is bare (no bar, no line, the lighter wash) with its type's badge at 9 px
+  (`--w-text-xs`): over the name in a column's head, before it in a row's. A typed name's head and a criterion row
+  unchanged.
+- *Table:* a card's name cell is flat and bare: no inset edge on its left, the lighter wash over its row, the short pill
+  of its colour (no word) before the name; a row is one line and the name column often narrow.
+- *Code:* `CardFace` gains `flat` + `bare` (no inset edge, the wash over what's under it); Matrix's `Head` and Table's
+  `NameCell` use `TypeBadge`.
+- *Checked:* the gallery in headless Chrome (matrix unframed and in focus, table unframed; dark and light), typecheck,
+  unit 1188, check:tokens, check:kit, check:gallery, check:repeats --names, check:gallery:live for matrix and table.
+- *Not yet:* the user to see it live; the threads' head still has the bar (not asked).

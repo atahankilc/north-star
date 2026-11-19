@@ -73,3 +73,12 @@
 .face[data-flat='true'][data-tint='true'] {
   background: color-mix(in srgb, var(--tone) var(--card-tint), transparent);
 }
+
+/* Flat and bare (a table's row name, D-413): no inset edge either, the lighter tint over its row. */
+.face[data-flat='true'][data-bare='true'] {
+  box-shadow: none;
+}
+
+.face[data-flat='true'][data-bare='true'][data-tint='true'] {
+  background: color-mix(in srgb, var(--tone) var(--mix-wash), transparent);
+}

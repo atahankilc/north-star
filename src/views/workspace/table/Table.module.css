@@ -145,6 +145,11 @@
   color: var(--fg-strong);
 }
 
+/* A card's colour as a short pill before its name (D-413), no word: a row has no room for one. */
+.badge {
+  margin-right: var(--space-1);
+}
+
 .nameText {
   flex: 1;
   min-width: 0;
