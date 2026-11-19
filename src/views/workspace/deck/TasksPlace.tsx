@@ -34,10 +34,10 @@ function useBox() {
   return { ref, ...size }
 }
 
-// `head`: the place's head, given what goes in it (the tabs: one row, D-418).
+// `head`: the place's head, given what goes in it (the tabs: one row, D-419).
 export function TasksPlace({ page = false, editor, head }: { page?: boolean; editor: boolean; head: (tabs: ReactNode) => ReactNode }) {
   const { pieces, canvas, spots, canvases } = useWs()
-  // Every deck in the workspace (D-418: Tasks is the workspace's, as Talk and Docs are): this canvas's first, then the
+  // Every deck in the workspace (D-419: Tasks is the workspace's, as Talk and Docs are): this canvas's first, then the
   // others' by their canvas's order.
   const decks = useMemo(() => {
     const here = new Set(piecesOn(canvas, pieces, spots).map((p) => p.id))

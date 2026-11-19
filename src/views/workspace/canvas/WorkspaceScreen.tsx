@@ -55,7 +55,7 @@ export function WorkspaceScreen({ shown, loading = false, editor, canvasName, se
     <div className={styles.app} data-app>
       <Hud
         crumbs={
-          // A place as the page (D-418): the workspace's name goes back to the canvas, the place's name ends it; the
+          // A place as the page (D-419): the workspace's name goes back to the canvas, the place's name ends it; the
           // canvases' switch is the canvas's own, not shown on a page.
           placePage
             ? [

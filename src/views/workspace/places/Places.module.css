@@ -28,7 +28,7 @@
     bottom var(--dur-slow) var(--ease-out),
     left var(--dur-slow) var(--ease-out),
     border-radius var(--dur-slow) var(--ease-out);
-  /* `full` (D-418): the page grows out of the column it was, from the left edge to the whole sheet. */
+  /* `full` (D-419): the page grows out of the column it was, from the left edge to the whole sheet. */
   animation: grow var(--dur-slow) var(--ease-out);
 }
 
@@ -64,7 +64,7 @@
   visibility: hidden;
 }
 
-/* One head for every place (D-418): its name big, the tools and `×` at the right, a line under it. */
+/* One head for every place (D-419): its name big, the tools and `×` at the right, a line under it. */
 .head {
   display: flex;
   flex: none;

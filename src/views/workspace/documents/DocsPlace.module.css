@@ -211,7 +211,7 @@
   color: var(--accent-cyan);
 }
 
-/* The page's list in columns (D-418): what it is, who added it, when it changed, how long; the heads sort it. The
+/* The page's list in columns (D-419): what it is, who added it, when it changed, how long; the heads sort it. The
    heads are a row as the rows are: the same widths and gaps. */
 .heads {
   display: flex;

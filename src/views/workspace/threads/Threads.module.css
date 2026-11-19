@@ -648,7 +648,7 @@
   min-height: 0;
 }
 
-/* A channel's head (D-416, D-418): one line, its name and how many messages. */
+/* A channel's head (D-416, D-419): one line, its name and how many messages. */
 .channelTitle {
   display: flex;
   align-items: baseline;

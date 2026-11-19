@@ -212,7 +212,7 @@ type PanelProps = {
   onClose?: () => void
   // Talk as the page (D-416): the messages as lines down the left (who, when, what), no bubbles, yours like everyone's.
   lines?: boolean
-  // Under a place's own head (Talk, D-418): its `×` is the place's, so the conversation has none of its own.
+  // Under a place's own head (Talk, D-419): its `×` is the place's, so the conversation has none of its own.
   underHead?: boolean
 }
 
@@ -359,7 +359,7 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
             )}
           </ButtonGroup>
         </div>
-        {/* A channel (D-416, D-418): one line, its name and how many messages; it's on nothing. */}
+        {/* A channel (D-416, D-419): one line, its name and how many messages; it's on nothing. */}
         {channel ? (
           <h2 className={styles.channelTitle}>
             {thing.name}

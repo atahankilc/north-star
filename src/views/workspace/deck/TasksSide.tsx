@@ -220,7 +220,7 @@ export function BoardAndDays(p: { deck: WithId<Piece>; top: number; width: numbe
 }
 
 // A deck as a tab (D-300; Tasks' too, D-412): its number, its name, `⇆` when it's linked to a plane, what it counts.
-// `on`: what it's on, said after it (Tasks, D-418: the plane it's linked to, the canvas it's on when that's another).
+// `on`: what it's on, said after it (Tasks, D-419: the plane it's linked to, the canvas it's on when that's another).
 export const deckTab = (d: WithId<Piece>, i: number, count?: ReactNode, on?: string) => ({
   value: d.id,
   title: [d.name || 'deck', on].filter(Boolean).join(' · '),

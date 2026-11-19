@@ -46,7 +46,7 @@ to keep documents; the agent beside all of it. This is where each opens.
    of Talk's list, `+ channel`, the first message makes it; no resolve, no chip. Its rules go live with D-415's.
 5. The side view (D-300) folded into Tasks for a plane's linked deck too, once Tasks has its own `linked` strip.
 
-## Consistency (D-418, 2026-11-19)
+## Consistency (D-419, 2026-11-19)
 
 After a design review of every place (a subagent judging screenshots against the three):
 - **One head for every place**, beside the canvas and as the page (`PlaceHead`): its name big, what it shows beside it

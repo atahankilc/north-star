@@ -222,7 +222,7 @@ export function DocsPlace({ page = false }: { page?: boolean }) {
   // Its lesson (onboarding: `docs`).
   useEffect(() => learn('docs-open'), [])
   const { folder: atRaw, open: openId } = useDocsAt()
-  // Find (D-418): every folder's documents whose title has it, each with its folder's path; and the page's sort.
+  // Find (D-419): every folder's documents whose title has it, each with its folder's path; and the page's sort.
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<{ by: 'name' | 'by' | 'changed' | 'size'; desc: boolean }>({ by: 'changed', desc: true })
   const at = atRaw && folders.some((f) => f.id === atRaw) ? atRaw : null

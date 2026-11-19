@@ -24,7 +24,7 @@ import { usePageHost } from './pageHost'
 import styles from './Places.module.css'
 
 
-// One head for every place, beside the canvas and as the page (D-418): its name big, what it shows beside it (`after`),
+// One head for every place, beside the canvas and as the page (D-419): its name big, what it shows beside it (`after`),
 // its own tools, then `full` or `beside the canvas` and `×` at the right.
 export function PlaceHead({ place, after, tools }: { place: Place; after?: ReactNode; tools?: ReactNode }) {
   const page = usePlace((s) => s.open === place && s.page)
@@ -45,7 +45,7 @@ export function PlaceHead({ place, after, tools }: { place: Place; after?: React
   )
 }
 
-// What's found in a place (D-418): one field under its head, the same in every place; Escape empties it.
+// What's found in a place (D-419): one field under its head, the same in every place; Escape empties it.
 export function PlaceFind({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
   return (
     <div className={styles.find}>

@@ -98,7 +98,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
   const [done, setDone] = useState(false)
   // Channels (D-416) stand apart, in every scope, by name; the rest by when they were last written in.
   const channels = useMemo(() => all.filter((t) => t.on === 'channel').sort((a, b) => a.targetId.localeCompare(b.targetId)), [all])
-  // What's typed in Talk's find (D-418): a thread or channel whose thing, last words or last writer have it.
+  // What's typed in Talk's find (D-419): a thread or channel whose thing, last words or last writer have it.
   const [q, setQ] = useState('')
   const found = (t: WithId<Thread>) => {
     const k = q.trim().toLowerCase()
@@ -106,7 +106,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
     return [thingOf(t).name, t.lastText, t.lastName, t.targetId].some((x) => x?.toLowerCase().includes(k))
   }
   const sorted = useMemo(() => threads.filter((t) => t.on !== 'channel').sort((a, b) => b.lastAt - a.lastAt), [threads])
-  // A new channel's name being typed (D-416); Talk's page tool starts it too (D-418).
+  // A new channel's name being typed (D-416); Talk's page tool starts it too (D-419).
   const naming = useChannelNaming((s) => s.name)
   const setNaming = (name: string | null) => useChannelNaming.setState({ name })
   const makeChannel = (typed: string) => {
@@ -309,7 +309,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
           data-viewer-ok
         >
           <DragLine at="right" label="Talk's width" onDrag={(e) => dragWidth(tokenPx('--sheet-rail-w'), e.clientX)} />
-          {/* The place's head stays; a conversation opens under it, in the list's place (D-418). */}
+          {/* The place's head stays; a conversation opens under it, in the list's place (D-419). */}
           {listHead}
           {panel ?? list}
         </EdgeColumn>
