@@ -28,7 +28,7 @@ export const EVENTS = [
   'framed', 'brought', 'canvas-made', 'moved-canvas', 'evidence-added', 'status-set', 'doc-uploaded', 'undo', 'deleted',
   'task-for-card', 'task-moved',
   // Other stores.
-  'wizard', 'setup-open', 'finder-open', 'threads-open', 'thread-open', 'side-view', 'following', 'filter-open',
+  'wizard', 'setup-open', 'finder-open', 'threads-open', 'thread-open', 'side-view', 'docs-open', 'following', 'filter-open',
   'filter-set', 'doc-reader', 'settings-open', 'task-given', 'peer-joined', 'edit-refused',
   // The URL.
   'canvas-switch',
@@ -91,6 +91,8 @@ export const PAYLOADS: Record<LessonEvent, readonly string[]> = {
   'threads-open': [],
   'thread-open': ['kind'],
   'side-view': [],
+  // Docs opened, beside the canvas or as the page (D-412).
+  'docs-open': [],
   following: [],
   'filter-open': ['kind'],
   'filter-set': ['kind'],
@@ -419,7 +421,7 @@ export const LESSONS: readonly Lesson[] = [
 
   // 7. Decks and days
   {
-    id: 'deck', v: 2, format: 'lesson', roles: ALL, area: 'decks', since: 'D-252, D-256, D-300, D-349',
+    id: 'deck', v: 3, format: 'lesson', roles: ALL, area: 'decks', since: 'D-252, D-256, D-300, D-349, D-412',
     // A deck of tasks: a deck holding cards has its own lesson (card-deck).
     trigger: [
       { event: 'piece-made', when: { kind: 'kanban', holds: 'tasks' } },
@@ -433,7 +435,7 @@ export const LESSONS: readonly Lesson[] = [
       { title: "A task's panel", tab: 'task', body: 'Click a task to open it: who it is given to, its due day, its card, a checklist and notes. Overdue days turn magenta.', scene: 'task-panel' },
       { title: 'Only some tasks', tab: 'filter', body: "The dock's filter shows only tasks given to someone, due soon, for a card, or with a label. It passes: closing the deck clears it.", scene: 'deck-filter' },
       { title: 'Lanes', tab: 'lanes', body: '`lanes` in the dock splits the deck into rows by person or by card. Dropping a task in a lane gives it to that person or card; a lane folds away.', scene: 'deck-filter' },
-      { title: 'Decks beside you', tab: 'beside', body: "The side nav's decks button opens your decks beside whatever you are on, from anywhere, so you can move tasks while you work.", scene: 'side-view' },
+      { title: 'Tasks beside you', tab: 'beside', body: 'Tasks, bottom left, opens your decks beside the canvas from anywhere, so you can move tasks while you work.', scene: 'side-view' },
     ],
   },
   {
@@ -445,12 +447,20 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'side-view', v: 2, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314, D-349',
+    id: 'docs', v: 1, format: 'lesson', roles: ALL, area: 'decks', since: 'D-232, D-412',
+    trigger: [{ event: 'docs-open' }],
+    pages: [
+      { title: 'Docs', tab: 'docs', body: 'Every document you may see, newest first: the shared ones and your own. A row opens it here; `open ↗` gives it its window, to write in, share or place.' },
+      { roles: EDITORS, title: 'Write or upload', tab: 'new', body: '`full` makes Docs the page; its tools on the left write a new document or upload a .md.' },
+    ],
+  },
+  {
+    id: 'side-view', v: 3, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314, D-349, D-412',
     trigger: [{ event: 'side-view' }],
     pages: [
-      { title: 'Decks and days, beside you', tab: 'side view', body: "This opens from anywhere, beside what you are on: the plane, its deck, then the deck's days with `days ›`. The tabs are the canvas's decks.", scene: 'side-view' },
-      { title: 'Yours', tab: 'mine', body: '`MINE` in the corner lists the tasks given to you, from every deck.', scene: 'side-mine' },
-      { title: 'Every deck on days', tab: 'days', body: '`ALL · DAYS` in the corner puts the tasks of every deck on one strip of days.', scene: 'side-mine' },
+      { title: 'Tasks, beside you', tab: 'tasks', body: "Tasks opens beside the canvas from anywhere, or with `t`. The tabs are the canvas's decks, each under its tab. `full` makes Tasks the page, the deck's days beside it.", scene: 'side-view' },
+      { title: 'Yours', tab: 'mine', body: '`mine` lists the tasks given to you, from every deck.', scene: 'side-mine' },
+      { title: 'Every deck on days', tab: 'days', body: '`all · days` puts the tasks of every deck on one strip of days.', scene: 'side-mine' },
     ],
   },
   {
@@ -477,12 +487,12 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'comment', v: 6, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349, D-393, D-398, D-402, D-405',
+    id: 'comment', v: 7, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349, D-393, D-398, D-402, D-405, D-412',
     trigger: [{ event: 'thread-open' }, { event: 'threads-open' }], within: 'threads',
     pages: [
       { title: 'Comments stay on things', tab: 'comments', body: 'Right-click a plane, card, text, link or task and pick `comment`. The conversation stays on that thing.', scene: 'thread' },
       { title: 'Its chip', tab: 'chip', body: 'A chip under its corner counts the messages. Magenta means something new for you; `@` means you were mentioned. Click the chip to open it.', scene: 'thread' },
-      { title: 'Every conversation', tab: 'threads', body: "The threads button, bottom left, opens the list: what's new on top, the rest by place, resolved ones at the foot. A conversation opens on the right; the card at its top takes you there.", scene: 'threads-panel' },
+      { title: 'Every conversation', tab: 'threads', body: "Talk, bottom left, opens the list beside the canvas: what's new on top, the rest by place. A conversation opens in its place; the card at its top takes you there, `full` makes Talk the page.", scene: 'threads-panel' },
     ],
   },
 

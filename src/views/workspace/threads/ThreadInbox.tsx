@@ -24,8 +24,10 @@ import { Rule } from '../../../ui/primitives/Rule'
 import { Label } from '../../../ui/primitives/Label'
 import { Select } from '../../../ui/patterns/Select'
 import { EdgeColumn } from '../../../ui/patterns/EdgeColumn'
-import { SHEET_MIN_PX } from '../../../ui/foundation/feel'
-import { useWindowWidth } from '../../../ui/foundation/useWindowWidth'
+import { createPortal } from 'react-dom'
+import { DragLine } from '../../../ui/primitives/DragLine'
+import { closePlace, dragWidth, setPage, usePlace } from '../places/placeStore'
+import { usePageHost } from '../places/pageHost'
 import { tokenPx } from '../../../styles/cssToken'
 import styles from './Threads.module.css'
 import { CloseIcon } from '../../../ui/primitives/hudIcons'
@@ -74,10 +76,11 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
   const draft = useThreadView((s) => s.draft)
   const current = all.find((t) => t.id === openId) ?? null
   const convo = current ? { thread: current, draft: null } : draft ? { thread: null, draft } : null
-  // A window too narrow for the list, the main screen and a conversation: the list gives way while one is open, and
-  // the conversation's `all threads` brings it back by closing itself (D-393).
-  const narrow = useWindowWidth() < tokenPx('--sheet-rail-w') + 2 * tokenPx('--panel-w') + SHEET_MIN_PX
-  const listShown = listOpen && !(narrow && convo)
+  // Talk as a place (D-412): beside the canvas one column on the left, the conversation in the list's place; as the
+  // page, the list and the conversation side by side in the page's host.
+  const asPage = usePlace((s) => s.open === 'talk' && s.page)
+  const placeWidth = usePlace((s) => s.width)
+  const host = usePageHost((s) => s.el)
   const me = myUid()
   const seen = useReads(wid, me || null).data?.seen
   // The resolved ones, behind a word at the list's foot (D-405), instead of the open ones.
@@ -156,25 +159,13 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
     ...(planeScope ? [{ value: planeScope, label: `in ${(scopeName?.(planeScope) ?? 'a plane').replace(/^"|"$/g, '')}` }] : []),
   ]
 
-  return (
+  const fullButton = (
+    <Button onClick={() => setPage(!asPage)} title={asPage ? 'beside the canvas again' : "as the page, in the canvas's place"}>
+      {asPage ? 'beside the canvas' : 'full'}
+    </Button>
+  )
+  const list = (
     <>
-      <AnimatePresence>
-        {listShown && (
-          <EdgeColumn
-            key="list"
-            side="left"
-            // Beside the HUD's tools, which keep their rail of ground (D-389).
-            offset="var(--sheet-rail-w)"
-            width="var(--panel-w)"
-            label="Threads"
-            // Escape closes it, unless a conversation is open (that closes first): the one Escape stack (D-359).
-            onClose={() => toggleInbox(false)}
-            escape={!openId && !draft}
-            className={styles.list}
-            data-learn="threads"
-            data-off-space
-            data-viewer-ok
-          >
             <header className={styles.listHead}>
               <span className={styles.listTitle}>Threads</span>
               {scopes.length > 1 ? (
@@ -190,7 +181,8 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
               )}
               <ButtonGroup className={styles.actions}>
                 {counts.new > 0 && <Button onClick={markAll}>mark all read</Button>}
-                <Button icon aria-label="Close threads" title="close" onClick={() => toggleInbox(false)}>
+                {fullButton}
+                <Button icon aria-label="Close threads" title="close" onClick={closePlace}>
                   <CloseIcon />
                 </Button>
               </ButtonGroup>
@@ -222,29 +214,62 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
                 </li>
               )}
             </ol>
-          </EdgeColumn>
-        )}
-      </AnimatePresence>
-      {/* The conversation picked in the list or from a chip, or one being started (D-197, D-199): on the right, where a
-          thing's panel is; over that panel while it's open, and closing it shows the panel again. */}
-      <AnimatePresence>
-        {convo && (
-          <EdgeColumn key="convo" label={`Thread: ${titleOf(convo.thread ?? convo.draft!)}`} escape={false} className={styles.convo} data-learn="thread-column" data-off-space data-viewer-ok>
-            <ThreadPanel
-              key={convo.thread?.id ?? 'draft'}
-              wid={wid}
-              thread={convo.thread}
-              draft={convo.draft}
-              title={titleOf(convo.thread ?? convo.draft!)}
-              thing={thingOf(convo.thread ?? convo.draft!)}
-              isOwner={isOwner}
-              where={convo.thread ? (whereOf?.(convo.thread) ?? undefined) : undefined}
-              onShow={convo.thread ? () => onShow(convo.thread!) : undefined}
-              onList={listShown ? undefined : () => (toggleInbox(true), narrow && closeThread())}
-            />
-          </EdgeColumn>
-        )}
-      </AnimatePresence>
     </>
+  )
+  const panel = convo && (
+    <ThreadPanel
+      key={convo.thread?.id ?? 'draft'}
+      wid={wid}
+      thread={convo.thread}
+      draft={convo.draft}
+      title={titleOf(convo.thread ?? convo.draft!)}
+      thing={thingOf(convo.thread ?? convo.draft!)}
+      isOwner={isOwner}
+      where={convo.thread ? (whereOf?.(convo.thread) ?? undefined) : undefined}
+      onShow={convo.thread ? () => onShow(convo.thread!) : undefined}
+      // Beside the canvas it's in the list's place: back to the list. As the page the list is beside it.
+      onList={asPage ? undefined : () => (closeThread(), toggleInbox(true))}
+      onClose={asPage ? closeThread : closePlace}
+    />
+  )
+
+  if (asPage)
+    return host
+      ? createPortal( // kit-ok: Talk as the page (D-412) draws into the page's host in the main sheet
+          <div className={styles.talkPage}>
+            <div className={styles.list} data-learn="threads" data-viewer-ok>
+              {list}
+            </div>
+            <div className={styles.convo} data-learn="thread-column" data-viewer-ok>
+              {panel ?? <p className={styles.lead}>Pick a thread.</p>}
+            </div>
+          </div>,
+          host,
+        )
+      : null
+
+  return (
+    <AnimatePresence>
+      {(listOpen || convo) && (
+        <EdgeColumn
+          key="talk"
+          side="left"
+          // Beside the HUD's tools, which keep their rail of ground (D-389).
+          offset="var(--sheet-rail-w)"
+          width={placeWidth ? `${placeWidth}px` : 'var(--panel-w)'}
+          label={convo ? `Thread: ${titleOf(convo.thread ?? convo.draft!)}` : 'Threads'}
+          // Escape closes the list; a conversation's own Escape closes it first (the one Escape stack, D-359).
+          onClose={closePlace}
+          escape={!convo}
+          className={convo ? styles.convo : styles.list}
+          data-learn={convo ? 'thread-column' : 'threads'}
+          data-off-space
+          data-viewer-ok
+        >
+          <DragLine at="right" label="Talk's width" onDrag={(e) => dragWidth(tokenPx('--sheet-rail-w'), e.clientX)} />
+          {panel ?? list}
+        </EdgeColumn>
+      )}
+    </AnimatePresence>
   )
 }

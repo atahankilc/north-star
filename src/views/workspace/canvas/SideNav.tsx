@@ -23,14 +23,25 @@ import { useTableUi } from '../table/Table'
 import { shownPieces } from './shownBox'
 import { useAuthor } from '../text/TextItems'
 import { CARD_TONE } from '../../../ui/foundation/cardTone'
-import { TasksTool } from '../deck/TasksTool'
+import { usePlace } from '../places/placeStore'
+import { DocsTools } from '../documents/DocsPlace'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
 import { useWs } from './context'
 import { FitTool } from './FitTool'
 import { FinderTool } from './FinderTool'
 
 // `focused`: the piece in focus, if any; `editor`: whether you may make things (viewers make nothing, D-098).
+// While a place is the page (D-412), the page's own actions stand here instead of the canvas's.
 export function SideNav({ wid, focused, editor }: { wid: string; focused?: WithId<Piece>; editor: boolean }) {
+  const page = usePlace((s) => (s.page ? s.open : null))
+  if (page)
+    return (
+      <>
+        {page === 'docs' && <DocsTools />}
+        <FinderTool />
+        <GuideTool />
+      </>
+    )
   return (
     <>
       {/* A matrix or a table in focus takes its rows and columns from its setup (D-204, D-209), not from `+`. */}
@@ -38,7 +49,6 @@ export function SideNav({ wid, focused, editor }: { wid: string; focused?: WithI
       <FitTool plane={focused?.id ?? null} />
       <FinderTool />
       <GuideTool />
-      <TasksTool />
     </>
   )
 }

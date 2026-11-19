@@ -64,7 +64,8 @@ import { GRID } from '../../../data/grid'
 import { goToPlace, useGoTo, type Place } from './goTo'
 import { Beside } from './Beside'
 import { TasksSide } from '../deck/TasksSide'
-import { closeTasksSide, escapeTasksSide, toggleDaysOf, toggleFromPlane, toggleTasksSide, useTasksSide } from '../deck/sideState'
+import { closeTasksSide, escapeTasksSide, toggleDaysOf, toggleFromPlane, useTasksSide } from '../deck/sideState'
+import { openPlace } from '../places/placeStore'
 import { isOpen, OPEN_PAD, shownPieces, useOpenSize } from './shownBox'
 import { deleteDocument, docRights, downloadDocument, unshareDocument, type Doc } from '../../../data/documents'
 import { closeDocs, shareOrAsk, openDoc, pinnedView, readDoc, readerLeft, uploadFiles, useDocUi } from '../documents/Documents'
@@ -840,8 +841,8 @@ export function CanvasView() {
       const tv = useThreadView.getState()
       if (e.key === 'Escape' && (tv.openId || tv.draft || tv.inbox)) return
       if (e.key === 'c' && !e.metaKey && !e.ctrlKey && !e.altKey) return toggleThreadPins()
-      // The tasks side view (D-300), from anywhere.
-      if (e.key === 't' && !e.metaKey && !e.ctrlKey && !e.altKey) return toggleTasksSide()
+      // Tasks, a place beside the canvas (D-412), from anywhere.
+      if (e.key === 't' && !e.metaKey && !e.ctrlKey && !e.altKey) return openPlace('tasks')
       // Fit (D-186): the canvas's planes, or in focus the plane's contents.
       if (e.key === '0' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         fitRef.current()

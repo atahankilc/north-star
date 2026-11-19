@@ -17,7 +17,7 @@ import { useDoc } from '../data/hooks'
 import type { Member } from '../data/model'
 import { WorkspaceContext } from '../views/workspace/canvas/context'
 import { useFind } from '../views/workspace/find/find'
-import { toggleTasksSide, useTasksSide } from '../views/workspace/deck/sideState'
+import { openPlace, usePlace } from '../views/workspace/places/placeStore'
 import { useProgress } from './progress'
 import { startEvents, stopEvents, onLearn, learn } from './events'
 import { readBusy, startBusy } from './busy'
@@ -409,7 +409,7 @@ export function Coach() {
     setNews(null)
     useProgress.getState().setLastRelease(newest())
     // Opened, never closed (the side view may already be open).
-    if (go === 'side-view') void (!useTasksSide.getState().open && toggleTasksSide())
+    if (go === 'side-view') void (usePlace.getState().open !== 'tasks' && openPlace('tasks'))
     else if (go === 'finder') useFind.setState({ open: true })
     else if (go === 'guide') setGuideOpen(true)
     else if (go === 'crumb-prompt') document.querySelector<HTMLElement>('[data-learn="crumb"]')?.click()

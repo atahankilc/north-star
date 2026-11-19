@@ -18,8 +18,9 @@ import { useGuides } from '../views/workspace/canvas/guides'
 import { useKanbanSizes, useOpenSize } from '../views/workspace/canvas/sizes'
 import { usePresence } from '../data/presence'
 import { useHistory } from '../data/history'
+import { usePlace } from '../views/workspace/places/placeStore'
 
-const stores = [useCanvasView, useKanbanUi, useMatrixUi, useTableUi, useSetup, useFind, useTasksSide, usePlaneFilter, useThreadView, useDocUi, useShelf, useGoTo, useGuides, useOpenSize, useKanbanSizes, usePresence]
+const stores = [useCanvasView, useKanbanUi, useMatrixUi, useTableUi, useSetup, useFind, useTasksSide, usePlaneFilter, useThreadView, useDocUi, useShelf, useGoTo, useGuides, useOpenSize, useKanbanSizes, usePresence, usePlace]
 const KEEP = ['north-star.theme', 'north-star.motion']
 
 export function fresh() {

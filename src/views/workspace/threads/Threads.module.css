@@ -533,3 +533,26 @@
   flex: none;
 }
 
+
+/* Talk as the page (D-412): the list on the left, the conversation on the rest, a line between. */
+.talkPage {
+  display: grid;
+  grid-template-columns: var(--panel-w) 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.talkPage > .list,
+.talkPage > .convo {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.talkPage > .list {
+  border-right: var(--line-w) solid var(--line);
+}
+
+.talkPage > .convo > .lead {
+  margin: auto;
+}

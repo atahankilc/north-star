@@ -1,0 +1,75 @@
+/* Docs as a place (DocsPlace.tsx, D-412). */
+.list {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: var(--space-1);
+  min-height: 0;
+  padding: var(--space-3);
+  overflow-y: auto;
+}
+
+.row {
+  min-height: var(--control-lg);
+}
+
+.kind {
+  flex: none;
+  min-width: 4ch;
+  color: var(--fg-dim);
+}
+
+.meta {
+  flex: none;
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.back {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.reading {
+  padding: var(--space-4) var(--space-6) var(--space-8);
+}
+
+/* As the page: the list on the left, the reading on the rest. */
+.split {
+  display: grid;
+  grid-template-columns: var(--panel-w) 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.split > .list {
+  border-right: var(--line-w) solid var(--line);
+}
+
+.page {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.readingWide {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-6) var(--space-12);
+}
+
+.none {
+  padding: var(--space-6);
+}
+
+/* The upload tool's file picker: never drawn (a tool strip's layout would show it). */
+.picker {
+  display: none !important;
+}

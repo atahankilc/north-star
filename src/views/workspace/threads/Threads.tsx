@@ -207,9 +207,11 @@ type PanelProps = {
   where?: string
   onShow?: () => void
   onList?: () => void
+  // Its `×` (D-412: beside the canvas it closes Talk; as the page, only the conversation).
+  onClose?: () => void
 }
 
-export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, onShow, onList }: PanelProps) {
+export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, onShow, onList, onClose }: PanelProps) {
   const messages = useMessages(wid, thread?.id ?? null)
   const members = useWorkspaceMembers(wid, useWs().workspace.memberIds)
   const reads = useReads(wid, myUid() || null).data
@@ -334,7 +336,7 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
           threads` opens it. */}
       <header className={styles.head}>
         <div className={styles.headTop}>
-          {onList && <Button onClick={onList}>all threads</Button>}
+          {onList && <Button onClick={onList}>‹ threads</Button>}
           <ButtonGroup className={styles.actions}>
             {thread && <Button onClick={() => setResolved(wid, thread.id, !resolved).catch(fail)}>{resolved ? 'reopen' : 'resolve'}</Button>}
             {mayDeleteThread && (
@@ -342,7 +344,7 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
                 delete
               </Button>
             )}
-            <Button icon aria-label="Close thread" title="close" onClick={closeThread}>
+            <Button icon aria-label="Close thread" title="close" onClick={onClose ?? closeThread}>
               <CloseIcon />
             </Button>
           </ButtonGroup>

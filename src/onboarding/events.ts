@@ -36,6 +36,8 @@ export const EMITS = [
   // (CanvasView), a feature axis unfolded (Matrix), a folded parts tree (PlaneCards); the workspaces page; the coach.
   'plus-open', 'context-menu', 'crumb-open', 'console-shown', 'axis-unfold', 'parts-folded',
   'workspaces-open', 'ws-made', 'join-requested', 'sidenav-rest', 'guide-open',
+  // Docs opened (DocsPlace, D-412).
+  'docs-open',
 ] as const satisfies readonly LessonEvent[]
 
 // Events emitted for some kinds only: check:lessons wants each other kind a lesson listens for listed in

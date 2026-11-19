@@ -38,7 +38,7 @@ const scene: Scene = {
     }, 'the threads’ messages'),
   ],
   steps: [
-    { at: 300, do: cursor.to('[aria-label^="Threads"]', 1000) },
+    { at: 300, do: cursor.to('[aria-label^="Talk"]', 1000) },
     { do: wait(400) },
     { do: cursor.press() },
     // The panel opens; a look down what's new.

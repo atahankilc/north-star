@@ -434,6 +434,9 @@ feature comes back as a piece, and check them with the user then.
   over a menu, the finder, a wizard, typing or Settings; the kind guide the glued column, `?` the finder's twin;
   keys shown nowhere in the app (D-344), only in `?` and lessons, as this computer writes them (`Ctrl+F` off a Mac, D-355).
 
+## The shell (D-412, docs/specs/shell.md)
+- The canvas is home, filling the window until something docks; Talk, Tasks and Docs open beside it as a column on the left ground, `full` makes one the page in the canvas's place; the right is the thing selected and the agent at the far right; the HUD bare buttons on the left edge: the page's actions in the middle, the places at the foot.
+
 ## Workspaces page
 - The page is for going back to work (D-338, docs/specs/workspaces-page.md): centred; the big title with its count, one
   prompt as wide as the page (filter, a new name ↵, an invite code ↵; `import .zip` at its end, a dropped .zip imports),

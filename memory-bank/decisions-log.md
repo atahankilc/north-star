@@ -7646,6 +7646,15 @@ part, `cards/TypeBadge` (PlaneCard uses it too).
   and closing the same panel, no page errors.
 - *Not yet:* the agent's Markdown waits for the agent's redesign (the user, 2026-11-19).
 
+### D-412 · 2026-11-19 · Accepted (the user, after many rounds on the talk preview, port 5193: "tamam güzel implemente et"; answers Q-036; docs/specs/shell.md): the app's shell, places beside the canvas
+- **The canvas is home:** with nothing docked it fills the window, square; it floats as the sheet (D-387) only while something is docked beside it.
+- **Places, Talk, Tasks, Docs:** each opens first beside the canvas, a column on the left ground (as a right panel lies on the right); `full` makes it the page, in the canvas's place in the main sheet; `beside the canvas` back; `×` closes it, the canvas back. One place open at a time.
+- **The right is the thing selected and, at the far right, the agent** (unchanged).
+- **The HUD on the left edge, bare buttons:** the open page's actions at the middle (the canvas's side nav; a page's own while it's the page); the places at the foot over who's here, you and the gear. No canvas button.
+- **Talk** is the threads (D-405): a conversation opens in the list's place; as the page the list and the conversation side by side. **Tasks:** the canvas's decks, `mine`, `all · days`, the deck's real board and days; the side nav's decks button and `t` open it; the side view (D-300) stays for a plane's linked deck. **Docs:** the documents you may see, a list; one opens in its place; as the page the list and the reading.
+- Rejected on the way: the HUD in a bay of the left edge (every shape: a curve, a squircle, a half pill, a hairline, mist), capsules or a track round the buttons, labels that slide out, a drawer or a floating card for the left panel, a canvas button, the canvas floating while nothing is docked.
+- *Not yet:* folders for Docs and channels for Talk (data and rules changes: their own steps, the deploy asked first); a page's address.
+
 ### D-413 · 2026-11-19 · Accepted (the user, after D-410 went live: "matrix ve tabloyu da rozetli yap"; extends D-409/D-410): a matrix's and a table's cards badged too
 **A matrix's card heads and a table's card names say their type with `TypeBadge`, not a bar.**
 - *Matrix:* a card's head (row or column) is bare (no bar, no line, the lighter wash) with its type's badge at 9 px

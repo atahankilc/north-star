@@ -16,6 +16,9 @@ import type { WorkspacePage } from '../../../ui/patterns/Settings'
 import { runCells } from '../../../ui/primitives/Appear'
 import { Finder } from '../find/Finder'
 import { ThreadsTool } from '../threads/ThreadsTool'
+import { TasksTool } from '../deck/TasksTool'
+import { DocsTool } from '../documents/DocsTool'
+import { CanvasBehind, Places } from '../places/Places'
 import { CanvasCrumb } from './CanvasSwitch'
 import { CanvasView } from './CanvasView'
 import { useWs } from './context'
@@ -62,13 +65,21 @@ export function WorkspaceScreen({ shown, loading = false, editor, canvasName, se
         settings={settings}
         settingsName={workspace.name}
         settingsBadge={settingsBadge}
-        // Who's here, then the threads on their own above your square and the gear (D-193, D-344).
+        // Who's here, then the places over your square and the gear (D-412): Talk, Tasks, Docs.
         corner={<PeopleHere />}
-        tools={<ThreadsTool wid={wid} threads={threads} />}
+        tools={
+          <>
+            <ThreadsTool wid={wid} threads={threads} />
+            <TasksTool />
+            <DocsTool />
+          </>
+        }
         side={<SideNav wid={wid} focused={focused} editor={editor} />}
       />
       {/* One per canvas (D-302): going to another builds it anew, its camera its own. */}
-      {!loading && <CanvasView key={shown} />}
+      <CanvasBehind>{!loading && <CanvasView key={shown} />}</CanvasBehind>
+      {/* Talk, Tasks and Docs beside the canvas, or one as the page in its place (D-412). */}
+      {!loading && <Places editor={editor} />}
       {/* The finder (⌘F, the side nav's compass): nothing drawn until it's opened. */}
       {!loading && <Finder />}
       {children}

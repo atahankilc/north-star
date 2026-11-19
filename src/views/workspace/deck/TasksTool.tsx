@@ -1,4 +1,4 @@
-// The tasks side view's button (D-300) in the side nav, after `+`, fit and the compass: columns over a time bar (a
+// Tasks' button (D-412): at the HUD's foot, it opens Tasks, a place beside the canvas (or the page). Before, the tasks side view's button (D-300) in the side nav, after `+`, fit and the compass: columns over a time bar (a
 // deck and its days), shown only while the canvas has a deck or a timeline; cyan while the side view is open; `t` does
 // the same. A click opens it on the deck you had, or on MINE when something new is given to you. Its magenta count is
 // still tasks given to you since you last looked (D-261; looking is MINE shown, your read marks
@@ -6,23 +6,23 @@
 // presence, so a follower's opens there too.
 import { useEffect } from 'react'
 import { useAuth } from '../../../data/auth'
-import { piecesOn } from '../../../data/canvases'
 import { setPresenceTasks } from '../../../data/presence'
 import { finished } from '../../../data/tasks'
 import { useReads } from '../../../data/threads'
 import { useWs } from '../canvas/context'
-import { loadTasksSide, sideShared, toggleTasksSide, useTasksSide } from './sideState'
+import { loadTasksSide, sideShared, useTasksSide } from './sideState'
+import { openPlace, usePlace } from '../places/placeStore'
 import { ToolButton } from '../../../ui/primitives/ToolButton'
 import { DeckIcon } from '../../../ui/primitives/hudIcons'
 import { plural } from '../../../model/words'
 
 export function TasksTool() {
-  const { wid, tasks, pieces, canvas, spots } = useWs()
+  const { wid, tasks, pieces } = useWs()
   const { user } = useAuth()
   const me = user?.id ?? null
   const reads = useReads(wid, me)
   const lookedAt = reads.data?.tasks ?? 0
-  const open = useTasksSide((s) => s.open)
+  const open = usePlace((s) => s.open === 'tasks')
   useEffect(() => loadTasksSide(wid), [wid])
   const shared = useTasksSide(sideShared)
   useEffect(() => setPresenceTasks(shared), [shared])
@@ -30,16 +30,15 @@ export function TasksTool() {
   const mine = tasks.filter((t) => me && t.assignee === me && !finished(t, pieces) && pieces.some((p) => p.id === t.pieceId))
   // Nothing counts as new until your read marks are in.
   const fresh = reads.isLoading ? 0 : mine.filter((t) => (t.givenAt ?? 0) > lookedAt && t.givenBy !== me).length
-  if (!piecesOn(canvas, pieces, spots).some((p) => p.kind === 'kanban' || p.kind === 'timeline')) return null
   return (
     <ToolButton
       data-learn="tasks"
       pressed={open}
       badge={fresh}
-      label={`Decks and their days${fresh ? `: ${plural(fresh, 'task')} given to you, new` : ''}`}
-      title={fresh ? `decks and days (t) · ${fresh} given to you since you last looked` : 'decks and days (t)'}
+      label={`Tasks${fresh ? `: ${plural(fresh, 'task')} given to you, new` : ''}`}
+      title={fresh ? `Tasks (t) · ${fresh} given to you since you last looked` : 'Tasks: decks and their days (t)'}
       data-viewer-ok
-      onClick={() => toggleTasksSide(fresh && !open ? 'mine' : undefined)}
+      onClick={() => openPlace('tasks')}
     >
       <DeckIcon />
     </ToolButton>

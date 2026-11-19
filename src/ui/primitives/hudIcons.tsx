@@ -48,6 +48,14 @@ export const DeckIcon = () => (
   </Icon>
 )
 
+// Docs (D-412): a sheet with its corner folded, two lines of text on it.
+export const DocsIcon = () => (
+  <Icon>
+    <path d="M3.75 1.75h7l3.5 3.5v11h-10.5z" />
+    <path d="M10.75 1.75v3.5h3.5M6.5 9h5M6.5 12h5" />
+  </Icon>
+)
+
 // Threads: the comment mark (Threads.tsx's CommentIcon, on this grid).
 export const ThreadsIcon = () => (
   <Icon>

@@ -12,9 +12,9 @@ const given = (ws: Ws): Ws => ({
 
 export default example({
   name: 'TasksTool',
-  place: 'hud/navigation',
+  place: 'hud/corner',
   file: 'src/views/workspace/deck/TasksTool.tsx',
-  note: 'the side nav’s tasks button: shown with a deck or timeline on the canvas; it counts tasks given to you since you last looked',
+  note: 'Tasks’ button at the HUD’s foot (D-412): it opens Tasks beside the canvas; it counts tasks given to you since you last looked',
   states: {
     'given to you': { fixture: given(PAZAR), render: () => <TasksTool /> },
     'nothing new': { fixture: PAZAR, render: () => <TasksTool /> },

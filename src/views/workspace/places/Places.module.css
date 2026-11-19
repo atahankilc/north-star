@@ -1,0 +1,54 @@
+/* A place beside the canvas and as the page (src/views/workspace/places/Places.tsx, D-412). */
+
+.column {
+  font-size: var(--text-sm);
+}
+
+/* The page: the main sheet's box (sheet.ts's values; the whole window while nothing is docked), under the HUD and the
+   ground, over the hidden canvas. Clear of the breadcrumb's bar on top and of the HUD's buttons on the left. */
+.page {
+  position: fixed;
+  z-index: calc(var(--z-hud) - 1);
+  top: var(--sheet-b, 0px);
+  right: var(--sheet-x1, 0px);
+  bottom: var(--sheet-b, 0px);
+  left: var(--sheet-x0, 0px);
+  display: flex;
+  flex-direction: column;
+  padding: var(--hud-h) 0 0 max(0px, calc(var(--sheet-rail-w) - var(--sheet-x0, 0px)));
+  overflow: hidden;
+  border-radius: var(--sheet-round, 0px);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  transition:
+    top var(--dur-slow) var(--ease-out),
+    right var(--dur-slow) var(--ease-out),
+    bottom var(--dur-slow) var(--ease-out),
+    left var(--dur-slow) var(--ease-out),
+    border-radius var(--dur-slow) var(--ease-out);
+}
+
+.pageBody {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.talkHost {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+/* The canvas under a page: laid out as ever, unseen. */
+.behind {
+  display: contents;
+}
+
+.behind[data-hidden] {
+  visibility: hidden;
+}

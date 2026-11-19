@@ -25,6 +25,8 @@ export const RELEASES: readonly Release[] = [
     date: '2026-11-18',
     title: 'Threads, new first',
     items: [
+      // D-412: the places beside the canvas.
+      { title: 'Talk, Tasks, Docs', tab: 'places', line: 'Bottom left: Talk, Tasks and Docs open beside the canvas; `full` makes one the page. The canvas fills the window until something docks.', scene: 'side-view', lessons: ['comment', 'side-view', 'docs'] },
       // D-405: the threads' list and a conversation drawn anew.
       { title: 'New first', tab: 'threads', line: 'The threads list puts what’s new on top, resolved ones at its foot. A conversation shows its card, each message in its writer’s colour.', scene: 'threads-panel', lessons: ['comment'] },
     ],

@@ -24,7 +24,7 @@ export default example({
   name: 'ThreadsTool',
   place: 'hud/corner',
   file: 'src/views/workspace/threads/ThreadsTool.tsx',
-  note: 'the corner’s threads tool (D-402, D-193): a magenta dot with new ones, a count with a mention, lit while the list is open',
+  note: 'Talk’s button at the HUD’s foot (D-412; D-402, D-193): a magenta dot with new ones, a count with a mention, lit while Talk is open',
   states: {
     'something new': { fixture: withThreads(PAZAR), render: () => <Fresh /> },
     'nothing new': { fixture: PAZAR, render: () => <ThreadsTool wid={PAZAR.wid} threads={[]} /> },

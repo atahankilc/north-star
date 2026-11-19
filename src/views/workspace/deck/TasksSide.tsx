@@ -239,7 +239,7 @@ function NewMark() {
 type PartProps = { box: Bounds; editor: boolean; onTask: (t: Task) => void; dock: ReactNode }
 
 // A deck's board in a view of its own (as beside a plane), its dock with what it does.
-function Board({ box, deck, editor, onTask, onCard, dock, close }: PartProps & { deck: WithId<Piece>; onCard: (c: Card) => void; close: ReactNode }) {
+export function Board({ box, deck, editor, onTask, onCard, dock, close }: PartProps & { deck: WithId<Piece>; onCard: (c: Card) => void; close: ReactNode }) {
   const { tasks } = useWs()
   const { el, view, pan } = usePaneView(kanbanBounds(deck, tasks), box, true, 0.85)
   return (
@@ -257,7 +257,7 @@ function Board({ box, deck, editor, onTask, onCard, dock, close }: PartProps & {
 
 // A deck's days: the timeline linked to it, else one of its own here (rows by who). Every deck's (`deck` null): the
 // timeline stuck to `plane` when there's one (a plane with no deck, D-300), else one of its own (rows by deck).
-function Days({ box, deck, plane, editor, onTask, dock }: PartProps & { deck: WithId<Piece> | null; plane: WithId<Piece> | null }) {
+export function Days({ box, deck, plane, editor, onTask, dock }: PartProps & { deck: WithId<Piece> | null; plane: WithId<Piece> | null }) {
   const { pieces, tasks, cards, canvas, spots } = useWs()
   // A deck's timeline, linked to it or through its plane; a plane's, linked to it (a plane with no deck).
   const linked = deck ? timelineOf(deck.id, pieces) : plane ? pieces.find((p) => p.kind === 'timeline' && p.stuckTo === plane.id) : undefined
@@ -300,7 +300,7 @@ const Name = ({ deck }: { deck: WithId<Piece> }) => (
 
 // Tasks given to you, not finished, across this canvas's decks, by deck; the new ones (given by someone else since you
 // last looked) marked `●`, and seen once shown. A row picks its task: its panel opens here, nothing else moves.
-function Mine({ decks, top, children }: { decks: WithId<Piece>[]; top: number; children: ReactNode }) {
+export function Mine({ decks, top, children }: { decks: WithId<Piece>[]; top: number; children: ReactNode }) {
   const { wid, tasks, pieces } = useWs()
   const { user } = useAuth()
   const me = user?.id ?? null
@@ -348,7 +348,7 @@ function Mine({ decks, top, children }: { decks: WithId<Piece>[]; top: number; c
             })}
           </section>
         ))}
-        {groups.length > 0 && <p className={styles.foot}>● new since you last looked (the count on the side nav&apos;s icon). A row opens its task here.</p>}
+        {groups.length > 0 && <p className={styles.foot}>● new since you last looked (the count on Tasks&apos; button). A row opens its task here.</p>}
       </div>
       <FocusDock label="Mine" name={<span className={pane.kind}>mine</span>}>
         {children}

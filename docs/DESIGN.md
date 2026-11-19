@@ -302,10 +302,14 @@ Values will be tuned against contrast checks (WCAG AA for text).
 ### HUD (D-027, D-175)
 - Top left on every page but the landing (which has none, D-340): the breadcrumb (`# north-star / workspaces / <name>`, then the focused plane's name, D-189).
   Everything else moves to a left side nav piece by piece. Screen-edge margins come only from `--hud-x` / `--hud-y`.
+- The shell (D-412, docs/specs/shell.md): the canvas fills the window until something docks; Talk, Tasks and Docs
+  open beside it as a column on the left ground (`full`: the page, in the canvas's place in the main sheet); the right
+  is the thing selected and the agent at the far right. On the left edge bare buttons: the open page's actions in the
+  middle (the canvas's side nav, or a page's own), the places at the foot over who's here, you and the gear.
 - The side nav's tools at the middle of the left edge (D-178): ToolButton cells like the gear (D-344); the `+` a drawn 18 px (every icon's size, D-402)
   magenta `+` in its cell, its menu opening right.
 - Bottom-left corner, `--space-3` from the edges, top to bottom (D-175, D-193): people here (D-169: squares, no names,
-  overlapping, name on hover, `+N` past four; a click follows), the threads button, your square (initial,
+  overlapping, name on hover, `+N` past four; a click follows), Talk, Tasks and Docs (D-412), your square (initial,
   name on hover), the ⚙ (a cyan count when people wait to join). The side nav and the corner are each one
   `ButtonGroup vertical`, and the gaps are its own (D-402): a circle filled to its edge (`data-filled`) gets outside
   the air an icon keeps inside its cell, so every seen gap is one (14 px at the normal size); nothing else sets a gap. Anything else bottom left stays `--corner-h` above.
