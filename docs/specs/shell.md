@@ -44,7 +44,18 @@ to keep documents; the agent beside all of it. This is where each opens.
    document's folder as a dropdown. Pushed only once the rules are deployed (the user's yes first).
 4. **Channels** for Talk (D-416, built 2026-11-19): a thread `on: 'channel'` named by its `targetId`; CHANNELS on top
    of Talk's list, `+ channel`, the first message makes it; no resolve, no chip. Its rules go live with D-415's.
-5. The side view (D-300) folded into Tasks for a plane's linked deck too, once Tasks has its own `linked` strip.
+5. The side view (D-300) folded into Tasks (planned 2026-11-19; the user picked: a plane's linked deck opens in the
+   Tasks column on the left, and following follows into Tasks). One commit each:
+   1. Tasks' state in one store (tab, days, `linked`) and one opener `openTasks({ deck, days, linked })`.
+   2. The `linked` strip in Tasks (`⇆ linked to 01 Pazar · its cards only  [all decks]`): a task picked glides the
+      focused plane to its card, a card picked there lights its tasks; opened from a plane the column starts wider.
+   3. The callers: a plane's `⇆ deck` / `⇆ timeline`, a deck's `⇆ days` (its days only while it's in focus), the task
+      panel's `show on board|days`; the task panel on the right as the thing selected (no `full`).
+   4. The agent (`src/agent/ui.ts`: `showBesideNow`, `currentView`) on Tasks; its tests and `job demo` on the stub.
+   5. Following: presence `tasks` carries the Tasks place's tab (same field and format, no rules change).
+   6. Deleted: `TasksSide`, its gallery, `sideState.ts`, CanvasView's split, Escape and shade code for it, the
+      cursors' `sideOpen`, busy.ts and realm.ts entries; `Days`, `Mine`, `BoardAndDays` move to Tasks' file.
+   7. A decision (D-300's side view gone), the side-view lesson's next version, a release line, DESIGN.md.
 
 ## Consistency (D-419, 2026-11-19)
 
