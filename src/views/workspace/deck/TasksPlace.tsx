@@ -9,13 +9,11 @@ import { piecesOn } from '../../../data/canvases'
 import { useWs } from '../canvas/context'
 import { useCanvasView } from '../../../state/canvasView'
 import { Tabs } from '../../../ui/primitives/Tabs'
-import { Num } from '../../../ui/primitives/Rule'
 import { Button } from '../../../ui/primitives/Button'
 import { Empty } from '../../../ui/primitives/Empty'
-import { DragLine } from '../../../ui/primitives/DragLine'
 import { learn } from '../../../onboarding/events'
 import { kanbanOf } from './Kanban'
-import { Board, Days, Mine } from './TasksSide'
+import { BoardAndDays, Days, deckTab, Mine } from './TasksSide'
 import styles from './TasksPlace.module.css'
 
 type Tab = 'mine' | 'all' | string
@@ -68,15 +66,7 @@ export function TasksPlace({ page = false, editor }: { page?: boolean; editor: b
             label="Decks"
             value={deck ? tab : ''}
             onChange={setTab}
-            options={decks.map((d, i) => ({
-              value: d.id,
-              title: d.name || 'deck',
-              label: (
-                <>
-                  <Num n={i + 1} /> {d.name || 'deck'}
-                </>
-              ),
-            }))}
+            options={decks.map((d, i) => deckTab(d, i))}
           />
         )}
         <Tabs label="Across decks" value={deck ? '' : tab} onChange={setTab} options={[{ value: 'mine', label: 'mine' }, { value: 'all', label: 'all · days' }]} />
@@ -90,15 +80,7 @@ export function TasksPlace({ page = false, editor }: { page?: boolean; editor: b
           ) : tab === 'all' ? (
             <Days key="all" box={{ x: 0, y: 0, w: box.w, h: box.h }} deck={null} plane={null} editor={editor} onTask={() => {}} dock={null} />
           ) : deck ? (
-            <>
-              <Board key={deck.id} box={{ x: 0, y: 0, w: deckW, h: box.h }} deck={deck} editor={editor} onTask={() => {}} onCard={onCard} dock={daysToggle} close={null} />
-              {two && (
-                <>
-                  <DragLine at="x" style={{ left: deckW, top: 0 }} onDrag={drag} label="The deck and its days" />
-                  <Days key={`days:${deck.id}`} box={{ x: deckW, y: 0, w: box.w - deckW, h: box.h }} deck={deck} plane={null} editor={editor} onTask={() => {}} dock={null} />
-                </>
-              )}
-            </>
+            <BoardAndDays deck={deck} top={0} width={box.w} height={box.h} deckW={deckW} days={two} editor={editor} onTask={() => {}} onCard={onCard} boardDock={daysToggle} close={null} daysDock={null} onDrag={drag} />
           ) : (
             <Empty className={styles.none}>no deck on this canvas yet</Empty>
           ))}

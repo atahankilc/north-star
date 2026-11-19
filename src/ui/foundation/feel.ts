@@ -20,9 +20,6 @@ export const KIND_WORD_ZOOM = 0.5
 // the dock at the foot's middle (≈ 360 px wide round it).
 export const PANEL_W = { min: 320, max: 800, dock: 180 }
 
-// The least width the main screen keeps between two columns docked on its sides (D-393): under it the threads' list
-// gives way to the conversation.
-export const SHEET_MIN_PX = 360
 
 // One wheel step's zoom: a pinch (ctrl, a trackpad) moves faster than a mouse wheel.
 const WHEEL = 0.0015

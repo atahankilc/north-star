@@ -37,13 +37,6 @@ useTasksSide.subscribe((s) => {
   keepLocal(KEY(s.wid), JSON.stringify(kept))
 })
 
-// The side nav's icon and `t`: open (on `tab` when given) or close. Opened this way it's every deck's, not a plane's.
-export function toggleTasksSide(tab?: SideTab) {
-  const s = useTasksSide.getState()
-  if (s.open && (!tab || tab === s.tab)) return useTasksSide.setState({ open: false, linked: null })
-  useTasksSide.setState({ open: true, linked: null, ...(tab ? { tab } : {}) })
-}
-
 // From a plane's dock (D-300, D-210): its linked deck (with its days, from its timeline), or (a plane with no deck) its
 // timeline as every deck's days for its cards; again, it closes.
 export function toggleFromPlane(plane: string, tab: SideTab, days = false) {

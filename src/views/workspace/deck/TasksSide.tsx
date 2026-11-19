@@ -158,21 +158,7 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
               label="Decks"
               value={tab ?? ''}
               onChange={(id) => useTasksSide.setState({ tab: id, linked: null })}
-              options={decks.map((d, i) => ({
-                value: d.id,
-                title: d.name || 'deck',
-                count: `· ${count(d)}`,
-                label: (
-                  <>
-                    <Num n={i + 1} /> <span className={styles.tabName}>{d.name || 'deck'}</span>
-                    {d.stuckTo && (
-                      <span className={styles.link} title="linked to a plane: only its cards' tasks">
-                        {' '}⇆
-                      </span>
-                    )}
-                  </>
-                ),
-              }))}
+              options={decks.map((d, i) => deckTab(d, i, `· ${count(d)}`))}
             />
           ) : (
             <Empty as="span">
@@ -209,21 +195,45 @@ export function TasksSide({ editor, focusedId, plane }: Props) {
         ) : deck && !ofCards && (deckOnLeft || (days && !wide)) ? (
           <Days key={`days:${deck.id}`} box={{ x: 0, y: top, w: width, h: colH }} deck={deck} plane={null} editor={editor} onTask={onTask} dock={deckOnLeft ? close : <>{closeDays}{close}</>} />
         ) : deck ? (
-          <>
-            <Board key={deck.id} box={{ x: 0, y: top, w: deckW, h: colH }} deck={deck} editor={editor} onTask={onTask} onCard={onCard} dock={<>{daysToggle}</>} close={close} />
-            {twoCols && (
-              <>
-                <DragLine at="x" style={{ left: deckW, top }} onDrag={dragInner} label="The deck and its days" />
-                <Days key={`days:${deck.id}`} box={{ x: deckW, y: top, w: width - deckW, h: colH }} deck={deck} plane={null} editor={editor} onTask={onTask} dock={closeDays} />
-              </>
-            )}
-          </>
+          <BoardAndDays deck={deck} top={top} width={width} height={colH} deckW={deckW} days={twoCols} editor={editor} onTask={onTask} onCard={onCard} boardDock={<>{daysToggle}</>} close={close} daysDock={closeDays} onDrag={dragInner} />
         ) : null}
       </aside>
     </>
   )
 }
 
+
+// A deck's board and, with `days`, its days beside it, the line between them dragged (the side view's and Tasks', D-412).
+export function BoardAndDays(p: { deck: WithId<Piece>; top: number; width: number; height: number; deckW: number; days: boolean; editor: boolean; onTask: (t: Task) => void; onCard: (c: Card) => void; boardDock: ReactNode; close: ReactNode; daysDock: ReactNode; onDrag: (e: PointerEvent) => void }) {
+  return (
+    <>
+      <Board key={p.deck.id} box={{ x: 0, y: p.top, w: p.deckW, h: p.height }} deck={p.deck} editor={p.editor} onTask={p.onTask} onCard={p.onCard} dock={p.boardDock} close={p.close} />
+      {p.days && (
+        <>
+          <DragLine at="x" style={{ left: p.deckW, top: p.top }} onDrag={p.onDrag} label="The deck and its days" />
+          <Days key={`days:${p.deck.id}`} box={{ x: p.deckW, y: p.top, w: p.width - p.deckW, h: p.height }} deck={p.deck} plane={null} editor={p.editor} onTask={p.onTask} dock={p.daysDock} />
+        </>
+      )}
+    </>
+  )
+}
+
+// A deck as a tab (D-300; Tasks' too, D-412): its number, its name, `⇆` when it's linked to a plane, what it counts.
+export const deckTab = (d: WithId<Piece>, i: number, count?: ReactNode) => ({
+  value: d.id,
+  title: d.name || 'deck',
+  count,
+  label: (
+    <>
+      <Num n={i + 1} /> <span className={styles.tabName}>{d.name || 'deck'}</span>
+      {d.stuckTo && (
+        <span className={styles.link} title="linked to a plane: only its cards' tasks">
+          {' '}⇆
+        </span>
+      )}
+    </>
+  ),
+})
 
 // MINE's `●N`: tasks given to you since you last looked.
 function NewMark() {
@@ -239,7 +249,7 @@ function NewMark() {
 type PartProps = { box: Bounds; editor: boolean; onTask: (t: Task) => void; dock: ReactNode }
 
 // A deck's board in a view of its own (as beside a plane), its dock with what it does.
-export function Board({ box, deck, editor, onTask, onCard, dock, close }: PartProps & { deck: WithId<Piece>; onCard: (c: Card) => void; close: ReactNode }) {
+function Board({ box, deck, editor, onTask, onCard, dock, close }: PartProps & { deck: WithId<Piece>; onCard: (c: Card) => void; close: ReactNode }) {
   const { tasks } = useWs()
   const { el, view, pan } = usePaneView(kanbanBounds(deck, tasks), box, true, 0.85)
   return (

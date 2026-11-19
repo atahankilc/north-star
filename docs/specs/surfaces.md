@@ -99,7 +99,7 @@ Agreed 2026-11-17 on a port, built the same day.
 - **The threads lie on the ground:** the list is a column on the left, beside the HUD's rail (which stays: sheet.ts
   keeps the rail when a left column starts past it); a conversation is a column on the right, where a thing's panel
   is, over that panel while both are open. Two `EdgeColumn`s in `AnimatePresence`; the tab with two halves over the
-  canvas and its dragged height are gone. A window too narrow for the list, the least screen (`SHEET_MIN_PX`, feel.ts)
+  canvas and its dragged height are gone. A window too narrow for the list, the least screen (`SHEET_MIN_PX`, feel.ts; gone with D-412, Talk is one column now)
   and a conversation: the list gives way while one is open. The list's rows are round shades, the open one stronger.
 - Seen in the gallery (both themes) and in the real app on the emulators: a plane's console in edit mode and under the
   pointer; the three tabs 32 px tall on one line; the list open (the sheet from 400 px), a comment started from a

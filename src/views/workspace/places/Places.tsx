@@ -22,7 +22,7 @@ import { usePageHost } from './pageHost'
 import styles from './Places.module.css'
 
 
-export function PlaceColumn({ place, tools, children }: { place: Place; tools?: ReactNode; children: ReactNode }) {
+function PlaceColumn({ place, tools, children }: { place: Place; tools?: ReactNode; children: ReactNode }) {
   const width = usePlace((s) => s.width)
   return (
     <EdgeColumn
@@ -54,7 +54,7 @@ export function PlaceColumn({ place, tools, children }: { place: Place; tools?: 
   )
 }
 
-export function PlacePage({ place, head = true, tools, children }: { place: Place; head?: boolean; tools?: ReactNode; children: ReactNode }) {
+function PlacePage({ place, head = true, tools, children }: { place: Place; head?: boolean; tools?: ReactNode; children: ReactNode }) {
   const box = useRef<HTMLElement>(null)
   useEscapeLayer(closePlace, { root: box })
   return (
