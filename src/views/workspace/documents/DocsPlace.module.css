@@ -237,8 +237,8 @@
   width: calc(var(--space-12) + var(--space-6));
 }
 
-/* Over the column that says whether it's shared or placed: no head. */
-.heads > [data-col='by'] {
+/* Over the column that says whether it's shared or placed: no head (that column is there only with all of them). */
+.heads[data-cols='full'] > [data-col='by'] {
   margin-left: calc(2 * var(--space-12) + var(--space-2));
 }
 

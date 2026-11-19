@@ -9,11 +9,12 @@ import type { Task } from '../data/tasks'
 
 export type DueKey = 'past' | 'today' | 'week' | 'none'
 // `who`: 'me', 'nobody' or a member's uid; `for`: 'type:<card type>', a card's id, or 'none'.
-export type KanbanFilter = { who: string[]; due: DueKey[]; for: string[]; labels: string[] }
+// `text` (D-419, Tasks' find): words its title or notes have.
+export type KanbanFilter = { who: string[]; due: DueKey[]; for: string[]; labels: string[]; text?: string }
 export const NO_FILTER: KanbanFilter = { who: [], due: [], for: [], labels: [] }
 
 // How many filters narrow it.
-export const narrowing = (f: KanbanFilter) => [f.who, f.due, f.for, f.labels].filter((x) => x.length).length
+export const narrowing = (f: KanbanFilter) => [f.who, f.due, f.for, f.labels].filter((x) => x.length).length + (f.text?.trim() ? 1 : 0)
 
 // The last day of this week (Sunday), as a due day is written.
 function weekEnd(now = new Date()) {
@@ -38,5 +39,7 @@ export function passes(t: Task, f: KanbanFilter, finished: boolean, me: string |
     if (!ok) return false
   }
   if (f.labels.length && !f.labels.some((l) => t.labels?.includes(l))) return false
+  const k = f.text?.trim().toLowerCase()
+  if (k && ![t.title, t.notes].some((x) => x?.toLowerCase().includes(k))) return false
   return true
 }

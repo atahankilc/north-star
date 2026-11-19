@@ -292,11 +292,11 @@ export function Days({ box, deck, plane, editor, onTask, dock }: PartProps & { d
       <TimelineView piece={piece} view={view} live editor={editor} onTask={onTask} span={T.besideDays} />
       <FocusDock label="Days" name={<span className={pane.kind}>{deck ? 'days' : 'all · days'}</span>}>
         {linked ? (
-          <TimelineDockTools piece={linked} editor={editor} />
+          <TimelineDockTools piece={linked} editor={editor} compact />
         ) : (
           <>
             <KanbanFilterDock piece={piece} pool={pool} />
-            <WeekTools piece={piece} />
+            <WeekTools piece={piece} compact />
           </>
         )}
         {dock}
@@ -314,7 +314,8 @@ const Name = ({ deck }: { deck: WithId<Piece> }) => (
 
 // Tasks given to you, not finished, across this canvas's decks, by deck; the new ones (given by someone else since you
 // last looked) marked `●`, and seen once shown. A row picks its task: its panel opens here, nothing else moves.
-export function Mine({ decks, top, children }: { decks: WithId<Piece>[]; top: number; children: ReactNode }) {
+// `find`: only the tasks whose title has it (Tasks' find, D-419).
+export function Mine({ decks, top, find = '', children }: { decks: WithId<Piece>[]; top: number; find?: string; children: ReactNode }) {
   const { wid, tasks, pieces } = useWs()
   const { user } = useAuth()
   const me = user?.id ?? null
@@ -325,7 +326,8 @@ export function Mine({ decks, top, children }: { decks: WithId<Piece>[]; top: nu
   const [held, setHeld] = useState<number | null>(null)
   const since = held ?? lookedAt
   const isNew = (t: Task) => (t.givenAt ?? 0) > since && t.givenBy !== me
-  const mine = tasks.filter((t) => me && t.assignee === me && !finished(t, pieces))
+  const k = find.trim().toLowerCase()
+  const mine = tasks.filter((t) => me && t.assignee === me && !finished(t, pieces) && (!k || t.title.toLowerCase().includes(k)))
   const fresh = mine.some((t) => (t.givenAt ?? 0) > lookedAt && t.givenBy !== me)
   useEffect(() => {
     if (!fresh) return

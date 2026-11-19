@@ -648,14 +648,8 @@
   min-height: 0;
 }
 
-/* A channel's head (D-416, D-419): one line, its name and how many messages. */
-.channelTitle {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-  margin: 0;
-  color: var(--fg-strong);
-  font-family: var(--font-mono);
-  font-size: var(--text-lg);
-  font-weight: var(--weight-medium);
+
+/* A channel's head (D-416, D-419): a thing's three lines, no face: in the head's own padding. */
+.thing[data-bare] {
+  padding-block: var(--space-1);
 }

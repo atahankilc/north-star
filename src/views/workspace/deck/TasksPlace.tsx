@@ -13,6 +13,8 @@ import { Button } from '../../../ui/primitives/Button'
 import { Empty } from '../../../ui/primitives/Empty'
 import { learn } from '../../../onboarding/events'
 import { kanbanOf } from './Kanban'
+import { setKanbanFilter, useKanbanFilter } from './kanbanFilter'
+import { PlaceFind } from '../places/Places'
 import { BoardAndDays, Days, deckTab, Mine } from './TasksSide'
 import styles from './TasksPlace.module.css'
 
@@ -56,9 +58,18 @@ export function TasksPlace({ page = false, editor, head }: { page?: boolean; edi
   // The board's share of the page: room for its columns, its days beside them.
   const [inner, setInner] = useState(0.68)
   const box = useBox()
+  // Tasks' find (D-419): a deck's tasks through its filter's `text` (as its filter dock narrows it); mine's rows.
+  const [find, setFind] = useState('')
   // Its lesson, as the side view's was (onboarding: `side-view`).
   useEffect(() => learn('side-view'), [])
   const deck = decks.find((d) => d.id === tab)
+  const filter = useKanbanFilter(deck?.id ?? '')
+  useEffect(() => {
+    if (!deck) return
+    if ((filter.text ?? '') !== find) setKanbanFilter(deck.id, { ...filter, text: find || undefined })
+    // Only when what's typed or the deck changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [find, deck?.id])
   const ofCards = !!deck && kanbanOf(deck).holds === 'cards'
   const two = !!deck && !ofCards && withDays && page
   const deckW = two ? Math.round(box.w * inner) : box.w
@@ -87,10 +98,11 @@ export function TasksPlace({ page = false, editor, head }: { page?: boolean; edi
         <Tabs label="Across decks" value={deck ? '' : tab} onChange={setTab} options={[{ value: 'mine', label: 'mine' }, { value: 'all', label: 'all · days' }]} />
       </div>,
       )}
+      {tab !== 'all' && <PlaceFind value={find} onChange={setFind} label="Find in Tasks" />}
       <div ref={box.ref} className={styles.area}>
         {box.w > 0 &&
           (tab === 'mine' ? (
-            <Mine decks={taskDecks} top={0}>
+            <Mine decks={taskDecks} top={0} find={find}>
               {null}
             </Mine>
           ) : tab === 'all' ? (

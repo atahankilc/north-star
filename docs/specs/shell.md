@@ -60,9 +60,12 @@ After a design review of every place (a subagent judging screenshots against the
   switch is the canvas's only.
 - **The page grows out of its column** as `full` is pressed (clip from the left column to the sheet).
 - **Docs as the page:** columns name · by · changed · size, sorted by their heads, while nothing is read beside it.
-- **A channel's head is one line** (`# general  4 messages`); a deck's tab shows one number (its own).
+- A deck's tab shows one number (its own).
 - Talk's page has `new channel` in the HUD's middle, as Docs has write and upload.
-- Left for later: a Tasks find; one foot console for the board and its days; touch.
+- Then (the small ones): a find in Tasks too (a deck's board through its filter's `text`, mine's rows); Docs' list keeps
+  name · by · changed beside a document read; a channel's head the same three lines as a thing's (kind, name, how
+  long) without a face; the days pane's scale one dropdown, so its dock stays one row.
+- Left for later: touch.
 
 ## Not yet
 

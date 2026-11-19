@@ -111,7 +111,9 @@ function FolderRow({ f, count, editor }: { f: WithId<Folder>; count: number; edi
   )
 }
 
-function DocRow({ d, picked, wide, path }: { d: WithId<Doc>; picked?: boolean; wide?: boolean; path?: string }) {
+// `cols`: on the page, its columns (`full`: whether it's shared or placed, by, changed, size; `narrow`, beside a
+// document read: by, changed).
+function DocRow({ d, picked, cols, path }: { d: WithId<Doc>; picked?: boolean; cols?: 'full' | 'narrow'; path?: string }) {
   // Shown on a canvas on its own (a document piece, D-234): said, as the threads say where they are.
   const placed = useWs().pieces.some((p) => p.kind === 'document' && p.docId === d.id)
   return (
@@ -122,12 +124,12 @@ function DocRow({ d, picked, wide, path }: { d: WithId<Doc>; picked?: boolean; w
       selected={picked}
       lead={<Label className={styles.kind}>{KIND_WORD[d.kind]}</Label>}
       end={
-        wide ? (
+        cols ? (
           <>
-            <span className={styles.col}>{placed && <Label className={styles.placed}>on the canvas</Label>}{d.shared ? '' : 'only you'}</span>
+            {cols === 'full' && <span className={styles.col}>{placed && <Label className={styles.placed}>on the canvas</Label>}{d.shared ? '' : 'only you'}</span>}
             <span className={styles.col}>{d.name}</span>
             <span className={styles.colNum}>{ago(d.updatedAt)}</span>
-            <span className={styles.colNum}>{d.words ? `${d.words} w` : ''}</span>
+            {cols === 'full' && <span className={styles.colNum}>{d.words ? `${d.words} w` : ''}</span>}
           </>
         ) : (
           <span className={styles.meta}>
@@ -238,11 +240,11 @@ export function DocsPlace({ page = false }: { page?: boolean }) {
   const open = docs.find((d) => d.id === openId)
   const where = at ? (folders.find((f) => f.id === at)?.name ?? 'All files') : 'All files'
 
-  // Columns only while the list has the room: on the page with nothing read beside it.
-  const wide = page && !open
-  const heads = wide && (
-    <div className={styles.heads} role="row">
-      {(['name', 'by', 'changed', 'size'] as const).map((c) => (
+  // Columns on the page: all of them with nothing read beside it, name · by · changed beside a document read.
+  const cols = page ? (open ? 'narrow' : 'full') : undefined
+  const heads = cols && (
+    <div className={styles.heads} role="row" data-cols={cols}>
+      {(cols === 'full' ? (['name', 'by', 'changed', 'size'] as const) : (['name', 'by', 'changed'] as const)).map((c) => (
         <Button
           key={c}
           link
@@ -266,7 +268,7 @@ export function DocsPlace({ page = false }: { page?: boolean }) {
         <FolderRow key={f.id} f={f} count={countIn(f.id, folders, docs)} editor={editor} />
       ))}
       {here.map((d) => (
-        <DocRow key={d.id} d={d} picked={page && d.id === open?.id} wide={wide} path={k ? pathOf(d) : undefined} />
+        <DocRow key={d.id} d={d} picked={page && d.id === open?.id} cols={cols} path={k ? pathOf(d) : undefined} />
       ))}
       {subs.length === 0 && here.length === 0 && (
         <div className={styles.empty}>

@@ -361,10 +361,12 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
         </div>
         {/* A channel (D-416, D-419): one line, its name and how many messages; it's on nothing. */}
         {channel ? (
-          <h2 className={styles.channelTitle}>
-            {thing.name}
+          // The same three lines as a thing's head (D-419): its kind, its name, how long; no face, it's on nothing.
+          <div className={styles.thing} data-bare>
+            <Label className={styles.kind}>channel</Label>
+            <h2 className={styles.title}>{thing.name}</h2>
             <span className={styles.where}>{thread ? plural(thread.count, 'message') : 'new channel'}</span>
-          </h2>
+          </div>
         ) : (
         // The thing itself (D-405): its card face in its colour, its kind a badge (D-414), its name, where it is and how
         // many messages; a press goes there (D-220).

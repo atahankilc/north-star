@@ -22,6 +22,7 @@ import { isReducedMotion } from '../../../state/motion'
 import { DrawerPick } from '../../../ui/patterns/Console'
 import { useWs, useWsNow } from '../canvas/context'
 import { DockAction } from '../canvas/FocusDock'
+import { Select } from '../../../ui/patterns/Select'
 import { kanbanOf, selectTask, useKanbanUi } from './Kanban'
 import { KanbanFilterDock } from './KanbanFilterDock'
 import { passes, useKanbanFilter } from './kanbanFilter'
@@ -964,7 +965,7 @@ const NO_CARD = { id: '', type: 'idea', pieceId: '', title: '', x: 0, y: 0 } as 
 const NONE = new Set<string>()
 
 // Its tools in its dock (its focus, beside its deck): its filter, its rows, its scale and days.
-export function TimelineDockTools({ piece, editor }: { piece: WithId<Piece>; editor: boolean }) {
+export function TimelineDockTools({ piece, editor, compact }: { piece: WithId<Piece>; editor: boolean; compact?: boolean }) {
   const { pieces, tasks } = useWs()
   const kanbans = timelineKanbans(piece, pieces)
   const pool = useMemo(() => tasks.filter((t) => kanbans.some((k) => k.id === t.pieceId)), [tasks, kanbans])
@@ -972,14 +973,15 @@ export function TimelineDockTools({ piece, editor }: { piece: WithId<Piece>; edi
     <>
       <KanbanFilterDock piece={piece} pool={pool} />
       <TimelineRowsMenu piece={piece} editor={editor} />
-      <WeekTools piece={piece} />
+      <WeekTools piece={piece} compact={compact} />
     </>
   )
 }
 
 // Its scale and `‹ today ›` in a dock (yours): a week back or on, or back to today. Also the tasks side view's days
-// (D-300), whose timeline may be none.
-export function WeekTools({ piece }: { piece: Pick<Piece, 'kind'> & { id: string } }) {
+// (D-300), whose timeline may be none. `compact` (a narrow pane's dock, D-419): the scale one dropdown, so the dock
+// keeps one row.
+export function WeekTools({ piece, compact }: { piece: Pick<Piece, 'kind'> & { id: string }; compact?: boolean }) {
   const s = useStrip((st) => st[piece.id])
   const ppd = s?.ppd ?? STRIP_SCALES[1].ppd
   const now = dayOf(today())
@@ -988,7 +990,9 @@ export function WeekTools({ piece }: { piece: Pick<Piece, 'kind'> & { id: string
   const near = STRIP_SCALES.reduce((a, b) => (Math.abs(Math.log(ppd / b.ppd)) < Math.abs(Math.log(ppd / a.ppd)) ? b : a))
   return (
     <>
-      {STRIP_SCALES.map((sc) => (
+      {compact ? (
+        <Select ariaLabel="Scale" value={near.name} options={STRIP_SCALES.map((sc) => ({ value: sc.name, label: sc.name }))} onChange={(n) => scaleStrip(piece.id, STRIP_SCALES.find((sc) => sc.name === n)!.ppd)} />
+      ) : STRIP_SCALES.map((sc) => (
         <DockAction key={sc.name} label={sc.name} pressed={sc === near && Math.abs(Math.log(ppd / sc.ppd)) < 0.25} title={`${sc.ppd} px a day (a pinch on it changes it too)`} onClick={() => scaleStrip(piece.id, sc.ppd)} />
       ))}
       <DockAction label="‹" title="a week back" onClick={() => step(-1)} />

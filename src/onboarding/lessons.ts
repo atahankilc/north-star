@@ -455,11 +455,11 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'side-view', v: 3, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314, D-349, D-412',
+    id: 'side-view', v: 4, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314, D-349, D-412, D-419',
     trigger: [{ event: 'side-view' }],
     pages: [
       { title: 'Tasks, beside you', tab: 'tasks', body: "Tasks opens beside the canvas from anywhere, or with `t`. The tabs are the canvas's decks, each under its tab. `full` makes Tasks the page, the deck's days beside it.", scene: 'side-view' },
-      { title: 'Yours', tab: 'mine', body: '`mine` lists the tasks given to you, from every deck.', scene: 'side-mine' },
+      { title: 'Yours', tab: 'mine', body: '`mine` lists the tasks given to you, from every deck. The find under the tabs narrows it, or a deck, to the tasks with your words.', scene: 'side-mine' },
       { title: 'Every deck on days', tab: 'days', body: '`all · days` puts the tasks of every deck on one strip of days.', scene: 'side-mine' },
     ],
   },
