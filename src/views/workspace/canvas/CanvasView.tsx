@@ -80,7 +80,7 @@ import { usePlaneFilter } from './planeFilter'
 import styles from './CanvasView.module.css'
 import { DUR, easeInOut, lerp } from '../../../ui/foundation/motion'
 import { CELLS_SHUT } from '../../../ui/foundation/cellReveal'
-import { CONSOLE_FILL, DRAG_PX, KIND_WORD_ZOOM, PLANE_FIT_MAX, wheelStep, zoomAt } from '../../../ui/foundation/feel'
+import { CONSOLE_FILL, DRAG_PX, KIND_WORD_ZOOM, PLANE_FIT_MAX, clampZoom, wheelStep, zoomAt } from '../../../ui/foundation/feel'
 import { PIECE_GLYPH } from './glyphs'
 import { tokenPx } from '../../../styles/cssToken'
 import type { PieceKind } from '../../../data/model'
@@ -950,7 +950,22 @@ export function CanvasView() {
     useCanvasView.setState(onCell ? { selected: null, labelSelected: null } : { selected: null, labelSelected: null, cardSelected: null })
     stopFollowing()
     const start = camOf(wid)
-    panPointer(e, { lazy: onCell, move: (dx, dy) => setCam(wid, { ...start, x: start.x + dx, y: start.y + dy }) })
+    const el = e.currentTarget
+    panPointer(e, {
+      lazy: onCell,
+      move: (dx, dy) => setCam(wid, { ...start, x: start.x + dx, y: start.y + dy }),
+      // Two fingers zoom round their middle (measured, as the camera is, from the screen's middle).
+      pinch: (at) => {
+        const c = camOf(wid)
+        const r = el.getBoundingClientRect()
+        const p: [number, number] = [at[0] - r.left - r.width / 2, at[1] - r.top - r.height / 2]
+        return (k, by) => {
+          const zoom = clampZoom(c.zoom * k)
+          const [x, y] = zoomAt(c.zoom, zoom, p, [c.x, c.y])
+          setCam(wid, { zoom, x: x + by[0], y: y + by[1] })
+        }
+      },
+    })
   }
 
   return (

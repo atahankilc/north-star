@@ -53,7 +53,7 @@ export default example({
   place: 'hud/docks',
   also: ['canvas/pieces'],
   file: 'src/ui/patterns/Console.tsx',
-  note: 'every console, dock and bar (D-347): a rail, who · groups by role · go last; a pill under a piece’s edge or a selection (D-393), a tab on the screen’s foot (D-387); its line faint, cyan when pointed at; past 70 % of its edge it takes the whole edge',
+  note: 'every console, dock and bar (D-347): a rail, who · groups by role · go last; a pill under a piece’s edge or a selection (D-393), a tab on the screen’s foot (D-387); its line faint, cyan when pointed at; past 70 % of its edge it takes the whole edge, still under it (the 2026-11-20 touch pass)',
   states: {
     'a piece’s, a pill under its edge': () => (
       <Host>

@@ -21,7 +21,7 @@ export const KEYS: readonly KeyRow[] = [
   { keys: '⌘Z', what: 'undo', lesson: 'piece-made', editors: true },
   { keys: '⇧⌘Z  ⌃Y', what: 'redo', lesson: 'piece-made', editors: true },
   { keys: '0', what: 'fit: show everything (in a focus, all of the piece)' },
-  { keys: 'wheel', what: 'zoom round the pointer (pinch or ⌃: faster)' },
+  { keys: 'wheel', what: 'zoom round the pointer (pinch or ⌃: faster); on a touch screen, two fingers' },
   { keys: 't', what: 'decks and days beside you', lesson: 'side-view' },
   { keys: 'c', what: 'comments on the canvas, shown or hidden', lesson: 'comment' },
   { keys: '⌥1–⌥9', what: 'go to canvas 1 to 9', lesson: 'canvases' },

@@ -21,7 +21,7 @@ import { CELL_PX, cellHash, cellsPath } from '../../../ui/foundation/cellReveal'
 import styles from './CanvasView.module.css'
 import { DUR, tween } from '../../../ui/foundation/motion'
 import { wheelStep, zoomAt } from '../../../ui/foundation/feel'
-import { panPointer } from '../../../ui/foundation/dragPointer'
+import { panPointer, pinchView } from '../../../ui/foundation/dragPointer'
 
 const IN_MS = DUR.focusIn
 const OUT_MS = DUR.focusOut
@@ -116,6 +116,7 @@ export function FocusedPlane({ piece, at, home, spread, leaving, lens, onArrived
     panPointer(e, {
       lazy: onCell,
       move: (dx, dy) => useCanvasView.setState({ planeCam: { ...start, ox: start.ox + dx, oy: start.oy + dy } }),
+      pinch: pinchView(e.currentTarget, () => useCanvasView.getState().planeCam ?? start, (planeCam) => useCanvasView.setState({ planeCam })),
       // A click on the plane itself lets go of what's selected (D-187); a pan doesn't, so a panel stays open while you
       // look round the plane (D-230).
       end: (moved) => void (!moved && !onCell && useCanvasView.setState({ cardSelected: null, cardMulti: [], labelSelected: null, linkSelected: null })),

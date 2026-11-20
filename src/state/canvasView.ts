@@ -3,7 +3,8 @@
 // where the side nav's `+` puts new things.
 import { create } from 'zustand'
 import { DUR, glideValues } from '../ui/foundation/motion'
-import { ZOOM_MIN } from '../ui/foundation/feel'
+import { zoomLeast } from '../ui/foundation/feel'
+import { tokenPx } from '../styles/cssToken'
 import { boundsOf } from '../model/layout'
 import { keepLocal, readLocal } from './local'
 
@@ -171,9 +172,12 @@ export const stopGlide = () => moving()
 export type Bounds = { x: number; y: number; w: number; h: number }
 
 // The zoom and middle that fit `b` into a w × h box with `pad` round it, never past `most`: 1, but for a plane's cards
-// (D-186, as the board's fit, D-060; D-363).
+// (D-186, as the board's fit, D-060; D-363). On a small box (a phone) the pad shrinks to a share of its short side.
+const PAD_SHARE = 0.12
+const padFor = (w: number, h: number, pad: number) => Math.min(pad, PAD_SHARE * Math.min(w, h))
 export function fitInto(b: Bounds, w: number, h: number, pad: number, most = 1) {
-  const zoom = Math.max(ZOOM_MIN, Math.min(most, (w - 2 * pad) / Math.max(1, b.w), (h - 2 * pad) / Math.max(1, b.h)))
+  const p = padFor(w, h, pad)
+  const zoom = Math.max(zoomLeast(), Math.min(most, (w - 2 * p) / Math.max(1, b.w), (h - 2 * p) / Math.max(1, b.h)))
   return { zoom, cx: b.x + b.w / 2, cy: b.y + b.h / 2 }
 }
 
@@ -184,9 +188,11 @@ export function fitCanvas(wid: string, pieces: Bounds[], instant = false) {
   if (pieces.length) {
     // Room for a plane's name above it and its console under it, and the side nav on the left. With the tasks side
     // view open (D-300) in the left part, its middle the camera's less half the side view.
+    // Where the pad is smaller than the side nav (a phone), the side nav's room is kept on the left besides.
     const area = planeArea()
-    const { zoom, cx, cy } = fitInto(boundsOf(pieces), area.w, area.h, 96)
-    to = { x: (area.w - size.w) / 2 - cx * zoom, y: -cy * zoom, zoom }
+    const nav = Math.max(0, tokenPx('--sheet-rail-w') - padFor(area.w, area.h, 96))
+    const { zoom, cx, cy } = fitInto(boundsOf(pieces), area.w - nav, area.h, 96)
+    to = { x: (area.w - size.w + nav) / 2 - cx * zoom, y: -cy * zoom, zoom }
   }
   if (instant) setCam(wid, to)
   else glide(camOf(wid), to, DUR.glide, (c) => setCam(wid, c))

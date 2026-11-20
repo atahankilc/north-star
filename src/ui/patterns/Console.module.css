@@ -63,7 +63,7 @@
 
 /* The gap is the console's too: the pointer going from the piece down to it never leaves them (the console shows only
    while its piece is pointed at). */
-.console[data-at='edge']:not([data-full])::before {
+.console[data-at='edge']::before {
   content: '';
   position: absolute;
   right: 0;
@@ -127,9 +127,12 @@
   transform: none;
 }
 
-/* Cut into the edge, wrapped: only its last row sits on the edge, half out; the rows over it inside the piece. */
+/* A piece's, wrapped: under its bottom edge too, the same gap off it, never over what the piece shows (the touch pass,
+   2026-11-20: on a small plane its rows covered it, and a second tap to focus hit `edit`). Never narrower than its widest
+   tool, however small the piece. */
 .console[data-full][data-at='edge'] {
-  transform: translateY(calc(1em + var(--space-1) * var(--cs, 1)));
+  min-width: min-content;
+  transform: translateY(calc(100% + var(--off)));
 }
 
 .console[data-full][data-editing] {

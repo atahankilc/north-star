@@ -7,9 +7,14 @@ export const DRAG_PX = 5
 // A list counts as read to its bottom this close to it (useStickToBottom): new things keep it there.
 export const STICK_PX = 40
 
-// The zoom's range, on the canvas, in a focus and beside it (D-186).
-export const ZOOM_MIN = 0.1
+// The zoom's range, on the canvas, in a focus and beside it (D-186). On a window narrower than ZOOM_WIDE (a phone) the
+// least zoom shrinks with it, so as much of the canvas fits on it as on a wide one (the touch pass, 2026-11-20: Fit
+// couldn't take in a spread-out canvas on a phone).
+const ZOOM_MIN = 0.1
 const ZOOM_MAX = 4
+const ZOOM_WIDE = 1280
+export const zoomLeast = () => ZOOM_MIN * Math.min(1, (typeof window === 'undefined' ? ZOOM_WIDE : window.innerWidth) / ZOOM_WIDE)
+export const clampZoom = (zoom: number) => Math.min(ZOOM_MAX, Math.max(zoomLeast(), zoom))
 // How far a plane's few cards grow to fill the space (D-363): its picture on the canvas, and its view in focus.
 export const PLANE_FIT_MAX = { picture: 2, focus: 1.5 }
 
@@ -24,8 +29,7 @@ export const PANEL_W = { min: 320, max: 800, dock: 180 }
 // One wheel step's zoom: a pinch (ctrl, a trackpad) moves faster than a mouse wheel.
 const WHEEL = 0.0015
 const PINCH = 0.01
-export const wheelStep = (zoom: number, e: { deltaY: number; ctrlKey: boolean }) =>
-  Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom * Math.exp(-e.deltaY * (e.ctrlKey ? PINCH : WHEEL))))
+export const wheelStep = (zoom: number, e: { deltaY: number; ctrlKey: boolean }) => clampZoom(zoom * Math.exp(-e.deltaY * (e.ctrlKey ? PINCH : WHEEL)))
 
 // Zooming round a point (D-186, D-361): where a view's offset goes so the point under the pointer stays put, from one
 // zoom to another. `at` and `o` are in the same px (from the view's own origin: an element's top-left, the canvas's

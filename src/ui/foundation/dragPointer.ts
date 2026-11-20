@@ -1,7 +1,7 @@
 // A drag from a press to its release (D-359): every edge or line that's dragged (a panel's width, a dock's height, the
 // split beside a plane) listened to the same three events and took them away again by hand.
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { DRAG_PX } from './feel'
+import { DRAG_PX, clampZoom, zoomAt } from './feel'
 import { holdKeys } from './focus'
 
 // From a press on `e.currentTarget`: `move` hears every step, `end` the release (or a cancel). Only the main button.
@@ -84,19 +84,39 @@ export function boxDrag(e: At, at: (ev: At) => readonly [number, number], draw: 
 // lets go of the selection, a pan doesn't). `lazy`: a press on a cell is the cell's until it moves DRAG_PX (a click still
 // selects it, a drag pans); otherwise the pan starts at once. While panning the view is `data-panning` (its cursor) and
 // holds the pointer, so the pan goes on over anything.
-export function panPointer(e: ReactPointerEvent<HTMLElement>, o: { lazy?: boolean; move: (dx: number, dy: number) => void; end?: (moved: boolean) => void }) {
+// `pinch` (touch, the 2026-11-20 pass: a phone couldn't zoom at all): a second finger on the same view turns the pan
+// into a pinch. It hears where the two fingers' middle started (client px) and gives back what hears each step: how
+// much their spread has grown (`k`) and how far their middle has moved. Lifting either finger ends it.
+type Pinch = (at: [number, number]) => (k: number, by: [number, number]) => void
+const second = new WeakMap<Element, (e: ReactPointerEvent<Element>) => void>()
+export function panPointer(e: ReactPointerEvent<HTMLElement>, o: { lazy?: boolean; move: (dx: number, dy: number) => void; end?: (moved: boolean) => void; pinch?: Pinch }) {
   const el = e.currentTarget
+  // A second finger while a pan holds this view: the pan's.
+  const join = second.get(el)
+  if (join && e.pointerType === 'touch') return join(e)
   const [sx, sy] = [e.clientX, e.clientY]
   const id = e.pointerId
   let panning = false
   let moved = false
+  // While pinching: both fingers' places now, where they started, and the step's hearer.
+  let two: { pts: Map<number, [number, number]>; d0: number; m0: [number, number]; step: ReturnType<Pinch> } | null = null
   const begin = () => {
     panning = true
     el.setPointerCapture(id)
     el.dataset.panning = 'true'
   }
   if (!o.lazy) begin()
+  const mid = (a: [number, number], b: [number, number]): [number, number] => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
   const move = (ev: PointerEvent) => {
+    if (two) {
+      if (!two.pts.has(ev.pointerId)) return
+      two.pts.set(ev.pointerId, [ev.clientX, ev.clientY])
+      const [a, b] = [...two.pts.values()]
+      const m = mid(a, b)
+      two.step(Math.hypot(a[0] - b[0], a[1] - b[1]) / two.d0, [m[0] - two.m0[0], m[1] - two.m0[1]])
+      return
+    }
+    if (ev.pointerId !== id) return
     if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) >= DRAG_PX) moved = true
     if (!panning) {
       if (!moved) return
@@ -104,14 +124,45 @@ export function panPointer(e: ReactPointerEvent<HTMLElement>, o: { lazy?: boolea
     }
     o.move(ev.clientX - sx, ev.clientY - sy)
   }
+  let last: [number, number] = [sx, sy]
+  const track = (ev: PointerEvent) => ev.pointerId === id && (last = [ev.clientX, ev.clientY])
+  if (o.pinch && e.pointerType === 'touch')
+    second.set(el, (e2) => {
+      if (two || !o.pinch) return
+      e2.stopPropagation()
+      if (!panning) begin()
+      el.setPointerCapture(e2.pointerId)
+      const b: [number, number] = [e2.clientX, e2.clientY]
+      const m0 = mid(last, b)
+      two = { pts: new Map([[id, last], [e2.pointerId, b]]), d0: Math.max(1, Math.hypot(last[0] - b[0], last[1] - b[1])), m0, step: o.pinch(m0) }
+      moved = true
+    })
   const up = () => {
+    second.delete(el)
     delete el.dataset.panning
+    el.removeEventListener('pointermove', track)
     el.removeEventListener('pointermove', move)
     el.removeEventListener('pointerup', up)
     el.removeEventListener('pointercancel', up)
     o.end?.(moved)
   }
+  el.addEventListener('pointermove', track)
   el.addEventListener('pointermove', move)
   el.addEventListener('pointerup', up)
   el.addEventListener('pointercancel', up)
+}
+
+// A pinch on a view kept as an offset from its top-left and a zoom (a plane in focus, a pane beside it): round the
+// fingers' middle, moving with it. `get` is the view when the pinch starts.
+export function pinchView<V extends { ox: number; oy: number; zoom: number }>(el: Element, get: () => V, set: (v: V) => void): Pinch {
+  return (at) => {
+    const start = get()
+    const r = el.getBoundingClientRect()
+    const p: [number, number] = [at[0] - r.left, at[1] - r.top]
+    return (k, by) => {
+      const zoom = clampZoom(start.zoom * k)
+      const [ox, oy] = zoomAt(start.zoom, zoom, p, [start.ox, start.oy])
+      set({ ...start, zoom, ox: ox + by[0], oy: oy + by[1] })
+    }
+  }
 }

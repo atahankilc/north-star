@@ -24,7 +24,7 @@ import { DockAction, FocusDock } from './FocusDock'
 import styles from './Beside.module.css'
 import { DUR } from '../../../ui/foundation/motion'
 import { wheelStep, zoomAt } from '../../../ui/foundation/feel'
-import { panPointer } from '../../../ui/foundation/dragPointer'
+import { panPointer, pinchView } from '../../../ui/foundation/dragPointer'
 
 const PAD = 48
 
@@ -129,7 +129,7 @@ export function usePaneView(content: Bounds, box: Bounds, top = false, floor = 0
     const onCell = !!(e.target as HTMLElement).closest('[data-cell]')
     if (!onCell) useCanvasView.setState({ cardSelected: null, labelSelected: null, linkSelected: null })
     const start = viewRef.current
-    panPointer(e, { lazy: onCell, move: (dx, dy) => setView({ ...start, ox: start.ox + dx, oy: start.oy + dy }) })
+    panPointer(e, { lazy: onCell, move: (dx, dy) => setView({ ...start, ox: start.ox + dx, oy: start.oy + dy }), pinch: pinchView(e.currentTarget, () => viewRef.current, setView) })
   }
   return { el, view, setView, pan }
 }
