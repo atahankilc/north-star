@@ -17,7 +17,7 @@ const KEYS = ['place', 'page', 'thread', 'deck', 'days', 'linked', 'doc', 'folde
 const PLACES: readonly Place[] = ['talk', 'tasks', 'docs']
 
 // What the stores say now, as the address's keys.
-export function placeAddress(): Record<string, string> {
+function placeAddress(): Record<string, string> {
   const { open, page, tasks } = usePlace.getState()
   if (!open) return {}
   const out: Record<string, string> = { [page ? 'page' : 'place']: open }
@@ -39,7 +39,7 @@ export function placeAddress(): Record<string, string> {
 }
 
 // The address's keys into the stores: what it names opens, and with no place named every place is closed.
-export function openFromAddress(q: URLSearchParams) {
+function openFromAddress(q: URLSearchParams) {
   const asPage = q.get('page')
   const name = asPage ?? q.get('place')
   const place = PLACES.find((p) => p === name) ?? null
