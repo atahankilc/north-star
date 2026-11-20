@@ -29,6 +29,8 @@ export const RELEASES: readonly Release[] = [
       { title: 'One size for everything', tab: 'size', line: 'Settings → display → interface size makes the text, buttons, panels and menus bigger or smaller together, 75 to 150 %.', lessons: ['settings'] },
       // D-422: the decks side view folded into Tasks.
       { title: "A plane's deck in Tasks", tab: 'tasks', line: "A plane's `⇆ deck` opens its deck in Tasks, beside the canvas, linked to the plane. Follow someone and you see their Tasks too.", lessons: ['side-view'] },
+      // D-423: a place in the address.
+      { title: 'Links to a place', tab: 'links', line: "Talk, Tasks and Docs are in the page's address, with the conversation or document open: a reload keeps them, a link opens them.", lessons: [] },
       // The touch pass (2026-11-20): pinch, and a phone's Fit.
       { title: 'Two fingers', tab: 'touch', line: 'On a phone or tablet, two fingers zoom the canvas and a plane in focus. Fit takes in a whole canvas on a phone too.', lessons: [] },
     ],

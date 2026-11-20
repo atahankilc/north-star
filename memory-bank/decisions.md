@@ -435,6 +435,7 @@ feature comes back as a piece, and check them with the user then.
 - The canvas is home, filling the window until something docks; Talk, Tasks and Docs open beside it as a column on the left ground, `full` makes one the page in the canvas's place; the right is the thing selected and the agent at the far right; the HUD bare buttons on the left edge: the page's actions in the middle, the places at the foot.
 
 - The decks side view is Tasks now (D-422): a plane's `⇆ deck`/`⇆ timeline` open Tasks linked to it, a task's `show on…` too; following follows into Tasks; the agent opens decks there.
+- A place is in the address (D-423): `?place=` beside, `?page=` as the page, with what's open in it (`thread`, `deck`, `doc`, `folder`); read on arriving, then written in place, never a history step.
 - The places alike (D-419): one head (`PlaceHead`), an opened item under it with one back row, one find (`PlaceFind`); the places are the workspace's (Tasks every deck, what each is on); on a page the breadcrumb ends with it and the canvases' switch is gone; `full` grows the page from its column.
 - Folders in Docs (D-415): `folders/` (a name, the folder it's in), content owners and editors change; a document's `folderId`, moved by its author or, shared, by an owner or editor; a folder deleted, what's in it goes up.
 

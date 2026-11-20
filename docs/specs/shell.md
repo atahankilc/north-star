@@ -28,8 +28,8 @@ to keep documents; the agent beside all of it. This is where each opens.
   when, what) rather than bubbles.
 - **Tasks:** tabs for the canvas's decks, `mine`, `all · days`. Beside the canvas: the deck's board (KanbanView),
   mine as rows, all · days as the timeline. As the page: the board and its days side by side, the line between them
-  dragged. The decks side view (D-300) stays for a plane's linked deck (`⇆ deck` in a plane's dock); the side nav's
-  decks button and `t` open the Tasks place instead.
+  dragged. A plane's linked deck (`⇆ deck` in a plane's dock) opens in Tasks too, linked to it (D-422); the side
+  nav's decks button and `t` open the Tasks place.
 - **Docs:** every document the workspace keeps (D-232), the ones you may see. Beside the canvas a list; a document
   opens in the list's place. As the page: the list on the left, the document read on the rest.
 
@@ -76,9 +76,20 @@ After a design review of every place (a subagent judging screenshots against the
 - Then (the small ones): a find in Tasks too (a deck's board through its filter's `text`, mine's rows); Docs' list keeps
   name · by · changed beside a document read; a channel's head the same three lines as a thing's (kind, name, how
   long) without a face; the days pane's scale one dropdown, so its dock stays one row.
-- Left for later: touch.
+- Touch (2026-11-20, a tablet and a phone): columns never wider than the window, the agent's orb and the kind guide
+  step aside on a phone, two fingers zoom, a wrapped console hangs under its piece.
+
+## The address (D-423, 2026-11-20)
+
+The place open and what's open in it are in the address, so a reload brings them back and a link opens the same place
+for whoever it's sent to (`places/placeAddress.ts`):
+- `?place=talk|tasks|docs` beside the canvas, `?page=…` as the page;
+- Talk `&thread=<id>`; Tasks `&deck=<tab>` (a deck's id, `mine`, `all`; only once one is picked), `&days`,
+  `&linked=<plane>`; Docs `&doc=<id>`, `&folder=<id>`.
+- Read once, on arriving at a workspace (no place named: every place closed); after that the stores lead and the
+  address follows, always in place: opening or closing a place is never a step back. A focus or another canvas
+  writing the address keeps the place's keys.
 
 ## Not yet
 
-- Folders and channels (steps 3, 4). The preview's folder tree and channels were made up.
-- A page's address (`?page=talk`): today a page is this tab's state, not shared or kept.
+- Talk's draft (a conversation being started) and a place's find are not in the address.

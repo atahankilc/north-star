@@ -11,6 +11,7 @@ import { usePresenceSession } from '../../../data/presence'
 import { useWorkspaceData } from '../../../data/workspaceData'
 import { useMarkVisits, useSummaryWriter } from '../../../data/glance'
 import { canvasOf, MAIN, setCanvasHere } from '../../../data/canvases'
+import { usePlaceAddress } from '../places/placeAddress'
 import {
   canEditIn,
   describeWorkspace,
@@ -93,6 +94,8 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
   useMarkVisits(wid)
   useSummaryWriter(wid, data, isLoading, editor)
   useEditKeys(wid)
+  // The place open and what's open in it, kept in the address (D-423).
+  usePlaceAddress(wid)
   return (
     <WorkspaceContext.Provider value={store}>
       <WorkspaceScreen
