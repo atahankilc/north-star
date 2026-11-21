@@ -391,7 +391,7 @@ feature comes back as a piece, and check them with the user then.
   person's colour the one they have here, else their own (`usePersonColor`). A HUD menu is drawn in the page's top layer (D-405).
 
 ## Agent (planned, docs/specs/agent.md)
-- Its mascot (D-407, D-408): 1.0's orb (`AgentOrb`: ASCII sphere, eyes, moods, antics, the `nar` pomegranate), 72 px (`--orb`); closed it's the orb alone in the bottom-right corner (a press, ⌘J or `/` opens the box), open it rides the box's top edge; the chat's place still open (Q-036).
+- Its mascot (D-407, D-408): 1.0's orb (`AgentOrb`: ASCII sphere, eyes, moods, antics, the `nar` pomegranate), 72 px (`--orb`); closed it's the orb alone in the bottom-right corner (a press, ⌘J or `/` opens the box), open it rides the box's top edge. The chat a column at the far right whose `full` makes it the page: its chats beside the conversation, the canvas still beside it (D-424).
 - The agent (D-312, not started): browser loop as the signed-in person over a shared `src/ops/` layer; map + read
   tools, no vector DB; OpenAI first, the person picks the model, own keys only (no Blaze); every change previewed on
   the real components, one undo step; in the bottom-right corner growing into a column; knowledge base as wide as it

@@ -32,10 +32,13 @@ type Props = {
   tools?: ReactNode
   // No `>` line (a short Select's list): the panel holds the keys, a letter jumps to a row.
   line?: boolean
+  // Takes the keyboard as it opens (a menu asked for); false for one that lies in the page beside something else
+  // that has it (the agent's page: its chats beside the prompt, D-424).
+  focus?: boolean
   className?: string
 }
 
-export function PromptPanel({ items, ariaLabel, empty, prompt = 'type to find…', onClose, id, more, role, start, hitTone, tools, line: wanted = true, className }: Props) {
+export function PromptPanel({ items, ariaLabel, empty, prompt = 'type to find…', onClose, id, more, role, start, hitTone, tools, line: wanted = true, focus = true, className }: Props) {
   const [query, setQuery] = useState('')
   const own = useId()
   const listId = id ?? own
@@ -53,8 +56,11 @@ export function PromptPanel({ items, ariaLabel, empty, prompt = 'type to find…
   const idOf = (key: string) => `${listId}-${key}`
 
   useEffect(() => {
+    if (!focus) return
     const raf = requestAnimationFrame(() => (field.current ?? root.current)?.focus())
     return () => cancelAnimationFrame(raf)
+    // Only as it opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

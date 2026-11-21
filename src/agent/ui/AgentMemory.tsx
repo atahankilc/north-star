@@ -27,7 +27,8 @@ function Rule({ n, label, aside }: { n: string; label: string; aside?: string })
 
 // ---- The saved chats
 
-export function ChatsView() {
+// `beside`: the agent's page shows it beside the conversation (D-424): the prompt keeps the keyboard, and it never closes.
+export function ChatsView({ beside = false }: { beside?: boolean } = {}) {
   const ws = useWs()
   const { user } = useAuth()
   const uid = user?.id
@@ -91,7 +92,8 @@ export function ChatsView() {
         prompt={open ? 'find, or type a new name…' : 'find a chat…'}
         empty="No saved chats yet: they're kept after the first answer."
         more={(typed) => (open ? [{ key: 'a-rename', letter: 'r', label: `rename this chat to "${typed.slice(0, 120)}"`, onSelect: () => (void agentActions.renameChat(chat.id, typed), 'keep') }] : [])}
-        onClose={() => agentActions.show('chat')}
+        focus={!beside}
+        onClose={() => !beside && agentActions.show('chat')}
       />
     </div>
   )

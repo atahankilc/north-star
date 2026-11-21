@@ -11,9 +11,15 @@
 @property --agent-width { syntax: '*'; inherits: false; }
 @property --agent-col-w { syntax: '*'; inherits: false; }
 @property --ai-w { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --agent-page-w { syntax: '*'; inherits: false; }
 
 :global(:is([data-sheet], [data-app])) {
   --agent-col-w: min(var(--agent-width, var(--size-lg)), calc(100vw - var(--size-md)));
+}
+
+/* As the page (D-424): wide, the canvas beside it keeping its least (Agent.tsx works the width out). */
+:global(html[data-agent-full] :is([data-sheet], [data-app])) {
+  --agent-col-w: var(--agent-page-w, var(--size-xl));
 }
 
 /* `data-agent-in` comes after `data-agent-open`, once the sheet has drawn back (Agent.tsx): the app narrows then. */
@@ -117,7 +123,8 @@
     width: calc(100vw - 2 * var(--space-3) - var(--control-lg) - var(--space-6));
   }
 
-  :global(:is([data-sheet], [data-app])) {
+  :global(:is([data-sheet], [data-app])),
+  :global(html[data-agent-full] :is([data-sheet], [data-app])) {
     --agent-col-w: 100%;
   }
 }
@@ -143,6 +150,39 @@
   font-weight: var(--weight-bold);
 }
 
+
+/* ---- The page (D-424): the saved chats on the left, the conversation on the rest, as wide as it reads well. */
+
+.page {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.pageChats {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: var(--size-sm);
+  min-height: 0;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-right: var(--line-w) solid var(--line);
+  overflow: hidden;
+}
+
+.pageTalk {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.page[data-split] .pageTalk > * {
+  width: 100%;
+  max-width: calc(var(--size-xl) + 2 * var(--space-12));
+  margin-inline: auto;
+}
 
 /* ---- The log */
 

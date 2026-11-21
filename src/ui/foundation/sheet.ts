@@ -39,6 +39,9 @@ export function onSheetMove(fn: Move) {
   moves.add(fn)
   return () => void moves.delete(fn)
 }
+// How far the columns reach now, from the window's left and right edges (the agent's page leaves the canvas its least
+// beside what's docked on the left, D-424).
+export const sheetReach = () => ({ left: leftWas, right: rightWas })
 
 // The sheet's corner now, in px: 0 while it fills the window (the agent's tab keeps clear of it, as its CSS does).
 export const sheetRound = () => parseFloat(pageValue('--sheet-round') ?? '') || 0

@@ -15,6 +15,8 @@ type Props = {
   more?: (typed: string) => PromptEntry[]
   onClose: (refocus?: boolean) => void
   height?: 'panel' | 'full'
+  // Takes the keyboard as it opens (default); false while something beside it has it (PromptPanel's `focus`).
+  focus?: boolean
   className?: string
   ref?: Ref<HTMLDivElement>
 }

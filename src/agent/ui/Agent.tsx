@@ -10,6 +10,7 @@
 // Everything it shows is DOM text, never under the ASCII effect; colours are tokens (light under [data-theme='light']);
 // every animation reads useMotion().reduced (Appear and the spinner do).
 import { AnimatePresence } from 'motion/react'
+import { create } from 'zustand'
 import { useStickToBottom } from '../../ui/foundation/useStickToBottom'
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -28,7 +29,7 @@ import { canvasHere, piecesOn } from '../../data/canvases'
 import { canvasCenter } from '../../state/canvasView'
 import { shownPieces } from '../../views/workspace/canvas/shownBox'
 import { isTyping, keysTaken } from '../../ui/foundation/focus'
-import { sheetRound } from '../../ui/foundation/sheet'
+import { onSheetMove, sheetReach, sheetRound } from '../../ui/foundation/sheet'
 import { DUR } from '../../ui/foundation/motionTokens'
 import { isReducedMotion } from '../../state/motion'
 import { useDisplay } from '../../state/display'
@@ -64,6 +65,38 @@ import { plural } from '../../model/words'
 const WIDTH_STORE = 'northstar.agent.width'
 const W_MIN = 340
 const W_MAX = 720
+// The agent as the page (D-424): its column grown wide, the saved chats on its left and the conversation on the rest, the
+// canvas beside it keeping at least `--size-lg` (where the previews are drawn on the real pieces). This tab's; folding
+// the agent away ends it.
+const PAGE_MAX = 1120 // tokens-ok: the chats' list and a conversation as wide as it reads well, in px
+const PAGE_SPLIT = 640 // tokens-ok: under this width the page has no room for the chats' list beside the conversation
+const useAgentPage = create<{ full: boolean }>(() => ({ full: false }))
+const setFull = (full: boolean) => {
+  useAgentPage.setState({ full })
+  if (full) void agentActions.listChats()
+  if (useAgent.getState().view === 'chats') agentActions.show('chat')
+}
+function pageWidth(left: number) {
+  return Math.round(Math.max(W_MIN, Math.min(PAGE_MAX, window.innerWidth - left - tokenPx('--size-lg'))))
+}
+// While the page is up: its width, kept as the window or what's docked on the left changes.
+function usePageWidth(full: boolean) {
+  useLayoutEffect(() => {
+    if (!full) return
+    const h = document.documentElement
+    const fit = (left = sheetReach().left) => setPageValue('--agent-page-w', `${pageWidth(left)}px`, 'app')
+    fit()
+    h.setAttribute('data-agent-full', '')
+    const off = onSheetMove((_l, _r, reach) => fit(reach.left))
+    const resized = () => fit()
+    window.addEventListener('resize', resized)
+    return () => {
+      h.removeAttribute('data-agent-full')
+      off()
+      window.removeEventListener('resize', resized)
+    }
+  }, [full])
+}
 
 // The agent's draft read beside the column (D-381, D-382) lasts while its preview does: discarded, revised past it, or
 // unticked, the page closes (an apply goes on to the document made, agentStore's accept).
@@ -84,6 +117,10 @@ export function Agent() {
   const wid = ws.wid
   const mode = useAgent((s) => s.mode)
   useDraftFollows()
+  const full = useAgentPage((s) => s.full)
+  // Folded back to the box or closed, the page ends with it.
+  useEffect(() => void (mode !== 'column' && useAgentPage.getState().full && useAgentPage.setState({ full: false })), [mode])
+  usePageWidth(full && mode === 'column')
 
   useEffect(() => {
     agentActions.attach(wid, user ? { uid: user.id, ...(user.name || user.email ? { name: (user.name || user.email)! } : {}) } : null)
@@ -370,6 +407,9 @@ function Column() {
   const log = useRef<HTMLDivElement>(null)
   const skills = useSkillMenu(text, setText)
   const viewer = isViewer(chat.wid)
+  const full = useAgentPage((s) => s.full)
+  const width = useAgentPageWidth()
+  const split = full && width >= PAGE_SPLIT
 
   // Kept at the bottom while new things come in (unless the person scrolled up to read).
   const stick = useStickToBottom(log, [chat.entries])
@@ -386,6 +426,8 @@ function Column() {
       if (doc.beside && (doc.draft || doc.reading)) useDocUi.setState({ draft: null, reading: null, editing: false, beside: false })
       else if (useAgent.getState().view !== 'chat') agentActions.show('chat')
       else if (phase === 'previewing') agentActions.discard()
+      // The page goes back beside the canvas before the agent folds.
+      else if (useAgentPage.getState().full) setFull(false)
       else closeAgent()
     }
   }
@@ -418,7 +460,7 @@ function Column() {
       data-learn="agent-column"
       onKeyDown={onKey}
     >
-      <DragLine at="left" label="The agent's width" onDrag={resizeTo} onEnd={keepWidth} />
+      {!full && <DragLine at="left" label="The agent's width" onDrag={resizeTo} onEnd={keepWidth} />}
       <PanelHead
         className={styles.head}
         tone="var(--accent-cyan)"
@@ -429,14 +471,19 @@ function Column() {
         }
         tools={
           <>
-            <Button pressed={view === 'chats'} onClick={() => agentActions.show(view === 'chats' ? 'chat' : 'chats')} disabled={running} title="Your saved chats and the shared ones">
-              chats
-            </Button>
+            {!split && (
+              <Button pressed={view === 'chats'} onClick={() => agentActions.show(view === 'chats' ? 'chat' : 'chats')} disabled={running} title="Your saved chats and the shared ones">
+                chats
+              </Button>
+            )}
             <Button pressed={view === 'notes'} onClick={() => agentActions.show(view === 'notes' ? 'chat' : 'notes')} title="The agent notes: the workspace's memory">
               notes
             </Button>
             <Button onClick={() => agentActions.newChat()} disabled={running} title="A new chat (this one is saved)">
               new
+            </Button>
+            <Button onClick={() => setFull(!full)} title={full ? 'beside the canvas again' : 'as the page: your chats beside the conversation, the canvas still beside it'}>
+              {full ? 'beside the canvas' : 'full'}
             </Button>
           </>
         }
@@ -446,12 +493,19 @@ function Column() {
       >
         <ModelSwitch />
       </PanelHead>
+      <div className={styles.page} data-split={split || undefined}>
+      {split && (
+        <div className={styles.pageChats}>
+          <ChatsView beside />
+        </div>
+      )}
+      <div className={styles.pageTalk}>
       <div
         className={styles.log}
         ref={log}
         onScroll={stick.onScroll}
       >
-        {view === 'chats' ? <ChatsView /> : view === 'notes' ? <NotesView /> : chat.entries.length === 0 ? <Empty focus={focus} /> : numbered(chat.entries).map(([e, n]) => <EntryView key={e.id} entry={e} n={n} />)}
+        {view === 'chats' && !split ? <ChatsView /> : view === 'notes' ? <NotesView /> : chat.entries.length === 0 ? <Empty focus={focus} /> : numbered(chat.entries).map(([e, n]) => <EntryView key={e.id} entry={e} n={n} />)}
       </div>
       <footer className={styles.foot}>
         {viewer && <p className={styles.viewer}>you're a viewer here: the agent reads and answers, it changes nothing</p>}
@@ -487,11 +541,26 @@ function Column() {
           <Label className={styles.scopeLabel}>sees</Label> whole workspace{here ? <> · you're in <span className={styles.scopeHere}>"{here}"</span></> : <> · {workspace}</>}
         </p>
       </footer>
+      </div>
+      </div>
     </EdgeColumn>
   )
 }
 
 // Drag the column's left edge to resize it (DragLine, D-359); remembered in this browser.
+// The page's width while it's up (a page value: read back to choose whether the chats' list fits beside).
+function useAgentPageWidth() {
+  const full = useAgentPage((s) => s.full)
+  const [w, setW] = useState(0)
+  useEffect(() => {
+    if (!full) return
+    const read = () => setW(parseInt(pageValue('--agent-page-w') ?? '', 10) || 0)
+    read()
+    return onPageValue(read)
+  }, [full])
+  return full ? w : 0
+}
+
 function resizeTo(e: PointerEvent) {
   const w = Math.round(Math.min(W_MAX, Math.max(W_MIN, window.innerWidth - e.clientX)))
   setPageValue('--agent-width', `${w}px`, 'app')

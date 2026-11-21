@@ -13,7 +13,8 @@ to keep documents; the agent beside all of it. This is where each opens.
   it takes the canvas's place in the main sheet; `beside the canvas` puts it back; `×` closes it and the canvas is
   back. One place open at a time.
 - **The right is the thing selected** (a card's, a task's panel, D-219) and, at the far right, **the agent** (D-312,
-  its orb in the corner while closed, D-407, D-408). Unchanged.
+  its orb in the corner while closed, D-407, D-408). Its column has `full` too (D-424): the agent as the page, its chats
+  beside the conversation, the canvas still beside it; it works alongside a place, never as one.
 - **The HUD on the left edge, bare buttons on the ground, nothing round them:**
   - the **open page's actions** at the middle of the left edge: the canvas's side nav (`+`, fit, the compass, `?`);
     a page's own while it's the page (Docs: write, upload, the compass; Talk and Tasks: the compass);

@@ -215,7 +215,12 @@ screen). It's there on every canvas and in every focus, so it never has to be fo
   with the `>` prompt under it, the orb riding its top edge.
 - First message: it grows into a column on the right, full height; the app narrows beside it (`[data-app]`, as 1.0),
   so the canvas is never under it. What already uses the right side (a card's panel D-219, beside D-211, the tasks
-  side view D-300) sits **left of** the chat column, never under it.
+  side view D-300, now Tasks on the left, D-422) sits **left of** the chat column, never under it.
+- **As the page** (D-424, the user's pick from docs/specs/agent-place-preview/, option C): the column's `full` grows it
+  wide, the saved chats on its left (the conversation keeping the keyboard), the conversation on the rest at a reading
+  width; the canvas beside it keeps at least `--size-lg`, so a preview is still drawn on the real pieces. With a place
+  docked on the left it narrows, and under 640 px drops the list (`chats` comes back). Escape or `beside the canvas`
+  goes back first; folding the agent away ends it. This tab's, not in the address.
 - During a preview the column holds the change list and the stepper (§4.5).
 - Small screens (≤ 760 px): the chat covers the screen, as 1.0 (D-114).
 - The agent also shows **in presence**: its own square and colour, its cursor gliding to what it reads or changes,
