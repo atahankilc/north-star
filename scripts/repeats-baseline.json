@@ -159,10 +159,6 @@
       "src/onboarding/devMount.tsx"
     ],
     "exports": {
-      "src/data/firebase.ts": [
-        "functionsOf",
-        "storageOf"
-      ],
       "src/onboarding/events.ts": [
         "EMITS_PARTLY"
       ],

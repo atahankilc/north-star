@@ -48,7 +48,7 @@ export function mayUseWorkspaceKey(config: AiConfig | null | undefined, uid: str
 // How a call reaches OpenAI on the workspace key: the function's address and the signed-in person's token (sent each
 // call; the function checks it, the membership, the access and the model).
 export type WorkspaceRoute = { url: string; token: () => Promise<string>; wid: string }
-export function workspaceRoute(wid: string): WorkspaceRoute | null {
+function workspaceRoute(wid: string): WorkspaceRoute | null {
   const url = functionUrl('ai')
   const auth = firebase?.auth
   if (!url || !auth) return null
