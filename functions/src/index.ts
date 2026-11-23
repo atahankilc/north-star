@@ -1,4 +1,4 @@
-// The only server code (D-079): a workspace's shared OpenAI key lives here and nowhere else.
+// The only server code (D-079): a workspace's shared OpenAI key lives here and nowhere else; besides it, atem-lab.com's waitlist (D-429).
 // The key is encrypted with AI_KEY_SECRET and kept in aiSecrets/{wid}, which no client can read (firestore.rules).
 // Members the owners allow call OpenAI through `ai` (the agent, D-427), which streams the answer back and logs what each
 // call used.
@@ -17,6 +17,7 @@ import { defineSecret } from 'firebase-functions/params'
 import { isOwner, mayUseKey, type Access, type Workspace } from './access.js'
 import { accessOf, docAccessOf, sameAccess, sameDocAccess } from './mirror.js'
 import { BadRequest, cleanBody, MODEL_ID, modelsAllowed } from './request.js'
+import { readWaitlistBody, WaitlistError } from './waitlist.js'
 
 initializeApp()
 setGlobalOptions({ region: 'europe-west1', maxInstances: 10 })
@@ -364,4 +365,31 @@ export const syncAccess = onCall({ cors: ORIGINS }, async (req) => {
     await mirrorDocument(wid as string, doc)
   }
   return { ok: true }
+})
+
+// ---- atem-lab.com's waitlist (D-429): an email for a product that isn't out yet ----
+
+export const joinWaitlist = onRequest({ cors: ORIGINS, maxInstances: 2 }, async (req, res) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'POST only.' })
+    return
+  }
+  let entry: ReturnType<typeof readWaitlistBody>
+  try {
+    entry = readWaitlistBody(req.body)
+  } catch (e) {
+    if (!(e instanceof WaitlistError)) throw e
+    res.status(400).json({ error: e.message })
+    return
+  }
+  if (entry !== 'bot') {
+    const id = `${entry.product}_${createHash('sha256').update(entry.email).digest('hex')}`
+    try {
+      // create(): a second time keeps the first date.
+      await db().collection('waitlist').doc(id).create({ ...entry, createdAt: FieldValue.serverTimestamp() })
+    } catch (e) {
+      if ((e as { code?: number }).code !== 6) throw e // 6: already exists
+    }
+  }
+  res.json({ ok: true })
 })
