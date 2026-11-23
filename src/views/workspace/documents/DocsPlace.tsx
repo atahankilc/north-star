@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import { create } from 'zustand'
 import { learn } from '../../../onboarding/events'
 import type { WithId } from '../../../data/hooks'
-import { filesAvailable, newDocument, useDocBody, type Doc } from '../../../data/documents'
+import { DOC_LIMITS, filesAvailable, newDocument, renameDocument, useDocBody, type Doc } from '../../../data/documents'
 import { deleteFolder, makeFolder, moveDocument, renameFolder, type Folder } from '../../../data/folders'
 import { roleOf } from '../../../data/workspaces'
 import { NOTES_ID } from '../../../model/notes'
@@ -28,7 +28,7 @@ import { BinIcon, DownloadIcon, EditIcon, FolderIcon, WriteIcon } from '../../..
 import { CardRow } from '../cards/CardRow'
 import { PlaceFind } from '../places/Places'
 import { DocContent, lengthOf } from './DocContent'
-import { readDoc, uploadFiles } from './Documents'
+import { readDoc, uploadFiles, useDocActions } from './Documents'
 import styles from './DocsPlace.module.css'
 
 const KIND_WORD: Record<Doc['kind'], string> = { markdown: 'md', report: 'report', image: 'image', pdf: 'pdf' }
@@ -90,7 +90,7 @@ function FolderRow({ f, count, editor }: { f: WithId<Folder>; count: number; edi
     )
   // Its tools beside the row, not in it: a button holds no button.
   return (
-    <div className={styles.folderRow}>
+    <div className={styles.toolRow}>
       <CardRow className={styles.row} data-folder title={f.name} lead={<FolderIcon />} end={<span className={styles.meta}>{plural(count, 'file')}</span>} onClick={() => useDocsAt.setState({ folder: f.id, open: null })} />
       {editor && (
         <span className={styles.rowTools}>
@@ -114,10 +114,24 @@ function FolderRow({ f, count, editor }: { f: WithId<Folder>; count: number; edi
 
 // `cols`: on the page, its columns (`full`: whether it's shared or placed, by, changed, size; `narrow`, beside a
 // document read: by, changed).
+// Its rename and delete beside it while pointed at, as a folder's (the 2026-11-23 live pass: a document was deleted only
+// from its window); only what this person may do (docRights through useDocActions), delete through the canvas's
+// confirm (D-182).
 function DocRow({ d, picked, cols, path }: { d: WithId<Doc>; picked?: boolean; cols?: 'full' | 'narrow'; path?: string }) {
   // Shown on a canvas on its own (a document piece, D-234): said, as the threads say where they are.
-  const placed = useWs().pieces.some((p) => p.kind === 'document' && p.docId === d.id)
+  const { wid, pieces } = useWs()
+  const placed = pieces.some((p) => p.kind === 'document' && p.docId === d.id)
+  const acts = useDocActions(d)
+  const renaming = useDocsAt((s) => s.renaming === d.id)
+  if (renaming)
+    return (
+      <div className={styles.folderEdit}>
+        <Label className={styles.kind}>{KIND_WORD[d.kind]}</Label>
+        <CommitField line autoFocus select value={d.title} label="Document name" maxLength={DOC_LIMITS.title} empty="undo" onSave={(v) => void renameDocument(wid, d.id, v)} onEnd={() => useDocsAt.setState({ renaming: null })} />
+      </div>
+    )
   return (
+    <div className={styles.toolRow}>
     <CardRow
       className={styles.row}
       title={d.title || 'untitled'}
@@ -143,6 +157,21 @@ function DocRow({ d, picked, cols, path }: { d: WithId<Doc>; picked?: boolean; c
       }
       onClick={() => useDocsAt.setState({ open: d.id })}
     />
+      {(acts.rename || acts.remove) && (
+        <span className={styles.rowTools}>
+          {acts.rename && (
+            <Button icon aria-label={`Rename ${d.title}`} title="rename" onClick={() => useDocsAt.setState({ renaming: d.id })}>
+              <EditIcon />
+            </Button>
+          )}
+          {acts.remove && (
+            <Button icon tone="danger" aria-label={`Delete ${d.title}`} title={acts.remove.title} onClick={acts.remove.run}>
+              <BinIcon />
+            </Button>
+          )}
+        </span>
+      )}
+    </div>
   )
 }
 

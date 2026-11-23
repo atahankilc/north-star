@@ -119,11 +119,11 @@
   color: var(--accent-yellow);
 }
 
-.folderRow {
+.toolRow {
   position: relative;
 }
 
-/* Rename and delete over the row's right end (where its count is), while pointed at. */
+/* A folder's or a document's rename and delete over the row's right end (its count, its columns), while pointed at. */
 .rowTools {
   position: absolute;
   top: 50%;
@@ -135,7 +135,7 @@
   transform: translateY(-50%);
 }
 
-.folderRow:hover .rowTools,
+.toolRow:hover .rowTools,
 .rowTools:focus-within {
   opacity: 1;
 }
