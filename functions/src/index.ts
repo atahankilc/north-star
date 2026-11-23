@@ -1,6 +1,7 @@
 // The only server code (D-079): a workspace's shared OpenAI key lives here and nowhere else.
 // The key is encrypted with AI_KEY_SECRET and kept in aiSecrets/{wid}, which no client can read (firestore.rules).
-// Members the owner allows call OpenAI through `ai`, which streams the answer back and logs what each call used.
+// Members the owners allow call OpenAI through `ai` (the agent, D-427), which streams the answer back and logs what each
+// call used.
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
 import { initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
@@ -15,6 +16,7 @@ import { setGlobalOptions } from 'firebase-functions/options'
 import { defineSecret } from 'firebase-functions/params'
 import { isOwner, mayUseKey, type Access, type Workspace } from './access.js'
 import { accessOf, docAccessOf, sameAccess, sameDocAccess } from './mirror.js'
+import { BadRequest, cleanBody, MODEL_ID, modelsAllowed } from './request.js'
 
 initializeApp()
 setGlobalOptions({ region: 'europe-west1', maxInstances: 10 })
@@ -25,15 +27,7 @@ const OPENAI = process.env.OPENAI_API_BASE ?? 'https://api.openai.com/v1'
 // The Pages site and local dev servers.
 const ORIGINS = [/^https:\/\/atahankilc\.github\.io$/, /^http:\/\/(localhost|127\.0\.0\.1):\d+$/]
 
-type AiConfig = { hasKey?: boolean; keyHint?: string; access?: Access; allowed?: string[]; models?: Record<string, string>; allowedModels?: string[] }
-
-// Models the workspace key may be used with (D-104): the owners' pick per task and the extras they allow. Owners who
-// never chose a task's model get the default for it (1.0's assistant kept the same list; its client code went with 1.0,
-// D-248, and comes back with the agent, D-312).
-const DEFAULT_MODEL = 'gpt-6-luna'
-const TASKS = ['chat', 'research', 'deep'] as const
-const modelsAllowed = (config: AiConfig) =>
-  new Set([...TASKS.map((t) => config.models?.[t] ?? DEFAULT_MODEL), ...(config.allowedModels ?? [])])
+type AiConfig = { hasKey?: boolean; keyHint?: string; access?: Access; allowed?: string[]; allowedModels?: string[] }
 
 const db = () => getFirestore()
 // RTDB's default instance (europe-west1), named outright: left to itself the admin SDK picks another namespace on the
@@ -113,7 +107,7 @@ export const checkWorkspaceModel = onCall({ secrets: [AI_KEY_SECRET], cors: ORIG
   const { wid, model } = (req.data ?? {}) as { wid?: unknown; model?: unknown }
   const ws = await workspaceOf(wid)
   if (!isOwner(ws, uid)) throw new HttpsError('permission-denied', 'Only an owner chooses the workspace key\'s models.')
-  if (typeof model !== 'string' || !/^[A-Za-z0-9._:-]{1,100}$/.test(model)) throw new HttpsError('invalid-argument', "That isn't a model id.")
+  if (typeof model !== 'string' || !MODEL_ID.test(model)) throw new HttpsError('invalid-argument', "That isn't a model id.")
   const secret = (await secretRef(wid as string).get()).data() as { data: string; iv: string; tag: string } | undefined
   if (!secret) throw new HttpsError('failed-precondition', 'This workspace has no key.')
   const r = await fetch(`${OPENAI}/models/${encodeURIComponent(model)}`, { headers: { Authorization: `Bearer ${decrypt(secret)}` } })
@@ -129,26 +123,6 @@ type Usage = {
   output_tokens?: number
   input_tokens_details?: { cached_tokens?: number }
   output_tokens_details?: { reasoning_tokens?: number }
-}
-
-// Only what the assistant sends; everything else is dropped. Answers are streamed and never stored at OpenAI.
-function cleanBody(body: unknown) {
-  const b = (body ?? {}) as Record<string, unknown>
-  if (typeof b.model !== 'string' || !/^[A-Za-z0-9._:-]{1,100}$/.test(b.model)) throw new Error('model')
-  if (typeof b.instructions !== 'string' || b.instructions.length > 400_000) throw new Error('instructions')
-  if (!Array.isArray(b.input) || b.input.length > 200) throw new Error('input')
-  if (b.tools !== undefined && (!Array.isArray(b.tools) || b.tools.length > 5)) throw new Error('tools')
-  return {
-    model: b.model,
-    instructions: b.instructions,
-    input: b.input,
-    ...(b.tools ? { tools: b.tools, tool_choice: b.tool_choice === 'none' || b.tool_choice === 'required' ? b.tool_choice : 'auto', parallel_tool_calls: false } : {}),
-    ...(b.reasoning ? { reasoning: b.reasoning } : {}),
-    // Reasoning carried between an answer's steps (D-084); nothing else may be asked back.
-    ...(Array.isArray(b.include) && b.include.includes('reasoning.encrypted_content') ? { include: ['reasoning.encrypted_content'] } : {}),
-    stream: true,
-    store: false,
-  }
 }
 
 export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSeconds: 300 }, async (req, res) => {
@@ -178,17 +152,18 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
   if (!ws.memberIds.includes(uid)) return fail(403, "You're not a member of this workspace.")
   const id = wid as string
   const config = ((await configRef(id).get()).data() ?? {}) as AiConfig
-  if (!config.hasKey) return fail(412, 'This workspace has no key.')
+  if (!config.hasKey) return fail(412, 'This workspace has no key (Settings → workspace → agent key).')
   if (ws.roles?.[uid] === 'viewer') return fail(403, 'Viewers use their own key.')
-  if (!mayUseKey(ws, uid, config)) return fail(403, "The owner hasn't let you use the workspace key.")
+  if (!mayUseKey(ws, uid, config)) return fail(403, "The owners haven't let you use the workspace key (Settings → workspace → agent key).")
 
   let payload: ReturnType<typeof cleanBody>
   try {
     payload = cleanBody(body)
   } catch (e) {
-    return fail(400, `Bad request (${(e as Error).message}).`)
+    if (!(e instanceof BadRequest)) throw e
+    return fail(400, `Bad request (${e.message}).`)
   }
-  if (!modelsAllowed(config).has(payload.model)) return fail(403, `The owners haven't allowed ${payload.model} on the workspace key.`)
+  if (!modelsAllowed(config).has(payload.model)) return fail(403, `The owners haven't allowed ${payload.model} on the workspace key (Settings → workspace → agent key).`)
 
   const secret = (await secretRef(id).get()).data() as { data: string; iv: string; tag: string } | undefined
   if (!secret) return fail(412, 'This workspace has no key.')

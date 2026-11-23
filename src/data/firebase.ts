@@ -44,6 +44,13 @@ type Services = { app: FirebaseApp; auth: Auth; firestore: Firestore; rtdb: Data
 // Our Cloud Functions live next to the Realtime Database (D-079).
 const REGION = 'europe-west1'
 
+// An HTTP function's address (the workspace key's `ai`, D-427): the emulator's on 5001, else the region's.
+export function functionUrl(name: string): string | null {
+  const project = firebase?.app.options.projectId
+  if (!project) return null
+  return useEmulators ? `http://127.0.0.1:5001/${project}/${REGION}/${name}` : `https://${REGION}-${project}.cloudfunctions.net/${name}`
+}
+
 // The onboarding's demo realm (demo.html, D-315): its own page in a sealed frame, drawing the real components on made-up
 // data. demo.html sets the flag before any module loads, so nothing there ever reaches Firebase.
 export const isDemo = typeof window !== 'undefined' && (window as { __northStarDemo?: boolean }).__northStarDemo === true

@@ -2,7 +2,7 @@
 // it without the workspace's code.
 
 export const KEY_REFUSED = 'your key was refused — check it in Settings → the agent'
-export const NO_KEY = 'add your key for this model (OpenAI or Anthropic) in Settings → the agent first: it stays in this browser'
+export const NO_KEY = "add your key for this model (OpenAI or Anthropic) in Settings → the agent first: it stays in this browser. Or ask an owner to let you use the workspace's key (an OpenAI model)"
 
 export function plainError(raw: string): { text: string; settings?: boolean } {
   const m = raw.replace(/^the model failed: /, '')

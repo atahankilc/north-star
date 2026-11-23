@@ -167,7 +167,7 @@ function KeySection() {
       <Section
         n={1}
         label="keys"
-        note="Keys stay in this browser and go only to their own provider, never to the workspace or to North Star. You pay the provider for what you use. One key is enough."
+        note="Keys stay in this browser and go only to their own provider, never to the workspace or to North Star. You pay the provider for what you use. One key is enough; with none, the agent uses the workspace's key if its owners let you (workspace → agent key)."
       >
         <KeyRow provider="openai" onSaid={setSaid} />
         <KeyRow provider="anthropic" onSaid={setSaid} />

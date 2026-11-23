@@ -47,6 +47,9 @@ export type OpenAIOptions = {
   maxOutputTokens?: number
   // OpenAI's prompt_cache_key: requests with the same key are routed to the same cache (e.g. a hash of the workspace id).
   cacheKey?: string
+  // The workspace key (D-427): no key here; each request goes to the `ai` function with the person's token, wrapped as
+  // { wid, task, body }; the function checks who may, adds the key and streams OpenAI's answer back as it came.
+  via?: { url: string; token: () => Promise<string>; wid: string; task?: 'chat' | 'research' }
   // For tests: a fake fetch, the base URL, and how long a retry waits.
   fetch?: typeof fetch
   baseUrl?: string
@@ -383,6 +386,10 @@ async function failure(res: Response, model: string, key: string): Promise<OpenA
   const d = await detailOf(res)
   const detail = redact(d.message, key)
   const s = res.status
+  // Through the workspace key (D-427, no key here): the function says in its own words what stopped it and where to
+  // change it (not allowed, no key, a model the owners didn't pick, OpenAI refusing the workspace's key); quota and rate
+  // limits read as below.
+  if (!key && s !== 429 && detail) return new OpenAIError(detail, s === 401 || s === 412 ? 'auth' : s === 403 ? 'forbidden' : s >= 500 ? 'server' : 'bad_request', s)
   if (s === 401) return new OpenAIError("OpenAI didn't accept this key. Check the key in Settings → the agent (it may be mistyped, revoked or from another project).", 'auth', s)
   if (s === 403) return new OpenAIError(`This key isn't allowed to do that${detail ? `: ${detail}` : '.'}`, 'forbidden', s)
   if (s === 404) return new OpenAIError(`This key can't use ${model}${detail ? `: ${detail}` : '.'} Pick another model in Settings → the agent.`, 'not_found', s)
@@ -429,12 +436,16 @@ export type OpenAIModel = StreamingModel
 export function openaiModel(o: OpenAIOptions): OpenAIModel {
   // Trimmed: a key pasted with a space or a newline still works.
   const key = typeof o.key === 'string' ? o.key.trim() : ''
-  if (!key) throw new OpenAIError('An OpenAI key is needed (Settings → the agent).', 'auth')
+  const via = o.via
+  if (!key && !via) throw new OpenAIError('An OpenAI key is needed (Settings → the agent).', 'auth')
   const base = o.baseUrl ?? OPENAI_API
   const h: Http = { key, model: o.model, fetch: o.fetch ?? ((...a) => fetch(...a)), sleep: o.sleep ?? defaultSleep }
   async function* stream(req: ModelRequest): AsyncGenerator<ModelEvent> {
     const body = requestBody(req, o)
-    const res = await send(h, `${base}/responses`, { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', Accept: 'text/event-stream' }, body: JSON.stringify(body) }, req.signal)
+    const headers = { 'Content-Type': 'application/json', Accept: 'text/event-stream' }
+    const res = via
+      ? await send(h, via.url, { method: 'POST', headers: { ...headers, Authorization: `Bearer ${await via.token()}` }, body: JSON.stringify({ wid: via.wid, task: via.task ?? 'chat', body }) }, req.signal)
+      : await send(h, `${base}/responses`, { method: 'POST', headers: { ...headers, Authorization: `Bearer ${key}` }, body: JSON.stringify(body) }, req.signal)
     if (!res.body) throw new OpenAIError('OpenAI answered without a body.', 'stream', res.status)
     try {
       yield* readResponse(sseData(res.body, req.signal), key)

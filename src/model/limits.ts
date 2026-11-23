@@ -126,3 +126,7 @@ export const LIVE_FOLD_BYTES = 300_000
 export const LIVE_DROP_BATCH = 400
 // A caret's two positions in presence (`presence/…/doc.a`, `.h`, base64), and the document's id (database.rules.json).
 export const CARET_MAX = 300
+
+// The workspace key (D-427, `ai/config`): the editors the owners let use it, and the models it runs.
+export const KEY_ALLOWED_MAX = 100
+export const KEY_MODELS_MAX = 20

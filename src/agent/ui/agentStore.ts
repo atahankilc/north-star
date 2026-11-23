@@ -41,6 +41,7 @@ import { plainError, NO_KEY } from './errors'
 import { subscribeWs } from '../../state/wsStore'
 import { NOTES_ID, saveNotes as saveNotesData, watchNotes } from '../../data/agentNotes'
 import { readDocBody, type DocBody } from '../../data/documents'
+import { workspaceKeyFor } from '../../data/workspaceKey'
 import { startChangeLog, watchChanges, watchMembers, type ChangeEntry } from '../../data/changeLog'
 import { chatsAvailable, deleteChat, listChats, newChatId, openChat as openChatData, renameChat as renameChatData, saveChat, shareChat as shareChatData, type ChatListItem } from '../../data/agentChats'
 import { chatDocs, historyOf, reopenedJob, type ChatCursor, type ChatSummary } from '../chats'
@@ -567,9 +568,12 @@ async function turn(chat: Chat, text: string, n: number) {
     const stub = stubOn()
     const provider = providerOf(model)
     const key = stub ? '' : readKey(provider)
-    if (!stub && !key) throw new Error(`An ${provider === 'anthropic' ? 'Anthropic' : 'OpenAI'} key is needed (Settings → the agent).`)
     const env = envOf(chat, rt)
-    const m = await makeModel({ model, key, env, stub, effort: useAgentSettings.getState().effort })
+    // No OpenAI key of their own: the workspace's, when the owners let them (D-427).
+    const actor = actorOf(env.getWs())
+    const via = !stub && !key && provider === 'openai' ? await workspaceKeyFor(chat.wid, actor.uid, actor.role) : null
+    if (!stub && !key && !via) throw new Error(`An ${provider === 'anthropic' ? 'Anthropic' : 'OpenAI'} key is needed (Settings → the agent).`)
+    const m = await makeModel({ model, key, ...(via ? { via } : {}), env, stub, effort: useAgentSettings.getState().effort })
     // A viewer's agent gets no write tool and the read-only note: the loop does it from the actor's role (agent-bugs 18,
     // the evals run the same loop).
     const r = await runTurn(m, env, TOOLS, rt.history, text, { signal: controller.signal, onEvent: on, turnId: `${chat.id}:${n}`, steer: () => rt.steer.splice(0) })

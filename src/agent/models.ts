@@ -14,7 +14,7 @@
 // on the real tools without a key. The stub is behind `import.meta.env.DEV`, so a production build drops it
 // (tests/unit/devStub.test.ts builds this file for production and checks).
 import type { AgentEnv, AgentModel, Usage } from './contract'
-import { openaiModel, type Effort } from './openai'
+import { openaiModel, type Effort, type OpenAIOptions } from './openai'
 import { SEARCH_PRICE } from './web'
 import { readLocal } from '../state/local'
 import { claudeModern } from './provider'
@@ -158,7 +158,8 @@ export function devStubWanted(): boolean {
 // The model a chat talks to. `key`: the person's own key, read by the caller from their browser's storage and passed
 // here; it goes into the adapter's closure and nowhere else. `env`: the dev stub reads the current workspace through it.
 // `effort`: the person's reasoning effort (Settings → the agent), sent only to a model that reasons; left out, effortFor.
-export async function makeModel(o: { model: string; key?: string; env: Pick<AgentEnv, 'getWs' | 'ids'>; stub?: boolean; effort?: Effort }): Promise<AgentModel> {
+// `via`: no key of their own, the workspace's (D-427): an OpenAI model only, through the `ai` function.
+export async function makeModel(o: { model: string; key?: string; via?: OpenAIOptions['via']; env: Pick<AgentEnv, 'getWs' | 'ids'>; stub?: boolean; effort?: Effort }): Promise<AgentModel> {
   if (import.meta.env.DEV && (o.stub ?? devStubWanted())) {
     const { devStubModel } = await import('./devStub')
     return devStubModel(o.env)
@@ -169,5 +170,5 @@ export async function makeModel(o: { model: string; key?: string; env: Pick<Agen
     const { anthropicModel } = await import('./anthropic')
     return anthropicModel({ key: o.key ?? '', model: bareId(o.model), effort: reasoning })
   }
-  return openaiModel({ key: o.key ?? '', model: o.model, reasoning, ...(wid ? { cacheKey: cacheKeyOf(wid) } : {}) })
+  return openaiModel({ key: o.key ?? '', ...(o.key ? {} : o.via ? { via: o.via } : {}), model: o.model, reasoning, ...(wid ? { cacheKey: cacheKeyOf(wid) } : {}) })
 }

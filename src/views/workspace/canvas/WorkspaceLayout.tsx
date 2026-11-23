@@ -32,6 +32,7 @@ import { Toast } from '../../../ui/patterns/Toast'
 import { previewCanvasName, previewHasCanvas, subscribePreview } from '../../../agent/preview'
 import { useWorkspaceStore, WorkspaceContext, type WorkspaceCtx } from './context'
 import { PeopleSettings } from '../settings/PeopleSettings'
+import { WorkspaceKeySettings } from '../settings/WorkspaceKeySettings'
 import { useCanvasSwap, WorkspaceScreen } from './WorkspaceScreen'
 import { exportWorkspace } from '../../../data/exportWorkspace'
 import { download, fileSlug, zipBundle } from '../../../io/bundle'
@@ -128,7 +129,8 @@ function useShownCanvas(wid: string, canvas: string) {
 }
 
 // The workspace's pages in the settings modal (D-054, D-064, D-097): general (name, what we're building) and people
-// (PeopleSettings.tsx: members and roles, requests, invites, the code; D-062, D-098) and export (D-080, D-246).
+// (PeopleSettings.tsx: members and roles, requests, invites, the code; D-062, D-098), the agent key (WorkspaceKeySettings.tsx,
+// D-427) and export (D-080, D-246).
 type SettingsProps = { page: WorkspacePage; wid: string; workspace: WorkspaceCtx['workspace']; requests: WithId<JoinRequest>[] }
 
 function WorkspaceSettings({ page, wid, workspace, requests }: SettingsProps) {
@@ -138,6 +140,7 @@ function WorkspaceSettings({ page, wid, workspace, requests }: SettingsProps) {
 
   if (page === 'people') return <PeopleSettings wid={wid} workspace={workspace} requests={requests} />
   if (page === 'export') return <ExportSection wid={wid} workspace={workspace} />
+  if (page === 'key') return <WorkspaceKeySettings wid={wid} workspace={workspace} />
 
   const run = (p: Promise<unknown>) => {
     setError(null)

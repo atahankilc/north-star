@@ -17,9 +17,9 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Live at https://atahankilc.github.io/north-star/; every push to `main` redeploys. `refactor/north-star-1.5` was merged into `main` (fast-forward) and pushed 2026-10-27; Pages deployed.
 - Rules: Firestore rules + indexes and RTDB deployed 2026-10-29 (RTDB again for presence `tasks`, D-300) (latest change D-292, no `bends` check); rules tests 639/0 (2026-11-03). Until Blaze,
   deploy without Storage: `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db`.
-- Waiting for Blaze: Cloud Functions (workspace key D-079, model enforcement D-104, cleanup trigger) and Storage
-  (documents' files, D-232; `storage.rules` allow nothing yet). The assistant's client code went with 1.0 (D-248); only
-  its server side in `functions/` and the `ai`/`aiUsage`/`aiSecrets` rules are kept.
+- **On Blaze since 2026-11-23.** Deployed: `cleanUpWorkspaceAi` (europe-west3, Firestore's region); `AI_KEY_SECRET` set.
+  Built, not deployed (asked first, D-322): D-426's functions + database.rules.json + firestore.rules (with the push),
+  D-427's key functions; Storage waits for the bucket (the user: console → Storage → europe-west3), then D-425's rules.
 
 ## In progress
 - Pushed and live (checked against origin/main 2026-11-01): D-332 grid dots, D-331 away (RTDB rules deployed), D-330
@@ -47,9 +47,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   reordered, lessons split; D-357: canvases in the welcome and piece-made; all pushed and live 2026-11-02,
   firestore:rules deployed (631/0). The comment lesson seen over the threads panel 2026-11-04 (clear of it; its thread demo hides the breadcrumb). The agent's
   lessons wait for its redesign.
-- Parked (D-312: the agent uses own keys only): the
-  workspace key once Blaze goes through: `npx firebase functions:secrets:set AI_KEY_SECRET --project north-star-db`,
-  `npm run deploy:functions`, try as owner + member (also the workspace-delete cleanup).
+- The workspace key (D-427, 2026-11-23): Settings → workspace → agent key, the agent's keyless OpenAI calls through `ai`; built, checked on the emulators with a fake OpenAI; to deploy and try with a real key.
 - Gallery and foundation (D-324, D-326): done 2026-11-01: the whole UI on the kit, `check:kit` at 0 (baseline `{}`),
   folders by layer/area; the agent's column on Window, InPlaceMenu added, text caps in limits.ts (pushed 2026-11-01;
   checked headless on emulators). D-326's smaller notes all settled (2026-11-04).
@@ -72,7 +70,7 @@ something is finished, add its entry to state-history.md and leave at most one l
 - The workspaces page (D-390, 2026-11-17, docs/specs/workspaces-page.md): round cards, the prompt as wide as the page with `import .zip`, what needs you as one list, a wide card for another workspace that changed, people in colour, waiting things in words; built, checked in the gallery (dark, light), pushed (89f3023, deploy ok), seen on the emulators with the backdrop and the coach's choices; to see with real data (others' changes, people in it) and touch.
 - Opening a workspace from the workspaces page (2026-11-17, pushed): the new page was drawn, covered by the loading curtain 250 ms later, then built again; now a loading page stays hidden until the curtain reveals it (Curtain.tsx), and the page you leave breaks cell by cell first (192 ms, `useShownPage` in App.tsx), both ways; checked headless on emulators; the user to see it live.
 ## Blockers
-- Blaze: the user's payments profile was refused once (OR_BAOOC_15, likely profile country vs German card); retrying.
+- None (Blaze went through 2026-11-23).
 
 ## Known issues
 - Agent: bugs 1–48 (45–48 from the sweep: fixed 2026-11-03; 44, organising moving things far: fixed in code 2026-11-02, to measure; 43, non-goals as tasks: eval edit-17 built 2026-11-02, to run on credit), order and status in docs/specs/agent-bugs.md (add new ones there). Other providers: Q-031.

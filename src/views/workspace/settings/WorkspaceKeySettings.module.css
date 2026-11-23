@@ -1,0 +1,28 @@
+/* Settings → workspace → agent key (D-427; laid out by D-404, its key row as the agent's own keys are). */
+
+/* The key shortened, `sk-…abcd`. */
+.hint {
+  color: var(--fg-strong);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* Whether you may use it, in words. */
+.state {
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+}
+
+.keyForm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+/* The key's field: the kit's Field, mono as a key is; only its room is here. */
+.input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+}

@@ -31,7 +31,8 @@ feature comes back as a piece, and check them with the user then.
 ## Stack, hosting, backend
 - Static React SPA on GitHub Pages, deployed by Actions; three.js via @react-three/fiber for the backdrop (D-001, D-003).
 - No app server: the browser talks to Firebase directly (Auth, Firestore, RTDB europe-west1); rules enforce security
-  (D-002, D-014). The only server code: Cloud Functions for the workspace key, waiting for Blaze (D-079).
+  (D-002, D-014). The only server code: Cloud Functions (Blaze since 2026-11-23): the workspace key (D-079, D-427), RTDB's copy of
+  who may do what (D-426), cleanups (a deleted workspace's data and files, documents' files no summary points to, D-425).
 - Plain paths (`/workspaces/<id>`, `?focus=<id>`, `beside=`), BrowserRouter, index.html copied to 404.html; signing out
   goes to `/`; a link opened signed out continues after sign-in; paths only via `src/app/paths.ts` (D-070, D-174, D-248).
 - Local dev and tests on emulators: a `demo-` project, test users Alice/Bob/Carol, RTDB on 9010 (D-020).
@@ -392,7 +393,7 @@ feature comes back as a piece, and check them with the user then.
 ## Agent (planned, docs/specs/agent.md)
 - Its mascot (D-407, D-408): 1.0's orb (`AgentOrb`: ASCII sphere, eyes, moods, antics, the `nar` pomegranate), 72 px (`--orb`); closed it's the orb alone in the bottom-right corner (a press, ⌘J or `/` opens the box), open it rides the box's top edge. The chat a column at the far right whose `full` makes it the page: its chats beside the conversation, the canvas still beside it (D-424).
 - The agent (D-312, not started): browser loop as the signed-in person over a shared `src/ops/` layer; map + read
-  tools, no vector DB; OpenAI first, the person picks the model, own keys only (no Blaze); every change previewed on
+  tools, no vector DB; OpenAI first, the person picks the model, their own keys first, else the workspace's OpenAI key when the owners let them (D-427); every change previewed on
   the real components, one undo step; in the bottom-right corner growing into a column; knowledge base as wide as it
   can be, never other workspaces, PDFs/images last;
   full workflows with parity to a person plus skills; phases gated by evals built before the UI.
@@ -459,6 +460,7 @@ feature comes back as a piece, and check them with the user then.
   under numbered rules (`01 KEYS ──`) with dashed rows, no boxes, none for a page with one group; a setting's control at
   the row's right edge, under its words when it needs the width; every button the small pill, filled only for a page's
   one go; people: who's asking on top, drawn only while someone is, then members, then the ways in; no keys shown.
+- The agent key (D-427, Settings → workspace → agent key): owners give the workspace an OpenAI key, checked with OpenAI and kept only encrypted on the server (`setWorkspaceKey`, `aiSecrets/`), never shown again (`sk-…abcd`); who may use it (owners always, viewers never, editors every one or the ones ticked) and which models it runs (none ticked, none); a member with no OpenAI key of their own uses it through the `ai` function, which checks all of it again and logs each call (`aiUsage`, never the messages).
 
 ## Export and import
 - Export (D-080, D-246): a `.zip` (`north-star.workspace` v2, Settings → export) of every piece, card, link, text, cell,

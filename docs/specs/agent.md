@@ -310,11 +310,14 @@ moved by a merge (threads aren't ops), documents placed on the canvas by the age
 
 ### 4.8 Keys, money and Blaze (D-312)
 
-- **Only own keys.** Each person puts their OpenAI key in Settings; it stays in their browser only and calls go
-  straight to OpenAI (the hard rule stays). We pay nothing for the agent and run no server for it.
+- **Own keys first.** Each person puts their OpenAI key in Settings; it stays in their browser only and calls go
+  straight to OpenAI (the hard rule stays). We pay nothing for the agent.
+- **The workspace key (D-427, since Blaze):** owners may give the workspace an OpenAI key (Settings → workspace →
+  agent key), kept encrypted on the server; a member they allow, with no OpenAI key of their own, gets the same
+  requests sent through the `ai` function, limited to the models the owners ticked, each call logged in `aiUsage`.
 - **So the agent needs no Blaze.** Blaze (Firebase's pay-as-you-go plan) is needed only for Cloud Functions and
   Storage. The agent runs in the browser with the person's key, so it can be built and shipped on today's free plan.
-  The workspace key (D-079's `setWorkspaceKey` and `ai` proxy) stays parked, unused.
+  (Superseded for the workspace key by D-427 above.)
 - **What Blaze still blocks for the agent:** only PDFs and images in the knowledge base, because files need Storage
   (D-232). Markdown documents work without it.
 - **What a person pays OpenAI** (estimates with OpenAI's prices on 2026-10-29; their prompt caching is automatic and

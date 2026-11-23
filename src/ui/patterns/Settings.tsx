@@ -29,7 +29,7 @@ const BACKGROUND: readonly BackgroundPref[] = ['on', 'off']
 const THEME: readonly ThemePref[] = ['dark', 'light', 'system']
 
 // The workspace's own pages; WorkspaceLayout renders each (D-097).
-export type WorkspacePage = 'general' | 'people' | 'export'
+export type WorkspacePage = 'general' | 'people' | 'key' | 'export'
 type Page = 'account' | 'display' | 'agent' | WorkspacePage
 type Group = 'you' | 'workspace'
 
@@ -37,13 +37,14 @@ type Group = 'you' | 'workspace'
 const PAGES: { id: Page; label: string; title: string; about: string; group: Group }[] = [
   { id: 'account', label: 'account', title: 'Account', about: 'Who you are signed in as.', group: 'you' },
   { id: 'display', label: 'display', title: 'Display', about: 'How North Star looks and moves in this browser.', group: 'you' },
-  { id: 'agent', label: 'the agent', title: 'The agent', about: 'Your own key and the model the agent uses, in this browser.', group: 'you' },
+  { id: 'agent', label: 'the agent', title: 'The agent', about: 'Your own keys and the model the agent uses, in this browser. A workspace can also have its own key (workspace → agent key).', group: 'you' },
   { id: 'general', label: 'general', title: 'Workspace', about: 'Its name and what the team is building.', group: 'workspace' },
   { id: 'people', label: 'people', title: 'People', about: 'Who is in this workspace and how others get in.', group: 'workspace' },
+  { id: 'key', label: 'agent key', title: 'Agent key', about: "The workspace's own OpenAI key for the agent: who may use it, and which models.", group: 'workspace' },
   { id: 'export', label: 'export', title: 'Export', about: 'Take the workspace with you as a file.', group: 'workspace' },
 ]
 
-const WORKSPACE_PAGES: readonly Page[] = ['general', 'people', 'export']
+const WORKSPACE_PAGES: readonly Page[] = ['general', 'people', 'key', 'export']
 
 // Opens Settings on a page from elsewhere (the agent's `settings → the agent`): heard by the mounted SettingsButton.
 const OPEN_AT = 'north-star:settings-at'

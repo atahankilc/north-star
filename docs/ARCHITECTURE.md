@@ -275,7 +275,7 @@ src/
   io/             the export bundle's format
   state/          canvas view, curtain, display, motion, theme
   styles/         tokens (tokens.css + tokens.ts), global.css
-functions/        Cloud Functions: the workspace key (D-079), waiting for Blaze
+functions/        Cloud Functions (Blaze): the workspace key (D-079, D-427), RTDB's copy of roles (D-426), cleanups
 tests/            rules tests (npm run test:rules)
 scripts/          check-memory.mjs
 docs/             product, architecture, design, roadmap, specs/

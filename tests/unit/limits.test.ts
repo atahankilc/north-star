@@ -69,6 +69,8 @@ const CASES: [keyof typeof L, () => number][] = [
   ['CHANGE_KINDS_MAX', () => num(rules.slice(rules.indexOf('match /changes/')), list('d.kinds'))],
   ['SUMMARY_PIECES_CHARS', () => num(body('validSummary'), list('d.pieces'))],
   ['SUMMARY_CARDS_CHARS', () => num(body('validSummary'), list('d.cards'))],
+  ['KEY_ALLOWED_MAX', () => num(body('validAccess'), list('d.allowed'))],
+  ['KEY_MODELS_MAX', () => num(body('validModels'), list('d.allowedModels'))],
 ]
 // Bytes in the app, base64 in RTDB.
 const BASE64_CASES: [keyof typeof L, () => number][] = [
