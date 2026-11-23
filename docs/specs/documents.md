@@ -31,6 +31,14 @@ pieces/{id}  kind 'document'   docId
 - Summaries load with the workspace (two live queries: shared, yours); a body only where it's read.
 - **Files** (images, PDFs) need Storage, so the Blaze plan. Until then only `.md` uploads (`filesAvailable` =
   emulators or `FILES_LIVE`, the pattern of D-079/D-083); an image or PDF says "files come with Storage".
+- **Files, built (D-425):** an upload measures the file in the browser first (`fileFacts.ts`: an image's px size, a
+  PDF's pages, a 480 px webp thumbnail of the image or the PDF's first page), puts the file and its thumbnail at
+  `workspaces/{wid}/documents/{id}/` (storage.rules: a member, before the summary or as its author, one of the kept
+  types, ≤ 10 MB, never over a file), then writes the summary (one undo step; an undo leaves the file, swept after a
+  day by `sweepDocumentFiles`). Read through the rules every time (`getBlob`, never a download link). The reader shows
+  an image at its own shape and a PDF's pages drawn by pdf.js (lazy, up to 60, then "download it"); a sheet shows the
+  thumbnail; `download` saves the file as uploaded. Export puts files in the .zip under `files/<id>/`, import uploads
+  them under the new ids (`cleanFileDocument`).
 - **Old reports moved once:** on opening a workspace, each member's browser copies their own `reports/*` (and an
   owner's, the shared ones) to `documents/*` with the same id, author, date and sharing, then deletes the old ones.
   One report a batch (a body's rules read its summary). Not an undo step. Safe to run twice.
@@ -142,7 +150,7 @@ there is measured as drawn.
 
 ## Not yet
 
-- Images and PDFs (Storage, step 4): upload with thumbnails, pdf.js pages, `[◐ dark]`, an image taking its shape.
+- Images and PDFs: `[◐ dark]` (a PDF's pages inverted in the dark theme); a PDF's pages drawn as they scroll into view rather than all at once.
 - Writing: images by upload once Storage is live; the shared text's channel on RTDB once Blaze is on (D-374).
 - Viewers uploading (the client's read-only mode refuses it).
 - Comments on a document in a list. (Documents are in the export since D-246: .md and reports; files once Storage is live.)

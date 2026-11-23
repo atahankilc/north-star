@@ -43,6 +43,8 @@ export type Bundle = {
   exportedAt: string
   workspace: { name: string; description?: string }
   documents: BundleDocument[]
+  // Files' bytes (D-425), by their names in the .zip (`files/<id>/<name>`): never in workspace.json.
+  files?: Record<string, Uint8Array>
 } & Record<BundleCollection, Raw[]>
 
 class BundleError extends Error {}
@@ -60,7 +62,10 @@ export function makeBundle(workspace: { name: string; description?: string }, da
 }
 
 export function zipBundle(bundle: Bundle): Blob {
-  const zip = zipSync({ 'workspace.json': strToU8(JSON.stringify(bundle, null, 2)) }, { level: 6 })
+  const { files = {}, ...json } = bundle
+  // Images and PDFs are packed already: stored, not squeezed again.
+  const packed = Object.fromEntries(Object.entries(files).map(([name, bytes]) => [name, [bytes, { level: 0 }] as [Uint8Array, { level: 0 }]]))
+  const zip = zipSync({ 'workspace.json': strToU8(JSON.stringify(json, null, 2)), ...packed }, { level: 6 })
   return new Blob([zip as Uint8Array<ArrayBuffer>], { type: 'application/zip' })
 }
 
@@ -70,17 +75,19 @@ const docs = (v: unknown): Raw[] => (Array.isArray(v) ? v.filter((d): d is Raw =
 export async function readBundle(file: File): Promise<Bundle> {
   const bytes = new Uint8Array(await file.arrayBuffer())
   let text: string
+  let files: Record<string, Uint8Array> = {}
   // "PK": a zip.
   if (bytes[0] === 0x50 && bytes[1] === 0x4b) {
     let entries: Record<string, Uint8Array>
     try {
-      entries = unzipSync(bytes, { filter: (f) => f.name.endsWith('workspace.json') })
+      entries = unzipSync(bytes, { filter: (f) => f.name.endsWith('workspace.json') || f.name.startsWith('files/') })
     } catch {
       throw new BundleError('That zip file could not be opened.')
     }
     const entry = Object.keys(entries).find((n) => n.endsWith('workspace.json'))
     if (!entry) throw new BundleError('No workspace.json in that zip: is it a North Star export?')
     text = strFromU8(entries[entry])
+    files = Object.fromEntries(Object.entries(entries).filter(([n]) => n.startsWith('files/')))
   } else {
     text = strFromU8(bytes)
   }
@@ -103,13 +110,14 @@ export async function readBundle(file: File): Promise<Bundle> {
     exportedAt: typeof b.exportedAt === 'string' ? b.exportedAt : '',
     workspace: { name: str(b.workspace?.name, 200)?.trim() || 'Imported workspace', ...(description && { description }) },
     documents: docs(b.documents),
+    files,
   } as Bundle
   for (const c of BUNDLE_COLLECTIONS) bundle[c] = docs(b[c])
   return bundle
 }
 
 // ---- Cleaning (every clean* below) lives in src/model/clean.ts, without Firebase (S3); re-exported here.
-export { cleanCard, cleanCompetitorFeature, cleanComparison, cleanEvidence, cleanEdge, cleanLabel, cleanPiece, cleanPlace, cleanTask, cleanCell, cleanDocument, cleanCanvas, cleanSpot, cleanFolder } from '../model/clean'
+export { cleanCard, cleanCompetitorFeature, cleanComparison, cleanEvidence, cleanEdge, cleanLabel, cleanPiece, cleanPlace, cleanTask, cleanCell, cleanDocument, cleanFileDocument, cleanCanvas, cleanSpot, cleanFolder } from '../model/clean'
 export type { Ids } from '../model/clean'
 
 // A file name safe on every system: "Example: Tablebook" → "example-tablebook".

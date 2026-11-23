@@ -34,6 +34,32 @@
   font-size: var(--text-sm);
 }
 
+/* A file (D-425): an image at its own shape, a PDF's pages one under another, each as wide as the page. */
+.image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-top: var(--space-4);
+}
+
+.image[data-loading] {
+  width: 100%;
+  background: var(--wash-2);
+}
+
+.pdf {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.pdfPage {
+  width: 100%;
+  height: auto;
+  background: var(--fg-strong);
+}
+
 /* A kind's mark (D-232): a small square in its colour, then its short name. Colours from the links' quieter hues. */
 .kind {
   --kind: var(--fg);

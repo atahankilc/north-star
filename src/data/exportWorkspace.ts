@@ -2,10 +2,11 @@
 // content.
 import { collection, getDoc, getDocs, query, where } from 'firebase/firestore'
 import { BUNDLE_COLLECTIONS, makeBundle, type Bundle, type BundleCollection, type BundleDocument, type Raw } from '../io/bundle'
-import { bodyRef, type DocBody } from './documents'
+import { bodyRef, filesAvailable, readFile, type DocBody } from './documents'
 import { db } from './firebase'
 
-// `leftOut`: documents that are files (images, PDFs), which can't travel until Storage is live (D-083).
+// `leftOut`: documents that are files (images, PDFs) that stayed behind: before Storage is live (D-083), or one that
+// couldn't be read. With it, a file travels in the .zip under files/<id>/ with its thumbnail (D-425).
 export async function exportWorkspace(wid: string, uid: string, workspace: { name: string; description?: string }): Promise<{ bundle: Bundle; leftOut: number }> {
   const col = (name: string) => collection(db(), 'workspaces', wid, name)
   const snaps = await Promise.all(BUNDLE_COLLECTIONS.map((c) => getDocs(col(c))))
@@ -25,5 +26,23 @@ export async function exportWorkspace(wid: string, uid: string, workspace: { nam
       return { ...rest, body: body ?? {} }
     }),
   )
-  return { bundle: makeBundle(workspace, data, documents), leftOut: summaries.size - textual.length }
+  const files: Record<string, Uint8Array> = {}
+  const fileDocs = filesAvailable ? [...summaries.values()].filter((d) => (d.kind === 'image' || d.kind === 'pdf') && typeof d.path === 'string') : []
+  const bytes = async (path: string) => new Uint8Array(await (await readFile(path)).arrayBuffer())
+  const carried = await Promise.all(
+    fileDocs.map(async (d): Promise<BundleDocument | null> => {
+      const { uid: _uid, path, thumbPath, ...rest } = d
+      try {
+        const file = `files/${d.id}/${String(path).split('/').pop()}`
+        files[file] = await bytes(String(path))
+        const thumb = typeof thumbPath === 'string' ? `files/${d.id}/thumb.webp` : undefined
+        if (thumb) files[thumb] = await bytes(String(thumbPath)).catch(() => new Uint8Array())
+        return { ...rest, file, ...(thumb && files[thumb].length && { thumb }) }
+      } catch {
+        return null
+      }
+    }),
+  )
+  const sent = carried.filter((d): d is BundleDocument => !!d)
+  return { bundle: { ...makeBundle(workspace, data, [...documents, ...sent]), files }, leftOut: summaries.size - textual.length - sent.length }
 }

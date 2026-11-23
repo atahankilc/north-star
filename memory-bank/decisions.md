@@ -325,8 +325,7 @@ feature comes back as a piece, and check them with the user then.
 - Documents (D-232, D-234, docs/specs/documents.md): every file is a document (`markdown | image | pdf | report`; old
   reports moved over once), private until shared. A `documents` list piece (table or shelf) and a `document` piece (one,
   in a window; a private one asks first); both unframe (a document at most 6000 px, then `[continue reading ↗]`). Open
-  beside the list: the list pinned left, "on this page", zoom 50–200 %, several side by side. Files need Storage (`.md`
-  only until Blaze).
+  beside the list: the list pinned left, "on this page", zoom 50–200 %, several side by side. Files (images, PDFs ≤ 10 MB) in Storage (D-425): measured and thumbnailed in the browser, read through the rules (never a download link), PDFs by pdf.js, in the export's .zip; live once the bucket exists and storage.rules are deployed (`FILES_LIVE`).
 
 ## Kanban, priorities, timeline
 - Kanban (D-251, D-252), called a **deck** on screen (D-301: `+ → deck…`, `· DECK`, every label and undo line; code,

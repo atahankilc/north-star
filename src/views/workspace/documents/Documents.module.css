@@ -197,6 +197,15 @@
   -webkit-line-clamp: 3;
 }
 
+.sheetPicture {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: cover;
+  object-position: top;
+  background: var(--wash-2);
+}
+
 .sheetText {
   flex: 1;
   min-height: 0;

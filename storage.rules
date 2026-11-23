@@ -1,10 +1,47 @@
 rules_version = '2';
 
-// Files in Storage (needs Blaze). Nothing is stored yet: documents' files (images, PDFs, D-232) come with Storage, at
-// workspaces/{wid}/documents/{id}/…, and get their rules then. Until then nobody reads or writes anything.
-// Deploy: npm run deploy:rules
+// Files in Storage (needs Blaze; D-232, D-425): a document's file (an image, a PDF) and an image's or a PDF's thumbnail,
+// at workspaces/{wid}/documents/{id}/{name}. The document's summary in Firestore (documents/{id}) says who may see it,
+// as firestore.rules does: its author, and every member once it's shared.
+// The file goes up first and its summary is written after (src/data/documents.ts' uploadFile), so a member may put a file
+// under an id with no summary yet, or under their own document; never over another one (no update: a file is written
+// once). Deleting a document leaves its file, so an undo brings it back whole; a file no summary points to any more is
+// deleted after a day by `sweepDocumentFiles` (functions/src/index.ts), a deleted workspace's by cleanUpWorkspaceAi.
+// Deploy: npm run deploy:storage (asked first, D-322)
 service firebase.storage {
   match /b/{bucket}/o {
+    match /workspaces/{wid}/documents/{id}/{name} {
+      function workspace() {
+        return firestore.get(/databases/(default)/documents/workspaces/$(wid)).data;
+      }
+      function isMember() {
+        return request.auth != null && request.auth.uid in workspace().memberIds;
+      }
+      function summaryPath() {
+        return /databases/(default)/documents/workspaces/$(wid)/documents/$(id);
+      }
+      function summary() {
+        return firestore.get(summaryPath()).data;
+      }
+      function isOwner() {
+        return workspace().roles[request.auth.uid] == 'owner';
+      }
+
+      allow read: if isMember() && firestore.exists(summaryPath())
+        && (summary().shared == true || summary().uid == request.auth.uid);
+      // One of the kinds a document keeps (firestore.rules' contentType list, but .md, which is text in Firestore),
+      // at most 10 MB (DOC_LIMITS' file size).
+      // Never over a file already there (the emulator, at least, checks an overwrite as a create).
+      allow create: if isMember() && resource == null
+        && (!firestore.exists(summaryPath()) || summary().uid == request.auth.uid)
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/(png|jpeg|webp|gif|svg[+]xml)|application/pdf');
+      allow update: if false;
+      // Whoever may delete the document (firestore.rules' mayDelete): its author, an owner once it's shared.
+      allow delete: if isMember() && firestore.exists(summaryPath())
+        && (summary().uid == request.auth.uid || (summary().shared == true && isOwner()));
+    }
+    // Nothing else is stored.
     match /{path=**} {
       allow read, write: if false;
     }

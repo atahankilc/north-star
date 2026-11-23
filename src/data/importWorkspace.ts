@@ -12,6 +12,7 @@ import {
   cleanComparison,
   cleanCompetitorFeature,
   cleanDocument,
+  cleanFileDocument,
   cleanEdge,
   cleanEvidence,
   cleanLabel,
@@ -26,7 +27,8 @@ import { ALL_TYPES, CARD_COLLECTION, type AnyType } from './cards'
 import { CANVAS } from './labels'
 import { MAIN } from './canvases'
 import { SUB, subKey } from './matrix'
-import { db } from './firebase'
+import { db, storageOf } from './firebase'
+import { filesAvailable } from './documents'
 import type { Workspace } from './model'
 import { createWorkspace, deleteWorkspace } from './workspaces'
 import { docBytes, wholeBatches } from './batches'
@@ -246,7 +248,32 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
 
   // Documents (D-232): yours now, shared as they were, under the name of whoever added them. The summary first, as its
   // content's rule reads it.
-  for (const d of bundle.documents) {
+  // Files (D-425): their bytes go up under the new ids first (storage.rules lets a member put a file before its summary),
+  // then their summaries with the other documents. Where files aren't kept yet, they're left out.
+  const files: Write[][] = []
+  for (const d of bundle.documents.filter((x) => x.kind === 'image' || x.kind === 'pdf')) {
+    const clean = filesAvailable ? cleanFileDocument(d, now, ids) : null
+    const bytes = clean && bundle.files?.[clean.file]
+    if (!clean || !bytes) {
+      skipped++
+      continue
+    }
+    const id = docIds.get(d.id)!
+    const at = `workspaces/${wid}/documents/${id}`
+    const path = `${at}/${clean.file.split('/').pop()}`
+    const thumb = clean.thumb && bundle.files?.[clean.thumb]
+    try {
+      await putFile(path, bytes, clean.contentType)
+      if (thumb) await putFile(`${at}/thumb.webp`, thumb, 'image/webp')
+    } catch {
+      skipped++
+      continue
+    }
+    files.push([[doc(col('documents'), id), { ...clean.summary, path, ...(thumb && { thumbPath: `${at}/thumb.webp` }), uid, name: clean.summary.name ?? name }]])
+  }
+  docWrites.push(...files)
+
+  for (const d of bundle.documents.filter((x) => x.kind !== 'image' && x.kind !== 'pdf')) {
     const clean = cleanDocument(d, now, ids)
     if (!clean) {
       skipped++
@@ -270,6 +297,12 @@ export async function importWorkspace(bundle: Bundle, uid: string, name: string)
     throw err
   }
   return { workspaceId: wid, written: writes.length + docWrites.length, skipped }
+}
+
+// A file's bytes into Storage (D-425).
+async function putFile(path: string, bytes: Uint8Array, contentType: string) {
+  const [st, { ref, uploadBytes }] = await Promise.all([storageOf(), import('firebase/storage')])
+  await uploadBytes(ref(st, path), bytes, { contentType })
 }
 
 // One after another, as batches.ts cuts them (one batch while it fits, D-369): a later one may need what an earlier wrote.

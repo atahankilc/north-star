@@ -12,6 +12,7 @@ import { useWorkspaceData } from '../../../data/workspaceData'
 import { useMarkVisits, useSummaryWriter } from '../../../data/glance'
 import { canvasOf, MAIN, setCanvasHere } from '../../../data/canvases'
 import { usePlaceAddress } from '../places/placeAddress'
+import { filesAvailable } from '../../../data/documents'
 import {
   canEditIn,
   describeWorkspace,
@@ -191,7 +192,7 @@ function ExportSection({ wid, workspace }: { wid: string; workspace: WorkspaceCt
       setPacked(
         `Packed ${n(bundle.pieces.length, 'piece')}, ${n(cards, 'card')}, ${n(bundle.edges.length, 'link')}, ${n(bundle.labels.length, 'text item')}, ` +
           `${n(bundle.cells.length, 'cell')} and ${n(bundle.documents.length, 'document')}.` +
-          (leftOut ? ` ${n(leftOut, 'file')} (images, PDFs) stayed behind: files can't travel until Storage is live.` : ''),
+          (leftOut ? ` ${n(leftOut, 'file')} (images, PDFs) stayed behind: ${filesAvailable ? "they couldn't be read." : "files can't travel until Storage is live."}` : ''),
       )
     } catch (e) {
       setError((e as Error).message)

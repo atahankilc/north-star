@@ -10,8 +10,8 @@
 // The pieces (pieces.ts): a `documents` piece lists them (a table or a shelf of sheets, `DocumentsSetup`); a `document`
 // piece shows one (`docId`).
 import { collection, deleteField, doc, getDoc, query, updateDoc, where, writeBatch, type DocumentReference } from 'firebase/firestore'
-import { useMemo } from 'react'
-import { db, useEmulators } from './firebase'
+import { useEffect, useMemo, useState } from 'react'
+import { db, storageOf, useEmulators } from './firebase'
 import { absent, tracked } from './history'
 import { useDoc, useQuery, type WithId } from './hooks'
 import { deleteLive } from './liveTransport'
@@ -161,6 +161,87 @@ export function refusal(file: File): string | null {
   return null
 }
 
+// ---- Files (D-425): images and PDFs in Storage, at workspaces/{wid}/documents/{id}/ (storage.rules)
+
+// What a file says about itself, worked out in the browser before it goes up (views/…/fileFacts.ts).
+export type FileFacts = { width?: number; height?: number; pages?: number; thumb?: Blob }
+
+const fileTitle = (name: string) => name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim().slice(0, DOC_LIMITS.title) || 'untitled'
+// Its name in Storage: the file's own, made safe for a path (the title keeps what was typed).
+const storedName = (name: string) => name.toLowerCase().replace(/[^a-z0-9.]+/g, '-').replace(/^-+|-+$/g, '').slice(-80) || 'file'
+
+// An image or a PDF as a document of yours (private until shared): the file and its thumbnail go up first, then its
+// summary, one undo step (an undo takes the summary away and leaves the file, so a redo brings it back whole).
+export async function uploadFile(wid: string, who: { uid: string; name: string }, file: File, facts: FileFacts): Promise<string> {
+  const type = typeOfFile(file)
+  if (!type || type === 'text/markdown') throw new DocumentError('not a file we keep')
+  if (!filesAvailable) throw new DocumentError('files come with Storage')
+  const ref = doc(docsOf(wid))
+  const at = `workspaces/${wid}/documents/${ref.id}`
+  const [st, { ref: fileRef, uploadBytes }] = await Promise.all([storageOf(), import('firebase/storage')])
+  const path = `${at}/${storedName(file.name)}`
+  await uploadBytes(fileRef(st, path), file, { contentType: type })
+  const thumbPath = facts.thumb ? `${at}/thumb.webp` : undefined
+  if (facts.thumb && thumbPath) await uploadBytes(fileRef(st, thumbPath), facts.thumb, { contentType: 'image/webp' })
+  const now = Date.now()
+  const summary: Doc = {
+    kind: type === 'application/pdf' ? 'pdf' : 'image',
+    title: fileTitle(file.name),
+    origin: 'upload',
+    uid: who.uid,
+    name: who.name,
+    shared: false,
+    contentType: type,
+    size: file.size,
+    path,
+    ...(thumbPath && { thumbPath }),
+    ...(facts.width && facts.height && { width: Math.round(facts.width), height: Math.round(facts.height) }),
+    ...(facts.pages && { pages: facts.pages }),
+    createdAt: now,
+    updatedAt: now,
+  }
+  await tracked('upload a file', [ref], () => {
+    const batch = writeBatch(db())
+    batch.set(ref, summary)
+    return batch.commit()
+  }, { before: absent([ref]) })
+  return ref.id
+}
+
+// A file's bytes, read through the rules each time (never a download link, which anyone holding it could open), kept
+// for this tab as a local address while anything shows it.
+const blobs = new Map<string, Promise<Blob>>()
+export function readFile(path: string): Promise<Blob> {
+  let got = blobs.get(path)
+  if (!got) {
+    got = Promise.all([storageOf(), import('firebase/storage')]).then(([st, { ref: fileRef, getBlob }]) => getBlob(fileRef(st, path)))
+    got.catch(() => blobs.delete(path))
+    blobs.set(path, got)
+  }
+  return got
+}
+
+// A file as a local address while it's shown: null while it loads, `false` when it can't be read (no Storage yet, or the
+// rules refuse it).
+export function useFileUrl(path: string | undefined): string | null | false {
+  const [url, setUrl] = useState<string | null | false>(null)
+  useEffect(() => {
+    if (!path || !filesAvailable) return void setUrl(false)
+    let gone = false
+    let made: string | null = null
+    setUrl(null)
+    readFile(path).then(
+      (b) => !gone && setUrl((made = URL.createObjectURL(b))),
+      () => !gone && setUrl(false),
+    )
+    return () => {
+      gone = true
+      if (made) URL.revokeObjectURL(made)
+    }
+  }, [path])
+  return url
+}
+
 // A .md's title: its first heading, else the file's name without the extension.
 function mdTitle(text: string, fileName: string) {
   const h = /^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/m.exec(text)
@@ -274,8 +355,17 @@ export async function deleteDocument(wid: string, id: string, pieces: DocumentRe
   })
 }
 
-// A document as a .md file to save: a .md's own text, a report written out. Files (images, PDFs) come with Storage.
+// A document as a file to save: a .md's own text, a report written out, a file as it was uploaded.
 export async function downloadDocument(wid: string, d: WithId<Doc>) {
+  if (d.path) {
+    const blob = await readFile(d.path)
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = d.path.split('/').pop() ?? 'file'
+    a.click()
+    URL.revokeObjectURL(a.href)
+    return
+  }
   const snap = await getDoc(bodyRef(wid, d.id))
   const b = (snap.data() as DocBody | undefined) ?? {}
   const text = d.kind === 'report' ? reportAsMarkdown(d.title, b) : (b.text ?? '')

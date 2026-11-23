@@ -8,7 +8,7 @@ import { memo, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'r
 import { create } from 'zustand'
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
-import { DOC_LIMITS, DocumentError, docRights, downloadDocument, emptyDocuments, newDocument, refusal, renameDocument, shareDocument, typeOfFile, uploadMarkdown, type Doc, type DocCol, type DocKind, type DocumentsSetup } from '../../../data/documents'
+import { DOC_LIMITS, DocumentError, docRights, downloadDocument, emptyDocuments, filesAvailable, newDocument, refusal, renameDocument, shareDocument, typeOfFile, uploadFile, uploadMarkdown, useFileUrl, type Doc, type DocCol, type DocKind, type DocumentsSetup } from '../../../data/documents'
 import { setDocumentsSetup } from '../../../data/pieces'
 import { useHistory } from '../../../data/history'
 import { useAuth } from '../../../data/auth'
@@ -436,8 +436,15 @@ function RenameField({ d }: { d: WithId<Doc> }) {
   )
 }
 
-// A sheet's lines: the first words of its text, a grey bar a line when there are none.
+// A file's sheet (D-425): its thumbnail, filling the sheet under its title.
+function SheetPicture({ path, title }: { path: string; title: string }) {
+  const url = useFileUrl(path)
+  return url ? <img className={styles.sheetPicture} src={url} alt={title} /> : <span className={styles.sheetPicture} aria-hidden />
+}
+
+// A sheet's lines: a file's picture, the first words of its text, a grey bar a line when there are none.
 function SheetLines({ d }: { d: WithId<Doc> }) {
+  if (d.thumbPath && filesAvailable) return <SheetPicture path={d.thumbPath} title={d.title} />
   if (d.excerpt) return <span className={styles.sheetText} data-find={`e|${d.id}`}>{d.excerpt}</span>
   return (
     <span className={styles.bars} aria-hidden>
@@ -498,7 +505,8 @@ const dragOut = (docId: string) => (e: ReactPointerEvent<HTMLElement>) => {
   pressDrag(move, up)
 }
 
-// Files given to the workspace (dropped, or picked from `[upload]`): .md goes up now; anything else says why not.
+// Files given to the workspace (dropped, or picked from `[upload]`): a .md, and an image or a PDF where files are kept
+// (D-425: Storage, `filesAvailable`); anything else says why not.
 // Each upload's line shows in the list's tools until it's done. The new documents' ids, in order.
 export async function uploadFiles(wid: string, who: { uid: string; name: string }, files: File[]): Promise<string[]> {
   const say = useHistory.getState().say
@@ -511,9 +519,10 @@ export async function uploadFiles(wid: string, who: { uid: string; name: string 
       say(`${f.name}: ${why}`)
       continue
     }
-    if (typeOfFile(f) !== 'text/markdown') continue
+    const type = typeOfFile(f)
     try {
-      ids.push(await uploadMarkdown(wid, who, f))
+      // A file (an image, a PDF, D-425): its size, pages and thumbnail worked out here, then it goes up.
+      ids.push(type === 'text/markdown' ? await uploadMarkdown(wid, who, f) : await uploadFile(wid, who, f, await import('./fileFacts').then((m) => m.fileFacts(f, type ?? ''))))
       useDocUi.setState((s) => ({ uploads: s.uploads.map((u) => (u.name === f.name ? { ...u, state: 'done' } : u)) }))
     } catch (e) {
       const msg = e instanceof DocumentError ? e.message : "couldn't upload it"
@@ -534,7 +543,7 @@ function UploadAction({ className }: { className?: string }) {
   if (!user) return null
   return (
     <>
-      <Button className={className} title="add .md files (images and PDFs come with Storage)" onClick={() => input.current?.click()}>
+      <Button className={className} title={filesAvailable ? 'add .md files, images and PDFs' : 'add .md files (images and PDFs come with Storage)'} onClick={() => input.current?.click()}>
         upload
       </Button>
       <input /* kit-ok: the hidden file picker the button above opens */

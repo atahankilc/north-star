@@ -12,7 +12,8 @@ import type { DocBody } from '../data/documents'
 export type Raw = Record<string, unknown> & { id: string }
 
 // A document (D-232): its summary with its content beside it.
-export type BundleDocument = Raw & { body?: DocBody }
+// A file's document (D-425) names its bytes in the .zip: `file`, and its thumbnail `thumb` (under files/).
+export type BundleDocument = Raw & { body?: DocBody; file?: string; thumb?: string }
 
 // ---- Cleaning: a bundle is a file anyone could have edited, so every doc is rebuilt from known fields only, in the
 // shapes firestore.rules accepts (change both together). Ids are new: `Ids` gives the new id of what a doc points at,
@@ -451,6 +452,37 @@ export function cleanCell(d: Raw, now: number) {
 
 // ---- Documents (documents.ts): a .md or a report, whose content travels with it. Images and PDFs are files in Storage,
 // which needs the Blaze plan: not exported yet. The importer adds whose it is now.
+
+// The types a file document keeps (firestore.rules' contentType, storage.rules).
+const FILE_TYPES = { image: ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml'], pdf: ['application/pdf'] } as const
+const FILE_BYTES_MAX = 10485760
+
+// An image's or a PDF's summary (D-425), its bytes named in the file (`file`, `thumb`): the importer uploads them and
+// adds the paths. Null when it's broken or names no file.
+export function cleanFileDocument(d: BundleDocument, now: number, ids: Ids) {
+  const kind = oneOf(d.kind, ['image', 'pdf'] as const)
+  const title = str(d.title, DOC_LIMITS.title)?.trim()
+  const file = str(d.file, 400)
+  if (!kind || !title || !file?.startsWith('files/')) return null
+  const contentType = oneOf(d.contentType, FILE_TYPES[kind])
+  if (!contentType) return null
+  const summary = compact({
+    kind,
+    title,
+    origin: oneOf(d.origin, ['upload', 'assistant'] as const) ?? 'upload',
+    name: str(d.name, AUTHOR_NAME_MAX) || undefined,
+    shared: d.shared === true,
+    contentType,
+    size: int(d.size, 0, FILE_BYTES_MAX) ?? 0,
+    width: int(d.width, 1, 1_000_000),
+    height: int(d.height, 1, 1_000_000),
+    pages: int(d.pages, 1, 100_000),
+    folderId: ids.folder?.(d.folderId),
+    ...times(d, now),
+  })
+  const thumb = str(d.thumb, 400)
+  return { summary, file, contentType, ...(thumb?.startsWith('files/') && { thumb }) }
+}
 
 export function cleanDocument(d: BundleDocument, now: number, ids: Ids) {
   const kind = oneOf(d.kind, ['markdown', 'report'] as const)

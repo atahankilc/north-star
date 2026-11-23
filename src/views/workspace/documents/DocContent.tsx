@@ -1,10 +1,10 @@
 // What a document reads as (D-232), wherever it's shown: on its own piece, beside the documents list, in focus. A head
 // (its kind's mark, who and when, its length; its title) and its content: a .md's Markdown, a report's answer and
-// sections (the old report reader, D-089), or for a file what it is until Storage is live. Laid out at a width given in
-// its own px; the frame round it and how it moves are the caller's.
-import { memo, type ReactNode } from 'react'
+// sections (the old report reader, D-089), an image at its own shape, a PDF's pages (D-425; until Storage is live, what
+// it is). Laid out at a width given in its own px; the frame round it and how it moves are the caller's.
+import { memo, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { WithId } from '../../../data/hooks'
-import { filesAvailable, type Doc, type DocBody, type DocKind } from '../../../data/documents'
+import { filesAvailable, readFile, useFileUrl, type Doc, type DocBody, type DocKind } from '../../../data/documents'
 import { ago } from '../../../ui/foundation/ago'
 import { Markdown } from '../../../ui/primitives/Markdown'
 import styles from './DocContent.module.css'
@@ -93,12 +93,73 @@ export const DocContent = memo(function DocContent({ d, body, loading = false, f
         <Markdown text={splitTitle(body?.text ?? '', d.title).rest} links={links} />
       ) : d.kind === 'report' ? (
         <Report body={body ?? {}} research={d.reportKind === 'research'} links={links} />
+      ) : !filesAvailable ? (
+        <p className={styles.note}>Images and PDFs show here once files are stored (Storage, the paid plan).</p>
+      ) : d.kind === 'image' ? (
+        <FileImage d={d} />
       ) : (
-        <p className={styles.note}>{filesAvailable ? 'The file shows here soon.' : 'Images and PDFs show here once files are stored (Storage, the paid plan).'}</p>
+        <PdfPages d={d} />
       )}
     </article>
   )
 })
+
+// An image document (D-425): at its own shape, never wider than the page; its place kept while it loads.
+function FileImage({ d }: { d: WithId<Doc> }) {
+  const url = useFileUrl(d.path)
+  if (url === false) return <p className={styles.note}>This file couldn&apos;t be read.</p>
+  return url ? (
+    <img className={styles.image} src={url} alt={d.title} width={d.width} height={d.height} />
+  ) : (
+    <div className={styles.image} data-loading style={d.width && d.height ? { aspectRatio: `${d.width} / ${d.height}` } : undefined} />
+  )
+}
+
+// A PDF document (D-425): its pages drawn one after another at the page's width (pdf.js, loaded the first time), up to
+// PDF_PAGES; past that, download it.
+const PDF_PAGES = 60 // tokens-ok: how many of a PDF's pages the reader draws
+function PdfPages({ d }: { d: WithId<Doc> }) {
+  const box = useRef<HTMLDivElement>(null)
+  const [state, setState] = useState<'loading' | 'failed' | 'shown'>('loading')
+  useEffect(() => {
+    const el = box.current
+    if (!el || !d.path) return void setState('failed')
+    let gone = false
+    let done: (() => void) | null = null
+    setState('loading')
+    void (async () => {
+      try {
+        const [{ openPdf, drawPage }, blob] = await Promise.all([import('./pdf'), readFile(d.path!)])
+        const pdf = await openPdf(await blob.arrayBuffer())
+        done = () => void pdf.loadingTask.destroy()
+        const width = el.clientWidth || el.getBoundingClientRect().width
+        for (let n = 1; n <= Math.min(pdf.numPages, PDF_PAGES) && !gone; n++) {
+          const { canvas } = await drawPage(pdf, n, width)
+          if (gone) break
+          canvas.className = styles.pdfPage
+          canvas.setAttribute('aria-label', `page ${n}`)
+          el.append(canvas)
+          if (n === 1) setState('shown')
+        }
+      } catch {
+        if (!gone) setState('failed')
+      }
+    })()
+    return () => {
+      gone = true
+      done?.()
+      el.replaceChildren()
+    }
+  }, [d.path])
+  return (
+    <>
+      {state === 'loading' && <p className={styles.note}>loading…</p>}
+      {state === 'failed' && <p className={styles.note}>This file couldn&apos;t be read.</p>}
+      <div ref={box} className={styles.pdf} />
+      {state === 'shown' && (d.pages ?? 0) > PDF_PAGES && <p className={styles.note}>{plural((d.pages ?? 0) - PDF_PAGES, 'more page')}: download it to read them.</p>}
+    </>
+  )
+}
 
 // A .md's first heading is its title (mdTitle), shown in the head already: not twice. Writing it (D-373) edits the
 // rest and puts the heading back in front.

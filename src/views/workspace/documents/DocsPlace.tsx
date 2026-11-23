@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import { create } from 'zustand'
 import { learn } from '../../../onboarding/events'
 import type { WithId } from '../../../data/hooks'
-import { newDocument, useDocBody, type Doc } from '../../../data/documents'
+import { filesAvailable, newDocument, useDocBody, type Doc } from '../../../data/documents'
 import { deleteFolder, makeFolder, moveDocument, renameFolder, type Folder } from '../../../data/folders'
 import { roleOf } from '../../../data/workspaces'
 import { NOTES_ID } from '../../../model/notes'
@@ -27,7 +27,7 @@ import { ToolButton } from '../../../ui/primitives/ToolButton'
 import { BinIcon, DownloadIcon, EditIcon, FolderIcon, WriteIcon } from '../../../ui/primitives/hudIcons'
 import { CardRow } from '../cards/CardRow'
 import { PlaceFind } from '../places/Places'
-import { DocContent } from './DocContent'
+import { DocContent, lengthOf } from './DocContent'
 import { readDoc, uploadFiles } from './Documents'
 import styles from './DocsPlace.module.css'
 
@@ -130,7 +130,7 @@ function DocRow({ d, picked, cols, path }: { d: WithId<Doc>; picked?: boolean; c
             {cols === 'full' && <span className={styles.col}>{placed && <Label className={styles.placed}>on the canvas</Label>}{d.shared ? '' : 'only you'}</span>}
             <span className={styles.col}>{d.name}</span>
             <span className={styles.colNum}>{ago(d.updatedAt)}</span>
-            {cols === 'full' && <span className={styles.colNum}>{d.words ? `${d.words} w` : ''}</span>}
+            {cols === 'full' && <span className={styles.colNum}>{lengthOf(d)}</span>}
           </>
         ) : (
           <span className={styles.meta}>
@@ -379,7 +379,7 @@ export function DocsTools() {
       <ToolButton label="Write a document" title="write a new document (only you see it until you share it)" onClick={make.write}>
         <WriteIcon />
       </ToolButton>
-      <ToolButton label="Upload documents" title="add .md files (images and PDFs come with Storage)" onClick={() => input.current?.click()}>
+      <ToolButton label="Upload documents" title={filesAvailable ? 'add .md files, images and PDFs' : 'add .md files (images and PDFs come with Storage)'} onClick={() => input.current?.click()}>
         <DownloadIcon />
       </ToolButton>
       <input /* kit-ok: the hidden file picker the upload tool opens */
