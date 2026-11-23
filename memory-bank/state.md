@@ -19,7 +19,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   deploy without Storage: `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db`.
 - **On Blaze since 2026-11-23.** Deployed: `cleanUpWorkspaceAi` (europe-west3, Firestore's region); `AI_KEY_SECRET` set.
   All functions deployed, database + firestore rules released with the push (61ba696, 2026-11-23); the bucket exists
-  (europe-west3), D-425's storage.rules wait for the user. Left: the container image cleanup policy (the user).
+  (europe-west3), D-425's storage.rules wait for the user. Old function builds deleted after a day (the user set the policy, both regions, 2026-11-23).
 
 ## In progress
 - Pushed and live (checked against origin/main 2026-11-01): D-332 grid dots, D-331 away (RTDB rules deployed), D-330
