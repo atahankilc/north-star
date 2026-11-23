@@ -61,6 +61,11 @@ export const SELECT_FIND_PAST = 7
 export const LIVE_SEND_MS = 200
 export const LIVE_TEXT_PAUSE_MS = 2000
 
+// RTDB's copy of who may do what (D-426): a workspace's or a document's not there this long after it's needed (made
+// before the copy existed, or the trigger still on its way) is asked for; past the second wait, it's given up on.
+export const ACCESS_ASK_MS = 1500
+export const ACCESS_GIVE_UP_MS = 30_000
+
 // The interface's size in percent (D-417, Settings → display): its range, its step and where it starts. Every size token
 // on the screen is multiplied by it (tokens.css `--ui`).
 export const UI_SIZE = { min: 75, max: 150, step: 5, normal: 100 } as const

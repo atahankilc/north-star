@@ -22,19 +22,17 @@ export const signOut = refuse
 // firebase/database
 export const connectDatabaseEmulator = refuse
 export const getDatabase = refuse
+export const onChildAdded = refuse
+export const onChildRemoved = refuse
 export const onDisconnect = refuse
 export const onValue = refuse
+export const push = refuse
 export const ref = refuse
 export const remove = refuse
 export const serverTimestamp = refuse
 export const set = refuse
+export const update = refuse
 // firebase/firestore
-// Writing together's packets (D-374, liveTransport.ts); never made in the demo.
-export class Bytes {
-  static fromUint8Array(): never {
-    return refuse()
-  }
-}
 export const arrayRemove = refuse
 export const arrayUnion = refuse
 export const collection = refuse

@@ -1,101 +1,127 @@
-// Writing together's channel (D-374, docs/specs/live-writing.md): Firestore until Blaze, RTDB after (only this file
-// changes). Under a document: `edits/{eid}` the packets ({ u: bytes, by, at }, created, never changed) and `live/state`
-// what's folded ({ s: bytes, v, at }). The rules (firestore.rules, `documents/{id}`) let only who may write the .md
-// (D-373's `mayWrite`) send or fold. No Yjs here: bytes in, bytes out (liveText.ts holds the text).
+// Writing together's channel (D-374), in RTDB since Blaze (D-426; ~0.05–0.1 s, Firestore's was ~0.3): under
+// `live/{wid}/{id}`, `edits/{eid}` the packets ({ u, by, at }, created, never changed) and `state` what's folded
+// ({ s, v, at }), the bytes as base64 (RTDB keeps none). RTDB's rules (database.rules.json) let only who may write the .md
+// (D-373's `mayWrite`) send or fold, from a copy of the roles and the document's author and sharing (access.ts): nothing
+// starts until the copy says what this tab's summary does. A document's shared text goes with it (a function, when its
+// summary is deleted). No Yjs here: bytes in, bytes out (liveText.ts holds the text).
 import {
-  Bytes,
-  collection,
-  doc,
-  getDocs,
-  onSnapshot,
+  onChildAdded,
+  onChildRemoved,
+  onValue,
+  push,
+  ref,
   runTransaction,
   serverTimestamp,
-  setDoc,
-  writeBatch,
-  type DocumentData,
-} from 'firebase/firestore'
+  set,
+  update,
+  type DataSnapshot,
+} from 'firebase/database'
+import { fromBase64, toBase64 } from '../model/base64'
 import { LIVE_DROP_BATCH } from '../model/limits'
-import { inBatches } from './batches'
-import { db } from './firebase'
+import { whenDocMirrored, type DocAccess } from './access'
+import { firebase } from './firebase'
 import type { LivePacket, LiveState, LiveTransport } from './liveText'
 
-const editsOf = (wid: string, id: string) => collection(db(), 'workspaces', wid, 'documents', id, 'edits')
-const stateOf = (wid: string, id: string) => doc(db(), 'workspaces', wid, 'documents', id, 'live', 'state')
+type Stored = { s?: unknown; v?: unknown }
 
-const bytesOf = (d: DocumentData | undefined, key: string) => {
-  const b = d?.[key]
-  return b instanceof Bytes ? b.toUint8Array() : null
+const asState = (d: Stored | null): LiveState | null =>
+  d && typeof d.s === 'string' ? { s: fromBase64(d.s), v: typeof d.v === 'number' ? d.v : 0 } : null
+const packetOf = (snap: DataSnapshot): LivePacket | null => {
+  const u = (snap.val() as { u?: unknown } | null)?.u
+  return typeof u === 'string' && snap.key ? { id: snap.key, u: fromBase64(u) } : null
 }
 
-export function firestoreLive(wid: string, id: string, uid: string): LiveTransport {
-  const edits = editsOf(wid, id)
-  const stateRef = stateOf(wid, id)
-  const asState = (d: DocumentData | undefined): LiveState | null => {
-    const s = bytesOf(d, 's')
-    return s ? { s, v: typeof d?.v === 'number' ? d.v : 0 } : null
+// `doc`: the document's summary as this tab reads it, what the copy must say before RTDB's rules agree.
+export function rtdbLive(wid: string, id: string, uid: string, doc: DocAccess): LiveTransport {
+  const rtdb = firebase?.rtdb
+  if (!rtdb) throw new Error('Firebase is not configured')
+  const root = `live/${wid}/${id}`
+  const stateRef = ref(rtdb, `${root}/state`)
+  const editsRef = ref(rtdb, `${root}/edits`)
+
+  let stopWait = () => {}
+  const allowed = new Promise<void>((resolve, reject) => {
+    stopWait = whenDocMirrored(rtdb, wid, uid, id, doc, resolve, () => reject(new Error("couldn't open this document for writing together")))
+  })
+  // Starts `go` once allowed; the stop works before and after.
+  const once = (go: () => () => void, onError: (e: unknown) => void) => {
+    let off: (() => void) | null = null
+    let stopped = false
+    allowed.then(() => {
+      if (!stopped) off = go()
+    }, onError)
+    return () => {
+      stopped = true
+      off?.()
+      stopWait()
+    }
   }
+
   return {
     listenState(on, onError) {
-      return onSnapshot(stateRef, (snap) => on(asState(snap.data())), onError)
+      return once(() => onValue(stateRef, (snap) => on(asState(snap.val() as Stored | null)), onError), onError)
     },
     listen(on, onError) {
-      // Sizes per id, so what's there is known as packets come and go (a compaction deletes them).
-      const sizes = new Map<string, number>()
-      let bytes = 0
-      return onSnapshot(
-        edits,
-        (snap) => {
-          const added: LivePacket[] = []
-          for (const c of snap.docChanges()) {
-            if (c.type === 'removed') {
-              bytes -= sizes.get(c.doc.id) ?? 0
-              sizes.delete(c.doc.id)
-              continue
-            }
-            if (c.type !== 'added') continue
-            const u = bytesOf(c.doc.data(), 'u')
-            if (!u) continue
-            sizes.set(c.doc.id, u.length)
-            bytes += u.length
-            added.push({ id: c.doc.id, u })
-          }
-          on(added, { count: sizes.size, bytes })
-        },
-        onError,
-      )
+      return once(() => {
+        // Sizes per id, so what's there is known as packets come and go (a compaction deletes them).
+        const sizes = new Map<string, number>()
+        let bytes = 0
+        // Those there now come one by one before the first value: gathered and given at once, then each as it comes.
+        let first: LivePacket[] | null = []
+        const offAdded = onChildAdded(
+          editsRef,
+          (snap) => {
+            const p = packetOf(snap)
+            if (!p || sizes.has(p.id)) return
+            sizes.set(p.id, p.u.length)
+            bytes += p.u.length
+            if (first) first.push(p)
+            else on([p], { count: sizes.size, bytes })
+          },
+          onError,
+        )
+        const offRemoved = onChildRemoved(editsRef, (snap) => {
+          if (!snap.key) return
+          bytes -= sizes.get(snap.key) ?? 0
+          sizes.delete(snap.key)
+        })
+        const offFirst = onValue(
+          editsRef,
+          () => {
+            const now = first ?? []
+            first = null
+            on(now, { count: sizes.size, bytes })
+          },
+          onError,
+          { onlyOnce: true },
+        )
+        return () => {
+          offAdded()
+          offRemoved()
+          offFirst()
+        }
+      }, onError)
     },
     send(u) {
-      const ref = doc(edits)
-      return { id: ref.id, done: setDoc(ref, { u: Bytes.fromUint8Array(u), by: uid, at: serverTimestamp() }) }
+      const node = push(editsRef)
+      const done = allowed.then(() => set(node, { u: toBase64(u), by: uid, at: serverTimestamp() }))
+      return { id: node.key!, done }
     },
     async seed(s) {
-      return runTransaction(db(), async (tx) => {
-        const now = await tx.get(stateRef)
-        const theirs = asState(now.data())
-        if (theirs) return theirs
-        tx.set(stateRef, { s: Bytes.fromUint8Array(s), v: 0, at: serverTimestamp() })
-        return { s, v: 0 }
-      })
+      await allowed
+      // Made only if there's none: someone else's, there first, is taken as it is (two seeds would double the text).
+      const r = await runTransaction(stateRef, (now: Stored | null) => (now ? undefined : { s: toBase64(s), v: 0, at: serverTimestamp() }))
+      return asState(r.snapshot.val() as Stored | null) ?? { s, v: 0 }
     },
     async compact(fold, drop) {
-      await runTransaction(db(), async (tx) => {
-        const now = await tx.get(stateRef)
-        const old = asState(now.data())
-        const s = Bytes.fromUint8Array(fold(old?.s ?? null))
-        if (old) tx.update(stateRef, { s, v: old.v + 1, at: serverTimestamp() })
-        else tx.set(stateRef, { s, v: 0, at: serverTimestamp() })
+      await allowed
+      await runTransaction(stateRef, (now: Stored | null) => {
+        const old = asState(now)
+        return { s: toBase64(fold(old?.s ?? null)), v: old ? old.v + 1 : 0, at: serverTimestamp() }
       })
-      for (const batch of inBatches(drop, (b, eid) => b.delete(doc(edits, eid)), LIVE_DROP_BATCH)) await batch.commit()
+      for (let i = 0; i < drop.length; i += LIVE_DROP_BATCH) {
+        await update(editsRef, Object.fromEntries(drop.slice(i, i + LIVE_DROP_BATCH).map((eid) => [eid, null])))
+      }
     },
   }
-}
-
-// A document's packets and state go with it (deleteDocument, deleteWorkspace): packets first, the state last, so a
-// state is never left behind with its packets gone (an undo of the delete reseeds from the Markdown body).
-export async function deleteLive(wid: string, id: string) {
-  const all = await getDocs(editsOf(wid, id))
-  for (const batch of inBatches(all.docs, (b, d) => b.delete(d.ref), LIVE_DROP_BATCH)) await batch.commit()
-  const batch = writeBatch(db())
-  batch.delete(stateOf(wid, id))
-  await batch.commit()
 }

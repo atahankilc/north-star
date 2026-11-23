@@ -3,8 +3,12 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import * as L from '../../src/model/limits'
+import { base64Length } from '../../src/model/base64'
 
 const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8')
+// Writing together's packets live in RTDB (D-426), as base64: its rules cap their length.
+const rtdbRules = readFileSync(new URL('../../database.rules.json', import.meta.url), 'utf8')
+const base64Cap = (field: string) => num(rtdbRules, new RegExp(`"${field}": \\{\\s*"\\.validate": "newData\\.isString\\(\\) && newData\\.val\\(\\)\\.length > 0 && newData\\.val\\(\\)\\.length <= (\\d+)"`))
 
 // A rules function's body: from `function name(` to the next function or match at its depth.
 function body(name: string) {
@@ -65,8 +69,11 @@ const CASES: [keyof typeof L, () => number][] = [
   ['CHANGE_KINDS_MAX', () => num(rules.slice(rules.indexOf('match /changes/')), list('d.kinds'))],
   ['SUMMARY_PIECES_CHARS', () => num(body('validSummary'), list('d.pieces'))],
   ['SUMMARY_CARDS_CHARS', () => num(body('validSummary'), list('d.cards'))],
-  ['LIVE_PACKET_MAX', () => num(rules, /d\.u is bytes && d\.u\.size\(\) <= (\d+)/)],
-  ['LIVE_STATE_MAX', () => num(rules, /d\.s is bytes && d\.s\.size\(\) <= (\d+)/)],
+]
+// Bytes in the app, base64 in RTDB.
+const BASE64_CASES: [keyof typeof L, () => number][] = [
+  ['LIVE_PACKET_MAX', () => base64Cap('u')],
+  ['LIVE_STATE_MAX', () => base64Cap('s')],
 ]
 
 // Limits the rules can't hold, each with why: they bound an item inside a list or map (Firestore rules can't loop over
@@ -100,9 +107,10 @@ const CLIENT_ONLY: Partial<Record<keyof typeof L, string>> = {
 
 describe('limits match firestore.rules', () => {
   for (const [name, read] of CASES) it(name, () => expect(L[name]).toBe(read()))
+  for (const [name, read] of BASE64_CASES) it(`${name} (base64 in database.rules.json)`, () => expect(base64Length(L[name] as number)).toBe(read()))
   // A new limit is either checked against its rule above or says here why the rules can't hold it.
   it('every limit is checked or says why not', () => {
-    const covered = new Set<string>([...CASES.map(([n]) => n), ...Object.keys(CLIENT_ONLY)])
+    const covered = new Set<string>([...CASES.map(([n]) => n), ...BASE64_CASES.map(([n]) => n), ...Object.keys(CLIENT_ONLY)])
     expect(Object.keys(L).filter((n) => !covered.has(n))).toEqual([])
   })
 })

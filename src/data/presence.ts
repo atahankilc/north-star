@@ -1,11 +1,12 @@
 // Presence and live cursors (Phase 3, D-016, D-065): ephemeral state in RTDB at presence/{wid}/{uid}.
 // Each tab writes its whole node (small), so if another tab of the same user disconnects and removes it,
 // the next write puts it back. onDisconnect() removes it when the tab goes away.
-import { onDisconnect, onValue, ref, remove, serverTimestamp, set, type DatabaseReference } from 'firebase/database'
+import { onDisconnect, onValue, ref, remove, serverTimestamp, set, type Database, type DatabaseReference } from 'firebase/database'
 import { useEffect } from 'react'
 import { create } from 'zustand'
 import { accents } from '../styles/tokens'
 import type { AuthUser } from './auth'
+import { whenMember } from './access'
 import { firebase } from './firebase'
 import { AWAY_AFTER_MS } from '../ui/foundation/feel'
 import { authorName } from '../model/words'
@@ -177,12 +178,13 @@ export function onCursorMove(fn: () => void): () => void {
 }
 
 // This tab's own node: what we last wrote, and where to write it.
-let mine: { node: DatabaseReference; data: Omit<Presence, 'ts' | 'since'>; since: number | null } | null = null
+// `ready`: RTDB's copy of the workspace's members has you (D-426); nothing is written before (the rules would refuse it).
+let mine: { node: DatabaseReference; data: Omit<Presence, 'ts' | 'since'>; since: number | null; ready: boolean } | null = null
 let lastWrite = 0
 let pending: number | null = null
 
-// Who may be here (D-317): the workspace's members. Presence is readable by anyone signed in until membership is in RTDB
-// (Blaze), so a node from someone else is never shown; nobody is shown until the members are known.
+// Who may be here (D-317): the workspace's members. RTDB's rules let only members read and write presence (D-426), from
+// a copy a function keeps; this tab's own list also hides someone the copy hasn't dropped yet.
 let members: ReadonlySet<string> | null = null
 let republish: (() => void) | null = null
 
@@ -201,7 +203,7 @@ export const safePhoto = (url: string | null | undefined) => (url && url.length 
 
 function flush() {
   pending = null
-  if (!mine) return
+  if (!mine?.ready) return
   lastWrite = performance.now()
   // Drop undefined fields: RTDB refuses them.
   const data = Object.fromEntries(Object.entries(mine.data).filter(([, v]) => v !== undefined))
@@ -299,99 +301,31 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
     const rtdb = firebase?.rtdb
     if (!rtdb || !uid) return
     const node = ref(rtdb, `presence/${wid}/${uid}`)
-    mine = { node, data: { name: name.slice(0, 80), color: presenceColor(uid), photo, view: 'canvas' }, since: null }
-
-    // Whenever the connection (re)opens: re-arm the clean-up and write ourselves back.
-    const offConnected = onValue(ref(rtdb, '.info/connected'), (snap) => {
-      if (snap.val() !== true) return
-      onDisconnect(node)
-        .remove()
-        .then(flush)
-        .catch(() => {})
-    })
-
-    let offset = 0
-    const offOffset = onValue(ref(rtdb, '.info/serverTimeOffset'), (snap) => (offset = snap.val() ?? 0))
-    let all: Record<string, Presence> = {}
-    // The peer list as last published, cursors as there-or-not: a cursor that only moved doesn't publish again.
-    let shape = ''
-    const publish = () => {
-      const now = Date.now() + offset
-      const here = Object.entries(all)
-        .filter(([id, p]) => id !== uid && !!members?.has(id) && now - (p.ts ?? 0) < (p.away ? AWAY_STALE_MS : STALE_MS))
-        // Someone away has no cursor here, whatever their last write said.
-        .map(([id, p]) => ({ ...p, ...(p.away ? { x: undefined, y: undefined } : {}), photo: safePhoto(p.photo), uid: id }))
-      let moved = false
-      for (const p of here) {
-        if (p.x === undefined || p.y === undefined) tracks.delete(p.uid)
-        else (track(p.uid, p.x, p.y), (moved = true))
-      }
-      for (const id of tracks.keys()) if (!here.some((p) => p.uid === id)) tracks.delete(id)
-      if (moved) listeners.forEach((fn) => fn())
-      const colors = assignColors([...here, { uid, since: mine?.since ?? undefined }])
-      // Carets in documents (D-374); someone away has none.
-      setCarets(
-        here.flatMap((p) =>
-          p.doc?.a && p.doc.h && !p.away ? [{ uid: p.uid, docId: p.doc.id, name: p.name, color: colors.get(p.uid)!, a: p.doc.a, h: p.doc.h }] : [],
-        ),
-      )
-      const next = JSON.stringify([
-        mine?.since,
-        here.map(({ x, y, ts: _ts, doc, ...p }) => ({ ...p, doc: doc?.id, at: x !== undefined && y !== undefined })),
-      ])
-      if (next === shape) return
-      shape = next
-      const { following } = usePresence.getState()
-      usePresence.setState({
-        // Those here first, then those away (D-331), each by name.
-        peers: here.map((p) => ({ ...p, doc: p.doc ? { id: p.doc.id } : undefined, color: colors.get(p.uid)! })).sort((a, b) => Number(!!a.away) - Number(!!b.away) || a.name.localeCompare(b.name)),
-        myColor: colors.get(uid)!,
-        // They left: stop following.
-        following: following && here.some((p) => p.uid === following) ? following : null,
+    mine = { node, data: { name: name.slice(0, 80), color: presenceColor(uid), photo, view: 'canvas' }, since: null, ready: false }
+    // Nothing is said or heard until RTDB's copy has you as a member (D-426): a moment, the first time in a workspace.
+    // Refused later (the copy gone for a moment, or you were let go), it waits for the copy again.
+    let stopLive: (() => void) | null = null
+    let stopWait = () => {}
+    let wasLive = false
+    const wait = () => {
+      stopWait = whenMember(rtdb, wid, uid, () => {
+        if (mine?.node === node) mine.ready = true
+        wasLive = true
+        stopLive = goLive(rtdb, uid, lost)
       })
     }
-    const offPeers = onValue(
-      ref(rtdb, `presence/${wid}`),
-      (snap) => {
-        all = (snap.val() as Record<string, Presence> | null) ?? {}
-        // Our join time comes back from the server once; keep writing that one.
-        const since = all[uid]?.since
-        if (mine && mine.since === null && typeof since === 'number') mine.since = since
-        publish()
-      },
-      () => usePresence.setState({ peers: [], following: null }),
-    )
-
-    republish = publish
-    // Away (D-331): the tab hidden, or nothing touched for AWAY_AFTER_MS (checked with the heartbeat). Any touch, or
-    // the tab shown again, is back at once.
-    let active = performance.now()
-    const check = () => setAway(document.hidden || performance.now() - active >= AWAY_AFTER_MS)
-    const onActive = () => {
-      active = performance.now()
-      if (mine?.data.away) check()
+    const lost = () => {
+      stopLive?.()
+      stopLive = null
+      if (mine?.node === node) mine.ready = false
+      usePresence.setState({ peers: [], following: null })
+      wait()
     }
-    const ACTIVE = ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart'] as const
-    for (const t of ACTIVE) window.addEventListener(t, onActive, { capture: true, passive: true })
-    const beat = window.setInterval(() => {
-      check()
-      flush()
-      publish()
-    }, HEARTBEAT_MS)
-    const onVisibility = () => {
-      if (!document.hidden) active = performance.now()
-      check()
-    }
-    document.addEventListener('visibilitychange', onVisibility)
-    check()
+    wait()
 
     return () => {
-      offConnected()
-      offOffset()
-      offPeers()
-      window.clearInterval(beat)
-      document.removeEventListener('visibilitychange', onVisibility)
-      for (const t of ACTIVE) window.removeEventListener(t, onActive, { capture: true })
+      stopWait()
+      stopLive?.()
       if (pending !== null) window.clearTimeout(pending)
       pending = null
       mine = null
@@ -399,8 +333,105 @@ export function usePresenceSession(wid: string, user: AuthUser | null, view: Pre
       tracks.clear()
       setCarets([])
       usePresence.setState({ peers: [], myColor: null, following: null })
-      onDisconnect(node).cancel().catch(() => {})
-      remove(node).catch(() => {})
+      if (wasLive) {
+        onDisconnect(node).cancel().catch(() => {})
+        remove(node).catch(() => {})
+      }
+    }
+
+    function goLive(rtdb: Database, uid: string, lost: () => void) {
+      // Whenever the connection (re)opens: re-arm the clean-up and write ourselves back.
+      const offConnected = onValue(ref(rtdb, '.info/connected'), (snap) => {
+        if (snap.val() !== true) return
+        onDisconnect(node)
+          .remove()
+          .then(flush)
+          .catch(() => {})
+      })
+
+      let offset = 0
+      const offOffset = onValue(ref(rtdb, '.info/serverTimeOffset'), (snap) => (offset = snap.val() ?? 0))
+      let all: Record<string, Presence> = {}
+      // The peer list as last published, cursors as there-or-not: a cursor that only moved doesn't publish again.
+      let shape = ''
+      const publish = () => {
+        const now = Date.now() + offset
+        const here = Object.entries(all)
+          .filter(([id, p]) => id !== uid && !!members?.has(id) && now - (p.ts ?? 0) < (p.away ? AWAY_STALE_MS : STALE_MS))
+          // Someone away has no cursor here, whatever their last write said.
+          .map(([id, p]) => ({ ...p, ...(p.away ? { x: undefined, y: undefined } : {}), photo: safePhoto(p.photo), uid: id }))
+        let moved = false
+        for (const p of here) {
+          if (p.x === undefined || p.y === undefined) tracks.delete(p.uid)
+          else (track(p.uid, p.x, p.y), (moved = true))
+        }
+        for (const id of tracks.keys()) if (!here.some((p) => p.uid === id)) tracks.delete(id)
+        if (moved) listeners.forEach((fn) => fn())
+        const colors = assignColors([...here, { uid, since: mine?.since ?? undefined }])
+        // Carets in documents (D-374); someone away has none.
+        setCarets(
+          here.flatMap((p) =>
+            p.doc?.a && p.doc.h && !p.away ? [{ uid: p.uid, docId: p.doc.id, name: p.name, color: colors.get(p.uid)!, a: p.doc.a, h: p.doc.h }] : [],
+          ),
+        )
+        const next = JSON.stringify([
+          mine?.since,
+          here.map(({ x, y, ts: _ts, doc, ...p }) => ({ ...p, doc: doc?.id, at: x !== undefined && y !== undefined })),
+        ])
+        if (next === shape) return
+        shape = next
+        const { following } = usePresence.getState()
+        usePresence.setState({
+          // Those here first, then those away (D-331), each by name.
+          peers: here.map((p) => ({ ...p, doc: p.doc ? { id: p.doc.id } : undefined, color: colors.get(p.uid)! })).sort((a, b) => Number(!!a.away) - Number(!!b.away) || a.name.localeCompare(b.name)),
+          myColor: colors.get(uid)!,
+          // They left: stop following.
+          following: following && here.some((p) => p.uid === following) ? following : null,
+        })
+      }
+      const offPeers = onValue(
+        ref(rtdb, `presence/${wid}`),
+        (snap) => {
+          all = (snap.val() as Record<string, Presence> | null) ?? {}
+          // Our join time comes back from the server once; keep writing that one.
+          const since = all[uid]?.since
+          if (mine && mine.since === null && typeof since === 'number') mine.since = since
+          publish()
+        },
+        lost,
+      )
+
+      republish = publish
+      // Away (D-331): the tab hidden, or nothing touched for AWAY_AFTER_MS (checked with the heartbeat). Any touch, or
+      // the tab shown again, is back at once.
+      let active = performance.now()
+      const check = () => setAway(document.hidden || performance.now() - active >= AWAY_AFTER_MS)
+      const onActive = () => {
+        active = performance.now()
+        if (mine?.data.away) check()
+      }
+      const ACTIVE = ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart'] as const
+      for (const t of ACTIVE) window.addEventListener(t, onActive, { capture: true, passive: true })
+      const beat = window.setInterval(() => {
+        check()
+        flush()
+        publish()
+      }, HEARTBEAT_MS)
+      const onVisibility = () => {
+        if (!document.hidden) active = performance.now()
+        check()
+      }
+      document.addEventListener('visibilitychange', onVisibility)
+      check()
+
+      return () => {
+        offConnected()
+        offOffset()
+        offPeers()
+        window.clearInterval(beat)
+        document.removeEventListener('visibilitychange', onVisibility)
+        for (const t of ACTIVE) window.removeEventListener(t, onActive, { capture: true })
+      }
     }
   }, [wid, uid, name, photo])
 

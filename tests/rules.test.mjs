@@ -3,10 +3,9 @@
 import assert from 'node:assert/strict'
 import { initializeApp } from 'firebase/app'
 import { connectAuthEmulator, getAuth, GoogleAuthProvider, signInWithCredential } from 'firebase/auth'
-import { connectDatabaseEmulator, get as rtGet, getDatabase, ref, remove as rtRemove, serverTimestamp, set as rtSet } from 'firebase/database'
+import { connectDatabaseEmulator, get as rtGet, getDatabase, ref, remove as rtRemove, runTransaction as rtTransaction, serverTimestamp, set as rtSet, update as rtUpdate } from 'firebase/database'
 import {
   addDoc,
-  Bytes,
   arrayRemove,
   arrayUnion,
   collection,
@@ -18,8 +17,6 @@ import {
   getDocs,
   getFirestore,
   query,
-  runTransaction,
-  serverTimestamp as fsTime,
   setDoc,
   updateDoc,
   where,
@@ -60,6 +57,16 @@ async function seed(path, data) {
     method: 'PATCH',
     headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields: enc(data).mapValue.fields }),
+  })
+  if (!r.ok) throw new Error(await r.text())
+}
+
+// Writes RTDB as the emulator's owner, past the rules: the copy of roles and documents that functions keep (D-426).
+async function rtSeed(path, data) {
+  const r = await fetch(`http://127.0.0.1:9010/${path}.json?ns=${PROJECT}-default-rtdb`, {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer owner' },
+    body: JSON.stringify(data),
   })
   if (!r.ok) throw new Error(await r.text())
 }
@@ -623,13 +630,6 @@ await allow('owner deletes a shared document with its text', () => { const w = w
 await allow("owner's undo restores someone's shared document", () => saveDoc(alice, 'd1', { uid: bob.uid, shared: true }))
 await deny('owner restores someone else\'s document as private', () => saveDoc(alice, 'd11', { uid: bob.uid }))
 await deny('a document from the old reports\' move (origin moved, gone)', () => saveDoc(alice, 'd12', { kind: 'report', origin: 'moved', uid: bob.uid, shared: true, reportKind: 'research', sections: 1, sources: 1 }, { answer: 'Small.', sections: [], implications: [], openQuestions: [], sources: [] }))
-// Folders of documents (D-415), content like the rest: owners and editors make and change them; a document moved by its author, or by an owner
-// or editor once it's shared.
-const folderDoc = (fs, id) => doc(fs, 'workspaces', wid, 'folders', id)
-const folderOf = (who, extra = {}) => ({ name: 'Research', uid: who.uid, createdAt: 1, updatedAt: 1, ...extra })
-await allow('editor makes a folder', () => setDoc(folderDoc(alice.fs, 'f1'), folderOf(alice)))
-await allow('a folder in a folder', () => setDoc(folderDoc(alice.fs, 'f2'), folderOf(alice, { name: 'Competitors', parent: 'f1' })))
-await deny('viewer makes a folder', () => setDoc(folderDoc(dave.fs, 'f3'), folderOf(dave)))
 // Documents' files in Storage (D-425): the file goes up before its summary; who sees the summary reads the file.
 const file = (who, id, name) => fileRef(who.st, `workspaces/${wid}/documents/${id}/${name}`)
 const pdf = new Uint8Array(2048)
@@ -654,6 +654,13 @@ await deny('another member deletes a shared file', () => deleteObject(file(dave,
 await allow('owner deletes a shared file', () => deleteObject(file(alice, 'p1', 'plan.pdf')))
 await allow('author deletes their own file', async () => { await uploadBytes(file(bob, 'p5', 'plan.pdf'), pdf, asPdf); await fileDoc(bob, 'p5'); await deleteObject(file(bob, 'p5', 'plan.pdf')) })
 await deny('nothing else is stored', () => uploadBytes(fileRef(bob.st, 'elsewhere/plan.pdf'), pdf, asPdf))
+// Folders of documents (D-415), content like the rest: owners and editors make and change them; a document moved by its author, or by an owner
+// or editor once it's shared.
+const folderDoc = (fs, id) => doc(fs, 'workspaces', wid, 'folders', id)
+const folderOf = (who, extra = {}) => ({ name: 'Research', uid: who.uid, createdAt: 1, updatedAt: 1, ...extra })
+await allow('editor makes a folder', () => setDoc(folderDoc(alice.fs, 'f1'), folderOf(alice)))
+await allow('a folder in a folder', () => setDoc(folderDoc(alice.fs, 'f2'), folderOf(alice, { name: 'Competitors', parent: 'f1' })))
+await deny('viewer makes a folder', () => setDoc(folderDoc(dave.fs, 'f3'), folderOf(dave)))
 await deny('a folder without a name', () => setDoc(folderDoc(alice.fs, 'f3'), folderOf(alice, { name: '' })))
 await deny('a folder with too long a name', () => setDoc(folderDoc(alice.fs, 'f3'), folderOf(alice, { name: 'x'.repeat(81) })))
 await deny('a folder inside itself', () => setDoc(folderDoc(alice.fs, 'f3'), folderOf(alice, { parent: 'f3' })))
@@ -699,77 +706,70 @@ await deny('a written text with another field', () => setDoc(docBody(alice.fs, '
 await allow('author writes the text alone', () => setDoc(docBody(bob.fs, 'd1'), { text: 'Only the text' }))
 await deny('outsider writes a shared document', () => setDoc(docBody(carol.fs, 'd1'), { text: 'x' }))
 
-// Writing together (D-374): packets under a document (`edits`) and what's folded (`live/state`), sent and folded by who
-// may write the .md (D-373's mayWrite); read by who reads it; going with the document.
-const edit = (fs, id, eid) => doc(fs, 'workspaces', wid, 'documents', id, 'edits', eid)
-const liveState = (fs, id) => doc(fs, 'workspaces', wid, 'documents', id, 'live', 'state')
-const bytes = (n) => Bytes.fromUint8Array(new Uint8Array(n).fill(7))
-const packet = (who, extra = {}) => ({ u: bytes(40), by: who.uid, at: fsTime(), ...extra })
-const folded = (v, extra = {}) => ({ s: bytes(200), v, at: fsTime(), ...extra })
-await allow('author sends a packet to their shared document', () => setDoc(edit(bob.fs, 'd1', 'e1'), packet(bob)))
-await allow('owner sends a packet to a shared document', () => setDoc(edit(alice.fs, 'd1', 'e2'), packet(alice)))
-await allow('viewer sends a packet to their own private document', () => setDoc(edit(dave.fs, 'd2', 'e1'), packet(dave)))
-await deny("viewer sends a packet to someone's shared document", () => setDoc(edit(dave.fs, 'd1', 'e3'), packet(dave)))
-await deny("editor sends a packet to someone's private document", () => setDoc(edit(alice.fs, 'd2', 'e2'), packet(alice)))
-await deny('outsider sends a packet', () => setDoc(edit(carol.fs, 'd1', 'e4'), packet(carol)))
-await deny('a packet in someone else\'s name', () => setDoc(edit(alice.fs, 'd1', 'e5'), packet(alice, { by: bob.uid })))
-await deny('a packet over 64 KB', () => setDoc(edit(bob.fs, 'd1', 'e6'), packet(bob, { u: bytes(65537) })))
-await allow('a packet of exactly 64 KB', () => setDoc(edit(bob.fs, 'd1', 'e7'), packet(bob, { u: bytes(65536) })))
-await deny('a packet as text, not bytes', () => setDoc(edit(bob.fs, 'd1', 'e8'), packet(bob, { u: 'AAAA' })))
-await deny('a packet with another field', () => setDoc(edit(bob.fs, 'd1', 'e9'), packet(bob, { text: 'x' })))
-await deny('a packet without its sender', () => setDoc(edit(bob.fs, 'd1', 'e10'), { u: bytes(4), at: fsTime() }))
-await deny('a packet dated by the client', () => setDoc(edit(bob.fs, 'd1', 'e11'), packet(bob, { at: Date.now() })))
-await deny('a packet changed after it was sent', () => updateDoc(edit(bob.fs, 'd1', 'e1'), { u: bytes(3) }))
-await deny('a packet to the agent notes (their own rule)', () => setDoc(edit(bob.fs, 'agent-notes', 'e1'), packet(bob)))
-await allow("viewer reads a shared document's packets", () => getDocs(collection(dave.fs, 'workspaces', wid, 'documents', 'd1', 'edits')))
-await deny("outsider reads a shared document's packets", () => getDocs(collection(carol.fs, 'workspaces', wid, 'documents', 'd1', 'edits')))
-await deny("another member reads a private document's packets", () => getDocs(collection(alice.fs, 'workspaces', wid, 'documents', 'd2', 'edits')))
-await allow('a state read before it exists (reads as missing)', () => getDoc(liveState(dave.fs, 'd1')))
-await deny('outsider reads a state', () => getDoc(liveState(carol.fs, 'd1')))
-await deny('a state seeded at a later count', () => setDoc(liveState(bob.fs, 'd1'), folded(1)))
-await deny('a state over 900 KB', () => setDoc(liveState(bob.fs, 'd1'), folded(0, { s: bytes(921601) })))
-await deny('viewer seeds a shared document', () => setDoc(liveState(dave.fs, 'd1'), folded(0)))
-await allow('editor seeds the state in a transaction', () => runTransaction(bob.fs, async (tx) => {
-  const now = await tx.get(liveState(bob.fs, 'd1'))
-  if (!now.exists()) tx.set(liveState(bob.fs, 'd1'), folded(0))
-}))
-await deny('a second seed over the state (it would double the text)', () => setDoc(liveState(alice.fs, 'd1'), folded(0)))
-await allow('owner folds the packets, one count on', () => runTransaction(alice.fs, async (tx) => {
-  const now = await tx.get(liveState(alice.fs, 'd1'))
-  tx.update(liveState(alice.fs, 'd1'), { s: bytes(300), v: now.data().v + 1, at: fsTime() })
-}))
-await deny("a state's count going back", () => updateDoc(liveState(bob.fs, 'd1'), { s: bytes(300), v: 0, at: fsTime() }))
-await deny("a state's count kept (an overwrite, not a fold)", () => updateDoc(liveState(bob.fs, 'd1'), { s: bytes(300), v: 1, at: fsTime() }))
-await deny('viewer folds a shared document', () => updateDoc(liveState(dave.fs, 'd1'), { s: bytes(300), v: 2, at: fsTime() }))
-await allow("viewer reads a shared document's state", () => getDoc(liveState(dave.fs, 'd1')))
-await deny('viewer deletes packets', () => deleteDoc(edit(dave.fs, 'd1', 'e1')))
-await allow('editor deletes folded packets (a compaction)', () => deleteDoc(edit(alice.fs, 'd1', 'e1')))
-await allow('a compaction deletes 400 packets in one batch', async () => {
-  for (let k = 0; k < 2; k++) {
-    const w = writeBatch(bob.fs)
-    for (let i = 0; i < 200; i++) w.set(edit(bob.fs, 'd1', `m${k}_${i}`), packet(bob, { u: bytes(4) }))
-    await w.commit()
-  }
-  const w = writeBatch(alice.fs)
-  for (let k = 0; k < 2; k++) for (let i = 0; i < 200; i++) w.delete(edit(alice.fs, 'd1', `m${k}_${i}`))
-  await w.commit()
+// Writing together (D-374) in RTDB since D-426: packets (`live/{wid}/{id}/edits`) and what's folded (`…/state`), sent and
+// folded by who may write the .md (D-373's mayWrite), read by who reads it. RTDB's rules read a copy of the roles and the
+// documents' author, sharing and kind that functions keep (`access/`, `docAccess/`); here it's seeded by hand.
+const ROLES = { [alice.uid]: 'owner', [bob.uid]: 'editor', [dave.uid]: 'viewer' }
+const md = (who, shared) => ({ uid: who.uid, shared, kind: 'markdown' })
+await rtSeed(`access/${wid}`, ROLES)
+await rtSeed(`docAccess/${wid}`, { d1: md(bob, true), d2: md(dave, false), d13: md(alice, true), 'agent-notes': md(bob, true), r1: { uid: bob.uid, shared: true, kind: 'report' } })
+const live = (who, id, part = '') => ref(who.rt, `live/${wid}/${id}${part}`)
+const edit = (who, id, eid) => live(who, id, `/edits/${eid}`)
+const liveState = (who, id) => live(who, id, '/state')
+const b64 = (n) => Buffer.alloc(n, 7).toString('base64')
+const packet = (who, extra = {}) => ({ u: b64(40), by: who.uid, at: serverTimestamp(), ...extra })
+const folded = (v, extra = {}) => ({ s: b64(200), v, at: serverTimestamp(), ...extra })
+await allow('author sends a packet to their shared document', () => rtSet(edit(bob, 'd1', 'e1'), packet(bob)))
+await allow('owner sends a packet to a shared document', () => rtSet(edit(alice, 'd1', 'e2'), packet(alice)))
+await allow('viewer sends a packet to their own private document', () => rtSet(edit(dave, 'd2', 'e1'), packet(dave)))
+await deny("viewer sends a packet to someone's shared document", () => rtSet(edit(dave, 'd1', 'e3'), packet(dave)))
+await deny("owner sends a packet to someone's private document", () => rtSet(edit(alice, 'd2', 'e2'), packet(alice)))
+await deny('outsider sends a packet', () => rtSet(edit(carol, 'd1', 'e4'), packet(carol)))
+await deny("a packet in someone else's name", () => rtSet(edit(alice, 'd1', 'e5'), packet(alice, { by: bob.uid })))
+// base64 counts in steps of 3 bytes: the next step past 64 KB.
+await deny('a packet over 64 KB', () => rtSet(edit(bob, 'd1', 'e6'), packet(bob, { u: b64(65539) })))
+await allow('a packet of exactly 64 KB', () => rtSet(edit(bob, 'd1', 'e7'), packet(bob, { u: b64(65536) })))
+await deny('a packet as a number', () => rtSet(edit(bob, 'd1', 'e8'), packet(bob, { u: 5 })))
+await deny('a packet with another field', () => rtSet(edit(bob, 'd1', 'e9'), packet(bob, { text: 'x' })))
+await deny('a packet without its sender', () => rtSet(edit(bob, 'd1', 'e10'), { u: b64(4), at: serverTimestamp() }))
+await deny('a packet dated by the client', () => rtSet(edit(bob, 'd1', 'e11'), packet(bob, { at: Date.now() - 1000 })))
+await deny('a packet changed after it was sent', () => rtSet(edit(bob, 'd1', 'e1'), packet(bob, { u: b64(3) })))
+await deny('a packet to the agent notes (their own rule)', () => rtSet(edit(bob, 'agent-notes', 'e1'), packet(bob)))
+await deny('a packet to a report (not a .md)', () => rtSet(edit(bob, 'r1', 'e1'), packet(bob)))
+await deny('a packet to a document with no copy yet', () => rtSet(edit(bob, 'unknown', 'e1'), packet(bob)))
+await allow("viewer reads a shared document's packets", () => rtGet(live(dave, 'd1', '/edits')))
+await deny("outsider reads a shared document's packets", () => rtGet(live(carol, 'd1', '/edits')))
+await deny("another member reads a private document's packets", () => rtGet(live(alice, 'd2', '/edits')))
+await allow('a state read before it exists', () => rtGet(liveState(dave, 'd1')))
+await deny('outsider reads a state', () => rtGet(liveState(carol, 'd1')))
+await deny('a state seeded at a later count', () => rtSet(liveState(bob, 'd1'), folded(1)))
+await deny('a state over 900 KB', () => rtSet(liveState(bob, 'd1'), folded(0, { s: b64(921603) })))
+await deny('viewer seeds a shared document', () => rtSet(liveState(dave, 'd1'), folded(0)))
+await allow('editor seeds the state in a transaction', () => rtTransaction(liveState(bob, 'd1'), (now) => (now ? undefined : folded(0))))
+await deny('a second seed over the state (it would double the text)', () => rtSet(liveState(alice, 'd1'), folded(0)))
+await allow('owner folds the packets, one count on', () => rtTransaction(liveState(alice, 'd1'), (now) => folded((now?.v ?? 0) + 1, { s: b64(300) })))
+await deny("a state's count going back", () => rtSet(liveState(bob, 'd1'), folded(0, { s: b64(300) })))
+await deny("a state's count kept (an overwrite, not a fold)", () => rtSet(liveState(bob, 'd1'), folded(1, { s: b64(300) })))
+await deny('viewer folds a shared document', () => rtSet(liveState(dave, 'd1'), folded(2)))
+await allow("viewer reads a shared document's state", () => rtGet(liveState(dave, 'd1')))
+await deny('a writer deletes the state (a function does, with the document)', () => rtRemove(liveState(alice, 'd1')))
+await deny('viewer deletes packets', () => rtRemove(edit(dave, 'd1', 'e1')))
+await allow('editor deletes folded packets (a compaction)', () => rtRemove(edit(alice, 'd1', 'e1')))
+await allow('a compaction deletes 400 packets in one update', async () => {
+  for (let k = 0; k < 2; k++) await rtUpdate(live(bob, 'd1', '/edits'), Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`m${k}_${i}`, packet(bob, { u: b64(4) })])))
+  await rtUpdate(live(alice, 'd1', '/edits'), Object.fromEntries(Array.from({ length: 400 }, (_, i) => [`m${Math.floor(i / 200)}_${i % 200}`, null])))
 })
-await allow('owner shares a document of their own', () => saveDoc(alice, 'd13', { shared: true }))
-await allow('editor folds into the owner\'s shared document', () => setDoc(liveState(bob.fs, 'd13'), folded(0)))
-await deny("editor deletes the state of someone else's document", () => deleteDoc(liveState(bob.fs, 'd13')))
-await allow('its author deletes the state with the document', () => deleteDoc(liveState(alice.fs, 'd13')))
-await allow('the document gone, a member clears its packets left behind', async () => {
-  await setDoc(edit(bob.fs, 'd13', 'x1'), packet(bob))
-  await setDoc(liveState(bob.fs, 'd13'), folded(0))
-  const w = writeBatch(alice.fs)
-  w.delete(docBody(alice.fs, 'd13'))
-  w.delete(docDoc(alice.fs, 'd13'))
-  await w.commit()
-  await deleteDoc(edit(dave.fs, 'd13', 'x1'))
-  await deleteDoc(liveState(dave.fs, 'd13'))
-})
-await deny('the document gone, a packet sent to it', () => setDoc(edit(bob.fs, 'd13', 'x2'), packet(bob)))
-await deny('outsider clears the packets of a document gone', () => deleteDoc(edit(carol.fs, 'd13', 'x1')))
+await allow("editor folds into the owner's shared document", () => rtSet(liveState(bob, 'd13'), folded(0)))
+await rtSeed(`access/${wid}/${bob.uid}`, null)
+await deny('a packet from someone no longer in the copy of the roles', () => rtSet(edit(bob, 'd1', 'e12'), packet(bob)))
+await rtSeed(`access/${wid}/${bob.uid}`, 'editor')
+// The copy itself: only functions write it; each person reads only their own role.
+await deny('a member writes their own role into the copy', () => rtSet(ref(dave.rt, `access/${wid}/${dave.uid}`), 'owner'))
+await deny("a member writes a document's copy", () => rtSet(ref(dave.rt, `docAccess/${wid}/d1`), md(dave, true)))
+await allow('a member reads their own role in the copy', () => rtGet(ref(dave.rt, `access/${wid}/${dave.uid}`)))
+await deny("a member reads someone else's role in the copy", () => rtGet(ref(dave.rt, `access/${wid}/${alice.uid}`)))
+await allow("a member reads a document's copy", () => rtGet(ref(dave.rt, `docAccess/${wid}/d1`)))
+await deny("an outsider reads a document's copy", () => rtGet(ref(carol.rt, `docAccess/${wid}/d1`)))
 
 // The agent notes (S16): one shared markdown document per workspace (`agent-notes`); members read, editors write.
 const notesSummary = (who, extra = {}) => ({ kind: 'markdown', role: 'agent-notes', title: 'Agent notes', excerpt: 'We only sell in Berlin', origin: 'assistant', uid: who.uid, name: 'x', shared: true, contentType: 'text/markdown', size: 30, words: 6, createdAt: 1, updatedAt: 1, ...extra })
@@ -1071,7 +1071,11 @@ await allow('member leaves', () => join(bob, { memberIds: arrayRemove(bob.uid), 
 await deny('former member reads workspace', () => getDoc(doc(bob.fs, 'workspaces', wid)))
 await deny('former member lists ideas', () => getDocs(ideas(bob.fs)))
 
-const presence = (who, uid) => ref(who.rt, `presence/${wid}/${uid}`)
+// Presence (D-317), members only since D-426: its rules read the copy of the roles functions keep (seeded here; this
+// workspace's members changed above, so presence gets one of its own).
+const pw = `${wid}-presence`
+await rtSeed(`access/${pw}`, { [alice.uid]: 'owner', [bob.uid]: 'editor' })
+const presence = (who, uid) => ref(who.rt, `presence/${pw}/${uid}`)
 const me = (name, extra = {}) => ({ name, color: '#2de2e6', view: 'canvas', ts: serverTimestamp(), ...extra })
 await allow('write own presence', () => rtSet(presence(bob, bob.uid), me('Bob')))
 await allow('presence with cursor, selection and photo', () =>
@@ -1112,8 +1116,11 @@ await deny('presence with a text cursor', () => rtSet(presence(bob, bob.uid), me
 await deny('presence from the future', () => rtSet(presence(bob, bob.uid), me('Bob', { ts: Date.now() + 3_600_000 })))
 await allow('remove own presence', () => rtRemove(presence(bob, bob.uid)))
 await deny('remove someone else\'s presence', () => rtRemove(presence(bob, alice.uid)))
-await allow('signed-in user reads presence', () => rtGet(ref(alice.rt, `presence/${wid}`)))
-await deny('signed-out user reads presence', () => rtGet(ref(anon.rt, `presence/${wid}`)))
+await allow('member reads presence', () => rtGet(ref(alice.rt, `presence/${pw}`)))
+await deny('outsider reads presence (D-426)', () => rtGet(ref(carol.rt, `presence/${pw}`)))
+await deny('signed-out user reads presence', () => rtGet(ref(anon.rt, `presence/${pw}`)))
+await deny('outsider writes their own presence (D-426)', () => rtSet(presence(carol, carol.uid), me('Carol')))
+await allow('someone no longer a member removes their own presence', () => rtRemove(presence(carol, carol.uid)))
 await deny('read outside /presence', () => rtGet(ref(alice.rt, '/')))
 
 await deny('member deletes the invite code', () => writeBatch(carol.fs).delete(doc(carol.fs, 'inviteCodes', CODE)).commit())

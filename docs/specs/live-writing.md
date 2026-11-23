@@ -12,13 +12,14 @@ the plan, it says so).
   we have none). Tiptap's own open-source extensions tie it to the editor: `@tiptap/extension-collaboration` (the text)
   and `@tiptap/extension-collaboration-caret` (others' carets), over `@tiptap/y-tiptap`, `yjs`, `y-protocols`. Never
   Tiptap Cloud or Hocuspocus (a paid service, a server).
-- **The channel is Firestore for now**: each writer's changes go as small packets under the document; the others get
-  them through a listener (~0.2–0.5 s). The rules that say who writes (D-373's `mayWrite`) guard the packets too.
+- **The channel is RTDB** (D-426; Firestore until Blaze, ~0.3 s): each writer's changes go as small packets under the
+  document; the others get them through a listener (~0.1 s after the 200 ms send pause). The rules that say who writes
+  (D-373's `mayWrite`) guard the packets too, over a copy of the roles and the document's author and sharing that
+  functions keep in RTDB (`access/`, `docAccess/`), since RTDB's rules can't read Firestore.
 - **Carets go through presence** (RTDB, the channel cursors already use): only positions, never text.
 - **Markdown stays the document**: the body's `text` is written again from the shared text on a pause, so the reader,
   the agent, export, download and the finder read it as today. Dropping Yjs one day loses only writing together.
-- **Once Blaze is on**, the channel moves to RTDB (~0.05–0.1 s, Google Docs' speed): a Cloud Function mirrors each
-  workspace's roles to RTDB so its rules can check who writes. The transport is one file behind an interface
+- The transport is one file behind an interface
   (`listenState`, `listen`, `send`, `seed`, `compact`; `src/data/liveText.ts`' `LiveTransport`), so nothing else
   changes. `liveMemory.ts` is the same interface in memory, for the unit tests and the gallery.
 - Only free text gets this. Cards, links, tables, cells, tasks, pieces and short fields stay last write wins per field
@@ -26,13 +27,14 @@ the plan, it says so).
 
 ## Data
 
-Under each document (`workspaces/{wid}/documents/{id}`):
+In RTDB under `live/{wid}/{id}` (D-426), the bytes as base64:
 
-- `edits/{eid}`: a packet: `{ u: Bytes (a Yjs update, ≤ 64 KB), by: uid, at: serverTimestamp }`. Created, never
-  updated; deleted only by a compaction or with the document.
-- `live/state`: everything folded so far: `{ s: Bytes (Y.encodeStateAsUpdate, ≤ 900 KB), v: int, at }`. `v` counts
+- `edits/{eid}`: a packet: `{ u: base64 (a Yjs update, ≤ 64 KB), by: uid, at: server time }`. Created, never
+  changed; deleted only by a compaction, or with the document (a function).
+- `state`: everything folded so far: `{ s: base64 (Y.encodeStateAsUpdate, ≤ 900 KB), v, at }`. `v` counts
   compactions.
-- `content/body.text`: the Markdown, as today.
+
+In Firestore, `workspaces/{wid}/documents/{id}/content/body.text`: the Markdown, as today.
 
 The Y.Doc holds one `XmlFragment` (`default`), what Tiptap's Collaboration extension writes.
 
@@ -77,15 +79,19 @@ Generic (a collection of packets and a state doc), so paragraphs, sticky notes a
 
 ## Rules
 
-- firestore.rules, under `documents/{id}`:
-  - `edits/{eid}`: read if `mayRead(summary())`; create if `mayWrite(summary())`, keys `u, by, at` only, `by ==
-    request.auth.uid`, `u is bytes && u.size() <= 65536`, `at == request.time`; no update; delete if `mayWrite` or
-    `mayDelete(summary())` (compaction, the document's delete).
-  - `live/state`: read if `mayRead`; create and update if `mayWrite`, keys `s, v, at`, `s.size() <= 921600`, `v` up by
-    one on update; delete if `mayDelete`.
-- database.rules.json: `presence/$wid/$uid/doc` with `id` (≤ 128), `a`, `h` (strings ≤ 300); nothing else.
-- `deleteDocument` and `deleteWorkspace` take `edits` and `live` too (batches, as bodies are), and the rules tests
-  cover all of it (author, owner, editor, viewer, outsider; sizes; `by` someone else; a state's `v` going back).
+- database.rules.json (D-426), over the copy (`access/{wid}/{uid}` the role, `docAccess/{wid}/{id}` uid, shared, kind):
+  - `live/{wid}/{id}`: read if a member and (shared or its author), firestore.rules' `mayRead`.
+  - `edits/{eid}`: written if `mayWrite` (a member; a `.md`, not the agent notes; its author, or an owner or editor once
+    shared), keys `u, by, at`, `by` the writer, `u` base64 ≤ 87 384 characters, `at` the server's; created, never
+    changed; deleted by the same (a compaction).
+  - `state`: written if `mayWrite`, never deleted by a client, keys `s, v, at`, `s` ≤ 1 228 800 characters; `v` 0 when
+    there's none, else one more.
+  - `presence/$wid/$uid/doc` with `id` (≤ 128), `a`, `h` (strings ≤ 300); nothing else.
+- A function clears a document's `live/` when its summary is gone (and a workspace's); the client deletes nothing
+  there. The rules tests cover it all (author, owner, editor, viewer, outsider; sizes; `by` someone else; a state's `v`
+  going back; someone not in the copy; the copy written by no client).
+- The provider waits until the document's copy says what this tab's summary does (`whenDocMirrored`), asking
+  `syncAccess` once if it's late.
 
 ## Steps (built 2026-11-05)
 
@@ -110,5 +116,4 @@ document) and undoing a delete (the text back, seeded again from the Markdown).
 ## Not in this plan
 
 - Paragraphs, sticky notes, card and task notes written together (the same provider later, each with its own rule).
-- RTDB as the channel (Blaze).
 - Comments on a selection, suggestions, version history.

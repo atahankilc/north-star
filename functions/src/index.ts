@@ -4,13 +4,17 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
 import { initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
+import { getDatabaseWithUrl } from 'firebase-admin/database'
+import { getStorage } from 'firebase-admin/storage'
 import { FieldValue, getFirestore } from 'firebase-admin/firestore'
-import { onDocumentDeleted } from 'firebase-functions/firestore'
+import { onDocumentDeleted, onDocumentWritten } from 'firebase-functions/firestore'
 import { HttpsError, onCall, onRequest } from 'firebase-functions/https'
 import { logger } from 'firebase-functions'
+import { onSchedule } from 'firebase-functions/scheduler'
 import { setGlobalOptions } from 'firebase-functions/options'
 import { defineSecret } from 'firebase-functions/params'
 import { isOwner, mayUseKey, type Access, type Workspace } from './access.js'
+import { accessOf, docAccessOf, sameAccess, sameDocAccess } from './mirror.js'
 
 initializeApp()
 setGlobalOptions({ region: 'europe-west1', maxInstances: 10 })
@@ -32,6 +36,16 @@ const modelsAllowed = (config: AiConfig) =>
   new Set([...TASKS.map((t) => config.models?.[t] ?? DEFAULT_MODEL), ...(config.allowedModels ?? [])])
 
 const db = () => getFirestore()
+// RTDB's default instance (europe-west1), named outright: left to itself the admin SDK picks another namespace on the
+// emulator than the app's (`<project>-default-rtdb`).
+const PROJECT = process.env.GCLOUD_PROJECT ?? ''
+const RTDB_URL =
+  process.env.FUNCTIONS_EMULATOR === 'true'
+    ? `https://${PROJECT}-default-rtdb.firebaseio.com`
+    : `https://${PROJECT}-default-rtdb.europe-west1.firebasedatabase.app`
+const rtdb = () => getDatabaseWithUrl(RTDB_URL)
+// Firestore lives in europe-west3, and a Firestore trigger runs where its database is (the callables stay in europe-west1).
+const FIRESTORE_REGION = 'europe-west3'
 const configRef = (wid: string) => db().doc(`workspaces/${wid}/ai/config`)
 const secretRef = (wid: string) => db().doc(`aiSecrets/${wid}`)
 
@@ -277,7 +291,7 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
 
 // ---- A deleted workspace takes its key, AI records, reports, documents, agent chats and invites with it ----
 
-export const cleanUpWorkspaceAi = onDocumentDeleted('workspaces/{wid}', async (event) => {
+export const cleanUpWorkspaceAi = onDocumentDeleted({ document: 'workspaces/{wid}', region: FIRESTORE_REGION }, async (event) => {
   const wid = event.params.wid
   await secretRef(wid).delete()
   await db().recursiveDelete(db().collection(`workspaces/${wid}/ai`))
@@ -293,4 +307,85 @@ export const cleanUpWorkspaceAi = onDocumentDeleted('workspaces/{wid}', async (e
   // Invites (D-323) the client didn't get to.
   const invites = await db().collection('invites').where('workspaceId', '==', wid).get()
   await Promise.all(invites.docs.map((d) => d.ref.delete()))
+  // Its documents' files (D-425), whoever's they were.
+  await getStorage().bucket().deleteFiles({ prefix: `workspaces/${wid}/` }).catch((e) => logger.warn('files left', { wid, error: String(e) }))
+})
+
+// ---- Documents' files no summary points to any more (D-425): once a day, those over a day old ----
+// Deleting a document leaves its file so an undo finds it (storage.rules); a day later nothing will undo it.
+const FILE_KEPT_MS = 24 * 60 * 60 * 1000
+const FILE_PATH = /^workspaces\/([A-Za-z0-9]+)\/documents\/([A-Za-z0-9_-]+)\//
+
+export const sweepDocumentFiles = onSchedule({ schedule: 'every day 04:00', timeZone: 'Europe/Berlin', region: FIRESTORE_REGION }, async () => {
+  const [files] = await getStorage().bucket().getFiles({ prefix: 'workspaces/' })
+  const byDoc = new Map<string, typeof files>()
+  for (const f of files) {
+    const m = FILE_PATH.exec(f.name)
+    const made = Date.parse(String(f.metadata.timeCreated ?? ''))
+    if (!m || !(Date.now() - made > FILE_KEPT_MS)) continue
+    const path = `workspaces/${m[1]}/documents/${m[2]}`
+    byDoc.set(path, [...(byDoc.get(path) ?? []), f])
+  }
+  const paths = [...byDoc.keys()]
+  for (let i = 0; i < paths.length; i += 100) {
+    const some = paths.slice(i, i + 100)
+    const snaps = await db().getAll(...some.map((p) => db().doc(p)))
+    for (const snap of snaps) if (!snap.exists) await Promise.all(byDoc.get(snap.ref.path)!.map((f) => f.delete({ ignoreNotFound: true })))
+  }
+})
+
+// ---- What RTDB's rules know about Firestore (D-426, mirror.ts) ----
+// Each copy is made from what Firestore holds now, never from the event, so events that come late or out of order
+// still leave the truth behind.
+
+const DOC_ID = /^[A-Za-z0-9_-]{1,128}$/
+
+// A workspace's roles; gone, everything it had in RTDB goes too (presence, the mirror, the shared texts).
+async function mirrorWorkspace(wid: string) {
+  const snap = await db().doc(`workspaces/${wid}`).get()
+  const access = accessOf(snap.exists ? (snap.data() as Workspace) : undefined)
+  if (access) return rtdb().ref(`access/${wid}`).set(access)
+  return rtdb().ref().update({ [`access/${wid}`]: null, [`docAccess/${wid}`]: null, [`live/${wid}`]: null, [`presence/${wid}`]: null })
+}
+
+// A document's author, sharing and kind; gone, its shared text goes too (live/), and what writing together kept in
+// Firestore before D-426 (`edits`, `live`) with it.
+async function mirrorDocument(wid: string, id: string) {
+  const ref = db().doc(`workspaces/${wid}/documents/${id}`)
+  const snap = await ref.get()
+  const access = docAccessOf(snap.exists ? snap.data() : undefined)
+  if (access) return rtdb().ref(`docAccess/${wid}/${id}`).set(access)
+  await rtdb().ref().update({ [`docAccess/${wid}/${id}`]: null, [`live/${wid}/${id}`]: null })
+  await db().recursiveDelete(ref.collection('edits'))
+  await db().recursiveDelete(ref.collection('live'))
+}
+
+export const mirrorWorkspaceAccess = onDocumentWritten({ document: 'workspaces/{wid}', region: FIRESTORE_REGION }, async (event) => {
+  const before = event.data?.before.data() as Workspace | undefined
+  const after = event.data?.after.data() as Workspace | undefined
+  if (before && after && sameAccess(before, after)) return
+  await mirrorWorkspace(event.params.wid)
+})
+
+export const mirrorDocAccess = onDocumentWritten({ document: 'workspaces/{wid}/documents/{id}', region: FIRESTORE_REGION }, async (event) => {
+  const before = event.data?.before.data()
+  const after = event.data?.after.data()
+  if (before && after && sameDocAccess(before, after)) return
+  await mirrorDocument(event.params.wid, event.params.id)
+})
+
+// A member whose copy isn't there yet (a workspace from before D-426, or a trigger still on its way) asks for it.
+// Copies only the truth, so asking twice, or for a document they can't read, changes nothing anyone can see.
+export const syncAccess = onCall({ cors: ORIGINS }, async (req) => {
+  const uid = req.auth?.uid
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in again.')
+  const { wid, doc } = (req.data ?? {}) as { wid?: unknown; doc?: unknown }
+  const ws = await workspaceOf(wid)
+  if (!ws.memberIds.includes(uid)) throw new HttpsError('permission-denied', "You're not a member of this workspace.")
+  await mirrorWorkspace(wid as string)
+  if (doc !== undefined) {
+    if (typeof doc !== 'string' || !DOC_ID.test(doc)) throw new HttpsError('invalid-argument', 'No such document.')
+    await mirrorDocument(wid as string, doc)
+  }
+  return { ok: true }
 })

@@ -11,7 +11,7 @@ import type { WithId } from '../../../data/hooks'
 import { downloadDocument, renameDocument, useDocBody, writeDocumentText, type Doc, type DocBody } from '../../../data/documents'
 import { useAuth } from '../../../data/auth'
 import { caretsIn, onCarets, presenceColor, setPresenceDoc, usePresence, type Peer } from '../../../data/presence'
-import { firestoreLive } from '../../../data/liveTransport'
+import { rtdbLive } from '../../../data/liveTransport'
 import { themeAccent } from '../../../state/theme'
 import { Avatar } from '../../../ui/primitives/Avatar'
 import type { LiveSetup } from './DocEditor'
@@ -205,7 +205,7 @@ function Reading({ d, docked }: { d: WithId<Doc>; docked: boolean }) {
   const live = useMemo<LiveSetup | undefined>(() => {
     if (!writing || !id || !uid) return undefined
     return {
-      transport: () => firestoreLive(wid, id, uid),
+      transport: () => rtdbLive(wid, id, uid, { uid: d.uid, shared: !!d.shared, kind: d.kind }),
       user: { name, color: themeAccent(myColor ?? presenceColor(uid)) },
       carets: {
         list: () => caretsIn(id).map((c) => ({ ...c, color: themeAccent(c.color) })),

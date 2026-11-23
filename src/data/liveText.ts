@@ -1,6 +1,6 @@
 // Writing together (D-374, docs/specs/live-writing.md): a text several people type at once. Yjs (a library, no server)
 // holds it while it's written and merges everyone's changes to the same result in any order; the packets travel through
-// a transport (liveTransport.ts: Firestore today, RTDB once Blaze is on), so nothing here knows where they go.
+// a transport (liveTransport.ts: RTDB, D-425), so nothing here knows where they go.
 //
 // Open: the folded state and every packet since, applied to a fresh Y.Doc, then whatever comes. A text with no state yet
 // (written before D-374, or new) is seeded from its Markdown in a transaction, so two people opening at once never both
@@ -10,13 +10,14 @@
 //
 // Lazy: only the editor's chunk imports this (Yjs stays out of the app's first load).
 import * as Y from 'yjs'
+import { fromBase64, toBase64 } from '../model/base64'
 import { LIVE_FOLD_BYTES, LIVE_FOLD_PACKETS, LIVE_PACKET_MAX } from '../model/limits'
 import { LIVE_SEND_MS } from '../ui/foundation/feel'
 
 export type LivePacket = { id: string; u: Uint8Array }
 export type LiveState = { s: Uint8Array; v: number }
 
-// Where the packets go. Firestore's is liveTransport.ts; tests and the gallery use liveMemory.ts.
+// Where the packets go. RTDB's is liveTransport.ts; tests and the gallery use liveMemory.ts.
 export interface LiveTransport {
   // The folded state, live: what's there now (null: none yet), then again after every compaction.
   listenState(on: (s: LiveState | null) => void, onError: (e: unknown) => void): () => void
@@ -178,18 +179,6 @@ export function openLiveText(t: LiveTransport, opts: Options): LiveText {
 }
 
 // ---- Carets (presence's `doc`: base64 Yjs relative positions, so a caret stays on its letter as others type)
-
-function toBase64(u: Uint8Array) {
-  let s = ''
-  for (const b of u) s += String.fromCharCode(b)
-  return btoa(s)
-}
-function fromBase64(s: string) {
-  const bin = atob(s)
-  const u = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i)
-  return u
-}
 
 // A relative position as it travels (the caret plugin keeps them as JSON-ish objects) and back.
 export const encodePosition = (rp: unknown) => toBase64(Y.encodeRelativePosition(Y.createRelativePositionFromJSON(rp)))

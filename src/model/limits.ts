@@ -115,13 +115,14 @@ export const ATOMIC_WRITE_MAX = 1000
 export const ATOMIC_WRITE_BYTES = 4_000_000
 
 // Writing a document together (D-374, docs/specs/live-writing.md): a packet of changes (`edits/{eid}.u`, a Yjs update)
-// and everything folded so far (`live/state.s`), in bytes; past the packet's cap a change is folded straight in.
+// and everything folded so far (`state.s`), in bytes; past the packet's cap a change is folded straight in. In RTDB
+// (D-426) they travel as base64, so database.rules.json caps their base64 length (`base64Length`).
 export const LIVE_PACKET_MAX = 65536
 export const LIVE_STATE_MAX = 921600
 // Folded once this many packets or bytes of them are waiting (a fresh open reads them all).
 export const LIVE_FOLD_PACKETS = 200
 export const LIVE_FOLD_BYTES = 300_000
-// Packets one compaction deletes per batch (each delete's rule reads the same summary).
+// Packets one compaction deletes per update (one RTDB write, each child's rule read).
 export const LIVE_DROP_BATCH = 400
 // A caret's two positions in presence (`presence/…/doc.a`, `.h`, base64), and the document's id (database.rules.json).
 export const CARET_MAX = 300

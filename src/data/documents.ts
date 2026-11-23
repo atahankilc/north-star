@@ -14,7 +14,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { db, storageOf, useEmulators } from './firebase'
 import { absent, tracked } from './history'
 import { useDoc, useQuery, type WithId } from './hooks'
-import { deleteLive } from './liveTransport'
 
 export { DOC_LIMITS } from '../model/shapes'
 export type { DocKind, DocCol } from '../model/shapes'
@@ -340,12 +339,11 @@ export function renameDocument(wid: string, id: string, title: string) {
 }
 
 // The document, its content and every piece showing it, as one undo step. The body first: its rule reads the summary.
-// What it was written together with (D-374: packets and state) goes first, outside the step: an undo brings the
-// Markdown back, and the shared text is seeded from it again when it's next written.
+// What it was written together with (D-374, in RTDB) goes after, by a function once the summary's gone (D-425): an undo
+// brings the Markdown back, and the shared text is seeded from it again when it's next written.
 export async function deleteDocument(wid: string, id: string, pieces: DocumentReference[]) {
   const ref = docRef(wid, id)
   const body = bodyRef(wid, id)
-  await deleteLive(wid, id).catch(() => {})
   return tracked('delete a document', [ref, body, ...pieces], () => {
     const batch = writeBatch(db())
     batch.delete(body)

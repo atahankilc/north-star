@@ -318,7 +318,7 @@ feature comes back as a piece, and check them with the user then.
   row or column is a card (D-247).
 
 ## Documents
-- Writing together (D-374, built, docs/specs/live-writing.md): several write a document at once (Yjs through Tiptap's open extensions, carets in presence with names, the writers' squares in the head), Firestore as the channel (`edits/`, `live/state`) until Blaze, then RTDB; the Markdown body stays the document, written on a 2 s pause outside the workspace's undo; each undoes only their own; one reader per document.
+- Writing together (D-374, built, docs/specs/live-writing.md): several write a document at once (Yjs through Tiptap's open extensions, carets in presence with names, the writers' squares in the head), RTDB as the channel (`live/{wid}/{id}`, D-426: base64 packets and state, the rules over a copy of who may write); the Markdown body stays the document, written on a 2 s pause outside the workspace's undo; each undoes only their own; one reader per document.
 - Documents written in the app (D-373): on the page as it reads, never its Markdown (Tiptap, lazy), a word processor's tools; `edit` in the reader, `write` beside `upload`, `¶` on a row; saved as Markdown as typed; its author, or any owner or editor once it's shared.
 - The agent's documents (D-381, D-382): one preview row (name, length, first words, `read`), never its text; `read` docks the draft left of the agent's column (no window, no shade), the preview's `create` the only go, the same page then reading the document made; Escape closes the page before the preview; nothing opens by itself, nothing opens written in. Made, it's in the documents (any list shows it); with no list on this canvas the report offers `+ add a list`, never made unasked (D-383).
 - A document read in a window (D-371): `DocReader` over whatever's open, from the agent's `open` beside `undo` and the finder's `in no list` group (a document no list or piece shows); `place on the canvas`, `download`.
@@ -363,7 +363,7 @@ feature comes back as a piece, and check them with the user then.
 ## Collaboration
 - Real-time collaboration with presence and live cursors (D-005); presence in RTDB `presence/{wid}/{uid}`, readable by
   any signed-in user, own node whole-node writes (D-016, D-065); the client shows only members' presence and a
-  `photo` only from googleusercontent.com, the rule checks the photo too; with Blaze the read is bound to membership (D-317).
+  `photo` only from googleusercontent.com, the rule checks the photo too; read and written only by members, from a copy of the roles functions keep in RTDB (`access/`, `docAccess/`; `syncAccess` when it's missing, D-317, D-426).
 - Away (D-331): a hidden tab or 5 minutes untouched is `away`: the square faint, grey and last, `away` on hover, not
   followable (a follow already going goes on); no cursor or drag, the selection kept but not shown; hidden after 180 s
   silent (60 s for those here).
