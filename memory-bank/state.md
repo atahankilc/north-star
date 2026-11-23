@@ -14,7 +14,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   of lines (D-263–D-277).
 
 ## Live vs not yet
-- Live at https://atahankilc.github.io/north-star/; moving to https://atem-lab.com/north-star/ (D-428, 2026-11-23: the org site repo made, the rest in its *Not yet*); every push to `main` redeploys. `refactor/north-star-1.5` was merged into `main` (fast-forward) and pushed 2026-10-27; Pages deployed.
+- Live at https://atem-lab.com/north-star/ (D-428, 2026-11-23: the repo is `atem-lab/north-star`; the old github.io address is a 404); every push to `main` redeploys. `refactor/north-star-1.5` was merged into `main` (fast-forward) and pushed 2026-10-27; Pages deployed.
 - Rules: Firestore rules + indexes and RTDB deployed 2026-10-29 (RTDB again for presence `tasks`, D-300) (latest change D-292, no `bends` check); rules tests 639/0 (2026-11-03). Until Blaze,
   deploy without Storage: `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db`.
 - **On Blaze since 2026-11-23.** Deployed: `cleanUpWorkspaceAi` (europe-west3, Firestore's region); `AI_KEY_SECRET` set.
