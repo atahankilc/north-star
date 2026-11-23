@@ -21,6 +21,15 @@ export type Release = { id: string; date: string; title: string; items: readonly
 
 export const RELEASES: readonly Release[] = [
   {
+    id: '2026-11-23',
+    date: '2026-11-23',
+    title: 'Images and PDFs',
+    items: [
+      // D-425: documents' files in Storage.
+      { title: 'Images and PDFs in Docs', tab: 'files', line: 'Upload images and PDFs to Docs: an image shows at its own shape, a PDF page by page. They travel in an export too.', lessons: ['docs'] },
+    ],
+  },
+  {
     id: '2026-11-19',
     date: '2026-11-19',
     title: 'Bigger or smaller',

@@ -90,8 +90,9 @@ export const emptyDocuments = (): DocumentsSetup => ({ view: 'table', pageSize: 
 
 const FILE_MAX_BYTES = 10 * 1024 * 1024
 
-// Storage needs the Blaze plan (D-083): images and PDFs are taken only on the emulators until it's live.
-const FILES_LIVE = false
+// Storage needs the Blaze plan (D-083): live since 2026-11-23 (D-425: the bucket, storage.rules and the Storage agent's
+// role for the rules' Firestore look-ups); the emulators take files too.
+const FILES_LIVE = true
 export const filesAvailable = useEmulators || FILES_LIVE
 
 const docsOf = (wid: string) => collection(db(), 'workspaces', wid, 'documents')
