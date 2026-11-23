@@ -5,7 +5,8 @@ import { EMAIL_MAX } from '../../src/model/limits'
 
 describe('the waitlist', () => {
   it('keeps an email trimmed and lowercased, with its product', () => {
-    expect(readWaitlistBody({ email: '  Ada@Example.COM ', product: 'granat' })).toEqual({ email: 'ada@example.com', product: 'granat' })
+    expect(readWaitlistBody({ email: '  Ada@Example.COM ', product: 'orrery' })).toEqual({ email: 'ada@example.com', product: 'orrery' })
+    expect(readWaitlistBody({ email: 'ada@example.com', product: 'granat' })).toEqual({ email: 'ada@example.com', product: 'granat' })
   })
 
   it('refuses what is not an email', () => {

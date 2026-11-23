@@ -49,6 +49,6 @@ _Q-036 (the app's shell) was answered by D-412._
 atem-lab.com shows `ATEM` in plain JetBrains Mono for now (D-429); the user and Melike will settle a logo. Tried on
 2026-11-23 and not liked: thin futuristic wordmarks after Melike's references (a rounded monoline "Supernova" and a
 hairline "Futurism", Michroma), letters that breathe, marks from "Atem" = breath (a ring, a breath curve, a glyph
-sphere, arcs, a Λ monogram), `AteM` with "te" in script, `AtEM` with a small leaning t or a plus. The user's own
+sphere, arcs, a Λ monogram), `AteM` with "te" in script, `AtEM` with a small leaning t or a plus. Then (2026-11-23, a second round, all turned down as not creative): a one-line "atem", a stencil, letters in glyphs, two lungs, a seal, and other names (Sextant, aril, Orrery; Orrery went to the second project instead). The name stays ATEM; no ASCII in the logo. The user's own
 leads: a lowercase t that leans or is a plus between capitals A and EM. **Recommendation:** ask what they liked about
 Melike's references (the thinness, the geometry, the space) and draw from that by hand, in a few sizes and as a favicon.

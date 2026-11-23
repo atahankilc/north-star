@@ -1,9 +1,9 @@
-// atem-lab.com's waitlist (D-429): someone leaves an email for a product that isn't out yet (Granat). The page is
+// atem-lab.com's waitlist (D-429): someone leaves an email for a product that isn't out yet (Orrery, once Granat). The page is
 // static, so the email comes here and goes to `waitlist/{product}_{sha256(email)}`, which no client can read or write
 // (firestore.rules denies every collection it doesn't name). Only the email, the product and when it came are kept.
 
-// Products with a waitlist today.
-export const WAITLIST_PRODUCTS = ['granat'] as const
+// Products with a waitlist today. Granat was renamed Orrery (2026-11-23); `granat` stays for a page still open from before.
+export const WAITLIST_PRODUCTS = ['orrery', 'granat'] as const
 export type WaitlistProduct = (typeof WAITLIST_PRODUCTS)[number]
 
 // The same cap as src/model/limits.ts' EMAIL_MAX (held equal by tests/unit/waitlist.test.ts).
