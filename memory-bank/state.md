@@ -18,8 +18,8 @@ something is finished, add its entry to state-history.md and leave at most one l
 - Rules: Firestore rules + indexes and RTDB deployed 2026-10-29 (RTDB again for presence `tasks`, D-300) (latest change D-292, no `bends` check); rules tests 639/0 (2026-11-03). Until Blaze,
   deploy without Storage: `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db`.
 - **On Blaze since 2026-11-23.** Deployed: `cleanUpWorkspaceAi` (europe-west3, Firestore's region); `AI_KEY_SECRET` set.
-  Built, not deployed (asked first, D-322): D-426's functions + database.rules.json + firestore.rules (with the push),
-  D-427's key functions; Storage waits for the bucket (the user: console → Storage → europe-west3), then D-425's rules.
+  All functions deployed, database + firestore rules released with the push (61ba696, 2026-11-23); the bucket exists
+  (europe-west3), D-425's storage.rules wait for the user. Left: the container image cleanup policy (the user).
 
 ## In progress
 - Pushed and live (checked against origin/main 2026-11-01): D-332 grid dots, D-331 away (RTDB rules deployed), D-330
