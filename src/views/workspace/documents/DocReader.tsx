@@ -110,7 +110,7 @@ export function DocReaderView({ d, body, loading, failed, me, onClose, onDownloa
               place on the canvas
             </Button>
           )}
-          <Button title="save it as a .md file" onClick={onDownload}>
+          <Button title={d.path ? 'save the file as it was uploaded' : 'save it as a .md file'} onClick={onDownload}>
             download
           </Button>
           {share && (

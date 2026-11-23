@@ -136,7 +136,7 @@ export function useDocActions(d: WithId<Doc>, near?: string) {
     // `edit`, as the window's own button: `write` in a list's dock starts a new one.
     write: act(may.write, { label: 'edit', title: 'edit: write in it, on the page as it reads', run: () => readDoc(d.id, true) }),
     place: act(may.place, { label: 'place ↗', title: `place: put it on the canvas on its own${d.shared ? '' : ' (shares it; asks first)'}`, run: () => useDocUi.setState({ placing: { docId: d.id, near } }) }),
-    download: { label: 'download', title: 'download: save it as a .md file', run: () => void downloadDocument(wid, d) } as DocAct,
+    download: { label: 'download', title: d.path ? 'download: save the file as it was uploaded' : 'download: save it as a .md file', run: () => void downloadDocument(wid, d) } as DocAct,
     remove: act(may.remove, { label: 'delete', title: 'delete the document (asks first)', run: () => useDocUi.setState({ deleting: d.id }) }),
   }
 }
