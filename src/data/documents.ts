@@ -339,7 +339,7 @@ export function renameDocument(wid: string, id: string, title: string) {
 }
 
 // The document, its content and every piece showing it, as one undo step. The body first: its rule reads the summary.
-// What it was written together with (D-374, in RTDB) goes after, by a function once the summary's gone (D-425): an undo
+// What it was written together with (D-374, in RTDB) goes after, by a function once the summary's gone (D-426): an undo
 // brings the Markdown back, and the shared text is seeded from it again when it's next written.
 export async function deleteDocument(wid: string, id: string, pieces: DocumentReference[]) {
   const ref = docRef(wid, id)

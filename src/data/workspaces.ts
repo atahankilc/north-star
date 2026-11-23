@@ -348,7 +348,7 @@ export async function deleteWorkspace(wid: string, inviteCode: string, uid: stri
   // Once each: your own shared documents and chats come back from both queries. A body goes before its summary, which
   // its rule reads.
   const reportRefs = [...new Map(reports.flatMap((r) => r.docs.map((d) => [d.ref.path, d.ref] as const))).values()]
-  // A .md's shared text (D-374) is in RTDB: a function clears it with its summary, and the workspace's with it (D-425).
+  // A .md's shared text (D-374) is in RTDB: a function clears it with its summary, and the workspace's with it (D-426).
   for (const batch of inBatches(reportRefs, (b, ref) => b.delete(doc(ref, 'content', 'body')).delete(ref), BODIES_PER_BATCH)) await batch.commit()
   // Comment threads (D-159): each with all its messages (threads.ts: an owner may take others' messages only once
   // their thread is gone, D-166); then everyone's read marks.
