@@ -201,7 +201,7 @@ RTDB: presence/{wid}/{uid}   name, color, photo? (googleusercontent.com only, D-
 
 ## 7. Authentication
 
-Firebase Auth with the Google provider, popup flow (D-011). `localhost` and `atahankilc.github.io`
+Firebase Auth with the Google provider, popup flow (D-011). `localhost` and `atem-lab.com`
 must be in Firebase Auth → Settings → Authorized domains. Workspaces are shared by email invite or by a code the owner approves (D-062).
 
 ## 8. AI (BYOK)

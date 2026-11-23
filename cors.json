@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["https://atahankilc.github.io", "http://localhost:5288"],
+    "origin": ["https://atem-lab.com", "https://www.atem-lab.com", "https://atahankilc.github.io", "http://localhost:5288"],
     "method": ["GET"],
     "maxAgeSeconds": 3600
   }
