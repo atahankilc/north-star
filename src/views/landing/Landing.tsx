@@ -12,6 +12,8 @@ export function Landing({ error }: { error?: string | null }) {
 
   return (
     <main className={styles.page}>
+      {/* Top right (the user), where the field is calm, so nothing runs under the words. */}
+      <LegalLinks className={styles.legal} />
       {/* No HUD and no scrim (D-340): the page is the title, the sign-in and the backdrop on the whole screen. */}
       <section className={styles.hero}>
         {/* Builds cell by cell every time the landing opens: on reload, and after signing out. */}
@@ -44,7 +46,6 @@ export function Landing({ error }: { error?: string | null }) {
               <span className={styles.warn}>!</span> {shownError}
             </p>
           )}
-          <LegalLinks className={styles.legal} />
         </Appear>
       </section>
     </main>

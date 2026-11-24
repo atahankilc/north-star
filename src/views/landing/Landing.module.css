@@ -76,8 +76,7 @@
   gap: var(--space-2);
 }
 
-/* On the ground's own colour: the field's glyphs never run under words. */
 .legal {
-  padding: var(--space-1) var(--space-2);
-  background: var(--bg);
+  justify-content: flex-end;
+  margin-bottom: auto;
 }
