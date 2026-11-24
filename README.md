@@ -10,7 +10,7 @@ timelines on one canvas, rendered in a 3D ASCII aesthetic.
 - Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Current state, decisions and open questions: [memory-bank/](memory-bank/README.md)
 
-Status: 1.5, live at <https://atem-lab.com/north-star/>. See [memory-bank/state.md](memory-bank/state.md).
+Status: 1.5, live at <https://north-star.atem-lab.com/>. See [memory-bank/state.md](memory-bank/state.md).
 
 ## Develop
 
@@ -38,7 +38,7 @@ npm run deploy:rules   # push the Firestore rules + indexes and database.rules.j
 2. **Web app**: Project settings → *Your apps* → Web (`</>`) → register `north-star`. Copy the config
    values into `.env.local` (`VITE_FIREBASE_*`). They are public by design; security lives in the rules files.
 3. **Auth**: Build → Authentication → *Get started* → Sign-in method → **Google** → enable.
-   Settings → *Authorized domains* → add `atem-lab.com` (localhost is there by default).
+   Settings → *Authorized domains* → add `north-star.atem-lab.com` (localhost is there by default).
 4. **Firestore**: Build → Firestore Database → *Create database* → production mode, pick a region.
 5. **Realtime Database**: Build → Realtime Database → *Create database* → locked mode. Copy its URL
    into `VITE_FIREBASE_DATABASE_URL`.
@@ -46,6 +46,6 @@ npm run deploy:rules   # push the Firestore rules + indexes and database.rules.j
    `npx firebase-tools deploy --only firestore:rules,database --project <project-id>`.
 7. **GitHub Pages**: repo → Settings → Pages → Source: *GitHub Actions*. Then Settings → Secrets and
    variables → Actions → **Variables**: add the six `VITE_FIREBASE_*` values (API key, auth domain, project id, database URL, app id, storage bucket).
-   Every push to `main` deploys to `https://<owner>.github.io/<repo-name>/`. The base path follows the repo name automatically.
-   Ours is `atem-lab/north-star`: the org's site repo `atem-lab/atem-lab.github.io` holds the custom domain `atem-lab.com`,
-   so this one is served at `https://atem-lab.com/north-star/` (D-428).
+   Every push to `main` deploys to `https://<owner>.github.io/<repo-name>/`. A repo without its own domain needs `BASE_PATH: /<repo-name>/` in deploy.yml.
+   Ours is `atem-lab/north-star`: its Pages custom domain is `north-star.atem-lab.com` (D-430), served from the root;
+   `https://atem-lab.com/north-star/` is the product page, in the org's site repo `atem-lab/atem-lab.github.io`.

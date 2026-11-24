@@ -10,7 +10,7 @@ logger.warnOnce = (msg, options) => {
   warnOnce(msg, options)
 }
 
-// GitHub Pages serves from /<repo-name>/; CI sets BASE_PATH from the repo name (deploy.yml).
+// Served from the root of its own domain (north-star.atem-lab.com, D-430); CI sets BASE_PATH (deploy.yml).
 export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
   customLogger: logger,

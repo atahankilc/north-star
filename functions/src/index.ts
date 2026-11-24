@@ -25,9 +25,9 @@ setGlobalOptions({ region: 'europe-west1', maxInstances: 10 })
 const AI_KEY_SECRET = defineSecret('AI_KEY_SECRET')
 // OPENAI_API_BASE is set only in functions/.env.local, for emulator tests against a fake OpenAI; never deployed.
 const OPENAI = process.env.OPENAI_API_BASE ?? 'https://api.openai.com/v1'
-// The site (atem-lab.com/north-star, GitHub Pages under the atem-lab org) and local dev servers.
+// The app (north-star.atem-lab.com, D-430), the site (atem-lab.com: the waitlist) and local dev servers.
 // atahankilc.github.io only until the repo's move to the atem-lab org is live.
-const ORIGINS = [/^https:\/\/(www\.)?atem-lab\.com$/, /^https:\/\/atahankilc\.github\.io$/, /^http:\/\/(localhost|127\.0\.0\.1):\d+$/]
+const ORIGINS = [/^https:\/\/(www\.|north-star\.)?atem-lab\.com$/, /^https:\/\/atahankilc\.github\.io$/, /^http:\/\/(localhost|127\.0\.0\.1):\d+$/]
 
 type AiConfig = { hasKey?: boolean; keyHint?: string; access?: Access; allowed?: string[]; allowedModels?: string[] }
 

@@ -29,7 +29,7 @@ feature comes back as a piece, and check them with the user then.
   card's meta line; the REGION filter narrows competitors only, a place counting inside the bigger ones (D-145).
 
 ## Stack, hosting, backend
-- Static React SPA on GitHub Pages, deployed by Actions, at https://atem-lab.com/north-star/ (the repo in the `atem-lab` org, whose site repo holds the domain, D-428); three.js via @react-three/fiber for the backdrop (D-001, D-003).
+- Static React SPA on GitHub Pages, deployed by Actions, at https://north-star.atem-lab.com/ (D-430; the repo in the `atem-lab` org, whose site repo holds atem-lab.com and the product page, D-428); three.js via @react-three/fiber for the backdrop (D-001, D-003).
 - No app server: the browser talks to Firebase directly (Auth, Firestore, RTDB europe-west1); rules enforce security
   (D-002, D-014). The only server code: Cloud Functions (Blaze since 2026-11-23): the workspace key (D-079, D-427), atem-lab.com's waitlist (`joinWaitlist`, D-429), RTDB's copy of
   who may do what (D-426), cleanups (a deleted workspace's data and files, documents' files no summary points to, D-425).
