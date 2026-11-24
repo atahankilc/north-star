@@ -1,12 +1,14 @@
 import {
   GoogleAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithPopup,
   signInWithCredential,
   signInWithPopup,
   signOut as fbSignOut,
 } from 'firebase/auth'
 import { useEffect, useState } from 'react'
-import { firebase, isDemo, useEmulators } from './firebase'
+import { ACCOUNT_DELETE_MS } from '../ui/foundation/feel'
+import { firebase, functionsOf, isDemo, useEmulators } from './firebase'
 import { leavePresence } from './presence'
 
 export type AuthUser = { id: string; email: string | null; name: string | null; photoURL: string | null }
@@ -72,6 +74,32 @@ export async function signInAsTestUser(name: string) {
   const slug = name.toLowerCase()
   const idToken = JSON.stringify({ sub: `test-${slug}`, email: `${slug}@example.com`, email_verified: true, name })
   await signInWithCredential(firebase.auth, GoogleAuthProvider.credential(idToken))
+}
+
+// Deletes the account and what only its owner could see (D-432, functions/src/account.ts). Google's window comes first: the
+// function takes only a sign-in of the last few minutes. Signed out at the end, the account being gone.
+export async function deleteAccount() {
+  const user = firebase?.auth.currentUser
+  if (!firebase || !user) return
+  if (!useEmulators) {
+    try {
+      const google = new GoogleAuthProvider()
+      if (user.email) google.setCustomParameters({ login_hint: user.email })
+      await reauthenticateWithPopup(user, google)
+    } catch (e) {
+      const code = (e as { code?: string }).code ?? ''
+      if (code === 'auth/user-mismatch') throw new Error('That was another Google account. Nothing was deleted.')
+      throw new Error(SIGN_IN_SAYS[code] ?? 'You have to sign in again first. Nothing was deleted.')
+    }
+  }
+  await user.getIdToken(true)
+  const [f, { httpsCallable }] = await Promise.all([functionsOf(), import('firebase/functions')])
+  try {
+    await httpsCallable(f, 'deleteAccount', { timeout: ACCOUNT_DELETE_MS })({})
+  } catch (e) {
+    throw new Error((e as Error)?.message || "The account couldn't be deleted. Try again.")
+  }
+  await fbSignOut(firebase.auth)
 }
 
 export async function signOut() {

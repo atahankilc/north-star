@@ -5,7 +5,7 @@
 // page's groups are numbered rules (`01 KEYS ──`), a setting's control sits at the row's right edge.
 // On the one Window (D-359): focus kept inside and given back, Escape (a menu in it first) and the scrim close it.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { signOut, useAuth } from '../../data/auth'
+import { deleteAccount, signOut, useAuth } from '../../data/auth'
 import { safePhoto, usePresence } from '../../data/presence'
 import { useDisplay, type BackgroundPref } from '../../state/display'
 import { UI_SIZE } from '../foundation/feel'
@@ -20,6 +20,8 @@ import { ButtonGroup } from '../primitives/ButtonGroup'
 import { CountBadge } from '../primitives/CountBadge'
 import { Rule } from '../primitives/Rule'
 import { SettingsTool } from './SettingsTool'
+import { HazardConfirm } from './HazardConfirm'
+import { LegalLinks } from './LegalLinks'
 import { Window } from './Window'
 import styles from './Settings.module.css'
 import { CloseIcon } from '../primitives/hudIcons'
@@ -37,7 +39,7 @@ type Group = 'you' | 'workspace'
 const PAGES: { id: Page; label: string; title: string; about: string; group: Group }[] = [
   { id: 'account', label: 'account', title: 'Account', about: 'Who you are signed in as.', group: 'you' },
   { id: 'display', label: 'display', title: 'Display', about: 'How North Star looks and moves in this browser.', group: 'you' },
-  { id: 'agent', label: 'the agent', title: 'The agent', about: 'Your own keys and the model the agent uses, in this browser. A workspace can also have its own key (workspace → agent key).', group: 'you' },
+  { id: 'agent', label: 'the agent', title: 'The agent', about: 'The agent is an AI and can be wrong: check what matters. Your own keys and the model it uses, in this browser. A workspace can also have its own key (workspace → agent key).', group: 'you' },
   { id: 'general', label: 'general', title: 'Workspace', about: 'Its name and what the team is building.', group: 'workspace' },
   { id: 'people', label: 'people', title: 'People', about: 'Who is in this workspace and how others get in.', group: 'workspace' },
   { id: 'key', label: 'agent key', title: 'Agent key', about: "The workspace's own OpenAI key for the agent: who may use it, and which models.", group: 'workspace' },
@@ -152,6 +154,8 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
                       </span>
                       <Button onClick={() => signOut()}>sign out</Button>
                     </div>
+                    <DeleteAccount />
+                    <LegalLinks />
                   </Section>
                 )}
 
@@ -171,6 +175,40 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
             </div>
           </div>
         </Window>
+      )}
+    </>
+  )
+}
+
+// Deleting the account (D-432): what goes, what stays, then Google's sign-in again.
+function DeleteAccount() {
+  const [ask, setAsk] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const go = () => {
+    setAsk(false)
+    setBusy(true)
+    setError(null)
+    deleteAccount()
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusy(false))
+  }
+  return (
+    <>
+      <Row label="delete account" hint="Your account, and the workspaces only you are in. What you made in shared ones stays, without your name.">
+        <Button tone="danger" disabled={busy} onClick={() => setAsk(true)}>
+          {busy ? 'deleting…' : 'delete…'}
+        </Button>
+      </Row>
+      {error && <Note tone="error">{error}</Note>}
+      {ask && (
+        <HazardConfirm
+          title="Delete your account?"
+          lines={['Workspaces only you are in go, with everything in them.', 'In shared ones your private documents and chats go; the rest stays without your name.', 'This cannot be undone. Google asks you to sign in again first.']}
+          confirm="delete"
+          onCancel={() => setAsk(false)}
+          onConfirm={go}
+        />
       )}
     </>
   )

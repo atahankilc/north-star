@@ -127,10 +127,10 @@ const product: Card[] = [
   card(P.product, 'feature', 'f-weekly', 'Weekly plan, paid on Mondays', 1, 1, { priority: 'P3', status: 'idea', impact: 'medium', effort: 'M' }),
   card(P.product, 'feature', 'f-split', 'One team order, split by person', 2, 1, { priority: 'P2', status: 'idea', impact: 'medium', effort: 'M' }),
   card(P.product, 'feature', 'f-tips', 'Tip your cook in the app', 3, 1, { priority: 'P3', status: 'idea', impact: 'low', effort: 'S' }),
-  card(P.product, 'competitor', 'k-wolt', 'Wolt', 0, 3, { regions: ['Europe'], description: 'Restaurant delivery in 25 countries', pricing: '€1.99–4.99 delivery' }),
-  card(P.product, 'competitor', 'k-lieferando', 'Lieferando', 1, 3, { regions: ['Germany'], description: 'Takeaway orders from 25,000 restaurants', pricing: 'free delivery over €15' }),
-  card(P.product, 'competitor', 'k-tgtg', 'Too Good To Go', 2, 3, { regions: ['Europe'], description: 'Surplus food from shops at a third of the price' }),
-  card(P.product, 'competitor', 'k-shef', 'Shef', 3, 3, { regions: ['US'], description: 'Home-cooked meals from vetted local cooks' }),
+  card(P.product, 'competitor', 'k-wolt', 'Wegbote', 0, 3, { regions: ['Europe'], description: 'Couriers for restaurant lunches', pricing: '€3 delivery' }),
+  card(P.product, 'competitor', 'k-lieferando', 'Lunchpost', 1, 3, { regions: ['Germany'], description: 'Takeaway orders from many restaurants', pricing: 'free delivery over €20' }),
+  card(P.product, 'competitor', 'k-tgtg', 'Topfretter', 2, 3, { regions: ['Europe'], description: 'Leftover food from shops, cheaper in the evening' }),
+  card(P.product, 'competitor', 'k-shef', 'Stubenkoch', 3, 3, { regions: ['Europe'], description: 'Meals cooked at home, a few streets away' }),
   card(P.product, 'competitor', 'k-canteen', 'The office canteen', 4, 3, { regions: ['Berlin'], description: 'Subsidised, same menu every week', pricing: '€4.20 a meal' }),
 ]
 
@@ -182,7 +182,7 @@ const evidence: Evidence[] = [
 const cf = (id: string, competitorId: string, name: string, category: string, availability: CompetitorFeature['availability']): CompetitorFeature => ({ id, competitorId, name, category, availability, createdAt: AT })
 const competitorFeatures: CompetitorFeature[] = [
   cf('w-1', 'k-wolt', 'Live courier tracking', 'delivery', 'free'),
-  cf('w-2', 'k-wolt', 'Wolt+ free delivery', 'pricing', 'paid'),
+  cf('w-2', 'k-wolt', 'Free delivery plan', 'pricing', 'paid'),
   cf('l-1', 'k-lieferando', 'Group orders', 'ordering', 'free'),
   cf('l-2', 'k-lieferando', 'Allergen filter', 'trust', 'free'),
   cf('t-1', 'k-tgtg', 'Surprise bags', 'pricing', 'free'),

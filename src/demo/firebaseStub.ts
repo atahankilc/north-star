@@ -18,6 +18,7 @@ export const getAuth = refuse
 export const onAuthStateChanged = refuse
 export const signInWithCredential = refuse
 export const signInWithPopup = refuse
+export const reauthenticateWithPopup = refuse
 export const signOut = refuse
 // firebase/database
 export const connectDatabaseEmulator = refuse

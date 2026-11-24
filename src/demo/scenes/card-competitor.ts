@@ -1,5 +1,5 @@
 // The kind guide's `competitor` row, in a plane (lessons.ts `kind-guide`): a plane in focus, no HUD. A competitor card
-// appears, Shef (shown with set()); the hand comes over it and its features grow out of it, inside the card (the real
+// appears, Stubenkoch (shown with set()); the hand comes over it and its features grow out of it, inside the card (the real
 // hover), by category.
 import { aim, camera, cursor, wait, type Scene } from '../director'
 import { PLANE_K, arrive, bare, focusRoute, moved, smallPlane } from '../fixtures/kit'

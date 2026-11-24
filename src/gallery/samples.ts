@@ -6,7 +6,7 @@ import type { Task } from '../data/tasks'
 export const none = () => {}
 
 // A card's title, by type (Pazar's).
-export const TITLE = { customer: 'Office workers near the market', problem: 'Lunch takes too long', competitor: 'Lieferando', idea: 'Pre-order at the stall', feature: 'Order by QR code', package: 'Pickup at work' } as const
+export const TITLE = { customer: 'Office workers near the market', problem: 'Lunch takes too long', competitor: 'Lunchpost', idea: 'Pre-order at the stall', feature: 'Order by QR code', package: 'Pickup at work' } as const
 
 // The day `n` days from today, as a task writes it.
 export const day = (n: number) => {

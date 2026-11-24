@@ -8,13 +8,11 @@
 The interface is a dark, monochrome world rendered through **ASCII glyphs**, with depth and motion
 from three.js. It is mostly black and white. **Colour is rare and meaningful**, so it pops. The one exception is the backdrop, whose waves are in colour (D-386).
 
-References in [design/references/](design/references/):
-- `ascii-hero-enosta.webp`: black canvas, flowing 3D forms rendered as fine character dithering,
-  a large clean grotesk headline, small nav text. **Takeaways:** restraint, big type contrast, and
-  ASCII used as *texture and atmosphere*.
-- `ascii-portrait-color-accents.jpeg`: a 3D form rendered entirely in glyphs, mostly white/grey
-  with streaks of **magenta, cyan, yellow, blue**. **Takeaways:** colour lives *inside* the ASCII
-  as accents, not as flat fills.
+What it took from its references (two pictures by others, kept out of the repo since D-432):
+- a black canvas with flowing 3D forms in fine character dithering, a large clean grotesk headline, small nav text.
+  **Takeaways:** restraint, big type contrast, and ASCII used as *texture and atmosphere*.
+- a 3D form rendered entirely in glyphs, mostly white/grey with streaks of **magenta, cyan, yellow, blue**.
+  **Takeaways:** colour lives *inside* the ASCII as accents, not as flat fills.
 
 ## 2. Principles
 

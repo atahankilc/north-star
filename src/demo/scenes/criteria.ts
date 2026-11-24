@@ -1,7 +1,7 @@
 // `matrix` "Judged on" (lessons.ts, D-349): Pazar's matrix in focus, two features down (Allergen labels,
 // Pre-order by 9 pm) against three competitors (none cut at the stage's edge), no HUD. Pre-order is judged on two things; its head says `[+] 2`. The hand
 // presses it: the two criteria open as rows under it (the write shown with set()). It scores `Order cut-off the night
-// before × Shef`: a click, `3` (● full). The feature's own cell now reads from its criteria, a small square each. A click
+// before × Stubenkoch`: a click, `3` (● full). The feature's own cell now reads from its criteria, a small square each. A click
 // on the empty canvas lets the cell go, so the matrix reads whole.
 import type { MatrixSetup } from '../../data/matrix'
 import { SCALES } from '../../data/scales'

@@ -2,7 +2,7 @@
 // The key is encrypted with AI_KEY_SECRET and kept in aiSecrets/{wid}, which no client can read (firestore.rules).
 // Members the owners allow call OpenAI through `ai` (the agent, D-427), which streams the answer back and logs what each
 // call used.
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
+import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 import { initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getDatabaseWithUrl } from 'firebase-admin/database'
@@ -14,8 +14,10 @@ import { logger } from 'firebase-functions'
 import { onSchedule } from 'firebase-functions/scheduler'
 import { setGlobalOptions } from 'firebase-functions/options'
 import { defineSecret } from 'firebase-functions/params'
+import { fateOf, GONE_NAME, isFresh } from './account.js'
 import { isOwner, mayUseKey, type Access, type Workspace } from './access.js'
 import { accessOf, docAccessOf, sameAccess, sameDocAccess } from './mirror.js'
+import { confirmMail, CONFIRMS_A_DAY, ContactError, contactMail, CONTACTS_A_DAY, type Mail, PENDING_KEPT_MS, readConfirmBody, readContactBody, RESEND_AFTER_MS } from './mail.js'
 import { BadRequest, cleanBody, MODEL_ID, modelsAllowed } from './request.js'
 import { readWaitlistBody, WaitlistError, waitlistNotice, type WaitlistEntry } from './waitlist.js'
 
@@ -367,9 +369,47 @@ export const syncAccess = onCall({ cors: ORIGINS }, async (req) => {
   return { ok: true }
 })
 
-// ---- atem-lab.com's waitlist (D-429): an email for a product that isn't out yet ----
+// ---- atem-lab.com's mail (D-429, D-431, D-432), through Resend: its key a secret set by the user, never in the code ----
 
-export const joinWaitlist = onRequest({ cors: ORIGINS, maxInstances: 2 }, async (req, res) => {
+const RESEND_API_KEY = defineSecret('RESEND_API_KEY')
+// Set only for emulator tests against a fake Resend; never deployed.
+const RESEND = process.env.RESEND_API_BASE ?? 'https://api.resend.com'
+
+// True once Resend took it. What it answers may name an address, so only its status is logged.
+async function sendMail(mail: Mail): Promise<boolean> {
+  try {
+    const res = await fetch(`${RESEND}/emails`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY.value()}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(mail),
+      signal: AbortSignal.timeout(15_000),
+    })
+    if (!res.ok) logger.error('mail not sent', { status: res.status })
+    return res.ok
+  } catch (e) {
+    logger.error('mail not sent', { error: (e as Error).name })
+    return false
+  }
+}
+
+// Counts one use of `what` today; false past `max`. One counter a day, no addresses.
+async function underLimit(what: string, max: number): Promise<boolean> {
+  const day = new Date().toISOString().slice(0, 10)
+  const ref = db().doc(`limits/${what}_${day}`)
+  return db().runTransaction(async (tx) => {
+    const n = ((await tx.get(ref)).data()?.n as number | undefined) ?? 0
+    if (n >= max) return false
+    tx.set(ref, { n: n + 1, at: Date.now() })
+    return true
+  })
+}
+
+const sha256 = (text: string) => createHash('sha256').update(text).digest('hex')
+const BUSY = 'Too many today. Try again tomorrow, or write to the address in the Impressum.'
+
+// ---- The waitlist (D-429): an email for a product that isn't out yet, on it only once its owner confirmed (D-432) ----
+
+export const joinWaitlist = onRequest({ cors: ORIGINS, maxInstances: 2, secrets: [RESEND_API_KEY] }, async (req, res) => {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'POST only.' })
     return
@@ -382,22 +422,73 @@ export const joinWaitlist = onRequest({ cors: ORIGINS, maxInstances: 2 }, async 
     res.status(400).json({ error: e.message })
     return
   }
-  if (entry !== 'bot') {
-    const id = `${entry.product}_${createHash('sha256').update(entry.email).digest('hex')}`
-    try {
-      // create(): a second time keeps the first date.
-      await db().collection('waitlist').doc(id).create({ ...entry, createdAt: FieldValue.serverTimestamp() })
-    } catch (e) {
-      if ((e as { code?: number }).code !== 6) throw e // 6: already exists
-    }
+  if (entry === 'bot') {
+    res.json({ ok: true })
+    return
+  }
+  const id = `${entry.product}_${sha256(entry.email)}`
+  const pending = db().doc(`waitlistPending/${id}`)
+  const [on, was] = await db().getAll(db().doc(`waitlist/${id}`), pending)
+  // On the list already, or written to a moment ago: the same answer, so nobody learns who is on it, and no second mail.
+  if (on.exists || (was.exists && Date.now() - (was.data()!.sentAt as number) < RESEND_AFTER_MS)) {
+    res.json({ ok: true })
+    return
+  }
+  if (!(await underLimit('confirm', CONFIRMS_A_DAY))) {
+    res.status(429).json({ error: BUSY })
+    return
+  }
+  const token = randomBytes(32).toString('hex')
+  await pending.set({ ...entry, tokenHash: sha256(token), askedAt: FieldValue.serverTimestamp(), sentAt: Date.now() })
+  if (!(await sendMail(confirmMail(entry, id, token)))) {
+    await pending.delete()
+    res.status(502).json({ error: "We couldn't send the email. Try again later." })
+    return
   }
   res.json({ ok: true })
 })
 
-// A new name on a waitlist: one email to the lab (D-431), through Resend (its key a secret, set by the user, never in
-// the code). A failed send is logged and dropped: the name is kept either way.
-const RESEND_API_KEY = defineSecret('RESEND_API_KEY')
+// The button on the page the email links to: a press, so a mail scanner opening the link confirms nothing.
+export const confirmWaitlist = onRequest({ cors: ORIGINS, maxInstances: 2 }, async (req, res) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'POST only.' })
+    return
+  }
+  let asked: ReturnType<typeof readConfirmBody>
+  try {
+    asked = readConfirmBody(req.body)
+  } catch (e) {
+    if (!(e instanceof WaitlistError)) throw e
+    res.status(400).json({ error: e.message })
+    return
+  }
+  const { id, token } = asked
+  const pending = db().doc(`waitlistPending/${id}`)
+  const list = db().doc(`waitlist/${id}`)
+  const done = await db().runTransaction(async (tx) => {
+    const [p, on] = await tx.getAll(pending, list)
+    if (!p.exists) return false
+    const d = p.data()!
+    if (Date.now() - (d.sentAt as number) > PENDING_KEPT_MS) return false
+    if (!timingSafeEqual(Buffer.from(d.tokenHash as string, 'hex'), Buffer.from(sha256(token), 'hex'))) return false
+    if (!on.exists) tx.create(list, { email: d.email, product: d.product, askedAt: d.askedAt, createdAt: FieldValue.serverTimestamp(), confirmedAt: FieldValue.serverTimestamp() })
+    tx.delete(pending)
+    return true
+  })
+  if (done) res.json({ ok: true })
+  else res.status(410).json({ error: 'This link was used already or is older than 7 days. If you are not on the list, join again.' })
+})
 
+// Unconfirmed addresses go after 7 days, and the day counters with them.
+export const sweepPending = onSchedule({ schedule: 'every day 04:30', timeZone: 'Europe/Berlin', region: FIRESTORE_REGION }, async () => {
+  const before = Date.now() - PENDING_KEPT_MS
+  for (const [path, field] of [['waitlistPending', 'sentAt'], ['limits', 'at']] as const) {
+    const old = await db().collection(path).where(field, '<', before).limit(400).get()
+    await Promise.all(old.docs.map((d) => d.ref.delete()))
+  }
+})
+
+// A new name on a waitlist: one email to the lab (D-431). A failed send is logged and dropped: the name is kept either way.
 export const tellWaitlist = onDocumentCreated({ document: 'waitlist/{id}', region: FIRESTORE_REGION, secrets: [RESEND_API_KEY] }, async (event) => {
   const entry = event.data?.data() as WaitlistEntry | undefined
   if (!entry?.email) return
@@ -407,10 +498,105 @@ export const tellWaitlist = onDocumentCreated({ document: 'waitlist/{id}', regio
   } catch {
     count = null
   }
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${RESEND_API_KEY.value()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(waitlistNotice(entry, count)),
-  })
-  if (!res.ok) logger.error('waitlist notice not sent', { status: res.status, body: (await res.text()).slice(0, 300) })
+  await sendMail(waitlistNotice(entry, count))
+})
+
+// ---- The contact form (D-432): sent to the lab, kept nowhere else ----
+
+export const contact = onRequest({ cors: ORIGINS, maxInstances: 2, secrets: [RESEND_API_KEY] }, async (req, res) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'POST only.' })
+    return
+  }
+  let said: ReturnType<typeof readContactBody>
+  try {
+    said = readContactBody(req.body)
+  } catch (e) {
+    if (!(e instanceof ContactError)) throw e
+    res.status(400).json({ error: e.message })
+    return
+  }
+  if (said === 'bot') {
+    res.json({ ok: true })
+    return
+  }
+  if (!(await underLimit('contact', CONTACTS_A_DAY))) {
+    res.status(429).json({ error: BUSY })
+    return
+  }
+  if (!(await sendMail(contactMail(said)))) {
+    res.status(502).json({ error: "We couldn't send it. Write to the address in the Impressum." })
+    return
+  }
+  res.json({ ok: true })
+})
+
+// ---- Deleting an account (D-432, account.ts) ----
+
+// What they wrote in a shared workspace stays for the others, without their name; what only they could see goes.
+async function leaveNameless(wid: string, uid: string) {
+  const ws = db().doc(`workspaces/${wid}`)
+  const gone = async (q: FirebaseFirestore.Query, patch: Record<string, unknown>) => {
+    const w = db().bulkWriter()
+    for (const d of (await q.get()).docs) void w.update(d.ref, patch)
+    await w.close()
+  }
+  for (const c of ['documents', 'agentChats', 'reports']) {
+    const mine = await ws.collection(c).where('uid', '==', uid).get()
+    for (const d of mine.docs) if (d.data().shared !== true) await db().recursiveDelete(d.ref)
+  }
+  for (const c of ['documents', 'reports', 'threads']) await gone(ws.collection(c).where('uid', '==', uid), { name: GONE_NAME })
+  await gone(ws.collection('threads').where('lastUid', '==', uid), { lastName: GONE_NAME })
+  for (const t of await ws.collection('threads').listDocuments()) await gone(t.collection('messages').where('uid', '==', uid), { name: GONE_NAME })
+  await gone(ws.collection('labels').where('uid', '==', uid), { author: GONE_NAME })
+  const used = await ws.collection('aiUsage').where('uid', '==', uid).get()
+  await Promise.all(used.docs.map((d) => d.ref.delete()))
+  await ws.collection('threadReads').doc(uid).delete()
+  await ws.collection('members').doc(uid).delete()
+  const config = await configRef(wid).get()
+  if (((config.data()?.allowed as string[] | undefined) ?? []).includes(uid)) await configRef(wid).update({ allowed: FieldValue.arrayRemove(uid) })
+  await rtdb().ref(`presence/${wid}/${uid}`).remove()
+}
+
+export const deleteAccount = onCall({ cors: ORIGINS, timeoutSeconds: 540 }, async (req) => {
+  const uid = req.auth?.uid
+  if (!uid) throw new HttpsError('unauthenticated', 'Sign in again.')
+  if (!isFresh(req.auth?.token.auth_time, Date.now())) throw new HttpsError('failed-precondition', 'Sign in again to delete your account.')
+  const mine = await db().collection('workspaces').where('memberIds', 'array-contains', uid).get()
+  const blocked = mine.docs.filter((d) => fateOf(d.data() as Workspace, uid) === 'blocked')
+  if (blocked.length) {
+    throw new HttpsError('failed-precondition', `You are the only owner of ${blocked.map((d) => `"${String(d.data().name)}"`).join(', ')}. Make someone else an owner, or delete it, first. Nothing was deleted.`)
+  }
+  for (const { ref, id: wid } of mine.docs) {
+    // Judged again in the transaction: someone may have joined, or the other owner left, since.
+    const fate = await db().runTransaction(async (tx) => {
+      const snap = await tx.get(ref)
+      const ws = snap.exists ? (snap.data() as Workspace) : null
+      const now = ws && fateOf(ws, uid)
+      if (now === 'delete') tx.delete(ref)
+      if (now === 'leave') tx.update(ref, { memberIds: FieldValue.arrayRemove(uid), [`roles.${uid}`]: FieldValue.delete() })
+      return now
+    })
+    if (fate === 'blocked') throw new HttpsError('aborted', 'Someone changed a workspace meanwhile. Try again.')
+    if (fate === 'delete') {
+      await db().recursiveDelete(ref)
+      const codes = await db().collection('inviteCodes').where('workspaceId', '==', wid).get()
+      const asks = await db().collection('joinRequests').where('workspaceId', '==', wid).get()
+      await Promise.all([...codes.docs, ...asks.docs].map((d) => d.ref.delete()))
+    }
+    if (fate === 'leave') await leaveNameless(wid, uid)
+  }
+  const asked = await db().collection('joinRequests').where('uid', '==', uid).get()
+  await Promise.all(asked.docs.map((d) => d.ref.delete()))
+  const email = req.auth?.token.email?.toLowerCase()
+  if (email && req.auth?.token.email_verified) {
+    const invites = await db().collection('invites').where('email', '==', email).get()
+    for (const d of invites.docs) {
+      await db().doc(`workspaces/${String(d.data().workspaceId)}`).update({ invitedEmails: FieldValue.arrayRemove(email) }).catch(() => {})
+      await d.ref.delete()
+    }
+  }
+  await db().recursiveDelete(db().doc(`users/${uid}`))
+  await getAuth().deleteUser(uid)
+  return { ok: true }
 })

@@ -3,6 +3,7 @@ import { isConfigured, useEmulators } from '../../data/firebase'
 import { signInAsTestUser, signInWithGoogle } from '../../data/auth'
 import { Button } from '../../ui/primitives/Button'
 import { Appear } from '../../ui/primitives/Appear'
+import { LegalLinks } from '../../ui/patterns/LegalLinks'
 import styles from './Landing.module.css'
 
 export function Landing({ error }: { error?: string | null }) {
@@ -43,6 +44,7 @@ export function Landing({ error }: { error?: string | null }) {
               <span className={styles.warn}>!</span> {shownError}
             </p>
           )}
+          <LegalLinks />
         </Appear>
       </section>
     </main>

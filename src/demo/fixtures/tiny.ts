@@ -34,7 +34,7 @@ const card = (c: Omit<Card, 'pieceId'>): Card => ({ pieceId: PLANE, ...c })
 const cards: Card[] = [
   card({ id: 'c-office', type: 'customer', title: 'Office workers', x: 0, y: 0, validation: 'testing', tags: ['b2c'] }),
   card({ id: 'p-greasy', type: 'problem', title: 'Delivery lunch is greasy and costs €14 or more', x: 300, y: 0, validation: 'validated' }),
-  card({ id: 'k-wolt', type: 'competitor', title: 'Wolt', x: 600, y: 0, regions: ['Europe'], description: 'Restaurant delivery in 25 countries' }),
+  card({ id: 'k-wolt', type: 'competitor', title: 'Wegbote', x: 600, y: 0, regions: ['Europe'], description: 'Couriers for restaurant lunches' }),
   card({ id: 'c-cooks', type: 'customer', title: 'Retired cooks', x: 0, y: 225, validation: 'hypothesis' }),
   card({ id: 'i-preorder', type: 'idea', title: 'Home cooks sell tomorrow’s lunch the night before', x: 300, y: 225, validation: 'testing' }),
   card({ id: 'f-pickup', type: 'feature', title: 'Pre-order by 9 pm, pick up at noon', x: 600, y: 225, priority: 'P1', status: 'planned', impact: 'high', effort: 'M' }),
@@ -59,7 +59,7 @@ export const tiny: WorkspaceData = {
   ],
   competitorFeatures: [
     { id: 'w-tracking', competitorId: 'k-wolt', name: 'Live courier tracking', category: 'delivery', availability: 'free', createdAt: AT },
-    { id: 'w-plus', competitorId: 'k-wolt', name: 'Wolt+ free delivery', category: 'pricing', availability: 'paid', createdAt: AT },
+    { id: 'w-plus', competitorId: 'k-wolt', name: 'Free delivery plan', category: 'pricing', availability: 'paid', createdAt: AT },
   ],
   comparisons: [],
   edges: [

@@ -1,7 +1,7 @@
 // `matrix` "Change it any time" (lessons.ts, D-349): the real matrix wizard, laid out over the small stage.
 // It opens on `start from`, features × competitors chosen, the preview beside it. The hand picks `problems × customers`:
 // the preview turns into Pazar's problems against its customers. Then the third question, `columns`; the hand picks
-// `competitors`: the preview's columns turn into Wolt, Lieferando… The wizard works on a draft, so every click here is
+// `competitors`: the preview's columns turn into Wegbote, Lunchpost… The wizard works on a draft, so every click here is
 // the app's own (nothing is written until it's made).
 import { cursor, onStage, wait, type Scene } from '../director'
 import { base, byText } from '../fixtures/kit'

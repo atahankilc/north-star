@@ -23,7 +23,7 @@ Why: the user wants a visual, animated 3D experience.
 
 ### D-004 · 2026-10-17 · Accepted
 **Design language: 3D ASCII, mostly black and white with vivid accent colours.**
-Why: user preference, based on the references in `docs/design/references/`. See [DESIGN.md](../docs/DESIGN.md).
+Why: user preference, based on two reference pictures (out of the repo since D-432). See [DESIGN.md](../docs/DESIGN.md).
 
 ### D-005 · 2026-10-17 · Accepted
 **Real-time collaboration with live cursors and presence is in scope.**
@@ -7898,3 +7898,13 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
 - *How:* `tellWaitlist` (functions/src/index.ts), a trigger on `waitlist/{id}` created, in Firestore's region; the words are `waitlistNotice` (functions/src/waitlist.ts): the address, the product (a name left from Granat reads Orrery), how many are on its list. A failed send is logged and dropped; the name is kept either way.
 - *The key:* `RESEND_API_KEY`, a secret the user sets, never in the code. The sender is on atem-lab.com, which must be verified at Resend.
 - *Live (2026-11-24):* the secret set by the user, `tellWaitlist` deployed; atem-lab.com/privacy.html names Resend (atem-lab.github.io 3692720). *Not yet:* seen sending a real notice.
+
+### D-432 · 2026-11-24 · Accepted (the user, of a legal check of the sites: "hepsini düzelt özellikle ilk 5 ve orta risk olanlar")
+**The app links the legal pages, an account can be deleted, the waitlist asks for a confirmation, and the demo's competitors are made up.**
+- *Links:* `LegalLinks` (Impressum, privacy, terms, contact, report content; the pages are atem-lab.com's) on the landing and in Settings → account.
+- *Deleting an account:* Settings → account, after Google's sign-in again; `deleteAccount` (functions/src/account.ts). Alone in a workspace: it goes whole. Shared: they leave, their private documents and chats go, what they made stays without their name. The only owner of a shared one: refused, nothing deleted. Names typed in others' texts stay.
+- *The waitlist:* `joinWaitlist` keeps the address in `waitlistPending` and mails a link (`confirmMail`); `confirmWaitlist`, a press on atem-lab.com/confirm.html, puts it on the list; unconfirmed ones go after 7 days (`sweepPending`). Who was on it before is on it unconfirmed.
+- *The contact form:* `contact`, mailed to the lab and kept nowhere else: questions, privacy requests, reports of illegal content (DSA Art. 16). Day limits on both (`limits/`).
+- *The demo:* Wegbote, Lunchpost, Topfretter, Stubenkoch for real companies with scores we made up; the evals and the dev stub keep real names. The two reference pictures by others left the repo (still in its history).
+- *The AI said so:* the agent's prompt and its settings page say it is an AI.
+- *Checked:* unit 1239; on the emulators with a fake Resend: 26 checks, all ok (joining, confirming, the form, limits, an account deleted with a workspace of each fate). Not a lawyer's check.

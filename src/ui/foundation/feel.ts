@@ -69,3 +69,5 @@ export const ACCESS_GIVE_UP_MS = 30_000
 // The interface's size in percent (D-417, Settings → display): its range, its step and where it starts. Every size token
 // on the screen is multiplied by it (tokens.css `--ui`).
 export const UI_SIZE = { min: 75, max: 150, step: 5, normal: 100 } as const
+// Deleting an account (D-432) may take as long as its function may run.
+export const ACCOUNT_DELETE_MS = 540_000

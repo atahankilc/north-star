@@ -1,0 +1,15 @@
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+}
+
+.links a {
+  color: var(--fg-dim);
+}
+
+.links a:hover,
+.links a:focus-visible {
+  color: var(--fg-strong);
+}

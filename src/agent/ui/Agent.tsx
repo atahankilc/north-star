@@ -374,7 +374,7 @@ function Box() {
             running={running}
             data={{ 'data-agent-input': true }}
             value={text}
-            placeholder={running ? 'working…' : pending ? 'changes are waiting: open the chat' : entries ? 'go on with the chat…' : `ask about ${ask}… (/ for skills)`}
+            placeholder={running ? 'working…' : pending ? 'changes are waiting: open the chat' : entries ? 'go on with the chat…' : `ask the AI about ${ask}… (/ for skills)`}
             label="Ask the agent"
             onFocus={(e) => {
               remember(e.relatedTarget)
@@ -519,7 +519,7 @@ function Column() {
           running={running}
           data={{ 'data-agent-input': true }}
           value={text}
-          placeholder={running ? 'tell it something while it works… (it reads it at its next step)' : phase === 'previewing' ? 'change something…' : `ask about ${ask}… (/ for skills)`}
+          placeholder={running ? 'tell it something while it works… (it reads it at its next step)' : phase === 'previewing' ? 'change something…' : `ask the AI about ${ask}… (/ for skills)`}
           label="Ask the agent"
           onChange={setText}
           onSubmit={() => {}}

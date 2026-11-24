@@ -1,7 +1,7 @@
 // `card-panel` "Their features inside" (lessons.ts, D-349): 02 Product in focus, no HUD, two
-// competitors. The hand comes over Shef: it grows and its features show inside it, by category (the real hover); it
-// clicks: Shef is selected, its panel builds (its features there to add and match), and as the hand moves off to the
-// panel Shef stays open. All real.
+// competitors. The hand comes over Stubenkoch: it grows and its features show inside it, by category (the real hover); it
+// clicks: Stubenkoch is selected, its panel builds (its features there to add and match), and as the hand moves off to the
+// panel Stubenkoch stays open. All real.
 import { aim, cursor, inFocus, wait, type Scene } from '../director'
 import { PLANE_K, focusRoute, moved, smallPlane } from '../fixtures/kit'
 import { scrollPanel, stage, view } from '../fixtures/o10'
