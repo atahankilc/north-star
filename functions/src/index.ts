@@ -8,7 +8,7 @@ import { getAuth } from 'firebase-admin/auth'
 import { getDatabaseWithUrl } from 'firebase-admin/database'
 import { getStorage } from 'firebase-admin/storage'
 import { FieldValue, getFirestore } from 'firebase-admin/firestore'
-import { onDocumentDeleted, onDocumentWritten } from 'firebase-functions/firestore'
+import { onDocumentCreated, onDocumentDeleted, onDocumentWritten } from 'firebase-functions/firestore'
 import { HttpsError, onCall, onRequest } from 'firebase-functions/https'
 import { logger } from 'firebase-functions'
 import { onSchedule } from 'firebase-functions/scheduler'
@@ -17,7 +17,7 @@ import { defineSecret } from 'firebase-functions/params'
 import { isOwner, mayUseKey, type Access, type Workspace } from './access.js'
 import { accessOf, docAccessOf, sameAccess, sameDocAccess } from './mirror.js'
 import { BadRequest, cleanBody, MODEL_ID, modelsAllowed } from './request.js'
-import { readWaitlistBody, WaitlistError } from './waitlist.js'
+import { readWaitlistBody, WaitlistError, waitlistNotice, type WaitlistEntry } from './waitlist.js'
 
 initializeApp()
 setGlobalOptions({ region: 'europe-west1', maxInstances: 10 })
@@ -392,4 +392,25 @@ export const joinWaitlist = onRequest({ cors: ORIGINS, maxInstances: 2 }, async 
     }
   }
   res.json({ ok: true })
+})
+
+// A new name on a waitlist: one email to the lab (D-431), through Resend (its key a secret, set by the user, never in
+// the code). A failed send is logged and dropped: the name is kept either way.
+const RESEND_API_KEY = defineSecret('RESEND_API_KEY')
+
+export const tellWaitlist = onDocumentCreated({ document: 'waitlist/{id}', region: FIRESTORE_REGION, secrets: [RESEND_API_KEY] }, async (event) => {
+  const entry = event.data?.data() as WaitlistEntry | undefined
+  if (!entry?.email) return
+  let count: number | null = null
+  try {
+    count = (await db().collection('waitlist').where('product', '==', entry.product).count().get()).data().count
+  } catch {
+    count = null
+  }
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${RESEND_API_KEY.value()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(waitlistNotice(entry, count)),
+  })
+  if (!res.ok) logger.error('waitlist notice not sent', { status: res.status, body: (await res.text()).slice(0, 300) })
 })

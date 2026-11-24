@@ -7892,3 +7892,9 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
 - *How:* a GoDaddy CNAME `north-star` → atem-lab.github.io; this repo's Pages custom domain, the build at the root (`BASE_PATH: /`); the product page and a 404 page that sends old links on are in `atem-lab/atem-lab.github.io`. The old origins stay allowed (Auth, CORS, `ORIGINS`).
 - *Why a subdomain and not `app.atem-lab.com/north-star`:* a Pages domain belongs to one repo, and products on one origin would share localStorage, where a person's own AI key is kept.
 - *What doesn't move:* localStorage and the sign-in (per origin): people sign in again and set their own keys and display choices again. Firestore's data is untouched.
+
+### D-431 · 2026-11-24 · Accepted (the user: "waitlist işini D-431 olarak numaralandır ve commit'le")
+**A new name on a waitlist sends one email to the lab's own inbox, through Resend.**
+- *How:* `tellWaitlist` (functions/src/index.ts), a trigger on `waitlist/{id}` created, in Firestore's region; the words are `waitlistNotice` (functions/src/waitlist.ts): the address, the product (a name left from Granat reads Orrery), how many are on its list. A failed send is logged and dropped; the name is kept either way.
+- *The key:* `RESEND_API_KEY`, a secret the user sets, never in the code. The sender is on atem-lab.com, which must be verified at Resend.
+- *Not yet:* deployed; the secret doesn't exist (checked 2026-11-24), and a functions deploy asks for it. Privacy.html must name Resend before it goes live (it now says the address is shared with nobody else).

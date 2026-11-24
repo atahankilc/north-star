@@ -1,6 +1,6 @@
 // atem-lab.com's waitlist (D-429, functions/src/waitlist.ts): what the function takes in, and what it refuses.
 import { describe, expect, it } from 'vitest'
-import { readWaitlistBody, WAITLIST_EMAIL_MAX, WaitlistError } from '../../functions/src/waitlist'
+import { readWaitlistBody, WAITLIST_EMAIL_MAX, WaitlistError, waitlistNotice } from '../../functions/src/waitlist'
 import { EMAIL_MAX } from '../../src/model/limits'
 
 describe('the waitlist', () => {
@@ -27,5 +27,21 @@ describe('the waitlist', () => {
 
   it('caps an email as the app does', () => {
     expect(WAITLIST_EMAIL_MAX).toBe(EMAIL_MAX)
+  })
+})
+
+describe('the notice to the lab', () => {
+  it('names the address, the product and how many are on its list', () => {
+    const n = waitlistNotice({ email: 'ada@example.com', product: 'orrery' }, 12)
+    expect(n.to).toEqual(['atahankilic.dev@gmail.com'])
+    expect(n.from).toBe('ATEM <hello@atem-lab.com>')
+    expect(n.subject).toBe('New on the Orrery waitlist: ada@example.com')
+    expect(n.text).toContain('ada@example.com joined the Orrery waitlist (12 on the list).')
+  })
+
+  it('says Orrery for a name left from Granat, and leaves the count out when it is not known', () => {
+    const n = waitlistNotice({ email: 'b@c.de', product: 'granat' }, null)
+    expect(n.subject).toBe('New on the Orrery waitlist: b@c.de')
+    expect(n.text).toContain('b@c.de joined the Orrery waitlist.')
   })
 })

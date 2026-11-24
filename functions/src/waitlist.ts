@@ -27,3 +27,22 @@ export function readWaitlistBody(body: unknown): WaitlistEntry | 'bot' {
   if (clean.length > WAITLIST_EMAIL_MAX || !EMAIL.test(clean)) throw new WaitlistError("That doesn't look like an email.")
   return { email: clean, product: product as WaitlistProduct }
 }
+
+// ---- Telling the lab (D-431): a new name on a list sends one email to the lab's own inbox, through Resend ----
+
+// Who sends and who reads. The sender is the domain verified at Resend; the reader is the address in the Impressum.
+export const NOTICE_FROM = 'ATEM <hello@atem-lab.com>'
+export const NOTICE_TO = 'atahankilic.dev@gmail.com'
+const PRODUCT_NAMES: Record<WaitlistProduct, string> = { orrery: 'Orrery', granat: 'Orrery' }
+
+// The email Resend sends (its POST /emails body): plain text, the address, the product, how many are on its list now.
+export function waitlistNotice(entry: WaitlistEntry, count: number | null) {
+  const name = PRODUCT_NAMES[entry.product]
+  const place = count ? ` (${count} on the list)` : ''
+  return {
+    from: NOTICE_FROM,
+    to: [NOTICE_TO],
+    subject: `New on the ${name} waitlist: ${entry.email}`,
+    text: `${entry.email} joined the ${name} waitlist${place}.\n\nAll of it: Firebase console → Firestore → waitlist\nhttps://console.firebase.google.com/project/north-star-db/firestore/databases/-default-/data/~2Fwaitlist\n`,
+  }
+}
