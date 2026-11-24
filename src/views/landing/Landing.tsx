@@ -44,7 +44,7 @@ export function Landing({ error }: { error?: string | null }) {
               <span className={styles.warn}>!</span> {shownError}
             </p>
           )}
-          <LegalLinks />
+          <LegalLinks className={styles.legal} />
         </Appear>
       </section>
     </main>
