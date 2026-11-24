@@ -7897,4 +7897,4 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
 **A new name on a waitlist sends one email to the lab's own inbox, through Resend.**
 - *How:* `tellWaitlist` (functions/src/index.ts), a trigger on `waitlist/{id}` created, in Firestore's region; the words are `waitlistNotice` (functions/src/waitlist.ts): the address, the product (a name left from Granat reads Orrery), how many are on its list. A failed send is logged and dropped; the name is kept either way.
 - *The key:* `RESEND_API_KEY`, a secret the user sets, never in the code. The sender is on atem-lab.com, which must be verified at Resend.
-- *Not yet:* deployed; the secret doesn't exist (checked 2026-11-24), and a functions deploy asks for it. Privacy.html must name Resend before it goes live (it now says the address is shared with nobody else).
+- *Live (2026-11-24):* the secret set by the user, `tellWaitlist` deployed; atem-lab.com/privacy.html names Resend (atem-lab.github.io 3692720). *Not yet:* seen sending a real notice.
