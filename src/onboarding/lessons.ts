@@ -513,7 +513,7 @@ export const LESSONS: readonly Lesson[] = [
     // Shown once Settings closes: a modal Window, nothing shows over it (D-349, D-359).
     trigger: [{ event: 'settings-open' }],
     pages: [
-      { title: 'Settings', tab: 'you', body: 'YOU holds your account, with deleting it, and the display: how big everything on the screen is, theme, motion, the background. It is kept in this browser.' },
+      { title: 'Settings', tab: 'you', body: 'YOU holds your account, which you can delete there, and the display: how big everything on the screen is, theme, motion, the background. It is kept in this browser.' },
       { title: 'This workspace', tab: 'workspace', body: 'WORKSPACE holds its name and what you are building, the people in it, and export: the whole workspace as a .zip.' },
     ],
   },

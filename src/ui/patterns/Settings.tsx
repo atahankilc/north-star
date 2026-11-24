@@ -39,7 +39,7 @@ type Group = 'you' | 'workspace'
 const PAGES: { id: Page; label: string; title: string; about: string; group: Group }[] = [
   { id: 'account', label: 'account', title: 'Account', about: 'Who you are signed in as.', group: 'you' },
   { id: 'display', label: 'display', title: 'Display', about: 'How North Star looks and moves in this browser.', group: 'you' },
-  { id: 'agent', label: 'the agent', title: 'The agent', about: 'The agent is an AI and can be wrong: check what matters. Your own keys and the model it uses, in this browser. A workspace can also have its own key (workspace → agent key).', group: 'you' },
+  { id: 'agent', label: 'the agent', title: 'The agent', about: 'The agent is an AI and can make mistakes. Your own keys and the model it uses, in this browser. A workspace can also have its own key (workspace → agent key).', group: 'you' },
   { id: 'general', label: 'general', title: 'Workspace', about: 'Its name and what the team is building.', group: 'workspace' },
   { id: 'people', label: 'people', title: 'People', about: 'Who is in this workspace and how others get in.', group: 'workspace' },
   { id: 'key', label: 'agent key', title: 'Agent key', about: "The workspace's own OpenAI key for the agent: who may use it, and which models.", group: 'workspace' },
@@ -195,7 +195,7 @@ function DeleteAccount() {
   }
   return (
     <>
-      <Row label="delete account" hint="Your account, and the workspaces only you are in. What you made in shared ones stays, without your name.">
+      <Row label="delete account" hint="This also deletes any workspace you're the only member of.">
         <Button tone="danger" disabled={busy} onClick={() => setAsk(true)}>
           {busy ? 'deleting…' : 'delete…'}
         </Button>
@@ -204,8 +204,12 @@ function DeleteAccount() {
       {ask && (
         <HazardConfirm
           title="Delete your account?"
-          lines={['Workspaces only you are in go, with everything in them.', 'In shared ones your private documents and chats go; the rest stays without your name.', 'This cannot be undone. Google asks you to sign in again first.']}
-          confirm="delete"
+          lines={[
+            "You'll lose your private documents and chats, and any workspace you're the only member of.",
+            'Anything else you made in shared workspaces stays there, but your name is removed.',
+            "You can't undo this. To confirm, you'll sign in with Google again.",
+          ]}
+          confirm="delete account"
           onCancel={() => setAsk(false)}
           onConfirm={go}
         />

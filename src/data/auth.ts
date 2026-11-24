@@ -88,8 +88,8 @@ export async function deleteAccount() {
       await reauthenticateWithPopup(user, google)
     } catch (e) {
       const code = (e as { code?: string }).code ?? ''
-      if (code === 'auth/user-mismatch') throw new Error('That was another Google account. Nothing was deleted.')
-      throw new Error(SIGN_IN_SAYS[code] ?? 'You have to sign in again first. Nothing was deleted.')
+      if (code === 'auth/user-mismatch') throw new Error("That's a different Google account. Sign in with the one you want to delete.")
+      throw new Error(SIGN_IN_SAYS[code] ?? 'Your account was not deleted. Sign in with Google to confirm.')
     }
   }
   await user.getIdToken(true)
