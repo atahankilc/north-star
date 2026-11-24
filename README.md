@@ -47,5 +47,5 @@ npm run deploy:rules   # push the Firestore rules + indexes and database.rules.j
 7. **GitHub Pages**: repo → Settings → Pages → Source: *GitHub Actions*. Then Settings → Secrets and
    variables → Actions → **Variables**: add the six `VITE_FIREBASE_*` values (API key, auth domain, project id, database URL, app id, storage bucket).
    Every push to `main` deploys to `https://<owner>.github.io/<repo-name>/`. A repo without its own domain needs `BASE_PATH: /<repo-name>/` in deploy.yml.
-   Ours is `atem-lab/north-star`: its Pages custom domain is `north-star.atem-lab.com` (D-430), served from the root;
+   Ours is `atem-lab/north-star-app` (renamed so that `/north-star/` is free for the product page): its Pages custom domain is `north-star.atem-lab.com` (D-430), served from the root;
    `https://atem-lab.com/north-star/` is the product page, in the org's site repo `atem-lab/atem-lab.github.io`.
