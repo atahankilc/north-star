@@ -985,16 +985,43 @@ service cloud.firestore {
     // for a workspace's key, by that workspace's owners; the audit log's workspace entries by its owners. No text in any.
     match /aiMeters/{id} {
       allow read: if signedIn() && (resource.data.uid == request.auth.uid
-        || (resource.data.source == 'workspace' && resource.data.wid is string && isOwner(resource.data.wid)));
+        || (resource.data.source == 'workspace' && resource.data.wid is string && isOwner(resource.data.wid))
+        || (resource.data.source == 'lab' && isLabAdmin()));
       allow write: if false;
     }
     match /aiCalls/{id} {
       allow read: if signedIn() && (resource.data.uid == request.auth.uid
-        || (resource.data.source == 'workspace' && resource.data.wid is string && isOwner(resource.data.wid)));
+        || (resource.data.source == 'workspace' && resource.data.wid is string && isOwner(resource.data.wid))
+        || (resource.data.source == 'lab' && isLabAdmin()));
       allow write: if false;
     }
     match /audit/{id} {
-      allow read: if signedIn() && resource.data.wid is string && isOwner(resource.data.wid);
+      allow read: if signedIn() && ((resource.data.wid is string && isOwner(resource.data.wid)) || (!('wid' in resource.data) && isLabAdmin()));
+      allow write: if false;
+    }
+
+    // The lab's key (D-434): who's a lab admin (a doc made by hand in the Firebase console; each reads their own), what
+    // signed-in people read of it, what only admins read, a person's own standing, the invites. Written by the functions only.
+    function isLabAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+    match /lab/{part} {
+      allow read: if (part == 'public' && signedIn()) || isLabAdmin();
+      allow write: if false;
+    }
+    match /labPeople/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isLabAdmin());
+      allow write: if false;
+    }
+    match /labGone/{id} {
+      allow read, write: if false;
+    }
+    match /labInvites/{email} {
+      allow read: if isLabAdmin();
       allow write: if false;
     }
 

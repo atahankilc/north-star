@@ -33,7 +33,9 @@ export function metered(model: AgentModel, db: Firestore, who: () => Omit<Who, '
       await settle(db, h.call, s).catch((e) => o.log?.('a call was not settled', { call: h.call, error: (e as Error).name }))
     }
     try {
-      const inner = model.stream ? model.stream({ ...req, maxOutput: h.maxOutput }) : once(model, { ...req, maxOutput: h.maxOutput })
+      // The output it may write, and the searches it may run, as the budget lets it.
+      const sent: ModelRequest = { ...req, maxOutput: h.maxOutput, ...(req.web ? (h.searches ? { searches: h.searches } : { web: false }) : {}) }
+      const inner = model.stream ? model.stream(sent) : once(model, sent)
       for await (const ev of inner) {
         if (ev.type === 'text') streamed += ev.delta.length
         if (ev.type === 'done') {

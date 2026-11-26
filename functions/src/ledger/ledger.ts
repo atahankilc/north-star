@@ -4,7 +4,7 @@
 // person's (or a whole workspace's) use of one way to pay. An own key's calls are recorded the same, with no limit.
 import { FieldValue, type Firestore, type Transaction } from 'firebase-admin/firestore'
 import type { Usage } from '../../../src/agent/contract'
-import { centsToMicro, costMicro, guessed, microToCents, monthOf, outputFor, resetsOn, USD_PER_EUR, worstCase } from '../../../src/agent/money'
+import { centsToMicro, costMicro, guessed, microToCents, monthOf, outputFor, resetsOn, searchesFor, USD_PER_EUR, worstCase } from '../../../src/agent/money'
 import { priced } from '../../../src/agent/models'
 
 // A request this big is refused: past 272k tokens OpenAI's price doubles, and the loop compacts long before.
@@ -39,7 +39,8 @@ const meterRef = (db: Firestore, id: string) => db.doc(`aiMeters/${id}`)
 export const callRef = (db: Firestore, id: string) => db.doc(`aiCalls/${id}`)
 export const newCallId = (db: Firestore) => db.collection('aiCalls').doc().id
 
-const empty = (source: Source, month: string, uid: string | null, wid: string | null): Meter => ({ source, uid, wid, month, spent: 0, reserved: 0, calls: 0, input: 0, cached: 0, cacheWrite: 0, output: 0, searches: 0 })
+// A meter's workspace is only a workspace key's: the lab's and an own key's meters are the person's, over every workspace.
+const empty = (source: Source, month: string, uid: string | null, wid: string | null): Meter => ({ source, uid, wid: source === 'workspace' ? wid : null, month, spent: 0, reserved: 0, calls: 0, input: 0, cached: 0, cacheWrite: 0, output: 0, searches: 0 })
 
 // The month's rate (USD per EUR): set once a month (the sweep reads the ECB's), else the default.
 export async function rateOf(db: Firestore, month: string): Promise<number> {
@@ -47,7 +48,8 @@ export async function rateOf(db: Firestore, month: string): Promise<number> {
   return typeof r?.usdPerEur === 'number' && r.usdPerEur > 0.5 && r.usdPerEur < 2 ? r.usdPerEur : USD_PER_EUR
 }
 
-export type Hold = { call: string; maxOutput: number; reserved: number }
+// `searches`: how many web searches it may run (fewer than asked when the budget is short; 0: the web off for it).
+export type Hold = { call: string; maxOutput: number; reserved: number; searches: number }
 export type Who = { source: Source; uid: string; wid: string | null; run: string | null; step: number; provider: string; model: string }
 
 const euros = (cents: number) => `€${(cents / 100).toFixed(2)}`
@@ -68,7 +70,8 @@ export async function hold(db: Firestore, w: Who, o: { input: number; searches: 
     const total = t ? ((t.data() as Meter | undefined) ?? empty(w.source, month, null, w.wid)) : null
     const room = (m: Meter, cents?: number) => (cents === undefined ? Infinity : centsToMicro(cents, rate) - m.spent - m.reserved)
     const left = Math.min(limited ? room(person, o.limits?.person) : Infinity, total ? room(total, o.limits?.total) : Infinity)
-    const maxOutput = left === Infinity ? Math.min(o.asked ?? 32_000, 32_000) : outputFor(w.model, left, o)
+    const searches = left === Infinity ? o.searches : searchesFor(w.model, left, o)
+    const maxOutput = left === Infinity ? Math.min(o.asked ?? 32_000, 32_000) : outputFor(w.model, left, { ...o, searches })
     if (maxOutput === null) {
       const which = room(person, o.limits?.person) <= room(total!, o.limits?.total) ? 'person' : 'total'
       bump(tx, db, ids.person, person, { refused: which })
@@ -80,11 +83,11 @@ export async function hold(db: Firestore, w: Who, o: { input: number; searches: 
         which,
       )
     }
-    const reserved = limited ? worstCase(w.model, { input: o.input, output: maxOutput, searches: o.searches }) : 0
+    const reserved = limited ? worstCase(w.model, { input: o.input, output: maxOutput, searches }) : 0
     tx.create(callRef(db, call), { ...w, status: 'open', reserved, asked: { input: o.input, searches: o.searches }, cost: 0, input: 0, cached: 0, cacheWrite: 0, output: 0, reasoning: 0, searches: 0, at: now } satisfies Call)
     bump(tx, db, ids.person, person, { reserved })
     if (total && ids.total) bump(tx, db, ids.total, total, { reserved })
-    return { call, maxOutput, reserved }
+    return { call, maxOutput, reserved, searches }
   })
 }
 

@@ -2,7 +2,7 @@
 // (functions/src/ledger/wsAi.ts): what a call may cost at worst, what it may write with what's left, what a call whose
 // answer never came is charged, and a limit typed by an owner.
 import { describe, expect, it } from 'vitest'
-import { centsToMicro, costMicro, guessed, microToCents, OUTPUT_CAP, OUTPUT_MIN, outputFor, resetsOn, worstCase } from '../../src/agent/money'
+import { centsToMicro, costMicro, guessed, microToCents, OUTPUT_CAP, OUTPUT_MIN, outputFor, resetsOn, searchesFor, worstCase } from '../../src/agent/money'
 import { BadSetting, readPatch } from '../../functions/src/ledger/wsAi'
 
 const M = 'gpt-6.1-terra' // $1 in, $0.05 cached, $1.25 a cache write, $5 out, per million
@@ -22,6 +22,12 @@ describe('what a call costs', () => {
     expect(outputFor(M, 1250 + OUTPUT_MIN * 5 - 1, { input: 1000, searches: 0 })).toBeNull()
     expect(outputFor(M, 1_000_000, { input: 1000, searches: 0, asked: 2000 })).toBe(2000)
     expect(outputFor('no-such-model', 1_000_000, { input: 1, searches: 0 })).toBeNull()
+  })
+  it('a short budget runs fewer web searches, then none, before it refuses the call', () => {
+    expect(searchesFor(M, 1_000_000, { input: 1000, searches: 5 })).toBe(5)
+    expect(searchesFor(M, 1250 + 7500 + 25_000, { input: 1000, searches: 5 })).toBe(2)
+    expect(searchesFor(M, 1250 + 7500 + 9_999, { input: 1000, searches: 5 })).toBe(0)
+    expect(searchesFor(M, 1_000_000, { input: 1000, searches: 0 })).toBe(0)
   })
   it('an answer that never came: input and what streamed or the time it took, never more than was held', () => {
     expect(guessed(M, { input: 1000, streamedChars: 3000, ms: 1000, held: 1_000_000 }).usage.output).toBe(1000)

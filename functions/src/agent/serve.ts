@@ -31,13 +31,13 @@ export type Deps = {
   enqueue: (run: string) => Promise<void>
   log: (what: string, more?: Record<string, unknown>) => void
 }
-export type Caller = { uid: string; name?: string }
+export type Caller = { uid: string; name?: string; email?: string; emailVerified?: boolean }
 
 // A message: a run made and queued. Answers with its id; the rest comes over RTDB.
 export async function startAgentRun(who: Caller, data: unknown, d: Deps): Promise<{ run: string }> {
   const ask = readAsk(data)
   await roleNow(d.db, ask.wid, who.uid)
-  const provider = await mayPay(d.db, { uid: who.uid, wid: ask.wid, paidBy: ask.paidBy, model: ask.model, ...(ask.key ? { key: ask.key } : {}) })
+  const provider = await mayPay(d.db, { uid: who.uid, wid: ask.wid, paidBy: ask.paidBy, model: ask.model, ...(ask.key ? { key: ask.key } : {}), ...(who.email ? { email: who.email, emailVerified: !!who.emailVerified } : {}) })
   const run = await queueRun(d, who, { ...ask, provider }, { text: ask.text, view: ask.view, ...(ask.off ? { off: ask.off } : {}) })
   return { run }
 }
@@ -95,7 +95,7 @@ export async function tellAgent(who: Caller, data: unknown, d: Deps): Promise<{ 
   await noteOutcome(d.db, { uid: who.uid, wid: told.wid, chatId: told.chatId, what: told.what, now: Date.now() })
   const job = r.thread.env.job
   if (r.say === undefined || !told.paidBy || !told.model) return { job }
-  const provider = await mayPay(d.db, { uid: who.uid, wid: told.wid, paidBy: told.paidBy, model: told.model, ...(told.key ? { key: told.key } : {}) })
+  const provider = await mayPay(d.db, { uid: who.uid, wid: told.wid, paidBy: told.paidBy, model: told.model, ...(told.key ? { key: told.key } : {}), ...(who.email ? { email: who.email, emailVerified: !!who.emailVerified } : {}) })
   const run = await queueRun(d, who, { wid: told.wid, chatId: told.chatId, paidBy: told.paidBy, model: told.model, ...(told.effort ? { effort: told.effort } : {}), ...(told.key ? { key: told.key } : {}), provider }, { text: r.say, view: told.view, auto: true })
   return { run, say: r.say, auto: true, job }
 }
@@ -172,6 +172,9 @@ export async function closeStale(d: Deps, now = Date.now()): Promise<{ queued: n
   }
   if (out.keys) d.log('own keys left behind were deleted', { keys: out.keys })
   const calls = await closeOpen(d.db, now)
+  // Last month's carried spends (lab.ts' labGone) go.
+  const old = await d.db.collection('labGone').where('month', '<', monthOf(now)).limit(300).get()
+  await Promise.all(old.docs.map((x) => x.ref.delete()))
   if (calls) d.log('calls left open were closed at what was held', { calls })
   await setMonthRate(d, now).catch((e) => d.log('no rate for the month', { error: (e as Error).name }))
   // Once an hour: the audit log's chain walked; a break is an error in the log (and a mail, with the backoffice).

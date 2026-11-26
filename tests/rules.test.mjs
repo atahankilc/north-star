@@ -1280,5 +1280,36 @@ await allow('owner deletes children, invite code, then workspace', async () => {
   await deny("someone else reads a run's controls", () => rtGet(ref(alice.rt, `agentCtl/${bob.uid}/r1`)))
 }
 
+// ---- The lab's key (D-434): admins by a hand-made doc; signed-in people read only what's public of it.
+{
+  await seed(`admins/${alice.uid}`, { at: 1 })
+  await seed('lab/public', { on: true, hasKey: true, models: ['gpt-6.1-terra'], personCents: 300 })
+  await seed('lab/private', { keyHint: 'sk-…lab1', totalCents: 10000, invitedOnly: true })
+  await seed(`labPeople/${bob.uid}`, { agreedAt: 1 })
+  await seed('labInvites/bob@example.com', { by: alice.uid, at: 1 })
+  await seed(`aiMeters/lab_${bob.uid}_2026-11`, { source: 'lab', uid: bob.uid, wid: null, month: '2026-11', spent: 1, reserved: 0 })
+  await seed('aiSecrets/_lab', { data: 'x' })
+  await allow("anyone signed in reads what's public of the lab's key", () => getDoc(doc(bob.fs, 'lab', 'public')))
+  await deny('signed out', () => getDoc(doc(anon.fs, 'lab', 'public')))
+  await deny("a person reads the lab key's private settings", () => getDoc(doc(bob.fs, 'lab', 'private')))
+  await allow('a lab admin does', () => getDoc(doc(alice.fs, 'lab', 'private')))
+  await deny('a lab admin writes them on the client', () => updateDoc(doc(alice.fs, 'lab', 'public'), { personCents: 100000 }))
+  await deny('the key itself, even an admin', () => getDoc(doc(alice.fs, 'aiSecrets', '_lab')))
+  await allow('an admin reads that they are one', () => getDoc(doc(alice.fs, 'admins', alice.uid)))
+  await deny("someone makes themselves an admin", () => setDoc(doc(bob.fs, 'admins', bob.uid), { at: 1 }))
+  await deny("someone reads who else is", () => getDoc(doc(bob.fs, 'admins', alice.uid)))
+  await allow('a person reads their own standing', () => getDoc(doc(bob.fs, 'labPeople', bob.uid)))
+  await deny('or writes it (agreeing goes through a function)', () => setDoc(doc(bob.fs, 'labPeople', bob.uid), { agreedAt: 2, personCents: 999999 }))
+  await deny("someone else's", () => getDoc(doc(carol.fs, 'labPeople', bob.uid)))
+  await allow('a lab admin reads anyone\'s', () => getDoc(doc(alice.fs, 'labPeople', bob.uid)))
+  await deny('the invites, unless an admin', () => getDoc(doc(bob.fs, 'labInvites', 'bob@example.com')))
+  await allow('an admin reads them', () => getDoc(doc(alice.fs, 'labInvites', 'bob@example.com')))
+  await allow('a person reads their lab meter', () => getDoc(doc(bob.fs, 'aiMeters', `lab_${bob.uid}_2026-11`)))
+  await allow('a lab admin reads it', () => getDoc(doc(alice.fs, 'aiMeters', `lab_${bob.uid}_2026-11`)))
+  await deny('an owner of a workspace does not', () => getDoc(doc(carol.fs, 'aiMeters', `lab_${bob.uid}_2026-11`)))
+  await allow("a lab admin reads the lab's audit entries", () => getDoc(doc(alice.fs, 'audit', '000000000002')))
+  await deny('a carried spend, anyone', () => getDoc(doc(alice.fs, 'labGone', 'x')))
+}
+
 console.log(`\n${passed} passed, ${failed} failed`)
 process.exit(failed ? 1 : 0)

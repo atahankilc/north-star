@@ -11,6 +11,7 @@ import { CLAUDE_KEY, OPENAI_KEY, seal, unseal, type Box } from '../seal'
 import type { PaidBy } from './ask'
 import { Refused, type Run } from './runs'
 import { metered } from '../ledger/metered'
+import { LAB_SECRET, LabRefused, labLimits, labNow, labPersonRef, mayUseLab, type LabPerson } from '../ledger/lab'
 import { LimitReached, roomToStart, type Limits } from '../ledger/ledger'
 import type { Firestore as Db } from 'firebase-admin/firestore'
 
@@ -28,8 +29,15 @@ export const keyLooksRight = (key: string, p: Provider) => (p === 'openai' ? OPE
 type AiConfig = { hasKey?: boolean; access?: Access; allowed?: string[]; allowedModels?: string[]; limits?: Limits }
 
 // Whether this person may pay this way for this model; says why not, before anything starts.
-export async function mayPay(db: Firestore, o: { uid: string; wid: string; paidBy: PaidBy; model: string; key?: string }): Promise<Provider> {
+export async function mayPay(db: Firestore, o: { uid: string; wid: string; paidBy: PaidBy; model: string; key?: string; email?: string; emailVerified?: boolean }): Promise<Provider> {
   const provider = providerOf(o.model)
+  if (o.paidBy === 'lab') {
+    if (provider !== 'openai') throw new Refused("North Star's key runs OpenAI models only.")
+    await mayUseLab(db, { uid: o.uid, model: bare(o.model), ...(o.email ? { email: o.email } : {}), ...(o.emailVerified ? { emailVerified: true } : {}) }).catch((e) => {
+      throw e instanceof LabRefused ? new Refused(e.message) : e
+    })
+    return provider
+  }
   if (o.paidBy === 'workspace') {
     if (provider !== 'openai') throw new Refused("The workspace's key runs OpenAI models only.")
     const [w, c] = await Promise.all([db.doc(`workspaces/${o.wid}`).get(), db.doc(`workspaces/${o.wid}/ai/config`).get()])
@@ -62,7 +70,12 @@ export const dropRunKey = async (db: Firestore, run: string) => void (await runS
 export async function modelFor(db: Firestore, run: Run & { id: string }, o: { secret: string; safetyId: string; openai?: string; step: () => number; log?: (what: string, more: Record<string, unknown>) => void }): Promise<AgentModel> {
   let box: Box | undefined
   let limits: Limits | undefined
-  if (run.paidBy === 'workspace') {
+  if (run.paidBy === 'lab') {
+    const { pub, priv } = await labNow(db)
+    if (!pub.on || !pub.models.includes(bare(run.model))) throw new Refused("North Star's key isn't open for this now.")
+    limits = labLimits(pub, priv, (await labPersonRef(db, run.uid).get()).data() as LabPerson | undefined)
+    box = (await db.doc(LAB_SECRET).get()).data() as Box | undefined
+  } else if (run.paidBy === 'workspace') {
     await mayPay(db, { uid: run.uid, wid: run.wid, paidBy: 'workspace', model: run.model })
     box = (await wsSecret(db, run.wid).get()).data() as Box | undefined
     limits = ((await db.doc(`workspaces/${run.wid}/ai/config`).get()).data() as AiConfig | undefined)?.limits
@@ -70,7 +83,7 @@ export async function modelFor(db: Firestore, run: Run & { id: string }, o: { se
     box = (await runSecret(db, run.id).get()).data() as Box | undefined
     box ??= (await ownSecret(db, run.uid, run.provider).get()).data() as Box | undefined
   }
-  if (!box) throw new Refused(run.paidBy === 'workspace' ? 'This workspace has no key.' : 'Your key is gone from the server; send the message again.')
+  if (!box) throw new Refused(run.paidBy === 'workspace' ? 'This workspace has no key.' : run.paidBy === 'lab' ? "North Star's key isn't set." : 'Your key is gone from the server; send the message again.')
   const key = unseal(box, o.secret)
   const effort = effortFor(run.model) ? ((run.effort as Effort | undefined) ?? effortFor(run.model)) : null
   const model: AgentModel =
@@ -78,5 +91,5 @@ export async function modelFor(db: Firestore, run: Run & { id: string }, o: { se
       ? (await import('../../../src/agent/anthropic')).anthropicModel({ key, model: bare(run.model), effort })
       : openaiModel({ key, model: bare(run.model), reasoning: effort, cacheKey: cacheKeyOf(run.wid), safetyId: o.safetyId, ...(o.openai ? { baseUrl: o.openai } : {}) })
   // Every call on the ledger: the run's model by its full id, so its price is found.
-  return metered({ ...model, name: run.model }, db as unknown as Db, () => ({ source: run.paidBy === 'own' ? 'own' : 'workspace', uid: run.uid, wid: run.wid, run: run.id, step: o.step(), provider: run.provider }), { limits: () => limits, ...(o.log ? { log: o.log } : {}) })
+  return metered({ ...model, name: run.model }, db as unknown as Db, () => ({ source: run.paidBy, uid: run.uid, wid: run.wid, run: run.id, step: o.step(), provider: run.provider }), { limits: () => limits, ...(o.log ? { log: o.log } : {}) })
 }

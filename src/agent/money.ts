@@ -35,6 +35,15 @@ export function outputFor(model: string, left: number, o: { input: number; searc
   return n >= OUTPUT_MIN ? n : null
 }
 
+// How many web searches a call may run with `left` micro-dollars, after its input and the least output worth having: as many
+// as asked, else fewer, else none (the web off for that call, the answer still given).
+export function searchesFor(model: string, left: number, o: { input: number; searches: number }): number {
+  const p = priceOf(model)
+  if (!p || !o.searches) return 0
+  const room = left - worstCase(model, { input: o.input, output: OUTPUT_MIN, searches: 0 })
+  return Math.max(0, Math.min(o.searches, Math.floor(room / (SEARCH_PRICE * MICRO))))
+}
+
 // A call whose usage never came (stopped, cut, its worker gone): what we know of it, never more than was held for it.
 // Output counted by what streamed and by time (hidden reasoning streams nothing), so stopping just before the end is
 // never free.

@@ -550,3 +550,38 @@ the stub.
   locked retention (the user's step: `gcloud logging buckets create agent-audit --location=europe-west1
   --retention-days=400` and a sink on `jsonPayload.message="audit"`), reconciliation with OpenAI's costs (P6).
 
+
+## 20. P4's log: North Star's key (2026-11-26)
+- **Its data** (`functions/src/ledger/lab.ts`): `lab/public` (on, has a key, its models, € a person; any signed-in person
+  reads it), `lab/private` (the key's `sk-…abcd`, the total, invited only; lab admins read it), `aiSecrets/_lab` (the key,
+  sealed), `labPeople/{uid}` (blocked, their own limit, when they agreed; they read their own, admins all), `labInvites/{email}`
+  (admins only), `admins/{uid}` (made by hand in the console; each reads only their own). Nothing written by a client.
+  Defaults while unset: off, €3.00 a person, €100 in total, invited only.
+- **Who may use it** (`mayUseLab`, asked at the start and again at each model call): on and with a key, the model one of
+  its models (OpenAI only), not blocked, invited by a verified email while invited-only, agreed, and room left on the
+  person's month and the total. A refusal is in words; the one before agreeing points to Settings.
+- **Its meters** are the person's over every workspace (`lab_{uid}_{month}`, no `wid`), and the total `lab_total_{month}`.
+- **A deleted account** (§9.8): what it spent this month, and a block, are kept under a hash of its email (`labGone/`,
+  readable by nobody) and carried to a new account with that email; dropped when the month ends.
+- **The admin's calls** (each a lab admin signed in within the hour, each in the audit log with no `wid`, before and
+  after): `setLabKey` (checked with OpenAI first; the log keeps only `sk-…abcd`), `setLab` (on, models, € a person, total,
+  invited only), `setLabPerson` (block or free, their own limit; a reason required), `inviteToLab` (the log keeps
+  `bo…@example.com`, never the address). **The person's:** `labStatus` (off, not invited, blocked or open; agreed; the
+  month's use of their limit; when it starts again), `agreeToLab`.
+- **The audit log's hash** now sorts every map's keys first: Firestore gives a map back in its own key order, so an
+  entry with `from`/`to` maps hashed differently when read back (the chain check failed on the lab's entries).
+- **Web searches under a short budget:** a call may run fewer searches than asked (`searchesFor`), then none (the web off
+  for that call), before it's refused; their price counted in the hold.
+- **In the app** (only where the server path is on): Settings → the agent → `03 WHO PAYS`: new chats `auto` (your key,
+  else the workspace's when you may, else North Star's), `my key`, `workspace`, `North Star`; North Star's key: its state,
+  the month (`€0.42 of €3.00`, when it starts again), and before its first use what it is (a free allowance, through our
+  server to OpenAI, counts never words, OpenAI's 30-day abuse logs, it may change or stop, the privacy link) and
+  `I agree, use it`. The column's foot: a `paid by` row under the model, the chat's own pick and `North Star: €2.58 left`.
+  Asking before agreeing says where to agree, with `open settings`.
+- **Rules:** 803/0. **Checked:** unit 1276; end to end on the emulators 100/100 (refused while not an admin, not invited,
+  not agreed, a model it doesn't run, a month used up, blocked, off; paid with its key on the person's meter and the
+  total; a raised limit working again; every change in the audit log with no key and no address, admins reading it and
+  nobody else, the whole chain read back); the real app headless 7/7 (the foot, the refusal before agreeing, agreeing in
+  Settings, a run on North Star's key counted).
+- **Not yet:** the backoffice to change it (P5: today the admin's calls only); invites by a list or a domain; the
+  privacy page's paragraph on the lab key (§11) before anyone outside uses it.

@@ -40,7 +40,7 @@ import { freshWs } from '../../ops'
 import type { OpActor } from '../../ops'
 import type { AgentEnv, AgentTool, AgentWs, ModelMessage, Source, TurnEnd, Usage } from '../contract'
 import { NO_USAGE } from '../contract'
-import { readKey, suggested, useAgentSettings } from './settings'
+import { readKey, suggested, useAgentSettings, type Pay } from './settings'
 import { svgToPng } from './render'
 import { chooseAt, JOB_BUDGET, moveAfterTurn, nextMove, nextStep, takeMove, type Job, type JobHost, type JobPreview, type Move } from '../job'
 import { plainError, NO_KEY } from './errors'
@@ -48,7 +48,7 @@ import { subscribeWs } from '../../state/wsStore'
 import { NOTES_ID, saveNotes as saveNotesData, watchNotes } from '../../data/agentNotes'
 import { readDocBody, type DocBody } from '../../data/documents'
 import { workspaceKeyFor } from '../../data/workspaceKey'
-import { answerMove, pendingOf, serverAgentOn, startRun, stopAfterStep, stopRun, tellRun, tellView, tellWords, watchAccountKeys, watchChatOnServer, watchRun, type Move as RunMove, type PaidBy, type RunEnd, type RunEvent, type Told } from '../../data/agentServer'
+import { agreeToLab, answerMove, labStatusOf, pendingOf, serverAgentOn, startRun, stopAfterStep, stopRun, tellRun, tellView, tellWords, watchAccountKeys, watchChatOnServer, watchRun, type Move as RunMove, type PaidBy, type RunEnd, type RunEvent, type Told } from '../../data/agentServer'
 import { startChangeLog, watchChanges, watchMembers, type ChangeEntry } from '../../data/changeLog'
 import { chatsAvailable, deleteChat, listChats, newChatId, openChat as openChatData, renameChat as renameChatData, saveChat, shareChat as shareChatData, type ChatListItem } from '../../data/agentChats'
 import { chatDocs, historyOf, reopenedJob, type ChatCursor, type ChatSummary } from '../chats'
@@ -84,7 +84,8 @@ export type Entry =
 // `saved`: the summary as last saved (its id is the chat's), or null until the first save; `from`: the person whose
 // shared chat this one was copied from (opening someone else's shared chat makes a copy of your own).
 // `job`: the chat's big job (D-328, job.ts) as the checklist shows it; the runtime holds the same.
-export type Chat = { id: string; wid: string; model: string; entries: Entry[]; wf: WorkflowState; saved?: ChatSummary | null; from?: string; job?: Job | null }
+// `pay`: who pays for this chat, when the person picked it here (D-434); left out, Settings' choice.
+export type Chat = { id: string; wid: string; model: string; entries: Entry[]; wf: WorkflowState; saved?: ChatSummary | null; from?: string; job?: Job | null; pay?: Pay }
 
 export type Mode = 'closed' | 'box' | 'column'
 
@@ -600,16 +601,36 @@ async function turn(chat: Chat, text: string, n: number) {
 
 const onServer = () => serverAgentOn() && !stubOn()
 
-// Who pays for this chat's model: the person's own key kept here (it goes with the message), else theirs kept in their
-// account, else the workspace's. The server says why not, in words, when none may.
-function payment(model: string): { paidBy: PaidBy; key?: string } {
+// Who pays for a chat (D-434): what the person picked for it (`chat.pay`, else Settings' choice); `auto` is their own key
+// (kept here: it goes with the message; else in their account), else the workspace's when they may use it, else North
+// Star's when it's open to them. A key kept here goes with each message only.
+export type Payer = { paidBy: PaidBy; key?: string }
+export async function payerOf(chat: Chat, model = chatModel(chat)): Promise<Payer> {
+  const s = useAgentSettings.getState()
+  const pay = chat.pay ?? s.pay
   const provider = providerOf(model)
   const key = readKey(provider)
-  if (key) return { paidBy: 'own', key }
-  const account = useAgentSettings.getState().account
-  if (account[provider]) return { paidBy: 'own' }
+  const own = (): Payer | null => (key ? { paidBy: 'own', key } : s.account[provider] ? { paidBy: 'own' } : null)
+  if (pay === 'own') return own() ?? { paidBy: 'own' }
+  if (pay === 'workspace') return { paidBy: 'workspace' }
+  if (pay === 'lab') return { paidBy: 'lab' }
+  const mine = own()
+  if (mine) return mine
+  const ws = liveWs(chat.wid)
+  if (provider === 'openai' && (await workspaceKeyFor(chat.wid, me?.uid, roleOf(ws, me?.uid ?? '')))) return { paidBy: 'workspace' }
+  if (s.lab?.state === 'open') return { paidBy: 'lab' }
   return { paidBy: 'workspace' }
 }
+
+// North Star's key as the server tells it now: asked when the panel comes up and after each run.
+export const refreshLab = () =>
+  void labStatusOf().then(
+    (l) => useAgentSettings.getState().setLab(l),
+    () => {},
+  )
+
+// The first time North Star's key would pay, the person agrees to how it works first (Settings → the agent says it).
+const LAB_FIRST = "to use North Star's key, read how it works and agree first: Settings → the agent → North Star's key"
 
 const viewNow = () => agentUi.currentView()
 const VIEW_EVERY = 2000
@@ -666,7 +687,9 @@ async function serverTurn(chat: Chat, text: string) {
     rt.joined = false
     if (!run) {
       const off = [...rt.off]
-      run = (await startRun({ wid: chat.wid, chatId: chat.id, text, view: viewNow(), model, effort: useAgentSettings.getState().effort, ...payment(model), ...(off.length ? { off } : {}) })).run
+      const payer = await payerOf(chat, model)
+      if (payer.paidBy === 'lab' && !useAgentSettings.getState().lab?.agreed) throw Object.assign(new Error(LAB_FIRST), { settings: true })
+      run = (await startRun({ wid: chat.wid, chatId: chat.id, text, view: viewNow(), model, effort: useAgentSettings.getState().effort, ...payer, ...(off.length ? { off } : {}) })).run
     }
     rt.run = run
     // Joined: the message the run was asked goes in before its answer, as if this tab had sent it.
@@ -685,6 +708,7 @@ async function serverTurn(chat: Chat, text: string) {
     const failed = ended.status === 'failed' ? plainError(ended.said ?? 'it stopped').text : undefined
     const end = (ended.end as TurnEnd | undefined) ?? (ended.status === 'stopped' ? 'stopped' : failed ? 'error' : 'answered')
     patchEntry(id, (x) => (x.kind === 'agent' ? { ...x, text: ended.answer ?? (end === 'stopped' ? '' : x.live), live: '', running: false, ...(ended.ms !== undefined ? { ms: ended.ms } : {}), end, ...(ended.usage ? { usage: ended.usage } : {}), ...(ended.sources?.length ? { sources: ended.sources } : {}), ...(failed ? { error: failed } : {}), steps: x.steps.map((s) => ({ ...s, running: false })) } : x))
+    refreshLab()
     if (!mine()) return
     rt.run = null
     dispatch(failed && !ended.answer ? { type: 'fail', error: failed } : { type: 'turn_end', answer: ended.answer ?? '', pending: pendingCount(rt.changes), end })
@@ -772,7 +796,7 @@ async function tellServer(chat: Chat, what: Told) {
   const rt = rtOf(chat)
   const model = chatModel(chat)
   try {
-    const r = await tellRun({ wid: chat.wid, chatId: chat.id, view: viewNow(), what, model, effort: useAgentSettings.getState().effort, ...payment(model) })
+    const r = await tellRun({ wid: chat.wid, chatId: chat.id, view: viewNow(), what, model, effort: useAgentSettings.getState().effort, ...(await payerOf(chat, model)) })
     jobHost(chat.id, rt).set(r.job)
     if (r.run) setTimeout(() => goOnWith(chat, r.run!, r.say ?? '', !!r.auto), 0)
   } catch (e) {
@@ -885,6 +909,7 @@ export const agentActions = {
     useAgent.setState({ wid, chat, mode: 'closed', view: 'chat', touch: null, chats: null, chatsMore: false, notes: null })
     watchExtra(wid)
     joinServerChat(chat)
+    if (onServer()) refreshLab()
   },
   // The panel went away (the workspace closed).
   detach() {
@@ -1087,6 +1112,14 @@ export const agentActions = {
   },
   setModel(model: string) {
     setChat((c) => ({ ...c, model }))
+  },
+  // Who pays for this chat (D-434); `auto` follows Settings' choice again.
+  setPay(pay: Pay) {
+    setChat((c) => ({ ...c, pay }))
+  },
+  async agreeToLab() {
+    await agreeToLab()
+    refreshLab()
   },
 }
 

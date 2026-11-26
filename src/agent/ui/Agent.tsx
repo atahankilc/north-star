@@ -38,7 +38,8 @@ import { previewOf, type Job, type JobStep } from '../job'
 import { siteOf } from '../web'
 import type { Source } from '../contract'
 import { plainCites } from '../read/names'
-import { pickable, suggested, useAgentSettings } from './settings'
+import { pickable, suggested, useAgentSettings, type Pay } from './settings'
+import { serverAgentOn } from '../../data/agentServer'
 import { firstAsks } from './suggest'
 import { agentUi } from '../ui'
 import { AgentGhost } from './AgentGhost'
@@ -542,6 +543,7 @@ function Column() {
           </p>
           <ModelSwitch />
         </div>
+        {serverAgentOn() && !stubOn() && <PaySwitch />}
       </footer>
       </div>
       </div>
@@ -594,6 +596,28 @@ function ModelSwitch() {
       options={rows.map((r) => ({ value: r.id, label: r.id }))}
       onChange={(v) => agentActions.setModel(v)}
     />
+  )
+}
+
+// Who pays for this chat (D-434), a row of its own under the model: its pick, and what's left of North Star's key when it
+// may pay. The pick is this chat's; `auto` follows Settings (your own key, else the workspace's, else North Star's).
+const PAY_WORDS: Record<Pay, string> = { auto: 'auto', own: 'your key', workspace: "the workspace's key", lab: "North Star's key" }
+function PaySwitch() {
+  const chatPay = useAgent((s) => s.chat.pay)
+  const pay = useAgentSettings((s) => s.pay)
+  const lab = useAgentSettings((s) => s.lab)
+  const current = chatPay ?? pay
+  const open = lab?.state === 'open'
+  const options = (Object.keys(PAY_WORDS) as Pay[]).filter((p) => p !== 'lab' || open || current === 'lab')
+  const left = open && (current === 'lab' || current === 'auto') ? `North Star: €${(Math.max(0, lab.limitCents - lab.usedCents) / 100).toFixed(2)} left` : ''
+  return (
+    <div className={styles.scopeRow}>
+      <p className={styles.scope} title={open ? `€${(lab.usedCents / 100).toFixed(2)} of €${(lab.limitCents / 100).toFixed(2)} this month; it starts again on ${lab.resets}` : undefined}>
+        <Label className={styles.scopeLabel}>paid by</Label>
+        {left}
+      </p>
+      <Select ariaLabel="Who pays for this chat" value={current} options={options.map((p) => ({ value: p, label: PAY_WORDS[p] }))} onChange={(v) => agentActions.setPay(v as Pay)} />
+    </div>
   )
 }
 

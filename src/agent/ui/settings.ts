@@ -10,7 +10,7 @@ import { DEFAULT_EFFORT } from '../models'
 
 import { KNOWN_MODELS, suggestedFor, type ProviderId } from '../models'
 import { keepLocal, readLocal } from '../../state/local'
-import type { AccountKeys } from '../../data/agentServer'
+import type { AccountKeys, LabStatus } from '../../data/agentServer'
 
 export const KEY_STORE = 'northstar.agent.openaiKey'
 export const ANTHROPIC_KEY_STORE = 'northstar.agent.anthropicKey'
@@ -19,6 +19,10 @@ const STORE: Record<ProviderId, string> = { openai: KEY_STORE, anthropic: ANTHRO
 const MODEL_STORE = 'northstar.agent.model'
 const EFFORT_STORE = 'northstar.agent.effort'
 const MODELS_STORE = 'northstar.agent.models'
+const PAY_STORE = 'northstar.agent.pay'
+
+export const PAYS = ['auto', 'own', 'workspace', 'lab'] as const
+export type Pay = (typeof PAYS)[number]
 
 export const EFFORTS: readonly Effort[] = ['low', 'medium', 'high']
 
@@ -57,6 +61,12 @@ type AgentSettingsState = {
   // The keys kept in the person's account on the server (D-434): only their `sk-…abcd`, live.
   account: AccountKeys
   setAccount: (a: AccountKeys) => void
+  // Who pays, as the person chose (D-434): `auto` is their own key, else the workspace's when they may, else North Star's.
+  pay: Pay
+  setPay: (p: Pay) => void
+  // North Star's key as the server last told it (null: not asked yet).
+  lab: LabStatus | null
+  setLab: (l: LabStatus | null) => void
 }
 
 // `sk-…abcd`: enough to tell two keys apart, never the key.
@@ -112,6 +122,13 @@ export const useAgentSettings = create<AgentSettingsState>((set) => ({
   },
   account: {},
   setAccount: (account) => set({ account }),
+  pay: PAYS.find((p) => p === read(PAY_STORE)) ?? 'auto',
+  setPay: (pay) => {
+    write(PAY_STORE, pay === 'auto' ? null : pay)
+    set({ pay })
+  },
+  lab: null,
+  setLab: (lab) => set({ lab }),
 }))
 
 type Keys = Pick<AgentSettingsState, 'hasKey' | 'hasClaudeKey' | 'models' | 'claudeModels'>

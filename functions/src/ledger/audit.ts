@@ -15,8 +15,10 @@ const headRef = (db: Firestore) => db.doc('auditHead/main')
 const entryRef = (db: Firestore, seq: number) => db.doc(`audit/${String(seq).padStart(12, '0')}`)
 const START = '0'.repeat(64)
 
-// The same entry always hashes the same: its fields in a fixed order.
-export const hashOf = (prev: string, e: Omit<Entry, 'hash' | 'prev'>) => createHash('sha256').update(`${prev}\n${JSON.stringify([e.seq, e.at, e.what, e.by, e.wid ?? null, e.from ?? null, e.to ?? null, e.reason ?? null])}`).digest('hex')
+// The same entry always hashes the same: its fields in a fixed order, and every map's keys sorted (Firestore gives a map's
+// keys back in its own order, so an entry read back must hash as it was written).
+const canonical = (v: unknown): unknown => (Array.isArray(v) ? v.map(canonical) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canonical((v as Record<string, unknown>)[k])])) : v)
+export const hashOf = (prev: string, e: Omit<Entry, 'hash' | 'prev'>) => createHash('sha256').update(`${prev}\n${JSON.stringify(canonical([e.seq, e.at, e.what, e.by, e.wid ?? null, e.from ?? null, e.to ?? null, e.reason ?? null]))}`).digest('hex')
 
 // Runs `act` in a transaction whose last write is its entry. `act` reads first, then writes, and says what it did (null:
 // nothing happened, no entry).

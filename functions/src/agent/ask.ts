@@ -3,7 +3,7 @@
 // server's own, which is what keeps it from being a free general model.
 import type { WhereView } from '../../../src/agent/read/tools'
 
-export const PAID_BY = ['workspace', 'own'] as const
+export const PAID_BY = ['workspace', 'own', 'lab'] as const
 export type PaidBy = (typeof PAID_BY)[number]
 export const EFFORTS = ['low', 'medium', 'high'] as const
 

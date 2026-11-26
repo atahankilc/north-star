@@ -630,6 +630,9 @@ export const deleteAccount = onCall({ cors: ORIGINS, timeoutSeconds: 540 }, asyn
       await d.ref.delete()
     }
   }
+  // The lab's key (D-434): what they spent this month stays with a hash of their email till the month ends, so signing up
+  // again doesn't start it over; their standing goes.
+  await (await import('./ledger/lab')).rememberGone(db(), uid, req.auth?.token.email_verified ? req.auth?.token.email : undefined)
   // The agent on the server (D-434): their runs, chats and keys, and what was kept for them.
   for (const c of ['agentRuns', 'agentThreads']) {
     const w = db().bulkWriter()
@@ -686,10 +689,11 @@ async function answered<T>(go: (a: Awaited<ReturnType<typeof agent>>) => Promise
   }
 }
 
-type Signed = { auth?: { uid: string; token: { name?: string; auth_time?: number } } }
+type Signed = { auth?: { uid: string; token: { name?: string; auth_time?: number; email?: string; email_verified?: boolean } } }
 const callerOf = (req: Signed) => {
   if (!req.auth) throw new HttpsError('unauthenticated', 'Sign in again.')
-  return { uid: req.auth.uid, ...(req.auth.token.name ? { name: String(req.auth.token.name).slice(0, 80) } : {}) }
+  const t = req.auth.token
+  return { uid: req.auth.uid, ...(t.name ? { name: String(t.name).slice(0, 80) } : {}), ...(t.email ? { email: String(t.email).toLowerCase(), emailVerified: t.email_verified === true } : {}) }
 }
 
 const agentCall = { secrets: [AI_KEY_SECRET], cors: ORIGINS, memory: '512MiB' as const }
@@ -739,3 +743,74 @@ export const sweepAgent = onSchedule({ schedule: 'every 5 minutes', timeZone: 'E
   const { serve, deps } = await agent()
   await serve.closeStale(deps)
 })
+
+// ---- The lab's key (D-434, ledger/lab.ts): what a person reads of it and agrees to; what a lab admin changes ----
+
+export const labStatus = onCall({ cors: ORIGINS }, async (req) => {
+  const who = callerOf(req)
+  const { labStatus: status } = await import('./ledger/lab')
+  return status(db(), who)
+})
+
+export const agreeToLab = onCall({ cors: ORIGINS }, async (req) => {
+  const who = callerOf(req)
+  const { agreeToLab: agree } = await import('./ledger/lab')
+  await agree(db(), who.uid)
+  return { ok: true }
+})
+
+// A lab admin, signed in within the hour, for anything that changes the lab's key (§10).
+async function labAdmin(req: Signed) {
+  const who = callerOf(req)
+  const lab = await import('./ledger/lab')
+  if (!(await lab.isLabAdmin(db(), who.uid))) throw new HttpsError('permission-denied', 'Only a lab admin does this.')
+  if (!isFresh(req.auth?.token.auth_time, Date.now())) throw new HttpsError('failed-precondition', 'Sign in again to change this.')
+  return { who, lab }
+}
+const labCall = async <T,>(go: () => Promise<T>) => {
+  try {
+    return await go()
+  } catch (e) {
+    const { LabRefused } = await import('./ledger/lab')
+    if (e instanceof LabRefused) throw new HttpsError('invalid-argument', e.message)
+    throw e
+  }
+}
+
+export const setLab = onCall({ cors: ORIGINS }, async (req) => {
+  const { who, lab } = await labAdmin(req)
+  const d = (req.data ?? {}) as Record<string, unknown>
+  return labCall(() => lab.setLab(db(), who.uid, lab.readLabPatch(d), typeof d.reason === 'string' ? d.reason : undefined))
+})
+
+export const setLabKey = onCall({ secrets: [AI_KEY_SECRET], cors: ORIGINS }, async (req) => {
+  const { who, lab } = await labAdmin(req)
+  const key = (req.data as { key?: unknown } | undefined)?.key
+  if (key === '' || key === null) return labCall(() => lab.setLabKey(db(), who.uid, null, null)).then(() => ({ keyHint: null }))
+  const clean = typeof key === 'string' ? key.trim() : ''
+  if (!/^sk-(?!ant-)[A-Za-z0-9_-]{20,300}$/.test(clean)) throw new HttpsError('invalid-argument', "That doesn't look like an OpenAI API key.")
+  const check = await fetch(`${OPENAI}/models`, { headers: { Authorization: `Bearer ${clean}` } })
+  if (!check.ok) throw new HttpsError('failed-precondition', check.status === 401 ? "OpenAI didn't accept this key." : `OpenAI answered ${check.status}.`)
+  const keyHint = `${clean.slice(0, 3)}…${clean.slice(-4)}`
+  await labCall(() => lab.setLabKey(db(), who.uid, { ...encrypt(clean), setBy: who.uid, setAt: Date.now() }, keyHint))
+  return { keyHint }
+})
+
+export const setLabPerson = onCall({ cors: ORIGINS }, async (req) => {
+  const { who, lab } = await labAdmin(req)
+  const d = (req.data ?? {}) as { uid?: unknown; blocked?: unknown; personCents?: unknown; reason?: unknown }
+  if (typeof d.uid !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(d.uid)) throw new HttpsError('invalid-argument', 'Who?')
+  if (typeof d.reason !== 'string' || !d.reason.trim()) throw new HttpsError('invalid-argument', 'Say why: it goes in the audit log.')
+  const personCents = d.personCents === undefined ? undefined : d.personCents === null ? null : typeof d.personCents === 'number' && Number.isInteger(d.personCents) && d.personCents >= 0 && d.personCents <= 10_000_000 ? d.personCents : undefined
+  await labCall(() => lab.setLabPerson(db(), who.uid, d.uid as string, { ...(typeof d.blocked === 'boolean' ? { blocked: d.blocked } : {}), ...(personCents !== undefined ? { personCents } : {}) }, d.reason as string))
+  return { ok: true }
+})
+
+export const inviteToLab = onCall({ cors: ORIGINS }, async (req) => {
+  const { who, lab } = await labAdmin(req)
+  const d = (req.data ?? {}) as { email?: unknown; on?: unknown }
+  if (typeof d.email !== 'string') throw new HttpsError('invalid-argument', "That isn't an email address.")
+  await labCall(() => lab.inviteToLab(db(), who.uid, d.email as string, d.on !== false))
+  return { ok: true }
+})
+

@@ -18,7 +18,7 @@ describe('what a browser may ask', () => {
     expect(a).toEqual({ wid: 'w1', chatId: 'c1', text: 'hi', view: readView({ canvas: 'main' }), paidBy: 'workspace', model: 'gpt-6.1-terra' })
   })
   it('refuses what is missing or wrong, and a key unless it pays', () => {
-    for (const bad of [{ text: '' }, { wid: 'a/b' }, { chatId: '' }, { paidBy: 'lab' }, { model: 'a b' }, { key: 'sk-x' }])
+    for (const bad of [{ text: '' }, { wid: 'a/b' }, { chatId: '' }, { paidBy: 'friend' }, { model: 'a b' }, { key: 'sk-x' }])
       expect(() => readAsk({ ...ask, ...bad }), JSON.stringify(bad)).toThrow(BadAsk)
     expect(readAsk({ ...ask, paidBy: 'own', key: ' sk-abc ' }).key).toBe('sk-abc')
     expect(() => readAsk({ ...ask, text: 'x'.repeat(20_001) })).toThrow(/too long/)

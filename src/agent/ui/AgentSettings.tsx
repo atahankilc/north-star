@@ -11,14 +11,14 @@ import { Select } from '../../ui/patterns/Select'
 import { canChat, claudeId, devStubWanted, FIT_WORDS, KNOWN_MODELS, pickerRows, reasons, type ProviderId } from '../models'
 import { listModels, type Effort } from '../openai'
 import { clearUsage, readUsage, sumUsage } from '../usage'
-import { EFFORTS, pickable, readKey, suggested, useAgentSettings } from './settings'
+import { EFFORTS, PAYS, pickable, readKey, suggested, useAgentSettings, type Pay } from './settings'
 import { plainError } from './errors'
 import styles from './AgentSettings.module.css'
 import { Button } from '../../ui/primitives/Button'
 import { ButtonGroup } from '../../ui/primitives/ButtonGroup'
 import { Field } from '../../ui/primitives/Field'
 import { plural } from '../../model/words'
-import { keepKeyInAccount, serverAgentOn, watchAccountKeys } from '../../data/agentServer'
+import { agreeToLab, keepKeyInAccount, labStatusOf, serverAgentOn, watchAccountKeys } from '../../data/agentServer'
 
 const k = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 
@@ -26,6 +26,7 @@ export function AgentSettings() {
   return (
     <>
       <KeySection />
+      {serverAgentOn() && <PaySection />}
       <UsageSection />
       {import.meta.env.DEV && (
         <Note>
@@ -252,13 +253,69 @@ function ModelRow({ id, words, suggested }: { id: string; words: string; suggest
   )
 }
 
+// Who pays (D-434): the person's choice for new chats (each chat can switch it at its foot), and North Star's own key: whether
+// it's open to them, this month's use of their limit, and, before its first use, how it works and their yes.
+const PAY_LABEL: Record<Pay, string> = { auto: 'auto', own: 'my key', workspace: 'workspace', lab: 'North Star' }
+const LAB_WORDS = {
+  off: "Not open now.",
+  'not invited': 'Open to invited people for now.',
+  blocked: "Not open to you. Write to us from atem-lab.com/contact if that's a mistake.",
+} as const
+
+function PaySection() {
+  const pay = useAgentSettings((x) => x.pay)
+  const lab = useAgentSettings((x) => x.lab)
+  const [busy, setBusy] = useState(false)
+  const [said, setSaid] = useState<string | null>(null)
+  useEffect(() => void labStatusOf().then((l) => useAgentSettings.getState().setLab(l), () => {}), [])
+  const agree = () => {
+    setBusy(true)
+    void agreeToLab()
+      .then(() => labStatusOf())
+      .then((l) => (useAgentSettings.getState().setLab(l), setSaid("Thanks. North Star's key is yours to use.")), (e) => setSaid(plainError((e as Error)?.message ?? String(e)).text))
+      .finally(() => setBusy(false))
+  }
+  const eur = (c: number) => `€${(c / 100).toFixed(2)}`
+  return (
+    <Section n={3} label="who pays">
+      <Row label="new chats" hint="Auto: your own key, else the workspace's when its owners let you, else North Star's. Each chat can switch it by its prompt.">
+        <Select ariaLabel="who pays for new chats" value={pay} options={PAYS.map((p) => ({ value: p, label: PAY_LABEL[p] }))} onChange={(p) => useAgentSettings.getState().setPay(p as Pay)} />
+      </Row>
+      <Row
+        label="North Star's key"
+        wide={lab?.state === 'open' && !lab.agreed}
+        hint={
+          !lab ? 'Asking…' : lab.state !== 'open' ? LAB_WORDS[lab.state] : lab.agreed ? `${eur(lab.usedCents)} of ${eur(lab.limitCents)} this month. It starts again on ${lab.resets}. Models: ${lab.models.join(', ')}.` : (
+            <>
+              A free allowance of {eur(lab.limitCents)} a month, paid by North Star. Your requests and the workspace content they need go through North
+              Star's server to OpenAI; we keep counts and cost, never your words; OpenAI keeps abuse logs for 30 days. It can change or stop.{' '}
+              <a href="https://atem-lab.com/privacy" target="_blank" rel="noreferrer">
+                Privacy
+              </a>
+            </>
+          )
+        }
+      >
+        {lab?.state === 'open' && !lab.agreed ? (
+          <Button tone="main" disabled={busy} onClick={agree}>
+            {busy ? 'saving' : 'I agree, use it'}
+          </Button>
+        ) : (
+          <span className={styles.usage}>{lab?.state === 'open' ? 'yours to use' : ''}</span>
+        )}
+      </Row>
+      {said && <Note>{said}</Note>}
+    </Section>
+  )
+}
+
 function UsageSection() {
   const [, redraw] = useState(0)
   const now = new Date()
   const since = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
   const u = sumUsage(readUsage(), since)
   return (
-    <Section n={3} label="usage">
+    <Section n={serverAgentOn() ? 4 : 3} label="usage">
       <Row label="this month" hint={`Since ${new Date(since).toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}. Counts only, kept in this browser: never your messages or your key.`}>
         <span className={styles.usage}>
           {plural(u.answers, 'answer')} · {k(u.input)} in{u.cached ? ` (${k(u.cached)} cached)` : ''} · {k(u.output)} out

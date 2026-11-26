@@ -23,7 +23,7 @@ const asked = typeof location !== 'undefined' && new URLSearchParams(location.se
 if (asked) keepLocal('northstar.agent.server', '1')
 export const serverAgentOn = () => !!firebase && readLocal('northstar.agent.server') === '1'
 
-export type PaidBy = 'workspace' | 'own'
+export type PaidBy = 'workspace' | 'own' | 'lab'
 export type StartRun = { wid: string; chatId: string; text: string; view: WhereView; paidBy: PaidBy; model: string; effort?: string; key?: string; off?: string[] }
 
 export const startRun = (o: StartRun) => callFunction<{ run: string }>('startAgent', o, "The agent couldn't start.")
@@ -136,4 +136,10 @@ export function watchAccountKeys(uid: string, cb: (k: AccountKeys) => void): () 
     () => cb({}),
   )
 }
+// North Star's own key (D-434): whether this person may use it now and this month's use of their limit; agreeing to how it
+// works (asked once, before its first use).
+export type LabStatus = { state: 'off' | 'not invited' | 'blocked' | 'open'; agreed: boolean; models: string[]; limitCents: number; usedCents: number; resets: string }
+export const labStatusOf = () => callFunction<LabStatus>('labStatus', {}, "North Star's key couldn't be asked about.")
+export const agreeToLab = () => callFunction<{ ok: true }>('agreeToLab', {}, "That didn't go through; try again.")
+
 export const keepKeyInAccount = (provider: 'openai' | 'anthropic', key: string | null) => callFunction<{ hint: string | null }>('setOwnKey', { provider, key: key ?? '' }, "The key couldn't be saved.")

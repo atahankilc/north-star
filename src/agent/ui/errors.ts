@@ -5,11 +5,13 @@ export const KEY_REFUSED = 'your key was refused — check it in Settings → th
 export const NO_KEY = "add your key for this model (OpenAI or Anthropic) in Settings → the agent first: it stays in this browser. Or ask an owner to let you use the workspace's key (an OpenAI model)"
 
 export function plainError(raw: string): { text: string; settings?: boolean } {
-  const m = raw.replace(/^the model failed: /, '')
+  const m = raw.replace(/^the model failed: /, '').replace(/ \[\d{3}\]$/, '')
   if (/didn't accept this key|key is needed/i.test(m)) return { text: /needed/i.test(m) ? NO_KEY : KEY_REFUSED, settings: true }
   if (/can't use .* Pick another model/i.test(m)) return { text: `${m.split(' Pick')[0]} — pick another model in the header or in Settings → the agent`, settings: true }
   if (/Anthropic organisation behind your key is out of credit/i.test(m)) return { text: "your key's Anthropic organisation is out of credit — a Max, Ultra or Team plan's monthly API credits come back next cycle, or add credits in the Console" }
   if (/out of credit/i.test(m)) return { text: 'the OpenAI account behind your key is out of credit (or hit its spending limit)' }
+  // North Star's key, before its first use, or a key to add: the way to Settings comes with it.
+  if (/agree first: Settings|Add your (OpenAI|Claude) key in Settings/i.test(m)) return { text: m, settings: true }
   // The agent's server isn't there (the functions not running on the emulators, offline).
   if (/^internal\b/i.test(m)) return { text: "couldn't reach the agent's server — check your connection and send again" }
   if (/Couldn't reach OpenAI/i.test(m)) return { text: "couldn't reach OpenAI — check your connection and send again" }
