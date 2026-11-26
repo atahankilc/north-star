@@ -489,9 +489,7 @@ function Column() {
         onClose={() => closeAgent()}
         closeLabel="fold it back"
         closeTitle="Fold it back to the box (Esc); the chat stays"
-      >
-        <ModelSwitch />
-      </PanelHead>
+      />
       <div className={styles.page} data-split={split || undefined}>
       {split && (
         <div className={styles.pageChats}>
@@ -536,9 +534,14 @@ function Column() {
             </Button>
           )}
         </PromptField>
-        <p className={styles.scope}>
-          <Label className={styles.scopeLabel}>sees</Label> whole workspace{here ? <> · you're in <span className={styles.scopeHere}>"{here}"</span></> : <> · {workspace}</>}
-        </p>
+        {/* What it sees, and the model it answers with at the right end: by the prompt, where there's room for its
+            name (the head had none once its tools were there, the 2026-11-26 tour). */}
+        <div className={styles.scopeRow}>
+          <p className={styles.scope}>
+            <Label className={styles.scopeLabel}>sees</Label> whole workspace{here ? <> · you're in <span className={styles.scopeHere}>"{here}"</span></> : <> · {workspace}</>}
+          </p>
+          <ModelSwitch />
+        </div>
       </footer>
       </div>
       </div>
