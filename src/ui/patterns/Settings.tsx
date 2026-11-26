@@ -39,7 +39,7 @@ type Group = 'you' | 'workspace'
 const PAGES: { id: Page; label: string; title: string; about: string; group: Group }[] = [
   { id: 'account', label: 'account', title: 'Account', about: 'Who you are signed in as.', group: 'you' },
   { id: 'display', label: 'display', title: 'Display', about: 'How North Star looks and moves in this browser.', group: 'you' },
-  { id: 'agent', label: 'the agent', title: 'The agent', about: 'The agent is an AI and can make mistakes. Your own keys and the model it uses, in this browser. A workspace can also have its own key (workspace → agent key).', group: 'you' },
+  { id: 'agent', label: 'the agent', title: 'The agent', about: 'The agent is an AI and can make mistakes. Your own keys and the model it uses. A workspace can also have its own key (workspace → agent key).', group: 'you' },
   { id: 'general', label: 'general', title: 'Workspace', about: 'Its name and what the team is building.', group: 'workspace' },
   { id: 'people', label: 'people', title: 'People', about: 'Who is in this workspace and how others get in.', group: 'workspace' },
   { id: 'key', label: 'agent key', title: 'Agent key', about: "The workspace's own OpenAI key for the agent: who may use it, and which models.", group: 'workspace' },

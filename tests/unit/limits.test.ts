@@ -100,6 +100,7 @@ const CLIENT_ONLY: Partial<Record<keyof typeof L, string>> = {
   MEMBERS_LISTED: 'how many people a picker loads, not data',
   CHANGES_READ: 'how many changes the agent reads, not data',
   MEMBERS_READ: 'how many people the agent reads, not data',
+  MOVE_SAID_MAX: "RTDB's agentCtl rule, held by tests/rules.test.mjs",
   WORKSPACE_NAME_MAX: "the fields' cap; the rules' validName takes up to WORKSPACE_NAME_KEPT_MAX (older names kept)",
   SUMMARY_PIECES_MAX: 'pieces in a workspace summary: the rules cap the joined string (SUMMARY_PIECES_CHARS), not the count',
   LIVE_FOLD_PACKETS: 'when a writer folds the packets, not data',

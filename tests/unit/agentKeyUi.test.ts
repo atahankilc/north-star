@@ -33,9 +33,10 @@ describe('the key in the agent UI', () => {
   it('only settings.ts touches the key\'s storage name; the store reads it through readKey at a turn\'s start', () => {
     for (const f of files.filter((x) => x !== 'settings.ts')) expect(src(f), f).not.toMatch(/KEY_STORE|northstar\.agent\.(openai|anthropic)Key/)
     const store = src('agentStore.ts')
-    // One read, of the key for the chat's model's provider (D-329).
-    expect(store.match(/readKey\(/g)?.length).toBe(1)
-    expect(store).toMatch(/readKey\(provider\)/)
+    // Two reads, each of the key for the chat's model's provider (D-329): the tab's own turn, and the message that
+    // carries it to the server's run (D-434), and nowhere else.
+    expect(store.match(/readKey\(/g)?.length).toBe(2)
+    expect(store.match(/readKey\(provider\)/g)?.length).toBe(2)
     // Never into the zustand state or an entry.
     expect(store).not.toMatch(/setState\(\{[^}]*key/i)
   })

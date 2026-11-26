@@ -496,3 +496,25 @@ the stub.
   `agentChanges`, moves from RTDB, reopening a chat at work), the evals through the functions, the CLAUDE.md hard rule
   (changes when the app uses it), KMS instead of `AI_KEY_SECRET`, `WEB_API_KEY` set at the deploy.
 
+## 18. P2's log, the app's half (2026-11-26)
+- **On when** `serverAgentOn()` (src/data/agentServer.ts): on the emulators, and in a browser where
+  `northstar.agent.server` is 1. Elsewhere the tab's own loop runs as before, until P6.
+- **The store** (agentStore.ts): `serverTurn` starts a run (or follows one the server started), and the column takes its
+  events as it took the loop's (`entryEvents`, one for both); stop, words while it works, the job's buttons (`stop after
+  this step` mid-run through `agentCtl/…/after`), what was done with the preview (`tellAgent`), moves the server asks of
+  the screen (made, then answered); the turn's lock isn't taken; the chat isn't saved from the tab (the server does);
+  a chat opened, or come back to, finds its run and follows it (with the message it was asked) or shows its waiting
+  preview; leaving only stops watching.
+- **Who pays:** a key kept in this browser goes with the message; else one kept in the account; else the workspace's
+  (the `paid by` pick comes with the lab's key, P4).
+- **Settings → the agent:** with the agent on the server, saving a key asks `this browser` or `my account`; one in the
+  account shows as `sk-…abcd` with `remove`; the words say where it goes.
+- **CLAUDE.md's hard rule on keys** rewritten for D-434.
+- **Checked:** the real app on the emulators with functions, tasks and a fake OpenAI, headless Chrome (a script in the
+  session's scratchpad): a question streamed into the column, a change previewed and applied in the tab as the person
+  and the saved chat saying so, stop, a reload while it works (the chat finds its run, shows its message, follows it to
+  its end), the tab closed (the run ends, the chat holds it); no page error; Settings' two places, a key kept in the
+  account shown and its row turned. Rules 776/0; unit 1266; the checks.
+- **Not yet:** a stale `paid by` choice per chat and its line under the prompt (P4); the agent's own onboarding words (they
+  wait for its redesign, D-312); the evals through the functions; deployed nowhere.
+

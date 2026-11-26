@@ -60,9 +60,12 @@ Functions in `functions/` for the assistant's shared workspace key (D-079).
   feedback: fix it before going on, never work round it. Commits run `scripts/commit-rules.mjs` (`.githooks/`, set by
   `npm install`): the same checks, and a staged component without its `X.gallery.tsx` or without a lesson change needs a
   `Gallery: …` / `Lessons: …` line in the message saying why. A rule the checks can't see yet: add it to the check.
-- OpenAI keys: a person's own key lives only in their own browser storage. A workspace key (D-079) is sent once to the
-  `setWorkspaceKey` function and kept only encrypted in `aiSecrets/`, which no client can read; it is never returned to
-  any browser. Never log or store either key anywhere else, and never put message text in the usage log.
+- AI keys (D-434): a person's own key is kept where they chose: in their browser's storage, from where it goes to our
+  server only with a message and is deleted there when that run ends (`aiSecrets/run_{id}`), or in their account
+  (`setOwnKey`, `aiSecrets/user_{uid}_{provider}`). A workspace key (D-079) is sent once to `setWorkspaceKey`, the lab's
+  to `setLab`. Every key kept on the server is sealed in `aiSecrets/`, which no client can read, opened only in the
+  agent's worker, and never returned to any browser (only `sk-…abcd`). Never log or store a key anywhere else, never put
+  one in a task, a checkpoint or an error, and never put message text in the usage log or the ledger.
 - The ASCII post-processing effect must never cover readable or editable text.
 - All DB access goes through `src/data/`. Permissions are enforced by `firestore.rules` and
   `database.rules.json`, not by the client. Change a rule and the data shape together.

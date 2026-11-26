@@ -55,6 +55,29 @@ export async function saveRun(db: Firestore, o: { run: string; uid: string; wid:
     tx.set(at, { saved: o.run }, { merge: true })
   })
 }
+// What the person did with a preview, in the saved chat as the column shows it: the list's fate, and the status line.
+export async function noteOutcome(db: Firestore, o: { uid: string; wid: string; chatId: string; what: Told['what']; now: number }): Promise<void> {
+  const what = o.what
+  if (what.kind === 'job') return
+  await db.runTransaction(async (tx) => {
+    const was = (await tx.get(chatRef(db, o.wid, o.chatId))).data() as ChatSummary | undefined
+    const body = (await tx.get(bodyRef(db, o.wid, o.chatId))).data() as ChatBody | undefined
+    if (!was || !body || was.uid !== o.uid) return
+    const turns = [...body.turns]
+    const at = turns.map((t) => t.role).lastIndexOf('changes')
+    if (what.kind === 'undone') {
+      const r = turns.map((t) => t.role).lastIndexOf('report')
+      if (r >= 0) turns[r] = { ...turns[r], applied: { state: 'undone', ...(turns[r].applied?.count !== undefined ? { count: turns[r].applied!.count } : {}) } }
+    } else {
+      if (at >= 0) turns[at] = { ...turns[at], applied: { state: what.kind, count: turns[at].applied?.count ?? what.done.length } }
+      turns.push({ role: 'report', text: what.text, at: o.now, applied: { state: what.kind, count: what.done.length } })
+    }
+    const docs = chatDocs({ uid: o.uid, model: was.model, turns, ids: body.ids, was, now: o.now, job: body.job })
+    tx.set(chatRef(db, o.wid, o.chatId), plain(docs.summary))
+    tx.set(bodyRef(db, o.wid, o.chatId), plain(docs.body))
+  })
+}
+
 const plain = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T
 
 // What the job does after a turn that ended by itself: words to go on with, if any (src/agent/job.ts, the app's and the

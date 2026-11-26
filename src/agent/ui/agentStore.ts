@@ -18,6 +18,12 @@
 //
 // THE KEY: read from this browser's storage (settings.ts' readKey) at the start of a turn and handed to makeModel; it is
 // never put in the store, an entry, a log or the usage log (usage.ts keeps counts only).
+//
+// ON THE SERVER (D-434, docs/specs/agent-server.md §5.5; `serverAgentOn()`): a turn is a run there instead
+// (`serverTurn`): started with the message, followed over RTDB into the same entries, stopped and steered from here,
+// going on with this tab closed. The server saves the chat and keeps the pending changes; this tab only shows them, and
+// applies them as the person, as ever. Nothing locks the person's writes while it works. A key kept in this browser goes
+// with each message and is deleted on the server at the run's end.
 import { create } from 'zustand'
 import { AGENT_TOOLS } from '../tools'
 import { runTurn, type LoopEvent } from '../loop'
@@ -42,6 +48,7 @@ import { subscribeWs } from '../../state/wsStore'
 import { NOTES_ID, saveNotes as saveNotesData, watchNotes } from '../../data/agentNotes'
 import { readDocBody, type DocBody } from '../../data/documents'
 import { workspaceKeyFor } from '../../data/workspaceKey'
+import { answerMove, pendingOf, serverAgentOn, startRun, stopAfterStep, stopRun, tellRun, tellView, tellWords, watchAccountKeys, watchChatOnServer, watchRun, type Move as RunMove, type PaidBy, type RunEnd, type RunEvent, type Told } from '../../data/agentServer'
 import { startChangeLog, watchChanges, watchMembers, type ChangeEntry } from '../../data/changeLog'
 import { chatsAvailable, deleteChat, listChats, newChatId, openChat as openChatData, renameChat as renameChatData, saveChat, shareChat as shareChatData, type ChatListItem } from '../../data/agentChats'
 import { chatDocs, historyOf, reopenedJob, type ChatCursor, type ChatSummary } from '../chats'
@@ -109,7 +116,9 @@ type AgentState = {
 // the items the person unticked.
 // `steer`: messages sent while a turn runs, waiting for its next step (D-328); `job`: the chat's big job (job.ts),
 // kept for this tab only (the saved chat's body holds turns and ids: saving a job needs a rules change first).
-type Runtime = { history: ModelMessage[]; ids: Ids; changes: Changeset; abort: AbortController | null; last: AgentWs | null; base: Changeset | null; off: Set<string>; steer: string[]; job: Job | null }
+// `run`: the server's run this chat is on (D-434); `follow`: one the server started by itself, to watch instead of starting.
+// `joined`: the run was going before this tab came to it, so its message isn't in the chat here yet.
+type Runtime = { history: ModelMessage[]; ids: Ids; changes: Changeset; abort: AbortController | null; last: AgentWs | null; base: Changeset | null; off: Set<string>; steer: string[]; job: Job | null; run?: string | null; follow?: string | null; joined?: boolean }
 
 const runtime = (o: Partial<Runtime> = {}): Runtime => ({ history: [], ids: makeIds(), changes: emptyChangeset(), abort: null, last: null, base: null, off: new Set(), steer: [], job: null, ...o })
 
@@ -151,7 +160,7 @@ export const stubOn = () => (stubAsked ||= devStubWanted())
 export const chatModel = (c: Chat = get().chat) => (stubOn() ? 'dev stub' : c.model || useAgentSettings.getState().model || suggested(useAgentSettings.getState()))
 // A key is there (or the dev stub stands in for the model).
 // A key for the chat's model's provider (D-329: OpenAI's or Anthropic's).
-export const canRun = () => stubOn() || (providerOf(chatModel()) === 'anthropic' ? useAgentSettings.getState().hasClaudeKey : useAgentSettings.getState().hasKey)
+export const canRun = () => stubOn() || serverAgentOn() || (providerOf(chatModel()) === 'anthropic' ? useAgentSettings.getState().hasClaudeKey : useAgentSettings.getState().hasKey)
 
 // ---- The workspace and the person
 
@@ -331,6 +340,8 @@ function watchExtra(wid: string) {
     watchChanges(wid, (list) => bump(() => ({ changeLog: list }))),
     watchMembers(wid, (list) => bump(() => ({ members: list }))),
     subscribeWs(() => followNotes(wid)),
+    // The keys kept in their account (D-434), for who pays and Settings' rows.
+    ...(me?.uid && onServer() ? [watchAccountKeys(me.uid, (account) => useAgentSettings.getState().setAccount(account))] : []),
   ]
   followNotes(wid)
 }
@@ -365,6 +376,8 @@ function saveNow(): Promise<void> {
   saveTimer = null
   const chat = get().chat
   if (!me?.uid || !chat.wid || !chatsAvailable() || !chat.entries.some((e) => e.kind === 'user')) return saving
+  // On the server the chat is saved there, once a run (D-434).
+  if (onServer()) return saving
   if (chat.saved && chat.saved.uid !== me.uid) return saving
   const rt = rtOf(chat)
   const { summary, body } = chatDocs({ uid: me.uid, model: chatModel(chat), turns: turnsOf(chat.entries), ids: rt.ids.toJSON(), was: chat.saved ?? null, now: Date.now(), job: rt.job })
@@ -455,7 +468,8 @@ function run(chatId: string, e: Effect) {
   const rt = rtOf(chat)
   switch (e.type) {
     case 'lock':
-      return lockTurn()
+      // On the server the person keeps writing while it works (D-434): accept rebuilds on the workspace as it is then.
+      return serverAgentOn() && !stubOn() ? undefined : lockTurn()
     case 'unlock':
       unlockTurn()
       unlockPreview()
@@ -463,12 +477,14 @@ function run(chatId: string, e: Effect) {
     case 'run':
       return void turn(chat, e.text, e.turn)
     case 'steer':
+      if (rt.run && me) return void tellWords(me.uid, rt.run, e.text).catch(() => {})
       rt.steer.push(e.text)
       return
     case 'abort':
       // A stop drops the words queued before it (they stay in the chat as sent, as after a failed turn): else the turn's
       // end would send them as a new turn and the agent would start again. Words sent after the stop still go.
       rt.steer.splice(0)
+      if (rt.run && me) return void stopRun(me.uid, rt.run).catch(() => {})
       return rt.abort?.abort()
     case 'preview': {
       // The store overlaid with the changes (S15, preview.ts), the app locked while it's open, the list in the chat.
@@ -511,6 +527,7 @@ function run(chatId: string, e: Effect) {
       push({ id: uid('rep'), kind: 'report', report: e.report, wheres, count: e.report.done.length })
       // The model hears what happened (bug 5); a job goes on after an apply, pauses after a discard.
       const applied = get().chat.wf.phase === 'applied'
+      if (onServer()) return void tellServer(chat, { kind: applied ? 'applied' : 'discarded', text: e.report.text, done: e.report.done, notDone: e.report.notDone })
       tellModel(rt, applied ? { applied: e.report } : { discarded: e.report })
       const move = nextMove(rt.job, applied ? { applied: e.report.done.length } : { discarded: true })
       setTimeout(() => moveJob(chat, move), 0)
@@ -521,7 +538,8 @@ function run(chatId: string, e: Effect) {
         if (get().chat.id !== chatId) return
         dispatch({ type: 'undo_done', ok })
         if (!ok) return
-        tellModel(rt, { undone: true })
+        if (onServer()) void tellServer(chat, { kind: 'undone' })
+        else tellModel(rt, { undone: true })
         const list = [...get().chat.entries].reverse().find((x) => x.kind === 'changes' && x.state === 'applied')
         if (list) patchEntry(list.id, (x) => ({ ...x, state: 'undone' }) as Entry)
       })
@@ -529,6 +547,7 @@ function run(chatId: string, e: Effect) {
 }
 
 async function turn(chat: Chat, text: string, n: number) {
+  if (onServer()) return serverTurn(chat, text)
   const rt = rtOf(chat)
   const model = chatModel(chat)
   const id = uid('ans')
@@ -536,34 +555,7 @@ async function turn(chat: Chat, text: string, n: number) {
   const controller = new AbortController()
   rt.abort = controller
   const mine = () => get().chat.id === chat.id
-  const on = (e: LoopEvent) => {
-    if (!mine()) return
-    patchEntry(id, (x) => {
-      if (x.kind !== 'agent') return x
-      switch (e.type) {
-        case 'text':
-          return { ...x, live: x.live + e.delta }
-        case 'tool_started': {
-          // What the model said before its calls stays as a line among the steps.
-          const said: StepLine[] = x.live.trim() ? [{ id: `${e.call.id}-say`, label: '', running: false, say: x.live.trim() }] : []
-          return { ...x, live: '', steps: [...x.steps, ...said, { id: e.call.id, label: e.call.label, running: true }] }
-        }
-        case 'search': {
-          // A web search (D-360): a step line of its own, what the model said before it kept above it.
-          const said: StepLine[] = x.live.trim() ? [{ id: `${id}-${x.steps.length}-say`, label: '', running: false, say: x.live.trim() }] : []
-          return { ...x, live: '', steps: [...x.steps, ...said, { id: `${id}-web-${x.steps.length}`, label: `searched the web: "${e.query}"`, running: false }] }
-        }
-        case 'tool_finished':
-          return { ...x, steps: x.steps.map((s) => (s.id === e.call.id ? { ...s, running: false, ok: e.call.ok, ms: e.call.ms } : s)) }
-        case 'step_started':
-          return x.live.trim() && x.steps.length ? x : { ...x, live: '' }
-        case 'usage':
-          return { ...x, usage: e.total }
-        default:
-          return x
-      }
-    })
-  }
+  const on = entryEvents(chat, id)
   try {
     const stub = stubOn()
     const provider = providerOf(model)
@@ -602,6 +594,215 @@ async function turn(chat: Chat, text: string, n: number) {
     const phase = get().chat.wf.phase
     if (!mine() || (phase !== 'previewing' && phase !== 'applying')) releaseAgentLocks()
   }
+}
+
+// ---- On the server (D-434)
+
+const onServer = () => serverAgentOn() && !stubOn()
+
+// Who pays for this chat's model: the person's own key kept here (it goes with the message), else theirs kept in their
+// account, else the workspace's. The server says why not, in words, when none may.
+function payment(model: string): { paidBy: PaidBy; key?: string } {
+  const provider = providerOf(model)
+  const key = readKey(provider)
+  if (key) return { paidBy: 'own', key }
+  const account = useAgentSettings.getState().account
+  if (account[provider]) return { paidBy: 'own' }
+  return { paidBy: 'workspace' }
+}
+
+const viewNow = () => agentUi.currentView()
+const VIEW_EVERY = 2000
+
+// What the server's events are to the column: the same as the loop's in a tab.
+function loopEventOf(e: RunEvent): LoopEvent | null {
+  switch (e.type) {
+    case 'text':
+      return { type: 'text', n: e.n, delta: e.delta }
+    case 'search':
+      return { type: 'search', n: e.n, query: e.query }
+    case 'step':
+      return { type: 'step_started', n: e.n, final: e.final }
+    case 'tool_started':
+    case 'tool_finished':
+      return { type: e.type, n: e.n, call: e.call }
+    case 'usage':
+      return { type: 'usage', n: e.n, step: e.total, total: e.total }
+    default:
+      return null
+  }
+}
+
+// A move the server asks of this screen: made as the tab's own agent makes it, then answered.
+async function moveScreen(run: string, m: RunMove) {
+  if (!me) return
+  const id = typeof m.args === 'string' ? m.args : ''
+  try {
+    if (m.tool === 'select') await agentUi.select(Array.isArray(m.args) ? (m.args as string[]) : [])
+    else if (m.tool === 'focus') await agentUi.focus(typeof m.args === 'string' ? m.args : null)
+    else if (id) await agentUi[m.tool](id)
+    if (id) touchAt(id, 'ui')
+    await answerMove(me.uid, run, m.id, true)
+  } catch (e) {
+    await answerMove(me.uid, run, m.id, (e as Error)?.message ?? 'it failed').catch(() => {})
+  }
+}
+
+// A turn as a run on the server: started with the message (or, when the server started it by itself, only followed),
+// followed into the chat's entry until it ends. Leaving the chat only stops watching: the run goes on.
+async function serverTurn(chat: Chat, text: string) {
+  const rt = rtOf(chat)
+  const model = chatModel(chat)
+  const id = uid('ans')
+  push({ id, kind: 'agent', text: '', live: '', steps: [], usage: { ...NO_USAGE }, running: true, model })
+  const mine = () => get().chat.id === chat.id
+  const on = entryEvents(chat, id)
+  const watching = new AbortController()
+  rt.abort = watching
+  try {
+    let run = rt.follow ?? null
+    const joined = !!rt.joined
+    rt.follow = null
+    rt.joined = false
+    if (!run) {
+      const off = [...rt.off]
+      run = (await startRun({ wid: chat.wid, chatId: chat.id, text, view: viewNow(), model, effort: useAgentSettings.getState().effort, ...payment(model), ...(off.length ? { off } : {}) })).run
+    }
+    rt.run = run
+    // Joined: the message the run was asked goes in before its answer, as if this tab had sent it.
+    const asked = (text: string, auto: boolean) => joined && setChat((c) => ({ ...c, entries: c.entries.flatMap((e) => (e.id === id ? [{ id: uid('you'), kind: 'user' as const, text, ...(auto ? { auto: true } : {}) }, e] : [e])) }))
+    const ended = await follow(run, on, watching.signal, asked)
+    if (!ended) return
+    const job = ended.job === undefined ? rt.job : ended.job
+    jobHost(chat.id, rt).set(job)
+    if (ended.pending && me) {
+      const p = await pendingOf(chat.wid, chat.id).catch(() => null)
+      if (p) {
+        rt.changes = p.changes
+        rt.ids = makeIds(p.ids)
+      }
+    } else rt.changes = emptyChangeset()
+    const failed = ended.status === 'failed' ? plainError(ended.said ?? 'it stopped').text : undefined
+    const end = (ended.end as TurnEnd | undefined) ?? (ended.status === 'stopped' ? 'stopped' : failed ? 'error' : 'answered')
+    patchEntry(id, (x) => (x.kind === 'agent' ? { ...x, text: ended.answer ?? (end === 'stopped' ? '' : x.live), live: '', running: false, ...(ended.ms !== undefined ? { ms: ended.ms } : {}), end, ...(ended.usage ? { usage: ended.usage } : {}), ...(ended.sources?.length ? { sources: ended.sources } : {}), ...(failed ? { error: failed } : {}), steps: x.steps.map((s) => ({ ...s, running: false })) } : x))
+    if (!mine()) return
+    rt.run = null
+    dispatch(failed && !ended.answer ? { type: 'fail', error: failed } : { type: 'turn_end', answer: ended.answer ?? '', pending: pendingCount(rt.changes), end })
+    if (ended.next) setTimeout(() => goOnWith(chat, ended.next!, ended.say ?? '', !!ended.auto), 0)
+  } catch (e) {
+    const err = plainError((e as Error)?.message ?? String(e))
+    patchEntry(id, (x) => (x.kind === 'agent' ? { ...x, running: false, live: '', error: err.text, ...(err.settings ? { errorSettings: true } : {}), end: 'error' } : x))
+    rt.run = null
+    if (mine()) dispatch({ type: 'fail', error: err.text })
+  } finally {
+    if (rt.abort === watching) rt.abort = null
+  }
+}
+
+// What a run's events do to its entry in the column (the tab's own loop gives the same events).
+function entryEvents(chat: Chat, id: string): (e: LoopEvent) => void {
+  const mine = () => get().chat.id === chat.id
+  return (e) => {
+    if (!mine()) return
+    patchEntry(id, (x) => {
+      if (x.kind !== 'agent') return x
+      switch (e.type) {
+        case 'text':
+          return { ...x, live: x.live + e.delta }
+        case 'tool_started': {
+          const said: StepLine[] = x.live.trim() ? [{ id: `${e.call.id}-say`, label: '', running: false, say: x.live.trim() }] : []
+          return { ...x, live: '', steps: [...x.steps, ...said, { id: e.call.id, label: e.call.label, running: true }] }
+        }
+        case 'search': {
+          const said: StepLine[] = x.live.trim() ? [{ id: `${id}-${x.steps.length}-say`, label: '', running: false, say: x.live.trim() }] : []
+          return { ...x, live: '', steps: [...x.steps, ...said, { id: `${id}-web-${x.steps.length}`, label: `searched the web: "${e.query}"`, running: false }] }
+        }
+        case 'tool_finished':
+          return { ...x, steps: x.steps.map((s) => (s.id === e.call.id ? { ...s, running: false, ok: e.call.ok, ms: e.call.ms } : s)) }
+        case 'step_started':
+          return x.live.trim() && x.steps.length ? x : { ...x, live: '' }
+        case 'usage':
+          return { ...x, usage: e.total }
+        default:
+          return x
+      }
+    })
+  }
+}
+
+// Follows a run to its end; null when this tab stopped watching first (the run goes on without it).
+function follow(run: string, on: (e: LoopEvent) => void, stop: AbortSignal, asked: (text: string, auto: boolean) => void): Promise<RunEnd | null> {
+  return new Promise((resolve) => {
+    if (!me) return resolve(null)
+    const who = me.uid
+    let off = () => {}
+    const tick = setInterval(() => void tellView(who, run, viewNow()).catch(() => {}), VIEW_EVERY)
+    const done = (v: RunEnd | null) => {
+      clearInterval(tick)
+      off()
+      resolve(v)
+    }
+    stop.addEventListener('abort', () => done(null), { once: true })
+    void tellView(who, run, viewNow()).catch(() => {})
+    off = watchRun(who, run, {
+      event: (e) => {
+        // A worker died and the run goes on from its last step: what was said of that step is said again.
+        if (e.type === 'again') return on({ type: 'step_started', n: e.n, final: false })
+        if (e.type === 'asked') return asked(e.text, !!e.auto)
+        const l = loopEventOf(e)
+        if (l) on(l)
+      },
+      move: (m) => void moveScreen(run, m),
+      end: (e) => done(e),
+    })
+  })
+}
+
+// A run the server started by itself (a job's next step, words sent too late): shown as the app's own go-on, then followed.
+function goOnWith(chat: Chat, run: string, say: string, auto: boolean) {
+  const c = get().chat
+  if (c.id !== chat.id || c.wf.phase === 'running' || c.wf.phase === 'applying') return
+  rtOf(c).follow = run
+  if (say) push({ id: uid('you'), kind: 'user', text: say, ...(auto ? { auto: true } : {}) })
+  dispatch({ type: 'send', text: say || 'go on' })
+}
+
+// What the person did, told to the chat on the server; a run that follows by itself is followed.
+async function tellServer(chat: Chat, what: Told) {
+  const rt = rtOf(chat)
+  const model = chatModel(chat)
+  try {
+    const r = await tellRun({ wid: chat.wid, chatId: chat.id, view: viewNow(), what, model, effort: useAgentSettings.getState().effort, ...payment(model) })
+    jobHost(chat.id, rt).set(r.job)
+    if (r.run) setTimeout(() => goOnWith(chat, r.run!, r.say ?? '', !!r.auto), 0)
+  } catch (e) {
+    if (get().chat.id === chat.id) push({ id: uid('note'), kind: 'note', text: plainError((e as Error)?.message ?? String(e)).text, tone: 'error' })
+  }
+}
+
+// A chat opened or come back to while its run works, or with its preview waiting: the run followed, the preview shown.
+let unwatchServer = () => {}
+function joinServerChat(chat: Chat) {
+  unwatchServer()
+  if (!onServer() || !chat.wid || !me) return
+  let joined = false
+  unwatchServer = watchChatOnServer(chat.wid, chat.id, (t) => {
+    if (joined || !t || get().chat.id !== chat.id) return
+    joined = true
+    const rt = rtOf(chat)
+    if (t.running && get().chat.wf.phase === 'idle') {
+      rt.follow = t.running
+      rt.joined = true
+      dispatch({ type: 'send', text: '' })
+    } else if (t.waiting && get().chat.wf.phase === 'idle')
+      void pendingOf(chat.wid, chat.id).then((p) => {
+        if (!p?.changes.items.length || get().chat.id !== chat.id || get().chat.wf.phase !== 'idle') return
+        rt.changes = p.changes
+        rt.ids = makeIds(p.ids)
+        setChat((c) => ({ ...c, wf: { phase: 'running', turn: c.wf.turn + 1, pending: 0 } }))
+        dispatch({ type: 'turn_end', answer: '', pending: pendingCount(rt.changes), end: 'answered' })
+      })
+  })
 }
 
 // After a turn (D-328): words the person sent too late for its last step start the next turn; else, with no preview
@@ -683,6 +884,7 @@ export const agentActions = {
     chats.set(wid, chat)
     useAgent.setState({ wid, chat, mode: 'closed', view: 'chat', touch: null, chats: null, chatsMore: false, notes: null })
     watchExtra(wid)
+    joinServerChat(chat)
   },
   // The panel went away (the workspace closed).
   detach() {
@@ -730,6 +932,9 @@ export const agentActions = {
     const c = get().chat
     const rt = rtOf(c)
     if (rt.job) jobHost(c.id, rt).set({ ...rt.job, stopAfter: on || undefined })
+    if (!onServer() || !me) return
+    if (rt.run) void stopAfterStep(me.uid, rt.run, on).catch(() => {})
+    else void tellServer(c, { kind: 'job', act: on ? 'stopAfter' : 'keepOn' })
   },
   jobGoOn(raise = false) {
     const c = get().chat
@@ -738,6 +943,7 @@ export const agentActions = {
     if (!j || j.status === 'done' || c.wf.phase === 'running' || c.wf.phase === 'applying' || c.wf.phase === 'previewing') return
     const nx = nextStep(j)
     if (!nx) return
+    if (onServer()) return void tellServer(c, { kind: 'job', act: raise ? 'raise' : 'goOn' })
     jobHost(c.id, rt).set({ ...j, status: 'running', paused: undefined, stopAfter: undefined, settledAt: -1, ...(raise ? { budget: j.budget + JOB_BUDGET } : {}) })
     const text = `Go on with step ${nx.n} of ${j.steps.length}: ${nx.title}.`
     push({ id: uid('you'), kind: 'user', text, auto: true })
@@ -748,6 +954,7 @@ export const agentActions = {
     const c = get().chat
     const rt = rtOf(c)
     if (!rt.job || rt.job.status !== 'planned' || c.wf.phase === 'running' || c.wf.phase === 'applying') return
+    if (onServer()) return void tellServer(c, { kind: 'job', act: preview })
     jobHost(c.id, rt).set(chooseAt(rt.job, preview))
     agentActions.send(preview === 'all' ? 'go (one preview at the end)' : 'go (one preview per step)')
   },
@@ -756,6 +963,7 @@ export const agentActions = {
     const rt = rtOf(c)
     if (c.wf.phase === 'running') return
     jobHost(c.id, rt).set(null)
+    if (onServer()) void tellServer(c, { kind: 'job', act: 'drop' })
   },
   // A tick in the preview: off takes the item and what needs it off, on brings it back (and what came off only with
   // it); the preview is worked out again from its base on the workspace as it is now.
@@ -842,6 +1050,7 @@ export const agentActions = {
     runtimes.set(chat.id, runtime({ history: historyOf(got.body.turns), ids: makeIds(got.body.ids), job }))
     chats.set(chat.wid, chat)
     useAgent.setState({ chat, view: 'chat', mode: 'column', touch: null })
+    joinServerChat(chat)
   },
   async renameChat(id: string, title: string) {
     const s = get()
@@ -885,6 +1094,7 @@ export const agentActions = {
 // new chat).
 function leave() {
   closePreview()
+  unwatchServer()
   const chat = get().chat
   if (chat.wf.phase !== 'idle') dispatch({ type: 'reset' })
   rtOf(chat).abort?.abort()

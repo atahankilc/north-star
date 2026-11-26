@@ -10,6 +10,7 @@ import { DEFAULT_EFFORT } from '../models'
 
 import { KNOWN_MODELS, suggestedFor, type ProviderId } from '../models'
 import { keepLocal, readLocal } from '../../state/local'
+import type { AccountKeys } from '../../data/agentServer'
 
 export const KEY_STORE = 'northstar.agent.openaiKey'
 export const ANTHROPIC_KEY_STORE = 'northstar.agent.anthropicKey'
@@ -53,6 +54,9 @@ type AgentSettingsState = {
   setEffort: (e: Effort) => void
   setModels: (ids: string[]) => void
   setClaudeModels: (ids: string[]) => void
+  // The keys kept in the person's account on the server (D-434): only their `sk-…abcd`, live.
+  account: AccountKeys
+  setAccount: (a: AccountKeys) => void
 }
 
 // `sk-…abcd`: enough to tell two keys apart, never the key.
@@ -106,6 +110,8 @@ export const useAgentSettings = create<AgentSettingsState>((set) => ({
     write(CLAUDE_MODELS_STORE, JSON.stringify(ids))
     set({ claudeModels: ids })
   },
+  account: {},
+  setAccount: (account) => set({ account }),
 }))
 
 type Keys = Pick<AgentSettingsState, 'hasKey' | 'hasClaudeKey' | 'models' | 'claudeModels'>

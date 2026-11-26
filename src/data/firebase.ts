@@ -93,6 +93,16 @@ export function functionsOf(): Promise<Functions> {
   }))
 }
 
+// A callable function's answer; a refusal comes back as an Error in the function's own words (never the SDK's code).
+export async function callFunction<T>(name: string, data: unknown, fallback: string): Promise<T> {
+  const [f, { httpsCallable }] = await Promise.all([functionsOf(), import('firebase/functions')])
+  try {
+    return (await httpsCallable(f, name)(data)).data as T
+  } catch (e) {
+    throw new Error((e as Error)?.message || fallback)
+  }
+}
+
 export function storageOf(): Promise<FirebaseStorage> {
   if (!firebase) return Promise.reject(new Error('Firebase is not configured'))
   const { app } = firebase

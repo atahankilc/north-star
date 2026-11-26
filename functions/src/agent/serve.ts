@@ -10,7 +10,7 @@ import { changesPath, runPath, threadPath, type Keep } from './keep'
 import { dropLive } from './live'
 import { NotAMember, roleNow } from './membership'
 import { endRun, Held, newRunId, Refused, runRef, startRun, threadRef, type Run, type Thread } from './runs'
-import { loadThread, tell } from './thread'
+import { loadThread, noteOutcome, tell } from './thread'
 import { Stop, work, type KeptAsk, type Worked } from './worker'
 import { keyHint, seal } from '../seal'
 import type { Changeset } from '../../../src/agent/changeset'
@@ -83,7 +83,7 @@ async function mine(d: Deps, who: Caller, wid: string, chatId: string): Promise<
 }
 
 // What the person did with a preview, or with the job's checklist; a run may follow by itself.
-export async function tellAgent(who: Caller, data: unknown, d: Deps): Promise<{ run?: string; job: unknown }> {
+export async function tellAgent(who: Caller, data: unknown, d: Deps): Promise<{ run?: string; say?: string; auto?: boolean; job: unknown }> {
   const told = readTold(data)
   await roleNow(d.db, told.wid, who.uid)
   const t = await mine(d, who, told.wid, told.chatId)
@@ -95,11 +95,12 @@ export async function tellAgent(who: Caller, data: unknown, d: Deps): Promise<{ 
     await d.keep.save(changesPath(who.uid, told.wid, told.chatId), { run: t.last, changes: r.thread.env.changes, ids: r.thread.env.ids, job: r.thread.env.job })
     await threadRef(d.db, told.wid, told.chatId).update({ waiting: false, updatedAt: Date.now() })
   }
+  await noteOutcome(d.db, { uid: who.uid, wid: told.wid, chatId: told.chatId, what: told.what, now: Date.now() })
   const job = r.thread.env.job
   if (r.say === undefined || !told.paidBy || !told.model) return { job }
   const provider = await mayPay(d.db, { uid: who.uid, wid: told.wid, paidBy: told.paidBy, model: told.model, ...(told.key ? { key: told.key } : {}) })
   const run = await queueRun(d, who, { wid: told.wid, chatId: told.chatId, paidBy: told.paidBy, model: told.model, ...(told.effort ? { effort: told.effort } : {}), ...(told.key ? { key: told.key } : {}), provider }, { text: r.say, view: told.view, auto: true })
-  return { run, job }
+  return { run, say: r.say, auto: true, job }
 }
 
 // The chat's pending changes, for its person's preview.

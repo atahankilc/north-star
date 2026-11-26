@@ -103,6 +103,7 @@ export async function work(id: string, d: WorkDeps): Promise<Worked> {
   const beat = setInterval(() => void renewLease(d.db, id, d.by, at, now()).catch((e) => e instanceof LeaseLost && lost.abort()), LEASE_EVERY)
   const signal = AbortSignal.any([ctl.signal, lost.signal])
   if (was) out.event({ type: 'again', n: at })
+  else out.event({ type: 'asked', n: 0, text: ask.text, ...(ask.auto ? { auto: true } : {}) })
   try {
     const thread = await loadThread(d.keep, d.db, run)
     const model = await d.model(run)
@@ -139,7 +140,8 @@ export async function work(id: string, d: WorkDeps): Promise<Worked> {
       },
     )
     if (lost.signal.aborted) throw new LeaseLost()
-    const moved = afterTurn(done.env, { turn: done.turn, left: ctl.words() })
+    const job = done.env.job && ctl.stopAfter() ? { ...done.env.job, stopAfter: true } : done.env.job
+    const moved = afterTurn({ ...done.env, job }, { turn: done.turn, left: ctl.words() })
     const items = moved.env.changes.items
     const t = done.turn
     const follow = moved.say !== undefined && t.end !== 'error'

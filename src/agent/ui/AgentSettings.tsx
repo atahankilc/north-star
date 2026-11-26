@@ -3,7 +3,8 @@
 // `[check]` (each key's model list, which fills the picker), the model (works well / not tried yet; the suggested one only pre-selected), its reasoning effort, and
 // this month's usage in tokens (counts only, from this browser's usage log). Three groups (D-404): keys, model, usage;
 // the agent's keys (⌘J, /) are told in its lesson and `?`, not here (D-344).
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '../../data/auth'
 import { Choice } from '../../ui/primitives/Choice'
 import { Note, Row, Section } from '../../ui/patterns/Settings'
 import { Select } from '../../ui/patterns/Select'
@@ -17,6 +18,7 @@ import { Button } from '../../ui/primitives/Button'
 import { ButtonGroup } from '../../ui/primitives/ButtonGroup'
 import { Field } from '../../ui/primitives/Field'
 import { plural } from '../../model/words'
+import { keepKeyInAccount, serverAgentOn, watchAccountKeys } from '../../data/agentServer'
 
 const k = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 
@@ -50,20 +52,48 @@ const PROVIDERS = {
 // Anthropic's article on the plans' monthly API credits (D-329): linked, so the rules live on their page, not here.
 const CLAUDE_CREDITS = 'https://support.claude.com/en/articles/17154008-monthly-api-credits-for-max-ultra-and-team-plans'
 
+// Where a key is kept when the agent works on the server (D-434): asked when it's saved.
+type KeptWhere = 'this browser' | 'my account'
+const WHERE: readonly KeptWhere[] = ['this browser', 'my account']
+const WHERE_WORDS: Record<KeptWhere, string> = {
+  'this browser': 'Sent with each message and deleted when the answer is done.',
+  'my account': "Kept encrypted on North Star's server. Works on all your devices.",
+}
+
 function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text: string; tone?: 'error' } | null) => void }) {
   const s = useAgentSettings()
   const p = PROVIDERS[provider]
-  const has = provider === 'anthropic' ? s.hasClaudeKey : s.hasKey
-  const hint = provider === 'anthropic' ? s.claudeHint : s.hint
+  const local = provider === 'anthropic' ? s.hasClaudeKey : s.hasKey
+  const kept = serverAgentOn() ? s.account[provider] : undefined
+  const has = local || !!kept
+  const hint = local ? (provider === 'anthropic' ? s.claudeHint : s.hint) : (kept?.hint ?? '')
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
+  const [where, setWhere] = useState<KeptWhere>('this browser')
 
   const save = () => {
     const key = draft.trim()
     if (!key) return
+    if (serverAgentOn() && where === 'my account') {
+      setBusy(true)
+      onSaid(null)
+      void keepKeyInAccount(provider, key).then(
+        () => (setDraft(''), onSaid({ text: `Kept in your account. ${p.name} accepted it.` })),
+        (e) => onSaid({ text: plainError((e as Error)?.message ?? String(e)).text, tone: 'error' }),
+      ).finally(() => setBusy(false))
+      return
+    }
     s.saveKey(key, provider)
     setDraft('')
     onSaid({ text: `Saved in this browser. [check] asks ${p.name} which models it can use.` })
+  }
+  const remove = () => {
+    if (local) return s.removeKey(provider), onSaid({ text: 'Removed from this browser.' })
+    setBusy(true)
+    void keepKeyInAccount(provider, null).then(
+      () => onSaid({ text: 'Removed from your account.' }),
+      (e) => onSaid({ text: plainError((e as Error)?.message ?? String(e)).text, tone: 'error' }),
+    ).finally(() => setBusy(false))
   }
 
   const check = async () => {
@@ -100,7 +130,9 @@ function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text
       label={p.label}
       hint={
         has ? (
-          'Saved in this browser.'
+          local ? 'Saved in this browser.' : 'Kept in your account.'
+        ) : serverAgentOn() ? (
+          WHERE_WORDS[where]
         ) : provider === 'anthropic' ? (
           <>
             {p.where} A Max, Ultra or Team plan can pay for it (
@@ -120,10 +152,12 @@ function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text
             {hint}
           </span>
           <ButtonGroup>
-            <Button onClick={() => void check()} disabled={busy}>
-              {busy ? 'checking' : 'check'}
-            </Button>
-            <Button tone="danger" onClick={() => (s.removeKey(provider), onSaid({ text: 'Removed from this browser.' }))}>
+            {local && (
+              <Button onClick={() => void check()} disabled={busy}>
+                {busy ? 'checking' : 'check'}
+              </Button>
+            )}
+            <Button tone="danger" disabled={busy} onClick={remove}>
               remove
             </Button>
           </ButtonGroup>
@@ -146,8 +180,9 @@ function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text
             value={draft}
             onChange={setDraft}
           />
-          <Button tone="main" type="submit" disabled={!draft.trim()}>
-            save
+          {serverAgentOn() && <Choice label="keep it in" bare options={WHERE} value={where} onChange={(w: KeptWhere) => setWhere(w)} />}
+          <Button tone="main" type="submit" disabled={!draft.trim() || busy}>
+            {busy ? 'checking' : 'save'}
           </Button>
         </form>
       )}
@@ -157,6 +192,9 @@ function KeyRow({ provider, onSaid }: { provider: ProviderId; onSaid: (s: { text
 
 function KeySection() {
   const s = useAgentSettings()
+  // The keys kept in their account (D-434), live while this page is open (the agent's panel needn't be).
+  const uid = useAuth().user?.id
+  useEffect(() => (uid && serverAgentOn() ? watchAccountKeys(uid, (a) => useAgentSettings.getState().setAccount(a)) : undefined), [uid])
   const [said, setSaid] = useState<{ text: string; tone?: 'error' } | null>(null)
   const suggest = suggested(s)
   const rows = pickerRows(pickable(s), s.model || undefined, suggest)
@@ -167,7 +205,11 @@ function KeySection() {
       <Section
         n={1}
         label="keys"
-        note="Keys stay in this browser and go only to their own provider, never to the workspace or to North Star. You pay the provider for what you use. One key is enough; with none, the agent uses the workspace's key if its owners let you (workspace → agent key)."
+        note={
+          serverAgentOn()
+            ? "The agent works on North Star's server, so your key goes there: with each message only, or kept in your account, as you choose. Never shown again, never logged. You pay the provider for what you use; set a spending limit on the key there. With no key of your own, the agent uses the workspace's key if its owners let you."
+            : "Keys stay in this browser and go only to their own provider, never to the workspace or to North Star. You pay the provider for what you use. One key is enough; with none, the agent uses the workspace's key if its owners let you (workspace → agent key)."
+        }
       >
         <KeyRow provider="openai" onSaid={setSaid} />
         <KeyRow provider="anthropic" onSaid={setSaid} />

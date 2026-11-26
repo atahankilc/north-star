@@ -20,6 +20,8 @@ export type LiveEvent =
   | { type: 'usage'; n: number; total: Record<string, number> }
   // The run goes on from its last step after a worker died: what came of that step before is told again.
   | { type: 'again'; n: number }
+  // What the run was asked, first (a tab that joins a run already going shows it; `auto`: the app's own go-on).
+  | { type: 'asked'; n: number; text: string; auto?: boolean }
   // Words taken into the turn between two steps.
   | { type: 'heard'; n: number; text: string }
 
@@ -92,6 +94,8 @@ export function liveOut(db: Database, uid: string, run: string, o: { from?: numb
 export type Ctl = {
   // Aborts when the person stops the run.
   signal: AbortSignal
+  // The person asked, while it worked, to stop the job after the step under way (D-328's `stopAfter`).
+  stopAfter: () => boolean
   // Words written since the last call, oldest first; each is given once.
   words: () => string[]
   // The ids of every word given so far (kept with a checkpoint, so none is given twice).
@@ -107,6 +111,7 @@ export async function openCtl(db: Database, uid: string, run: string, first: Whe
   const stop = new AbortController()
   let view = first
   let watched = false
+  let after = false
   // Read off the node, and those of them handed on: only these are kept, so words read but not yet given aren't lost.
   const read = new Set(o.heard ?? [])
   const given = new Set(o.heard ?? [])
@@ -122,6 +127,7 @@ export async function openCtl(db: Database, uid: string, run: string, first: Whe
   const offs = [
     on('stop', (s) => s.val() === true && stop.abort()),
     on('here', (s) => void (watched = s.exists())),
+    on('after', (s) => void (after = s.val() === true)),
     on('view', (s) => {
       const v = s.val() as unknown
       if (typeof v !== 'string') return
@@ -169,6 +175,7 @@ export async function openCtl(db: Database, uid: string, run: string, first: Whe
   }
   return {
     signal: stop.signal,
+    stopAfter: () => after,
     words: () =>
       waiting.splice(0).map((w) => {
         given.add(w.id)

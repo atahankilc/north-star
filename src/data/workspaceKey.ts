@@ -6,7 +6,7 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { KEY_ALLOWED_MAX, KEY_MODELS_MAX } from '../model/limits'
 import type { Role } from './model'
-import { db, firebase, functionsOf, functionUrl } from './firebase'
+import { callFunction, db, firebase, functionUrl } from './firebase'
 import { useDoc } from './hooks'
 
 export type KeyAccess = 'everyone' | 'chosen'
@@ -16,15 +16,7 @@ const configRef = (wid: string) => doc(db(), 'workspaces', wid, 'ai', 'config')
 
 export const useAiConfig = (wid: string) => useDoc<AiConfig>(`workspaces/${wid}/ai/config`)
 
-async function call<T>(name: string, data: unknown): Promise<T> {
-  const [f, { httpsCallable }] = await Promise.all([functionsOf(), import('firebase/functions')])
-  try {
-    return (await httpsCallable(f, name)(data)).data as T
-  } catch (e) {
-    // The function's own words ("OpenAI didn't accept this key."), never the SDK's code.
-    throw new Error((e as Error)?.message || "The workspace key couldn't be saved.")
-  }
-}
+const call = <T,>(name: string, data: unknown) => callFunction<T>(name, data, "The workspace key couldn't be saved.")
 
 // Owners: give the workspace this key (checked with OpenAI first), or none (null). The models it runs start as `first`
 // when none were chosen yet.

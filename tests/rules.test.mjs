@@ -1257,6 +1257,9 @@ await allow('owner deletes children, invite code, then workspace', async () => {
   await allow('that a tab watches', () => rtSet(ctl(bob, bob.uid, 'here'), serverTimestamp()))
   await deny('watching at a time of their own', () => rtSet(ctl(bob, bob.uid, 'here'), 5))
   await allow("a move's answer", () => rtSet(ctl(bob, bob.uid, 'done/m1'), true))
+  await allow('stop the job after this step', () => rtSet(ctl(bob, bob.uid, 'after'), true))
+  await deny('after as anything but true or false', () => rtSet(ctl(bob, bob.uid, 'after'), 'soon'))
+  await deny("a move's answer too long", () => rtSet(ctl(bob, bob.uid, 'done/m2'), 'x'.repeat(301)))
   await deny('anything else there', () => rtSet(ctl(bob, bob.uid, 'other'), 1))
   await deny("someone else reads a run's controls", () => rtGet(ref(alice.rt, `agentCtl/${bob.uid}/r1`)))
 }

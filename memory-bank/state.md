@@ -35,7 +35,7 @@ something is finished, add its entry to state-history.md and leave at most one l
      **Waiting for OpenAI credit:** the four runs in agent-pipeline.md §7, then routing and the map's default (D-341).
   2. In the app: both go buttons checked headless on the stub 2026-11-02 (`job demo`); `/restructure` on a real model
      still to see; the preview pick saved with the chat (a rules change). Every agent bug: docs/specs/agent-bugs.md (its table).
-- **The agent on the server (D-434, docs/specs/agent-server.md, P0–P6):** P0 done but what waits for the user (evals on the new models ≈ $12, the OpenAI project, KMS, the letters); P1 done; P2's server half built and checked end to end on the emulators (§17), not deployed; next the app's side (agentStore's `serverHost`, `paid by`). Nothing committed yet.
+- **The agent on the server (D-434, docs/specs/agent-server.md, P0–P6):** P0 but what waits for the user (evals on the new models ≈ $12, the OpenAI project, KMS, the letters); P1 and P2 done and checked on the emulators, the app included (§17, §18), on only on the emulators or a switched-on browser; committed, not pushed, nothing deployed. Next P3 (ledger, limits, audit).
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
   which (D-313); pushed;
   rules deployed.
