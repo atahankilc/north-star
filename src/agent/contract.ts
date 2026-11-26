@@ -31,8 +31,9 @@ export type ToolResult = { callId: string; name: string; ok: boolean; text: stri
 
 // Tokens as the provider counts them (the stub reports zeros). `cached`: input read from the provider's prompt cache
 // (part of `input`); `reasoning`: hidden reasoning tokens (part of `output`).
+// `cacheWrite`: input written to that cache (part of `input`, never of `cached`), billed above plain input (D-434).
 // `searches`: web searches the provider ran (D-360; billed apart from tokens).
-export type Usage = { input: number; output: number; cached?: number; reasoning?: number; searches?: number }
+export type Usage = { input: number; output: number; cached?: number; cacheWrite?: number; reasoning?: number; searches?: number }
 export const NO_USAGE: Usage = Object.freeze({ input: 0, output: 0, cached: 0, reasoning: 0 })
 
 // The web (D-360): a page the model read or cited, and what one response searched. The provider runs the searches
@@ -198,7 +199,7 @@ export type Transcript = { model: string; startedAt: number; turns: AgentTurn[];
 // ---- Helpers
 
 export function addUsage(a: Usage, b: Usage): Usage {
-  return { input: a.input + b.input, output: a.output + b.output, cached: (a.cached ?? 0) + (b.cached ?? 0), reasoning: (a.reasoning ?? 0) + (b.reasoning ?? 0), ...((a.searches ?? 0) + (b.searches ?? 0) ? { searches: (a.searches ?? 0) + (b.searches ?? 0) } : {}) }
+  return { input: a.input + b.input, output: a.output + b.output, cached: (a.cached ?? 0) + (b.cached ?? 0), reasoning: (a.reasoning ?? 0) + (b.reasoning ?? 0), ...((a.cacheWrite ?? 0) + (b.cacheWrite ?? 0) ? { cacheWrite: (a.cacheWrite ?? 0) + (b.cacheWrite ?? 0) } : {}), ...((a.searches ?? 0) + (b.searches ?? 0) ? { searches: (a.searches ?? 0) + (b.searches ?? 0) } : {}) }
 }
 
 // Sources joined, one per url (its title kept, cited if any copy was), cited first, in the order met.

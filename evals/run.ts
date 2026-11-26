@@ -16,6 +16,8 @@
 //   npm run eval -- --write-fixtures  writes evals/fixtures/<name>.workspace.json (export v2)
 //   npm run eval -- --emulator        accepts through the real apply into the running Firestore emulator, end state and
 //                                     undo read back from it (evals/emulator.ts; README "Emulator mode")
+//   npm run eval -- --server          every turn on the server's path against the emulators (evals/server.ts, D-434)
+//   npm run eval -- --cut             every turn thrown away before each step and resumed from JSON (evals/cut.ts, D-434)
 //
 // The report goes to evals/results/<timestamp>/ (report.md, report.json, transcripts/).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -24,7 +26,8 @@ import { answerOf, stepsOf, toolsHash, transcriptUsage, type AgentModel, type Ag
 import { stubModel, wrongScript, type Script } from '../src/agent/stubModel'
 import { FIXTURES, loadFixture, toBundle } from './fixtures'
 import { makeEnv } from './env'
-import { runTurn } from '../src/agent/loop'
+import { runTurn, type TurnOpts, type TurnResult } from '../src/agent/loop'
+import { runCut } from './cut'
 import { systemPrompt } from '../src/agent/prompt'
 import { openaiModel } from '../src/agent/openai'
 import { anthropicModel } from '../src/agent/anthropic'
@@ -42,8 +45,8 @@ import { TASKS } from './tasks'
 import { writeReport } from './report'
 import type { FollowUp, Grade, RunResult, Task } from './types'
 import type { Judge } from './graders'
-import type { Writer } from './env'
-import type { AgentWs, ModelRequest } from '../src/agent/contract'
+import type { EvalEnv, Writer } from './env'
+import type { AgentTool, AgentWs, ModelMessage, ModelRequest } from '../src/agent/contract'
 import type { Role } from '../src/data/model'
 import type { DocBody } from '../src/data/documents'
 import { makeIds } from '../src/agent/read'
@@ -76,6 +79,8 @@ export type RunOpts = {
   backend?: Backend
   // A pipeline's model per turn role (docs/specs/agent-pipeline.md): a fresh model per attempt and model id.
   pick?: () => (role: TurnRole) => AgentModel
+  // Every turn cut before each step and resumed from JSON alone (evals/cut.ts, D-434).
+  cut?: boolean
 }
 
 export const referenceModel = (task: Task): AgentModel => stubModel(task.reference, { name: 'stub', ...(task.research ? { research: task.research } : {}) })
@@ -94,13 +99,16 @@ const WRITE_CALLS = new RegExp(`\\b(${[...WRITE_TOOLS].join('|')})\\b`)
 // One attempt: a fresh env on the fixture, one turn, the graders over what it left. Anything that throws (the model,
 // the loop, a fixture) fails this attempt with its message, never the run.
 // The emulator mode's backend (evals/emulator.ts' emulate), handed in by evals/cli.mjs: run.ts never loads Firebase.
-export type Backend = (start: AgentWs, o: { role: Role; tag?: string }) => Promise<{ start: AgentWs; write: Writer; undo: () => Promise<AgentWs>; close: () => void; readBody: (id: string) => Promise<DocBody | null> }>
+export type Backend = (start: AgentWs, o: { role: Role; tag?: string }) => Promise<{ start: AgentWs; write: Writer; undo: () => Promise<AgentWs>; close: () => void; readBody: (id: string) => Promise<DocBody | null>; run?: Runner }>
+
+// What runs a turn: the loop itself, cut and resumed (evals/cut.ts), or the server's own path (evals/server.ts).
+export type Runner = (model: AgentModel, env: EvalEnv, tools: AgentTool[], history: ModelMessage[], ask: string, opts?: TurnOpts) => Promise<TurnResult>
 
 // `--map-budget` for the run under way (a smaller map, agent-pipeline.md §6); left out, the loop's default.
 let mapBudget: number | undefined
 
 // `pick`: a pipeline's model for a turn's role (docs/specs/agent-pipeline.md); left out, `model` runs every turn.
-export async function attempt(task: Task, model: AgentModel, o: { backend?: Backend; pick?: (role: TurnRole) => AgentModel } = {}): Promise<{ result?: RunResult; attempt: Attempt }> {
+export async function attempt(task: Task, model: AgentModel, o: { backend?: Backend; pick?: (role: TurnRole) => AgentModel; cut?: boolean } = {}): Promise<{ result?: RunResult; attempt: Attempt }> {
   const t0 = performance.now()
   const defs = EVAL_TOOLS.map((t) => t.def)
   let close = () => {}
@@ -208,7 +216,7 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
       // A message on a planned job takes the preview the model suggested, as the app's send does (D-328).
       const planned = env.job?.get()
       if (planned?.status === 'planned' && !planned.preview) env.job!.set(chooseAt(planned))
-      const r = await runTurn(watched, env, EVAL_TOOLS, history, ask, { transcript, turnId: `${turns.length + 1}`, ...(mapBudget ? { mapBudget } : {}) })
+      const r = await (em?.run ?? (o.cut ? runCut : runTurn))(watched, env, EVAL_TOOLS, history, ask, { transcript, turnId: `${turns.length + 1}`, ...(mapBudget ? { mapBudget } : {}) })
       notesSeen.push(seenThisTurn ?? '')
       history = r.history
       turns.push(o.pick ? Object.assign(r.turn, { model: current.name, role }) : r.turn)
@@ -279,7 +287,7 @@ export async function attempt(task: Task, model: AgentModel, o: { backend?: Back
 
 export async function runTask(task: Task, o: RunOpts = {}): Promise<TaskResult> {
   const attempts: Attempt[] = []
-  for (let i = 0; i < Math.max(1, o.repeat ?? 1); i++) attempts.push((await attempt(task, (o.model ?? referenceModel)(task, i), { ...(o.backend ? { backend: o.backend } : {}), ...(o.pick ? { pick: o.pick() } : {}) })).attempt)
+  for (let i = 0; i < Math.max(1, o.repeat ?? 1); i++) attempts.push((await attempt(task, (o.model ?? referenceModel)(task, i), { ...(o.backend ? { backend: o.backend } : {}), ...(o.pick ? { pick: o.pick() } : {}), ...(o.cut ? { cut: true } : {}) })).attempt)
   return { id: task.id, group: task.group, set: task.set, ask: task.ask, attempts }
 }
 
@@ -363,7 +371,7 @@ export function replayLines(r: Replayed[]): string[] {
 
 // ---- The command line
 
-type Args = { set?: string; group?: string; task?: string[]; repeat: number; wrong: boolean; emulator: boolean; writeFixtures: boolean; out?: string; model: string; judge?: string; replay?: string; pipeline?: string; strong?: string; compare?: [string, string]; mapBudget?: number }
+type Args = { set?: string; group?: string; task?: string[]; repeat: number; wrong: boolean; emulator: boolean; writeFixtures: boolean; out?: string; model: string; judge?: string; replay?: string; pipeline?: string; strong?: string; compare?: [string, string]; mapBudget?: number; cut?: boolean; server?: boolean }
 
 export function parseArgs(argv: string[]): Args {
   const a: Args = { repeat: 1, wrong: false, emulator: false, writeFixtures: false, model: 'stub' }
@@ -376,6 +384,8 @@ export function parseArgs(argv: string[]): Args {
     else if (k === '--repeat') a.repeat = Math.max(1, Number(v()) || 1)
     else if (k === '--wrong') a.wrong = true
     else if (k === '--emulator') a.emulator = true
+    else if (k === '--cut') a.cut = true
+    else if (k === '--server') a.server = true
     else if (k === '--write-fixtures') a.writeFixtures = true
     else if (k === '--out') a.out = v()
     else if (k === '--model') a.model = v()
@@ -474,6 +484,7 @@ export async function main(argv: string[], o: { backend?: Backend } = {}): Promi
     console.log(`\nreport: ${join(dir, 'report.md')} · what changed: ${join(dir, 'replay.md')}`)
     return 0
   }
+  if (a.server && !o.backend) throw new Error('--server runs through evals/cli.mjs; start the emulators first: npm run emulators')
   if (a.emulator && !o.backend) throw new Error('--emulator runs through evals/cli.mjs (it loads evals/emulator.ts with VITE_USE_EMULATORS=true); start the emulators first: npm run emulators')
   if (a.compare) {
     console.log(compareRuns(readRun(a.compare[0]), readRun(a.compare[1])).join('\n'))
@@ -500,13 +511,13 @@ export async function main(argv: string[], o: { backend?: Backend } = {}): Promi
   // Pictures are part of what's measured (`look`, the picture judge, D-327): say loudly when none can be drawn.
   const pictures = !!(await nodeRender('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"/>', { w: 4, h: 4 }))
   if (!pictures) console.warn('WARNING: no picture can be drawn (resvg did not load): look answers in words only and picture judges are skipped.')
-  const results = await runTasks(tasks, { repeat: a.repeat, model: real ? () => real.make() : a.wrong ? wrongModel : referenceModel, ...(a.emulator && o.backend ? { backend: o.backend } : {}), ...(pick ? { pick } : {}) })
+  const results = await runTasks(tasks, { repeat: a.repeat, model: real ? () => real.make() : a.wrong ? wrongModel : referenceModel, ...((a.emulator || a.server) && o.backend ? { backend: o.backend } : {}), ...(pick ? { pick } : {}), ...(a.cut ? { cut: true } : {}) })
   if (real) setJudge(null)
   mapBudget = undefined
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   const dir = a.out ? resolve(a.out) : join(ROOT, 'evals/results', stamp)
   mkdirSync(dir, { recursive: true })
-  const { summary } = writeReport(dir, results, { model: `${real ? `${real.name} (judge ${real.judgeName})` : a.wrong ? 'stub (wrong)' : 'stub'}${a.emulator ? ' · emulator' : ''}`, repeat: a.repeat, argv, pictures })
+  const { summary } = writeReport(dir, results, { model: `${real ? `${real.name} (judge ${real.judgeName})` : a.wrong ? 'stub (wrong)' : 'stub'}${a.emulator ? ' · emulator' : ''}${a.cut ? ' · cut' : ''}${a.server ? ' · server' : ''}`, repeat: a.repeat, argv, pictures })
   // The run's record (docs/specs/agent-pipeline.md §4): its manifest and summary, one line in the results' index.
   const t0 = results[0]?.attempts[0]?.transcript
   const rec = recordRun(dir, join(ROOT, 'evals/results'), {

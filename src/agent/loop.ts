@@ -54,7 +54,7 @@ import { viewOf, type Warning } from './changeset'
 import { notesOf } from '../model/notes'
 import { wrap } from './read/text'
 import { aboutPlanes, markOtherPlanes } from './read/names'
-import { parseSkill, skillGuide, unknownSkillNote, type Skill } from './skills'
+import { parseSkill, skillGuide, skillNamed, unknownSkillNote, type Skill } from './skills'
 import { skillChecks } from './skills/checks'
 import { jobText } from './job'
 import { plural, cut as cutTo } from '../model/words'
@@ -116,6 +116,40 @@ export type TurnOpts = {
   steer?: () => string[]
   // The provider's web search offered (D-360): on unless false.
   web?: boolean
+  // Called before each step's model call, with everything the loop needs to go on from here (D-434: the server keeps it,
+  // so a run whose worker dies resumes instead of starting again). Awaited; what it throws ends the turn by throwing (the
+  // worker lost the run, the person left the workspace). The env's own state (changes, short ids, job) is the caller's.
+  onStep?: (state: TurnState) => void | Promise<void>
+  // Goes on from a state `onStep` gave, instead of starting the turn: same prompt, map and messages, the next step's
+  // number. The history passed in is ignored (it's in the state).
+  resume?: TurnState
+}
+
+// A turn between two steps, as plain data. `n`: the step about to run.
+export type TurnState = {
+  v: 1
+  n: number
+  turnId: string
+  ask: string
+  system: string
+  map: string
+  where: string
+  notesText: string
+  guide: ModelMessage[]
+  past: ModelMessage[]
+  lead: ModelMessage[]
+  context: ModelMessage[]
+  mine: ModelMessage[]
+  steps: AgentStep[]
+  total: Usage
+  before: string[]
+  checked: boolean
+  trimmed: boolean
+  nudged: boolean
+  ms: number
+  about?: string[]
+  skill?: { name: string; rest: string }
+  researched?: boolean
 }
 
 // A message the person sent while the agent worked, as the model reads it between its steps.
@@ -303,7 +337,9 @@ async function callModel(model: AgentModel, req: ModelRequest, onText: (d: strin
 }
 
 export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool[], history: ModelMessage[], userMessage: string, opts: TurnOpts = {}): Promise<TurnResult> {
-  const t0 = performance.now()
+  const resume = opts.resume
+  if (resume) userMessage = resume.ask
+  const t0 = performance.now() - (resume?.ms ?? 0)
   const emit = (e: LoopEvent) => {
     try {
       opts.onEvent?.(e)
@@ -314,12 +350,14 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   const signal = opts.signal
   const budget = Math.max(1, opts.stepBudget ?? STEP_BUDGET)
   const keep = opts.keepResults ?? KEEP_RESULTS
-  emit({ type: 'turn_started' })
-  env.newTurn?.(userMessage)
+  if (!resume) {
+    emit({ type: 'turn_started' })
+    env.newTurn?.(userMessage)
+  }
 
   // Every write a tool makes goes as the agent, whatever the tool passes. Reads see the pending changes (S13: the
   // agent checks its own result); `change` builds on the workspace without them (liveWs) and keeps them on the env.
-  const turnId = `${opts.turnId ?? ++turnCount}`
+  const turnId = resume?.turnId ?? `${opts.turnId ?? ++turnCount}`
   let stepNow = 0
   const agentEnv: AgentEnv = {
     getWs: () => viewOf(env.changes, env.getWs()),
@@ -355,14 +393,14 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   // evals alike, since both run this loop.
   const viewer = env.actor.role === 'viewer'
   if (viewer) tools = tools.filter((t) => t.kind !== 'write')
-  const system = opts.system ?? systemPrompt({ workspaceName: ws.workspace?.name, viewer })
-  const map = workspaceMap(ws, env.ids, opts.mapBudget ? { budget: opts.mapBudget } : {})
+  const system = resume?.system ?? opts.system ?? systemPrompt({ workspaceName: ws.workspace?.name, viewer })
+  const map = resume?.map ?? workspaceMap(ws, env.ids, opts.mapBudget ? { budget: opts.mapBudget } : {})
   // The job (D-328), when there is one, read with where the person is: the model sees its plan every turn.
-  const job = env.job?.get()
-  const where = `${whereAmI(ws, env.ids, env.ui.currentView()).text}${job ? `\n\n${jobText(job)}` : ''}`
+  const job = resume ? null : env.job?.get()
+  const where = resume?.where ?? `${whereAmI(ws, env.ids, env.ui.currentView()).text}${job ? `\n\n${jobText(job)}` : ''}`
 
-  let past = [...history]
-  if (historyTokens(past) > (opts.compactAt ?? COMPACT_TOKENS)) {
+  let past = [...(resume?.past ?? history)]
+  if (!resume && historyTokens(past) > (opts.compactAt ?? COMPACT_TOKENS)) {
     try {
       // Append-only: no turn kept whole (its thinking would be bound to what the compaction drops).
       const keepTurns = appendOnly ? 0 : undefined
@@ -380,20 +418,22 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
   // A plan skill's guide comes again on the turn after its plan (agent-bugs 21: its "on go" steps are for that turn),
   // unless an append-only history still holds it.
   const skill = parseSkill(userMessage)
-  const active = skill && 'skill' in skill ? skill : !skill ? planSkillBefore(past) : null
+  const kept = resume?.skill ? skillNamed(resume.skill.name) : undefined
+  const active = resume ? (kept ? { skill: kept, rest: resume.skill!.rest } : null) : skill && 'skill' in skill ? skill : !skill ? planSkillBefore(past) : null
   const guideText = active ? skillGuide(active.skill, active.rest) : skill && 'unknown' in skill ? unknownSkillNote(skill.unknown) : ''
   if (active) {
     agentEnv.skill = active.skill.name
     agentEnv.skillInput = active.rest
   }
-  agentEnv.about = aboutPlanes(ws, userMessage, env.ui.currentView())
+  agentEnv.about = resume ? resume.about : aboutPlanes(ws, userMessage, env.ui.currentView())
+  if (resume?.researched) agentEnv.researching = 'done'
   const guideKept = appendOnly && past.some((m) => m.role === 'system' && m.tag === 'guide' && m.content === guideText)
-  const guide: ModelMessage[] = guideText && !guideKept ? [{ role: 'system', tag: 'guide', content: guideText }] : []
-  let checked = false
+  const guide: ModelMessage[] = resume?.guide ?? (guideText && !guideKept ? [{ role: 'system', tag: 'guide', content: guideText }] : [])
+  let checked = resume?.checked ?? false
   // The items pending when the turn began: a document made in this turn is one not among them (the answer's length).
-  const before = new Set((env.changes?.items ?? []).map((i) => i.id))
-  let trimmed = false
-  let nudged = false
+  const before = new Set(resume?.before ?? (env.changes?.items ?? []).map((i) => i.id))
+  let trimmed = resume?.trimmed ?? false
+  let nudged = resume?.nudged ?? false
   // Append-only: the context after the ask, kept in the history; the map and the notes only when they changed since
   // the copy last sent (a compaction drops them, so they come again after one).
   const lastSent = (tag: 'map' | 'notes') => {
@@ -403,25 +443,25 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     }
     return undefined
   }
-  const notesText = notes ? notesBlock(notes) : ''
+  const notesText = resume?.notesText ?? (notes ? notesBlock(notes) : '')
   // Append-only, a chat's first turn: the map and the notes BEFORE the ask (the order every other model gets), so
   // what's before the ask is the same for every chat in the workspace and Claude's cache can share it (anthropic.ts'
   // breakpoint on the map); later turns append them after their ask when they changed.
   const fresh = appendOnly && !past.length
-  const lead: ModelMessage[] = !fresh
+  const lead: ModelMessage[] = resume?.lead ?? (!fresh
     ? []
-    : [{ role: 'system', tag: 'map', content: map }, ...(notesText ? [{ role: 'system' as const, tag: 'notes' as const, content: notesText }] : [])]
-  const context: ModelMessage[] = !appendOnly
+    : [{ role: 'system', tag: 'map', content: map }, ...(notesText ? [{ role: 'system' as const, tag: 'notes' as const, content: notesText }] : [])])
+  const context: ModelMessage[] = resume?.context ?? (!appendOnly
     ? []
     : [
         ...(!fresh && lastSent('map') !== map ? [{ role: 'system' as const, tag: 'map' as const, content: map }] : []),
         ...(!fresh && notesText && lastSent('notes') !== notesText ? [{ role: 'system' as const, tag: 'notes' as const, content: notesText }] : []),
         { role: 'system', tag: 'where', content: where },
         ...guide,
-      ]
-  const head: ModelMessage[] = appendOnly ? [{ role: 'system', content: system }] : [{ role: 'system', content: system }, { role: 'system', content: map }, ...(notes ? [{ role: 'system' as const, content: notesText }] : [])]
+      ])
+  const head: ModelMessage[] = appendOnly ? [{ role: 'system', content: system }] : [{ role: 'system', content: system }, { role: 'system', content: map }, ...(notesText ? [{ role: 'system' as const, content: notesText }] : [])]
   // This turn's messages after the ask (assistant + tool results), and the whole chat as it will be returned.
-  const mine: ModelMessage[] = []
+  const mine: ModelMessage[] = [...(resume?.mine ?? [])]
   const byName = new Map(tools.map((t) => [t.def.name, t]))
   const defs = tools.map((t) => t.def)
   if (opts.transcript) {
@@ -429,8 +469,8 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     opts.transcript.toolsHash ??= toolsHash(defs)
   }
 
-  const steps: AgentStep[] = []
-  let total: Usage = { ...NO_USAGE }
+  const steps: AgentStep[] = [...(resume?.steps ?? [])]
+  let total: Usage = { ...(resume?.total ?? NO_USAGE) }
   let answer = ''
   let end: AgentTurn['end'] = 'budget'
   let error: string | undefined
@@ -447,7 +487,33 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     return { turn, history: [...past, ...lead, ask, ...context, ...mine] }
   }
 
-  for (let n = 1; n <= budget; n++) {
+  const stateAt = (n: number): TurnState => ({
+    v: 1,
+    n,
+    turnId,
+    ask: userMessage,
+    system,
+    map,
+    where,
+    notesText,
+    guide: [...guide],
+    past: [...past],
+    lead: [...lead],
+    context: [...context],
+    mine: [...mine],
+    steps: [...steps],
+    total: { ...total },
+    before: [...before],
+    checked,
+    trimmed,
+    nudged,
+    ms: performance.now() - t0,
+    ...(agentEnv.about ? { about: agentEnv.about } : {}),
+    ...(active ? { skill: { name: active.skill.name, rest: active.rest } } : {}),
+    ...(agentEnv.researching === 'done' ? { researched: true } : {}),
+  })
+
+  for (let n = resume?.n ?? 1; n <= budget; n++) {
     if (signal?.aborted) {
       end = 'stopped'
       break
@@ -455,6 +521,7 @@ export async function runTurn(model: AgentModel, env: AgentEnv, tools: AgentTool
     const final = n === budget
     // What the person wrote since the last step (D-328): their message, before the model's next step.
     if (n > 1) for (const said of opts.steer?.() ?? []) if (said.trim()) mine.push({ role: 'user', content: STEER(said.trim()) })
+    await opts.onStep?.(stateAt(n))
     stepNow = n
     emit({ type: 'step_started', n, final })
     const s0 = performance.now()

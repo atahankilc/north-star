@@ -29,15 +29,15 @@ feature comes back as a piece, and check them with the user then.
   card's meta line; the REGION filter narrows competitors only, a place counting inside the bigger ones (D-145).
 
 ## Stack, hosting, backend
-- Static React SPA on GitHub Pages, deployed by Actions, at https://north-star.atem-lab.com/ (D-430; the repo in the `atem-lab` org, whose site repo holds atem-lab.com and the product page, D-428); three.js via @react-three/fiber for the backdrop (D-001, D-003).
+- Static React SPA on GitHub Pages, deployed by Actions, at https://north-star.atem-lab.com/ (D-430; the repo in the `atem-lab` org, whose site repo `atem-lab.github.io` holds atem-lab.com, D-428, D-429: the name `atem` typed with a block cursor, a row a product, North Star's product page told by scrolling, the legal pages, D-433); three.js via @react-three/fiber for the backdrop (D-001, D-003).
 - No app server: the browser talks to Firebase directly (Auth, Firestore, RTDB europe-west1); rules enforce security
   (D-002, D-014). The only server code: Cloud Functions (Blaze since 2026-11-23): the workspace key (D-079, D-427), atem-lab.com's waitlist (`joinWaitlist`, D-429; `tellWaitlist` emails the lab, D-431; confirmed by email, the contact form, deleting an account, the legal links: D-432), RTDB's copy of
   who may do what (D-426), cleanups (a deleted workspace's data and files, documents' files no summary points to, D-425).
 - Plain paths (`/workspaces/<id>`, `?focus=<id>`, `beside=`), BrowserRouter, index.html copied to 404.html; signing out
   goes to `/`; a link opened signed out continues after sign-in; paths only via `src/app/paths.ts` (D-070, D-174, D-248).
 - Local dev and tests on emulators: a `demo-` project, test users Alice/Bob/Carol, RTDB on 9010 (D-020).
-- Every deploy (rules, indexes, functions) is asked for first, after `npm run test:rules`; until Blaze the storage-less
-  command; an index deploy never deletes Firebase's indexes (D-322).
+- Every deploy (rules, indexes, functions) is asked for first, after `npm run test:rules`; `deploy:rules` leaves
+  Storage out (`deploy:storage`, its own); an index deploy never deletes Firebase's indexes (D-322).
 - Component gallery (D-324, docs/specs/gallery.md): `gallery.html`, dev only, never built; demo realm parts on real
   time; one `X.gallery.tsx` beside each component in a covered folder (`src/ui`, `src/views/workspace`, `src/onboarding`), required with a new or changed
   component, `npm run check:gallery`; `check:gallery:live` runs the examples that act in headless Chrome (CI's own job, D-361); `check:scenes` plays every lesson's scene to its end the same way (D-401).
@@ -419,6 +419,8 @@ feature comes back as a piece, and check them with the user then.
   the person picks one preview at the end or one per step (the agent suggests, a message takes the suggestion), the
   next step starting by itself; no fixed step count (a person's budget and `[stop]`); a message sent while it runs
   steers it at the next step; done is checked from the job's state.
+
+- The agent on the server (D-434, docs/specs/agent-server.md; planned, P0 begun; until built D-312, D-329 and D-427 stand): the loop runs on the server as the person and only proposes; paid by the lab's key (a monthly limit per person and in total), the workspace's (both limits optional) or one's own (no limit; kept in the browser or the account, as they say), picked per chat, never switched silently; audit of counts, never text; a backoffice for the lab's key.
 
 ## Onboarding (built, docs/specs/onboarding.md)
 - Onboarding (D-315, D-349): taught at the moment of use, one at a time: a welcome on the first canvas (the canvas

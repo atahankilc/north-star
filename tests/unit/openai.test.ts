@@ -101,6 +101,15 @@ describe('the request', () => {
     })
   })
 
+  it('from GPT-6.2 on the system prompt goes first in the input (D-434): OpenAI bills `instructions` uncached there', () => {
+    const ask: ModelMessage[] = [{ role: 'system', content: 'PROMPT' }, { role: 'system', content: 'MAP' }, { role: 'user', content: 'x' }]
+    for (const model of ['gpt-6.2-sol', 'gpt-6.10-x', 'gpt-7', 'gpt-12.1-y']) {
+      const b = requestBody(req(ask), { model })
+      expect([b.instructions, b.input]).toEqual([undefined, [{ role: 'developer', content: 'PROMPT' }, { role: 'developer', content: 'MAP' }, { role: 'user', content: 'x' }]])
+    }
+    for (const model of ['gpt-6.1-terra', 'gpt-6-luna', 'gpt-5.6-terra', 'gpt-5.4-mini']) expect(requestBody(req(ask), { model }).instructions).toBe('PROMPT')
+  })
+
   it('the last step: tools listed, tool_choice none; no tools: no tool fields; a model that does not reason: no reasoning block', () => {
     expect(requestBody(req([{ role: 'user', content: 'x' }], { toolChoice: 'none' }), { model: 'm', reasoning: 'low' })).toMatchObject({ tool_choice: 'none', tools: expect.any(Array) })
     const bare = requestBody({ messages: [{ role: 'user', content: 'x' }], tools: [] }, { model: 'gpt-4.1', reasoning: null })
@@ -343,11 +352,14 @@ describe('listModels and the picker', () => {
   })
 
   it('effort medium by default for reasoning models; the suggestion is never the cheapest; prices for the report', () => {
-    expect([effortFor('gpt-5.6-sol'), effortFor('gpt-5.9-new'), effortFor('o3'), effortFor('gpt-4o'), effortFor('gpt-5-chat-latest')]).toEqual(['medium', 'medium', 'medium', null, null])
+    expect([effortFor('gpt-5.6-sol'), effortFor('gpt-5.9-new'), effortFor('o3'), effortFor('gpt-4o'), effortFor('gpt-5-chat-latest'), effortFor('gpt-6-sol'), effortFor('gpt-6.2-astra'), effortFor('gpt-10')]).toEqual(['medium', 'medium', 'medium', null, null, 'medium', 'medium', 'medium'])
     const cheapest = [...KNOWN_MODELS].sort((a, b) => a.price!.input - b.price!.input)[0].id
     expect(SUGGESTED).not.toBe(cheapest)
     expect(costOf('gpt-5.6-terra', { input: 1_000_000, cached: 500_000, output: 100_000 })).toBeCloseTo(0.5 * 2 + 0.5 * 0.2 + 0.1 * 12)
     expect(costOf('openai:gpt-5.6-terra', { input: 1_000_000, output: 0 })).toBeCloseTo(2)
+    // Cache writes (D-434): above plain input where the model bills them, as plain input where it doesn't.
+    expect(costOf('gpt-6.1-terra', { input: 12_000, cached: 4_000, cacheWrite: 7_000, output: 0 })).toBeCloseTo((1_000 * 1 + 4_000 * 0.05 + 7_000 * 1.25) / 1e6, 12)
+    expect(costOf('gpt-5.4-mini', { input: 1_000_000, cacheWrite: 1_000_000, output: 0 })).toBeCloseTo(0.75)
     expect(costOf('unknown-model', { input: 5, output: 5 })).toBe(0)
   })
 })

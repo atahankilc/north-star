@@ -987,6 +987,23 @@ service cloud.firestore {
         && d.updatedAt is number;
     }
 
+    // The agent on the server (D-434, docs/specs/agent-server.md): a run and a chat's place on the server, read by whose they
+    // are, written by the functions only. No text in either. `private/aiKeys`: which of their own keys a person keeps in
+    // their account (`sk-…abcd`), the same.
+    match /agentRuns/{id} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+    match /agentThreads/{id} {
+      allow get: if signedIn() && (resource == null || resource.data.uid == request.auth.uid);
+      allow list: if signedIn() && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+    match /users/{uid}/private/aiKeys {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
     match /users/{uid}/private/onboarding {
       allow read, delete: if signedIn() && request.auth.uid == uid;
       allow create, update: if signedIn() && request.auth.uid == uid && validOnboarding(request.resource.data);

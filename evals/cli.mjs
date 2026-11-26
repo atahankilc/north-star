@@ -5,10 +5,11 @@
 import { runnerImport } from 'vite'
 
 const argv = process.argv.slice(2)
-const emulator = argv.includes('--emulator')
+const server = argv.includes('--server')
+const emulator = server || argv.includes('--emulator')
 if (emulator) process.env.VITE_USE_EMULATORS = 'true'
 
-const { module } = await runnerImport(new URL(emulator ? './emulatorMain.ts' : './run.ts', import.meta.url).pathname)
+const { module } = await runnerImport(new URL(server ? './serverMain.ts' : emulator ? './emulatorMain.ts' : './run.ts', import.meta.url).pathname)
 try {
   process.exitCode = await module.main(argv)
 } catch (e) {

@@ -76,7 +76,7 @@ describe('the request', () => {
       else done = ev.response
     }
     expect(deltas).toEqual(['Hel', 'lo'])
-    expect(done).toMatchObject({ text: 'Hello', toolCalls: [], stop: 'end', usage: { input: 150, output: 20, cached: 40 }, responseId: 'msg_1' })
+    expect(done).toMatchObject({ text: 'Hello', toolCalls: [], stop: 'end', usage: { input: 150, output: 20, cached: 40, cacheWrite: 10 }, responseId: 'msg_1' })
     const [c] = calls
     expect(c.url).toMatch(/^https:\/\/api\.anthropic\.com\/v1\/messages/)
     // The key only in the auth header (SDK 1.x sends it as `authorization`; older ones `x-api-key`), never in the body.

@@ -126,6 +126,53 @@
           }
         }
       }
+    },
+    "agentLive": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+    "agentCtl": {
+      "$uid": {
+        "$run": {
+          ".read": "auth != null && auth.uid === $uid",
+          "stop": {
+            ".write": "auth != null && auth.uid === $uid && newData.val() === true"
+          },
+          "here": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "newData.val() === now"
+          },
+          "view": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "newData.isString() && newData.val().length <= 20000"
+          },
+          "words": {
+            "$id": {
+              ".write": "auth != null && auth.uid === $uid && newData.exists() && !data.exists()",
+              ".validate": "newData.hasChildren(['text', 'at'])",
+              "text": {
+                ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20000"
+              },
+              "at": {
+                ".validate": "newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "done": {
+            "$id": {
+              ".write": "auth != null && auth.uid === $uid && newData.exists() && !data.exists()",
+              ".validate": "newData.val() === true || (newData.isString() && newData.val().length <= 300)"
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }

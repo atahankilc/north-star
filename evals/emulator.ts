@@ -19,6 +19,7 @@ import { apply } from '../src/ops/firestore'
 import { undo, useHistory } from '../src/data/history'
 import { OpsRefused, type OpError } from '../src/ops/types'
 import { toDocs } from '../src/ops/docs'
+import { toChangeDoc } from '../src/model/changeLog'
 import { fromDocs, WS_COLLECTIONS, type Docs, type RawDoc } from '../src/model/fromDocs'
 import type { Role } from '../src/data/model'
 import type { AgentWs } from '../src/agent/contract'
@@ -26,7 +27,7 @@ import type { Writer } from './env'
 import { NOTES_ID } from '../src/model/notes'
 import { readDocBody, type DocBody } from '../src/data/documents'
 
-const PROJECT = 'demo-north-star'
+export const PROJECT = 'demo-north-star'
 const FIRESTORE = 'http://127.0.0.1:8080'
 const BASE = `projects/${PROJECT}/databases/(default)/documents`
 
@@ -64,6 +65,10 @@ async function seed(wid: string, start: AgentWs, uid: string, role: Role) {
     const { id: _i, ...fields } = b as Record<string, unknown>
     writes.push({ update: { name: `${BASE}/workspaces/${wid}/documents/${id}/content/body`, fields: fieldsOf(fields) } })
   }
+  // The people list, as the app and the server's agent read it (members/{uid}).
+  for (const m of start.members ?? []) writes.push({ update: { name: `${BASE}/workspaces/${wid}/members/${m.uid}`, fields: fieldsOf({ name: m.name, ...(m.email ? { email: m.email } : {}), joinedAt: 1 }) } })
+  // The change log (S16), as the app and the server's agent read it (changes/{id}).
+  for (const [i, c] of (start.changeLog ?? []).entries()) writes.push({ update: { name: `${BASE}/workspaces/${wid}/changes/${c.id ?? `c${i}`}`, fields: fieldsOf(toChangeDoc(c)) } })
   for (let i = 0; i < writes.length; i += 400) {
     const r = await fetch(`${FIRESTORE}/v1/${BASE}:commit`, { method: 'POST', headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }, body: JSON.stringify({ writes: writes.slice(i, i + 400) }) })
     if (!r.ok) throw new Error(`seeding the emulator failed (${r.status}): ${(await r.text()).slice(0, 300)}`)

@@ -102,6 +102,9 @@ export const SUMMARY_CARDS_CHARS = 4000
 
 // The workspace's people a picker lists (`@` mentions, given to, the deck's filter): the first by name.
 export const MEMBERS_LISTED = 100
+// What the agent reads beside the store, in the tab and on the server (D-434): the newest changes, the people by name.
+export const CHANGES_READ = 300
+export const MEMBERS_READ = 200
 
 // Writes in one batch of a write that has to be cut. Firestore itself has no cap on writes since March 2023, only 10 MiB
 // a request; the browser's SDK takes a batch's docs in time that grows with their square, on the main thread, so a batch

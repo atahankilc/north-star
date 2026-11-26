@@ -208,7 +208,8 @@ function usageOf(u: BetaMessage['usage'] | undefined): Usage {
   if (!u) return { input: 0, output: 0 }
   const read = u.cache_read_input_tokens ?? 0
   const searches = u.server_tool_use?.web_search_requests ?? 0
-  return { input: (u.input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) + read, output: u.output_tokens ?? 0, cached: read, ...(searches ? { searches } : {}) }
+  const cacheWrite = u.cache_creation_input_tokens ?? 0
+  return { input: (u.input_tokens ?? 0) + cacheWrite + read, output: u.output_tokens ?? 0, cached: read, ...(cacheWrite ? { cacheWrite } : {}), ...(searches ? { searches } : {}) }
 }
 
 // What the content searched and read (the results), and the pages its text cites.

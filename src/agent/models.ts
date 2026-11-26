@@ -23,8 +23,10 @@ import { claudeModern } from './provider'
 export type Fit = 'well' | 'struggles' | 'unknown'
 export const FIT_WORDS: Record<Fit, string> = { well: 'works well', struggles: 'may struggle with big changes', unknown: 'not tried yet' }
 
-// USD per million tokens. Cached input is billed at `cachedInput`; reasoning tokens are part of output.
-export type Price = { input: number; cachedInput: number; output: number }
+// USD per million tokens. Cached input is billed at `cachedInput`, input written to the cache at `cacheWrite` (left out:
+// as plain input); reasoning tokens are part of output. One request's tiers (OpenAI past 272k input, Haiku 5.5 past
+// 100k) aren't here: the agent's requests stay well under them.
+export type Price = { input: number; cachedInput: number; cacheWrite?: number; output: number }
 
 export type KnownModel = {
   id: string
@@ -36,18 +38,22 @@ export type KnownModel = {
   price?: Price
 }
 
-// Prices from OpenAI's page on 2026-10-29 (agent.md §4.8; cached input assumed at 10 % where the page didn't say).
-// Check the page when a model is added.
+// Prices from OpenAI's page on 2026-11-25 (gpt-5.6-sol's is promotional until 2026-11-30). Check the page when a model is
+// added.
 export const KNOWN_MODELS: KnownModel[] = [
-  { id: 'gpt-5.6-sol', provider: 'openai', fit: 'unknown', effort: 'medium', price: { input: 4, cachedInput: 0.4, output: 20 } },
-  { id: 'gpt-5.6-terra', provider: 'openai', fit: 'unknown', effort: 'medium', price: { input: 2, cachedInput: 0.2, output: 12 } },
+  { id: 'gpt-6.2-sol', provider: 'openai', fit: 'unknown', effort: 'medium', price: { input: 2, cachedInput: 0.1, cacheWrite: 2.5, output: 10 } },
+  { id: 'gpt-6.1-terra', provider: 'openai', fit: 'unknown', effort: 'medium', price: { input: 1, cachedInput: 0.05, cacheWrite: 1.25, output: 5 } },
+  { id: 'gpt-6-luna', provider: 'openai', fit: 'unknown', effort: 'medium', price: { input: 0.1, cachedInput: 0.01, cacheWrite: 0.125, output: 0.5 } },
+  { id: 'gpt-5.6-sol', provider: 'openai', fit: 'unknown', effort: 'medium', price: { input: 4, cachedInput: 0.4, cacheWrite: 5, output: 20 } },
+  { id: 'gpt-5.6-terra', provider: 'openai', fit: 'unknown', effort: 'medium', price: { input: 2, cachedInput: 0.2, cacheWrite: 2.5, output: 12 } },
   { id: 'gpt-5.4-mini', provider: 'openai', fit: 'unknown', effort: 'medium', price: { input: 0.75, cachedInput: 0.075, output: 4.5 } },
-  // Anthropic's (D-329), prices per million from Anthropic's table as of 2026-10-06 (cache reads as listed; writes,
-  // 1.25 × input, counted as input here). Check the page when a model is added.
-  { id: 'anthropic:claude-opus-5-5', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 4, cachedInput: 0.2, output: 20 } },
-  { id: 'anthropic:claude-sonnet-5-5', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 2, cachedInput: 0.2, output: 10 } },
-  { id: 'anthropic:claude-haiku-5-5', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 0.1, cachedInput: 0.01, output: 0.5 } },
-  { id: 'anthropic:claude-fable-5-1', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 10, cachedInput: 0.25, output: 50 } },
+  // Anthropic's (D-329), prices per million from Anthropic's table on 2026-11-25 (5-minute cache writes; Haiku 5.5's up to
+  // 100k a prompt). Check the page when a model is added.
+  { id: 'anthropic:claude-opus-5-5', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 4, cachedInput: 0.2, cacheWrite: 5, output: 20 } },
+  { id: 'anthropic:claude-sonnet-5-5', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 2, cachedInput: 0.1, cacheWrite: 2.5, output: 10 } },
+  { id: 'anthropic:claude-haiku-5-5', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 0.1, cachedInput: 0.01, cacheWrite: 0.125, output: 0.5 } },
+  { id: 'anthropic:claude-fable-5-2', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 8, cachedInput: 0.2, cacheWrite: 10, output: 40 } },
+  { id: 'anthropic:claude-fable-5-1', provider: 'anthropic', fit: 'unknown', effort: 'medium', price: { input: 10, cachedInput: 0.25, cacheWrite: 12.5, output: 50 } },
 ]
 
 export type ProviderId = KnownModel['provider']
@@ -69,11 +75,11 @@ export const DEFAULT_EFFORT: Effort = 'medium'
 
 const known = (id: string) => KNOWN_MODELS.find((m) => m.id === id)
 
-// OpenAI's reasoning models: the gpt-5 family and the o-series. Others (gpt-4.1, gpt-4o) get no reasoning block.
+// OpenAI's reasoning models: gpt-5 and every generation after it, and the o-series. Others (gpt-4.1, gpt-4o) get no reasoning block.
 // The `*-chat-latest` models (what ChatGPT runs) take no reasoning block.
 // Claude's 4.6+ models always think (adaptive; provider.ts' `claudeModern`), so they take an effort too.
 export const reasons = (id: string) =>
-  providerOf(id) === 'anthropic' ? claudeModern(bareId(id)) : /^(gpt-5|o\d)/.test(id) && !/-chat(-latest)?$/.test(id)
+  providerOf(id) === 'anthropic' ? claudeModern(bareId(id)) : /^(gpt-([5-9]|\d{2})|o\d)/.test(id) && !/-chat(-latest)?$/.test(id)
 
 // The effort to send for a model: what we know, else medium for a reasoning model, else none.
 export function effortFor(id: string): Effort | null {
@@ -126,10 +132,11 @@ export function costOf(model: string, u: Usage): number {
   const p = priceOf(model)
   if (!p) return 0
   const cached = u.cached ?? 0
+  const written = u.cacheWrite ?? 0
   // Web searches (D-360) cost the same on either provider, apart from tokens; a model that costs nothing (the stubs)
   // searched nothing real.
   const searches = p.input || p.output ? (u.searches ?? 0) * SEARCH_PRICE : 0
-  return ((u.input - cached) * p.input + cached * p.cachedInput + u.output * p.output) / 1_000_000 + searches
+  return ((u.input - cached - written) * p.input + cached * p.cachedInput + written * (p.cacheWrite ?? p.input) + u.output * p.output) / 1_000_000 + searches
 }
 
 // ---- Building the model

@@ -39,6 +39,9 @@
       "enabled": true,
       "port": 4000
     },
-    "singleProjectMode": true
+    "singleProjectMode": true,
+    "tasks": {
+      "port": 9499
+    }
   }
 }

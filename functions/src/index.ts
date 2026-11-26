@@ -2,7 +2,7 @@
 // The key is encrypted with AI_KEY_SECRET and kept in aiSecrets/{wid}, which no client can read (firestore.rules).
 // Members the owners allow call OpenAI through `ai` (the agent, D-427), which streams the answer back and logs what each
 // call used.
-import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqual } from 'node:crypto'
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 import { initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getDatabaseWithUrl } from 'firebase-admin/database'
@@ -13,12 +13,16 @@ import { HttpsError, onCall, onRequest } from 'firebase-functions/https'
 import { logger } from 'firebase-functions'
 import { onSchedule } from 'firebase-functions/scheduler'
 import { setGlobalOptions } from 'firebase-functions/options'
-import { defineSecret } from 'firebase-functions/params'
+import { defineSecret, defineString } from 'firebase-functions/params'
+import { getFunctions } from 'firebase-admin/functions'
+import { onTaskDispatched } from 'firebase-functions/tasks'
 import { fateOf, GONE_NAME, isFresh } from './account.js'
 import { isOwner, mayUseKey, type Access, type Workspace } from './access.js'
 import { accessOf, docAccessOf, sameAccess, sameDocAccess } from './mirror.js'
 import { confirmMail, CONFIRMS_A_DAY, ContactError, contactMail, CONTACTS_A_DAY, type Mail, PENDING_KEPT_MS, readConfirmBody, readContactBody, RESEND_AFTER_MS } from './mail.js'
 import { BadRequest, cleanBody, MODEL_ID, modelsAllowed } from './request.js'
+import { scrub, seal, unseal } from './seal'
+import type { Deps as AgentDeps } from './agent/serve'
 import { readWaitlistBody, WaitlistError, waitlistNotice, type WaitlistEntry } from './waitlist.js'
 
 initializeApp()
@@ -47,27 +51,10 @@ const FIRESTORE_REGION = 'europe-west3'
 const configRef = (wid: string) => db().doc(`workspaces/${wid}/ai/config`)
 const secretRef = (wid: string) => db().doc(`aiSecrets/${wid}`)
 
-// ---- The key at rest: AES-256-GCM with a key derived from the secret ----
+// ---- The key at rest (seal.ts) ----
 
-function cipherKey() {
-  return createHash('sha256').update(AI_KEY_SECRET.value()).digest()
-}
-
-function encrypt(text: string) {
-  const iv = randomBytes(12)
-  const c = createCipheriv('aes-256-gcm', cipherKey(), iv)
-  const data = Buffer.concat([c.update(text, 'utf8'), c.final()])
-  return { data: data.toString('base64'), iv: iv.toString('base64'), tag: c.getAuthTag().toString('base64') }
-}
-
-function decrypt(box: { data: string; iv: string; tag: string }) {
-  const d = createDecipheriv('aes-256-gcm', cipherKey(), Buffer.from(box.iv, 'base64'))
-  d.setAuthTag(Buffer.from(box.tag, 'base64'))
-  return Buffer.concat([d.update(Buffer.from(box.data, 'base64')), d.final()]).toString('utf8')
-}
-
-// OpenAI quotes part of a bad key in its errors; never pass that on.
-const scrub = (text: string) => text.replace(/sk-[A-Za-z0-9_*.-]+/g, 'sk-…')
+const encrypt = (text: string) => seal(text, AI_KEY_SECRET.value())
+const decrypt = (box: { data: string; iv: string; tag: string }) => unseal(box, AI_KEY_SECRET.value())
 
 async function workspaceOf(wid: unknown): Promise<Workspace> {
   if (typeof wid !== 'string' || !/^[A-Za-z0-9]{1,128}$/.test(wid)) throw new HttpsError('invalid-argument', 'No such workspace.')
@@ -286,6 +273,12 @@ export const cleanUpWorkspaceAi = onDocumentDeleted({ document: 'workspaces/{wid
   // Invites (D-323) the client didn't get to.
   const invites = await db().collection('invites').where('workspaceId', '==', wid).get()
   await Promise.all(invites.docs.map((d) => d.ref.delete()))
+  // Its chats on the server (D-434): whose they are, and what they kept.
+  const threads = await db().collection('agentThreads').where('wid', '==', wid).get()
+  for (const t of threads.docs) {
+    await getStorage().bucket().deleteFiles({ prefix: `agent/${String(t.data().uid)}/threads/${wid}/`, force: true }).catch((e) => logger.warn('threads left', { wid, error: String(e) }))
+    await t.ref.delete()
+  }
   // Its documents' files (D-425), whoever's they were.
   await getStorage().bucket().deleteFiles({ prefix: `workspaces/${wid}/` }).catch((e) => logger.warn('files left', { wid, error: String(e) }))
 })
@@ -596,7 +589,112 @@ export const deleteAccount = onCall({ cors: ORIGINS, timeoutSeconds: 540 }, asyn
       await d.ref.delete()
     }
   }
+  // The agent on the server (D-434): their runs, chats and keys, and what was kept for them.
+  for (const c of ['agentRuns', 'agentThreads']) {
+    const w = db().bulkWriter()
+    for (const d of (await db().collection(c).where('uid', '==', uid).get()).docs) {
+      if (c === 'agentRuns') void w.delete(db().doc(`aiSecrets/run_${d.id}`))
+      void w.delete(d.ref)
+    }
+    await w.close()
+  }
+  await Promise.all(['openai', 'anthropic'].map((p) => db().doc(`aiSecrets/user_${uid}_${p}`).delete()))
+  await Promise.all([rtdb().ref(`agentLive/${uid}`).remove(), rtdb().ref(`agentCtl/${uid}`).remove()])
+  await getStorage().bucket().deleteFiles({ prefix: `agent/${uid}/`, force: true }).catch((e) => logger.warn('agent files left', { error: String(e) }))
   await db().recursiveDelete(db().doc(`users/${uid}`))
   await getAuth().deleteUser(uid)
   return { ok: true }
+})
+
+// ---- The agent on the server (D-434, docs/specs/agent-server.md; agent/serve.ts, loaded when one of these runs) ----
+
+// The project's web key (public by design): what a person's own session on the server signs in with. Set at the deploy.
+const WEB_API_KEY = defineString('WEB_API_KEY', { default: '' })
+const RUN_SECONDS = 1800
+// A turn still going this long before the task's end is kept and goes on in the next task.
+const RUN_MARGIN_MS = 6 * 60_000
+
+async function agent() {
+  const [serve, { bucketKeep }] = await Promise.all([import('./agent/serve'), import('./agent/keep')])
+  const deps: AgentDeps = {
+    db: db(),
+    rtdb: rtdb(),
+    keep: bucketKeep(() => getStorage().bucket()),
+    web: { projectId: PROJECT, apiKey: process.env.FUNCTIONS_EMULATOR === 'true' ? 'demo' : WEB_API_KEY.value() },
+    secret: AI_KEY_SECRET.value(),
+    ...(process.env.OPENAI_API_BASE ? { openai: process.env.OPENAI_API_BASE } : {}),
+    enqueue: async (run) => {
+      await getFunctions().taskQueue('locations/europe-west1/functions/runAgent').enqueue({ run }, { dispatchDeadlineSeconds: RUN_SECONDS })
+    },
+    log: (what, more) => logger.info(what, more ?? {}),
+  }
+  return { serve, deps }
+}
+
+// A refusal in the person's own words; anything else is ours to look at, and says nothing of itself.
+async function answered<T>(go: (a: Awaited<ReturnType<typeof agent>>) => Promise<T>): Promise<T> {
+  const a = await agent()
+  try {
+    return await go(a)
+  } catch (e) {
+    if (e instanceof a.serve.BadAsk) throw new HttpsError('invalid-argument', e.message)
+    if (e instanceof a.serve.NotAMember) throw new HttpsError('permission-denied', 'You are not in this workspace.')
+    if (e instanceof a.serve.Refused) throw new HttpsError(e.code, e.message)
+    logger.error('agent call broke', { error: scrub(String((e as Error)?.message ?? e)) })
+    throw new HttpsError('internal', "That didn't work; try again.")
+  }
+}
+
+type Signed = { auth?: { uid: string; token: { name?: string; auth_time?: number } } }
+const callerOf = (req: Signed) => {
+  if (!req.auth) throw new HttpsError('unauthenticated', 'Sign in again.')
+  return { uid: req.auth.uid, ...(req.auth.token.name ? { name: String(req.auth.token.name).slice(0, 80) } : {}) }
+}
+
+const agentCall = { secrets: [AI_KEY_SECRET], cors: ORIGINS, memory: '512MiB' as const }
+export const startAgent = onCall(agentCall, (req) => answered(({ serve, deps }) => serve.startAgentRun(callerOf(req), req.data, deps)))
+export const tellAgent = onCall(agentCall, (req) => answered(({ serve, deps }) => serve.tellAgent(callerOf(req), req.data, deps)))
+export const agentChanges = onCall(agentCall, (req) => answered(({ serve, deps }) => serve.agentChanges(callerOf(req), req.data, deps)))
+
+export const setOwnKey = onCall(agentCall, (req) => {
+  const who = callerOf(req)
+  if (!isFresh(req.auth?.token.auth_time, Date.now())) throw new HttpsError('failed-precondition', 'Sign in again to change your key.')
+  return answered(({ serve, deps }) =>
+    serve.setOwnAgentKey(who, req.data, {
+      ...deps,
+      // A free call that proves the key works.
+      check: async (key, p) =>
+        (p === 'openai'
+          ? await fetch(`${OPENAI}/models`, { headers: { Authorization: `Bearer ${key}` } })
+          : await fetch('https://api.anthropic.com/v1/models', { headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' } })
+        ).status,
+    }),
+  )
+})
+
+export const runAgent = onTaskDispatched(
+  { secrets: [AI_KEY_SECRET], timeoutSeconds: RUN_SECONDS, memory: '1GiB', cpu: 1, concurrency: 8, maxInstances: 10, retryConfig: { maxAttempts: 8, minBackoffSeconds: 5, maxBackoffSeconds: 60 }, rateLimits: { maxConcurrentDispatches: 60 } },
+  async (req) => {
+    const run = (req.data as { run?: unknown })?.run
+    if (typeof run !== 'string' || !/^[A-Za-z0-9]{1,64}$/.test(run)) return
+    const { serve, deps } = await agent()
+    let worked: string
+    try {
+      worked = await serve.workRun(run, { ...deps, deadline: Date.now() + RUN_SECONDS * 1000 - RUN_MARGIN_MS })
+    } catch (e) {
+      // Another worker holds it: not a failure, the task is simply tried again later.
+      if (e instanceof serve.Held) {
+        logger.info('run held elsewhere', { run })
+        throw new Error('held')
+      }
+      throw e
+    }
+    logger.info('run worked', { run, worked })
+  },
+)
+
+// Runs left by a worker that died, own keys left behind, live nodes of runs that ended (agent/serve.ts).
+export const sweepAgent = onSchedule({ schedule: 'every 5 minutes', timeZone: 'Europe/Berlin', secrets: [AI_KEY_SECRET], memory: '512MiB' }, async () => {
+  const { serve, deps } = await agent()
+  await serve.closeStale(deps)
 })

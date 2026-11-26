@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-11-19 (one interface size D-417; a piece kind only through its record D-411; the threads' button in the HUD's corner D-402; the threads' list by place and a conversation in bubbles D-398; checks against repeats D-391; the workspaces page round with a line D-390; shared code round 2 D-388; surfaces D-387 built; the backdrop in colour, no welcome D-386; controls D-384 built; pieces' names a step under sections' D-379; writing together D-374 built; documents written in the app D-373; light theme's colours D-368; the agent's web D-360 checked on the stub and pushed; windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
+_Last updated: 2026-11-25 (the agent on the server D-434, P0; the site's name and product page D-433; legal links, deleting an account, the waitlist confirmed D-432; the app's own domain D-430; one interface size D-417; a piece kind only through its record D-411; the threads' button in the HUD's corner D-402; the threads' list by place and a conversation in bubbles D-398; checks against repeats D-391; the workspaces page round with a line D-390; shared code round 2 D-388; surfaces D-387 built; the backdrop in colour, no welcome D-386; controls D-384 built; pieces' names a step under sections' D-379; writing together D-374 built; documents written in the app D-373; light theme's colours D-368; the agent's web D-360 checked on the stub and pushed; windows and docked panels D-359; cards on one face D-358 done; onboarding content D-349; Steps on Tabs, tabs in one row; check:kit 0, D-326 done; buttons as cells D-344; two buttons and one HUD icon set D-343, light theme D-342, the landing D-340; the workspaces page D-338; the kit, D-326; gallery D-324 G1; audit P1–P3 and its decisions D-317–D-323; onboarding plan D-315, tasks side view D-300)_
 
 A snapshot, not a history. What was done and how it was verified, session by session, is in
 [state-history.md](state-history.md) (not auto-loaded; grep it by D-number). Keep this file under ~100 lines: when
@@ -15,11 +15,11 @@ something is finished, add its entry to state-history.md and leave at most one l
 
 ## Live vs not yet
 - Live at https://north-star.atem-lab.com/ (D-430, 2026-11-24; https://atem-lab.com/north-star/ is the product page and sends old links on; the repo is `atem-lab/north-star-app`, renamed from `north-star` so the product page could have that path; D-428); every push to `main` redeploys. `refactor/north-star-1.5` was merged into `main` (fast-forward) and pushed 2026-10-27; Pages deployed.
-- Rules: Firestore rules + indexes and RTDB deployed 2026-10-29 (RTDB again for presence `tasks`, D-300) (latest change D-292, no `bends` check); rules tests 639/0 (2026-11-03). Until Blaze,
-  deploy without Storage: `npx firebase deploy --only firestore:rules,firestore:indexes,database --project north-star-db`.
+- Rules: Firestore and RTDB rules last deployed 2026-11-23 with D-426 and D-427, storage.rules with D-425; `npm run deploy:rules` leaves Storage out, `npm run deploy:storage` is its own.
 - **On Blaze since 2026-11-23.** Deployed: `cleanUpWorkspaceAi` (europe-west3, Firestore's region); `AI_KEY_SECRET` set.
-  All functions deployed, database + firestore rules released with the push (61ba696, 2026-11-23); the bucket exists
-  (europe-west3), D-425's storage.rules wait for the user. Old function builds deleted after a day (the user set the policy, both regions, 2026-11-23).
+  All functions deployed, database + firestore rules released with the push (61ba696, 2026-11-23); the bucket
+  (europe-west3) and D-425's storage.rules live, `FILES_LIVE` on. Old function builds deleted after a day (the user set the policy, both regions, 2026-11-23).
+- atem-lab.com (repo `atem-lab/atem-lab.github.io`, its own session; D-429, D-433): the lab's page, North Star's product page, the legal pages, Orrery's waitlist and the contact form, their functions here (D-431, D-432) deployed, Resend works (the user, 2026-11-25). Left: a way to write to the list when Orrery is ready. Deleting an account tried live, works (the user, 2026-11-25).
 
 ## In progress
 - Pushed and live (checked against origin/main 2026-11-01): D-332 grid dots, D-331 away (RTDB rules deployed), D-330
@@ -27,8 +27,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   table's focus, D-300/D-301/D-303/D-314 decks and days, D-304 the timeline strip (its preview of four:
   docs/specs/timeline-preview/, B, C, D not built), the `setFitter` code, audit P1–P3 (D-317–D-323). What was done:
   state-history.md.
-- Audit leftovers: Firestore rules + RTDB deployed 2026-10-29 (indexes not, Firebase's kept); functions wait for
-  Blaze. P3b, P4–P6 after onboarding; Q-029, Q-030.
+- Audit leftovers: Firestore rules + RTDB deployed 2026-10-29 (indexes not, Firebase's kept). P3b, P4–P6 after onboarding; Q-029, Q-030.
 
 ## Next steps (not started; ask the user which first)
 - **The agent, where it stands (2026-11-02; D-327, D-328, D-329 built and pushed; D-341 P1 done):**
@@ -36,6 +35,7 @@ something is finished, add its entry to state-history.md and leave at most one l
      **Waiting for OpenAI credit:** the four runs in agent-pipeline.md §7, then routing and the map's default (D-341).
   2. In the app: both go buttons checked headless on the stub 2026-11-02 (`job demo`); `/restructure` on a real model
      still to see; the preview pick saved with the chat (a rules change). Every agent bug: docs/specs/agent-bugs.md (its table).
+- **The agent on the server (D-434, docs/specs/agent-server.md, P0–P6):** P0 done but what waits for the user (evals on the new models ≈ $12, the OpenAI project, KMS, the letters); P1 done; P2's server half built and checked end to end on the emulators (§17), not deployed; next the app's side (agentStore's `serverHost`, `paid by`). Nothing committed yet.
 - Several canvases (D-302): all four sessions built (D-305–D-307, D-309) and checked (D-311); a shared piece's delete asks
   which (D-313); pushed;
   rules deployed.
@@ -47,7 +47,7 @@ something is finished, add its entry to state-history.md and leave at most one l
   reordered, lessons split; D-357: canvases in the welcome and piece-made; all pushed and live 2026-11-02,
   firestore:rules deployed (631/0). The comment lesson seen over the threads panel 2026-11-04 (clear of it; its thread demo hides the breadcrumb). The agent's
   lessons wait for its redesign.
-- The workspace key (D-427, 2026-11-23): Settings → workspace → agent key, the agent's keyless OpenAI calls through `ai`; built, checked on the emulators with a fake OpenAI; to deploy and try with a real key.
+- The workspace key (D-427, 2026-11-23): Settings → workspace → agent key, the agent's keyless OpenAI calls through `ai`; built, checked on the emulators with a fake OpenAI, deployed 2026-11-23; to try with a real key.
 - Gallery and foundation (D-324, D-326): done 2026-11-01: the whole UI on the kit, `check:kit` at 0 (baseline `{}`),
   folders by layer/area; the agent's column on Window, InPlaceMenu added, text caps in limits.ts (pushed 2026-11-01;
   checked headless on emulators). D-326's smaller notes all settled (2026-11-04).

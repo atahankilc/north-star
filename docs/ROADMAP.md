@@ -23,7 +23,7 @@ reports too (D-335). Its specs stay as reference for when a feature comes back:
 - One look and behaviour across the canvas ✅ ([specs/consistency.md](specs/consistency.md), D-263–D-277).
 
 ## Next
-- Documents' files (images, PDFs) and the workspace key: both need the Blaze plan (D-232, D-079).
+- The agent on the server, the lab's key with monthly limits, audit, backoffice: [specs/agent-server.md](specs/agent-server.md) (D-434, P0 begun).
 - The agent back: plan and phases in [specs/agent.md](specs/agent.md) (D-312; next: Phase 1, the ops layer).
 
 ## Later

@@ -47,6 +47,8 @@ export type OpenAIOptions = {
   maxOutputTokens?: number
   // OpenAI's prompt_cache_key: requests with the same key are routed to the same cache (e.g. a hash of the workspace id).
   cacheKey?: string
+  // Who it's for, as OpenAI may see it: a hash (D-434, the server's runs), so it can stop one person and not the key.
+  safetyId?: string
   // The workspace key (D-427): no key here; each request goes to the `ai` function with the person's token, wrapped as
   // { wid, task, body }; the function checks who may, adds the key and streams OpenAI's answer back as it came.
   via?: { url: string; token: () => Promise<string>; wid: string; task?: 'chat' | 'research' }
@@ -136,8 +138,18 @@ export function toInput(messages: ModelMessage[]): { instructions?: string; inpu
   return { ...(instructions !== undefined ? { instructions } : {}), input }
 }
 
-export function requestBody(req: ModelRequest, o: Pick<OpenAIOptions, 'model' | 'reasoning' | 'maxOutputTokens' | 'cacheKey'>): Record<string, unknown> {
-  const { instructions, input } = toInput(req.messages)
+// From GPT-6.2 on, OpenAI puts `instructions` after the input and bills them uncached on every request, so the system
+// prompt goes first in the input instead, as a developer message (D-434; OpenAI's prompt caching guide, 2026-11-25).
+const instructionsLast = (model: string) => {
+  const m = /^gpt-(\d+)(?:\.(\d+))?/.exec(model)
+  return !!m && (+m[1] > 6 || (+m[1] === 6 && +(m[2] ?? 0) >= 2))
+}
+
+export function requestBody(req: ModelRequest, o: Pick<OpenAIOptions, 'model' | 'reasoning' | 'maxOutputTokens' | 'cacheKey' | 'safetyId'>): Record<string, unknown> {
+  const made = toInput(req.messages)
+  const first = made.instructions !== undefined && instructionsLast(o.model)
+  const instructions = first ? undefined : made.instructions
+  const input = first ? [{ role: 'developer', content: made.instructions }, ...made.input] : made.input
   const tools: Record<string, unknown>[] = [...req.tools.map(toOpenAITool), ...(req.web ? [{ type: 'web_search' }] : [])]
   const include = [...(req.web ? ['web_search_call.action.sources'] : []), ...(o.reasoning ? ['reasoning.encrypted_content'] : [])]
   return {
@@ -153,6 +165,7 @@ export function requestBody(req: ModelRequest, o: Pick<OpenAIOptions, 'model' | 
     ...(include.length ? { include } : {}),
     ...(o.maxOutputTokens ? { max_output_tokens: o.maxOutputTokens } : {}),
     ...(o.cacheKey ? { prompt_cache_key: o.cacheKey } : {}),
+    ...(o.safetyId ? { safety_identifier: o.safetyId } : {}),
     store: false,
     stream: true,
   }
@@ -200,10 +213,11 @@ async function* sseData(body: ReadableStream<Uint8Array>, signal?: AbortSignal):
 
 // ---- Parsing a response
 
-type RawUsage = { input_tokens?: number; output_tokens?: number; input_tokens_details?: { cached_tokens?: number }; output_tokens_details?: { reasoning_tokens?: number } }
+type RawUsage = { input_tokens?: number; output_tokens?: number; input_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number }; output_tokens_details?: { reasoning_tokens?: number } }
 
 function usageOf(u: RawUsage | undefined): Usage {
-  return { input: u?.input_tokens ?? 0, output: u?.output_tokens ?? 0, cached: u?.input_tokens_details?.cached_tokens ?? 0, reasoning: u?.output_tokens_details?.reasoning_tokens ?? 0 }
+  const cacheWrite = u?.input_tokens_details?.cache_write_tokens ?? 0
+  return { input: u?.input_tokens ?? 0, output: u?.output_tokens ?? 0, cached: u?.input_tokens_details?.cached_tokens ?? 0, ...(cacheWrite ? { cacheWrite } : {}), reasoning: u?.output_tokens_details?.reasoning_tokens ?? 0 }
 }
 
 // A function call's arguments as the contract's ToolCall: parsed, or `argsError` (never thrown).

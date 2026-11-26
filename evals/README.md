@@ -10,6 +10,9 @@ npm run eval -- --repeat 3        pass^3: every attempt must pass (catches flaky
 npm run eval -- --group build,edit --set capability --task find-01-no-evidence,edit-02-validate-with-interview
 npm run eval -- --wrong           the stub plays each task's plausible wrong script: every task should FAIL
 npm run eval -- --write-fixtures  rewrite evals/fixtures/*.workspace.json (export v2) after the fixtures change
+npm run eval -- --server          every turn on the server's own path (D-434): emulators, read as the person, cut and
+                                  resumed before every step (evals/server.ts; about 4 min, slower on an old emulator)
+npm run eval -- --cut             every turn cut before each step and resumed from JSON, in memory (evals/cut.ts)
 npm run eval -- --emulator        accepts through the real apply into the running Firestore emulator (below)
 OPENAI_API_KEY=… npm run eval -- --model openai:gpt-5.6-terra   a real model (S12)
 ANTHROPIC_API_KEY=… OPENAI_API_KEY=… npm run eval -- --model anthropic:claude-opus-5-5   a Claude model (D-329)

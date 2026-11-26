@@ -18,6 +18,7 @@ import { onTracked, useHistory, type TrackedMeta } from './history'
 import { getRealWs } from '../state/wsStore'
 import { changeEntry, fromChangeDoc, mergeEntries, toChangeDoc, type ChangeEntry } from '../model/changeLog'
 import { REGISTRY } from '../ops/registry'
+import { CHANGES_READ, MEMBERS_READ } from '../model/limits'
 import { readLocal } from '../state/local'
 
 const OPS: ReadonlySet<string> = new Set(REGISTRY.keys())
@@ -86,7 +87,7 @@ export function startChangeLog() {
 }
 
 // The newest entries, live (newest first); `cb([])` when it can't be read.
-export function watchChanges(wid: string, cb: (list: ChangeEntry[]) => void, max = 300): () => void {
+export function watchChanges(wid: string, cb: (list: ChangeEntry[]) => void, max = CHANGES_READ): () => void {
   if (!firebase || isDemo) return () => {}
   return onSnapshot(
     query(collection(db(), 'workspaces', wid, 'changes'), orderBy('at', 'desc'), limit(max)),
@@ -99,7 +100,7 @@ export function watchChanges(wid: string, cb: (list: ChangeEntry[]) => void, max
 export function watchMembers(wid: string, cb: (list: { uid: string; name: string; email?: string }[]) => void): () => void {
   if (!firebase || isDemo) return () => {}
   return onSnapshot(
-    query(collection(db(), 'workspaces', wid, 'members'), orderBy('name'), limit(200)),
+    query(collection(db(), 'workspaces', wid, 'members'), orderBy('name'), limit(MEMBERS_READ)),
     (snap) => cb(snap.docs.map((d) => ({ uid: d.id, name: String(d.data().name ?? ''), ...(d.data().email ? { email: String(d.data().email) } : {}) }))),
     () => cb([]),
   )
