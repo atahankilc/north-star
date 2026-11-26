@@ -74,17 +74,13 @@
 
 /* `under`: hanging under what it belongs to; the caller places it. */
 
-/* On the screen's foot, in the middle: the main screen's, which draws in and aside while a column is docked
-   (`--sheet-x0`, `--sheet-x1`, `--sheet-b`, foundation/sheet.ts, D-387); it travels with it. */
+/* On the foot of the box it's in, in the middle: the canvas's, whose middle is always the main screen's (D-435), a
+   pane's, a place's. It stands on the sheet's foot (`--sheet-b`, foundation/sheet.ts, D-387) and travels with it. */
 .console[data-at='foot'] {
-  /* `--sheet-x1` is from the window's edge; the app's own box already stops short of the agent's column (`--ai-w`). */
-  --sheet-in-x1: max(0px, var(--sheet-x1, 0px) - var(--ai-w, 0px));
-  left: calc(50% + (var(--sheet-x0, 0px) - var(--sheet-in-x1)) / 2);
+  left: 50%;
   bottom: var(--sheet-b, 0px);
   transform: translateX(-50%);
-  transition:
-    left var(--dur-slow) var(--ease-out),
-    bottom var(--dur-slow) var(--ease-out);
+  transition: bottom var(--dur-slow) var(--ease-out);
 }
 
 /* There it's a tab rising from the floor (D-387): its top corners round, a line round it (its foot's is under the
@@ -122,8 +118,6 @@
 }
 
 .console[data-full][data-at='foot'] {
-  left: var(--sheet-x0, 0px);
-  right: var(--sheet-in-x1);
   transform: none;
 }
 

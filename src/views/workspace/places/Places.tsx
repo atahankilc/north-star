@@ -10,7 +10,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { EdgeColumn } from '../../../ui/patterns/EdgeColumn'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
 import { Field } from '../../../ui/primitives/Field'
-import { CloseIcon } from '../../../ui/primitives/hudIcons'
+import { CloseIcon, GrowIcon, ShrinkIcon } from '../../../ui/primitives/hudIcons'
 import { Button } from '../../../ui/primitives/Button'
 import { DragLine } from '../../../ui/primitives/DragLine'
 import { stopCanvas } from '../../../ui/foundation/canvasGuard'
@@ -34,8 +34,8 @@ export function PlaceHead({ place, after, tools }: { place: Place; after?: React
       {after}
       <ButtonGroup className={styles.tools}>
         {tools}
-        <Button onClick={() => setPage(!page)} title={page ? 'beside the canvas again' : "as the page, in the canvas's place"}>
-          {page ? 'beside the canvas' : 'full'}
+        <Button icon onClick={() => setPage(!page)} aria-label={page ? 'beside the canvas' : 'full'} title={page ? 'beside the canvas again' : "as the page, in the canvas's place"}>
+          {page ? <ShrinkIcon /> : <GrowIcon />}
         </Button>
         <Button icon aria-label={`Close ${PLACE_NAME[place]}`} title="close" onClick={closePlace}>
           <CloseIcon />
@@ -46,10 +46,11 @@ export function PlaceHead({ place, after, tools }: { place: Place; after?: React
 }
 
 // What's found in a place (D-419): one field under its head, the same in every place; Escape empties it.
-export function PlaceFind({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
+// `onClose`: it's there only while asked for (Talk's): it takes the keyboard, and Escape puts it away.
+export function PlaceFind({ value, onChange, label, onClose }: { value: string; onChange: (v: string) => void; label: string; onClose?: () => void }) {
   return (
     <div className={styles.find}>
-      <Field size="sm" value={value} onChange={onChange} onEscape={() => onChange('')} label={label} placeholder={label.toLowerCase()} />
+      <Field size="sm" autoFocus={!!onClose} value={value} onChange={onChange} onEscape={() => (onChange(''), onClose?.())} label={label} placeholder={label.toLowerCase()} />
     </div>
   )
 }

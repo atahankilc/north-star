@@ -8,16 +8,16 @@
 // Firestore in the demo realm).
 import { demoThreads } from '../../data/threads'
 import { cursor, onStage, run, wait, type Scene } from '../director'
-import { base, byText } from '../fixtures/kit'
+import { base } from '../fixtures/kit'
 import { calm, cornerOnly } from '../fixtures/o13'
 import { MESSAGES, THREADS } from '../fixtures/threads'
 import { DEMO_USER } from '../fixtures/pazar'
 
 const IN = '[data-learn="threads"]'
-// The row that names you, under `NEW`: it leads with its thing's kind (D-398).
-const ROW = byText(`${IN} ol button`, 'feature', 0.5, 0.3)
-// The conversation's head, the card it's on (D-405): where it is, on its last line.
-const THERE = byText('[data-learn="thread-column"] header [role="button"]', 'feature', 0.3, 0.8)
+// The row that names you, under `NEW`: on a feature (D-435: its kind is its title's).
+const ROW = `${IN} ol button[title^="feature"]`
+// The conversation's head, the card it's on (D-405).
+const THERE = '[data-learn="thread-column"] header [role="button"]'
 
 const scene: Scene = {
   id: 'threads-panel',
@@ -26,7 +26,7 @@ const scene: Scene = {
   // Wider than the others: the list (400 px) beside the screen needs the room.
   size: [768, 480],
   length: 7900,
-  // The conversation open on the right, the hand on the card it's on.
+  // The conversation open, the hand on the card it's on.
   poster: 7800,
   cursor: onStage(560, 200),
   setup: [
@@ -46,7 +46,7 @@ const scene: Scene = {
     { do: cursor.to(ROW, 900) },
     { do: wait(300) },
     { do: cursor.press() },
-    // The conversation builds on the right; a moment, then to where it is.
+    // The conversation opens; a moment, then to the thing it's on.
     { do: wait(900) },
     { do: cursor.to(THERE, 800) },
     { do: wait(500) },

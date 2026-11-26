@@ -9,6 +9,12 @@ export const people = (n: number) => plural(n, 'person', 'people')
 // The first word of a name, for a short greeting or a tag (`Ada` from `Ada Lovelace`, `ada` from `ada@x.com`).
 export const firstName = (name: string) => name.trim().split(/[\s@]+/)[0] ?? ''
 
+// A name's first letters, for a glyph: two words' first ones (`One-tap order` → `OT`), else its first two.
+export function nameLetters(name: string) {
+  const words = (leadingNumber(name)?.rest || name).replace(/[^\p{L}\p{N}\s-]/gu, ' ').trim().split(/[\s-]+/).filter(Boolean)
+  return (words.length > 1 ? words.slice(0, 2).map((w) => [...w][0]).join('') : [...(words[0] ?? '?')].slice(0, 2).join('')).toUpperCase()
+}
+
 // An invite code as it's shown and copied: `ABCD-EFGH` (D-062).
 export const codeText = (code: string) => `${code.slice(0, 4)}-${code.slice(4)}`
 

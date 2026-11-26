@@ -40,7 +40,8 @@ export function useSeen(layer: RefObject<HTMLDivElement | null>, view: PlaneCam,
     // The screen in the canvas's px (its middle is the camera's), then in the piece's own.
     const x = (sx: number) => (sx - s.size.w / 2 - c.x) / c.zoom - at[0]
     const y = (sy: number) => (sy - s.size.h / 2 - c.y) / c.zoom - at[1]
-    return keyOf(snapOut(x(0), y(0), x(s.size.w), y(s.size.h)))
+    // As far again as a docked column moves it: the box is moved by at most `pad` (D-435).
+    return keyOf(snapOut(x(-s.pad), y(0), x(s.size.w + s.pad), y(s.size.h)))
   })
   const screen = useCanvasView((s) => s.size)
   if (at) return onCanvas ? parse(onCanvas) : { x0: -Infinity, y0: -Infinity, x1: Infinity, y1: Infinity }

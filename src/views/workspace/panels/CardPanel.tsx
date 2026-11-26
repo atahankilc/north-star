@@ -31,12 +31,11 @@ import { CompetitorProfile, CompetitorFeatures, Criteria, hasMatches, InPackages
 import { createEdge, defaultKind, deleteEdge, FOR, type Edge, type EdgeKind } from '../../../data/edges'
 import { linkLabel } from '../../../model/edges'
 import { addEvidence, EVIDENCE_KINDS, mismatch, removeEvidence, tally, updateEvidence, type Evidence, type EvidenceKind, type Stance } from '../../../data/evidence'
-import { glide, useBesideW, useCanvasView } from '../../../state/canvasView'
+import { glide, planeArea, useCanvasView } from '../../../state/canvasView'
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { cardEntry, whereList } from '../plane/cardEntry'
 import { InPlaceMenu } from '../../../ui/patterns/InPlaceMenu'
 import { PanelAction, PanelSection, SidePanel } from '../../../ui/patterns/SidePanel'
-import { sidePanelW } from '../../../ui/patterns/panelWidth'
 import { factsOf } from '../plane/cardFacts'
 import { packageTree } from '../../../model/cardInside'
 import { labelBox } from '../text/TextItems'
@@ -62,7 +61,8 @@ import { Label as UiLabel } from '../../../ui/primitives/Label'
 import { EVIDENCE_TEXT_MAX, LONG_TEXT_MAX, SOURCE_MAX, TAG_MAX, URL_MAX } from '../../../model/limits'
 import { CARD_PLACEHOLDER } from '../../../model/cardName'
 import { ALIGNS, alignTo, spreadTo } from '../../../model/layout'
-import { plural, leadingNumber } from '../../../model/words'
+import { firstName, plural, leadingNumber } from '../../../model/words'
+import { ago } from '../../../ui/foundation/ago'
 import { TagList } from './TagList'
 import { NotesSection } from './NotesSection'
 import { PanelRow } from './PanelRow'
@@ -101,24 +101,34 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
   const count = many.length + texts.length
   const plane = new URLSearchParams(location.search).get('focus')
   const shared = many.filter((c) => plane && elsewhere(c, places, plane).length)
-  const right = useBesideW()
   const card = cards.find((c) => c.id === id)
   // Enter shut it on a card just made (D-250); the card stays selected.
   const shut = useCanvasView((s) => s.panelShut)
   const close = onClose ?? (() => useCanvasView.setState({ cardSelected: null }))
-  // A card the panel would cover glides left, clear of it (48 px). Only on its own plane in focus: picked from a matrix's
-  // or a table's head, the view is the lens's.
+  // The card picked stays whole in what's seen of its plane (48 px in), past what the canvas moved for the panel if it has
+  // to (a card at the edge); given back as the panel goes, unless the view was moved since. Only on its own plane in
+  // focus: picked from a matrix's or a table's head, the view is the lens's.
+  const pad = useCanvasView((s) => s.pad)
+  const lent = useRef<{ by: number; at: number } | null>(null)
   useEffect(() => {
-    if (!card || planeOf(card) !== plane) return
-    const { planeCam: c, size } = useCanvasView.getState()
-    if (!c) return
-    const area = size.w - right
-    const clear = area - Math.min(sidePanelW(), area) - 48
-    const end = c.ox + (card.x + CARD.w) * c.zoom
-    if (end > clear) glide(c, { ...c, ox: c.ox - (end - clear) }, 320, (v) => useCanvasView.setState({ planeCam: v }))
-    // When a card is picked, or the panel's room changes.
+    const c = useCanvasView.getState().planeCam
+    const back = lent.current
+    const to = (ox: number) => c && glide(c, { ...c, ox }, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
+    if (!card) {
+      lent.current = null
+      if (c && back && Math.abs(c.ox - back.at) < 1) to(c.ox - back.by)
+      return
+    }
+    if (!c || planeOf(card) !== plane) return
+    const a = planeArea()
+    const [x0, x1] = [c.ox + card.x * c.zoom, c.ox + (card.x + CARD.w) * c.zoom]
+    const by = x1 > a.x + a.w - 48 ? a.x + a.w - 48 - x1 : x0 < a.x + 48 ? a.x + 48 - x0 : 0
+    if (!by) return
+    lent.current = { by: (back && Math.abs(c.ox - back.at) < 1 ? back.by : 0) + by, at: c.ox + by }
+    to(c.ox + by)
+    // When a card is picked, or what's seen of the canvas changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [card?.id, right])
+  }, [card?.id, pad])
   return (
     <AnimatePresence>
       {count > 1 && (
@@ -128,7 +138,6 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
           tone="var(--accent-cyan)"
           label={`${count} selected`}
           title={`${count} selected`}
-          right={right}
           onClose={() => setSelection([])}
           actions={
             <>
@@ -158,8 +167,8 @@ export function CardPanel({ cards, labels = [], editor, selected, onClose }: Pan
           kind={card.type}
           tone={TONE[card.type]}
           label={`${card.type} ${card.title}`}
+          of={card.id}
           title={<Title card={card} editor={editor} />}
-          right={right}
           onClose={close}
           actions={
             <>
@@ -401,6 +410,7 @@ function Inside({ card, cards, editor }: { card: Card; cards: Card[]; editor: bo
     <TasksSection key="tasks" n={next()} card={card} editor={editor} />,
     <TagsSection key="tags" n={next()} {...p} />,
     <CardNotes key="notes" n={next()} {...p} />,
+    <CardTalk key="talk" n={next()} {...p} />,
   )
   return (
     <>
@@ -906,17 +916,16 @@ const PICK_MANY: Record<AnyType, string> = { customer: 'customers', problem: 'pr
 // Selects a card on the plane and brings it into view, clear of the panel.
 export function goToCard(c: Card) {
   useCanvasView.setState({ cardSelected: c.id, labelSelected: null, linkSelected: null })
-  const { planeCam: v, size, beside, split } = useCanvasView.getState()
+  const v = useCanvasView.getState().planeCam
   if (!v) return
   // Where it's drawn (an unfolded package is its frame).
   const b = onPlane.boxes().find((x) => x.id === c.id)?.box ?? { x: c.x, y: c.y, w: CARD.w, h: CARD.h }
-  const area = beside ? Math.round(size.w * split) : size.w
-  const room = area - Math.min(sidePanelW(), area)
+  const a = planeArea()
   const [sx0, sy0] = [v.ox + b.x * v.zoom, v.oy + b.y * v.zoom]
   const [sx1, sy1] = [sx0 + b.w * v.zoom, sy0 + b.h * v.zoom]
-  if (sx0 >= 48 && sx1 <= room - 48 && sy0 >= 56 && sy1 <= size.h - 56) return
-  const cx = room / 2
-  glide(v, { ...v, ox: cx - (b.x + b.w / 2) * v.zoom, oy: size.h / 2 - (b.y + b.h / 2) * v.zoom }, DUR.glide, (to) => useCanvasView.setState({ planeCam: to }))
+  if (sx0 >= a.x + 48 && sx1 <= a.x + a.w - 48 && sy0 >= 56 && sy1 <= a.h - 56) return
+  const cx = a.x + a.w / 2
+  glide(v, { ...v, ox: cx - (b.x + b.w / 2) * v.zoom, oy: a.h / 2 - (b.y + b.h / 2) * v.zoom }, DUR.glide, (to) => useCanvasView.setState({ planeCam: to }))
 }
 
 // A piece's name with its leading number apart, magenta (D-266, D-276): `01 Pazar`.
@@ -992,6 +1001,18 @@ function TagsSection({ n, card, editor }: P) {
   return (
     <PanelSection n={n} name="tags" add={editor && draft === null ? { label: 'tag', onClick: () => setDraft('') } : undefined} empty={!tags.length && draft === null}>
       <TagList items={tags} editor={editor} word="tag" max={TAG_MAX} draft={draft} onDraft={setDraft} onAdd={(t) => set([...tags, t])} onRemove={(t) => set(tags.filter((x) => x !== t))} />
+    </PanelSection>
+  )
+}
+
+// What was last said about it (D-435): who and what; a press opens its conversation in Talk. Nothing said: no section
+// (the foot's `comment` starts it).
+function CardTalk({ n, card }: P) {
+  const t = threadOn(useWs().threads, card.id)
+  if (!t) return null
+  return (
+    <PanelSection n={n} name="talk" count={t.count}>
+      <PanelRow kind={firstName(t.lastName ?? t.name)} name={t.lastText ?? ''} goTitle="open its conversation" type={ago(t.lastAt)} onGo={() => openThread(t.id)} />
     </PanelSection>
   )
 }

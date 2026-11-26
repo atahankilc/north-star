@@ -88,7 +88,7 @@ export function TasksPlace({ page = false, editor, head }: { page?: boolean; edi
   const inFocus = () => !!linked && linked.kind === 'plane' && new URLSearchParams(window.location.search).get('focus') === linked.id
   const onTask = (t: Task) => {
     const card = t.cardId ? now().cards.find((c) => c.id === t.cardId) : undefined
-    if (card && linked && inFocus()) glidePlaneTo(card, linked.id, now().cards, now().places, true)
+    if (card && linked && inFocus()) glidePlaneTo(card, linked.id, now().cards, now().places)
   }
   const onCard = (c: Card) => {
     useCanvasView.setState({ cardSelected: c.id, labelSelected: null })

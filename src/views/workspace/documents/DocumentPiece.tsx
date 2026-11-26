@@ -12,7 +12,8 @@ import type { Piece } from '../../../data/model'
 import { useDocBody, type Doc } from '../../../data/documents'
 import { placeDocument, pieceRef } from '../../../data/pieces'
 import { useAuth } from '../../../data/auth'
-import { canvasCenter, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../../state/canvasView'
+import { sheetEdges } from '../../../ui/foundation/sheet'
+import { canvasCenter, useCanvasArea, useCanvasView, type Bounds, type PlaneCam, type ScreenRect } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
 import { WORLD } from '../../../model/world'
 import { useWs } from '../canvas/context'
@@ -153,12 +154,12 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
   const { user } = useAuth()
   const ids = useDocUi((s) => s.readers)
   const hidden = useDocUi((s) => s.listHidden)
-  const size = useCanvasView((s) => s.size)
+  const area = useCanvasArea()
   // Right of the list, pinned top-left at its own size (or fitted to where the line was dragged); the whole screen
   // (right of the side nav) with the list put away.
   const at = useDocUi((s) => s.readerAt)
   const count = listed(documents, documentsOf(list), user?.id).length
-  const left = readerLeft(documentsBounds(list, count), size.w, at, hidden)
+  const left = area.x + (hidden && area.x ? 0 : readerLeft(documentsBounds(list, count), area.w, at, hidden))
   const open = ids.filter((id) => documents.some((d) => d.id === id))
   // Gone (deleted, unshared) closes.
   useEffect(() => {
@@ -167,19 +168,19 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
   // Side by side, each its share of the width (the lines between them drag, D-232).
   const weights = useDocUi((s) => s.readerWeights)
   if (!open.length) return null
-  const room = size.w - left
+  const room = area.x + area.w - left
   const wt = open.map((id) => weights[id] ?? 1)
   const total = wt.reduce((a, b) => a + b, 0)
   const lefts = wt.reduce<number[]>((acc, x, i) => [...acc, acc[i] + (x / total) * room], [left])
 
   // The split lines (DragLine, D-359): the list's width, and between two documents.
-  const drag = (ev: PointerEvent) => useDocUi.setState({ readerAt: ev.clientX })
+  const drag = (ev: PointerEvent) => useDocUi.setState({ readerAt: ev.clientX - sheetEdges().x0 })
 
   // The line after document `i`: moves the width between it and the next, each kept at least PANE_MIN wide.
   const dragBetween = (i: number) => (ev: PointerEvent) => {
     const [x0, x1] = [lefts[i], lefts[i + 2]]
     const pair = wt[i] + wt[i + 1]
-    const at = Math.min(x1 - PANE_MIN, Math.max(x0 + PANE_MIN, ev.clientX))
+    const at = Math.min(x1 - PANE_MIN, Math.max(x0 + PANE_MIN, ev.clientX - sheetEdges().x0 + area.x))
     const a = (pair * (at - x0)) / (x1 - x0)
     useDocUi.setState((s) => ({ readerWeights: { ...s.readerWeights, [open[i]]: a, [open[i + 1]]: pair - a } }))
   }
@@ -187,7 +188,7 @@ export function DocReaders({ list }: { list: WithId<Piece> }) {
   return (
     <>
       {open.map((id, i) => (
-        <DocPane key={id} id={id} list={list} box={{ x: Math.round(lefts[i]), y: 0, w: Math.round(lefts[i + 1] - lefts[i]), h: size.h }} first={i === 0} />
+        <DocPane key={id} id={id} list={list} box={{ x: Math.round(lefts[i]), y: 0, w: Math.round(lefts[i + 1] - lefts[i]), h: area.h }} first={i === 0} />
       ))}
       {!hidden && <DragLine at="x" style={{ left }} onDrag={drag} label="List and documents" />}
       {open.slice(0, -1).map((id, i) => (
@@ -288,7 +289,7 @@ export function DocRead({ d, zoom, links, column, outline }: { d: WithId<Doc>; z
 // focus has arrived (the page builds cell by cell behind it till then).
 export function DocFocus({ piece, onUnfocus }: { piece: WithId<Piece>; onUnfocus: () => void }) {
   const { documents } = useWs()
-  const size = useCanvasView((s) => s.size)
+  const area = useCanvasArea()
   const arrived = useCanvasView((s) => s.focusArrived && !s.focusLeaving)
   const d = documents.find((x) => x.id === piece.docId)
   if (!arrived) return null
@@ -298,7 +299,7 @@ export function DocFocus({ piece, onUnfocus }: { piece: WithId<Piece>; onUnfocus
         This document is gone, or only its author sees it now.
       </p>
     )
-  return <DocPane id={d.id} focus={{ piece, onUnfocus }} box={{ x: SIDE_GAP, y: 0, w: size.w - SIDE_GAP, h: size.h }} first />
+  return <DocPane id={d.id} focus={{ piece, onUnfocus }} box={{ x: area.x || SIDE_GAP, y: 0, w: area.w - (area.x ? 0 : SIDE_GAP), h: area.h }} first />
 }
 // Right of the side nav, as with the list put away.
 const SIDE_GAP = 56

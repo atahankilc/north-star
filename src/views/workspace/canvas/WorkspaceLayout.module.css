@@ -1,18 +1,11 @@
-/* The app beside the assistant's window (D-081). Layout containment makes this box the containing block for every fixed
-   element inside (HUD, side panels, toasts), so they all end where the window starts. It changes width at once, never
-   animated: an easing canvas lags and jumps. What moves glides instead (glide.ts, the board's KeepLeftEdge). */
+/* The app's box: the whole window, whatever is docked (D-435; the docked columns lie over the ground round the sheet, and
+   what's in here keeps to the sheet by foundation/sheet.ts' values). Layout containment makes it the containing block
+   for every fixed element inside. */
 .app {
   position: fixed;
   inset: 0;
-  right: var(--ai-w, 0px);
   z-index: var(--z-1);
   contain: layout;
-}
-
-/* Beside the chat on the left, the app's box is the stage (a preview or a report, D-094). */
-:global(html[data-ai-open][data-ai-stage]) .app {
-  right: 0;
-  left: var(--ai-w);
 }
 
 .code {

@@ -12,8 +12,8 @@ to keep documents; the agent beside all of it. This is where each opens.
   the sheet (EdgeColumn, D-387, D-395), exactly as a right panel lies on the right. `full` turns it into **the page**:
   it takes the canvas's place in the main sheet; `beside the canvas` puts it back; `×` closes it and the canvas is
   back. One place open at a time.
-- **The right is the thing selected** (a card's, a task's panel, D-219) and, at the far right, **the agent** (D-312,
-  its orb in the corner while closed, D-407, D-408). Its column has `full` too (D-424): the agent as the page, its chats
+- **The right is one column** (D-435): the thing selected (a card's, a task's panel, D-219) and **the agent** (D-312, its
+  orb in the corner while closed, D-407, D-408) share it by tabs, what came last in front. Its column has `full` too (D-424): the agent as the page, its chats
   beside the conversation, the canvas still beside it; it works alongside a place, never as one.
 - **The HUD on the left edge, bare buttons on the ground, nothing round them:**
   - the **open page's actions** at the middle of the left edge: the canvas's side nav (`+`, fit, the compass, `?`);
@@ -22,11 +22,14 @@ to keep documents; the agent beside all of it. This is where each opens.
     Tasks (its count of tasks given to you), Docs. Lit while open beside the canvas or as the page. There is no
     canvas button: closing a place goes back to it.
 
+- **The canvas between columns** (D-435): moved, with the sheet's time and ease, by half of what the two sides take, so
+  its middle is the sheet's; never zoomed; exactly back as they close. Fit, go to, following, what's made, a pane beside
+  a plane, a document read beside its list and the docks all work in what's seen of it (`canvasArea`).
+
 ## What each place shows
 
-- **Talk** (the threads, D-405): beside the canvas the list; a conversation opens **in the list's place** (`‹
-  threads` back). As the page: the list on the left and the conversation on the rest, the messages as lines (who,
-  when, what) rather than bubbles.
+- **Talk** (D-435): beside the canvas the list, two lines a row; a conversation opens in the column with the list as a
+  rail of glyphs on its left. As the page: the list, the conversation at a reading width, and what it's about.
 - **Tasks:** tabs for the canvas's decks, `mine`, `all · days`. Beside the canvas: the deck's board (KanbanView),
   mine as rows, all · days as the timeline. As the page: the board and its days side by side, the line between them
   dragged. A plane's linked deck (`⇆ deck` in a plane's dock) opens in Tasks too, linked to it (D-422); the side

@@ -447,18 +447,18 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'docs', v: 2, format: 'lesson', roles: ALL, area: 'decks', since: 'D-232, D-412, D-415',
+    id: 'docs', v: 3, format: 'lesson', roles: ALL, area: 'decks', since: 'D-232, D-412, D-415',
     trigger: [{ event: 'docs-open' }],
     pages: [
       { title: 'Docs', tab: 'docs', body: 'Every document you may see, the shared ones and your own, in folders. A row opens it here; `open ↗` gives it its window, to write in, share or place.' },
-      { roles: EDITORS, title: 'Folders', tab: 'folders', body: '`full` makes Docs the page, its folders as a tree. Its tools on the left make a folder, write a document or upload a .md, into the folder open.' },
+      { roles: EDITORS, title: 'Folders', tab: 'folders', body: 'The arrows in its head make Docs the page, its folders as a tree. Its tools on the left make a folder, write a document or upload a .md, into the folder open.' },
     ],
   },
   {
-    id: 'side-view', v: 5, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314, D-349, D-412, D-419, D-422',
+    id: 'side-view', v: 6, format: 'lesson', roles: ALL, area: 'decks', since: 'D-300, D-314, D-349, D-412, D-419, D-422',
     trigger: [{ event: 'side-view' }],
     pages: [
-      { title: 'Tasks, beside you', tab: 'tasks', body: "Tasks opens beside the canvas from anywhere, or with `t`. The tabs are the workspace's decks. A plane's `⇆ deck` opens its deck here, linked to it. `full` makes Tasks the page, the deck's days beside it.", scene: 'side-view' },
+      { title: 'Tasks, beside you', tab: 'tasks', body: "Tasks opens beside the canvas from anywhere, or with `t`. The tabs are the workspace's decks. A plane's `⇆ deck` opens its deck here, linked to it. The arrows make Tasks the page, its days beside it.", scene: 'side-view' },
       { title: 'Yours', tab: 'mine', body: '`mine` lists the tasks given to you, from every deck. The find under the tabs narrows it, or a deck, to the tasks with your words.', scene: 'side-mine' },
       { title: 'Every deck on days', tab: 'days', body: '`all · days` puts the tasks of every deck on one strip of days.', scene: 'side-mine' },
     ],
@@ -487,13 +487,13 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'comment', v: 8, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349, D-393, D-398, D-402, D-405, D-412, D-416',
+    id: 'comment', v: 9, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349, D-393, D-398, D-402, D-405, D-412, D-416, D-435',
     trigger: [{ event: 'thread-open' }, { event: 'threads-open' }], within: 'threads',
     pages: [
       { title: 'Comments stay on things', tab: 'comments', body: 'Right-click a plane, card, text, link or task and pick `comment`. The conversation stays on that thing.', scene: 'thread' },
       { title: 'Its chip', tab: 'chip', body: 'A chip under its corner counts the messages. Magenta means something new for you; `@` means you were mentioned. Click the chip to open it.', scene: 'thread' },
-      { title: 'Every conversation', tab: 'threads', body: "Talk, bottom left, opens the list beside the canvas: what's new on top, the rest by place. A conversation opens in its place; the card at its top takes you there, `full` makes Talk the page.", scene: 'threads-panel' },
-      { title: 'Channels', tab: 'channels', body: '`+ channel` under CHANNELS starts a conversation on nothing, for the whole team: name it, and your first message opens it. Channels stay on top of Talk.', scene: 'threads-panel' },
+      { title: 'Every conversation', tab: 'threads', body: "Talk, bottom left, opens the list beside the canvas: what's new on top, then channels, then things. Open one and the list becomes a rail beside it. Its head takes you to the thing; the arrows make Talk the page.", scene: 'threads-panel' },
+      { title: 'Channels', tab: 'channels', body: 'The plus in Talk’s head starts a conversation on nothing, for the whole team: name it, and your first message opens it.', scene: 'threads-panel' },
     ],
   },
 

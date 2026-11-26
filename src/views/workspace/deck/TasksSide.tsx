@@ -72,7 +72,7 @@ function Board({ box, deck, editor, onTask, onCard, dock, close }: PartProps & {
       <KanbanView piece={deck} view={view} live editor={editor} onTask={onTask} onCard={onCard} />
       <LensSetup piece={deck} editor={editor} />
       {/* At its own part's middle (D-419): left to the sheet's, it slid off a narrow part (the Tasks column). */}
-      <FocusDock label="Deck" name={<Name deck={deck} />} center={box.w / 2}>
+      <FocusDock label="Deck" name={<Name deck={deck} />} part={{ x: 0, w: box.w }}>
         {dock}
         <LensTools piece={deck} editor={editor} />
         {close}
@@ -102,7 +102,7 @@ export function Days({ box, deck, plane, editor, onTask, dock }: PartProps & { d
   return (
     <div ref={el} className={styles.part} style={{ left: box.x, top: box.y, width: box.w, height: box.h }} onPointerDown={pan}>
       <TimelineView piece={piece} view={view} live editor={editor} onTask={onTask} span={T.besideDays} />
-      <FocusDock label="Days" name={<span className={pane.kind}>{deck ? 'days' : 'all · days'}</span>} center={box.w / 2}>
+      <FocusDock label="Days" name={<span className={pane.kind}>{deck ? 'days' : 'all · days'}</span>} part={{ x: 0, w: box.w }}>
         {linked ? (
           <TimelineDockTools piece={linked} editor={editor} compact />
         ) : (

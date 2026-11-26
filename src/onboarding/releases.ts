@@ -21,6 +21,17 @@ export type Release = { id: string; date: string; title: string; items: readonly
 
 export const RELEASES: readonly Release[] = [
   {
+    id: '2026-11-25',
+    date: '2026-11-25',
+    title: 'Talk, made anew',
+    items: [
+      // D-435: Talk's list, rail and page.
+      { title: 'Talk, made anew', tab: 'talk', line: "Each row says who wrote last and what. An open conversation keeps the others on a rail; as the page, what it's about stands beside.", scene: 'threads-panel', lessons: ['comment'] },
+      // D-435: one column on the right, the canvas in the middle of what's left.
+      { title: 'One column on the right', tab: 'right', line: 'A card and the agent share the right by tabs. The canvas stays in the middle of what the panels leave, and fit too.', lessons: [] },
+    ],
+  },
+  {
     id: '2026-11-23',
     date: '2026-11-23',
     title: 'Images and PDFs',

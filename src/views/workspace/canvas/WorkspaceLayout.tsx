@@ -112,7 +112,7 @@ function Loaded({ wid, workspace }: { wid: string; workspace: WorkspaceCtx['work
         <Toast />
         <Coach />
       </WorkspaceScreen>
-      {/* The agent (S14, D-312): beside the app's box, which narrows for its column (--ai-w). */}
+      {/* The agent (S14, D-312): over the app's box, on the right (D-435). */}
       <Agent />
     </WorkspaceContext.Provider>
   )

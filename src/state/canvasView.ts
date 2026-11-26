@@ -14,6 +14,8 @@ type State = {
   cams: Record<string, Cam>
   // Where the canvas sits on screen, set by the canvas while it's shown.
   size: { w: number; h: number }
+  // How far in from each of its edges the canvas is covered by docked columns (canvasArea).
+  pad: number
   selected: string | null
   // Planes in edit mode (D-180): only these move, resize and take a new name; edit is switched off by the same button.
   editing: string[]
@@ -97,18 +99,30 @@ export function setSplit(v: number) {
   keepLocal('north-star:split', String(split))
 }
 
-// The focused plane's own part of the screen: all of it, or its half with something open beside it (D-211).
+// What's seen of the canvas between the docked columns (D-435), in the canvas's own px: its whole width while nothing
+// is docked. The canvas's box stays as wide as the window and is moved so its middle is the sheet's (CanvasView), so the
+// part seen is the same on both sides of that middle: `pad` px in from each edge.
+export function canvasArea() {
+  const { size, pad } = useCanvasView.getState()
+  return { x: pad, w: Math.max(0, size.w - 2 * pad), h: size.h }
+}
+// The same, drawn again when it changes.
+export function useCanvasArea() {
+  const size = useCanvasView((s) => s.size)
+  const pad = useCanvasView((s) => s.pad)
+  return { x: pad, w: Math.max(0, size.w - 2 * pad), h: size.h }
+}
+
+// The focused plane's own part of that: all of it, or its half with something open beside it (D-211).
 export function planeArea() {
   const { size, beside, split } = useCanvasView.getState()
-  return { w: beside ? Math.round(size.w * split) : size.w, h: size.h }
+  const a = canvasArea()
+  return { x: a.x, w: beside ? Math.round(a.w * split) : a.w, h: size.h }
 }
 
 export type ScreenRect = { x: number; y: number; w: number; h: number; zoom: number }
 
-export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, selected: null, editing: [], confirming: null, deleting: null, bringing: null, toCanvas: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, fresh: null, panelShut: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
-
-// How wide what's open beside the focused plane is (D-211), 0 with nothing there: a right panel opens left of it.
-export const useBesideW = () => useCanvasView((s) => (s.beside ? s.size.w - Math.round(s.size.w * s.split) : 0))
+export const useCanvasView = create<State>(() => ({ cams: {}, size: { w: 0, h: 0 }, pad: 0, selected: null, editing: [], confirming: null, deleting: null, bringing: null, toCanvas: null, focusSpread: false, focusArrived: false, focusLeaving: false, planeCam: null, planeHome: null, cardSelected: null, cardEditing: null, labelSelected: null, labelEditing: null, fresh: null, panelShut: null, drawing: null, packing: null, dragShift: null, linkSelected: null, cardHovered: null, linkHovered: null, linking: null, linkLabelling: false, cfOpen: null, cardMulti: [], landing: {}, stickHint: null, following: {}, bondHover: null, beside: 0, split: savedSplit() }))
 
 // A panel Enter shut opens again once the card is let go or another is picked.
 useCanvasView.subscribe((s, was) => {
@@ -149,15 +163,17 @@ export function setCam(wid: string, cam: Cam) {
 // A point in a plane's view (px from the view's top-left: the screen, or the element it's drawn in) in the plane's own
 // px, through its offset and zoom (D-186, D-361).
 export const toPlane = (c: PlaneCam, x: number, y: number): [number, number] => [(x - c.ox) / c.zoom, (y - c.oy) / c.zoom]
-// The middle of the screen in the focused plane's px: where something made or brought in lands. None without a focus.
+// The middle of what's seen in the focused plane's px: where something made or brought in lands. None without a focus.
 export function planeMiddle(): [number, number] | null {
-  const { planeCam: c, size } = useCanvasView.getState()
-  return c ? toPlane(c, size.w / 2, size.h / 2) : null
+  const { planeCam: c } = useCanvasView.getState()
+  const a = planeArea()
+  return c ? toPlane(c, a.x + a.w / 2, a.h / 2) : null
 }
 
 export function canvasCenter(wid: string): [number, number] {
   const { x, y, zoom } = camOf(wid)
-  return [((planeArea().w - useCanvasView.getState().size.w) / 2 - x) / zoom, -y / zoom]
+  const a = planeArea()
+  return [(a.x + a.w / 2 - useCanvasView.getState().size.w / 2 - x) / zoom, -y / zoom]
 }
 
 // A camera move that visibly travels (eased both ends, motion.ts' tween); a newer one stops it. Reduced motion: there
@@ -190,9 +206,10 @@ export function fitCanvas(wid: string, pieces: Bounds[], instant = false) {
     // view open (D-300) in the left part, its middle the camera's less half the side view.
     // Where the pad is smaller than the side nav (a phone), the side nav's room is kept on the left besides.
     const area = planeArea()
-    const nav = Math.max(0, tokenPx('--sheet-rail-w') - padFor(area.w, area.h, 96))
+    // With a column docked the side nav's tools are on the ground, off the sheet: no room kept for them.
+    const nav = area.x ? 0 : Math.max(0, tokenPx('--sheet-rail-w') - padFor(area.w, area.h, 96))
     const { zoom, cx, cy } = fitInto(boundsOf(pieces), area.w - nav, area.h, 96)
-    to = { x: (area.w - size.w + nav) / 2 - cx * zoom, y: -cy * zoom, zoom }
+    to = { x: area.x + (area.w - size.w + nav) / 2 - cx * zoom, y: -cy * zoom, zoom }
   }
   if (instant) setCam(wid, to)
   else glide(camOf(wid), to, DUR.glide, (c) => setCam(wid, c))
@@ -208,10 +225,10 @@ export function bringIntoView(wid: string, b: Bounds) {
   const sx = (x: number) => size.w / 2 + c.x + x * c.zoom
   const sy = (y: number) => size.h / 2 + c.y + y * c.zoom
   const pad = 64
-  if (sx(b.x) >= pad && sx(b.x + b.w) <= area.w - pad && sy(b.y) >= pad && sy(b.y + b.h) <= size.h - pad) return
+  if (sx(b.x) >= area.x + pad && sx(b.x + b.w) <= area.x + area.w - pad && sy(b.y) >= pad && sy(b.y + b.h) <= size.h - pad) return
   const fit = fitInto(b, area.w, area.h, 96)
   const zoom = Math.min(c.zoom, fit.zoom)
-  glide(c, { x: (area.w - size.w) / 2 - fit.cx * zoom, y: -fit.cy * zoom, zoom }, DUR.glide, (v) => setCam(wid, v))
+  glide(c, { x: area.x + (area.w - size.w) / 2 - fit.cx * zoom, y: -fit.cy * zoom, zoom }, DUR.glide, (v) => setCam(wid, v))
 }
 
 // Fit as the canvas does it (D-186): the side nav's button calls what CanvasView set here, the same as `0`.
@@ -229,7 +246,7 @@ export function fitPlane(content: Bounds | null, instant = false, most = 1) {
   const size = planeArea()
   if (content) {
     const { zoom, cx, cy } = fitInto(content, size.w, size.h, 96, most)
-    to = { ox: size.w / 2 - cx * zoom, oy: size.h / 2 - cy * zoom, zoom }
+    to = { ox: size.x + size.w / 2 - cx * zoom, oy: size.h / 2 - cy * zoom, zoom }
   }
   if (instant) {
     stopGlide()

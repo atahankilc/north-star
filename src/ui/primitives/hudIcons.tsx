@@ -131,6 +131,17 @@ export const BinIcon = path('M2.5 3.75h7M4.75 3.75V2.5h2.5v1.25M3.5 3.75l.45 5.7
 // A quarter turn either way.
 export const TurnLeftIcon = path('M3 6.5a3.25 3.25 0 1 0 1-2.75L2.75 5M2.75 2.5V5h2.5')
 export const TurnRightIcon = path('M9 6.5a3.25 3.25 0 1 1-1-2.75L9.25 5M9.25 2.5V5h-2.5')
+// As the page, and beside the canvas again: two arrows out, two in (a place's head, the agent's).
+export const GrowIcon = path('M7.25 2.25h2.5v2.5M9.5 2.5 7 5M4.75 9.75h-2.5v-2.5M2.5 9.5 5 7')
+export const ShrinkIcon = path('M9.75 5h-2.5V2.5M7.5 4.75 10 2.25M2.25 7h2.5v2.5M4.5 7.25 2 9.75')
+// Find in it.
+export const FindIcon = path('M7.5 7.5 9.75 9.75M8 5.25a2.75 2.75 0 1 1-5.5 0 2.75 2.75 0 0 1 5.5 0z')
+// Send it.
+export const SendIcon = path('M6 9.75v-7M3 5.5l3-3 3 3')
+// Show it where it is on the canvas.
+export const TargetIcon = path('M6 1.75v1.5M6 8.75v1.5M1.75 6h1.5M8.75 6h1.5M8.25 6a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0z')
+// A list of them.
+export const ListIcon = path('M2.5 3.5h7M2.5 6h7M2.5 8.5h7')
 // More: three dots.
 export const MoreIcon = () => (
   <Glyph>

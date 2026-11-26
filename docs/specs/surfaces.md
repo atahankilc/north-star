@@ -108,7 +108,7 @@ Agreed 2026-11-17 on a port, built the same day.
 - *Not yet:* the conversation as a tab of the thing's own panel (`card · thread`); a dock's drawer as a round menu
   card; panes beside as two sheets; one column with tabs when the agent's and a card's panel don't both fit.
 
-## The threads' list and a conversation (D-398)
+## The threads' list and a conversation (D-398; replaced by D-435, docs/specs/shell.md)
 
 Picked 2026-11-17 on a port (list: now, A people first, **B by place**, C cards that speak; conversation: now, A the
 thing on top, **B bubbles**), built the same day. The columns, the foot tab and their motion stay D-393's and D-395's.
@@ -147,7 +147,7 @@ thing on top, **B bubbles**), built the same day. The columns, the foot tab and 
   colours, the runs, an edit, the scope's dropdown, the light theme.
 - *Not yet:* the conversation as a tab of the thing's own panel (D-393's); touch.
 
-## The threads, new first (D-405)
+## The threads, new first (D-405; replaced by D-435, docs/specs/shell.md)
 
 Picked 2026-11-18 on a port preview (`bugünkü`, `sade`, **`cesur`**), its first step: what doesn't depend on where
 things live (Q-036). Changes D-398's list and conversation above.

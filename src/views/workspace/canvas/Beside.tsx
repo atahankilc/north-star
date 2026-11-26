@@ -12,9 +12,9 @@ import type { Piece } from '../../../data/model'
 import { CARD, type Card } from '../../../data/cards'
 import { cardsOn, type Place } from '../../../data/places'
 import { KIND_NAME, kindOfPiece } from '../../../data/pieces'
-import { fitInto, glide, setSplit, stopGlide, useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
+import { fitInto, glide, planeArea, setSplit, stopGlide, useCanvasArea, useCanvasView, type Bounds, type PlaneCam } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
-import { sidePanelW } from '../../../ui/patterns/panelWidth'
+import { sheetEdges } from '../../../ui/foundation/sheet'
 import { DragLine } from '../../../ui/primitives/DragLine'
 import { useWs } from './context'
 import { } from '../matrix/Matrix'
@@ -36,9 +36,9 @@ type Props = {
 }
 
 export function Beside({ plane, open, editor, onClose }: Props) {
-  const size = useCanvasView((s) => s.size)
+  const size = useCanvasArea()
   const split = useCanvasView((s) => s.split)
-  const left = Math.round(size.w * split)
+  const left = size.x + Math.round(size.w * split)
   // Stacked panes share the height by their weights; the lines between them drag (D-211). Even again when what's open
   // changes.
   const ids = open.map((p) => p.id).join(',')
@@ -48,7 +48,7 @@ export function Beside({ plane, open, editor, onClose }: Props) {
   const tops = w.reduce<number[]>((acc, x, i) => [...acc, acc[i] + (x / total) * size.h], [0])
 
   // The line between them drags (DragLine, D-359).
-  const drag = (ev: PointerEvent) => setSplit(ev.clientX / Math.max(1, size.w))
+  const drag = (ev: PointerEvent) => setSplit((ev.clientX - sheetEdges().x0) / Math.max(1, size.w))
 
   // The line under pane `i`: it moves the height between that pane and the next, each kept at least 15 % of the screen.
   const dragRow = (i: number) => (ev: PointerEvent) => {
@@ -67,7 +67,7 @@ export function Beside({ plane, open, editor, onClose }: Props) {
   return (
     <>
       {open.map((p, i) => (
-        <Pane key={p.id} piece={p} plane={plane} box={{ x: left, y: tops[i], w: size.w - left, h: tops[i + 1] - tops[i] }} editor={editor} first={i === 0} onClose={() => onClose(p.id)} />
+        <Pane key={p.id} piece={p} plane={plane} box={{ x: left, y: tops[i], w: size.x + size.w - left, h: tops[i + 1] - tops[i] }} editor={editor} first={i === 0} onClose={() => onClose(p.id)} />
       ))}
       {open.slice(0, -1).map((p, i) => (
         <DragLine key={`row-${p.id}`} at="y" data-off-space style={{ left, top: tops[i + 1] }} onDrag={dragRow(i)} label="Between two panes" />
@@ -134,17 +134,15 @@ export function usePaneView(content: Bounds, box: Bounds, top = false, floor = 0
   return { el, view, setView, pan }
 }
 
-// The focused plane's view glides to put a card in the middle of the plane's part; `panel`: a right panel covers the
-// right of that part, the card goes to the middle of what's left. Not on the plane: nothing.
-export function glidePlaneTo(picked: Pick<Card, 'id'>, plane: string, cards: Card[], places: Place[], panel = false) {
+// The focused plane's view glides to put a card in the middle of the plane's part. Not on the plane: nothing.
+export function glidePlaneTo(picked: Pick<Card, 'id'>, plane: string, cards: Card[], places: Place[]) {
   // Its spot on this plane, where it was brought from another too (D-281).
   const card = cardsOn(cards, places, plane).find((c) => c.id === picked.id)
   if (!card) return
-  const { planeCam: c, size, split } = useCanvasView.getState()
+  const c = useCanvasView.getState().planeCam
   if (!c) return
-  const part = size.w * split
-  const w = panel ? part - Math.min(sidePanelW(), part) : part
-  const to = { ...c, ox: w / 2 - (card.x + CARD.w / 2) * c.zoom, oy: size.h / 2 - (card.y + CARD.h / 2) * c.zoom }
+  const a = planeArea()
+  const to = { ...c, ox: a.x + a.w / 2 - (card.x + CARD.w / 2) * c.zoom, oy: a.h / 2 - (card.y + CARD.h / 2) * c.zoom }
   stopGlide()
   if (isReducedMotion()) useCanvasView.setState({ planeCam: to })
   else glide(c, to, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))

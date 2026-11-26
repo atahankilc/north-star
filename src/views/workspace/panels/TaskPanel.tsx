@@ -12,7 +12,7 @@ import { isOnPlane, type Card } from '../../../data/cards'
 import { CHECK_MAX, LABEL_MAX, LABELS_MAX, TASK_PRIORITIES, deleteTask, deleteTasks, moveTasks, updateTasks, logLearned, moveTask, newCheck, orderBetween, overdue, setChecks, tasksIn, TASK_TITLE_MAX, today, untested, updateTask, type Check, type Task } from '../../../data/tasks'
 import type { Evidence } from '../../../data/evidence'
 import { useWorkspaceMembers } from '../../../data/workspaces'
-import { useBesideW, useCanvasView } from '../../../state/canvasView'
+import { useCanvasView } from '../../../state/canvasView'
 import { PanelAction, PanelSection, SidePanel } from '../../../ui/patterns/SidePanel'
 import { Select } from '../../../ui/patterns/Select'
 import { CardPicker, EvidenceForm, PLACEHOLDER } from './CardPanel'
@@ -52,10 +52,6 @@ export function TaskPanel({ editor }: { editor: boolean }) {
   const manyPiece = manyIds ? pieces.find((p) => p.id === manyIds.piece) : undefined
   const piece = task ? pieces.find((p) => p.id === task.pieceId) : undefined
   const close = () => selectTask('', null)
-  // Beside a plane, over the plane's part of the screen (as a card's, D-211).
-  const beside = useBesideW()
-  // On the right, the thing selected (D-412): the old side view's narrow and `full` went with it (D-419).
-  const right = beside
   // A card picked closes it (its panel takes the place). Going into a space or out of one lets go (CanvasView's focus
   // and unfocus), not this panel going: it's mounted per space, and remounted in development.
   const card = useCanvasView((s) => s.cardSelected)
@@ -73,7 +69,6 @@ export function TaskPanel({ editor }: { editor: boolean }) {
           tone={TONE}
           label={`${many.length} tasks selected`}
           title={`${many.length} selected`}
-          right={right}
           onClose={close}
           actions={
             editor && (
@@ -99,8 +94,8 @@ export function TaskPanel({ editor }: { editor: boolean }) {
           kind="task"
           tone={TONE}
           label={`task ${task.title}`}
+          of={task.id}
           title={<Title key={task.id} task={task} editor={editor} />}
-          right={right}
           onClose={close}
           actions={
             <>

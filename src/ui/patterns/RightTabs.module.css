@@ -1,0 +1,5 @@
+/* The right column's tabs (RightTabs.tsx, D-435): a row over the panel's head, at the head's padding. */
+.row {
+  flex: none;
+  padding: var(--space-3) var(--space-6) 0;
+}

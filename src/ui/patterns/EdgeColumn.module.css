@@ -48,3 +48,7 @@
 .column[data-leaving] {
   pointer-events: none;
 }
+
+.column[data-behind] {
+  visibility: hidden;
+}

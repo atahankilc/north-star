@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Talk · options</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/inter/opsz.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/jetbrains-mono/index.css">
+<style>
+/* A preview only: Talk designed again (the user, 2026-11-25), as a panel and as the page, and what the canvas does between
+   docked columns. Hand-made copies of the app's parts on its tokens, made-up data; served from the repo root. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-display); font-size: 14px; }
+button, input { font: inherit; color: inherit; background: none; border: 0; padding: 0; }
+button { cursor: pointer; text-align: left; }
+:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; border-radius: 8px; }
+p { margin: 0; }
+[hidden] { display: none !important; }
+.mono { font-family: var(--font-mono); }
+
+/* ---------- the preview's own frame */
+.top { position: fixed; inset: 0 0 auto 0; height: 92px; z-index: 50; display: flex; flex-wrap: wrap; align-content: center; gap: 6px 20px; align-items: center; padding: 6px 16px; background: #000; color: #ededed; border-bottom: 1px solid #2a2a2a; font: 12px var(--font-mono); }
+.grp { display: flex; gap: 2px; align-items: center; }
+.grp > span { color: #8a8a8a; margin-right: 6px; font-size: 11px; }
+.opt { border: 1px solid transparent; border-radius: 999px; padding: 4px 10px; color: #8a8a8a; font: 12px var(--font-mono); white-space: nowrap; }
+.opt b { color: #ff3d9a; font-weight: 400; margin-right: 5px; }
+.opt:hover { color: #ededed; background: rgba(255,255,255,.07); }
+.opt[aria-pressed='true'] { color: #fff; border-color: #3a3a3a; background: rgba(255,255,255,.1); }
+.about { position: fixed; top: 92px; left: 0; width: 316px; bottom: 0; overflow: auto; padding: 18px 20px 48px; background: #000; border-right: 1px solid #2a2a2a; color: #b0b0b0; font-size: 13px; line-height: 1.55; z-index: 40; }
+.about h3 { margin: 0 0 8px; font-size: 18px; font-weight: 500; color: #fff; }
+.about h2 { margin: 18px 0 5px; font: 500 11px/1.3 var(--font-mono); letter-spacing: .05em; color: #8a8a8a; }
+.about b { color: #ededed; font-weight: 500; }
+.about ul { margin: 0; padding-left: 16px; }
+.about li { margin-bottom: 5px; }
+.about .plus li::marker { color: #2de2e6; content: '+ '; }
+.about .minus li::marker { color: #ff3d9a; content: '− '; }
+.about .now { margin-top: 18px; padding: 10px 12px; border: 1px solid #2a2a2a; border-radius: 12px; }
+.wrap { position: fixed; top: 92px; left: 316px; right: 0; bottom: 0; overflow: hidden; display: grid; place-items: center; background: #070707; }
+.stage { position: relative; width: 1440px; height: 860px; overflow: hidden; flex: none; background: var(--ground, #131314); transform-origin: center; }
+.stage[data-theme='light'] { color-scheme: light; }
+
+/* ---------- the app */
+.sheet { position: absolute; background: var(--bg); overflow: hidden; transition: left .6s cubic-bezier(.2,.8,.2,1), right .6s cubic-bezier(.2,.8,.2,1), top .6s cubic-bezier(.2,.8,.2,1), bottom .6s cubic-bezier(.2,.8,.2,1), border-radius .6s; z-index: 2; }
+.sheet[data-lifted] { border-radius: 24px; outline: 1px solid var(--line); }
+.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.world[data-glide] { transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+.canvas { position: absolute; inset: 0; cursor: grab; touch-action: none; }
+.canvas:active { cursor: grabbing; }
+.crumb { position: absolute; left: 24px; top: 17px; font-size: 13px; color: var(--fg-dim); white-space: nowrap; z-index: 3; pointer-events: none; }
+.crumb i { color: var(--accent-magenta); font-style: normal; }
+.crumb b { color: var(--fg-strong); font-weight: 500; }
+.fit { position: absolute; left: 50%; transform: translateX(-50%); bottom: 14px; z-index: 3; padding: 5px 14px; border-radius: 999px; border: 1px solid var(--line-hover); background: var(--bg); color: var(--fg-dim); font: 12px var(--font-mono); }
+.fit:hover { color: var(--fg-strong); }
+.piece { position: absolute; background: var(--piece, #16171a); border-top: 2px solid var(--fg-dim); box-shadow: 0 0 0 1px var(--piece-edge, #2c2d31); }
+.pname { position: absolute; top: -13px; left: 14px; display: flex; gap: 7px; align-items: center; font: 500 13px/1 var(--font-mono); letter-spacing: .05em; white-space: nowrap; }
+.pname i { font-style: normal; padding: 4px 7px; background: var(--fg); color: var(--bg); font-size: 11px; }
+.kcard { position: absolute; width: 170px; min-height: 76px; border-radius: 14px; padding: 11px 12px; font-size: 13px; line-height: 1.35; background: color-mix(in srgb, var(--c) 13%, var(--piece, #16171a)); cursor: pointer; }
+.kcard[data-sel] { outline: 2px solid var(--accent-cyan); outline-offset: 4px; }
+.kcard[data-flash] { animation: flash 1.4s ease-out 2; }
+@keyframes flash { 0% { outline: 3px solid var(--accent-cyan); outline-offset: 3px; } 100% { outline: 3px solid transparent; outline-offset: 16px; } }
+.chipc { position: absolute; right: 6px; bottom: -11px; padding: 3px 8px; border-radius: 999px; background: var(--bg-raised); border: 1px solid var(--line-hover); font: 11px/1.2 var(--font-mono); color: var(--fg-dim); }
+.chipc[data-new] { color: var(--accent-magenta); border-color: var(--accent-magenta); }
+.badge { display: inline-block; font: 500 9px/1 var(--font-mono); letter-spacing: .05em; padding: 3px 5px; border-radius: 4px; background: var(--c); color: var(--on-accent, #000); text-transform: uppercase; vertical-align: 1px; white-space: nowrap; }
+.cards-row { position: absolute; left: 16px; right: 16px; height: 34px; border-radius: 9px; background: var(--wash-2); padding: 9px 11px; font-size: 12px; white-space: nowrap; overflow: hidden; }
+.hrule { position: absolute; left: 16px; right: 16px; font: 500 11px var(--font-mono); color: var(--fg); display: flex; gap: 8px; align-items: center; }
+.hrule i { color: var(--accent-magenta); font-style: normal; }
+.hrule::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+
+.rail { position: absolute; left: 0; top: 0; bottom: 0; width: 60px; z-index: 6; pointer-events: none; color: var(--fg-dim); }
+.rail .foot { position: absolute; bottom: 20px; left: 14px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.rail button { pointer-events: auto; position: relative; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; }
+.rail button:hover { background: var(--wash-3); color: var(--fg); }
+.rail button[data-on] { color: var(--accent-cyan); }
+.rail button[data-new]::after { content: ''; position: absolute; top: 4px; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-magenta); }
+.rail .mid { position: absolute; top: 45%; left: 14px; display: flex; flex-direction: column; gap: 4px; }
+svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.4; }
+
+.col { position: absolute; top: 0; bottom: 0; display: flex; flex-direction: column; overflow: hidden; z-index: 1; color: var(--fg); animation: in .5s cubic-bezier(.2,.8,.2,1); }
+@keyframes in { from { opacity: 0; } to { opacity: 1; } }
+.lhead { display: flex; align-items: center; gap: 10px; padding: 16px 12px 12px 20px; min-height: 60px; flex: none; }
+.lhead h2 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -.01em; color: var(--fg-strong); }
+.tools { margin-left: auto; display: flex; gap: 2px; align-items: center; color: var(--fg-dim); font: 12px var(--font-mono); }
+.tb { padding: 5px 9px; border-radius: 999px; color: var(--fg-dim); font: 12px var(--font-mono); white-space: nowrap; }
+.tb:hover { background: var(--wash-3); color: var(--fg-strong); }
+.tb.ic { width: 28px; height: 28px; padding: 0; display: grid; place-items: center; }
+.tb.dng { color: var(--accent-magenta); }
+.tb.on { background: var(--wash-3); color: var(--fg-strong); }
+.tb.go { background: var(--accent-cyan); color: var(--on-accent, #000); }
+.lamp { display: inline-block; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-magenta); }
+.rule { display: flex; align-items: center; gap: 9px; font: 500 11px/1 var(--font-mono); letter-spacing: .05em; color: var(--fg-muted); padding: 0 20px; margin: 18px 0 8px; }
+.rule::after { content: ''; flex: 1; border-top: 1px solid var(--line); order: 2; }
+.rule > button, .rule > em { order: 3; font-style: normal; letter-spacing: 0; color: var(--fg-dim); }
+.rule > button:hover { color: var(--fg-strong); }
+.rule[data-new] { color: var(--accent-magenta); }
+.scroll { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; }
+.av { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--p); color: #000; display: grid; place-items: center; font: 600 11px var(--font-display); }
+.av.s { width: 20px; height: 20px; font-size: 9px; }
+.gly { flex: none; width: 32px; height: 32px; border-radius: 11px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 20%, transparent); color: var(--c); font: 500 14px var(--font-mono); }
+.gly.ch { border-radius: 50%; }
+
+/* the composer */
+.comp { flex: none; display: flex; align-items: center; gap: 8px; margin: 10px 14px 14px; padding: 7px 7px 7px 15px; border-radius: 20px; background: var(--wash-2); border: 1px solid transparent; }
+.comp:focus-within { border-color: var(--accent-cyan); }
+.comp input { flex: 1; min-width: 0; height: 26px; outline: none; color: var(--fg-strong); font-size: 14px; }
+.comp input::placeholder { color: var(--fg-faint); }
+.send { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--wash-3); color: var(--fg-dim); flex: none; }
+.comp:has(input:not(:placeholder-shown)) .send { background: var(--accent-cyan); color: #000; }
+
+/* messages */
+.day { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; color: var(--fg-dim); font: 500 11px var(--font-mono); letter-spacing: .05em; }
+.day::after, .day::before { content: ''; flex: 1; border-top: 1px solid var(--line); }
+.nl { display: flex; align-items: center; gap: 8px; margin: 10px 0 8px; color: var(--accent-magenta); font: 500 11px var(--font-mono); letter-spacing: .05em; }
+.nl::before { content: ''; flex: 1; border-top: 1px solid var(--accent-magenta); }
+.m { position: relative; display: grid; grid-template-columns: 28px 1fr; gap: 0 11px; padding: 3px 8px; margin: 0 -8px; border-radius: 10px; }
+.m[data-first] { margin-top: 12px; }
+.m:hover { background: var(--wash-1); }
+.m .who { font-weight: 600; font-size: 13px; color: var(--p); }
+.m .t { margin-left: 8px; color: var(--fg-faint); font: 11px var(--font-mono); }
+.m .av { grid-row: 1 / span 2; }
+.m .x { grid-column: 2; line-height: 1.5; color: var(--fg); overflow-wrap: anywhere; }
+.m .acts { position: absolute; right: 6px; top: -10px; display: none; background: var(--bg-raised); border: 1px solid var(--line-hover); border-radius: 999px; padding: 1px 3px; }
+.m:hover .acts { display: flex; }
+.m .acts .tb { padding: 3px 7px; font-size: 11px; }
+.ref { display: inline; padding: 2px 8px 2px 5px; border-radius: 8px; background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--fg-strong); font-size: 13px; line-height: 1.2; }
+.ref .badge { margin-right: 6px; }
+.ref:hover { background: color-mix(in srgb, var(--c) 28%, transparent); }
+.at { color: var(--accent-cyan); }
+.thing { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; align-items: center; width: 100%; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--c) 12%, transparent); }
+.thing:hover { background: color-mix(in srgb, var(--c) 20%, transparent); }
+.thing b { font-weight: 500; font-size: 15px; color: var(--fg-strong); grid-column: 1; }
+.thing span.where { color: var(--fg-dim); font-size: 12px; grid-column: 1; }
+.thing .gos { grid-column: 2; grid-row: 1 / span 3; color: var(--fg-dim); font: 12px var(--font-mono); }
+.empty { padding: 28px 24px; color: var(--fg-dim); line-height: 1.6; }
+.empty h4 { margin: 0 0 6px; font-size: 17px; font-weight: 500; color: var(--fg-strong); }
+.empty .tb { margin-top: 14px; display: inline-block; }
+.name-in { margin: 0 14px 8px; padding: 6px 12px; border-radius: 16px; border: 1px solid var(--accent-cyan); display: flex; gap: 6px; align-items: center; color: var(--accent-cyan); font-family: var(--font-mono); }
+.name-in input { flex: 1; min-width: 0; outline: 0; color: var(--fg-strong); font-family: var(--font-display); }
+.page { position: absolute; inset: 0; padding: 52px 0 0 0; display: flex; flex-direction: column; background: var(--bg); z-index: 2; }
+.page[data-rail] { padding-left: 60px; }
+.pb { flex: 1; min-height: 0; display: flex; }
+
+/* ---------- A: desk */
+.Arow { display: grid; grid-template-columns: 32px 1fr auto; gap: 1px 12px; width: calc(100% - 16px); margin: 0 8px; padding: 9px 12px; border-radius: 14px; align-items: center; }
+.Arow:hover { background: var(--wash-2); }
+.Arow[data-on] { background: var(--wash-3); }
+.Arow > .gly, .Arow > .av { grid-row: 1 / span 2; }
+.Arow .n { font-size: 14px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.Arow[data-new] .n { color: var(--fg-strong); font-weight: 600; }
+.Arow .w { font: 11px var(--font-mono); color: var(--fg-faint); }
+.Arow .l { color: var(--fg-dim); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.Arow[data-new] .l { color: var(--fg-muted); }
+.Arow .lamp { justify-self: end; }
+.Acol { display: flex; flex: 1; min-height: 0; }
+.Arail { width: 60px; flex: none; overflow: auto; scrollbar-width: none; padding: 4px 0 12px 10px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.Arail button { position: relative; width: 44px; height: 44px; border-radius: 15px; display: grid; place-items: center; flex: none; }
+.Arail button:hover { background: var(--wash-2); }
+.Arail button[data-on] { background: var(--wash-3); }
+.Arail button[data-new]::after { content: ''; position: absolute; right: 2px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-magenta); }
+.Arail hr { width: 22px; border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
+.Aconv { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.Ahead { display: flex; align-items: center; gap: 10px; padding: 6px 12px 10px 14px; flex: none; }
+.Ahead[data-tint] { margin: 0 14px 4px 8px; padding: 10px 8px 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--c) 12%, transparent); }
+.Ahead .badge { margin-right: 4px; }
+.Ahead h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--fg-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.Ahead small { color: var(--fg-dim); font-size: 12px; white-space: nowrap; }
+.Alist { width: 316px; flex: none; display: flex; flex-direction: column; border-right: 1px solid var(--line); min-height: 0; }
+.Amid { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.measure { width: 100%; max-width: 760px; margin: 0 auto; }
+.Aside { width: 300px; flex: none; border-left: 1px solid var(--line); padding: 8px 0 20px; overflow: auto; scrollbar-width: none; }
+.mini { margin: 0 20px; height: 150px; border-radius: 14px; background: var(--piece, #16171a); position: relative; overflow: hidden; }
+.mini i { position: absolute; border-radius: 3px; background: var(--wash-4); }
+.mini i[data-me] { background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 30%, transparent); }
+.prow { display: flex; gap: 10px; align-items: center; padding: 5px 20px; }
+.prow small { margin-left: auto; color: var(--fg-dim); font: 11px var(--font-mono); }
+
+/* ---------- B: stream */
+.chips { display: flex; gap: 4px; padding: 0 14px 10px; overflow: auto; scrollbar-width: none; flex: none; }
+.chip { flex: none; padding: 5px 11px; border-radius: 999px; color: var(--fg-dim); font-size: 13px; display: inline-flex; gap: 7px; align-items: center; background: var(--wash-1); }
+.chip:hover { color: var(--fg); background: var(--wash-2); }
+.chip[data-on] { background: var(--fg); color: var(--bg); }
+.Bg { margin: 0 14px 10px; border-radius: 18px; background: var(--wash-1); padding: 4px 14px 10px; border: 1px solid transparent; }
+.Bg[data-target] { border-color: var(--accent-cyan); }
+.Bgh { position: sticky; top: 0; z-index: 1; display: flex; gap: 8px; align-items: center; padding: 9px 0 5px; width: 100%; font-weight: 600; color: var(--fg-strong); background: color-mix(in srgb, var(--bgs, var(--bg)) 97%, #fff); }
+.col .Bgh { --bgs: var(--ground); }
+.Bgh { white-space: nowrap; overflow: hidden; }
+.Bgh .gr { flex: none; margin-left: auto; font: 11px var(--font-mono); color: var(--fg-faint); font-weight: 400; }
+.Bg { position: relative; }
+.Bgo { position: absolute; right: 10px; top: 7px; z-index: 2; color: var(--fg-dim); }
+.Bg:has(.Bgo) .gr { margin-right: 26px; }
+.Bg .m { grid-template-columns: 20px 1fr; gap: 0 9px; }
+.more { color: var(--fg-dim); font: 12px var(--font-mono); padding: 3px 0; }
+.more:hover { color: var(--fg-strong); }
+.target { display: inline-flex; gap: 6px; align-items: center; padding: 4px 9px; margin-left: -8px; border-radius: 999px; background: var(--wash-3); max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: var(--fg-strong); flex: none; }
+.target:hover { background: var(--wash-4); }
+.pop { margin: 0 14px -4px; border: 1px solid var(--accent-cyan); border-radius: 16px; background: var(--bg-raised); padding: 6px; flex: none; max-height: 250px; overflow: auto; scrollbar-width: none; }
+.pop button { display: flex; gap: 10px; width: 100%; align-items: center; padding: 6px 10px; border-radius: 11px; }
+.pop button:hover { background: var(--wash-cyan); color: var(--fg-strong); }
+.pop .gly { width: 22px; height: 22px; border-radius: 7px; font-size: 11px; }
+.Bidx { width: 230px; flex: none; padding: 6px 8px; overflow: auto; scrollbar-width: none; }
+.Bidx button { display: flex; gap: 10px; align-items: center; width: 100%; padding: 7px 12px; border-radius: 11px; color: var(--fg-dim); font-size: 13px; }
+.Bidx button:hover { background: var(--wash-2); color: var(--fg); }
+.Bidx button[data-on] { color: var(--fg-strong); background: var(--wash-2); }
+.Bidx .gly { width: 20px; height: 20px; border-radius: 6px; font-size: 10px; }
+.Bidx .lamp { margin-left: auto; }
+
+/* ---------- C: side by side */
+.Ccols { flex: 1; min-height: 0; display: flex; gap: 0; overflow: auto; scrollbar-width: none; padding: 0 96px 0 12px; }
+.Cc { width: 344px; flex: none; display: flex; flex-direction: column; min-height: 0; padding: 0 4px; border-right: 1px dashed var(--line); }
+.Ch { display: flex; align-items: center; gap: 9px; padding: 14px 14px 8px; font: 500 12px var(--font-mono); letter-spacing: .03em; white-space: nowrap; color: var(--fg-strong); }
+.Ch i { font-style: normal; color: var(--accent-magenta); }
+.Ch span.nm { overflow: hidden; text-overflow: ellipsis; }
+.Ch::after { content: ''; flex: 1; border-top: 1px solid var(--line); order: 1; min-width: 10px; }
+.Ch > button, .Ch > .lamp { order: 2; }
+.Cbody { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; padding: 0 16px; display: flex; flex-direction: column; }
+.Cbody > :first-child { margin-top: auto; }
+.Cadd { width: 240px; flex: none; padding: 14px 16px; }
+.Cadd button.r { display: flex; gap: 10px; align-items: center; width: 100%; padding: 7px 10px; border-radius: 12px; color: var(--fg-muted); font-size: 13px; }
+.Cadd button.r:hover { background: var(--wash-2); color: var(--fg-strong); }
+.Cadd .lamp { margin-left: auto; }
+.tabs { display: flex; gap: 2px; padding: 0 12px 8px; overflow: auto; scrollbar-width: none; flex: none; }
+.tab { flex: none; display: flex; gap: 8px; align-items: center; padding: 6px 12px; border-radius: 999px; color: var(--fg-dim); font-size: 13px; max-width: 150px; white-space: nowrap; overflow: hidden; }
+.tab span.nm { overflow: hidden; text-overflow: ellipsis; }
+.tab:hover { background: var(--wash-2); color: var(--fg); }
+.tab[data-on] { background: var(--wash-3); color: var(--fg-strong); }
+
+/* ---------- D: console */
+.Dsw { display: flex; align-items: center; gap: 10px; margin: 0 2px 0 14px; padding: 9px 14px; border-radius: 14px; background: var(--wash-2); flex: 1; min-width: 0; font-size: 15px; color: var(--fg-strong); }
+.Dsw:hover { background: var(--wash-3); }
+.Dsw i { font-style: normal; color: var(--accent-magenta); font-family: var(--font-mono); }
+.Dsw .tl { margin-left: auto; color: var(--fg-dim); font: 12px var(--font-mono); display: flex; gap: 8px; align-items: center; }
+.Dlog { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; padding: 4px 20px; display: flex; flex-direction: column; }
+.Dlog > :first-child { margin-top: auto; }
+.Dl { display: grid; grid-template-columns: 42px 58px 1fr; gap: 0 10px; padding: 3px 8px; margin: 0 -8px; border-radius: 8px; line-height: 1.5; align-items: baseline; }
+.page .Dl { grid-template-columns: 52px 84px 1fr; }
+.Dl:hover { background: var(--wash-1); }
+.Dl .t { font: 11px var(--font-mono); color: var(--fg-faint); }
+.Dl .w { font: 500 12px var(--font-mono); color: var(--p); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.Dcomp { border-radius: 0; margin: 0; background: none; border: 0; border-top: 1px solid var(--line); padding: 12px 18px 8px; }
+.Dcomp:focus-within { border-color: var(--accent-cyan); }
+.Dcomp::before { content: '>'; color: var(--accent-magenta); font-family: var(--font-mono); }
+.hints { display: flex; gap: 14px; padding: 0 20px 14px 38px; color: var(--fg-faint); font: 11px var(--font-mono); flex: none; white-space: nowrap; overflow: hidden; }
+.hints b { color: var(--fg-dim); font-weight: 400; }
+.Didx { width: 260px; flex: none; border-right: 1px solid var(--line); padding: 8px; overflow: auto; scrollbar-width: none; }
+.Didx button { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; width: 100%; padding: 6px 12px; border-radius: 10px; color: var(--fg-dim); font-size: 13px; white-space: nowrap; }
+.Didx button .nm { overflow: hidden; text-overflow: ellipsis; }
+.Didx button i { font: 11px var(--font-mono); color: var(--fg-faint); }
+.Didx button:hover { background: var(--wash-2); color: var(--fg); }
+.Didx button[data-on] { background: var(--wash-3); color: var(--fg-strong); }
+.Didx button[data-on] i { color: var(--accent-magenta); }
+
+/* ---------- the right */
+.rtabs { display: flex; gap: 2px; padding: 14px 12px 4px 16px; }
+.phead { display: flex; align-items: center; padding: 16px 12px 4px 20px; font: 500 11px var(--font-mono); letter-spacing: .05em; color: var(--c); text-transform: uppercase; }
+.ptitle { padding: 2px 20px 10px; font-size: 20px; font-weight: 500; line-height: 1.25; color: var(--fg-strong); }
+.ptext { padding: 0 20px; color: var(--fg-muted); line-height: 1.55; font-size: 13px; }
+.orb { position: absolute; right: 22px; bottom: 18px; width: 64px; height: 64px; border-radius: 50%; z-index: 5; }
+.orb::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background-image: radial-gradient(var(--fg) 1px, transparent 1.3px); background-size: 6px 6px; opacity: .7; -webkit-mask: radial-gradient(circle at 35% 30%, #000 20%, rgba(0,0,0,.25) 60%, transparent 71%); mask: radial-gradient(circle at 35% 30%, #000 20%, rgba(0,0,0,.25) 60%, transparent 71%); }
+.orb::after { content: ''; position: absolute; left: 21px; top: 27px; width: 8px; height: 10px; border-radius: 3px; background: var(--fg-strong); box-shadow: 14px 0 var(--fg-strong); }
+.sheetw { position: absolute; right: 14px; top: 14px; z-index: 4; font: 11px var(--font-mono); color: var(--fg-faint); pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="top" id="top"></div>
+<aside class="about" id="about"></aside>
+<div class="wrap" id="wrap"><div class="stage" id="stage">
+  <div class="rail" id="rail" data-theme-dark></div>
+  <div class="col" id="left" data-ground hidden></div>
+  <div class="sheet" id="sheet">
+    <div class="canvas" id="canvas"><div class="world" id="world"></div></div>
+    <div class="crumb" id="crumb"></div>
+    <div class="sheetw" id="sheetw"></div>
+    <button class="fit" id="fit" data-act="fit">fit</button>
+    <div id="page"></div>
+    <button class="orb" id="orb" data-act="orb" aria-label="Ask the agent" title="the agent"></button>
+  </div>
+  <div class="col" id="right1" data-ground hidden></div>
+  <div class="col" id="right2" data-ground hidden></div>
+</div></div>
+<script>
+// ---------------------------------------------------------------- made-up data
+const P = { me: ['You', 'YO', 'var(--accent-magenta)'], z: ['Zeynep', 'ZE', 'var(--accent-cyan)'], m: ['Mert', 'ME', 'var(--accent-yellow)'], a: ['Ada', 'AD', 'var(--accent-green)'] }
+const T = { channel: ['#', 'var(--fg-muted)'], feature: ['◆', 'var(--type-feature)'], problem: ['!', 'var(--type-problem)'], idea: ['✦', 'var(--type-idea)'], plane: ['▦', 'var(--fg)'], task: ['☐', 'var(--accent-blue)'], customer: ['☺', 'var(--type-customer)'] }
+const CARDS = [
+  { id: 'k1', kind: 'customer', name: 'Office managers, 20–80 people', at: [30, 40] }, { id: 'k2', kind: 'problem', name: 'Nobody owns the follow-up', at: [230, 40] },
+  { id: 'k3', kind: 'feature', name: 'One-tap lunch order', at: [430, 40] }, { id: 'k4', kind: 'problem', name: 'Lists live in three places', at: [230, 180] },
+  { id: 'k5', kind: 'feature', name: 'A list everyone can tick', at: [430, 180] }, { id: 'k6', kind: 'customer', name: 'Team leads', at: [30, 180] },
+  { id: 'k7', kind: 'idea', name: 'Weekly menu vote', at: [700, 40] }, { id: 'k8', kind: 'feature', name: 'Reminder at 11:00', at: [900, 40] }, { id: 'k9', kind: 'idea', name: 'Leave-over swap', at: [700, 180] },
+]
+const card = (id) => CARDS.find((c) => c.id === id)
+const FULL = () => [
+  { id: 'general', kind: 'channel', name: 'general', new: true, msgs: [
+    ['z', 'Yesterday', '16:02', 'The pilot list is on the canvas: nine offices, three said yes already.'], ['a', 'Yesterday', '16:10', 'Nice. Who calls the other six?'], ['me', 'Yesterday', '16:12', 'I can take three of them tomorrow morning.'],
+    ['m', 'Today', '09:31', 'Two more yes. One asked about allergies, see [k3].'], ['m', 'Today', '09:32', 'They want it on the order itself, not in a note.', 'new'], ['z', 'Today', '10:04', '@You can you look before noon? I would rather not promise it in the call.', 'new'] ] },
+  { id: 'launch', kind: 'channel', name: 'launch-week', msgs: [['a', 'Yesterday', '11:20', 'Landing text is ready, three versions.'], ['me', 'Yesterday', '11:48', 'Second one. It says what it does in one line.'], ['a', 'Yesterday', '11:50', 'Agreed. Taking it.']] },
+  { id: 't3', kind: 'feature', name: 'One-tap lunch order', card: 'k3', where: '01 Market', new: true, msgs: [['z', 'Today', '08:40', 'Is one tap still true if there are three menus?'], ['me', 'Today', '08:52', 'One tap for the usual. Anything else is two.'], ['m', 'Today', '09:30', 'Allergies belong here: a line under the order, set once.', 'new']] },
+  { id: 't2', kind: 'problem', name: 'Nobody owns the follow-up', card: 'k2', where: '01 Market', msgs: [['a', 'Yesterday', '14:02', 'Three of five interviews said this first, unprompted.'], ['me', 'Yesterday', '14:30', 'Then it goes before the menu. Moving it up.']] },
+  { id: 't8', kind: 'feature', name: 'Reminder at 11:00', card: 'k8', where: '02 Product', msgs: [['m', 'Yesterday', '17:40', 'Eleven is late for the kitchens. Ten fifteen?']] },
+  { id: 'tt', kind: 'task', name: 'Call ten offices', where: '03 Plan', msgs: [['z', 'Yesterday', '12:00', 'Four done. Notes are on each card.']] },
+]
+const S = { look: 'A', size: 'panel', right: 'none', canvas: 'fit', side: 'two', data: 'full', theme: 'dark', open: null, openCols: ['general', 't3', 'launch'], filter: 'all', target: 'general', pop: false, naming: false, sel: 'k3', q: '', resolved: {}, talk: true, cam: { x: 590, y: 330, z: .78 }, expanded: {}, menu: false }
+try { Object.assign(S, JSON.parse(decodeURIComponent(location.hash.slice(1)) || '{}')) } catch {}
+let C = S.data === 'full' ? FULL() : []
+const conv = (id) => C.find((c) => c.id === id)
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+const last = (c) => c.msgs[c.msgs.length - 1]
+const $ = (id) => document.getElementById(id)
+
+// ---------------------------------------------------------------- parts
+const IC = {
+  close: '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12"/></svg>', send: '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 12V2M3 6l4-4 4 4"/></svg>',
+  talk: '<svg width="18" height="18" viewBox="0 0 18 18"><path d="M2 3h14v10H8l-4 3v-3H2z"/><path d="M5.5 8h.1M9 8h.1M12.500 8h.1" stroke-width="2" stroke-linecap="round"/></svg>',
+  deck: '<svg width="18" height="18" viewBox="0 0 18 18"><path d="M2 3h4v9H2zM7 3h4v12H7zM12 3h4v6h-4z"/></svg>', doc: '<svg width="18" height="18" viewBox="0 0 18 18"><path d="M4 2h7l3 3v11H4zM6.500 8h5M6.500 11h5"/></svg>',
+  find: '<svg width="15" height="15" viewBox="0 0 15 15"><circle cx="6.500" cy="6.500" r="4"/><path d="M9.500 9.500L13 13"/></svg>', plus: '<svg width="15" height="15" viewBox="0 0 15 15"><path d="M7.500 2v11M2 7.500h11"/></svg>',
+  more: '<svg width="15" height="15" viewBox="0 0 15 15"><path d="M3 7.500h.1M7.500 7.500h.1M12 7.500h.1" stroke-width="2.400" stroke-linecap="round"/></svg>',
+  grow: '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M8 2h4v4M6 12H2V8M12 2L8 6M2 12l4-4"/></svg>', shrink: '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M12 6H8V2M2 8h4v4M8 6l4-4M6 8l-4 4"/></svg>',
+  goto: '<svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="3.500"/><path d="M7 0v3M7 11v3M0 7h3M11 7h3"/></svg>', check: '<svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 7.500l3.500 3.500L12 3.500"/></svg>',
+}
+const av = (w, s) => `<span class="av ${s ? 's' : ''}" style="--p:${P[w][2]}">${P[w][1]}</span>`
+const gly = (c) => `<span class="gly ${c.kind === 'channel' ? 'ch' : ''}" style="--c:${T[c.kind][1]}">${T[c.kind][0]}</span>`
+const badge = (k) => `<span class="badge" style="--c:${T[k][1]}">${k}</span>`
+const nm = (c) => (c.kind === 'channel' ? '# ' : '') + esc(c.name)
+const text = (s) => esc(s).replace(/\[(k\d)\]/g, (_, id) => `<button class="ref" style="--c:${T[card(id).kind][1]}" data-act="show" data-id="${id}">${badge(card(id).kind)}${esc(card(id).name)}</button>`).replace(/@You/g, '<span class="at">@You</span>')
+const btn = (act, label, o = {}) => `<button class="tb ${o.ic ? 'ic' : ''} ${o.c || ''}" data-act="${act}" ${o.id ? `data-id="${o.id}"` : ''} title="${o.t || label}" aria-label="${o.t || label}">${label}</button>`
+const comp = (id, ph, cls = '', lead = '') => `<form class="comp ${cls}" data-send="${id}">${lead}<input data-compose="${id}" placeholder="${ph}" aria-label="${ph}" autocomplete="off"><button class="send" aria-label="send" title="send (Enter)">${IC.send}</button></form>`
+// The messages, one writer's in a row one run; a day's rule; the NEW line.
+function msgs(c, o = {}) {
+  let out = '', day = '', who = '', nl = false
+  const list = o.from ? c.msgs.slice(o.from) : c.msgs
+  list.forEach((m, i) => {
+    if (!o.noDay && m[1] !== day) { day = m[1]; who = ''; out += `<div class="day">${day.toUpperCase()}</div>` }
+    if (m[4] === 'new' && !nl) { nl = true; who = ''; out += '<div class="nl">NEW</div>' }
+    const first = m[0] !== who; who = m[0]
+    const mine = m[0] === 'me'
+    out += `<div class="m" ${first ? 'data-first' : ''} style="--p:${P[m[0]][2]}">${first ? av(m[0], o.small) : '<span></span>'}${first ? `<div><span class="who">${P[m[0]][0]}</span><span class="t">${m[2]}</span></div>` : ''}<div class="x">${text(m[3])}</div><div class="acts">${mine ? btn('del', 'delete', { id: c.id + ':' + (c.msgs.length - list.length + i) }) : btn('mention', 'reply', { id: c.id + ':' + m[0] })}</div></div>`
+  })
+  return out
+}
+const headTools = () => `<div class="tools">${btn('find', IC.find, { ic: 1, t: 'find in Talk' })}${btn('new', IC.plus, { ic: 1, t: 'new channel' })}${btn('size', S.size === 'full' ? IC.shrink : IC.grow, { ic: 1, t: S.size === 'full' ? 'beside the canvas' : 'as the page' })}${btn('closeTalk', IC.close, { ic: 1, t: 'close Talk' })}</div>`
+const naming = () => (S.naming ? `<form class="name-in" data-name>#<input data-focus placeholder="name, e.g. pilot" aria-label="A new channel's name" autocomplete="off"></form>` : '')
+const finding = () => (S.q !== null && S.finding ? `<div class="name-in" style="color:var(--fg-dim)">${IC.find}<input data-find data-focus placeholder="find in Talk" aria-label="Find in Talk" value="${esc(S.q)}" autocomplete="off"></div>` : '')
+const hit = (c) => !S.q || (c.name + c.msgs.map((m) => m[3]).join(' ')).toLowerCase().includes(S.q.toLowerCase())
+const live = () => C.filter((c) => !S.resolved[c.id] && hit(c))
+const people = (c) => [...new Set(c.msgs.map((m) => m[0]))]
+const thing = (c) => c.kind === 'channel' ? '' : `<button class="thing" style="--c:${T[c.kind][1]}" data-act="show" data-id="${c.card || ''}" title="show it on the canvas"><span>${badge(c.kind)}</span><b>${esc(c.name)}</b><span class="where">on ${c.where}</span><span class="gos">${IC.goto}</span></button>`
+const convTools = (c) => `${c.kind === 'channel' ? '' : btn('resolve', IC.check, { ic: 1, id: c.id, t: 'resolve' })}${btn('delConv', IC.more, { ic: 1, id: c.id, t: 'more: delete' })}`
+const empty = (wide) => `<div class="empty"><h4>Nothing said yet.</h4>Start a channel for talk that isn't about one thing, or right-click anything on the canvas and say it there.<br>${btn('new', 'start a channel', { c: 'go' })}</div>`
+
+// ---------------------------------------------------------------- A: the desk
+const Arow = (c) => `<button class="Arow" data-act="open" data-id="${c.id}" ${c.id === S.open ? 'data-on' : ''} ${c.new ? 'data-new' : ''}>${gly(c)}<span class="n">${nm(c)}</span><span class="w">${last(c) ? (last(c)[1] === 'Today' ? last(c)[2] : 'yest.') : ''}</span><span class="l">${last(c) ? `${P[last(c)[0]][0]}: ${esc(last(c)[3].replace(/\[(k\d)\]/g, (_, i) => card(i).name))}` : 'nothing said yet'}</span>${c.new ? '<span class="lamp"></span>' : '<span></span>'}</button>`
+function Alist() {
+  const l = live(), n = l.filter((c) => c.new || c.kept), ch = l.filter((c) => !n.includes(c) && c.kind === 'channel'), th = l.filter((c) => !n.includes(c) && c.kind !== 'channel'), done = C.filter((c) => S.resolved[c.id])
+  return `${finding()}${naming()}<div class="scroll">${!C.length ? empty() : ''}${C.length && !l.length ? '<div class="empty">Nothing found.</div>' : ''}${n.length ? `<div class="rule" data-new>NEW<button data-act="read">mark all read</button></div>${n.map(Arow).join('')}` : ''}${ch.length ? `<div class="rule">CHANNELS<button data-act="new">+ channel</button></div>${ch.map(Arow).join('')}` : ''}${th.length ? `<div class="rule">ON THE CANVAS</div>${th.map(Arow).join('')}` : ''}${done.length ? `<div class="rule">RESOLVED<em>${done.length}</em></div>${done.map(Arow).join('')}` : ''}</div>`
+}
+const Aconv = (c, full) => `<div class="${full ? 'Amid' : 'Aconv'}"><div class="Ahead" ${c.kind !== 'channel' && !full ? `data-tint style="--c:${T[c.kind][1]}"` : ''}>${full ? gly(c) : ''}<div style="min-width:0"><h3>${nm(c)}</h3><small>${c.kind === 'channel' ? 'everyone in the workspace' : `${full ? c.kind : badge(c.kind)} ${full ? '· ' : ''}on ${c.where}`}</small></div><div class="tools">${!full ? '' : people(c).map((p) => av(p, 1)).join('')}${c.card ? btn('show', IC.goto, { ic: 1, id: c.card, t: 'show it on the canvas' }) : ''}${convTools(c)}</div></div><div class="scroll" data-bottom style="padding:0 ${full ? 24 : 18}px 4px 14px"><div class="${full ? 'measure' : ''}">${c.msgs.length ? msgs(c) : '<p class="empty">Your first message starts it.</p>'}</div></div><div class="${full ? 'measure' : ''}">${comp(c.id, c.kind === 'channel' ? `say something in #${esc(c.name)}` : 'reply')}</div></div>`
+function Apanel() {
+  const c = conv(S.open)
+  if (!c) return `<div class="lhead"><h2>Talk</h2>${headTools()}</div>${Alist()}`
+  const g = [live().filter((x) => x.kind === 'channel'), live().filter((x) => x.kind !== 'channel')]
+  const rb = (x) => `<button data-act="open" data-id="${x.id}" ${x.id === S.open ? 'data-on' : ''} ${x.new ? 'data-new' : ''} title="${nm(x)}" aria-label="${nm(x)}"><span class="gly ${x.kind === 'channel' ? 'ch' : ''}" style="--c:${T[x.kind][1]};font-size:12px">${x.kind === 'channel' ? x.name.slice(0, 2) : x.name.split(/[\s-]+/).slice(0, 2).map((w) => w[0].toUpperCase()).join('')}</span></button>`
+  return `<div class="lhead"><h2>Talk</h2>${headTools()}</div><div class="Acol"><div class="Arail"><button data-act="open" data-id="" title="the list" aria-label="the list"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M3 4.500h12M3 9h12M3 13.500h12"/></svg></button><hr>${g[0].map(rb).join('')}<hr>${g[1].map(rb).join('')}</div>${finding() || naming() ? `<div class="Aconv">${finding()}${naming()}</div>` : Aconv(c)}</div>`
+}
+function Afull() {
+  const c = conv(S.open) || live()[0]
+  if (c && !S.open) S.open = c.id
+  const about = c && c.kind !== 'channel'
+  return `<div class="pb"><div class="Alist"><div class="lhead"><h2>Talk</h2>${headTools()}</div>${Alist()}</div>${c ? Aconv(c, 1) : '<div class="Amid"></div>'}${c && sheetBox().w > 1000 ? `<div class="Aside">${about ? `<div class="rule" style="margin-top:10px">WHERE IT IS<button data-act="show" data-id="${c.card || ''}">go there</button></div><div class="mini" style="--c:${T[c.kind][1]}">${CARDS.map((k) => `<i ${k.id === c.card ? 'data-me' : ''} style="left:${k.at[0] / 4.4 + 12}px;top:${k.at[1] / 3 + 30}px;width:36px;height:22px"></i>`).join('')}</div><div style="padding:12px 20px 0">${thing(c)}</div>` : ''}<div class="rule">IN IT</div>${people(c).map((p, i) => `<div class="prow">${av(p, 1)}${P[p][0]}<small>${p === 'm' ? 'away' : 'here'}</small></div>`).join('')}${about ? `<div class="rule">ALSO SAID ABOUT IT</div><div class="prow" style="color:var(--fg-dim)"># general, 09:31</div>` : ''}</div>` : ''}</div>`
+}
+// ---------------------------------------------------------------- B: the stream
+function Bstream() {
+  const l = live().filter((c) => S.filter === 'all' || (S.filter === 'things' ? c.kind !== 'channel' : S.filter === 'new' ? c.new : c.id === S.filter))
+  return [...l].reverse().map((c) => { const k = S.expanded[c.id] ? 0 : Math.max(0, c.msgs.length - 2); return `<section class="Bg" id="g-${c.id}" ${S.target === c.id ? 'data-target' : ''}><button class="Bgh" data-act="target" data-id="${c.id}" title="answer here">${c.kind === 'channel' ? '' : badge(c.kind)}${nm(c)}${c.new ? '<span class="lamp"></span>' : ''}<span class="gr">${c.where || ''}</span>${c.card ? `</button><span class="Bgo">${btn('show', IC.goto, { ic: 1, id: c.card, t: 'show it on the canvas' })}</span>` : '</button>'}${k ? `<button class="more" data-act="expand" data-id="${c.id}">${k} earlier</button>` : ''}${msgs(c, { from: k, noDay: 1, small: 1 })}</section>` }).join('') || empty()
+}
+const chip = (id, label, n) => `<button class="chip" data-act="filter" data-id="${id}" ${S.filter === id ? 'data-on' : ''}>${label}${n ? '<span class="lamp"></span>' : ''}</button>`
+const Bchips = () => `<div class="chips">${chip('all', 'everything')}${chip('new', 'new', C.some((c) => c.new))}${C.filter((c) => c.kind === 'channel').map((c) => chip(c.id, '# ' + esc(c.name))).join('')}${chip('things', 'on the canvas')}</div>`
+const Bcomp = () => { const c = conv(S.target) || C[0]; return c ? `${S.pop ? `<div class="pop">${live().map((x) => `<button data-act="target" data-id="${x.id}">${gly(x)}${nm(x)}</button>`).join('')}</div>` : ''}${comp(c.id, 'say something', '', `<button type="button" class="target" data-act="pop" title="where it goes">${c.kind === 'channel' ? '' : `<span class="lamp" style="background:${T[c.kind][1]}"></span>`}${nm(c)} ▾</button>`)}` : '' }
+const Bpanel = () => `<div class="lhead"><h2>Talk</h2>${headTools()}</div>${finding()}${naming()}${Bchips()}<div class="scroll" data-bottom>${Bstream()}</div>${Bcomp()}`
+const Bfull = () => `<div class="pb"><div class="Bidx"><div class="lhead" style="padding:8px 0 10px 12px"><h2>Talk</h2></div>${naming()}${['all', 'new', 'things'].map((f) => `<button data-act="filter" data-id="${f}" ${S.filter === f ? 'data-on' : ''}>${{ all: 'everything', new: 'new', things: 'on the canvas' }[f]}${f === 'new' && C.some((c) => c.new) ? '<span class="lamp"></span>' : ''}</button>`).join('')}<div class="rule" style="padding:0 12px">JUMP TO</div>${live().map((c) => `<button data-act="jump" data-id="${c.id}" ${S.target === c.id ? 'data-on' : ''}>${gly(c)}${esc(c.name)}${c.new ? '<span class="lamp"></span>' : ''}</button>`).join('')}</div><div class="Amid"><div class="lhead">${headTools()}</div>${finding()}<div class="scroll" data-bottom><div class="measure">${Bstream()}</div></div><div class="measure">${Bcomp()}</div></div></div>`
+// ---------------------------------------------------------------- C: side by side
+const Chead = (c, i, full) => `<div class="Ch"><i>0${i + 1}</i><span class="nm">${c.kind === 'channel' ? '# ' : ''}${esc(c.name).toUpperCase()}</span>${c.new ? '<span class="lamp"></span>' : ''}${c.card ? btn('show', IC.goto, { ic: 1, id: c.card, t: 'show it on the canvas' }) : ''}${btn('closeCol', IC.close, { ic: 1, id: c.id, t: 'put it away' })}</div>`
+const Cc = (c, i) => `<div class="Cc">${Chead(c, i)}${c.kind === 'channel' ? '' : `<div style="padding:0 14px 4px;color:var(--fg-dim);font-size:12px">${badge(c.kind)} &nbsp;on ${c.where}</div>`}<div class="Cbody" data-bottom>${msgs(c, { small: 1 }) || '<p class="empty">Your first message starts it.</p>'}</div>${comp(c.id, c.kind === 'channel' ? 'say something' : 'reply')}</div>`
+const Cclosed = () => live().filter((c) => !S.openCols.includes(c.id))
+const Cadd = () => `<div class="Cadd"><div class="rule" style="padding:0;margin-top:2px">PUT BESIDE</div>${Cclosed().map((c) => `<button class="r" data-act="addCol" data-id="${c.id}">${gly(c)}${nm(c)}${c.new ? '<span class="lamp"></span>' : ''}</button>`).join('') || '<p class="empty" style="padding:4px 0">all of them are open</p>'}<button class="r" data-act="new">+ channel</button>${naming().replace('margin:0', '')}</div>`
+const Cfull = () => `<div class="lhead"><h2>Talk</h2>${headTools()}</div>${finding()}<div class="Ccols">${S.openCols.map(conv).filter((c) => c && hit(c)).map(Cc).join('')}${C.length ? Cadd() : empty()}</div>`
+function Cpanel() {
+  const cols = S.openCols.map(conv).filter(Boolean), c = conv(S.open) || cols[0]
+  return `<div class="lhead"><h2>Talk</h2>${headTools()}</div>${finding()}${naming()}${cols.length ? `<div class="tabs">${cols.map((x) => `<button class="tab" data-act="open" data-id="${x.id}" ${x === c ? 'data-on' : ''}><span class="nm">${nm(x)}</span>${x.new ? '<span class="lamp"></span>' : ''}</button>`).join('')}${Cclosed().length ? btn('pop', IC.plus, { ic: 1, t: 'put another beside' }) : ''}</div>` : ''}${S.pop ? `<div class="pop" style="margin-bottom:8px">${Cclosed().map((x) => `<button data-act="addCol" data-id="${x.id}">${gly(x)}${nm(x)}</button>`).join('')}</div>` : ''}${c && c.kind !== 'channel' ? `<div style="display:flex;gap:8px;align-items:center;padding:0 12px 2px 20px;color:var(--fg-dim);font-size:12px;flex:none">${badge(c.kind)}on ${c.where}<div class="tools">${btn('show', IC.goto, { ic: 1, id: c.card, t: 'show it on the canvas' })}${convTools(c)}</div></div>` : ''}${c ? `<div class="Cbody" data-bottom style="padding:0 18px">${msgs(c, { small: 1 })}</div>${comp(c.id, c.kind === 'channel' ? 'say something' : 'reply')}` : empty()}`
+}
+// ---------------------------------------------------------------- D: the console
+const Dlog = (c) => { let day = '', nl = false; return c.msgs.map((m) => { let o = ''; if (m[1] !== day) { day = m[1]; o += `<div class="day">${day.toUpperCase()}</div>` } if (m[4] === 'new' && !nl) { nl = true; o += '<div class="nl">NEW</div>' } return o + `<div class="Dl" style="--p:${P[m[0]][2]}"><span class="t">${m[2]}</span><span class="w">${P[m[0]][0].toLowerCase()}</span><span>${text(m[3])}</span></div>` }).join('') || '<p class="empty">Your first message starts it.</p>' }
+const hints = '<div class="hints"><span><b>#</b> go to a channel</span><span><b>@</b> a person</span><span><b>/resolve</b></span><span><b>/new</b></span></div>'
+const Dbody = (c) => c ? `<div class="Dlog" data-bottom>${Dlog(c)}</div>${comp(c.id, c.kind === 'channel' ? `#${esc(c.name)}` : esc(c.name), 'Dcomp')}${hints}` : empty()
+const Dsw = (c) => c ? `<button class="Dsw" data-act="pop" title="go to another conversation">${c.kind === 'channel' ? '<i>#</i>' : badge(c.kind)}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</span><span class="tl">${C.filter((x) => x.new && x !== c).length ? `<span class="lamp"></span>${C.filter((x) => x.new && x !== c).length} new` : ''} ▾</span></button>` : ''
+const Dpick = () => S.pop ? `<div class="pop" style="margin-bottom:8px">${live().map((x) => `<button data-act="open" data-id="${x.id}">${gly(x)}${nm(x)}${x.new ? '<span class="lamp" style="margin-left:auto"></span>' : ''}</button>`).join('')}</div>` : ''
+const Dcur = () => conv(S.open) || live()[0]
+const Dpanel = () => { const c = Dcur(); return `<div class="lhead"><h2>Talk</h2>${headTools()}</div>${finding()}${naming()}<div style="display:flex;align-items:center;padding-right:12px;flex:none;margin-bottom:8px">${Dsw(c)}${c && c.card ? btn('show', IC.goto, { ic: 1, id: c.card, t: 'show it on the canvas' }) : ''}</div>${Dpick()}${Dbody(c)}` }
+const Dfull = () => { const c = Dcur(); return `<div class="pb"><div class="Didx"><div class="lhead" style="padding:8px 12px 10px"><h2>Talk</h2></div>${naming()}${live().map((x, i) => `<button data-act="open" data-id="${x.id}" ${x === c ? 'data-on' : ''}><i>${String(i + 1).padStart(2, '0')}</i><span class="nm">${nm(x)}</span>${x.new ? '<span class="lamp"></span>' : ''}</button>`).join('')}</div><div class="Amid"><div class="lhead">${c ? `<h2 style="font-size:17px">${nm(c)}</h2>${c.card ? btn('show', IC.goto, { ic: 1, id: c.card, t: 'show it on the canvas' }) : ''}` : ''}${headTools()}</div>${finding()}<div class="measure" style="max-width:900px;flex:1;min-height:0;display:flex;flex-direction:column">${Dbody(c)}</div></div></div>` }
+const LOOK = { A: [Apanel, Afull], B: [Bpanel, Bfull], C: [Cpanel, Cfull], D: [Dpanel, Dfull] }
+
+// ---------------------------------------------------------------- the window: what's docked, where the sheet is
+const W = 1440, H = 860, RAIL = 60, LW = 384, RW = 340, GAP = 8
+function cols() {
+  const left = S.talk && S.size === 'panel' ? RAIL + LW : 0
+  const card = S.right === 'card' || S.right === 'both', agent = S.right === 'agent' || S.right === 'both'
+  const one = S.side === 'one' && card && agent
+  return { left, card: card && !one, agent: agent && !one, one, right: (one ? RW : (card ? RW : 0) + (agent ? RW : 0)) }
+}
+function sheetBox() {
+  const c = cols(), lifted = c.left || c.right
+  const x0 = c.left || (lifted ? RAIL : 0), x1 = c.right || (lifted ? GAP : 0), b = lifted ? GAP : 0
+  return { x0, x1, b, lifted, w: W - x0 - x1, h: H - 2 * b }
+}
+// `fit`: what was in sight in the whole window stays in sight in what's left of it: zoomed out only as far as it has to be.
+function keepIn(w) {
+  if (S.canvas !== 'fit') return 1
+  const { x, z } = S.cam, half = Math.min(Math.max(x, 1180 - x), W / 2 / z)
+  return Math.min(1, Math.max(.3, (w / 2 - 36) / (half * z)))
+}
+// Where the canvas is drawn, in the sheet's own px.
+function camera() {
+  const b = sheetBox(), { x, y, z } = S.cam
+  if (S.canvas === 'today') {
+    // As it is now: measured from the window's middle (the app stops at the agent), moved by half of every column, the agent's twice.
+    const c = cols(), ag = c.agent ? RW : 0
+    const mid = (W - ag) / 2 + (c.left - c.right) / 2
+    return { tx: mid - b.x0 - x * z, ty: H / 2 - b.b - y * z, z }
+  }
+  const k = z * keepIn(b.w)
+  return { tx: b.w / 2 - x * k, ty: b.h / 2 - y * k, z: k }
+}
+function fit() {
+  const b = sheetBox(), w = S.canvas === 'today' ? W : b.w
+  S.cam = { x: 590, y: 340, z: Math.min(1, (w - 110) / 1180, (b.h - 170) / 720) }
+}
+function drawWorld() {
+  const pk = (x, y, w, h, kind, name) => `<div class="piece" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px"><div class="pname"><i>${kind}</i>${name}</div></div>`
+  $('world').innerHTML = pk(0, 0, 630, 330, '▦ PLANE', '01 MARKET') + pk(670, 0, 510, 330, '▦ PLANE', '02 PRODUCT') + pk(0, 400, 630, 300, '☰ DECK', '03 PLAN') + pk(670, 400, 510, 300, '▤ TABLE', '04 RIVALS') +
+    CARDS.map((c) => { const t = C.find((x) => x.card === c.id && !S.resolved[x.id]); return `<div class="kcard" data-act="card" data-id="${c.id}" style="--c:${T[c.kind][1]};left:${c.at[0]}px;top:${c.at[1] + 10}px" ${S.sel === c.id && (S.right === 'card' || S.right === 'both') ? 'data-sel' : ''}>${badge(c.kind)}<br>${c.name}${t ? `<span class="chipc" ${t.new ? 'data-new' : ''}>${t.msgs.length}</span>` : ''}</div>` }).join('') +
+    [0, 1, 2].map((i) => `<div class="hrule" style="left:${20 + i * 205}px;width:180px;right:auto;top:430px"><i>0${i + 1}</i>${['TODO', 'DOING', 'DONE'][i]}</div>` + [0, 1].map((j) => `<div class="cards-row" style="left:${20 + i * 205}px;width:180px;right:auto;top:${462 + j * 44}px">${[['Call ten offices', 'Price test'], ['Pilot list', 'Landing text'], ['Interviews', 'Name']][i][j]}</div>`).join('')).join('') +
+    [0, 1, 2, 3].map((i) => `<div class="cards-row" style="left:690px;width:470px;right:auto;top:${430 + i * 46}px">${['Wegbote', 'Lunchpost', 'Topfretter', 'Stubenkoch'][i]}</div>`).join('')
+}
+const talkHTML = () => LOOK[S.look][S.size === 'full' ? 1 : 0]()
+function cardHTML() { const c = card(S.sel), t = C.find((x) => x.card === c.id); return `<div class="phead" style="--c:${T[c.kind][1]}">${c.kind}<div class="tools">${btn('closeCard', IC.close, { ic: 1, t: 'close' })}</div></div><div class="ptitle">${c.name}</div><p class="ptext">Order the usual with one press; anything else in two. Kitchens see it by 10:15.</p><div class="rule">TAGS</div><p class="ptext"># pilot &nbsp; # offices</p><div class="rule">TALK${t ? `<button data-act="open" data-id="${t.id}">open</button>` : ''}</div>${t ? `<button class="Arow" data-act="open" data-id="${t.id}" ${t.new ? 'data-new' : ''}>${av(last(t)[0])}<span class="n">${P[last(t)[0]][0]}</span><span class="w">${last(t)[2]}</span><span class="l">${esc(last(t)[3])}</span>${t.new ? '<span class="lamp"></span>' : '<span></span>'}</button>` : `<div style="padding:0 12px">${btn('start', 'say something about it', { id: c.id, c: 'go' })}</div>`}` }
+const agentHTML = () => `<div class="phead" style="--c:var(--accent-cyan)">agent<div class="tools">${btn('closeAgent', IC.close, { ic: 1, t: 'fold it back' })}</div></div><div class="scroll" style="padding:12px 20px"><p class="ptext" style="padding:0">What do the interviews say about who follows up?</p><br><p style="line-height:1.55">Three of five name it first. It is on the canvas as a problem, with no feature against it yet.</p></div>${comp('agent', 'ask the AI')}`
+const rtabs = () => `<div class="rtabs">${btn('rtab', 'card', { id: 'card', c: S.rtab !== 'agent' ? 'on' : '' })}${btn('rtab', 'agent', { id: 'agent', c: S.rtab === 'agent' ? 'on' : '' })}</div>`
+
+let glideTimer
+function draw(glide = true) {
+  const st = $('stage'), c = cols(), b = sheetBox()
+  document.documentElement.dataset.theme = S.theme
+  const keep = document.activeElement?.dataset?.compose, kf = document.activeElement?.hasAttribute?.('data-find')
+  const sh = $('sheet')
+  sh.style.left = b.x0 + 'px'; sh.style.right = b.x1 + 'px'; sh.style.top = sh.style.bottom = b.b + 'px'
+  sh.toggleAttribute('data-lifted', !!b.lifted)
+  const full = S.talk && S.size === 'full'
+  $('canvas').style.visibility = full ? 'hidden' : ''; $('fit').hidden = full
+  $('sheetw').textContent = full || b.w < 520 ? '' : `canvas ${b.w}px`
+  $('crumb').innerHTML = `<i>#</i> north-star / workspaces / ${full ? 'Lunch pilot / <b>Talk</b>' : '<b>Lunch pilot</b>'}`
+  $('crumb').style.left = b.lifted ? '24px' : '24px'
+  const L = $('left'); L.hidden = !c.left; L.style.left = RAIL + 'px'; L.style.width = LW + 'px'
+  if (c.left) L.innerHTML = talkHTML()
+  $('page').innerHTML = full ? `<div class="page" ${b.lifted ? '' : 'data-rail'}>${talkHTML()}</div>` : ''
+  const r1 = $('right1'), r2 = $('right2')
+  r1.hidden = !(c.card || c.one); r2.hidden = !c.agent
+  r1.style.width = r2.style.width = RW + 'px'; r1.style.right = (c.agent ? RW : 0) + 'px'; r2.style.right = '0'
+  if (!r1.hidden) r1.innerHTML = c.one ? rtabs() + (S.rtab === 'agent' ? agentHTML() : cardHTML()) : cardHTML()
+  if (!r2.hidden) r2.innerHTML = agentHTML()
+  $('orb').hidden = c.agent || c.one || (full && S.look === 'D' && false)
+  $('rail').innerHTML = `<div class="mid"><button data-act="noop" title="add" style="color:var(--accent-magenta)">${IC.plus}</button><button data-act="fit" title="fit">${IC.goto}</button></div><div class="foot"><button data-act="toggleTalk" title="Talk" aria-label="Talk" ${S.talk ? 'data-on' : ''} ${C.some((x) => x.new) ? 'data-new' : ''}>${IC.talk}</button><button data-act="noop" title="Tasks">${IC.deck}</button><button data-act="noop" title="Docs">${IC.doc}</button>${av('me')}</div>`
+  drawWorld()
+  const w = $('world'), k = camera()
+  w.toggleAttribute('data-glide', glide)
+  w.style.transform = `translate(${k.tx}px, ${k.ty}px) scale(${k.z})`
+  clearTimeout(glideTimer); glideTimer = setTimeout(() => w.removeAttribute('data-glide'), 650)
+  document.querySelectorAll('[data-bottom]').forEach((e) => (e.scrollTop = e.scrollHeight))
+  const f = document.querySelector('[data-focus]') || (keep && document.querySelector(`[data-compose="${keep}"]`))
+  if (f) { f.focus(); const v = f.value; f.value = ''; f.value = v }
+  about(); top_()
+  history.replaceState(null, '', '#' + encodeURIComponent(JSON.stringify({ look: S.look, size: S.size, right: S.right, canvas: S.canvas, side: S.side, data: S.data, theme: S.theme, open: S.open, talk: S.talk })))
+}
+function scale() { const w = $('wrap').clientWidth, h = $('wrap').clientHeight; $('stage').style.transform = `scale(${Math.min(w / W, h / H)})` }
+addEventListener('resize', scale)
+
+// ---------------------------------------------------------------- the preview's own controls and words
+const G = [
+  ['look', 'tasarım', [['A', '<b>A</b>masa'], ['B', '<b>B</b>akış'], ['C', '<b>C</b>yan yana'], ['D', '<b>D</b>konsol']]],
+  ['size', 'Talk', [['panel', 'panel'], ['full', 'tam sayfa']]],
+  ['right', 'sağda', [['none', 'boş'], ['card', 'kart'], ['agent', 'ajan'], ['both', 'kart + ajan']]],
+  ['canvas', 'tuval', [['today', 'bugünkü'], ['slide', 'ortalar'], ['fit', 'ortalar + sığdırır']]],
+  ['side', 'sağ taraf', [['two', 'iki sütun'], ['one', 'tek sütun, sekmeli']]],
+  ['data', 'içerik', [['full', 'dolu'], ['empty', 'boş']]],
+  ['theme', 'tema', [['dark', 'koyu'], ['light', 'açık']]],
+]
+function top_() { $('top').innerHTML = G.map(([k, l, os]) => `<div class="grp"><span>${l}</span>${os.map(([v, t]) => `<button class="opt" data-set="${k}" data-v="${v}" aria-pressed="${S[k] === v}">${t}</button>`).join('')}</div>`).join('') + `<div class="grp"><button class="opt" data-act="incoming">yeni mesaj gelsin</button></div>` }
+const WORDS = {
+  A: ['A · Masa', 'Bildiğin mesajlaşma düzeni, ama ne hakkında konuşulduğu hep yanında.', 'Panelde iki satırlı bir liste: adı, son söyleyen ve ne dediği. Bir konuşma açılınca liste kaybolmuyor, solda dar bir şeride iniyor; tek tıkla öbürüne geçiyorsun.', 'Üç bölüm: liste, ortada okunur genişlikte konuşma, sağda konuşulan şey: tuvaldeki yeri, kartı, kimler var.', ['Öğrenmesi yok, herkes bilir', 'Panelde de geri tuşu aramadan konuşma değişir', 'Çok konuşma olunca da dağılmaz'], ['En az şaşırtan seçenek', 'Dar panelde şerit 60 px yer alır']],
+  B: ['B · Akış', 'Liste yok. Çalışma alanında söylenen her şey tek bir akışta, konusuna göre kutularda.', 'Aşağıda tek bir yazma yeri; solundaki etiket mesajın nereye gideceğini söyler. Bir kutunun adına basınca ya da tuvalde bir kart seçince hedef kendiliğinden o olur.', 'Solda atlama listesi, ortada akış. Yeni olan hep en altta.', ['Panele en uygunu: hiç sayfa değiştirmeden oku, cevapla', 'Tuvalle en sıkı bağ: seçtiğin kart = konuşma', 'Sabah açınca ne olduğunu bir kaydırışta görürsün'], ['Uzun bir konuşmayı baştan okumak için açmak gerekir', 'Yanlış yere yazma ihtimali var, etikete bakmak gerekir']],
+  C: ['C · Yan yana', 'Konuşmalar destenin sütunları gibi: birkaçı aynı anda açık, her birinin kendi yazma yeri var.', 'Açık konuşmalar üstte sekme; + ile başka birini yanına koyarsın.', 'Sütunlar yan yana, sonda kapalı olanlar. Desteyle aynı görünüm (numara, başlık, çizgi).', ['Tam sayfada en güçlüsü: üç konuşma birden gözünün önünde', 'Uygulamanın deste diliyle aynı'], ['Geniş ekran ister', 'Panelde sekmeler çabuk dolar']],
+  D: ['D · Konsol', 'Terminal gibi yoğun bir günlük: saat, kim, ne dedi. Her şey klavyeden.', 'Üstte hangi konuşmada olduğun; basınca liste iner. Yazma yerinde #ad yazıp Enter başka kanala götürür, /new ad kanal açar, /resolve kapatır. Üçü de çalışıyor, dene.', 'Solda numaralı konuşmalar, sağda günlük.', ['En yoğun: ekrana en çok mesaj sığar', 'North Star\'ın sistem diline en yakın'], ['Yüz yok, sıcak değil', 'Komutları öğrenmek gerekir']],
+}
+const CW = { today: 'Bugünkü: görünüm sütunların yarısı kadar kayar, ajanda iki kat kayar; fit bütün pencereye göre ortalar. İçerik panelin altında kalır.', slide: 'Tuvalin ortası, görünen parçanın ortasıdır. Fit oraya göre sığdırır. Ölçek değişmez, kenardakiler dışarıda kalabilir.', fit: 'Ortalar ve parça daraldıkça uzaklaşır: baktığın şey bütün kalır, paneller kapanınca ölçek geri gelir. Önerim bu.' }
+function about() {
+  const w = WORDS[S.look]
+  $('about').innerHTML = `<h3>${w[0]}</h3>${w[1]}<h2>PANEL</h2>${w[2]}<h2>TAM SAYFA</h2>${w[3]}<h2>ARTILAR</h2><ul class="plus">${w[4].map((x) => `<li>${x}</li>`).join('')}</ul><h2>EKSİLER</h2><ul class="minus">${w[5].map((x) => `<li>${x}</li>`).join('')}</ul><div class="now"><b>Tuval:</b> ${CW[S.canvas]}</div><div class="now"><b>Sağ taraf:</b> ${S.side === 'two' ? 'Kart ve ajan iki ayrı sütun. İkisi ve Talk birden açıkken tuvale çok az yer kalır.' : 'Kart ve ajan aynı sütunu sekmeyle paylaşır. Tuval ikisi açıkken de geniş kalır.'}</div><h2>HEPSİNDE ORTAK</h2><ul><li>Ajan küresi yazma yerinin üstüne binmez</li><li>Bir mesajda geçen karta basınca tuval oraya gider</li><li>Sağdaki kart panelinde o kartın son mesajı görünür</li><li>Silme, ⋯ içinde; tek başına kırmızı durmaz</li></ul>`
+}
+
+// ---------------------------------------------------------------- what's pressed
+const openConv = (id) => { S.open = id || null; S.pop = false; const c = conv(id); C.forEach((x) => (x.kept = x === c && (c.new || c.kept))); if (c) { c.new = false; S.target = id; if (S.look === 'C' && !S.openCols.includes(id)) S.openCols.push(id); if (S.look === 'B') { S.expanded[id] = 1; S.filter = 'all' } S.talk = true } }
+const newConv = (o) => { C.push({ msgs: [], ...o }); openConv(o.id) }
+function show(id) {
+  const c = card(id); if (!c) return
+  S.sel = id; if (S.size === 'full') S.size = 'panel'
+  S.cam = { ...S.cam, x: c.at[0] + 85, y: c.at[1] + 48, z: Math.max(S.cam.z, .9) }
+  draw(); setTimeout(() => document.querySelector(`.kcard[data-id="${id}"]`)?.setAttribute('data-flash', ''), 420)
+}
+const ACT = {
+  open: openConv, size: () => (S.size = S.size === 'full' ? 'panel' : 'full'), closeTalk: () => (S.talk = false), toggleTalk: () => (S.talk = !S.talk),
+  new: () => (S.naming = !S.naming, S.finding = false), find: () => (S.finding = !S.finding, S.q = '', S.naming = false), read: () => C.forEach((c) => (c.new = c.kept = false)),
+  show: (id) => (show(id), 'drawn'), card: (id) => { S.sel = id; S.right = S.right === 'agent' || S.right === 'both' ? 'both' : 'card'; S.rtab = 'card'; const t = C.find((x) => x.card === id); if (t) S.target = t.id },
+  start: (id) => { const c = card(id); newConv({ id: 't' + id, kind: c.kind, name: c.name, card: id, where: '01 Market' }); S.talk = true },
+  resolve: (id) => { S.resolved[id] = !S.resolved[id]; S.open = null }, delConv: (id) => { C = C.filter((c) => c.id !== id); S.open = null },
+  filter: (id) => (S.filter = id), target: (id) => { S.target = id; S.pop = false; const c = conv(id); if (c) c.new = false; S.refocus = id }, pop: () => (S.pop = !S.pop), expand: (id) => (S.expanded[id] = 1),
+  jump: (id) => { S.filter = 'all'; S.target = id; S.expanded[id] = 1; conv(id).new = false; S.jump = id }, addCol: (id) => { S.openCols.push(id); openConv(id) }, closeCol: (id) => { S.openCols = S.openCols.filter((x) => x !== id); if (S.open === id) S.open = null },
+  del: (k) => { const [id, i] = k.split(':'); conv(id).msgs.splice(+i, 1) }, mention: (k) => { const [id, who] = k.split(':'); S.target = id; S.prefill = [id, `@${P[who][0]} `] },
+  closeCard: () => (S.right = S.right === 'both' ? 'agent' : 'none'), closeAgent: () => (S.right = S.right === 'both' ? 'card' : 'none'), orb: () => (S.right = S.right === 'card' ? 'both' : 'agent', S.rtab = 'agent'), rtab: (id) => (S.rtab = id),
+  fit, noop: () => {}, incoming: () => { if (!C.length) C = [{ id: 'general', kind: 'channel', name: 'general', msgs: [] }]; const c = conv(S.look === 'A' || S.look === 'D' ? 'launch' : 't2') || C[0]; c.msgs.push(['z', 'Today', '10:21', 'One more thing: the kitchen wants the order by 10:15.', 'new']); c.new = true },
+}
+document.addEventListener('click', (e) => {
+  const o = e.target.closest('[data-set]')
+  if (o) { S[o.dataset.set] = o.dataset.v; if (o.dataset.set === 'data') { C = S.data === 'full' ? FULL() : []; S.open = null; S.resolved = {}; S.openCols = S.data === 'full' ? ['general', 't3', 'launch'] : [] } if (o.dataset.set === 'look') { S.pop = S.naming = S.finding = false; S.q = ''; S.filter = 'all' } if (o.dataset.set === 'size') S.talk = true; return draw() }
+  const b = e.target.closest('[data-act]')
+  if (!b || (b.dataset.act === 'card' && moved)) return
+  e.preventDefault()
+  if (ACT[b.dataset.act]?.(b.dataset.id) === 'drawn') return
+  draw()
+  if (S.refocus) { document.querySelector(`[data-compose="${S.refocus}"]`)?.focus(); S.refocus = null }
+  if (S.prefill) { const i = document.querySelector(`[data-compose="${S.prefill[0]}"]`); if (i) { i.value = S.prefill[1]; i.focus() } S.prefill = null }
+  if (S.jump) { $('g-' + S.jump)?.scrollIntoView({ block: 'start' }); S.jump = null }
+})
+const slug = (s) => s.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').slice(0, 40)
+document.addEventListener('submit', (e) => {
+  e.preventDefault()
+  const f = e.target, i = f.querySelector('input'), v = i.value.trim()
+  if (f.hasAttribute('data-name')) { const n = slug(v); S.naming = false; if (n) { const had = C.find((c) => c.kind === 'channel' && c.name === n); had ? openConv(had.id) : newConv({ id: 'c-' + n, kind: 'channel', name: n }) } draw(); return document.querySelector(`[data-compose="${S.open}"]`)?.focus() }
+  const id = f.dataset.send, c = conv(id)
+  if (!v || !c) return
+  if (S.look === 'D' && v[0] === '#') { const t = C.find((x) => x.kind === 'channel' && x.name.startsWith(v.slice(1))); if (t) openConv(t.id); i.value = ''; return draw(), document.querySelector(`[data-compose="${S.open}"]`)?.focus() }
+  if (S.look === 'D' && v.startsWith('/new ')) { const n = slug(v.slice(5)); if (n) newConv({ id: 'c-' + n, kind: 'channel', name: n }); return draw(), document.querySelector(`[data-compose="${S.open}"]`)?.focus() }
+  if (S.look === 'D' && v === '/resolve') { if (c.kind !== 'channel') { S.resolved[id] = 1; S.open = null } return draw() }
+  c.msgs.push(['me', 'Today', new Date().toTimeString().slice(0, 5), v]); c.msgs.forEach((m) => (m[4] = undefined)); c.new = false
+  draw(); document.querySelector(`[data-compose="${id}"]`)?.focus()
+})
+document.addEventListener('input', (e) => { if (e.target.hasAttribute('data-find')) { S.q = e.target.value; draw(false) } })
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (S.naming || S.finding || S.pop) { S.naming = S.finding = S.pop = false; S.q = '' } else if (S.size === 'full') S.size = 'panel'; else if (S.open) S.open = null; else S.talk = false; draw() } })
+// The canvas: dragged, zoomed round its middle.
+let drag = null, moved = false
+$('canvas').addEventListener('pointerdown', (e) => { drag = [e.clientX, e.clientY, S.cam]; moved = false })
+addEventListener('pointermove', (e) => { if (!drag) return; const s = Math.min($('wrap').clientWidth / W, $('wrap').clientHeight / H), z = camera().z * s; if (Math.hypot(e.clientX - drag[0], e.clientY - drag[1]) < 4 && !moved) return; moved = true; S.cam = { ...drag[2], x: drag[2].x - (e.clientX - drag[0]) / z, y: drag[2].y - (e.clientY - drag[1]) / z }; const k = camera(); $('world').removeAttribute('data-glide'); $('world').style.transform = `translate(${k.tx}px, ${k.ty}px) scale(${k.z})` })
+addEventListener('pointerup', () => { drag = null; setTimeout(() => (moved = false)) })
+$('canvas').addEventListener('wheel', (e) => { e.preventDefault(); S.cam = { ...S.cam, z: Math.max(.2, Math.min(2, S.cam.z * Math.exp(-e.deltaY / 400))) }; const k = camera(); $('world').removeAttribute('data-glide'); $('world').style.transform = `translate(${k.tx}px, ${k.ty}px) scale(${k.z})` }, { passive: false })
+scale(); draw(false)
+</script>
+</body>
+</html>

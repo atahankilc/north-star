@@ -15,7 +15,7 @@
 // stopping the next), and counted by agentDriving (driving.ts) from being asked until half a second after it settles,
 // for onboarding. Dev only: `window.__agentUi` holds the facade once this module is loaded.
 import { getRealWs, getWs } from '../state/wsStore'
-import { glide, useCanvasView } from '../state/canvasView'
+import { glide, planeArea, useCanvasView } from '../state/canvasView'
 import { canvasParams } from '../app/paths'
 import { clearFound, findGo } from '../views/workspace/find/find'
 import { goToCard } from '../views/workspace/panels/CardPanel'
@@ -297,13 +297,13 @@ async function showNow(id: string, o: { plane?: string; canvas?: string; focus?:
     const plane = o.plane ?? (f && isOnPlane(card, f) ? f : card.pieceId)
     await focusOn(plane)
     const shown = cardsOn(ws().cards, ws().places, plane).find((c) => c.id === id) ?? card
-    const { planeCam: v, size, beside, split } = useCanvasView.getState()
+    const v = useCanvasView.getState().planeCam
     if (!v) return
-    const area = beside ? Math.round(size.w * split) : size.w
+    const area = planeArea()
     const b = { x: shown.x, y: shown.y, w: CARD.w, h: CARD.h }
     const [sx0, sy0] = [v.ox + b.x * v.zoom, v.oy + b.y * v.zoom]
-    if (sx0 >= 48 && sx0 + b.w * v.zoom <= area - 48 && sy0 >= 56 && sy0 + b.h * v.zoom <= size.h - 56) return
-    glide(v, { ...v, ox: area / 2 - (b.x + b.w / 2) * v.zoom, oy: size.h / 2 - (b.y + b.h / 2) * v.zoom }, DUR.glide, (to) => useCanvasView.setState({ planeCam: to }))
+    if (sx0 >= area.x + 48 && sx0 + b.w * v.zoom <= area.x + area.w - 48 && sy0 >= 56 && sy0 + b.h * v.zoom <= area.h - 56) return
+    glide(v, { ...v, ox: area.x + area.w / 2 - (b.x + b.w / 2) * v.zoom, oy: area.h / 2 - (b.y + b.h / 2) * v.zoom }, DUR.glide, (to) => useCanvasView.setState({ planeCam: to }))
     return
   }
   const piece = pieceOf(id)

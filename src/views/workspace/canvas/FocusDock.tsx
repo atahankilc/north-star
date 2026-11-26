@@ -24,9 +24,9 @@ export function useSetupOnDock() {
   }, [])
 }
 
-// `center`: where its middle sits (screen px); its box's middle when unset (the screen's, or a pane's beside a plane:
-// each part has its own dock, D-211). `name`: what it's the dock of, first (a pane's: `TABLE · costs`).
-export function FocusDock({ children, center, name, label = 'Focus' }: { children: ReactNode; center?: number; name?: ReactNode; label?: string }) {
+// `part`: the part of its box it stands in the middle of (px); its box's middle when unset (the screen's, or a pane's
+// beside a plane: each part has its own dock, D-211). `name`: what it's the dock of, first (a pane's: `TABLE · costs`).
+export function FocusDock({ children, part, name, label = 'Focus' }: { children: ReactNode; part?: { x: number; w: number }; name?: ReactNode; label?: string }) {
   return (
     <Console
       at="foot"
@@ -35,10 +35,10 @@ export function FocusDock({ children, center, name, label = 'Focus' }: { childre
       name={name}
       data-learn="dock"
       data-reduced={isReducedMotion() || undefined}
-      // In a part of the screen (`center` its middle): past most of its width it takes the part's whole foot (D-347).
-      room={center !== undefined ? 2 * center : undefined}
-      style={center !== undefined ? { left: center, ['--part-w' as string]: `${2 * center}px` } : undefined}
-      data-in-part={center !== undefined || undefined}
+      // In a part of the screen: past most of its width it takes the part's whole foot (D-347).
+      room={part?.w}
+      style={part ? { left: part.x + part.w / 2, ['--part-x' as string]: `${part.x}px`, ['--part-w' as string]: `${part.w}px` } : undefined}
+      data-in-part={!!part || undefined}
       onPointerDown={(e) => e.stopPropagation()}
     >
       <ButtonGroup>{children}</ButtonGroup>

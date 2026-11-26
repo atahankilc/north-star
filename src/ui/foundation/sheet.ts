@@ -28,20 +28,16 @@ let rails = 0
 let layers: HTMLElement[] | null = null
 // Kept while the sheet travels home: the tools it drew back off are still there.
 let cut = 0
-// How far the columns reach on each side now, and who hears it change (D-422: the canvas moves its view by half of the
-// difference, so what was in the middle of the screen stays in the middle of what's left; no column covers it).
-let leftWas = 0
-let rightWas = 0
-// Heard with each side's move and where the columns now reach (from the window's left and right edges).
-type Move = (left: number, right: number, reach: { left: number; right: number }) => void
-const moves = new Set<Move>()
-export function onSheetMove(fn: Move) {
-  moves.add(fn)
-  return () => void moves.delete(fn)
+// Where the sheet's left and right edges are now, from the window's (0 with no column), and who hears them change: the
+// canvas keeps its middle in the sheet's (D-435), the agent's page leaves the canvas its least (D-424).
+type Edges = { x0: number; x1: number }
+let edges: Edges = { x0: 0, x1: 0 }
+const heard = new Set<(e: Edges) => void>()
+export function onSheetEdges(fn: (e: Edges) => void) {
+  heard.add(fn)
+  return () => void heard.delete(fn)
 }
-// How far the columns reach now, from the window's left and right edges (the agent's page leaves the canvas its least
-// beside what's docked on the left, D-424).
-export const sheetReach = () => ({ left: leftWas, right: rightWas })
+export const sheetEdges = () => edges
 
 // The sheet's corner now, in px: 0 while it fills the window (the agent's tab keeps clear of it, as its CSS does).
 export const sheetRound = () => parseFloat(pageValue('--sheet-round') ?? '') || 0
@@ -95,15 +91,14 @@ function measure() {
     layers = make()
     void layers[0].offsetWidth
   }
-  setPageValue('--sheet-x0', `${left || rail || gap}px`)
-  if (left !== leftWas || right !== rightWas) {
-    const l = left - leftWas
-    const r = right - rightWas
-    leftWas = left
-    rightWas = right
-    for (const fn of moves) fn(l, r, { left, right })
+  const x0 = left || rail || gap
+  const x1 = right || gap
+  setPageValue('--sheet-x0', `${x0}px`)
+  setPageValue('--sheet-x1', `${x1}px`)
+  if (x0 !== edges.x0 || x1 !== edges.x1) {
+    edges = { x0, x1 }
+    for (const fn of heard) fn(edges)
   }
-  setPageValue('--sheet-x1', `${right || gap}px`)
   setPageValue('--sheet-b', `${gap}px`)
   setPageValue('--sheet-rail', `${rail}px`)
   setPageValue('--sheet-round', `${round}px`)
@@ -127,11 +122,10 @@ function railGround(on: boolean) {
 
 const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
 if (typeof window !== 'undefined') window.addEventListener('resize', measure)
-// A column can move without changing size: the right panel steps aside as the agent's column opens and closes, and
-// again once the app has narrowed for it (`data-agent-open`, then `data-agent-in`, on the root: Agent.tsx). A dragged
-// width changes the column's own size, which `watch` sees.
+// A column can move without changing size: a document read beside the agent steps aside as the agent's column opens and
+// closes (`data-agent-open` on the root: Agent.tsx). A dragged width changes the column's own size, which `watch` sees.
 if (typeof MutationObserver !== 'undefined')
-  new MutationObserver(() => columns.size && measure()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-agent-open', 'data-agent-in'] })
+  new MutationObserver(() => columns.size && measure()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-agent-open'] })
 
 // A docked column is on the ground while `present` (false as soon as it starts leaving, so the sheet comes back as it
 // breaks apart, not after).

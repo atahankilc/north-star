@@ -29,9 +29,7 @@ import { canvasHere, piecesOn } from '../../data/canvases'
 import { canvasCenter } from '../../state/canvasView'
 import { shownPieces } from '../../views/workspace/canvas/shownBox'
 import { isTyping, keysTaken } from '../../ui/foundation/focus'
-import { onSheetMove, sheetReach, sheetRound } from '../../ui/foundation/sheet'
-import { DUR } from '../../ui/foundation/motionTokens'
-import { isReducedMotion } from '../../state/motion'
+import { onSheetEdges, sheetEdges, sheetRound } from '../../ui/foundation/sheet'
 import { useDisplay } from '../../state/display'
 import { onPageValue, pageValue, setPageValue } from '../../ui/foundation/pageValues'
 import { agentActions, byWhereLines, canRun, chatModel, isViewer, namedOfShort, stubOn, useAgent, type ChangeLine, type Entry, type StepLine } from './agentStore'
@@ -58,7 +56,9 @@ import { Spinner } from '../../ui/primitives/Spinner'
 import { PromptField } from '../../ui/primitives/PromptField'
 import { Num, Rule } from '../../ui/primitives/Rule'
 import { Label } from '../../ui/primitives/Label'
-import { NextIcon, PrevIcon } from '../../ui/primitives/hudIcons'
+import { GrowIcon, NextIcon, PrevIcon, ShrinkIcon } from '../../ui/primitives/hudIcons'
+import { RightTabs } from '../../ui/patterns/RightTabs'
+import { bringFront, isBehind, useAgentPanel, useBehind } from '../../ui/foundation/rightColumn'
 import { keepLocal, readLocal } from '../../state/local'
 import { plural } from '../../model/words'
 
@@ -84,10 +84,11 @@ function usePageWidth(full: boolean) {
   useLayoutEffect(() => {
     if (!full) return
     const h = document.documentElement
-    const fit = (left = sheetReach().left) => setPageValue('--agent-page-w', `${pageWidth(left)}px`, 'app')
+    // What's docked on the left; alone on the left there is only the HUD's rail.
+    const fit = (left = sheetEdges().x0) => setPageValue('--agent-page-w', `${pageWidth(left)}px`, 'app')
     fit()
     h.setAttribute('data-agent-full', '')
-    const off = onSheetMove((_l, _r, reach) => fit(reach.left))
+    const off = onSheetEdges((e) => fit(e.x0))
     const resized = () => fit()
     window.addEventListener('resize', resized)
     return () => {
@@ -127,24 +128,19 @@ export function Agent() {
   }, [wid, user])
   useEffect(() => () => agentActions.detach(), [])
 
-  // The app narrows beside the column (WorkspaceLayout.module.css `.app { right: var(--ai-w) }`).
+  // Its column is up: its width is known to what stands beside it (Agent.module.css `--ai-w`).
   useLayoutEffect(() => {
     const h = document.documentElement
     const w = Number(readLocal(WIDTH_STORE))
     if (w >= W_MIN && w <= W_MAX) setPageValue('--agent-width', `${w}px`, 'app')
     if (mode !== 'column') return
     h.setAttribute('data-agent-open', '')
-    // The app narrows (`data-agent-in`, Agent.module.css) only once the sheet has drawn back over the part it gives up:
-    // narrowing at once left a bare strip between the app's new edge and the sheet's, still on its way. Closing, it
-    // widens at once, under the column, and the sheet travels back over it.
-    const narrow = () => h.setAttribute('data-agent-in', '')
-    const wait = isReducedMotion() ? (narrow(), 0) : window.setTimeout(narrow, DUR.slow)
-    return () => {
-      window.clearTimeout(wait)
-      h.removeAttribute('data-agent-open')
-      h.removeAttribute('data-agent-in')
-    }
+    return () => h.removeAttribute('data-agent-open')
   }, [mode])
+  // The right side's one column (D-435): the agent's beside the thing's by tabs; a thing in front ends the page.
+  useAgentPanel(mode === 'column')
+  const behind = useBehind('agent')
+  useEffect(() => void (behind && useAgentPage.getState().full && setFull(false)), [behind])
 
   // ⌘J opens or folds it from anywhere; `/` opens it when nothing has the keyboard. On Windows and Linux it's Ctrl+J,
   // which inside a workspace takes over the browser's own Ctrl+J (Downloads); Settings → the agent says so.
@@ -153,7 +149,7 @@ export function Agent() {
       const mod = e.metaKey || e.ctrlKey
       if (mod && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'j') {
         e.preventDefault()
-        if (useAgent.getState().mode === 'closed') openAndFocus()
+        if (useAgent.getState().mode === 'closed' || isBehind('agent')) openAndFocus()
         else closeAgent()
         return
       }
@@ -188,6 +184,7 @@ function remember(el: EventTarget | Element | null) {
 function openAndFocus() {
   remember(document.activeElement)
   agentActions.open()
+  bringFront('agent')
   requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-agent-input]')?.focus())
 }
 
@@ -452,6 +449,7 @@ function Column() {
     <EdgeColumn
       portal={false}
       escape={false}
+      behind={useBehind('agent')}
       width="var(--agent-col-w)"
       className={styles.column}
       label="The agent"
@@ -461,6 +459,7 @@ function Column() {
       onKeyDown={onKey}
     >
       {!full && <DragLine at="left" label="The agent's width" onDrag={resizeTo} onEnd={keepWidth} />}
+      <RightTabs />
       <PanelHead
         className={styles.head}
         tone="var(--accent-cyan)"
@@ -482,8 +481,8 @@ function Column() {
             <Button onClick={() => agentActions.newChat()} disabled={running} title="A new chat (this one is saved)">
               new
             </Button>
-            <Button onClick={() => setFull(!full)} title={full ? 'beside the canvas again' : 'as the page: your chats beside the conversation, the canvas still beside it'}>
-              {full ? 'beside the canvas' : 'full'}
+            <Button icon onClick={() => setFull(!full)} aria-label={full ? 'beside the canvas' : 'full'} title={full ? 'beside the canvas again' : 'as the page: your chats beside the conversation, the canvas still beside it'}>
+              {full ? <ShrinkIcon /> : <GrowIcon />}
             </Button>
           </>
         }

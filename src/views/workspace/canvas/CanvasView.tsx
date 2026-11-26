@@ -36,9 +36,8 @@ import { BringCards } from '../plane/BringCards'
 import { isNew, useReads } from '../../../data/threads'
 import { ThreadInbox } from '../threads/ThreadInbox'
 import { CARD } from '../../../data/cards'
-import { getWs } from '../../../state/wsStore'
-import { glide, planeArea, stopGlide } from '../../../state/canvasView'
-import { onSheetMove } from '../../../ui/foundation/sheet'
+import { canvasArea, glide, planeArea, stopGlide, useCanvasArea } from '../../../state/canvasView'
+import { onSheetEdges, sheetEdges } from '../../../ui/foundation/sheet'
 import { isReducedMotion } from '../../../state/motion'
 import { isOwnerOf, roleOf } from '../../../data/workspaces'
 import type { Thread } from '../../../data/model'
@@ -46,7 +45,7 @@ import { Follow, PeerCursors, stopFollowing, useCursorReport, usePeersOn, usePre
 import { usePresenceMembers } from '../../../data/presence'
 import { deleteHere, heldAt } from './selection'
 import { alikeProps } from './kept'
-import { cardsByPlane, cardsOn, elsewhere } from '../../../data/places'
+import { cardsByPlane, elsewhere } from '../../../data/places'
 import { runCells } from '../../../ui/primitives/Appear'
 import { CARRIED, carriedStyle, EVERY_HANDLE, Landing, Marks, ZOOM_SETTLE_MS } from '../../../ui/primitives/Marks'
 import { DrawSection } from './DrawSection'
@@ -128,6 +127,7 @@ export function CanvasView() {
   // it shows settles.
   const zoom = useShownZoom(wid)
   const size = useCanvasView((s) => s.size)
+  const area = useCanvasArea()
   const selected = useCanvasView((s) => s.selected)
   const editing = useCanvasView((s) => s.editing)
   const confirmingId = useCanvasView((s) => s.confirming)
@@ -234,10 +234,11 @@ export function CanvasView() {
   // What fit frames (D-186, D-188): the focused plane's cards and text, or the canvas's planes and text.
   const fitRef = useRef((_instant?: boolean) => {})
   fitRef.current = (instant = false) => {
+    const area = canvasArea()
     // The documents list with a document beside it: pinned top-left, fitted to its part (D-232); a document on its
     // own: at 100 %, its top near the top of the screen.
     if (focused && focusedDocuments && listHidden) return
-    if (focused && focusedDocuments && readerOpen) setPlaneView(pinnedView(contentOf(focused)!, readerLeft(contentOf(focused)!, size.w, useDocUi.getState().readerAt)), instant)
+    if (focused && focusedDocuments && readerOpen) setPlaneView(pinnedView(contentOf(focused)!, readerLeft(contentOf(focused)!, area.w, useDocUi.getState().readerAt), area.x), instant)
     else if (focused && focusedDocument) setPlaneView(documentHome(focused, size.w), instant)
     // A timeline fills the screen at its own size (D-304): a box as big as the screen less fit's margins.
     // Its part of the screen with the tasks side view open (D-314).
@@ -254,7 +255,7 @@ export function CanvasView() {
   useEffect(() => {
     if (focusedDocuments && readerOpen && useCanvasView.getState().focusArrived) fitRef.current(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readerAt, size.w])
+  }, [readerAt, area.w])
   // The last document closed with the list put away: a framed list shows again, an unframed one leaves for the canvas.
   const readerCount = useDocUi((s) => s.readers.length)
   const hadReaders = useRef(0)
@@ -640,8 +641,9 @@ export function CanvasView() {
     }
     if (sp !== space) return focusTo(sp === CANVAS ? null : sp)
     const [x, y] = pinOf(t).at
-    const { size, planeCam } = useCanvasView.getState()
-    if (focusId && planeCam) glide(planeCam, { ...planeCam, ox: size.w / 2 - x * planeCam.zoom, oy: size.h / 2 - y * planeCam.zoom }, DUR.glide, (c) => useCanvasView.setState({ planeCam: c }))
+    const { planeCam } = useCanvasView.getState()
+    const area = planeArea()
+    if (focusId && planeCam) glide(planeCam, { ...planeCam, ox: area.x + area.w / 2 - x * planeCam.zoom, oy: area.h / 2 - y * planeCam.zoom }, DUR.glide, (c) => useCanvasView.setState({ planeCam: c }))
     else if (!focusId) {
       const c = camOf(wid)
       glide(c, { ...c, x: -x * c.zoom, y: -y * c.zoom }, DUR.glide, (v) => setCam(wid, v))
@@ -724,46 +726,22 @@ export function CanvasView() {
   // The plane's part of the screen follows what's open beside it (D-211); its contents fit there again.
   // A document open beside its list (D-232) takes the right part the same way.
   const besideCount = besideOpen.length + (readerOpen ? 1 : 0)
-  // A column docked on either side (Talk, Tasks, Docs on the left; a card's or task's panel, the agent on the right;
-  // D-422): the view moves over by half the sheet's move, so what was in the screen's middle stays in the middle of
-  // what's left of it, never under the column; and back as it goes.
-  // What a card at the edge took past half (its panel opening), given back as that panel goes: the view comes home.
-  const owed = useRef<{ plane: string; by: number } | null>(null)
-  useEffect(
-    () =>
-      onSheetMove((left, right, reach) => {
-        let half = (left - right) / 2
-        if (!half) return
-        const { planeCam, focusArrived, cardSelected } = useCanvasView.getState()
-        if (focusIdRef.current && planeCam && focusArrived) {
-          // A right column going: what was taken past half for its card comes back with it.
-          if (right < 0 && owed.current?.plane === focusIdRef.current) {
-            half -= owed.current.by
-            owed.current = null
-            return glide(planeCam, { ...planeCam, ox: planeCam.ox + half }, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
-          }
-          owed.current = null
-          const plain = half
-          // The card whose panel opened stays whole in sight, past half the move if it has to (a card at the edge).
-          const ws = getWs()
-          const card = cardSelected && ws ? cardsOn(ws.cards, ws.places, focusIdRef.current).find((c) => c.id === cardSelected) : undefined
-          if (card) {
-            const pad = tokenPx('--space-4')
-            const x0 = planeCam.ox + half + card.x * planeCam.zoom
-            const x1 = x0 + CARD.w * planeCam.zoom
-            const room = window.innerWidth - reach.right - pad
-            if (x1 > room) half -= x1 - room
-            else if (x0 < reach.left + pad) half += reach.left + pad - x0
-          }
-          if (half !== plain) owed.current = { plane: focusIdRef.current, by: half - plain }
-          return glide(planeCam, { ...planeCam, ox: planeCam.ox + half }, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
-        }
-        if (focusIdRef.current) return
-        const c = camOf(wid)
-        glide(c, { ...c, x: c.x + half }, DUR.glide, (v) => setCam(wid, v))
-      }),
-    [wid],
-  )
+  // A column docked on either side (Talk, Tasks, Docs on the left; a card's or a task's panel, the agent on the right;
+  // D-435): the whole canvas is moved by half of what the two sides take, with the sheet, so what was in the middle of
+  // the screen is in the middle of what's left of it, and exactly back as it goes. The camera and a focus's view never
+  // change for it. What's seen of the canvas is `canvasArea()`.
+  useLayoutEffect(() => {
+    const el = root.current
+    if (!el) return
+    const move = ({ x0, x1 }: { x0: number; x1: number }) => {
+      const by = Math.round((x0 - x1) / 2)
+      el.toggleAttribute('data-reduced', isReducedMotion())
+      el.style.transform = by ? `translateX(${by}px)` : ''
+      useCanvasView.setState({ pad: x0 - by })
+    }
+    move(sheetEdges())
+    return onSheetEdges(move)
+  }, [])
   useEffect(() => {
     useCanvasView.setState({ beside: besideCount })
     if (focusId && useCanvasView.getState().focusArrived) fitRef.current()
@@ -972,6 +950,7 @@ export function CanvasView() {
     <div
       ref={root}
       className={styles.canvas}
+      data-canvas
       data-file-over={fileOver || undefined}
       onPointerDown={pan}
       onDoubleClick={doubleClick}
@@ -1061,7 +1040,7 @@ export function CanvasView() {
           {/* With the list put away its dock goes too; unfocus is in the bar top-left (DocReaders). */}
           {/* A document's focus has the page's own dock (DocFocus). */}
           {focusArrived && !focusLeaving && !listHidden && !focusedDocument && (
-            <FocusDock center={readerOpen ? readerLeft(contentOf(focused)!, size.w, readerAt) / 2 : besideOpen.length ? (size.w * split) / 2 : undefined}>
+            <FocusDock part={readerOpen ? { x: area.x, w: readerLeft(contentOf(focused)!, area.w, readerAt) } : { x: area.x, w: besideOpen.length ? Math.round(area.w * split) : area.w }}>
               {/* Its kind's own tools, then its setup (pieceKinds.tsx). */}
               <LensTools piece={focused} editor={editor} />
               {/* A timeline stuck to the deck (D-262): its days in the tasks side view, the deck on the left (D-300). */}

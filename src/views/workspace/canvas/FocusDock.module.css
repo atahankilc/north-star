@@ -11,7 +11,7 @@
 
 /* In a part of the screen (D-211, D-314), taking its whole foot: from the part's left edge, the part's width. */
 .dock[data-in-part='true'][data-full] {
-  left: 0 !important;
+  left: var(--part-x) !important;
   right: auto;
   width: var(--part-w);
 }

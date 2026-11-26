@@ -153,9 +153,10 @@ export function readerLeft(content: Bounds, screenW: number, at: number | null, 
   const want = at ?? natural
   return Math.round(Math.max(PIN.left + 160, Math.min(want, screenW - READER_MIN)))
 }
-export function pinnedView(content: Bounds, left: number): PlaneCam {
+// `x`: where what's seen of the canvas starts (canvasArea).
+export function pinnedView(content: Bounds, left: number, x = 0): PlaneCam {
   const zoom = Math.min(1, Math.max(0.1, (left - PIN.left - PIN.right) / Math.max(1, content.w)))
-  return { ox: PIN.left, oy: PIN.top, zoom }
+  return { ox: x + PIN.left, oy: PIN.top, zoom }
 }
 
 // The documents a list shows, in its order: its kinds, sorted by a column (newest first when unset).

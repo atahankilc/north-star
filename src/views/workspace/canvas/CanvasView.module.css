@@ -7,6 +7,12 @@
   touch-action: none;
   /* Drags here move things; they never select text (fields being typed in still do). */
   user-select: none;
+  /* Moved so its middle stays the main screen's as columns dock (D-435), with the sheet's time and ease. */
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.canvas[data-reduced] {
+  transition: none;
 }
 
 .canvas[data-panning='true'] {

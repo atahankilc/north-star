@@ -1,7 +1,8 @@
 .toast {
   composes: frame from '../foundation/Frame.module.css';
   position: fixed;
-  left: 50%;
+  /* The middle of the main screen (foundation/sheet.ts). */
+  left: calc(50% + (var(--sheet-x0, 0px) - var(--sheet-x1, 0px)) / 2);
   bottom: calc(var(--hud-y) + var(--space-12));
   z-index: var(--z-float);
   display: flex;

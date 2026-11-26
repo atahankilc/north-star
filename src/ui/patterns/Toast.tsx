@@ -20,7 +20,7 @@ export function Toast() {
   }, [notice])
 
   return (
-    <div className={styles.toast} data-visible={visible} role="status" aria-live="polite" data-learn="toast">
+    <div className={styles.toast} data-visible={visible} data-sheet role="status" aria-live="polite" data-learn="toast">
       {notice?.text}
       {notice?.action && (
         <Button

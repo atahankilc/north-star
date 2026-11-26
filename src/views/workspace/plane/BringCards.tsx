@@ -6,7 +6,7 @@
 import { useEffect, useMemo } from 'react'
 import { CARD_TYPES, type AnyType, type Card } from '../../../data/cards'
 import { bringIn, cardsOn, planesOf, withParts } from '../../../data/places'
-import { glide, planeMiddle, useCanvasView } from '../../../state/canvasView'
+import { glide, planeArea, planeMiddle, useCanvasView } from '../../../state/canvasView'
 import { isReducedMotion } from '../../../state/motion'
 import type { PromptEntry } from '../../../ui/foundation/promptModel'
 import { cardEntry, whereList } from './cardEntry'
@@ -22,12 +22,13 @@ const close = () => useCanvasView.setState({ bringing: null })
 
 // The view moves only when what came lands off screen: its middle to the view's middle.
 function show(box: { x: number; y: number; w: number; h: number }) {
-  const { planeCam: c, size } = useCanvasView.getState()
+  const c = useCanvasView.getState().planeCam
   if (!c) return
+  const a = planeArea()
   const [l, t] = [c.ox + box.x * c.zoom, c.oy + box.y * c.zoom]
   const [r, b] = [l + box.w * c.zoom, t + box.h * c.zoom]
-  if (l >= 0 && t >= 0 && r <= size.w && b <= size.h) return
-  const to = { ...c, ox: size.w / 2 - (box.x + box.w / 2) * c.zoom, oy: size.h / 2 - (box.y + box.h / 2) * c.zoom }
+  if (l >= a.x && t >= 0 && r <= a.x + a.w && b <= a.h) return
+  const to = { ...c, ox: a.x + a.w / 2 - (box.x + box.w / 2) * c.zoom, oy: a.h / 2 - (box.y + box.h / 2) * c.zoom }
   if (isReducedMotion()) useCanvasView.setState({ planeCam: to })
   else glide(c, to, DUR.glide, (v) => useCanvasView.setState({ planeCam: v }))
 }

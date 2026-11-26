@@ -3,6 +3,7 @@
 // window, D-081). Inside a modal <dialog> it goes in the dialog (the top layer would hide it otherwise), measured from the
 // dialog's padding box, since a filtered dialog is the containing block for fixed children.
 import { tokenPx } from '../../styles/cssToken'
+import { sheetEdges } from './sheet'
 import { useLayoutEffect, useState, type RefObject } from 'react'
 
 export type Floating = {
@@ -19,8 +20,10 @@ function floatFrom(
   const box = dialog?.getBoundingClientRect()
   const origin = box && dialog ? { left: box.left + dialog.clientLeft, top: box.top + dialog.clientTop } : { left: 0, top: 0 }
   const viewHeight = dialog?.clientHeight ?? window.innerHeight
-  const right =
-    (anchor.closest('[data-side-panel]') ?? anchor.closest('[data-app]') ?? dialog)?.getBoundingClientRect().right ?? window.innerWidth
+  // On the main screen: up to where a docked column starts.
+  const right = anchor.closest('[data-app]')
+    ? window.innerWidth - sheetEdges().x1
+    : ((anchor.closest('[data-side-panel]') ?? dialog)?.getBoundingClientRect().right ?? window.innerWidth)
   const w = width ?? Math.max(r.width, minWidth)
   const edge = tokenPx('--space-2')
   const gap = tokenPx('--space-1')
@@ -42,7 +45,11 @@ export function placeAt(el: HTMLElement, at: [number, number]) {
   const box = el.offsetParent?.getBoundingClientRect()
   if (!box) return
   const m = tokenPx('--space-2')
-  el.style.left = `${Math.max(m, Math.min(at[0], box.width - el.offsetWidth - m))}px`
+  // On the canvas: in what's seen of it between the docked columns (D-435).
+  const onCanvas = !!el.closest('[data-canvas]')
+  const x0 = onCanvas ? sheetEdges().x0 - box.left : 0
+  const x1 = onCanvas ? window.innerWidth - sheetEdges().x1 - box.left : box.width
+  el.style.left = `${Math.max(x0 + m, Math.min(at[0], x1 - el.offsetWidth - m))}px`
   el.style.top = `${Math.max(m, Math.min(at[1], box.height - el.offsetHeight - m))}px`
 }
 

@@ -35,14 +35,16 @@ type Props = Omit<HTMLAttributes<HTMLElement>, 'children'> & {
   // Into the body (default), or where it's drawn.
   portal?: boolean
   elRef?: RefObject<HTMLElement | null>
+  // Behind another column in the same place (the right side's tabs, D-435): there, not shown, no press, no keys.
+  behind?: boolean
   children: ReactNode
   'data-learn'?: string
 }
 
-export function EdgeColumn({ side = 'right', offset = '0px', width, label, onClose, escape = true, portal = true, elRef, className, style, children, ...rest }: Props) {
+export function EdgeColumn({ side = 'right', offset = '0px', width, label, onClose, escape = true, portal = true, elRef, behind, className, style, children, ...rest }: Props) {
   const own = useRef<HTMLElement>(null)
   const root = elRef ?? own
-  useEscapeLayer(() => onClose?.(), { on: escape && !!onClose, root })
+  useEscapeLayer(() => onClose?.(), { on: escape && !!onClose && !behind, root })
   const [present, safeToRemove] = usePresence()
   useSheetColumn(root, side, present)
   // Leaving: the sheet travels back over it first (Sheet.module.css's time), then it goes.
@@ -62,6 +64,8 @@ export function EdgeColumn({ side = 'right', offset = '0px', width, label, onClo
       data-sheet
       data-ground
       data-leaving={present ? undefined : ''}
+      data-behind={behind || undefined}
+      inert={behind || undefined}
       className={[styles.column, className].filter(Boolean).join(' ')}
       style={{ [side]: offset, '--column-off': offset, ...(width !== undefined ? { '--column-w': typeof width === 'number' ? `${width}px` : width } : {}), ...style } as CSSProperties}
     >

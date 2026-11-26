@@ -232,10 +232,11 @@ export function Follow({ focusId, focusTo }: FollowProps) {
       // Where their cursor is on screen, from the middle of what you see: the left part with something open beside a
       // plane or the tasks side view (D-211, D-300).
       const area = planeArea()
+      const mid = area.x + area.w / 2
       const cam = focusId ? planeCam : camOf(wid)
       if (!cam) return
       const zoom = cam.zoom
-      const sx = focusId && planeCam ? planeCam.ox + c.x * zoom - area.w / 2 : (cam as { x: number }).x + c.x * zoom + (size.w - area.w) / 2
+      const sx = focusId && planeCam ? planeCam.ox + c.x * zoom - mid : (cam as { x: number }).x + c.x * zoom + size.w / 2 - mid
       const sy = focusId && planeCam ? planeCam.oy + c.y * zoom - size.h / 2 : (cam as { y: number }).y + c.y * zoom
       if (Math.abs(sx) > area.w * MIDDLE || Math.abs(sy) > size.h * MIDDLE) chasing = true
       if (chasing && Math.hypot(sx, sy) < 2) chasing = false

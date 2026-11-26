@@ -9,7 +9,7 @@
 import type { WithId } from '../../../data/hooks'
 import type { Piece } from '../../../data/model'
 import type { Label } from '../../../data/labels'
-import { camOf, fitInto, glide, setCam, useCanvasView, type Bounds } from '../../../state/canvasView'
+import { camOf, fitInto, glide, planeArea, setCam, useCanvasView, type Bounds } from '../../../state/canvasView'
 import { create } from 'zustand'
 import type { ReactNode } from 'react'
 import { PIECE_GLYPH, TEXT_GLYPH } from './glyphs'
@@ -39,12 +39,13 @@ export function placesIn(space: string, pieces: WithId<Piece>[], labels: Label[]
 
 // The zoom, and which point of the space goes where on screen (the finder's preview shows the same, D-236).
 export function aim(place: Place) {
-  const { size } = useCanvasView.getState()
+  const a = planeArea()
+  const mid = a.x + a.w / 2
   const b = place.box
-  const { zoom, cx, cy } = fitInto(b, size.w, size.h, PAD)
-  if (place.whole) return { zoom, at: [cx, cy], to: [size.w / 2, size.h / 2] }
+  const { zoom, cx, cy } = fitInto(b, a.w, a.h, PAD)
+  if (place.whole) return { zoom, at: [cx, cy], to: [mid, a.h / 2] }
   // A heading lands at 100%, to be read (smaller only if it's wider than the screen).
-  return { zoom, at: [cx, b.y], to: [size.w / 2, size.h * HEADING_TOP] }
+  return { zoom, at: [cx, b.y], to: [mid, a.h * HEADING_TOP] }
 }
 
 // On the canvas, or in the focused plane's own view (`inPlane`).

@@ -2,12 +2,10 @@
    the right that lies on the ground under the main screen (D-387; the right panel's look, D-219: the kind along the
    top, mono only on the system's bits, Inter for the rest, D-337). Tokens only; light under [data-theme='light']. */
 
-/* The column's width. `--agent-width` is the dragged one (Agent.tsx, a page value: pageValues.ts); `--ai-w` is how far
-   the app stops short of the right edge, read by the app's box (WorkspaceLayout.module.css `.app`), the right panel
-   (SidePanel), a document beside (DocReader) and the foot's console. Never leaves the app less than 360 px.
-   None of the three is inherited, and each is set on the elements that read it (`[data-sheet]`, `[data-app]`), never
-   on <html>: the app's box holds the whole canvas, and a value inherited from it or from the root restyles every
-   element there when it changes. So whoever reads one reads it on itself. */
+/* The column's width. `--agent-width` is the dragged one (Agent.tsx, a page value: pageValues.ts); `--ai-w` is how much of
+   the right edge the column takes, read by a document docked beside it (DocReader). Never leaves the app less than 360 px.
+   None of them is inherited, and each is set on the elements that read it (`[data-sheet]`, `[data-app]`), never on
+   <html>: so whoever reads one reads it on itself. */
 @property --agent-width { syntax: '*'; inherits: false; }
 @property --agent-col-w { syntax: '*'; inherits: false; }
 @property --ai-w { syntax: '<length>'; inherits: false; initial-value: 0px; }
@@ -22,14 +20,14 @@
   --agent-col-w: var(--agent-page-w, var(--size-xl));
 }
 
-/* `data-agent-in` comes after `data-agent-open`, once the sheet has drawn back (Agent.tsx): the app narrows then. */
-:global(html[data-agent-in] :is([data-sheet], [data-app])) {
+/* While its column is up (`data-agent-open`, Agent.tsx). */
+:global(html[data-agent-open] :is([data-sheet], [data-app])) {
   --ai-w: var(--agent-col-w);
 }
 
 /* ≤ 760 px the chat covers the screen (1.0's D-114): the app keeps its width under it. */
 @media (max-width: 760px) {
-  :global(html[data-agent-in] :is([data-sheet], [data-app])) {
+  :global(html[data-agent-open] :is([data-sheet], [data-app])) {
     --ai-w: 0px;
   }
 }
@@ -112,8 +110,8 @@
 
 /* ---- The column */
 
-/* On EdgeColumn (D-359): the edge, the height, the line, the marks and the cells are its. Over the right panel, which
-   stops at its left (`--ai-w`). */
+/* On EdgeColumn (D-359): the edge, the height, the line, the marks and the cells are its. In the right panel's place, the two by
+   tabs (D-435). */
 .column {
   --column-z: var(--z-panel);
 }

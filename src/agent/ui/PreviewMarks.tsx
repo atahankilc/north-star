@@ -21,8 +21,9 @@
 // transform, a zoom, a focus's ink, a glide: a MutationObserver on the app's style attributes, a resize, a scroll), and
 // for 400 ms after. Nothing is written on the world or what holds the contents (D-279); the only writes on content
 // elements are a `data-preview` attribute once per element (faint for removed, CSS below) and the one cell-by-cell build
-// of an added one. Clipped to the app's box ([data-app]), so a mark never lies over the agent's column. Reduced motion: no
+// of an added one. Clipped to the main screen's sheet (foundation/sheet.ts), so a mark never lies over a docked column. Reduced motion: no
 // build, no transitions.
+import { sheetEdges } from '../../ui/foundation/sheet'
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { isReducedMotion } from '../../state/motion'
 import { runCells } from '../../ui/primitives/Appear'
@@ -325,8 +326,8 @@ export function PreviewMarks() {
     }
 
     const measure = () => {
-      const a = document.querySelector('[data-app]')
-      const ar = a ? rectOf(a) : { x: 0, y: 0, w: innerWidth, h: innerHeight }
+      const e = sheetEdges()
+      const ar = { x: e.x0, y: 0, w: innerWidth - e.x0 - e.x1, h: innerHeight }
       const out: Drawn[] = []
       // Marks inside a plane that's only a picture here, by plane: one mark each (bug 7).
       const fold = new Map<Element, Drawn[]>()

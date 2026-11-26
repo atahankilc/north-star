@@ -59,8 +59,14 @@
   color: var(--accent-cyan);
 }
 
-/* The open thread (D-165; D-398): in its own column on the right (D-393), all its height. Its head says what it's on as
-   a thing's panel does, its messages are bubbles, its prompt a round well. */
+/* The comment mark (D-167). */
+.icon {
+  display: block;
+  flex: none;
+}
+
+/* ---- A conversation (D-435) */
+
 .panel {
   display: flex;
   flex: 1;
@@ -75,59 +81,37 @@
   font-size: var(--text-sm);
 }
 
-/* What it's on (D-405): the tools on a row, `×` last; under them the thing itself, its card face in its colour, a press
-   going there. */
+/* What it's on (D-405): the thing in its colour, its name, its kind and where; a press shows it there. The tools stand
+   at its right end. */
 .head {
-  display: grid;
+  position: relative;
   flex: none;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4) var(--space-2);
+  padding: var(--space-2) var(--space-3);
 }
 
-.headTop {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  min-height: var(--control-sm);
-}
-
-.actions {
-  flex: none;
-  margin-left: auto;
-}
-
-/* The thing's card: its kind in its colour, the name big, where it is and how long the thread is. */
 .thing {
   display: grid;
   gap: var(--space-1);
-  justify-items: start;
-  padding: var(--space-3) var(--space-4);
+  min-height: var(--control-lg);
+  padding: var(--space-2) calc(5 * var(--control-sm)) var(--space-2) var(--space-3);
   text-align: left;
-}
-
-/* Its kind as a badge in its colour (D-414), as a card's on a plane. */
-.badge {
-  font-size: var(--text-xs);
 }
 
 .thing[data-goes] {
   cursor: pointer;
 }
 
-.kind {
-  color: var(--tone, var(--fg-dim));
-  white-space: nowrap;
-}
-
 .title {
+  min-width: 0;
   margin: 0;
+  overflow: hidden;
   color: var(--fg-strong);
   font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: var(--weight-medium);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
   line-height: var(--lh-snug);
-  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .title[data-gone] {
@@ -135,25 +119,51 @@
 }
 
 .where {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   min-width: 0;
-  overflow: hidden;
   color: var(--fg-dim);
   font-size: var(--text-xs);
+}
+
+.whereText {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.badge {
+  flex: none;
+  padding: var(--space-half) var(--space-1);
+  font-size: var(--w-text-xs);
+}
+
+.actions {
+  position: absolute;
+  top: 50%;
+  right: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  transform: translateY(-50%);
 }
 
 .log {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-4);
   min-height: 0;
   margin: 0;
-  padding: var(--space-6) var(--space-4) var(--space-4);
+  padding: var(--space-2) var(--space-3) var(--space-3);
   overflow-y: auto;
   list-style: none;
   overscroll-behavior: contain;
+}
+
+.log > .lead {
+  padding: 0 var(--space-3);
 }
 
 .lead {
@@ -161,75 +171,90 @@
   line-height: var(--lh-body);
 }
 
-/* The messages gather at the foot, by the prompt, while there are few (D-405). */
-.log > :first-child {
-  margin-top: auto;
-}
-
-/* A day's rule over its messages (D-405, the kit's Rule: `20 TODAY ──`). */
-.day {
-  color: var(--fg);
-}
-
-/* Where what you hadn't read starts (D-405): a magenta line, its word at the end. */
+/* A day's name between two lines; where what you hadn't read starts, a magenta line with its word at the end (D-405). */
+.day,
 .newLine {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  margin: var(--space-4) var(--space-3) var(--space-2);
+  color: var(--fg-dim);
+}
+
+.newLine,
+.newLine > * {
   color: var(--accent-magenta);
 }
 
+.day::before,
+.day::after,
 .newLine::before {
   flex: 1;
   height: var(--line-w);
-  background: color-mix(in srgb, var(--accent-magenta) var(--mix-soft), transparent);
+  background: var(--line);
   content: '';
 }
 
-/* A message is a bubble (D-398). Someone else's on the left: their circle at its foot, their name in their colour and
-   when over it. Yours on the right, in cyan, no circle: the side says it's you. */
+.newLine::before {
+  background: color-mix(in srgb, var(--accent-magenta) var(--mix-soft), transparent);
+}
+
+/* A message is a line (D-435): the writer's circle and name start a run, the next lines of it show when only while
+   pointed at; a faint round shade under the pointer. Yours like everyone's. */
 .msg {
+  position: relative;
   display: flex;
-  align-items: flex-end;
-  gap: var(--space-2);
-  max-width: 88%;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-well);
 }
 
-.msg[data-mine] {
-  align-self: flex-end;
-}
-
-/* The next one of a run by the same writer: close under the one before, in line with it (no circle of its own). */
 .msg[data-follows] {
-  margin-top: calc(-1 * var(--space-3));
+  margin-top: 0;
+  padding-block: var(--space-half);
 }
 
-.noCircle {
+.msg:hover {
+  background: var(--wash-1);
+}
+
+.face,
+.gutter {
   flex: none;
-  width: var(--control-sm);
+  width: var(--hud-tool);
+}
+
+.gutter {
+  align-self: center;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  font-size: var(--w-text-xs);
+  text-align: right;
+  opacity: 0;
+}
+
+.msg:hover .gutter {
+  opacity: 1;
 }
 
 .said {
-  position: relative;
-  display: grid;
-  gap: var(--space-1);
+  flex: 1;
   min-width: 0;
 }
 
 .who {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: var(--space-2);
-  padding: 0 var(--space-1);
-  font-size: var(--text-xs);
-}
-
-.msg[data-mine] .who {
-  flex-direction: row-reverse;
 }
 
 .name {
-  font-weight: var(--weight-medium);
+  min-width: 0;
+  overflow: hidden;
+  font-weight: var(--weight-bold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .when {
@@ -239,12 +264,25 @@
   font-size: var(--text-xs);
 }
 
-/* Your own message's tools (D-405): beside its bubble, only while pointed at or with the keyboard in them. */
+.text {
+  color: var(--fg);
+  line-height: var(--lh-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.at {
+  color: var(--accent-cyan);
+}
+
+/* Your own line's tools: a small pill over its right end, only while pointed at or with the keyboard in them. */
 .tools {
   position: absolute;
-  right: 100%;
-  bottom: 0;
-  margin-right: var(--space-2);
+  top: calc(-1 * var(--space-3));
+  right: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--bg-raised);
+  box-shadow: inset 0 0 0 var(--line-w) var(--line-hover);
   opacity: 0;
   transition: opacity var(--dur-fast) var(--ease-out);
 }
@@ -254,54 +292,25 @@
   opacity: 1;
 }
 
-/* The bubble: round, the corner by its writer small (theirs bottom left, yours bottom right), washed in its writer's
-   colour (`--who`, D-405): who said it reads before the name does; yours stronger. */
-.text {
-  justify-self: start;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-menu);
-  border-bottom-left-radius: var(--space-1);
-  background: color-mix(in srgb, var(--who, var(--fg)) var(--mix-wash), var(--wash-3));
-  color: var(--fg);
-  line-height: var(--lh-body);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+/* No pointer to hover with: always there. */
+@media (hover: none) {
+  .tools {
+    opacity: 1;
+  }
 }
 
-.msg[data-mine] .text {
-  justify-self: end;
-  border-bottom-right-radius: var(--space-1);
-  border-bottom-left-radius: var(--radius-menu);
-  background: color-mix(in srgb, var(--who, var(--accent-cyan)) var(--mix-pick), transparent);
-  color: var(--fg-strong);
-}
-
-.at {
-  color: var(--accent-cyan);
-}
-
-/* Editing one's own message: a Field where its bubble was, as wide as a bubble may be (the field has no words to take
-   its width from). */
 .editField {
   font: inherit;
   line-height: var(--lh-body);
 }
 
-.msg:has(.editField) {
-  width: 100%;
-}
-
-.msg:has(.editField) .said {
-  flex: 1;
-}
-
-/* The prompt: `>` in a round well with `send` in it, its line cyan while the keys are in it (D-384's Field; D-398). */
+/* The prompt: a round well with `send` in it, its line cyan while the keys are in it (D-384's Field; D-398). */
 .composer {
   position: relative;
   display: flex;
   flex: none;
   flex-direction: column;
-  padding: var(--space-3) var(--space-4) var(--space-4);
+  padding: var(--space-2) var(--space-4) var(--space-4);
 }
 
 .well {
@@ -309,7 +318,7 @@
   padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
   border-radius: var(--radius-well);
   background: var(--wash-2);
-  box-shadow: inset 0 0 0 var(--line-w) var(--line-hover);
+  box-shadow: inset 0 0 0 var(--line-w) transparent;
   transition: box-shadow var(--dur-fast) var(--ease-out);
 }
 
@@ -336,55 +345,53 @@
   font-size: var(--text-sm);
 }
 
-
-
-/* Which threads it shows (D-195): quiet words, or the one dropdown trigger while there's something to pick. */
-.scope {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--fg-dim);
-  font-size: var(--text-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* ---- The list */
 
 .scopePick {
   flex: 0 1 auto;
   min-width: 0;
 }
 
+.naming {
+  flex: none;
+  padding: var(--space-3) var(--space-4) var(--space-1);
+}
+
 .rows {
   flex: 1;
   min-height: 0;
   margin: 0;
-  padding: var(--space-2);
+  padding: 0 var(--space-2) var(--space-6);
   overflow-y: auto;
   list-style: none;
   overscroll-behavior: contain;
 }
 
 .rows .lead {
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-4);
 }
 
 /* What's new to you, on top (D-405): its rule magenta, as everything new is. */
+.newHead {
+  display: flex;
+  align-items: center;
+  padding: var(--space-4) var(--space-1) var(--space-1) var(--space-3);
+}
+
 .fresh {
   --rule-line: color-mix(in srgb, var(--accent-magenta) var(--mix-soft), transparent);
-  padding: var(--space-4) var(--space-3) var(--space-2);
+  flex: 1;
   color: var(--accent-magenta);
 }
 
-/* A place's threads under its name (`02 PRODUCT ──── 1`, the kit's Rule). */
 .place {
   padding: var(--space-6) var(--space-3) var(--space-2);
-  color: var(--fg);
+  color: var(--fg-muted);
 }
 
-/* The resolved ones, behind a word at the foot (D-405). */
 .doneFoot {
   display: flex;
-  padding: var(--space-6) var(--space-3) var(--space-2);
+  padding: var(--space-6) var(--space-1) var(--space-1);
 }
 
 .group {
@@ -393,12 +400,12 @@
   list-style: none;
 }
 
-/* One thread: the thing first (its colour a bar inside the row's left, D-380's; its kind, its name), when; under it who
-   wrote last and how it began, how many. */
+/* A conversation: its glyph over both lines; its name and when; who wrote last and what, a lamp at the end when new. */
 .row {
-  position: relative;
   display: grid;
-  gap: var(--space-half);
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: var(--space-3);
   width: 100%;
   padding: var(--space-2) var(--space-3);
   border: 0;
@@ -410,7 +417,6 @@
   cursor: pointer;
 }
 
-/* A round shade under the pointer; the one that's open keeps a stronger one (D-384). */
 .row:hover,
 .row:focus-visible {
   background: var(--wash-1);
@@ -421,235 +427,216 @@
   background: var(--wash-3);
 }
 
-/* A read row is one line: the thing, when (D-405). */
-.row:not([data-said]) .rowHead {
-  align-items: center;
-  min-height: var(--control-sm);
+.row > .glyph {
+  grid-row: span 2;
 }
 
-.rowHead,
-.rowSaid {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-/* The kit's Label, quiet: the bar carries the thing's colour (D-405). */
-/* A row's thing: its kind as a badge in its colour (D-414), a step smaller than the head's, so the name leads. */
-.rowBadge {
-  flex: none;
-  padding: var(--space-half) var(--space-1);
-  font-size: var(--w-text-xs);
-}
-
-.rowKind {
-  flex: none;
-  color: var(--fg-dim);
-}
-
-/* Read, its name is quiet; with something new it's the row's brightest. */
-.rowTitle {
+.rowTitle,
+.rowText {
   min-width: 0;
   overflow: hidden;
-  color: var(--fg-muted);
   font-family: var(--font-display);
-  font-weight: var(--weight-medium);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.rowTitle {
+  color: var(--fg);
+}
+
+.rowText {
+  color: var(--fg-dim);
+  font-size: var(--text-xs);
+}
+
 .row[data-new] .rowTitle {
   color: var(--fg-strong);
+  font-weight: var(--weight-bold);
+}
+
+.row[data-new] .rowText {
+  color: var(--fg-muted);
 }
 
 .rowTitle[data-gone] {
   color: var(--fg-dim);
-  font-weight: var(--weight-regular);
 }
 
-/* Something new: a lit lamp after the name (D-384's lamp, magenta as everything new is). */
 .rowLamp {
-  flex: none;
-  align-self: center;
+  justify-self: end;
   width: var(--space-2);
   height: var(--space-2);
   border-radius: var(--radius-full);
   background: var(--accent-magenta);
 }
 
-.rowHead .when {
-  margin-left: auto;
-}
-
-.rowWho {
-  flex: none;
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-}
-
-.rowText {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--fg-muted);
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.rowCount {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--fg-dim);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-}
-
-.row[data-new] .rowCount {
+.rowAt {
+  justify-self: end;
   color: var(--accent-magenta);
-}
-
-/* The comment mark (D-167). */
-.icon {
-  display: block;
-  flex: none;
-}
-
-
-/* Talk as the page (D-412): the list on the left, the conversation on the rest, a line between. */
-.talkPage {
-  display: grid;
-  grid-template-columns: var(--panel-w) 1fr;
-  flex: 1;
-  min-height: 0;
-}
-
-.talkPage > .list,
-.talkPage > .convo {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.talkPage > .list {
-  border-right: var(--line-w) solid var(--line);
-}
-
-.talkPage > .convo > .lead {
-  margin: auto;
-}
-
-/* Talk as the page (D-416): the messages as lines, as a chat app reads them. Each a row as wide as the page, a faint
-   shade under the pointer; the writer's circle and name start a run, its next lines show when only while pointed at;
-   no bubbles, yours on the left like everyone's. */
-.panel[data-lines] .log {
-  gap: 0;
-  padding-inline: 0;
-}
-
-.panel[data-lines] .day,
-.panel[data-lines] .newLine {
-  margin: var(--space-4) var(--space-6) var(--space-1);
-}
-
-.panel[data-lines] .msg,
-.panel[data-lines] .msg[data-mine] {
-  position: relative;
-  align-self: stretch;
-  align-items: flex-start;
-  gap: var(--space-3);
-  max-width: none;
-  margin-top: var(--space-3);
-  padding: var(--space-1) var(--space-6);
-}
-
-.panel[data-lines] .msg[data-follows] {
-  margin-top: 0;
-  padding-block: var(--space-half);
-}
-
-.panel[data-lines] .msg:hover {
-  background: var(--wash-1);
-}
-
-.panel[data-lines] .face,
-.gutter {
-  flex: none;
-  width: var(--hud-tool);
-}
-
-/* A run's next lines: when, where the circle would be, only while pointed at. */
-.gutter {
-  align-self: center;
-  color: var(--fg-dim);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  text-align: right;
-  opacity: 0;
 }
 
-.panel[data-lines] .msg:hover .gutter {
-  opacity: 1;
+/* What a conversation is on, as a glyph (D-435). */
+.glyph {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--control);
+  height: var(--control);
+  border-radius: var(--space-2);
+  background: color-mix(in srgb, var(--tone, var(--fg)) var(--mix-pick), transparent);
+  color: color-mix(in srgb, var(--tone, var(--fg)) var(--mix-strong), var(--fg-strong));
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: normal;
 }
 
-.panel[data-lines] .said {
-  flex: 1;
-  gap: 0;
+.glyph[data-channel] {
+  border-radius: var(--radius-full);
+  background: var(--wash-3);
+  color: var(--fg-muted);
 }
 
-.panel[data-lines] .who,
-.panel[data-lines] .msg[data-mine] .who {
-  flex-direction: row;
-  padding: 0;
+/* Nothing said yet: what Talk is for and its one go. */
+.empty {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  padding: var(--space-6);
+  color: var(--fg-dim);
+  line-height: var(--lh-body);
 }
 
-.panel[data-lines] .text,
-.panel[data-lines] .msg[data-mine] .text {
-  justify-self: start;
-  max-width: var(--measure);
-  padding: 0;
-  border-radius: 0;
-  background: none;
-  color: var(--fg);
-}
-
-/* Your own line's tools: a small pill at the row's top right while pointed at. */
-.panel[data-lines] .tools {
-  top: calc(-1 * var(--space-3));
-  right: 0;
-  bottom: auto;
+.empty > p {
   margin: 0;
 }
 
-.panel[data-lines] .composer,
-.panel[data-lines] .head {
-  padding-inline: var(--space-6);
+.emptyTitle {
+  margin: 0;
+  color: var(--fg-strong);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
 }
 
-/* As in a chat app, a short conversation sits at the foot, by the prompt. */
-.panel[data-lines] .log > :first-child {
-  margin-top: auto;
-}
+/* ---- Beside the canvas: the list as a rail on the open conversation's left */
 
-/* A new channel's name, under the CHANNELS rule (D-416). */
-.channelField {
-  margin: 0 var(--space-3) var(--space-2);
-}
-
-/* Talk as the page: its head across, the list and the conversation under it. */
-.talkPageBox {
+.beside {
   display: flex;
   flex: 1;
-  flex-direction: column;
   min-height: 0;
 }
 
+.rail {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-3) 0 var(--space-4) var(--space-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 
-/* A channel's head (D-416, D-419): a thing's three lines, no face: in the head's own padding. */
-.thing[data-bare] {
-  padding-block: var(--space-1);
+.railGroup {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2) 0 0;
+  border-top: var(--line-w) solid var(--line);
+  list-style: none;
+}
+
+.railItem {
+  position: relative;
+  display: grid;
+  padding: var(--space-1);
+  border: 0;
+  border-radius: var(--radius-box);
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.railItem:hover,
+.railItem:focus-visible {
+  background: var(--wash-1);
+  outline: none;
+}
+
+.railItem[data-open] {
+  background: var(--wash-3);
+}
+
+.railItem[data-new]::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--accent-magenta);
+  content: '';
+}
+
+/* ---- As the page: the list, the conversation, what it's about */
+
+.talkPage {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  container-type: inline-size;
+}
+
+.talkPage > .list {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: min(var(--size-md), 40%);
+  min-height: 0;
+  border-right: var(--line-w) solid var(--line);
+}
+
+.talkPage > .convo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pick {
+  margin: auto;
+}
+
+/* A reading width, in the middle of its part. */
+.panel[data-wide] > .head,
+.panel[data-wide] > .composer {
+  width: 100%;
+  max-width: calc(var(--size-xl) + var(--size-xs));
+  margin-inline: auto;
+}
+
+.panel[data-wide] > .head {
+  padding-block: var(--space-4) var(--space-3);
+}
+
+.panel[data-wide] > .log {
+  padding-inline: max(var(--space-3), calc((100% - var(--size-xl) - var(--size-xs)) / 2 + var(--space-3)));
+}
+
+.panel[data-wide] .thing {
+  padding-right: calc(10 * var(--control-sm));
+}
+
+/* The agent's orb stands in the page's corner: the prompt keeps clear of it while nothing is beside the conversation. */
+.panel[data-wide] > .composer {
+  padding-right: calc(var(--orb) + 2 * var(--space-4));
+}
+
+@container (min-width: 1080px) {
+  .panel[data-wide] > .composer {
+    padding-right: var(--space-4);
+  }
 }

@@ -1,6 +1,6 @@
 // The right panel (D-219): one look for every panel that opens on the right, whatever fills it. A terminal column flush
-// with the right edge of the space it belongs to (EdgeColumn, D-359): a piece's own view in focus (its part of the
-// screen when something is open beside it), or the screen's right edge for what's on the canvas itself. Its head
+// with the screen's right edge (EdgeColumn, D-359); with the agent's column there it shares that column's place and
+// width, by tabs (D-435). Its head
 // (PanelHead: the kind in its colour, tools, `×`), the title under it, then sections under rules that carry a number and
 // a name (`01 STATUS ────`), actions at the foot, joined (D-344). The main screen drawing back uncovers it as it opens and covers
 // it again as it closes (D-395): wrap it in <AnimatePresence>.
@@ -11,6 +11,9 @@ import { DragLine } from '../primitives/DragLine'
 import { Rule } from '../primitives/Rule'
 import { EdgeColumn } from './EdgeColumn'
 import { PanelHead } from './PanelHead'
+import { RightTabs } from './RightTabs'
+import { useBehind, useRightColumn, useThingPanel } from '../foundation/rightColumn'
+import { usePresence } from 'motion/react'
 import { dragPanelWidth, keepPanelWidth } from './panelWidth'
 
 type Props = {
@@ -19,12 +22,12 @@ type Props = {
   tone?: string
   title: ReactNode
   label: string
+  // Which thing it is (an id): another one picked comes to the front of the right column (D-435).
+  of?: string
   // The `×` and Escape (on the one Escape stack, D-359: a menu or a thread over it closes first).
   onClose: () => void
   // Actions at its foot (PanelAction), joined; a danger one goes to the far right.
   actions?: ReactNode
-  // From the screen's right edge: the part of the screen right of the space it belongs to (what's open beside a plane).
-  right?: number
   // Its width when it isn't the right panels' own (a task's inside the tasks side view, D-300: narrower, or all of it):
   // that one isn't dragged.
   width?: number
@@ -34,22 +37,22 @@ type Props = {
 }
 
 // On the docked column (EdgeColumn, D-359): fixed right, full height, under the sheet, Escape; this is what's in it.
-export function SidePanel({ kind, tone, title, label, onClose, actions, right = 0, width, tools, children }: Props) {
+export function SidePanel({ kind, tone, title, label, of, onClose, actions, width, tools, children }: Props) {
   // Where its right edge is on the screen, read as a drag starts (what's beside it or the agent's column can move it).
   const edge = useRef(0)
+  const agent = useRightColumn((s) => s.agent)
+  const [present] = usePresence()
+  useThingPanel(kind, of ?? label, present)
   return (
     <EdgeColumn
-      // Left of the agent's column when it's open (`--ai-w`, S14).
-      offset={`calc(${right}px + var(--ai-w, 0px))`}
-      // Never wider than the room left of where it stands (a plane's part beside the tasks side view is narrower than
-      // the panel: it went off the screen's left edge).
-      width={width ?? `min(var(--panel-width, var(--panel-w)), calc(100vw - ${right}px - var(--ai-w, 0px)))`}
+      width={agent ? 'var(--agent-col-w)' : (width ?? 'min(var(--panel-width, var(--panel-w)), 100vw)')}
+      behind={useBehind('thing')}
       label={label}
       onClose={onClose}
       data-learn="card-panel"
       style={{ ['--tone' as string]: tone ?? 'var(--accent-magenta)' }}
     >
-      {width === undefined && (
+      {width === undefined && !agent && (
         <DragLine
           at="left"
           label="The panel's width"
@@ -58,6 +61,7 @@ export function SidePanel({ kind, tone, title, label, onClose, actions, right = 
           onEnd={keepPanelWidth}
         />
       )}
+      <RightTabs />
       <PanelHead className={tone ? styles.toned : undefined} kind={kind} tools={tools} onClose={onClose} />
       <div className={[styles.title, tone ? styles.toned : ''].filter(Boolean).join(' ')}>{title}</div>
       <div className={styles.body}>{children}</div>

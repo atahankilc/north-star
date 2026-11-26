@@ -81,7 +81,7 @@ export const frameTo = (b: { x: number; y: number; w: number; h: number }, ms: n
       from = useCanvasView.getState().planeCam ?? from
       const a = planeArea()
       const zoom = Math.min(1.25, (a.w - 2 * pad) / b.w, (a.h - 2 * pad) / b.h)
-      to = { zoom, ox: a.w / 2 - (b.x + b.w / 2) * zoom, oy: a.h / 2 - (b.y + b.h / 2) * zoom }
+      to = { zoom, ox: a.x + a.w / 2 - (b.x + b.w / 2) * zoom, oy: a.h / 2 - (b.y + b.h / 2) * zoom }
     },
     frame: (_c, k) => {
       const e = isReducedMotion() ? 1 : ease(k)
