@@ -49,89 +49,8 @@
 }
 
 .nav {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--space-6) var(--space-3);
-  border-right: var(--line-w) solid var(--line);
   /* It paints up to the window's left corners (D-387). */
   border-radius: var(--window-inner) 0 0 var(--window-inner);
-  background: var(--wash-1);
-}
-
-.navGroup {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-/* YOU · WORKSPACE; the workspace group also names the workspace, after it. */
-.navGroupLabel {
-  composes: fieldLabel from '../foundation/Frame.module.css';
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  padding: 0 var(--space-3) var(--space-1);
-}
-
-.navGroupName {
-  overflow: hidden;
-  color: var(--fg-muted);
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  letter-spacing: normal;
-  text-overflow: ellipsis;
-  text-transform: none;
-  white-space: nowrap;
-}
-
-.navList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-half);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.navItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  height: var(--control);
-  padding: 0 var(--space-3);
-  border: 0;
-  /* A pill, as every row that's picked from (D-387); the one you're on is filled, nothing else marks it. */
-  border-radius: var(--radius-full);
-  background: none;
-  color: var(--fg-muted);
-  font: inherit;
-  font-size: var(--text-sm);
-  text-align: left;
-  cursor: pointer;
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out);
-}
-
-.navItem:hover {
-  background: var(--wash-2);
-  color: var(--fg-strong);
-}
-
-.navItem[aria-current='page'] {
-  background: var(--wash-3);
-  color: var(--fg-strong);
-}
-
-/* The keyboard's ring hugs the pill. */
-.navItem:focus-visible {
-  outline: var(--line-w) solid var(--accent-cyan);
-  outline-offset: 0;
 }
 
 /* The right side: a head that stays, and the page scrolling under it. */
@@ -331,27 +250,7 @@
   }
 
   .nav {
-    flex-direction: row;
-    gap: var(--space-2);
-    overflow-x: auto;
-    padding: var(--space-2) var(--space-3);
-    border-right: 0;
-    border-bottom: var(--line-w) solid var(--line);
     border-radius: var(--window-inner) var(--window-inner) 0 0;
-  }
-
-  /* Tabs have no room for the group names. */
-  .navGroupLabel {
-    display: none;
-  }
-
-  .navList {
-    flex-direction: row;
-  }
-
-  .navItem {
-    width: auto;
-    white-space: nowrap;
   }
 
   .head {

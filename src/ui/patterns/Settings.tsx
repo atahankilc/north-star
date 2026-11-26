@@ -6,6 +6,9 @@
 // On the one Window (D-359): focus kept inside and given back, Escape (a menu in it first) and the scrim close it.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { deleteAccount, signOut, useAuth } from '../../data/auth'
+import { useNavigate } from 'react-router-dom'
+import { useLabAdmin } from '../../data/backoffice'
+import { BACKOFFICE } from '../../app/paths'
 import { safePhoto, usePresence } from '../../data/presence'
 import { useDisplay, type BackgroundPref } from '../../state/display'
 import { UI_SIZE } from '../foundation/feel'
@@ -22,6 +25,7 @@ import { Rule } from '../primitives/Rule'
 import { SettingsTool } from './SettingsTool'
 import { HazardConfirm } from './HazardConfirm'
 import { LegalLinks } from './LegalLinks'
+import { SideList } from './SideList'
 import { Window } from './Window'
 import styles from './Settings.module.css'
 import { CloseIcon } from '../primitives/hudIcons'
@@ -106,30 +110,20 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
       {open && (
         <Window label="Settings" onClose={() => setOpen(false)} look="bare" focus={false} elRef={box} className={styles.dialog}>
           <div className={styles.inner}>
-            <nav className={styles.nav} aria-label="Settings" data-learn="settings-menu">
-              {(['you', 'workspace'] as const).map((g) => {
-                const items = pages.filter((p) => p.group === g)
-                if (items.length === 0) return null
-                return (
-                  <div key={g} className={styles.navGroup}>
-                    <span className={styles.navGroupLabel}>
-                      {g}
-                      {g === 'workspace' && workspaceName && <span className={styles.navGroupName}>{workspaceName}</span>}
-                    </span>
-                    <ul className={styles.navList}>
-                      {items.map((p) => (
-                        <li key={p.id}>
-                          <button className={styles.navItem} aria-current={p.id === current.id ? 'page' : undefined} onClick={() => setPage(p.id)}>
-                            {p.label}
-                            {p.id === 'people' && badge > 0 && <CountBadge count={badge} tone="cyan" placement="inline" />}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )
-              })}
-            </nav>
+            <SideList<Page>
+              label="Settings"
+              className={styles.nav}
+              data={{ 'data-learn': 'settings-menu' }}
+              current={current.id}
+              onPick={setPage}
+              groups={(['you', 'workspace'] as const).map((g) => ({
+                name: g,
+                ...(g === 'workspace' && workspaceName ? { aside: workspaceName } : {}),
+                items: pages
+                  .filter((p) => p.group === g)
+                  .map((p) => ({ id: p.id, label: p.label, ...(p.id === 'people' && badge > 0 ? { extra: <CountBadge count={badge} tone="cyan" placement="inline" /> } : {}) })),
+              }))}
+            />
 
             <div className={styles.main}>
               {/* The head never scrolls: nothing passes under the title or the close. */}
@@ -154,6 +148,7 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
                       </span>
                       <Button onClick={() => signOut()}>sign out</Button>
                     </div>
+                    <BackofficeLink uid={user.id} />
                     <DeleteAccount />
                     <LegalLinks />
                   </Section>
@@ -177,6 +172,18 @@ export function SettingsButton({ workspace, workspaceName, badge = 0 }: Props) {
         </Window>
       )}
     </>
+  )
+}
+
+// North Star's key's backoffice (D-434), shown only to a lab admin.
+function BackofficeLink({ uid }: { uid: string }) {
+  const { admin } = useLabAdmin(uid)
+  const go = useNavigate()
+  if (!admin) return null
+  return (
+    <Row label="backoffice" hint="North Star's key: its month, its people, its limits, its audit log.">
+      <Button onClick={() => go(BACKOFFICE)}>open</Button>
+    </Row>
   )
 }
 

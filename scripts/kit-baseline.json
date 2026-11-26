@@ -87,7 +87,7 @@
     "kitRaw": 1
   },
   "src/ui/patterns/Settings.tsx": {
-    "kitRaw": 2
+    "kitRaw": 1
   },
   "src/ui/patterns/WizardShell.tsx": {
     "windowKeys": 1
@@ -108,9 +108,9 @@
     "windowKeys": 1
   },
   "src/views/workspace/canvas/CanvasView.tsx": {
+    "kindSwitch": 17,
     "windowKeys": 4,
-    "rafLoop": 2,
-    "kindSwitch": 17
+    "rafLoop": 2
   },
   "src/views/workspace/canvas/MoveToCanvas.tsx": {
     "windowKeys": 1

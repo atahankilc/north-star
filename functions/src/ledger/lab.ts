@@ -10,9 +10,8 @@ import { audited, type Act } from './audit'
 import { microToCents, monthOf, resetsOn } from '../../../src/agent/money'
 import { LimitReached, meterId, rateOf, roomToStart, type Limits, type Meter } from './ledger'
 
-export type LabPublic = { on: boolean; hasKey: boolean; models: string[]; personCents: number }
-export type LabPrivate = { keyHint?: string | null; keySetAt?: number; totalCents?: number | null; invitedOnly: boolean }
-export type LabPerson = { blocked?: boolean; personCents?: number | null; agreedAt?: number; reason?: string }
+import type { LabPerson, LabPrivate, LabPublic } from '../../../src/agent/labBoard'
+
 
 export const DEFAULT_PERSON_CENTS = 300
 export const DEFAULT_TOTAL_CENTS = 10_000

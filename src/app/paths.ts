@@ -4,6 +4,8 @@
 //   /workspaces/<id>                    a workspace's canvas (D-174); there are no other pages
 //   /workspaces/<id>?canvas=<c>         another of its canvases (D-302)
 export const WORKSPACES = '/workspaces'
+// North Star's key for a lab admin (D-434, agent-server.md §10); anyone else is sent to the workspaces.
+export const BACKOFFICE = '/backoffice'
 
 export function workspacePath(wid: string) {
   return `${WORKSPACES}/${wid}`

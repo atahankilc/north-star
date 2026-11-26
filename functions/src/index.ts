@@ -814,3 +814,27 @@ export const inviteToLab = onCall({ cors: ORIGINS }, async (req) => {
   return { ok: true }
 })
 
+// The backoffice (D-434, §10): North Star's key this month in one read, and stopping a run paid by it.
+export const labBoard = onCall({ cors: ORIGINS, memory: '512MiB' }, async (req) => {
+  const who = callerOf(req)
+  const lab = await import('./ledger/lab')
+  if (!(await lab.isLabAdmin(db(), who.uid))) throw new HttpsError('permission-denied', 'Only a lab admin does this.')
+  const { board } = await import('./ledger/board')
+  return board(db(), getAuth())
+})
+
+export const labStopRun = onCall({ cors: ORIGINS }, async (req) => {
+  const who = callerOf(req)
+  const lab = await import('./ledger/lab')
+  if (!(await lab.isLabAdmin(db(), who.uid))) throw new HttpsError('permission-denied', 'Only a lab admin does this.')
+  const id = (req.data as { run?: unknown } | undefined)?.run
+  if (typeof id !== 'string' || !/^[A-Za-z0-9]{1,40}$/.test(id)) throw new HttpsError('invalid-argument', 'Which run?')
+  const run = (await db().doc(`agentRuns/${id}`).get()).data() as { uid: string; paidBy: string; status: string } | undefined
+  if (!run || run.paidBy !== 'lab') throw new HttpsError('not-found', "No run of North Star's key by that id.")
+  if (run.status !== 'running' && run.status !== 'queued') return { ok: true, already: run.status }
+  const { audited } = await import('./ledger/audit')
+  await audited(db(), async () => ({ entry: { what: 'lab key: run stopped', by: who.uid, to: { run: id, uid: run.uid } }, value: null }))
+  await rtdb().ref(`agentCtl/${run.uid}/${id}/stop`).set(true)
+  return { ok: true }
+})
+

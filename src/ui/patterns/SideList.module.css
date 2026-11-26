@@ -1,0 +1,109 @@
+/* A page's side list (D-404): Settings' menu and the backoffice's. */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-3);
+  border-right: var(--line-w) solid var(--line);
+  background: var(--wash-1);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* YOU · WORKSPACE; a group may name what it's about after it (the workspace). */
+.groupLabel {
+  composes: fieldLabel from '../foundation/Frame.module.css';
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 0 var(--space-3) var(--space-1);
+}
+
+.groupAside {
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  letter-spacing: normal;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-half);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  height: var(--control);
+  padding: 0 var(--space-3);
+  border: 0;
+  /* A pill, as every row that's picked from (D-387); the one you're on is filled, nothing else marks it. */
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.item:hover {
+  background: var(--wash-2);
+  color: var(--fg-strong);
+}
+
+.item[aria-current='page'] {
+  background: var(--wash-3);
+  color: var(--fg-strong);
+}
+
+/* The keyboard's ring hugs the pill. */
+.item:focus-visible {
+  outline: var(--line-w) solid var(--accent-cyan);
+  outline-offset: 0;
+}
+
+/* Narrow screens: a row of tabs above the page; no room for the group names. */
+@media (max-width: 640px) {
+  .nav {
+    flex-direction: row;
+    gap: var(--space-2);
+    overflow-x: auto;
+    padding: var(--space-2) var(--space-3);
+    border-right: 0;
+    border-bottom: var(--line-w) solid var(--line);
+  }
+
+  .groupLabel {
+    display: none;
+  }
+
+  .list {
+    flex-direction: row;
+  }
+
+  .item {
+    width: auto;
+    white-space: nowrap;
+  }
+}

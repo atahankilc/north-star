@@ -78,9 +78,11 @@ export async function signInAsTestUser(name: string) {
 
 // Deletes the account and what only its owner could see (D-432, functions/src/account.ts). Google's window comes first: the
 // function takes only a sign-in of the last few minutes. Signed out at the end, the account being gone.
-export async function deleteAccount() {
+// Google's sign-in again, for what a function takes only from a sign-in of the last hour (deleting the account, the
+// backoffice's changes, D-434); on the emulators a fresh token is enough.
+export async function freshSignIn(otherAccount = "That's a different Google account.", failed = 'Sign in with Google to confirm.') {
   const user = firebase?.auth.currentUser
-  if (!firebase || !user) return
+  if (!firebase || !user) throw new Error('Sign in first.')
   if (!useEmulators) {
     try {
       const google = new GoogleAuthProvider()
@@ -88,11 +90,17 @@ export async function deleteAccount() {
       await reauthenticateWithPopup(user, google)
     } catch (e) {
       const code = (e as { code?: string }).code ?? ''
-      if (code === 'auth/user-mismatch') throw new Error("That's a different Google account. Sign in with the one you want to delete.")
-      throw new Error(SIGN_IN_SAYS[code] ?? 'Your account was not deleted. Sign in with Google to confirm.')
+      if (code === 'auth/user-mismatch') throw new Error(otherAccount)
+      throw new Error(SIGN_IN_SAYS[code] ?? failed)
     }
   }
   await user.getIdToken(true)
+}
+
+export async function deleteAccount() {
+  const user = firebase?.auth.currentUser
+  if (!firebase || !user) return
+  await freshSignIn("That's a different Google account. Sign in with the one you want to delete.", 'Your account was not deleted. Sign in with Google to confirm.')
   const [f, { httpsCallable }] = await Promise.all([functionsOf(), import('firebase/functions')])
   try {
     await httpsCallable(f, 'deleteAccount', { timeout: ACCOUNT_DELETE_MS })({})

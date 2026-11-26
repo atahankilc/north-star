@@ -585,3 +585,30 @@ the stub.
   Settings, a run on North Star's key counted).
 - **Not yet:** the backoffice to change it (P5: today the admin's calls only); invites by a list or a domain; the
   privacy page's paragraph on the lab key (§11) before anyone outside uses it.
+
+## 21. P5's log: the backoffice (2026-11-26)
+- **Where:** `/backoffice` (`src/views/backoffice/`, its own chunk), linked from Settings → account only for a lab admin
+  (`admins/{uid}`); anyone else is sent to the workspaces page. Laid out as Settings (D-404): the side list (now the kit's
+  `SideList`, which Settings' menu uses too), a head that stays with `refresh` and `back`, numbered groups.
+- **Read in one call:** `labBoard` (a lab admin, any sign-in; `functions/src/ledger/board.ts`, its shape in
+  `src/agent/labBoard.ts`): the settings, the month's total meter, each person (meter, standing, invite, name and email
+  from Auth, last call), the invites, the newest 200 runs paid by it with their cost, the newest 300 calls, the lab's audit
+  entries, health (calls under way, failures in the last hour, runs stuck past 35 minutes, the chain checked). Counts and
+  money only. Two indexes added to `firestore.indexes.json` (`aiCalls` source + at, `agentRuns` paidBy + createdAt): deployed
+  with the rest, after asking.
+- **Pages:** *Overview*: the switch (off through the hazard confirm; on), this month in euros of the total, a forecast to
+  the month's end, people, calls, runs by status, tokens, refusals at a limit, by day and by model as bars. *People*: find;
+  each person's month of their limit, calls, last used, and a panel to set their own limit or block/free them, each with a
+  reason (the button waits for one), and their calls; invite by email, take an invite back. *Runs*: going and failed first,
+  `stop` (`labStopRun`, audited, through `agentCtl`). *Calls*: by person, status, model; `~` for a guessed cost; CSV.
+  *Key and limits*: the key (`sk-…abcd`, set when; replace, remove behind the hazard confirm), € a person and the total
+  typed where shown, invited only or everyone, its models ticked. *Audit*: the lab's entries in words (`limit a person
+  €3.00 → €4.50`), the chain's state, CSV. *Health*: what needs looking at, magenta when it's wrong.
+- **A change** asks Google's sign-in again when the function says the sign-in is older than an hour (`freshSignIn` in
+  data/auth.ts, which deleting the account now uses too), then goes once more.
+- **Checked:** end to end 106/106 (the board's month, a person's standing, runs with cost, no key and no words in it;
+  refused to anyone else; a run already over not stopped again); the real app headless 18/18 (every page draws, the
+  chain shown holding, off through the confirm and on again, a limit typed, no block without a reason, blocked with it
+  and freed, anyone else sent to the workspaces page); unit 1278; Settings' gallery live.
+- **Not yet:** the mails to the lab at 50/80/100 % of the total and on health going wrong (Resend, as D-431); OpenAI's
+  own figure beside ours (reconciliation, P6); the person's own last calls and CSV in Settings → the agent.

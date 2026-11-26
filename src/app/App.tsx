@@ -15,12 +15,14 @@ import { Curtain } from '../ui/patterns/Curtain'
 import { runCells } from '../ui/primitives/Appear'
 import { Landing } from '../views/landing/Landing'
 import { Workspaces } from '../views/workspaces/Workspaces'
-import { WORKSPACES } from './paths'
+import { BACKOFFICE, WORKSPACES } from './paths'
 import { fetchWorkspaceAhead, loadWorkspace } from './chunks'
 import { Crash } from './Crash'
 
 // A workspace's code comes with it (chunks.ts): the landing and the workspaces page load without it.
 const WorkspaceLayout = lazy(() => loadWorkspace().then((m) => ({ default: m.WorkspaceLayout })))
+// The backoffice (D-434): its own chunk, fetched only by whoever opens it.
+const Backoffice = lazy(() => import('../views/backoffice/Backoffice').then((m) => ({ default: m.Backoffice })))
 
 export function App() {
   const reduced = useMotion((s) => s.reduced)
@@ -85,6 +87,14 @@ function Shell() {
                       // Its code still coming: the curtain holds, the field flowing, as for any loading (D-025).
                       <Suspense fallback={<HoldCurtain name="workspace-code" />}>
                         <OneWorkspace />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path={BACKOFFICE}
+                    element={
+                      <Suspense fallback={<HoldCurtain name="backoffice-code" />}>
+                        <Backoffice user={user} />
                       </Suspense>
                     }
                   />
