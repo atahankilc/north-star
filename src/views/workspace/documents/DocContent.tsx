@@ -115,9 +115,16 @@ function FileImage({ d }: { d: WithId<Doc> }) {
   )
 }
 
-// A PDF document (D-425): its pages drawn one after another at the page's width (pdf.js, loaded the first time), up to
-// PDF_PAGES; past that, download it.
-const PDF_PAGES = 60 // tokens-ok: how many of a PDF's pages the reader draws
+// A PDF document (D-425): its pages one after another at the page's width (pdf.js, loaded the first time), each drawn
+// only as it comes near the screen, so a long one opens at once (a page's place is kept by its shape, read first);
+// up to PDF_PAGES, past that, download it.
+const PDF_PAGES = 500 // tokens-ok: how many of a PDF's pages the reader lays out
+const PDF_AHEAD = '1200px' // tokens-ok: how far off the screen a page is drawn before it's reached
+// The nearest box that scrolls it, else the page.
+const scrollerOf = (el: HTMLElement): HTMLElement | null => {
+  for (let n = el.parentElement; n; n = n.parentElement) if (/(auto|scroll)/.test(getComputedStyle(n).overflowY)) return n
+  return null
+}
 function PdfPages({ d }: { d: WithId<Doc> }) {
   const box = useRef<HTMLDivElement>(null)
   const [state, setState] = useState<'loading' | 'failed' | 'shown'>('loading')
@@ -126,27 +133,55 @@ function PdfPages({ d }: { d: WithId<Doc> }) {
     if (!el || !d.path) return void setState('failed')
     let gone = false
     let done: (() => void) | null = null
+    let seen: IntersectionObserver | null = null
     setState('loading')
     void (async () => {
       try {
-        const [{ openPdf, drawPage }, blob] = await Promise.all([import('./pdf'), readFile(d.path!)])
+        const [{ openPdf, drawPage, pageRatio }, blob] = await Promise.all([import('./pdf'), readFile(d.path!)])
         const pdf = await openPdf(await blob.arrayBuffer())
         done = () => void pdf.loadingTask.destroy()
-        const width = el.clientWidth || el.getBoundingClientRect().width
-        for (let n = 1; n <= Math.min(pdf.numPages, PDF_PAGES) && !gone; n++) {
-          const { canvas } = await drawPage(pdf, n, width)
-          if (gone) break
-          canvas.className = styles.pdfPage
-          canvas.setAttribute('aria-label', `page ${n}`)
-          el.append(canvas)
-          if (n === 1) setState('shown')
-        }
+        if (gone) return
+        const count = Math.min(pdf.numPages, PDF_PAGES)
+        // Each page's place, its shape from its own size (the first's until it's read, which is almost always it).
+        const first = await pageRatio(pdf, 1)
+        const slots = Array.from({ length: count }, (_, i) => {
+          const slot = document.createElement('div')
+          slot.className = styles.pdfPage
+          slot.style.aspectRatio = `1 / ${first}`
+          slot.setAttribute('aria-label', `page ${i + 1}`)
+          slot.dataset.page = String(i + 1)
+          el.append(slot)
+          return slot
+        })
+        setState('shown')
+        const drawing = new Set<number>()
+        seen = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              const n = Number((e.target as HTMLElement).dataset.page)
+              if (!e.isIntersecting || drawing.has(n)) continue
+              drawing.add(n)
+              seen?.unobserve(e.target)
+              void drawPage(pdf, n, el.clientWidth || el.getBoundingClientRect().width).then(({ canvas, ratio }) => {
+                if (gone) return
+                const slot = slots[n - 1]
+                slot.style.aspectRatio = `1 / ${ratio}`
+                canvas.setAttribute('aria-hidden', 'true')
+                slot.append(canvas)
+              }, () => {})
+            }
+          },
+          // Measured against what scrolls it (the reader's column), so a page ahead of the screen is drawn before it's reached.
+          { root: scrollerOf(el), rootMargin: `${PDF_AHEAD} 0px` },
+        )
+        for (const slot of slots) seen.observe(slot)
       } catch {
         if (!gone) setState('failed')
       }
     })()
     return () => {
       gone = true
+      seen?.disconnect()
       done?.()
       el.replaceChildren()
     }

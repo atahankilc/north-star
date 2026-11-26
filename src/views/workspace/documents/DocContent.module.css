@@ -56,8 +56,14 @@
 
 .pdfPage {
   width: 100%;
-  height: auto;
   background: var(--fg-strong);
+}
+
+/* Drawn as it comes near (DocContent's PdfPages): the page fills its kept place. */
+.pdfPage > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* A kind's mark (D-232): a small square in its colour, then its short name. Colours from the links' quieter hues. */

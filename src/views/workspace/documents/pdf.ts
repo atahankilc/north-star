@@ -16,6 +16,12 @@ export async function openPdf(data: ArrayBuffer | Uint8Array) {
   return m.getDocument({ data: data instanceof Uint8Array ? data : new Uint8Array(data) }).promise
 }
 
+// A page's height for its width, read without drawing it (where it goes is kept before it's drawn).
+export async function pageRatio(pdf: Pdfjs.PDFDocumentProxy, n: number) {
+  const one = (await pdf.getPage(n)).getViewport({ scale: 1 })
+  return one.height / one.width
+}
+
 // One page drawn `width` css px wide (sharp on this screen) onto a new canvas.
 export async function drawPage(pdf: Pdfjs.PDFDocumentProxy, n: number, width: number, canvas = document.createElement('canvas')) {
   const page = await pdf.getPage(n)
