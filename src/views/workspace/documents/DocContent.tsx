@@ -2,6 +2,9 @@
 // (its kind's mark, who and when, its length; its title) and its content: a .md's Markdown, a report's answer and
 // sections (the old report reader, D-089), an image at its own shape, a PDF's pages (D-425; until Storage is live, what
 // it is). Laid out at a width given in its own px; the frame round it and how it moves are the caller's.
+import { create } from 'zustand'
+import { keepLocal, readLocal } from '../../../state/local'
+import { Button } from '../../../ui/primitives/Button'
 import { memo, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { WithId } from '../../../data/hooks'
 import { filesAvailable, readFile, useFileUrl, type Doc, type DocBody, type DocKind } from '../../../data/documents'
@@ -125,8 +128,15 @@ const scrollerOf = (el: HTMLElement): HTMLElement | null => {
   for (let n = el.parentElement; n; n = n.parentElement) if (/(auto|scroll)/.test(getComputedStyle(n).overflowY)) return n
   return null
 }
+// A PDF's pages read dark (the reader's own switch over its pages): their colours turned, white paper black, its hues
+// kept; kept in this browser for every PDF.
+const PDF_DARK = 'northstar.pdf.dark'
+const usePdfDark = create<{ on: boolean }>(() => ({ on: readLocal(PDF_DARK) === '1' }))
+const setPdfDark = (on: boolean) => (usePdfDark.setState({ on }), keepLocal(PDF_DARK, on ? '1' : '0'))
+
 function PdfPages({ d }: { d: WithId<Doc> }) {
   const box = useRef<HTMLDivElement>(null)
+  const dark = usePdfDark((s) => s.on)
   const [state, setState] = useState<'loading' | 'failed' | 'shown'>('loading')
   useEffect(() => {
     const el = box.current
@@ -190,7 +200,14 @@ function PdfPages({ d }: { d: WithId<Doc> }) {
     <>
       {state === 'loading' && <p className={styles.note}>loading…</p>}
       {state === 'failed' && <p className={styles.note}>This file couldn&apos;t be read.</p>}
-      <div ref={box} className={styles.pdf} />
+      {state === 'shown' && (
+        <div className={styles.pdfTools}>
+          <Button pressed={dark} title={dark ? 'the pages as they are' : 'the pages dark: their colours turned'} onClick={() => setPdfDark(!dark)}>
+            dark pages
+          </Button>
+        </div>
+      )}
+      <div ref={box} className={styles.pdf} data-dark={dark || undefined} />
       {state === 'shown' && (d.pages ?? 0) > PDF_PAGES && <p className={styles.note}>{plural((d.pages ?? 0) - PDF_PAGES, 'more page')}: download it to read them.</p>}
     </>
   )

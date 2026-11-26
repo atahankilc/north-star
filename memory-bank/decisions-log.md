@@ -7955,3 +7955,9 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
 - *Alternatives (the preview's):* B the name in its colour, underlined; C small cards under the message.
 - *Checked:* unit (cardRefs 3), headless Chrome on the emulators with real presses: the list, a pick, two cards sent, the list's preview, a press showing the card, an edit keeping them, a deleted one struck.
 - *Not yet:* the agent reads the references as they are (ids and names), not as chips.
+
+### D-437 · 2026-11-26 · Accepted (the user, of the list's leftovers: "et": a PDF read dark and the agent's page in the address; D-424's *Not yet*)
+**A PDF's pages read dark on a switch over them; the agent's column and page are in the address.**
+- *Dark pages:* `dark pages` over a PDF's pages (DocContent's PdfPages) turns their colours (invert, hues kept), a faint line round each page; kept in this browser for every PDF (`northstar.pdf.dark`).
+- *The agent in the address:* `?agent=open` while its column is up, `?agent=full` as the page (Agent.tsx' `useAgentAddress`); read on arriving, a frame after the chat is attached (which closes it); then written in place, put back when something else writes the address; folded away, gone. Beside Talk's `?place=` (D-423).
+- *Checked:* headless Chrome on the emulators: a 120-page PDF dark and dark again after a reload; the agent `open` → `full`, a reload brings the page back, Talk beside it keeps both, Escape → `open`, ⌘J → none.

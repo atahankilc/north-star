@@ -59,6 +59,22 @@
   background: var(--fg-strong);
 }
 
+/* Its pages dark (the reader's switch): their colours turned, the hues kept. */
+.pdf[data-dark] .pdfPage {
+  background: var(--bg-raised);
+  outline: var(--line-w) solid var(--line-hover);
+}
+
+.pdf[data-dark] .pdfPage > canvas {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.pdfTools {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-3);
+}
+
 /* Drawn as it comes near (DocContent's PdfPages): the page fills its kept place. */
 .pdfPage > canvas {
   display: block;

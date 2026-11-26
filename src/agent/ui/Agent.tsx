@@ -67,8 +67,8 @@ const WIDTH_STORE = 'northstar.agent.width'
 const W_MIN = 340
 const W_MAX = 720
 // The agent as the page (D-424): its column grown wide, the saved chats on its left and the conversation on the rest, the
-// canvas beside it keeping at least `--size-lg` (where the previews are drawn on the real pieces). This tab's; folding
-// the agent away ends it.
+// canvas beside it keeping at least `--size-lg` (where the previews are drawn on the real pieces). In the address
+// (`?agent=full`, D-437); folding the agent away ends it.
 const PAGE_MAX = 1120 // tokens-ok: the chats' list and a conversation as wide as it reads well, in px
 const PAGE_SPLIT = 640 // tokens-ok: under this width the page has no room for the chats' list beside the conversation
 const useAgentPage = create<{ full: boolean }>(() => ({ full: false }))
@@ -80,6 +80,39 @@ const setFull = (full: boolean) => {
 function pageWidth(left: number) {
   return Math.round(Math.max(W_MIN, Math.min(PAGE_MAX, window.innerWidth - left - tokenPx('--size-lg'))))
 }
+// The agent in the address (D-437): `?agent=open` while its column is up, `?agent=full` as the page, so a reload or a
+// link brings it back. Read once on arriving (after the chat is attached, which closes it); then the store leads and the
+// address follows, in place, put back when something else writes the address (a focus, another canvas).
+function useAgentAddress(wid: string, uid: string | undefined) {
+  const [params, setParams] = useSearchParams()
+  const mode = useAgent((s) => s.mode)
+  const full = useAgentPage((s) => s.full)
+  const arrived = useRef<string | null>(null)
+  useEffect(() => {
+    // Once the person is known: the chat is attached again then, which would close it. Again on a remount (the attach
+    // that comes with it closes it too).
+    if (!uid) return
+    arrived.current = wid
+    const a = new URLSearchParams(window.location.search).get('agent')
+    if (a !== 'open' && a !== 'full') return
+    // On the next frame: after every effect of this mount (the attach and the page's own ends) has run.
+    const raf = requestAnimationFrame(() => {
+      agentActions.show('chat')
+      if (a === 'full') setFull(true)
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [wid, uid])
+  useEffect(() => {
+    if (arrived.current !== wid) return
+    const want = mode === 'column' ? (full ? 'full' : 'open') : null
+    const q = new URLSearchParams(window.location.search)
+    if (q.get('agent') === want) return
+    if (want) q.set('agent', want)
+    else q.delete('agent')
+    setParams(q, { replace: true })
+  }, [wid, mode, full, params, setParams])
+}
+
 // While the page is up: its width, kept as the window or what's docked on the left changes.
 function usePageWidth(full: boolean) {
   useLayoutEffect(() => {
@@ -127,6 +160,8 @@ export function Agent() {
   useEffect(() => {
     agentActions.attach(wid, user ? { uid: user.id, ...(user.name || user.email ? { name: (user.name || user.email)! } : {}) } : null)
   }, [wid, user])
+  // After the attach (it closes the agent), so what the address says opens it.
+  useAgentAddress(wid, user?.id)
   useEffect(() => () => agentActions.detach(), [])
 
   // Its column is up: its width is known to what stands beside it (Agent.module.css `--ai-w`).

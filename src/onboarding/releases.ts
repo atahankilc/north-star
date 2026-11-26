@@ -25,6 +25,8 @@ export const RELEASES: readonly Release[] = [
     date: '2026-11-25',
     title: 'Talk, made anew',
     items: [
+      // D-437: a PDF read dark; the agent's page in the address.
+      { title: 'Dark pages, a page kept', tab: 'pdf', line: 'A PDF reads dark with `dark pages` over it. A reload or a link keeps the agent open, as the page too.', lessons: [] },
       // D-436: a card named in a message.
       { title: 'A card in a message', tab: 'cards', line: 'In Talk, `#` and a card’s name puts the card in your message; a press on it shows it on the canvas.', scene: 'threads-panel', lessons: ['comment'] },
       // D-435: Talk's list, rail and page.

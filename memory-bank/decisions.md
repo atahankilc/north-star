@@ -326,7 +326,7 @@ feature comes back as a piece, and check them with the user then.
 - Documents (D-232, D-234, docs/specs/documents.md): every file is a document (`markdown | image | pdf | report`; old
   reports moved over once), private until shared. A `documents` list piece (table or shelf) and a `document` piece (one,
   in a window; a private one asks first); both unframe (a document at most 6000 px, then `[continue reading ↗]`). Open
-  beside the list: the list pinned left, "on this page", zoom 50–200 %, several side by side. Files (images, PDFs ≤ 10 MB) in Storage (D-425): measured and thumbnailed in the browser, read through the rules (never a download link), PDFs by pdf.js, in the export's .zip; live once the bucket exists and storage.rules are deployed (`FILES_LIVE`).
+  beside the list: the list pinned left, "on this page", zoom 50–200 %, several side by side. Files (images, PDFs ≤ 10 MB) in Storage (D-425): measured and thumbnailed in the browser, read through the rules (never a download link), PDFs by pdf.js (each page drawn as it comes near, up to 500; read dark on a switch, D-437), in the export's .zip; live once the bucket exists and storage.rules are deployed (`FILES_LIVE`).
 
 ## Kanban, priorities, timeline
 - Kanban (D-251, D-252), called a **deck** on screen (D-301: `+ → deck…`, `· DECK`, every label and undo line; code,
@@ -438,7 +438,7 @@ feature comes back as a piece, and check them with the user then.
 - The canvas is home, filling the window until something docks; Talk, Tasks and Docs open beside it as a column on the left ground, `full` makes one the page in the canvas's place; the right is the thing selected and the agent at the far right; the HUD bare buttons on the left edge: the page's actions in the middle, the places at the foot.
 
 - The decks side view is Tasks now (D-422): a plane's `⇆ deck`/`⇆ timeline` open Tasks linked to it, a task's `show on…` too; following follows into Tasks; the agent opens decks there.
-- A place is in the address (D-423): `?place=` beside, `?page=` as the page, with what's open in it (`thread`, `deck`, `doc`, `folder`); read on arriving, then written in place, never a history step.
+- A place is in the address (D-423): `?place=` beside, `?page=` as the page, with what's open in it (`thread`, `deck`, `doc`, `folder`); read on arriving, then written in place, never a history step. The agent too (D-437): `?agent=open`, `?agent=full`.
 - The places alike (D-419): one head (`PlaceHead`), an opened item under it with one back row, one find (`PlaceFind`); the places are the workspace's (Tasks every deck, what each is on); on a page the breadcrumb ends with it and the canvases' switch is gone; `full` grows the page from its column.
 - Folders in Docs (D-415): `folders/` (a name, the folder it's in), content owners and editors change; a document's `folderId`, moved by its author or, shared, by an owner or editor; a folder deleted, what's in it goes up.
 
