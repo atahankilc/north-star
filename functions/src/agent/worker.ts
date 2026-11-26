@@ -4,7 +4,7 @@
 // under Cloud Tasks, in the emulators and in tests.
 import type { Database } from 'firebase-admin/database'
 import type { Firestore } from 'firebase-admin/firestore'
-import type { AgentModel, Usage } from '../../../src/agent/contract'
+import type { AgentModel } from '../../../src/agent/contract'
 import type { SavedStep } from '../../../src/agent/chats'
 import type { Ask } from './ask'
 import { changesPath, runPath, threadPath, type Keep } from './keep'
@@ -13,6 +13,7 @@ import { endRun, LeaseLost, type Ending, releaseLease, renewLease, takeLease, ne
 import { afterTurn, entriesOfRun, loadThread, onAsk, saveRun, type KeptThread } from './thread'
 import type { EnvState } from './env'
 import type { SavedTurn } from '../../../src/agent/chats'
+import { closeRunCalls } from '../ledger/ledger'
 import { NotAMember, RoleChanged, runServerTurn, type Checkpoint } from './turn'
 import type { WebConfig } from './person'
 
@@ -29,14 +30,13 @@ export type WorkDeps = {
   rtdb: Database
   keep: Keep
   web: WebConfig
-  // The model the run is paid for with, or why not, in the person's words (thrown).
-  model: (run: Run & { id: string }) => Promise<AgentModel>
+  // The model the run is paid for with, its calls on the ledger (`step`: the step a call is in), or why not, in the
+  // person's words (thrown).
+  model: (run: Run & { id: string }, step: () => number) => Promise<AgentModel>
   // The run's own key: handed to the run that follows, before it's queued; done with, at the end.
   keyTo: (run: string, next: string) => Promise<void>
   keyDone: (run: string) => Promise<void>
   enqueue: (run: string) => Promise<void>
-  // What each model call used (§8; the whole ledger is P3).
-  used?: (run: Run & { id: string }, step: { n: number; usage: Usage }) => void
   // This worker's name on the lease, and when its time is nearly up (it gives the run to the next task).
   by: string
   deadline: number
@@ -102,11 +102,14 @@ export async function work(id: string, d: WorkDeps): Promise<Worked> {
   const lost = new AbortController()
   const beat = setInterval(() => void renewLease(d.db, id, d.by, at, now()).catch((e) => e instanceof LeaseLost && lost.abort()), LEASE_EVERY)
   const signal = AbortSignal.any([ctl.signal, lost.signal])
-  if (was) out.event({ type: 'again', n: at })
+  if (was) {
+    out.event({ type: 'again', n: at })
+    await closeRunCalls(d.db, id, now()).catch(() => undefined)
+  }
   else out.event({ type: 'asked', n: 0, text: ask.text, ...(ask.auto ? { auto: true } : {}) })
   try {
     const thread = await loadThread(d.keep, d.db, run)
-    const model = await d.model(run)
+    const model = await d.model(run, () => at)
     const done = await runServerTurn(
       { wid: run.wid, uid: run.uid, ...(ask.name ? { name: ask.name } : {}), chatId: run.chatId, turnId: `${run.chatId}:${run.turn}`, ask: ask.text, canvas: ask.view.canvas, history: thread.history, was: onAsk(thread.env), ...(ask.off ? { off: ask.off } : {}), ...(was ? { from: was.c } : {}) },
       {
@@ -128,7 +131,6 @@ export async function work(id: string, d: WorkDeps): Promise<Worked> {
           if (l) out.event(l)
           if (e.type === 'tool_finished') steps.push({ label: e.call.label, ...(e.call.ms !== undefined ? { ms: e.call.ms } : {}), ...(e.call.ok === false ? { ok: false } : {}) })
           else if (e.type === 'search') steps.push({ label: `searched the web: "${e.query}"` })
-          else if (e.type === 'usage') d.used?.(run, { n: e.n, usage: e.step })
         },
         keep: async (c) => {
           at = c.turn.n
@@ -149,7 +151,8 @@ export async function work(id: string, d: WorkDeps): Promise<Worked> {
       history: done.history,
       env: moved.env,
       entries: entriesOfRun({ asked: [...(ask.auto ? [] : [ask.text]), ...said], turn: t, model: run.model, steps, items, now: now() }),
-      ending: { status: t.end === 'error' ? 'failed' : t.end === 'stopped' ? 'stopped' : items.length ? 'waiting' : 'done', end: t.end, pending: items.length, steps: t.steps.length, ...(t.error ? { said: t.error } : {}) },
+      // Changes made before it stopped or failed (a budget run out mid-turn) still wait for the person.
+      ending: { status: items.length ? 'waiting' : t.end === 'error' ? 'failed' : t.end === 'stopped' ? 'stopped' : 'done', end: t.end, pending: items.length, steps: t.steps.length, ...(t.error ? { said: t.error } : {}) },
       told: { answer: t.answer, usage: t.usage, ms: Math.round(t.ms), ...(t.sources?.length ? { sources: t.sources } : {}), ...(moved.env.job ? { job: moved.env.job } : {}), ...(follow ? { say: moved.say, auto: !!moved.auto } : {}) },
       ...(follow
         ? {

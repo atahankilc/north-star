@@ -10,6 +10,9 @@ import { modelsAllowed } from '../request'
 import { CLAUDE_KEY, OPENAI_KEY, seal, unseal, type Box } from '../seal'
 import type { PaidBy } from './ask'
 import { Refused, type Run } from './runs'
+import { metered } from '../ledger/metered'
+import { LimitReached, roomToStart, type Limits } from '../ledger/ledger'
+import type { Firestore as Db } from 'firebase-admin/firestore'
 
 export type Provider = 'openai' | 'anthropic'
 const bare = (model: string) => model.replace(/^(anthropic|openai):/, '')
@@ -22,7 +25,7 @@ export const ownKeys = (db: Firestore, uid: string) => db.doc(`users/${uid}/priv
 
 export const keyLooksRight = (key: string, p: Provider) => (p === 'openai' ? OPENAI_KEY : CLAUDE_KEY).test(key)
 
-type AiConfig = { hasKey?: boolean; access?: Access; allowed?: string[]; allowedModels?: string[] }
+type AiConfig = { hasKey?: boolean; access?: Access; allowed?: string[]; allowedModels?: string[]; limits?: Limits }
 
 // Whether this person may pay this way for this model; says why not, before anything starts.
 export async function mayPay(db: Firestore, o: { uid: string; wid: string; paidBy: PaidBy; model: string; key?: string }): Promise<Provider> {
@@ -35,6 +38,9 @@ export async function mayPay(db: Firestore, o: { uid: string; wid: string; paidB
     if (!config.hasKey) throw new Refused('This workspace has no key (Settings → workspace → agent key).')
     if (!ws || !mayUseKey(ws, o.uid, config)) throw new Refused(ws?.roles?.[o.uid] === 'viewer' ? 'Viewers use their own key.' : "The owners haven't let you use the workspace key (Settings → workspace → agent key).", 'permission-denied')
     if (!modelsAllowed(config).has(bare(o.model))) throw new Refused(`The owners haven't allowed ${bare(o.model)} on the workspace key (Settings → workspace → agent key).`)
+    await roomToStart(db, { source: 'workspace', uid: o.uid, wid: o.wid, model: o.model }, config.limits).catch((e) => {
+      throw e instanceof LimitReached ? new Refused(e.message, 'resource-exhausted') : e
+    })
     return provider
   }
   if (o.key) {
@@ -53,11 +59,13 @@ export async function passRunKey(db: Firestore, run: string, next: string): Prom
 export const dropRunKey = async (db: Firestore, run: string) => void (await runSecret(db, run).delete())
 
 // The model a run talks to, on its key. Who may pay is asked again: the owners may have changed their mind since.
-export async function modelFor(db: Firestore, run: Run & { id: string }, o: { secret: string; safetyId: string; openai?: string }): Promise<AgentModel> {
+export async function modelFor(db: Firestore, run: Run & { id: string }, o: { secret: string; safetyId: string; openai?: string; step: () => number; log?: (what: string, more: Record<string, unknown>) => void }): Promise<AgentModel> {
   let box: Box | undefined
+  let limits: Limits | undefined
   if (run.paidBy === 'workspace') {
     await mayPay(db, { uid: run.uid, wid: run.wid, paidBy: 'workspace', model: run.model })
     box = (await wsSecret(db, run.wid).get()).data() as Box | undefined
+    limits = ((await db.doc(`workspaces/${run.wid}/ai/config`).get()).data() as AiConfig | undefined)?.limits
   } else {
     box = (await runSecret(db, run.id).get()).data() as Box | undefined
     box ??= (await ownSecret(db, run.uid, run.provider).get()).data() as Box | undefined
@@ -65,6 +73,10 @@ export async function modelFor(db: Firestore, run: Run & { id: string }, o: { se
   if (!box) throw new Refused(run.paidBy === 'workspace' ? 'This workspace has no key.' : 'Your key is gone from the server; send the message again.')
   const key = unseal(box, o.secret)
   const effort = effortFor(run.model) ? ((run.effort as Effort | undefined) ?? effortFor(run.model)) : null
-  if (run.provider === 'anthropic') return (await import('../../../src/agent/anthropic')).anthropicModel({ key, model: bare(run.model), effort })
-  return openaiModel({ key, model: bare(run.model), reasoning: effort, cacheKey: cacheKeyOf(run.wid), safetyId: o.safetyId, ...(o.openai ? { baseUrl: o.openai } : {}) })
+  const model: AgentModel =
+    run.provider === 'anthropic'
+      ? (await import('../../../src/agent/anthropic')).anthropicModel({ key, model: bare(run.model), effort })
+      : openaiModel({ key, model: bare(run.model), reasoning: effort, cacheKey: cacheKeyOf(run.wid), safetyId: o.safetyId, ...(o.openai ? { baseUrl: o.openai } : {}) })
+  // Every call on the ledger: the run's model by its full id, so its price is found.
+  return metered({ ...model, name: run.model }, db as unknown as Db, () => ({ source: run.paidBy === 'own' ? 'own' : 'workspace', uid: run.uid, wid: run.wid, run: run.id, step: o.step(), provider: run.provider }), { limits: () => limits, ...(o.log ? { log: o.log } : {}) })
 }

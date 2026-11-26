@@ -13,6 +13,9 @@ import { endRun, Held, newRunId, Refused, runRef, startRun, threadRef, type Run,
 import { loadThread, noteOutcome, tell } from './thread'
 import { Stop, work, type KeptAsk, type Worked } from './worker'
 import { keyHint, seal } from '../seal'
+import { closeOpen } from '../ledger/ledger'
+import { checkChain } from '../ledger/audit'
+import { monthOf } from '../../../src/agent/money'
 import type { Changeset } from '../../../src/agent/changeset'
 
 export { BadAsk, Held, NotAMember, Refused }
@@ -60,21 +63,15 @@ export function workRun(run: string, d: Deps & { deadline: number }): Promise<Wo
   return work(run, {
     ...d,
     by: randomUUID(),
-    model: (r) =>
-      modelFor(d.db, r, { secret: d.secret, safetyId: createHmac('sha256', d.secret).update(`safety:${r.uid}`).digest('hex'), ...(d.openai ? { openai: d.openai } : {}) }).catch((e) => {
+    model: (r, step) =>
+      modelFor(d.db, r, { step, log: d.log, secret: d.secret, safetyId: createHmac('sha256', d.secret).update(`safety:${r.uid}`).digest('hex'), ...(d.openai ? { openai: d.openai } : {}) }).catch((e) => {
         throw e instanceof Refused ? new Stop(e.message) : e
       }),
     keyTo: (r, next) => passRunKey(d.db, r, next),
     keyDone: (r) => dropRunKey(d.db, r),
-    used: (r, u) => void logUse(d.db, r, u).catch((e) => d.log('usage log failed', { run: r.id, error: (e as Error).name })),
   })
 }
 
-// A workspace key's use, as the `ai` function logs it (aiUsage; the ledger takes its place in P3). Counts only.
-async function logUse(db: Firestore, r: Run & { id: string }, u: { usage: { input: number; output: number; cached?: number; reasoning?: number; searches?: number } }) {
-  if (r.paidBy !== 'workspace') return
-  await db.collection(`workspaces/${r.wid}/aiUsage`).add({ uid: r.uid, name: '', keySource: 'workspace', task: 'chat', model: r.model, inputTokens: u.usage.input, cachedTokens: u.usage.cached ?? 0, outputTokens: u.usage.output, reasoningTokens: u.usage.reasoning ?? 0, webSearches: u.usage.searches ?? 0, tools: [], status: 'done', ms: 0, at: Date.now() })
-}
 
 async function mine(d: Deps, who: Caller, wid: string, chatId: string): Promise<Thread> {
   const t = (await threadRef(d.db, wid, chatId).get()).data() as Thread | undefined
@@ -174,5 +171,26 @@ export async function closeStale(d: Deps, now = Date.now()): Promise<{ queued: n
     out.live++
   }
   if (out.keys) d.log('own keys left behind were deleted', { keys: out.keys })
+  const calls = await closeOpen(d.db, now)
+  if (calls) d.log('calls left open were closed at what was held', { calls })
+  await setMonthRate(d, now).catch((e) => d.log('no rate for the month', { error: (e as Error).name }))
+  // Once an hour: the audit log's chain walked; a break is an error in the log (and a mail, with the backoffice).
+  if (new Date(now).getUTCMinutes() < 5) {
+    const chain = await checkChain(d.db)
+    if (!chain.ok) d.log('AUDIT CHAIN BROKEN', { at: chain.at, why: chain.why })
+  }
   return out
 }
+
+// A month's rate (USD per EUR) is the ECB's on the month's first sweep, kept for the whole month, so a limit never moves
+// within it (§7). Unreachable, the default stands for that sweep and the next one tries again.
+const ECB = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml'
+async function setMonthRate(d: Deps, now: number) {
+  const ref = d.db.doc(`aiRates/${monthOf(now)}`)
+  if ((await ref.get()).exists) return
+  const xml = await (await fetch(ECB, { signal: AbortSignal.timeout(10_000) })).text()
+  const usd = Number(/currency=['"]USD['"]\s+rate=['"]([0-9.]+)['"]/.exec(xml)?.[1])
+  if (!(usd > 0.5 && usd < 2)) return
+  await ref.create({ usdPerEur: usd, from: 'ECB', at: now }).catch(() => undefined)
+}
+

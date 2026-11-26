@@ -186,7 +186,7 @@ export function requestBody(req: ModelRequest, o: Pick<AnthropicOptions, 'model'
   const betas = [...(fallsBack(o.model) ? [BETA_FALLBACK] : []), ...(binding ? [BETA_BINDING] : [])]
   return {
     model: o.model,
-    max_tokens: o.maxTokens ?? MAX_TOKENS,
+    max_tokens: Math.min(req.maxOutput ?? Infinity, o.maxTokens ?? MAX_TOKENS),
     // A breakpoint on the system prompt: tools + system, the same for every chat.
     ...(system !== undefined ? { system: [{ type: 'text' as const, text: system, cache_control: CACHE }] } : {}),
     messages: messages as BetaMessageParam[],

@@ -47,7 +47,8 @@ async function client(name) {
 
 // Writes a doc as the emulator's owner, past the rules: for what no client may write.
 const enc = (v) =>
-  typeof v === 'string' ? { stringValue: v }
+  v === null ? { nullValue: null }
+    : typeof v === 'string' ? { stringValue: v }
     : typeof v === 'boolean' ? { booleanValue: v }
       : typeof v === 'number' ? (Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v })
         : Array.isArray(v) ? { arrayValue: { values: v.map(enc) } }
@@ -501,19 +502,34 @@ await deny('member deletes workspace', () => writeBatch(bob.fs).delete(doc(bob.f
 
 // The assistant's workspace key and usage log (D-079).
 const aiConfig = (fs) => doc(fs, 'workspaces', wid, 'ai', 'config')
-await allow('owner chooses who may use the workspace key', () => setDoc(aiConfig(alice.fs), { access: 'chosen', allowed: [bob.uid] }))
+// D-434: written by the functions only (setWorkspaceKey, setWorkspaceAi), so every change is in the audit log.
+await seed(`workspaces/${wid}/ai/config`, { access: 'chosen', allowed: [bob.uid], allowedModels: ['gpt-6.1-terra'] })
 await allow('member reads the key settings', () => getDoc(aiConfig(bob.fs)))
 await deny('outsider reads the key settings', () => getDoc(aiConfig(carol.fs)))
+await deny('owner changes who may use the key on the client', () => updateDoc(aiConfig(alice.fs), { access: 'everyone' }))
+await deny('owner sets the models on the client', () => updateDoc(aiConfig(alice.fs), { allowedModels: ['gpt-6.2-sol'] }))
+await deny('owner sets a limit on the client', () => updateDoc(aiConfig(alice.fs), { limits: { person: 999999 } }))
 await deny('member lets themselves use the key', () => updateDoc(aiConfig(bob.fs), { allowed: [bob.uid, carol.uid] }))
 await deny('owner fakes a key on the client', () => updateDoc(aiConfig(alice.fs), { hasKey: true, keyHint: 'sk-…abcd' }))
-await deny('owner writes an unknown access mode', () => updateDoc(aiConfig(alice.fs), { access: 'anyone' }))
-await allow('owner opens the key to everyone', () => updateDoc(aiConfig(alice.fs), { access: 'everyone' }))
-// Models on the workspace key (D-104).
-await allow("owner sets the workspace key's models", () => updateDoc(aiConfig(alice.fs), { models: { chat: 'gpt-6-luna', deep: 'gpt-6.1-sol' }, allowedModels: ['gpt-5.6-luna'] }))
-await deny('member sets the workspace key\'s models', () => updateDoc(aiConfig(bob.fs), { models: { chat: 'gpt-5.5' } }))
-await deny('models for an unknown task', () => updateDoc(aiConfig(alice.fs), { models: { summarize: 'gpt-5.5' } }))
-await deny('a model id that is not text', () => updateDoc(aiConfig(alice.fs), { models: { chat: 5 } }))
-await deny('allowed models as a string', () => updateDoc(aiConfig(alice.fs), { allowedModels: 'gpt-5.5' }))
+// The ledger and the audit log (D-434).
+await seed(`aiMeters/ws_${wid}_${bob.uid}_2026-11`, { source: 'workspace', uid: bob.uid, wid, month: '2026-11', spent: 1, reserved: 0 })
+await seed(`aiMeters/ws_${wid}_total_2026-11`, { source: 'workspace', uid: null, wid, month: '2026-11', spent: 1, reserved: 0 })
+await seed(`aiMeters/own_${bob.uid}_2026-11`, { source: 'own', uid: bob.uid, wid: null, month: '2026-11', spent: 1, reserved: 0 })
+await seed('aiCalls/k1', { source: 'workspace', uid: bob.uid, wid, model: 'gpt-6.1-terra', status: 'done', cost: 1 })
+await seed('audit/000000000001', { what: 'workspace key set', by: alice.uid, wid, seq: 1 })
+await seed('audit/000000000002', { what: 'lab key set', by: alice.uid, seq: 2 })
+await allow('a person reads their meter', () => getDoc(doc(bob.fs, 'aiMeters', `ws_${wid}_${bob.uid}_2026-11`)))
+await allow("an owner reads a member's meter on the workspace key", () => getDoc(doc(alice.fs, 'aiMeters', `ws_${wid}_${bob.uid}_2026-11`)))
+await allow("an owner lists the workspace's meters", () => getDocs(query(collection(alice.fs, 'aiMeters'), where('wid', '==', wid), where('source', '==', 'workspace'))))
+await deny("a member reads the workspace's total", () => getDoc(doc(bob.fs, 'aiMeters', `ws_${wid}_total_2026-11`)))
+await deny("an owner reads a member's own-key meter", () => getDoc(doc(alice.fs, 'aiMeters', `own_${bob.uid}_2026-11`)))
+await deny('a person writes their meter', () => updateDoc(doc(bob.fs, 'aiMeters', `ws_${wid}_${bob.uid}_2026-11`), { spent: 0 }))
+await allow("an owner reads a call on the workspace key", () => getDoc(doc(alice.fs, 'aiCalls', 'k1')))
+await deny("an outsider reads it", () => getDoc(doc(carol.fs, 'aiCalls', 'k1')))
+await allow("an owner reads the workspace's audit entries", () => getDoc(doc(alice.fs, 'audit', '000000000001')))
+await deny('a member reads them', () => getDoc(doc(bob.fs, 'audit', '000000000001')))
+await deny("anyone reads an entry that isn't a workspace's", () => getDoc(doc(alice.fs, 'audit', '000000000002')))
+await deny('an owner writes an entry', () => setDoc(doc(alice.fs, 'audit', '000000000003'), { what: 'x', wid }))
 await deny('owner reads the encrypted key', () => getDoc(doc(alice.fs, 'aiSecrets', wid)))
 await deny('owner writes the encrypted key', () => setDoc(doc(alice.fs, 'aiSecrets', wid), { data: 'x' }))
 

@@ -26,3 +26,10 @@
   min-width: 0;
   font-family: var(--font-mono);
 }
+
+/* A month's limit, typed where it's shown: room for an amount. */
+.limit {
+  width: var(--size-xs);
+  font-family: var(--font-mono);
+  text-align: right;
+}

@@ -3,14 +3,15 @@
 // (`aiSecrets/`), and never comes back to a browser (CLAUDE.md's hard rule): what the workspace shows is `ai/config`
 // (whether there's one, `sk-…abcd`, who may use it, which models). A call goes through the `ai` function, which checks
 // all of it again and logs what each call used (`aiUsage`, workspace-key entries the owners read).
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, query, where } from 'firebase/firestore'
 import { KEY_ALLOWED_MAX, KEY_MODELS_MAX } from '../model/limits'
 import type { Role } from './model'
 import { callFunction, db, firebase, functionUrl } from './firebase'
-import { useDoc } from './hooks'
+import { useDoc, useQuery } from './hooks'
 
 export type KeyAccess = 'everyone' | 'chosen'
-export type AiConfig = { hasKey?: boolean; keyHint?: string; access?: KeyAccess; allowed?: string[]; allowedModels?: string[] }
+// `limits`: a month's per person and in total, in euro cents (D-434); left out, none.
+export type AiConfig = { hasKey?: boolean; keyHint?: string; access?: KeyAccess; allowed?: string[]; allowedModels?: string[]; limits?: { person?: number; total?: number } }
 
 const configRef = (wid: string) => doc(db(), 'workspaces', wid, 'ai', 'config')
 
@@ -22,12 +23,25 @@ const call = <T,>(name: string, data: unknown) => callFunction<T>(name, data, "T
 // when none were chosen yet.
 export async function setWorkspaceKey(wid: string, key: string | null, first?: string[]) {
   await call<{ keyHint: string | null }>('setWorkspaceKey', { wid, key: key ?? '' })
-  if (key && first?.length) await setDoc(configRef(wid), { allowedModels: first }, { merge: true })
+  if (key && first?.length) await setKeyModels(wid, first)
 }
 
-// Owners: who may use it (D-098, D-318: owners always, viewers never) and which models it runs (≤ 20, firestore.rules).
-export const setKeyAccess = (wid: string, access: KeyAccess, allowed: string[]) => setDoc(configRef(wid), { access, allowed: allowed.slice(0, KEY_ALLOWED_MAX) }, { merge: true })
-export const setKeyModels = (wid: string, models: string[]) => setDoc(configRef(wid), { allowedModels: models.slice(0, KEY_MODELS_MAX) }, { merge: true })
+// Owners: who may use it (D-098, D-318: owners always, viewers never), which models it runs and its month's limits, each
+// through `setWorkspaceAi`, so every change is in the audit log (D-434).
+const setAi = (wid: string, patch: Record<string, unknown>) => call<AiConfig>('setWorkspaceAi', { wid, ...patch })
+export const setKeyAccess = (wid: string, access: KeyAccess, allowed: string[]) => setAi(wid, { access, allowed: allowed.slice(0, KEY_ALLOWED_MAX) })
+export const setKeyModels = (wid: string, models: string[]) => setAi(wid, { allowedModels: models.slice(0, KEY_MODELS_MAX) })
+// A limit in euro cents; null takes it away.
+export const setKeyLimit = (wid: string, which: 'person' | 'total', cents: number | null) => setAi(wid, { limits: { [which]: cents } })
+
+// A month of the workspace key's use (aiMeters, D-434): each person's and the total, in micro-dollars, as owners read it.
+export type Spend = { uid: string | null; spent: number; reserved: number; calls: number }
+export function useKeySpend(wid: string, month: string): Spend[] {
+  const q = firebase ? query(collection(db(), 'aiMeters'), where('wid', '==', wid), where('source', '==', 'workspace'), where('month', '==', month)) : null
+  return useQuery<Spend>(q, `aiMeters:${wid}:${month}`).data
+}
+// The month's rate (USD per EUR), when it was set; else the ledger's default.
+export const useRate = (month: string) => useDoc<{ usdPerEur: number }>(`aiRates/${month}`).data?.usdPerEur
 
 // Whether `uid` may use the key (the function's `mayUseKey`, read here to say so before a call): owners always; editors
 // when everyone may or they were chosen; viewers never.

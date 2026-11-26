@@ -163,7 +163,7 @@ export function requestBody(req: ModelRequest, o: Pick<OpenAIOptions, 'model' | 
     // drops old turns' provider items.
     ...(o.reasoning ? { reasoning: { effort: o.reasoning } } : {}),
     ...(include.length ? { include } : {}),
-    ...(o.maxOutputTokens ? { max_output_tokens: o.maxOutputTokens } : {}),
+    ...(req.maxOutput || o.maxOutputTokens ? { max_output_tokens: Math.min(req.maxOutput ?? Infinity, o.maxOutputTokens ?? Infinity) } : {}),
     ...(o.cacheKey ? { prompt_cache_key: o.cacheKey } : {}),
     ...(o.safetyId ? { safety_identifier: o.safetyId } : {}),
     store: false,

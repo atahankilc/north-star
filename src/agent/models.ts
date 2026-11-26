@@ -125,7 +125,7 @@ export const PRICES: Record<string, Price> = {
 
 // A model's price by any of its names: `openai:gpt-…` or bare, `anthropic:claude-…` or the bare name its adapter
 // reports (an eval's attempts are priced by the adapter's name: Claude's runs showed $0).
-const priceOf = (model: string): Price | undefined => PRICES[model.replace(/^openai:/, '')] ?? PRICES[claudeId(model)]
+export const priceOf = (model: string): Price | undefined => PRICES[model.replace(/^openai:/, '')] ?? PRICES[claudeId(model)]
 export const priced = (model: string) => !!priceOf(model)
 
 export function costOf(model: string, u: Usage): number {

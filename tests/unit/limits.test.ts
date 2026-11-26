@@ -69,8 +69,6 @@ const CASES: [keyof typeof L, () => number][] = [
   ['CHANGE_KINDS_MAX', () => num(rules.slice(rules.indexOf('match /changes/')), list('d.kinds'))],
   ['SUMMARY_PIECES_CHARS', () => num(body('validSummary'), list('d.pieces'))],
   ['SUMMARY_CARDS_CHARS', () => num(body('validSummary'), list('d.cards'))],
-  ['KEY_ALLOWED_MAX', () => num(body('validAccess'), list('d.allowed'))],
-  ['KEY_MODELS_MAX', () => num(body('validModels'), list('d.allowedModels'))],
 ]
 // Bytes in the app, base64 in RTDB.
 const BASE64_CASES: [keyof typeof L, () => number][] = [
@@ -101,6 +99,8 @@ const CLIENT_ONLY: Partial<Record<keyof typeof L, string>> = {
   CHANGES_READ: 'how many changes the agent reads, not data',
   MEMBERS_READ: 'how many people the agent reads, not data',
   MOVE_SAID_MAX: "RTDB's agentCtl rule, held by tests/rules.test.mjs",
+  KEY_ALLOWED_MAX: 'setWorkspaceAi imports it (D-434: ai/config is written by the functions only)',
+  KEY_MODELS_MAX: 'setWorkspaceAi imports it (D-434: ai/config is written by the functions only)',
   WORKSPACE_NAME_MAX: "the fields' cap; the rules' validName takes up to WORKSPACE_NAME_KEPT_MAX (older names kept)",
   SUMMARY_PIECES_MAX: 'pieces in a workspace summary: the rules cap the joined string (SUMMARY_PIECES_CHARS), not the count',
   LIVE_FOLD_PACKETS: 'when a writer folds the packets, not data',

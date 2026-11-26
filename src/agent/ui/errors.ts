@@ -10,6 +10,8 @@ export function plainError(raw: string): { text: string; settings?: boolean } {
   if (/can't use .* Pick another model/i.test(m)) return { text: `${m.split(' Pick')[0]} — pick another model in the header or in Settings → the agent`, settings: true }
   if (/Anthropic organisation behind your key is out of credit/i.test(m)) return { text: "your key's Anthropic organisation is out of credit — a Max, Ultra or Team plan's monthly API credits come back next cycle, or add credits in the Console" }
   if (/out of credit/i.test(m)) return { text: 'the OpenAI account behind your key is out of credit (or hit its spending limit)' }
+  // The agent's server isn't there (the functions not running on the emulators, offline).
+  if (/^internal\b/i.test(m)) return { text: "couldn't reach the agent's server — check your connection and send again" }
   if (/Couldn't reach OpenAI/i.test(m)) return { text: "couldn't reach OpenAI — check your connection and send again" }
   if (/Couldn't reach Anthropic/i.test(m)) return { text: "couldn't reach Anthropic — check your connection and send again" }
   return { text: m }

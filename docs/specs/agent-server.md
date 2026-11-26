@@ -518,3 +518,35 @@ the stub.
 - **Not yet:** a stale `paid by` choice per chat and its line under the prompt (P4); the agent's own onboarding words (they
   wait for its redesign, D-312); the evals through the functions; deployed nowhere.
 
+## 19. P3's log: the ledger, limits and the audit log (2026-11-26)
+- **The ledger** (`functions/src/ledger/ledger.ts`, the sums in `src/agent/money.ts`): every model call on a key we hold
+  is held for before it's made (in one transaction on the person's meter and the total's) and settled after from the
+  provider's own usage; the output a call may write is cut to what's left (`ModelRequest.maxOutput`, both adapters);
+  under 1.5k tokens left, it isn't made and the person reads why and when it starts again. An own key's calls are
+  recorded too, with no hold. `metered()` wraps any adapter, so the researchers' calls are counted as well.
+- **When the usage never comes:** stopped or cut, charged its input and its output by what streamed or by the time it
+  had, never more than was held; a run going on after its worker died closes that worker's open call at such a guess
+  at once (it held up to $0.16 of a small budget for 35 minutes before); `sweepAgent` closes any left past 35 minutes.
+- **The old path** (`ai`, the tab's own loop on the workspace key): the same hold and settle, the call closed before
+  the answer ends (after it, Cloud Run may take the CPU away); refused at a limit with 402 and the words.
+- **The month's rate:** the ECB's, read on the month's first sweep (`aiRates/{YYYY-MM}`), else 1.0963.
+- **The workspace's limits** (`ai/config.limits`, euro cents, optional per person and in total), and who may use the key
+  and its models, written only by `setWorkspaceAi` (owners); `ai/config` takes no client write any more.
+- **The audit log** (`functions/src/ledger/audit.ts`): the workspace key set, replaced, removed, and every settings
+  change, with who, before and after (a key only as `sk-…abcd`), in the same transaction as the change; numbered and
+  hash-chained (`auditHead/main`), each also a Cloud Logging line; the chain walked hourly by the sweep.
+- **Owners' page** (Settings → workspace → agent key): `04 LIMITS` typed where shown, `05 THIS MONTH` everyone and each
+  person in euros of their limit with their calls; a member sees their own use there.
+- **Rules:** `aiMeters`, `aiCalls` read by their person and, on a workspace's key, its owners; `audit` by the workspace's
+  owners; nothing written by a client. 783/0.
+- **Checked:** unit 1271 (the sums, the settings' reading); end to end on the emulators 81/81 (the costs to the
+  micro-dollar, a meter with nothing left held, a run refused before it starts, output cut under a small limit, the
+  total, an owner listing the month under the rules, the `ai` function's call and its refusal, every change in the
+  audit log and its chain); the real app headless again (9/9); the owners' page in the gallery.
+- **Found on the way:** the demo build's Firebase stand-in lacked RTDB's `child`, so `npm run build` failed since
+  aa2d6b1 (never pushed); fixed. The server path is now opt-in everywhere (`northstar.agent.server`, `?agentServer=1`):
+  on the emulators without functions it answered `internal`.
+- **Not yet:** the person's own month across workspaces in Settings → the agent (with P4's line), the log bucket's
+  locked retention (the user's step: `gcloud logging buckets create agent-audit --location=europe-west1
+  --retention-days=400` and a sink on `jsonPayload.message="audit"`), reconciliation with OpenAI's costs (P6).
+

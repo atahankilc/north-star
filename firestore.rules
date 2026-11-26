@@ -485,29 +485,11 @@ service cloud.firestore {
           && !(request.auth.uid in request.resource.data.roles);
       }
 
-      // The assistant's workspace key settings (D-079). Members read them (is there a key, may I use it); the owner picks
-      // who may use it. hasKey / keyHint are written only by the setWorkspaceKey function, never by a client.
+      // The workspace key's settings (D-079, D-427): members read them (is there a key, may I use it). Written only by the
+      // functions (setWorkspaceKey, setWorkspaceAi), so each change is in the audit log (D-434).
       match /ai/{docId} {
-        function validAccess(d) {
-          return (!('access' in d) || d.access in ['everyone', 'chosen'])
-            && (!('allowed' in d) || (d.allowed is list && d.allowed.size() <= 100));
-        }
-        // The owners' model per task on the workspace key, and the others members may pick (D-104).
-        function validModels(d) {
-          return (!('models' in d) || (d.models is map
-              && d.models.keys().hasOnly(['chat', 'research', 'deep'])
-              && (!('chat' in d.models) || isText(d.models.chat, 100))
-              && (!('research' in d.models) || isText(d.models.research, 100))
-              && (!('deep' in d.models) || isText(d.models.deep, 100))))
-            && (!('allowedModels' in d) || (d.allowedModels is list && d.allowedModels.size() <= 20));
-        }
         allow read: if isMember(wid);
-        allow create: if docId == 'config' && isOwner(wid)
-          && request.resource.data.keys().hasOnly(['access', 'allowed', 'models', 'allowedModels'])
-          && validAccess(request.resource.data) && validModels(request.resource.data);
-        allow update: if docId == 'config' && isOwner(wid)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['access', 'allowed', 'models', 'allowedModels'])
-          && validAccess(request.resource.data) && validModels(request.resource.data);
+        allow write: if false;
       }
 
       // What each assistant call used (D-079): time, task, model, tokens, searches; never the messages.
@@ -999,6 +981,23 @@ service cloud.firestore {
       allow list: if signedIn() && resource.data.uid == request.auth.uid;
       allow write: if false;
     }
+    // The ledger and the audit log (D-434): written by the functions only. A meter or a call is read by its person, and,
+    // for a workspace's key, by that workspace's owners; the audit log's workspace entries by its owners. No text in any.
+    match /aiMeters/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid
+        || (resource.data.source == 'workspace' && resource.data.wid is string && isOwner(resource.data.wid)));
+      allow write: if false;
+    }
+    match /aiCalls/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid
+        || (resource.data.source == 'workspace' && resource.data.wid is string && isOwner(resource.data.wid)));
+      allow write: if false;
+    }
+    match /audit/{id} {
+      allow read: if signedIn() && resource.data.wid is string && isOwner(resource.data.wid);
+      allow write: if false;
+    }
+
     match /users/{uid}/private/aiKeys {
       allow read: if signedIn() && request.auth.uid == uid;
       allow write: if false;

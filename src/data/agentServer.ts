@@ -11,14 +11,17 @@ import type { Job } from '../agent/job'
 import type { IdsState } from '../agent/read'
 import type { WhereView } from '../agent/read/tools'
 import type { Source, Usage } from '../agent/contract'
-import { readLocal } from '../state/local'
+import { keepLocal, readLocal } from '../state/local'
 import { MOVE_SAID_MAX } from '../model/limits'
 import { cut } from '../model/words'
-import { callFunction, db, firebase, useEmulators } from './firebase'
+import { callFunction, db, firebase } from './firebase'
 
-// Whether chats run on the server (D-434): on the emulators, and where it's been switched on in this browser
-// (`northstar.agent.server` = 1) until it's deployed and opened to everyone.
-export const serverAgentOn = () => !!firebase && (useEmulators || readLocal('northstar.agent.server') === '1')
+// Whether chats run on the server (D-434): only where it's been switched on in this browser (`northstar.agent.server` =
+// 1, or `?agentServer=1` once), until it's deployed and opened to everyone; on the emulators it needs the functions
+// running too (`npm run emulators` starts them).
+const asked = typeof location !== 'undefined' && new URLSearchParams(location.search).get('agentServer') === '1'
+if (asked) keepLocal('northstar.agent.server', '1')
+export const serverAgentOn = () => !!firebase && readLocal('northstar.agent.server') === '1'
 
 export type PaidBy = 'workspace' | 'own'
 export type StartRun = { wid: string; chatId: string; text: string; view: WhereView; paidBy: PaidBy; model: string; effort?: string; key?: string; off?: string[] }

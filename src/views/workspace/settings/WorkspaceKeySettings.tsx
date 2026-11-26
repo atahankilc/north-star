@@ -1,13 +1,16 @@
 // Settings → workspace → agent key (D-079, D-427): an OpenAI key the owners give the workspace, so members they allow use
 // the agent without a key of their own. Owners save it (checked with OpenAI, then kept only encrypted on the server: no
 // browser sees it again, not even theirs; `sk-…abcd` is all that's shown), replace or remove it, say who may use it
-// (owners always, viewers never: D-098, D-318) and which models it runs. Everyone else reads whether they may.
+// (owners always, viewers never: D-098, D-318), which models it runs and its month's limits, and see this month's use by
+// person (D-434: every change through a function, in the audit log). Everyone else reads whether they may, and their own use.
 // Laid out as every settings page (D-404): numbered groups, a setting's control at its row's right edge.
 import { useState, type FormEvent } from 'react'
 import { useAuth } from '../../../data/auth'
 import type { Role } from '../../../data/model'
 import { roleOf, useMembers } from '../../../data/workspaces'
-import { mayUseWorkspaceKey, setKeyAccess, setKeyModels, setWorkspaceKey, useAiConfig, type AiConfig, type KeyAccess } from '../../../data/workspaceKey'
+import { mayUseWorkspaceKey, setKeyAccess, setKeyLimit, setKeyModels, setWorkspaceKey, useAiConfig, useKeySpend, useRate, type AiConfig, type KeyAccess, type Spend } from '../../../data/workspaceKey'
+import { microToCents, monthOf, USD_PER_EUR } from '../../../agent/money'
+import { CommitField } from '../../../ui/primitives/CommitField'
 import { FIT_WORDS, KNOWN_MODELS, SUGGESTED } from '../../../agent/models'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
@@ -25,14 +28,26 @@ export function WorkspaceKeySettings({ wid, workspace }: Props) {
   const config = useAiConfig(wid).data
   const members = useMembers(wid).data
   const names = new Map(members.map((m) => [m.id, m.name]))
-  return <WorkspaceKeyView wid={wid} workspace={workspace} me={user?.id} config={config} names={names} />
+  const month = monthOf(Date.now())
+  const spend = useKeySpend(wid, month)
+  const rate = useRate(month) ?? USD_PER_EUR
+  return <WorkspaceKeyView wid={wid} workspace={workspace} me={user?.id} config={config} names={names} spend={spend} rate={rate} />
+}
+
+// Money as people read it: euros, two places.
+const eur = (cents: number) => `€${(cents / 100).toFixed(2)}`
+// What's typed as a limit: `3`, `3.50`, `€3,5`; empty: none; anything else: not a limit.
+const centsOf = (typed: string): number | null | undefined => {
+  const t = typed.replace(/[€\s]/g, '').replace(',', '.')
+  if (!t) return null
+  return /^\d{1,7}(\.\d{1,2})?$/.test(t) ? Math.round(Number(t) * 100) : undefined
 }
 
 const OPENAI_MODELS = KNOWN_MODELS.filter((m) => m.provider === 'openai')
 const ACCESS: readonly KeyAccess[] = ['everyone', 'chosen']
 
 // The page itself, on what it's given (the gallery draws it on made-up config).
-export function WorkspaceKeyView({ wid, workspace, me, config, names }: Props & { me: string | undefined; config: AiConfig | null; names: Map<string, string> }) {
+export function WorkspaceKeyView({ wid, workspace, me, config, names, spend = [], rate = USD_PER_EUR }: Props & { me: string | undefined; config: AiConfig | null; names: Map<string, string>; spend?: Spend[]; rate?: number }) {
   const role: Role | null = roleOf(workspace, me)
   const owner = role === 'owner'
   const [said, setSaid] = useState<{ text: string; tone?: 'error' } | null>(null)
@@ -53,6 +68,10 @@ export function WorkspaceKeyView({ wid, workspace, me, config, names }: Props & 
     }
   }
 
+  const limits = config?.limits ?? {}
+  const used = (s: Spend | undefined) => microToCents((s?.spent ?? 0) + (s?.reserved ?? 0), rate)
+  const of = (s: Spend | undefined, limit?: number) => `${eur(used(s))}${limit !== undefined ? ` of ${eur(limit)}` : ''}`
+
   if (!owner) {
     const may = mayUseWorkspaceKey(config, me, role)
     return (
@@ -68,6 +87,11 @@ export function WorkspaceKeyView({ wid, workspace, me, config, names }: Props & 
                   : "the owners haven't let you use it"}
           </span>
         </Row>
+        {has && may && (
+          <Row label="this month" hint={limits.person !== undefined ? 'Your limit a month, set by the owners.' : undefined}>
+            <span className={styles.state}>{of(spend.find((s) => s.uid === me), limits.person)}</span>
+          </Row>
+        )}
       </Section>
     )
   }
@@ -147,6 +171,39 @@ export function WorkspaceKeyView({ wid, workspace, me, config, names }: Props & 
                 />
               </Row>
             ))}
+          </Section>
+          <Section n={4} label="limits" note="A month's use, counted in dollars as OpenAI bills it and shown in euros. When a limit is reached the agent stops and says so; it starts again on the 1st.">
+            {(['person', 'total'] as const).map((which) => (
+              <Row key={which} label={which === 'person' ? 'per person' : 'in all'} hint={limits[which] === undefined ? 'None. Type an amount in euros.' : 'Euros a month. Empty: none.'}>
+                <CommitField
+                  line
+                  className={styles.limit}
+                  label={which === 'person' ? 'the limit per person a month, in euros' : 'the limit for everyone a month, in euros'}
+                  placeholder="none"
+                  value={limits[which] !== undefined ? (limits[which]! / 100).toFixed(2) : ''}
+                  onSave={(typed) => {
+                    const cents = centsOf(typed)
+                    if (cents === undefined) return setSaid({ text: 'A limit is an amount in euros, like 5 or 12.50.', tone: 'error' })
+                    void run(() => setKeyLimit(wid, which, cents), cents === null ? 'No limit now.' : `The limit is ${eur(cents)} a month.`)
+                  }}
+                />
+              </Row>
+            ))}
+          </Section>
+          <Section n={5} label="this month" count={spend.filter((s) => s.uid).length || undefined}>
+            <Row label="everyone">
+              <span className={styles.state}>{of(spend.find((s) => !s.uid), limits.total)}</span>
+            </Row>
+            {spend
+              .filter((s) => s.uid)
+              .sort((a, b) => b.spent - a.spent)
+              .map((s) => (
+                <Row key={s.uid} label={names.get(s.uid!) ?? 'someone'}>
+                  <span className={styles.state}>
+                    {of(s, limits.person)} · {s.calls} {s.calls === 1 ? 'call' : 'calls'}
+                  </span>
+                </Row>
+              ))}
           </Section>
         </>
       )}

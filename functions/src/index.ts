@@ -22,6 +22,7 @@ import { accessOf, docAccessOf, sameAccess, sameDocAccess } from './mirror.js'
 import { confirmMail, CONFIRMS_A_DAY, ContactError, contactMail, CONTACTS_A_DAY, type Mail, PENDING_KEPT_MS, readConfirmBody, readContactBody, RESEND_AFTER_MS } from './mail.js'
 import { BadRequest, cleanBody, MODEL_ID, modelsAllowed } from './request.js'
 import { scrub, seal, unseal } from './seal'
+import { KEY_ALLOWED_MAX, KEY_MODELS_MAX } from '../../src/model/limits'
 import type { Deps as AgentDeps } from './agent/serve'
 import { readWaitlistBody, WaitlistError, waitlistNotice, type WaitlistEntry } from './waitlist.js'
 
@@ -35,7 +36,7 @@ const OPENAI = process.env.OPENAI_API_BASE ?? 'https://api.openai.com/v1'
 // atahankilc.github.io only until the repo's move to the atem-lab org is live.
 const ORIGINS = [/^https:\/\/(www\.|north-star\.)?atem-lab\.com$/, /^https:\/\/atahankilc\.github\.io$/, /^http:\/\/(localhost|127\.0\.0\.1):\d+$/]
 
-type AiConfig = { hasKey?: boolean; keyHint?: string; access?: Access; allowed?: string[]; allowedModels?: string[] }
+type AiConfig = { hasKey?: boolean; keyHint?: string; access?: Access; allowed?: string[]; allowedModels?: string[]; limits?: { person?: number; total?: number } }
 
 const db = () => getFirestore()
 // RTDB's default instance (europe-west1), named outright: left to itself the admin SDK picks another namespace on the
@@ -72,9 +73,14 @@ export const setWorkspaceKey = onCall({ secrets: [AI_KEY_SECRET], cors: ORIGINS 
   if (!isOwner(ws, uid)) throw new HttpsError('permission-denied', 'Only an owner manages the workspace key.')
   const id = wid as string
 
+  const { audited } = await import('./ledger/audit')
   if (key === '' || key === null) {
-    await secretRef(id).delete()
-    await configRef(id).set({ hasKey: false, keyHint: FieldValue.delete(), keySetAt: FieldValue.delete() }, { merge: true })
+    await audited(db(), async (tx) => {
+      const was = (await tx.get(configRef(id))).data()?.keyHint as string | undefined
+      tx.delete(secretRef(id))
+      tx.set(configRef(id), { hasKey: false, keyHint: FieldValue.delete(), keySetAt: FieldValue.delete() }, { merge: true })
+      return { entry: was ? { what: 'workspace key removed', by: uid!, wid: id, from: was } : null, value: null }
+    })
     return { keyHint: null }
   }
   if (typeof key !== 'string' || !/^sk-[A-Za-z0-9_-]{20,300}$/.test(key.trim())) {
@@ -86,9 +92,32 @@ export const setWorkspaceKey = onCall({ secrets: [AI_KEY_SECRET], cors: ORIGINS 
   if (!check.ok) throw new HttpsError('failed-precondition', check.status === 401 ? "OpenAI didn't accept this key." : `OpenAI answered ${check.status}.`)
 
   const keyHint = `${clean.slice(0, 3)}…${clean.slice(-4)}`
-  await secretRef(id).set({ ...encrypt(clean), setBy: uid, setAt: Date.now() })
-  await configRef(id).set({ hasKey: true, keyHint, keySetAt: Date.now() }, { merge: true })
+  await audited(db(), async (tx) => {
+    const was = (await tx.get(configRef(id))).data()?.keyHint as string | undefined
+    tx.set(secretRef(id), { ...encrypt(clean), setBy: uid, setAt: Date.now() })
+    tx.set(configRef(id), { hasKey: true, keyHint, keySetAt: Date.now() }, { merge: true })
+    return { entry: { what: was ? 'workspace key replaced' : 'workspace key set', by: uid!, wid: id, ...(was ? { from: was } : {}), to: keyHint }, value: null }
+  })
   return { keyHint }
+})
+
+// ---- Owners: who may use the workspace key, its models and its limits (D-434), each change in the audit log ----
+
+export const setWorkspaceAi = onCall({ cors: ORIGINS }, async (req) => {
+  const uid = req.auth?.uid
+  const { readPatch, setWsAi, BadSetting } = await import('./ledger/wsAi')
+  let read: ReturnType<typeof readPatch>
+  try {
+    read = readPatch(req.data, { allowedMax: KEY_ALLOWED_MAX, modelsMax: KEY_MODELS_MAX })
+  } catch (e) {
+    if (e instanceof BadSetting) throw new HttpsError('invalid-argument', e.message)
+    throw e
+  }
+  const ws = await workspaceOf(read.wid)
+  if (!isOwner(ws, uid)) throw new HttpsError('permission-denied', 'Only an owner changes the workspace key.')
+  // Only members can be let in.
+  if (read.patch.allowed) read.patch.allowed = read.patch.allowed.filter((u) => ws.memberIds.includes(u))
+  return setWsAi(db(), uid!, read.wid, read.patch)
 })
 
 // ---- Owners: is a model there for the workspace key? (D-104) A free call with the key, so it's never sent anywhere ----
@@ -159,21 +188,51 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
   const secret = (await secretRef(id).get()).data() as { data: string; iv: string; tag: string } | undefined
   if (!secret) return fail(412, 'This workspace has no key.')
 
+  // The ledger (D-434): held for before the call, its output cut to what's left of the owners' limits, settled after.
+  const ledger = await import('./ledger/ledger')
+  const { guessed } = await import('../../src/agent/money')
+  const input = Math.ceil(JSON.stringify(payload.input ?? []).length / 4) + Math.ceil((payload.instructions?.length ?? 0) / 4)
+  const searches = ((payload.tools ?? []) as { type?: string }[]).some((t) => t.type === 'web_search') ? (payload.max_tool_calls ?? 5) : 0
+  let held: Awaited<ReturnType<typeof ledger.hold>>
+  try {
+    held = await ledger.hold(db(), { source: 'workspace', uid, wid: id, run: null, step: 0, provider: 'openai', model: payload.model }, { input, searches, ...(payload.max_output_tokens ? { asked: payload.max_output_tokens } : {}), ...(config.limits ? { limits: config.limits } : {}) })
+  } catch (e) {
+    if (e instanceof ledger.LimitReached) return fail(402, e.message)
+    throw e
+  }
+  const sent = { ...payload, max_output_tokens: held.maxOutput }
+
   const started = Date.now()
   const upstream = new AbortController()
   res.on('close', () => upstream.abort())
 
   // What the call used, for the log.
   let usage: Usage = {}
+  // How much text came back (an answer cut off is counted by it).
+  let streamed = 0
   let webSearches = 0
-  const tools = new Set<string>()
   let status: 'done' | 'stopped' | 'failed' = 'stopped'
 
+  // Settled before the answer ends: after it, the instance's CPU may be taken away (request-based billing).
+  let closed = false
+  const closeCall = async () => {
+    if (closed) return
+    closed = true
+    const ms = Date.now() - started
+    const u: Usage = usage
+    const settled = status === 'done' && (u.input_tokens ?? 0) > 0
+      ? { usage: { input: u.input_tokens ?? 0, cached: u.input_tokens_details?.cached_tokens ?? 0, cacheWrite: (u.input_tokens_details as { cache_write_tokens?: number } | undefined)?.cache_write_tokens ?? 0, output: u.output_tokens ?? 0, reasoning: u.output_tokens_details?.reasoning_tokens ?? 0, searches: webSearches }, status: 'done' as const, ms }
+      : (() => {
+          const g = guessed(payload.model, { input, streamedChars: streamed, ms, held: held.reserved })
+          return { usage: g.usage, cost: g.cost, status: status === 'failed' ? ('failed' as const) : ('stopped' as const), ms, estimated: true }
+        })()
+    await ledger.settle(db(), held.call, settled).catch((e) => logger.error('a call was not settled', { wid: id, error: String(e) }))
+  }
   try {
     const r = await fetch(`${OPENAI}/responses`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${decrypt(secret)}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(sent),
       signal: upstream.signal,
     })
     if (!r.ok || !r.body) {
@@ -197,6 +256,7 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
       const { value, done } = await reader.read()
       if (done) break
       res.write(value)
+      streamed += value.length
       // Read the same events the browser gets, for the usage at the end.
       buffer += value
       let end: number
@@ -212,7 +272,6 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
         try {
           const event = JSON.parse(data) as { type: string; item?: { type?: string; name?: string }; response?: { usage?: Usage } }
           if (event.type === 'response.output_item.done' && event.item?.type === 'web_search_call') webSearches++
-          if (event.type === 'response.output_item.done' && event.item?.type === 'function_call' && event.item.name) tools.add(event.item.name)
           if (event.type === 'response.completed' || event.type === 'response.incomplete') {
             usage = event.response?.usage ?? {}
             status = 'done'
@@ -223,6 +282,7 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
         }
       }
     }
+    await closeCall()
     res.end()
   } catch (e) {
     if (!upstream.signal.aborted) {
@@ -232,26 +292,7 @@ export const ai = onRequest({ secrets: [AI_KEY_SECRET], cors: ORIGINS, timeoutSe
       else res.end()
     }
   } finally {
-    if (webSearches) tools.add('web_search')
-    await db()
-      .collection(`workspaces/${id}/aiUsage`)
-      .add({
-        uid,
-        name: name.slice(0, 200),
-        keySource: 'workspace',
-        task: task === 'research' ? 'research' : 'chat',
-        model: payload.model,
-        inputTokens: usage.input_tokens ?? 0,
-        cachedTokens: usage.input_tokens_details?.cached_tokens ?? 0,
-        outputTokens: usage.output_tokens ?? 0,
-        reasoningTokens: usage.output_tokens_details?.reasoning_tokens ?? 0,
-        webSearches,
-        tools: [...tools],
-        status,
-        ms: Date.now() - started,
-        at: Date.now(),
-      })
-      .catch((e) => logger.error('usage log failed', { wid: id, error: String(e) }))
+    await closeCall()
   }
 })
 

@@ -21,6 +21,7 @@ export const signInWithPopup = refuse
 export const reauthenticateWithPopup = refuse
 export const signOut = refuse
 // firebase/database
+export const child = refuse
 export const connectDatabaseEmulator = refuse
 export const getDatabase = refuse
 export const onChildAdded = refuse
