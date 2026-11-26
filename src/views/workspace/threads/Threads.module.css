@@ -275,6 +275,34 @@
   color: var(--accent-cyan);
 }
 
+/* A card named in a message (D-436): its badge and name on a wash of its colour; a press shows it on the canvas. */
+.cardRef {
+  display: inline;
+  padding: var(--space-half) var(--space-2) var(--space-half) var(--space-1);
+  border: 0;
+  border-radius: var(--space-2);
+  background: color-mix(in srgb, var(--tone) var(--mix-wash), var(--wash-2));
+  color: var(--fg-strong);
+  font: inherit;
+  line-height: var(--lh-tight);
+  cursor: pointer;
+}
+
+.cardRef:hover,
+.cardRef:focus-visible {
+  background: color-mix(in srgb, var(--tone) var(--mix-pick), transparent);
+  outline: none;
+}
+
+.cardRef > .badge {
+  margin-right: var(--space-1);
+  vertical-align: var(--line-w);
+}
+
+.cardGone {
+  color: var(--fg-dim);
+}
+
 /* Your own line's tools: a small pill over its right end, only while pointed at or with the keyboard in them. */
 .tools {
   position: absolute;

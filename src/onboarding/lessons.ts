@@ -487,12 +487,13 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'comment', v: 9, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349, D-393, D-398, D-402, D-405, D-412, D-416, D-435',
+    id: 'comment', v: 10, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349, D-393, D-398, D-402, D-405, D-412, D-416, D-435, D-436',
     trigger: [{ event: 'thread-open' }, { event: 'threads-open' }], within: 'threads',
     pages: [
       { title: 'Comments stay on things', tab: 'comments', body: 'Right-click a plane, card, text, link or task and pick `comment`. The conversation stays on that thing.', scene: 'thread' },
       { title: 'Its chip', tab: 'chip', body: 'A chip under its corner counts the messages. Magenta means something new for you; `@` means you were mentioned. Click the chip to open it.', scene: 'thread' },
       { title: 'Every conversation', tab: 'threads', body: "Talk, bottom left, opens the list beside the canvas: what's new on top, then channels, then things. Open one and the list becomes a rail beside it. Its head takes you to the thing; the arrows make Talk the page.", scene: 'threads-panel' },
+      { title: 'A card in a message', tab: 'cards', body: 'Type `#` and part of a card’s name, then pick it: the card goes into your message. A press on it takes anyone to that card on the canvas.', scene: 'threads-panel' },
       { title: 'Channels', tab: 'channels', body: 'The plus in Talk’s head starts a conversation on nothing, for the whole team: name it, and your first message opens it.', scene: 'threads-panel' },
     ],
   },

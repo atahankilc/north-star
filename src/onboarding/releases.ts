@@ -25,6 +25,8 @@ export const RELEASES: readonly Release[] = [
     date: '2026-11-25',
     title: 'Talk, made anew',
     items: [
+      // D-436: a card named in a message.
+      { title: 'A card in a message', tab: 'cards', line: 'In Talk, `#` and a card’s name puts the card in your message; a press on it shows it on the canvas.', scene: 'threads-panel', lessons: ['comment'] },
       // D-435: Talk's list, rail and page.
       { title: 'Talk, made anew', tab: 'talk', line: "Each row says who wrote last and what. An open conversation keeps the others on a rail; as the page, what it's about stands beside.", scene: 'threads-panel', lessons: ['comment'] },
       // D-435: one column on the right, the canvas in the middle of what's left.

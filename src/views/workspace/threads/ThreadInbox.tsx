@@ -32,6 +32,8 @@ import { usePageHost } from '../places/pageHost'
 import { tokenPx } from '../../../styles/cssToken'
 import styles from './Threads.module.css'
 import { firstName } from '../../../model/words'
+import { cardRefsAsText } from '../../../model/cardRefs'
+import { agentUi } from '../../../agent/ui'
 import { CHANNEL_NAME_MAX } from '../../../model/limits'
 
 // The threads panel's scope for the canvas shown (D-302's session 4), beside a plane's id (D-193).
@@ -98,7 +100,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
   const found = (t: WithId<Thread>) => {
     const k = q.trim().toLowerCase()
     if (!k) return true
-    return [thingOf(t).name, t.lastText, t.lastName, t.targetId].some((x) => x?.toLowerCase().includes(k))
+    return [thingOf(t).name, t.lastText && cardRefsAsText(t.lastText), t.lastName, t.targetId].some((x) => x?.toLowerCase().includes(k))
   }
   const sorted = useMemo(() => threads.filter((t) => t.on !== 'channel').sort((a, b) => b.lastAt - a.lastAt), [threads])
   // A new channel's name being typed (D-416); Talk's page tool starts it too (D-419).
@@ -150,7 +152,7 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
           </span>
           <span className={styles.when}>{ago(t.lastAt)}</span>
           <span className={styles.rowText}>
-            {(t.lastUid ?? t.uid) === me ? 'You' : firstName(t.lastName ?? t.name)}: {t.lastText ?? ''}
+            {(t.lastUid ?? t.uid) === me ? 'You' : firstName(t.lastName ?? t.name)}: {cardRefsAsText(t.lastText ?? '')}
           </span>
           {isFresh && (mentioned(t) ? <span className={styles.rowAt} aria-label="you're mentioned">@</span> : <span className={styles.rowLamp} aria-label="new" />)}
         </button>
@@ -253,8 +255,10 @@ export function ThreadInbox({ wid, threads: all, inside, titleOf, thingOf, onGo,
   const where = convo?.thread && !onChannel ? (whereOf?.(convo.thread) ?? undefined) : undefined
   // Shown on the canvas: from the page, Talk goes beside it first.
   const show = convo?.thread && !onChannel ? () => (setPage(false), onShow(convo.thread!)) : undefined
+  // A card named in a message (D-436): shown on the canvas, from the page beside it first.
+  const showCard = (id: string) => (setPage(false), void agentUi.goTo(id))
   const panel = convo && thing && (
-    <ThreadPanel key={convo.thread?.id ?? 'draft'} wid={wid} thread={convo.thread} draft={convo.draft} title={titleOf(convo.thread ?? convo.draft!)} thing={thing} isOwner={isOwner} where={where} onShow={show} wide={asPage} />
+    <ThreadPanel key={convo.thread?.id ?? 'draft'} wid={wid} thread={convo.thread} draft={convo.draft} title={titleOf(convo.thread ?? convo.draft!)} thing={thing} isOwner={isOwner} where={where} onShow={show} wide={asPage} onCard={showCard} />
   )
   // The list as a rail beside the open conversation: the channels, then what's said on the canvas, each its glyph.
   const railOf = (t: WithId<Thread>) => (

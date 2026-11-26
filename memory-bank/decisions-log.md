@@ -7944,3 +7944,13 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
 - **Alternatives (the preview's):** B one stream of everything, C conversations side by side as a deck's columns, D a console log.
 - **Checked:** headless Chrome on the emulators with real mouse presses: the canvas 26 (each place, with and without the agent: moved by exactly half, fit in the middle, home again, quick switching), focus and the right column 12, Talk 28; the gallery, the scenes, unit.
 - **Not yet:** a card named in a message as a chip (the preview drew it; messages are plain text today); the user to see it live; touch.
+
+### D-436 · 2026-11-26 · Accepted (the user, of three looks on docs/specs/card-chip-preview/: "A olsun"; D-435's *Not yet*)
+**A card named in a Talk message: `#` and its name picks it; shown as its badge and name, a press shows it on the canvas.**
+- *Typing:* `#` and part of a card's name opens a list of the workspace's cards (named ones, those starting with it first; the badge and the plane), ↑↓ ↵ or a press; picked, `#Name` stands in the field.
+- *Kept:* as plain text, `[[id|name]]` (model/cardRefs.ts): the rules, the preview's checks and every copy stay as they are; no data or rule change.
+- *Shown:* the card's type badge and its name now on a wash of its colour (the preview's A); a press takes Talk beside the canvas and goes to the card (agentUi.goTo); a card gone since, its old name struck. Read as text (a row's preview, Talk's find, a card panel's TALK) the name alone, a cut one `…`.
+- *Editing:* the names come back as `#Name` with their cards, so a message keeps its cards; the caret starts at the end.
+- *Alternatives (the preview's):* B the name in its colour, underlined; C small cards under the message.
+- *Checked:* unit (cardRefs 3), headless Chrome on the emulators with real presses: the list, a pick, two cards sent, the list's preview, a press showing the card, an edit keeping them, a deleted one struck.
+- *Not yet:* the agent reads the references as they are (ids and names), not as chips.

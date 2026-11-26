@@ -63,6 +63,7 @@ import { CARD_PLACEHOLDER } from '../../../model/cardName'
 import { ALIGNS, alignTo, spreadTo } from '../../../model/layout'
 import { firstName, plural, leadingNumber } from '../../../model/words'
 import { ago } from '../../../ui/foundation/ago'
+import { cardRefsAsText } from '../../../model/cardRefs'
 import { TagList } from './TagList'
 import { NotesSection } from './NotesSection'
 import { PanelRow } from './PanelRow'
@@ -1012,7 +1013,7 @@ function CardTalk({ n, card }: P) {
   if (!t) return null
   return (
     <PanelSection n={n} name="talk" count={t.count}>
-      <PanelRow kind={firstName(t.lastName ?? t.name)} name={t.lastText ?? ''} goTitle="open its conversation" type={ago(t.lastAt)} onGo={() => openThread(t.id)} />
+      <PanelRow kind={firstName(t.lastName ?? t.name)} name={cardRefsAsText(t.lastText ?? '')} goTitle="open its conversation" type={ago(t.lastAt)} onGo={() => openThread(t.id)} />
     </PanelSection>
   )
 }

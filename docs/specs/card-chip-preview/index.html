@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>A card in a message · options</title>
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/inter/opsz.css">
+<link rel="stylesheet" href="../../../node_modules/@fontsource-variable/jetbrains-mono/index.css">
+<style>
+/* A preview only (D-435's leftover): a card named in a Talk message. Made-up data, on the app's tokens. */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: #070707; color: var(--fg); font-family: var(--font-display); font-size: 14px; display: grid; grid-template-columns: 340px 1fr; }
+button, input { font: inherit; color: inherit; background: none; border: 0; padding: 0; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; border-radius: 8px; }
+.about { padding: 20px; border-right: 1px solid #2a2a2a; color: #b0b0b0; line-height: 1.55; font-size: 13px; overflow: auto; }
+.about h3 { margin: 0 0 8px; color: #fff; font-size: 18px; font-weight: 500; }
+.about h2 { margin: 18px 0 6px; font: 500 11px var(--font-mono); letter-spacing: .05em; color: #8a8a8a; }
+.about b { color: #ededed; font-weight: 500; }
+.grp { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.opt { border: 1px solid transparent; border-radius: 999px; padding: 4px 11px; color: #8a8a8a; font: 12px var(--font-mono); }
+.opt:hover { color: #ededed; background: rgba(255,255,255,.07); }
+.opt[aria-pressed='true'] { color: #fff; border-color: #3a3a3a; background: rgba(255,255,255,.1); }
+.opt b { color: #ff3d9a; font-weight: 400; margin-right: 5px; }
+.stage { display: grid; place-items: center; padding: 24px; }
+.col { width: 400px; height: 760px; background: var(--ground); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+.head { padding: 14px 16px 10px; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: baseline; }
+.head h2 { margin: 0; font-size: 20px; font-weight: 500; color: var(--fg-strong); }
+.head small { color: var(--fg-dim); }
+.log { flex: 1; overflow: auto; padding: 8px 12px; display: flex; flex-direction: column; }
+.log > :first-child { margin-top: auto; }
+.m { display: grid; grid-template-columns: 30px 1fr; gap: 0 12px; padding: 4px 12px; margin-top: 12px; border-radius: 16px; }
+.m:hover { background: var(--wash-1); }
+.m .av { grid-row: span 2; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #000; font: 600 12px var(--font-display); }
+.m .who { font-weight: 600; }
+.m .t { margin-left: 8px; color: var(--fg-dim); font: 12px var(--font-mono); }
+.m .x { line-height: 1.55; color: var(--fg); overflow-wrap: anywhere; }
+.badge { display: inline-block; font: 500 9px/1 var(--font-mono); letter-spacing: .05em; padding: 3px 5px; border-radius: 4px; background: var(--c); color: #000; text-transform: uppercase; vertical-align: 1px; }
+/* A: a chip */
+.ref[data-look='A'] { display: inline; padding: 2px 8px 2px 5px; border-radius: 8px; background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--fg-strong); line-height: 1.2; }
+.ref[data-look='A'] .badge { margin-right: 6px; }
+.ref[data-look='A']:hover { background: color-mix(in srgb, var(--c) 28%, transparent); }
+/* B: the name in its colour, underlined */
+.ref[data-look='B'] { color: color-mix(in srgb, var(--c) 75%, var(--fg-strong)); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--c) 45%, transparent); text-underline-offset: 3px; font-weight: 500; }
+.ref[data-look='B']::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 2px; background: var(--c); margin-right: 5px; vertical-align: 1px; }
+.ref[data-look='B']:hover { text-decoration-color: var(--c); }
+/* C: a small card under the message */
+.ref[data-look='C'] { color: var(--fg-strong); font-weight: 500; text-decoration: underline dotted var(--fg-dim); text-underline-offset: 3px; }
+.cards { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.mini { display: grid; gap: 4px; width: 160px; padding: 9px 11px; border-radius: 12px; text-align: left; background: color-mix(in srgb, var(--c) 13%, var(--bg-raised)); }
+.mini:hover { background: color-mix(in srgb, var(--c) 22%, var(--bg-raised)); }
+.mini .badge { justify-self: start; }
+.mini span:not(.badge) { font-size: 12px; color: var(--fg-strong); line-height: 1.3; }
+.mini small { font-size: 11px; color: var(--fg-dim); }
+.gone { color: var(--fg-dim); text-decoration: line-through; }
+/* the composer */
+.comp { position: relative; margin: 8px 14px 14px; padding: 7px 7px 7px 14px; border-radius: 18px; background: var(--wash-2); border: 1px solid var(--accent-cyan); display: flex; gap: 8px; align-items: center; }
+.comp .field { flex: 1; min-height: 24px; line-height: 1.5; outline: none; white-space: pre-wrap; word-break: break-word; }
+.comp .field:empty::before { content: attr(data-ph); color: var(--fg-faint); }
+.send { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-cyan); color: #000; display: grid; place-items: center; flex: none; }
+.pick { position: absolute; left: 14px; right: 14px; bottom: calc(100% + 6px); padding: 6px; border-radius: 16px; border: 1px solid var(--accent-cyan); background: var(--bg-raised); }
+.pick .q { padding: 6px 10px; color: var(--fg-dim); font: 12px var(--font-mono); }
+.pick .q b { color: var(--accent-magenta); font-weight: 400; }
+.pick button { display: flex; gap: 10px; align-items: center; width: 100%; padding: 7px 10px; border-radius: 11px; text-align: left; }
+.pick button[data-on] { background: color-mix(in srgb, var(--accent-cyan) 18%, transparent); }
+.pick button small { margin-left: auto; color: var(--fg-dim); font-size: 11px; }
+.hint { padding: 0 20px 14px; color: var(--fg-faint); font: 11px var(--font-mono); }
+.toast { position: absolute; left: 50%; top: 70px; transform: translateX(-50%); padding: 6px 14px; border-radius: 999px; background: var(--bg-raised); border: 1px solid var(--line-hover); font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap; }
+.toast[data-on] { opacity: 1; }
+</style>
+</head>
+<body>
+<aside class="about" id="about"></aside>
+<div class="stage"><div class="col" id="col"></div></div>
+<script>
+const CARDS = [
+  { id: 'k1', kind: 'feature', c: 'var(--type-feature)', name: 'One-tap lunch order', plane: '01 Market' },
+  { id: 'k2', kind: 'problem', c: 'var(--type-problem)', name: 'Nobody owns the follow-up', plane: '01 Market' },
+  { id: 'k3', kind: 'customer', c: 'var(--type-customer)', name: 'Office managers', plane: '01 Market' },
+  { id: 'k4', kind: 'idea', c: 'var(--type-idea)', name: 'Weekly menu vote', plane: '02 Product' },
+  { id: 'k5', kind: 'feature', c: 'var(--type-feature)', name: 'Reminder at 11:00', plane: '02 Product' },
+]
+const P = { z: ['Zeynep', 'var(--accent-cyan)'], me: ['You', 'var(--accent-magenta)'], m: ['Mert', 'var(--accent-yellow)'] }
+// What's stored: plain text with the card's id and the name it had, so an old app or the list's preview still reads it.
+let MSGS = [
+  ['z', '09:31', 'Two more offices said yes. One asked about allergies, see [[k1|One-tap lunch order]].'],
+  ['m', '09:40', 'That is really [[k2|Nobody owns the follow-up]] again, for [[k3|Office managers]].'],
+  ['z', '09:52', 'The old one is gone: [[kx|Pickup shelf]].'],
+]
+const S = { look: 'A', pick: null, at: 0 }
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
+const card = (id) => CARDS.find((c) => c.id === id)
+function render(text) {
+  const found = []
+  const html = esc(text).replace(/\[\[(\w+)\|([^\]]*)\]\]/g, (_, id, was) => {
+    const c = card(id)
+    if (!c) return `<span class="gone" title="this card was deleted">${was}</span>`
+    found.push(c)
+    const inner = S.look === 'A' ? `<span class="badge" style="--c:${c.c}">${c.kind}</span>${esc(c.name)}` : esc(c.name)
+    return `<button class="ref" data-look="${S.look}" data-go="${c.id}" style="--c:${c.c}" title="${c.kind} on ${c.plane} · show it on the canvas">${inner}</button>`
+  })
+  return { html, found }
+}
+function draw() {
+  const log = MSGS.map(([w, t, x]) => {
+    const r = render(x)
+    const cards = S.look === 'C' && r.found.length ? `<div class="cards">${r.found.map((c) => `<button class="mini" data-go="${c.id}" style="--c:${c.c}"><span class="badge" style="--c:${c.c}">${c.kind}</span><span>${esc(c.name)}</span><small>on ${c.plane}</small></button>`).join('')}</div>` : ''
+    return `<div class="m"><span class="av" style="background:${P[w][1]}">${P[w][0][0]}</span><div><span class="who" style="color:${P[w][1]}">${P[w][0]}</span><span class="t">${t}</span></div><div class="x">${r.html}</div>${cards}</div>`
+  }).join('')
+  const list = S.pick === null ? [] : CARDS.filter((c) => c.name.toLowerCase().includes(S.pick.toLowerCase()))
+  S.at = Math.min(S.at, Math.max(0, list.length - 1))
+  const pick = S.pick === null ? '' : `<div class="pick"><div class="q"><b>#</b>${esc(S.pick) || 'a card…'}</div>${list.map((c, i) => `<button data-pick="${c.id}" ${i === S.at ? 'data-on' : ''}><span class="badge" style="--c:${c.c}">${c.kind}</span>${esc(c.name)}<small>${c.plane}</small></button>`).join('') || '<div class="q">no card by that name</div>'}</div>`
+  const keep = document.querySelector('.field')?.innerText ?? ''
+  document.getElementById('col').innerHTML = `<div class="head"><h2># general</h2><small>everyone in the workspace</small></div><div class="log" id="log">${log}</div><form class="comp" id="form">${pick}<div class="field" contenteditable="true" data-ph="say something · # names a card" id="field"></div><button class="send" aria-label="send">↑</button></form><div class="hint"># a card · ↑↓ ↵ pick · esc</div><div class="toast" id="toast"></div>`
+  const f = document.getElementById('field'); f.innerText = keep; focusEnd(f)
+  document.getElementById('log').scrollTop = 1e6
+  about()
+}
+const focusEnd = (f) => { f.focus(); const r = document.createRange(); r.selectNodeContents(f); r.collapse(false); const s = getSelection(); s.removeAllRanges(); s.addRange(r) }
+const toast = (t) => { const e = document.getElementById('toast'); e.textContent = t; e.setAttribute('data-on', ''); setTimeout(() => e.removeAttribute('data-on'), 1400) }
+// What's typed: `#` and the words after it pick a card; picked, `[[id|name]]` goes in.
+function typed() {
+  const v = document.getElementById('field').innerText
+  const m = /(^|\s)#([^\n#]{0,30})$/.exec(v)
+  const was = S.pick
+  S.pick = m ? m[2] : null
+  if (was !== S.pick) { const k = document.getElementById('field').innerText; draw(); document.getElementById('field').innerText = k; focusEnd(document.getElementById('field')) }
+}
+function choose(id) {
+  const f = document.getElementById('field'), c = card(id)
+  f.innerText = f.innerText.replace(/#([^\n#]{0,30})$/, `[[${c.id}|${c.name}]] `)
+  S.pick = null; const k = f.innerText; draw(); document.getElementById('field').innerText = k; focusEnd(document.getElementById('field'))
+}
+document.addEventListener('input', (e) => e.target.id === 'field' && typed())
+document.addEventListener('keydown', (e) => {
+  if (e.target.id !== 'field') return
+  const list = S.pick === null ? [] : CARDS.filter((c) => c.name.toLowerCase().includes(S.pick.toLowerCase()))
+  if (S.pick !== null && list.length && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); S.at = (S.at + (e.key === 'ArrowDown' ? 1 : list.length - 1)) % list.length; const k = e.target.innerText; draw(); document.getElementById('field').innerText = k; focusEnd(document.getElementById('field')) }
+  else if (S.pick !== null && list.length && e.key === 'Enter') { e.preventDefault(); choose(list[S.at].id) }
+  else if (S.pick !== null && e.key === 'Escape') { S.pick = null; const k = e.target.innerText; draw(); document.getElementById('field').innerText = k; focusEnd(document.getElementById('field')) }
+  else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+})
+function send() { const f = document.getElementById('field'); const v = f.innerText.trim(); if (!v) return; MSGS.push(['me', 'now', v]); f.innerText = ''; S.pick = null; draw() }
+document.addEventListener('click', (e) => {
+  const o = e.target.closest('[data-look-set]'); if (o) { S.look = o.dataset.lookSet; const k = document.getElementById('field')?.innerText ?? ''; draw(); document.getElementById('field').innerText = k; return }
+  const g = e.target.closest('[data-go]'); if (g) { const c = card(g.dataset.go); return toast(`→ the canvas goes to "${c.name}" on ${c.plane}`) }
+  const p = e.target.closest('[data-pick]'); if (p) { e.preventDefault(); return choose(p.dataset.pick) }
+  if (e.target.closest('.send')) { e.preventDefault(); send() }
+})
+const W = {
+  A: ['A · Etiket', 'Kartın türü renkli bir rozet, yanında adı, hafif renkli bir zemin üstünde. Talk önizlemesinde çizdiğim.', 'Metin içinde en kolay fark edilen; ne tür bir kart olduğu bir bakışta okunur.', 'Uzun adlar satırı kalabalıklaştırır.'],
+  B: ['B · Renkli ad', 'Kartın adı, türünün renginde ve altı çizili; başında küçük bir renk karesi. Metin gibi akar.', 'Metin sakin kalır, okunması bölünmez.', 'Türü rengi bilmeyen biri hemen anlamaz; daha az fark edilir.'],
+  C: ['C · Mesajın altında kart', 'Metinde ad noktalı altı çizili; mesajın altına küçük kart(lar) eklenir: rozet, ad, hangi düzlemde.', 'Nerede olduğu da yazar; mesaj okunur kalır.', 'Mesajlar uzar; aynı kart iki kez görünür.'],
+}
+function about() {
+  const w = W[S.look]
+  document.getElementById('about').innerHTML = `<div class="grp">${['A', 'B', 'C'].map((k) => `<button class="opt" data-look-set="${k}" aria-pressed="${S.look === k}"><b>${k}</b>${W[k][0].slice(4)}</button>`).join('')}</div>
+  <h3>${w[0]}</h3>${w[1]}<h2>ARTI</h2>${w[2]}<h2>EKSİ</h2>${w[3]}
+  <h2>HEPSİNDE ORTAK</h2>
+  <b>Yazarken:</b> # yaz, kartın adının bir kısmını yaz; liste çıkar (↑↓ ve Enter ya da tıklama). Seçince karta dönüşür. Sağdaki sütunda dene.<br><br>
+  <b>Basınca:</b> tuval o karta gider (burada üstte bir yazı çıkar).<br><br>
+  <b>Kart silinirse:</b> adı üstü çizili, soluk kalır ("Pickup shelf" gibi).<br><br>
+  <b>Saklama:</b> mesaj düz yazı olarak kalır, içinde kartın kimliği ve o anki adı. Kural ve veri değişikliği yok. Kartın adı sonra değişirse yeni adı görünür.<br><br>
+  <b>Listede:</b> konuşmanın son mesajı satırda kartın adıyla okunur.<br><br>
+  <b>Önerim:</b> A.`
+}
+draw()
+</script>
+</body>
+</html>

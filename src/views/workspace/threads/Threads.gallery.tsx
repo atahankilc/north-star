@@ -20,6 +20,16 @@ export default example({
       then: () => (threadMessages(), (demoThreads.seen = { 't-pickup': DEMO_DAY - 100 * 60 * 1000 }), toggleInbox(true), openThread('t-pickup')),
       note: 'a magenta `NEW` line over the first message you hadn’t read (D-405)',
     }),
+    'a card named': onCanvas({
+      only: [P.lunch, P.product], change: withThreads,
+      then: () => {
+        threadMessages()
+        demoThreads.messages = { ...demoThreads.messages, 't-pickup': [...demoThreads.messages['t-pickup'], { id: 'm-card', uid: demoThreads.me, name: 'You', text: 'Then [[f-qr|Pickup shelf opened with a QR code]] goes first, and [[f-gone|Old pickup point]] waits.', createdAt: Date.now() }] }
+        toggleInbox(true)
+        openThread('t-pickup')
+      },
+      note: 'a card named with `#` (D-436): its badge and name, a press shows it; one deleted since, its old name struck',
+    }),
     'over days': onCanvas({
       only: [P.lunch, P.product], change: withThreads,
       then: () => (threadMessages(), toggleInbox(true), openThread('t-cooks')),

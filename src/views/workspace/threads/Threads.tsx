@@ -34,6 +34,8 @@ import { usePromptPick } from '../../../ui/foundation/usePromptPick'
 import { useStickToBottom } from '../../../ui/foundation/useStickToBottom'
 import { Button } from '../../../ui/primitives/Button'
 import { ButtonGroup } from '../../../ui/primitives/ButtonGroup'
+import { CARD_TONE } from '../../../ui/foundation/cardTone'
+import { cardRefsForEditing, withCardRefs } from '../../../model/cardRefs'
 import { HazardConfirm } from '../../../ui/patterns/HazardConfirm'
 import { Field } from '../../../ui/primitives/Field'
 import { PromptList } from '../../../ui/patterns/PromptList'
@@ -162,6 +164,10 @@ function ChipOf({ wid, thread, zoom }: { wid: string; thread: WithId<Thread>; zo
 
 // `@` in a field (D-166): the word being typed after it, if the caret is right after it.
 const MENTION_AT = /(^|\s)@([\p{L}\p{N}._ -]{0,30})$/u
+// `#` in a field (D-436): a card's name being typed after it.
+// A message split round its cards: text, id, name, text… (CARD_REF's two groups).
+const CARD_SPLIT = /\[\[([A-Za-z0-9_-]{1,40})\|([^\]\n]{0,200})\]\]/
+const CARD_AT = /(^|\s)#([^\n#@]{0,40})$/u
 const pickedIn = (text: string, picked: Map<string, string>) => [...picked].filter(([, name]) => text.includes(`@${name}`)).map(([uid]) => uid)
 
 // A day's name over its messages (D-405): today, yesterday, else the month and the weekday (the day's number is the
@@ -189,12 +195,14 @@ type PanelProps = {
   onShow?: () => void
   // Talk as the page (D-435): room for who's in it in its head, its words at a reading width.
   wide?: boolean
+  // A card named in a message pressed (D-436): shown where it is.
+  onCard?: (id: string) => void
 }
 
 // A conversation (D-435): its head the thing it's on (its kind a badge, its name, where; a press goes there) with its
 // tools at the right; its messages lines down the left, who, when, what, a run of one writer's under one name; the prompt
 // a round well at its foot.
-export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, onShow, wide = false }: PanelProps) {
+export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, onShow, wide = false, onCard }: PanelProps) {
   const channel = (thread?.on ?? draft?.on) === 'channel'
   const messages = useMessages(wid, thread?.id ?? null)
   const members = useWorkspaceMembers(wid, useWs().workspace.memberIds)
@@ -206,7 +214,10 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null)
   // People picked from `@` while typing: uid → name.
   const picked = useRef(new Map<string, string>())
-  const [suggest, setSuggest] = useState<{ q: string; at: number } | null>(null)
+  // What's being picked after the caret: a person (`@`) or a card (`#`, D-436).
+  const [suggest, setSuggest] = useState<{ q: string; at: number; card?: boolean } | null>(null)
+  // Cards picked while typing: id → name, `#Name` in the field until it's sent.
+  const pickedCards = useRef(new Map<string, string>())
   const field = useRef<HTMLTextAreaElement>(null)
   const list = useRef<HTMLOListElement>(null)
   const me = myUid()
@@ -241,10 +252,18 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
 
   const names = useMemo(() => members.map((m) => m.name).filter(Boolean), [members])
   const matches = useMemo(() => {
-    if (!suggest) return []
+    if (!suggest || suggest.card) return []
     const q = suggest.q.trim().toLowerCase()
     return members.filter((m) => m.id !== me && (!q || m.name.toLowerCase().split(/\s+/).some((w) => w.startsWith(q)) || m.name.toLowerCase().startsWith(q))).slice(0, 6)
   }, [suggest, members, me])
+  // The workspace's cards whose name has what's typed after `#` (D-436), the ones starting with it first.
+  const { cards, pieces } = useWs()
+  const cardMatches = useMemo(() => {
+    if (!suggest?.card) return []
+    const q = suggest.q.trim().toLowerCase()
+    const named = cards.filter((c) => c.title.trim() && c.title.toLowerCase().includes(q))
+    return [...named.filter((c) => c.title.toLowerCase().startsWith(q)), ...named.filter((c) => !c.title.toLowerCase().startsWith(q))].slice(0, 8)
+  }, [suggest, cards])
 
   const fail = (e: unknown) => useHistory.getState().say(`Couldn't save the comment: ${(e as Error).message}`)
   const send = async () => {
@@ -253,11 +272,13 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
     setBusy(true)
     try {
       const mentions = pickedIn(body, picked.current)
-      if (thread) await reply(wid, thread.id, body, mentions)
-      else if (draft) openThread(await startThread(wid, draft, body, mentions))
+      const said = withCardRefs(body, pickedCards.current)
+      if (thread) await reply(wid, thread.id, said, mentions)
+      else if (draft) openThread(await startThread(wid, draft, said, mentions))
       setText('')
       stick.toBottom()
       picked.current.clear()
+      pickedCards.current.clear()
       if (field.current) field.current.style.height = ''
     } catch (e) {
       fail(e)
@@ -274,15 +295,36 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
       const name = members.find((m) => m.id === uid)?.name
       return name && body.includes(`@${name}`)
     })
-    if (body) editMessage(wid, thread.id, editing.id, body, [...kept, ...pickedIn(body, picked.current)]).catch(fail)
+    if (body) editMessage(wid, thread.id, editing.id, withCardRefs(body, pickedCards.current), [...kept, ...pickedIn(body, picked.current)]).catch(fail)
     setEditing(null)
   }
 
   // Typing: is the caret right after an `@word`?
   const onType = (value: string, caret: number) => {
     setText(value)
-    const m = MENTION_AT.exec(value.slice(0, caret))
-    setSuggest(m ? { q: m[2], at: caret - m[2].length - 1 } : null)
+    const before = value.slice(0, caret)
+    const m = MENTION_AT.exec(before)
+    const c = !m && CARD_AT.exec(before)
+    setSuggest(m ? { q: m[2], at: caret - m[2].length - 1 } : c ? { q: c[2], at: caret - c[2].length - 1, card: true } : null)
+  }
+  // An edit starts with the caret after the words, where more is added.
+  const caretToEnd = () =>
+    requestAnimationFrame(() => {
+      const f = box.current?.querySelector<HTMLTextAreaElement>(`.${CSS.escape(styles.editField)} textarea, textarea.${CSS.escape(styles.editField)}`)
+      f?.setSelectionRange(f.value.length, f.value.length)
+    })
+  const pickCard = (c: Card) => {
+    if (!suggest) return
+    const caret = field.current?.selectionStart ?? text.length
+    const name = c.title.trim()
+    pickedCards.current.set(c.id, name)
+    setText(`${text.slice(0, suggest.at)}#${name} ${text.slice(caret)}`)
+    setSuggest(null)
+    requestAnimationFrame(() => {
+      const at = suggest.at + name.length + 2
+      field.current?.focus()
+      field.current?.setSelectionRange(at, at)
+    })
   }
   const pick = (m: WithId<Member>) => {
     if (!suggest) return
@@ -298,11 +340,33 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
     })
   }
   // The `@` list's keys (usePromptPick): its first row again as each key is typed.
-  const mention = usePromptPick(matches, !!suggest, { pick, close: () => setSuggest(null), reset: suggest })
+  const mention = usePromptPick(matches, !!suggest && !suggest.card, { pick, close: () => setSuggest(null), reset: suggest })
+  const cardPick = usePromptPick(cardMatches, !!suggest?.card, { pick: pickCard, close: () => setSuggest(null), reset: suggest })
+  const planeName = (c: Card) => pieces.find((p) => p.id === c.pieceId)?.name || 'a plane'
 
   const resolved = !!thread?.resolved
   // Owners, or whoever wrote the one message left (D-166; firestore.rules says the same).
   const mayDeleteThread = !!thread && (isOwner || (thread.count <= 1 && (thread.uid === me || thread.lastUid === me)))
+
+  // A message's words: people named (`@`), cards named as their badge and name (D-436), a press showing the card; a card
+  // that's gone, its old name struck.
+  const said = (text: string) =>
+    text.split(CARD_SPLIT).map((part, i) => {
+      if (i % 3 === 1) {
+        const c = cards.find((x) => x.id === part)
+        const was = text.split(CARD_SPLIT)[i + 1]
+        return c ? (
+          <button /* kit-ok: a card named in a message, which shows it on the canvas */ key={i} type="button" className={styles.cardRef} style={{ '--tone': CARD_TONE[c.type] } as CSSProperties} title={`${c.type} on ${planeName(c)} · show it on the canvas`} onClick={() => onCard?.(c.id)}>
+            <TypeBadge type={c.type} className={styles.badge} />
+            {c.title || was}
+          </button>
+        ) : (
+          <s key={i} className={styles.cardGone} title="this card was deleted">{was}</s>
+        )
+      }
+      if (i % 3 === 2) return null
+      return <Fragment key={i}>{withMentions(part, names)}</Fragment>
+    })
 
   const writers = wide ? [...new Map(messages.data.map((m) => [m.uid, m.name]))] : []
 
@@ -438,13 +502,13 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
                       }}
                     />
                   ) : (
-                    <div className={styles.text}>{withMentions(m.text, names)}</div>
+                    <div className={styles.text}>{said(m.text)}</div>
                   )}
                 </div>
                 {/* Only its writer edits or deletes a message (D-166): over its line's end while pointed at. */}
                 {m.uid === me && editing?.id !== m.id && (
                   <ButtonGroup className={styles.tools}>
-                    <Button icon aria-label="edit" title="edit" onClick={() => setEditing({ id: m.id, text: m.text })}>
+                    <Button icon aria-label="edit" title="edit" onClick={() => { const r = cardRefsForEditing(m.text); r.picked.forEach((n, id) => pickedCards.current.set(id, n)); setEditing({ id: m.id, text: r.text }); caretToEnd() }}>
                       <EditIcon />
                     </Button>
                     <Button
@@ -472,6 +536,21 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
           }}
         >
           {/* `@` suggests the workspace's people (D-166). */}
+          {suggest?.card && (
+            <div className={styles.suggest} onPointerDown={(e) => e.preventDefault()}>
+              <PromptList
+                role="listbox"
+                label="Name a card"
+                entries={cardMatches.map((c) => ({ key: c.id, label: c.title, glyph: <TypeBadge type={c.type} className={styles.badge} />, hint: planeName(c), onSelect: () => pickCard(c) }))}
+                picked={cardMatches[cardPick.at]?.id ?? null}
+                q=""
+                empty={suggest.q.trim() ? 'no card by that name' : 'type a card’s name'}
+                onPick={(i) => i.onSelect({ shift: false, alt: false })}
+                onPoint={(k) => cardPick.setAt(Math.max(0, cardMatches.findIndex((c) => c.id === k)))}
+                idOf={(k) => `card-${k}`}
+              />
+            </div>
+          )}
           {suggest && matches.length > 0 && (
             <div className={styles.suggest} onPointerDown={(e) => e.preventDefault()}>
               <PromptList
@@ -497,9 +576,9 @@ export function ThreadPanel({ wid, thread, draft, title, thing, isOwner, where, 
             label={thread ? 'Reply' : 'First message'}
             onChange={(v) => onType(v, field.current?.selectionStart ?? v.length)}
             // Enter sends, unless it's picking a mention (the keys below take it).
-            onSubmit={() => !(suggest && matches.length) && void send()}
+            onSubmit={() => !(suggest && (suggest.card ? cardMatches.length : matches.length)) && void send()}
             onKeyDown={(e) => {
-              if (mention.onKey(e)) return
+              if (suggest?.card ? cardPick.onKey(e) : mention.onKey(e)) return
               if (e.key === 'Escape') closeThread()
             }}
           >

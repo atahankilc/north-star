@@ -388,6 +388,7 @@ feature comes back as a piece, and check them with the user then.
   hadn't read, a day's name and the clock when it runs over days. Its preview always the newest message left, an edit
   changing it too; deleted by its starter or the last message's writer, or an owner (D-356). A person's colour the one
   they have here, else their own (`usePersonColor`). A HUD menu is drawn in the page's top layer (D-405).
+- A card in a message (D-436): `#` and its name picks a card; kept as `[[id|name]]` in the text (model/cardRefs.ts), shown as its badge and name, a press showing it on the canvas; a deleted one struck; read as text, its name.
 
 ## Agent (planned, docs/specs/agent.md)
 - Its mascot (D-407, D-408): 1.0's orb (`AgentOrb`: ASCII sphere, eyes, moods, antics, the `nar` pomegranate), 72 px (`--orb`); closed it's the orb alone in the bottom-right corner (a press, ⌘J or `/` opens the box), open it rides the box's top edge. The chat a column at the far right whose `full` makes it the page: its chats beside the conversation, the canvas still beside it (D-424).
