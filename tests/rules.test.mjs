@@ -1309,6 +1309,7 @@ await allow('owner deletes children, invite code, then workspace', async () => {
   await deny('an owner of a workspace does not', () => getDoc(doc(carol.fs, 'aiMeters', `lab_${bob.uid}_2026-11`)))
   await allow("a lab admin reads the lab's audit entries", () => getDoc(doc(alice.fs, 'audit', '000000000002')))
   await deny('a carried spend, anyone', () => getDoc(doc(alice.fs, 'labGone', 'x')))
+  await deny("the lab's alerts sent, anyone", () => getDoc(doc(alice.fs, 'labAlerts', '2026-11')))
 }
 
 console.log(`\n${passed} passed, ${failed} failed`)

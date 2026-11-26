@@ -739,9 +739,11 @@ export const runAgent = onTaskDispatched(
 )
 
 // Runs left by a worker that died, own keys left behind, live nodes of runs that ended (agent/serve.ts).
-export const sweepAgent = onSchedule({ schedule: 'every 5 minutes', timeZone: 'Europe/Berlin', secrets: [AI_KEY_SECRET], memory: '512MiB' }, async () => {
+export const sweepAgent = onSchedule({ schedule: 'every 5 minutes', timeZone: 'Europe/Berlin', secrets: [AI_KEY_SECRET, RESEND_API_KEY], memory: '512MiB' }, async () => {
   const { serve, deps } = await agent()
   await serve.closeStale(deps)
+  // The lab's mails about its key (§10), each once.
+  await (await import('./ledger/alerts')).labAlerts(db(), sendMail).catch((e) => logger.error('lab alerts', { error: (e as Error).message }))
 })
 
 // ---- The lab's key (D-434, ledger/lab.ts): what a person reads of it and agrees to; what a lab admin changes ----

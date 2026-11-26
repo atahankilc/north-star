@@ -610,5 +610,10 @@ the stub.
   refused to anyone else; a run already over not stopped again); the real app headless 18/18 (every page draws, the
   chain shown holding, off through the confirm and on again, a limit typed, no block without a reason, blocked with it
   and freed, anyone else sent to the workspaces page); unit 1278; Settings' gallery live.
-- **Not yet:** the mails to the lab at 50/80/100 % of the total and on health going wrong (Resend, as D-431); OpenAI's
-  own figure beside ours (reconciliation, P6); the person's own last calls and CSV in Settings → the agent.
+- **Not yet:** OpenAI's own figure beside ours (reconciliation, P6); the person's own last calls and CSV in Settings →
+  the agent.
+- **Deployed 2026-11-26:** Firestore and RTDB rules, the two indexes, every function.
+- **The lab's mails** (`functions/src/ledger/alerts.ts`, on `sweepAgent` every 5 minutes, through Resend to the lab's
+  own address): 50, 80, 100 % of the month's total (each once a month), failures over 5 % of at least 20 calls in an
+  hour, runs stuck past 35 minutes, the audit chain broken (each once a day); what was sent in `labAlerts/{month}`, read
+  by nobody. Unit-tested (`labAlerts.test.ts`); not yet tried against a fake Resend; deployed with the next functions deploy.

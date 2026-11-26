@@ -1017,6 +1017,9 @@ service cloud.firestore {
       allow read: if signedIn() && (request.auth.uid == uid || isLabAdmin());
       allow write: if false;
     }
+    match /labAlerts/{month} {
+      allow read, write: if false;
+    }
     match /labGone/{id} {
       allow read, write: if false;
     }
