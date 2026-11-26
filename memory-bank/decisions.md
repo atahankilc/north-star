@@ -378,17 +378,16 @@ feature comes back as a piece, and check them with the user then.
 - Comments on components only (D-192, D-193, D-195): right-click a plane, card, text, link or task → `comment`; one open
   conversation per component; its chip under its bottom-right corner (mark + count, magenta new, `@` mention); a plane's
   own chip apart from what's inside it (`[💬 N inside]` on its console). Threads keep their space (`planeId`).
-- Threads (D-197, D-199, D-220; D-393): the threads button in the HUD's corner (D-402) opens the list, a column on the left ground
-  beside the HUD's rail; a chip or a row opens the conversation, a column on the right ground; each works alone, uncovered
-  and covered by the main screen (D-395); a narrow window drops the list while a conversation is open. It says what it shows (`everywhere`, or a dropdown with `this canvas` / `in <plane>`); `on … ↗` goes there. Its preview always
-  the newest message left, an edit changing it too; the thread deleted by its starter or the last message's writer (D-356).
-- Their look (D-398, D-405, docs/specs/surfaces.md): the list as wide as the right panel, one head (`Threads`, what it shows, tools), no views:
-  what's new on top under a magenta `NEW` rule (who wrote last, how it began), the read ones one line under their place's rule
-  (`02 PRODUCT ── 1`), the resolved behind `resolved · N` at the foot; a row leads with the thing (its kind a badge in its colour, D-414; name).
-  A conversation's head is the thing's card (`CardFace`, a press goes there), the tools a row above; bubbles washed in their
-  writer's colour (the others' left with their circle, yours right; one writer's in a row one run), a `NEW` line over what you
-  hadn't read, day rules and the clock when it runs over days; the prompt a round well with `@` and `send`; a
-  person's colour the one they have here, else their own (`usePersonColor`). A HUD menu is drawn in the page's top layer (D-405).
+- Talk (D-435, replacing D-393's, D-398's and D-405's looks; D-197, D-220): beside the canvas a column on the left: the
+  list two lines a row (a glyph of its name's letters in its kind's colour, the name, when; who wrote last and what; a
+  magenta lamp or `@` when new): NEW on top (`mark all read`), CHANNELS, ON THE CANVAS, `resolved · N`; find and a new
+  channel are the head's tools. A conversation opens in the column with the list as a rail of glyphs on its left. As the
+  page: the list, the conversation at a reading width, what it's about (`ThreadAside`). A chip opens its conversation.
+- A conversation (D-435): its head the thing in its colour, a press showing it on the canvas; show it, resolve, delete
+  (asks: no undo); messages are lines, a writer's run under one name, yours like everyone's; a `NEW` line over what you
+  hadn't read, a day's name and the clock when it runs over days. Its preview always the newest message left, an edit
+  changing it too; deleted by its starter or the last message's writer, or an owner (D-356). A person's colour the one
+  they have here, else their own (`usePersonColor`). A HUD menu is drawn in the page's top layer (D-405).
 
 ## Agent (planned, docs/specs/agent.md)
 - Its mascot (D-407, D-408): 1.0's orb (`AgentOrb`: ASCII sphere, eyes, moods, antics, the `nar` pomegranate), 72 px (`--orb`); closed it's the orb alone in the bottom-right corner (a press, ⌘J or `/` opens the box), open it rides the box's top edge. The chat a column at the far right whose `full` makes it the page: its chats beside the conversation, the canvas still beside it (D-424).
@@ -434,6 +433,7 @@ feature comes back as a piece, and check them with the user then.
   keys shown nowhere in the app (D-344), only in `?` and lessons, as this computer writes them (`Ctrl+F` off a Mac, D-355).
 
 ## The shell (D-412, docs/specs/shell.md)
+- Between docked columns the canvas is moved, never zoomed, so its middle is the sheet's: by half of what the two sides take (D-435); what's seen is `canvasArea()` and everything that fits, frames or lands uses it. The right is one column: the thing selected and the agent by tabs (`RightTabs`), what came last in front.
 - The canvas is home, filling the window until something docks; Talk, Tasks and Docs open beside it as a column on the left ground, `full` makes one the page in the canvas's place; the right is the thing selected and the agent at the far right; the HUD bare buttons on the left edge: the page's actions in the middle, the places at the foot.
 
 - The decks side view is Tasks now (D-422): a plane's `⇆ deck`/`⇆ timeline` open Tasks linked to it, a task's `show on…` too; following follows into Tasks; the agent opens decks there.
