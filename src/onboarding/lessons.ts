@@ -487,7 +487,7 @@ export const LESSONS: readonly Lesson[] = [
     ],
   },
   {
-    id: 'comment', v: 9, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349, D-393, D-398, D-402, D-405, D-412, D-416, D-435',
+    id: 'comment', v: 9, format: 'lesson', roles: ALL, area: 'together', since: 'D-192, D-197, D-349, D-393, D-398, D-402, D-405, D-412, D-416',
     trigger: [{ event: 'thread-open' }, { event: 'threads-open' }], within: 'threads',
     pages: [
       { title: 'Comments stay on things', tab: 'comments', body: 'Right-click a plane, card, text, link or task and pick `comment`. The conversation stays on that thing.', scene: 'thread' },
