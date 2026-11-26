@@ -2,7 +2,7 @@
 // so the rules and every copy of it stay as they are, with the card's id to go to and the name it had to fall back on.
 // Shown, it's the card's badge and its name now (or the old name, struck, when the card is gone); read anywhere as text
 // (a conversation's preview, its find), the name alone.
-export const CARD_REF = /\[\[([A-Za-z0-9_-]{1,40})\|([^\]\n]{0,200})\]\]/g
+const CARD_REF = /\[\[([A-Za-z0-9_-]{1,40})\|([^\]\n]{0,200})\]\]/g
 
 // The text with each card named as its name (`plain`); a preview cut inside one ends with `…`.
 export const cardRefsAsText = (text: string) => text.replace(CARD_REF, (_, _id, name: string) => name).replace(/\[\[[^\]]*$/, '…')
