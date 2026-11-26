@@ -13,9 +13,10 @@
   min-height: var(--control-lg);
 }
 
+/* One width for every kind's word (`md`, `image`, `report`), so the names after it start in one line. */
 .kind {
   flex: none;
-  min-width: 4ch;
+  width: 7ch;
   color: var(--fg-dim);
 }
 
@@ -138,6 +139,11 @@
 .toolRow:hover .rowTools,
 .rowTools:focus-within {
   opacity: 1;
+}
+
+/* What they stand over goes while they're there: no words half under them (the 2026-11-25 tour). */
+.toolRow:has(.rowTools):is(:hover, :focus-within) :is(.meta, .colNum:last-child) {
+  opacity: 0;
 }
 
 .folderEdit {
