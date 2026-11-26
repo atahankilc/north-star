@@ -605,7 +605,7 @@ const onServer = () => serverAgentOn() && !stubOn()
 // (kept here: it goes with the message; else in their account), else the workspace's when they may use it, else North
 // Star's when it's open to them. A key kept here goes with each message only.
 export type Payer = { paidBy: PaidBy; key?: string }
-export async function payerOf(chat: Chat, model = chatModel(chat)): Promise<Payer> {
+async function payerOf(chat: Chat, model = chatModel(chat)): Promise<Payer> {
   const s = useAgentSettings.getState()
   const pay = chat.pay ?? s.pay
   const provider = providerOf(model)
@@ -623,7 +623,7 @@ export async function payerOf(chat: Chat, model = chatModel(chat)): Promise<Paye
 }
 
 // North Star's key as the server tells it now: asked when the panel comes up and after each run.
-export const refreshLab = () =>
+const refreshLab = () =>
   void labStatusOf().then(
     (l) => useAgentSettings.getState().setLab(l),
     () => {},

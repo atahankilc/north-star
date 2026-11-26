@@ -8,7 +8,8 @@ import { WORKSPACES } from '../../app/paths'
 import type { AuthUser } from '../../data/auth'
 import { inviteToLab, loadBoard, setLab, setLabKey, setLabPerson, stopLabRun, useLabAdmin } from '../../data/backoffice'
 import { csv, forecast, type Board, type BoardPerson } from '../../agent/labBoard'
-import { microToCents } from '../../agent/money'
+import { centsTyped, eurText, microToCents } from '../../agent/money'
+import { KeyForm } from '../workspace/settings/WorkspaceKeySettings'
 import { KNOWN_MODELS } from '../../agent/models'
 import { useHoldCurtain } from '../../state/curtain'
 import { Button } from '../../ui/primitives/Button'
@@ -53,7 +54,7 @@ export function Backoffice({ user }: { user: AuthUser }) {
 }
 
 const monthName = (month: string) => new Date(`${month}-15T00:00:00Z`).toLocaleDateString(undefined, { month: 'long', year: 'numeric', timeZone: 'UTC' })
-const eurOf = (cents: number) => `€${(cents / 100).toFixed(2)}`
+const eurOf = eurText
 const when = (ms: number | null | undefined) => (ms ? new Date(ms).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—')
 const tokens = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 const download = (name: string, text: string) => {
@@ -63,15 +64,8 @@ const download = (name: string, text: string) => {
   a.click()
   URL.revokeObjectURL(a.href)
 }
-// What's typed as an amount: `3`, `3.50`, `€3,5`; empty: none; else not an amount.
-const centsOf = (typed: string): number | null | undefined => {
-  const t = typed.replace(/[€\s]/g, '').replace(',', '.')
-  if (!t) return null
-  return /^\d{1,7}(\.\d{1,2})?$/.test(t) ? Math.round(Number(t) * 100) : undefined
-}
-
 // The page itself, on what it's given.
-export function BackofficeView({ board, error, onRead }: { board: Board | null; error: string | null; onRead: () => Promise<unknown> }) {
+function BackofficeView({ board, error, onRead }: { board: Board | null; error: string | null; onRead: () => Promise<unknown> }) {
   const [page, setPage] = useState<Page>('overview')
   const [said, setSaid] = useState<{ text: string; tone?: 'error' } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -333,7 +327,7 @@ function PersonPanel({ p, board, busy, act, showCalls }: { p: BoardPerson; board
           placeholder={(board.pub.personCents / 100).toFixed(2)}
           value={p.limitCents !== null ? (p.limitCents / 100).toFixed(2) : ''}
           onSave={(typed) => {
-            const c = centsOf(typed)
+            const c = centsTyped(typed)
             if (c === undefined || c === p.limitCents) return
             if (!why) return void act(() => Promise.reject(new Error('Say why first.')), '')
             void act(() => setLabPerson(p.uid, { personCents: c }, why), c === null ? 'Back to the usual limit.' : `Their limit: ${eurOf(c)}.`)
@@ -444,13 +438,8 @@ function Calls({ board, who, eur, of, setOf }: Ctx & { of: string; setOf: (uid: 
 const OPENAI = KNOWN_MODELS.filter((m) => m.provider === 'openai')
 function KeyAndLimits({ board, busy, act }: Ctx) {
   const [replacing, setReplacing] = useState(false)
-  const [draft, setDraft] = useState('')
   const [ask, setAsk] = useState(false)
   const has = board.pub.hasKey
-  const save = (e: FormEvent) => {
-    e.preventDefault()
-    if (draft.trim()) void act(() => setLabKey(draft.trim()).then(() => (setDraft(''), setReplacing(false))), 'Saved: OpenAI took it.')
-  }
   const models = board.pub.models
   const limit = (label: string, value: number | null | undefined, nullable: boolean, put: (c: number | null) => Promise<unknown>) => (
     <CommitField
@@ -460,7 +449,7 @@ function KeyAndLimits({ board, busy, act }: Ctx) {
       placeholder={nullable ? 'none' : '0.00'}
       value={value !== null && value !== undefined ? (value / 100).toFixed(2) : ''}
       onSave={(typed) => {
-        const c = centsOf(typed)
+        const c = centsTyped(typed)
         if (c === undefined || c === (value ?? null) || (c === null && !nullable)) return
         void act(() => put(c), c === null ? 'No total now.' : `Now ${eurOf(c)}.`)
       }}
@@ -483,19 +472,7 @@ function KeyAndLimits({ board, busy, act }: Ctx) {
               </ButtonGroup>
             </>
           ) : (
-            <form className={styles.inline} onSubmit={save}>
-              <Field className={`${styles.mono} ${styles.grow}`} type="password" autoComplete="off" spellCheck={false} placeholder="sk-…" label="North Star's OpenAI key" value={draft} onChange={setDraft} />
-              <ButtonGroup>
-                {replacing && (
-                  <Button type="button" onClick={() => setReplacing(false)}>
-                    cancel
-                  </Button>
-                )}
-                <Button tone="main" type="submit" disabled={busy || !draft.trim()}>
-                  {busy ? 'checking' : 'save'}
-                </Button>
-              </ButtonGroup>
-            </form>
+            <KeyForm busy={busy} label="North Star's OpenAI key" onCancel={replacing ? () => setReplacing(false) : undefined} onSave={(key) => void act(() => setLabKey(key).then(() => setReplacing(false)), 'Saved: OpenAI took it.')} />
           )}
         </Row>
       </Section>

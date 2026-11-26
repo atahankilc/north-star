@@ -9,7 +9,7 @@ import { useAuth } from '../../../data/auth'
 import type { Role } from '../../../data/model'
 import { roleOf, useMembers } from '../../../data/workspaces'
 import { mayUseWorkspaceKey, setKeyAccess, setKeyLimit, setKeyModels, setWorkspaceKey, useAiConfig, useKeySpend, useRate, type AiConfig, type KeyAccess, type Spend } from '../../../data/workspaceKey'
-import { microToCents, monthOf, USD_PER_EUR } from '../../../agent/money'
+import { centsTyped, eurText, microToCents, monthOf, USD_PER_EUR } from '../../../agent/money'
 import { CommitField } from '../../../ui/primitives/CommitField'
 import { FIT_WORDS, KNOWN_MODELS, SUGGESTED } from '../../../agent/models'
 import { Button } from '../../../ui/primitives/Button'
@@ -34,14 +34,7 @@ export function WorkspaceKeySettings({ wid, workspace }: Props) {
   return <WorkspaceKeyView wid={wid} workspace={workspace} me={user?.id} config={config} names={names} spend={spend} rate={rate} />
 }
 
-// Money as people read it: euros, two places.
-const eur = (cents: number) => `€${(cents / 100).toFixed(2)}`
-// What's typed as a limit: `3`, `3.50`, `€3,5`; empty: none; anything else: not a limit.
-const centsOf = (typed: string): number | null | undefined => {
-  const t = typed.replace(/[€\s]/g, '').replace(',', '.')
-  if (!t) return null
-  return /^\d{1,7}(\.\d{1,2})?$/.test(t) ? Math.round(Number(t) * 100) : undefined
-}
+const eur = eurText
 
 const OPENAI_MODELS = KNOWN_MODELS.filter((m) => m.provider === 'openai')
 const ACCESS: readonly KeyAccess[] = ['everyone', 'chosen']
@@ -182,7 +175,7 @@ export function WorkspaceKeyView({ wid, workspace, me, config, names, spend = []
                   placeholder="none"
                   value={limits[which] !== undefined ? (limits[which]! / 100).toFixed(2) : ''}
                   onSave={(typed) => {
-                    const cents = centsOf(typed)
+                    const cents = centsTyped(typed)
                     if (cents === undefined) return setSaid({ text: 'A limit is an amount in euros, like 5 or 12.50.', tone: 'error' })
                     void run(() => setKeyLimit(wid, which, cents), cents === null ? 'No limit now.' : `The limit is ${eur(cents)} a month.`)
                   }}
@@ -211,7 +204,8 @@ export function WorkspaceKeyView({ wid, workspace, me, config, names, spend = []
   )
 }
 
-function KeyForm({ busy, onSave, onCancel }: { busy: boolean; onSave: (key: string) => void; onCancel?: () => void }) {
+// The key's form: pasted, then saved (checked with OpenAI first); the backoffice's key too (D-434).
+export function KeyForm({ busy, onSave, onCancel, label = "the workspace's OpenAI key" }: { busy: boolean; onSave: (key: string) => void; onCancel?: () => void; label?: string }) {
   const [draft, setDraft] = useState('')
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -219,7 +213,7 @@ function KeyForm({ busy, onSave, onCancel }: { busy: boolean; onSave: (key: stri
   }
   return (
     <form className={styles.keyForm} onSubmit={submit}>
-      <Field className={styles.input} type="password" autoComplete="off" spellCheck={false} placeholder="sk-…" label="the workspace's OpenAI key" value={draft} onChange={setDraft} />
+      <Field className={styles.input} type="password" autoComplete="off" spellCheck={false} placeholder="sk-…" label={label} value={draft} onChange={setDraft} />
       <ButtonGroup>
         {onCancel && (
           <Button type="button" onClick={onCancel}>

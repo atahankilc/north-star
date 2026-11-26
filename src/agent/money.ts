@@ -16,6 +16,15 @@ export const USD_PER_EUR = 1.0963
 const micro = (usd: number) => Math.round(usd * MICRO)
 export const costMicro = (model: string, u: Usage) => micro(costOf(model, u))
 export const centsToMicro = (eurCents: number, usdPerEur: number) => Math.round((eurCents / 100) * usdPerEur * MICRO)
+// Money as people read it: euros, two places.
+export const eurText = (cents: number) => `€${(cents / 100).toFixed(2)}`
+// An amount typed in euros: `3`, `3.50`, `€3,5`; empty: none (null); anything else: not an amount (undefined).
+export function centsTyped(typed: string): number | null | undefined {
+  const t = typed.replace(/[€\s]/g, '').replace(',', '.')
+  if (!t) return null
+  return /^\d{1,7}(\.\d{1,2})?$/.test(t) ? Math.round(Number(t) * 100) : undefined
+}
+
 export const microToCents = (m: number, usdPerEur: number) => Math.round((m / MICRO / usdPerEur) * 100)
 
 // What a call could cost at worst: its whole input written to the cache, `output` tokens written, `searches` run.

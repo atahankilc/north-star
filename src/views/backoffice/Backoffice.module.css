@@ -26,48 +26,28 @@
 }
 
 .main {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-width: 0;
-  min-height: 0;
+  composes: main from '../../ui/patterns/Settings.module.css';
 }
 
 .head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-  padding: var(--space-6) var(--space-6) var(--space-4) var(--space-8);
-  border-bottom: var(--line-w) solid var(--line);
+  composes: head from '../../ui/patterns/Settings.module.css';
 }
 
 .headText {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
+  composes: headText from '../../ui/patterns/Settings.module.css';
 }
 
 .title {
-  composes: title from '../../ui/foundation/Page.module.css';
+  composes: title from '../../ui/patterns/Settings.module.css';
   margin: 0;
 }
 
 .about {
-  margin: 0;
-  color: var(--fg-muted);
-  font-size: var(--text-sm);
-  line-height: var(--lh-body);
+  composes: about from '../../ui/patterns/Settings.module.css';
 }
 
 .page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--space-6) var(--space-8) var(--space-8);
-  border-radius: 0 0 var(--window-inner) 0;
+  composes: page from '../../ui/patterns/Settings.module.css';
 }
 
 /* Numbers and ids: mono, as the system's bits are (D-337). */
