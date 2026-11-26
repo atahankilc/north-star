@@ -1650,3 +1650,7 @@ Offered, not asked for: a deck's column width, the document reader's window.
 ## Done (atem-lab.com, the app's own domain, legal, D-428–D-433, 2026-11-23 to 2026-11-25)
 - The repo moved to the `atem-lab` org (D-428), atem-lab.com made an index of products with a waitlist (D-429), the app moved to north-star.atem-lab.com with its repo renamed `north-star-app` (D-430), a notice of each new name through Resend (D-431), legal pages, the waitlist confirmed by email, a contact form, deleting an account (D-432), then the name typed in Michroma and North Star's product page told by scrolling (D-433, in the site's session).
 - Checked 2026-11-25: the app, the site, its product, confirm, contact, privacy, impressum and terms pages answer 200, `www` sends on to atem-lab.com; the last Pages deploy ok; every function in functions/src/index.ts listed as deployed; Resend works (the user). Seen by another session: the landing and its legal links, /north-star/workspaces sent on, the bucket's CORS for the new origin, atahankilic.github.io/north-star/ a 404. Deleting an account: tried live by the user, works.
+
+## Done (the field from @atem-lab/kit, D-438, 2026-11-26)
+- AmbientField.tsx includes the kit's `FIELD_GLSL`, AsciiEffect.ts its `RAMP`; the favicon is North Star's cyan cursor (`public/`).
+- Checked: the GLSL token for token against the kit's, tsc, vitest 1281, check:tokens/kit/repeats, the build, the landing in headless Chrome.

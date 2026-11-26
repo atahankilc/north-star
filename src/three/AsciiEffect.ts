@@ -25,6 +25,7 @@ import {
   type Object3D,
   type WebGLRenderer,
 } from 'three'
+import { RAMP } from '@atem-lab/kit/field.js'
 import { fonts } from '../styles/tokens'
 
 const vertexShader = /* glsl */ `
@@ -102,7 +103,8 @@ void main() {
 }
 `
 
-const GLYPH_RAMP = ' .·:-=+*#%@'
+// The glyphs, lightest to heaviest: the kit's, shared with atem-lab.com.
+const GLYPH_RAMP = RAMP
 
 export type AsciiOptions = {
   cellSize?: number
