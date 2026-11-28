@@ -1,0 +1,10 @@
+Copyright (c) 2026 Atahan Kılıç (ATEM). All rights reserved.
+
+This repository is public so that its code can be read and the app served. No licence is granted to anyone. You may
+not use, copy, modify, merge, publish, distribute, sublicense or sell this software or any part of it, in whole or in
+part, in any form, without prior written permission from the copyright holder. Reading it on GitHub, and the forking
+GitHub's terms of service allow on its own site, give no further right.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+The packages it depends on (package.json) keep their own licences.

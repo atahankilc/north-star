@@ -1654,3 +1654,7 @@ Offered, not asked for: a deck's column width, the document reader's window.
 ## Done (the field from @atem-lab/kit, D-438, 2026-11-26)
 - AmbientField.tsx includes the kit's `FIELD_GLSL`, AsciiEffect.ts its `RAMP`; the favicon is North Star's cyan cursor (`public/`).
 - Checked: the GLSL token for token against the kit's, tsc, vitest 1281, check:tokens/kit/repeats, the build, the landing in headless Chrome.
+
+## Done (all rights reserved, the kit v0.3.1, D-439, 2026-11-28)
+- LICENSE and `"license": "UNLICENSED"`; @atem-lab/kit v0.2.0 → v0.3.1.
+- Checked: tsc, vitest 1281, the build, the landing in headless Chrome.
