@@ -15,6 +15,7 @@
 // - Easter egg (D-092): once in a long while it turns into a pomegranate (nar) for half a minute, then bursts and the
 //   orb builds itself back. Typing `nar` outside a text field turns it (or back). Undocumented in the UI on purpose.
 // Under reduced motion it holds still and is drawn once per mood. Colours are tokens, re-read every few frames.
+import { AGENT_GLYPHS, AGENT_TILT, glyphIndex, lattice, nearEye, projector, shade } from '@atem-lab/kit/agent.js'
 import { useEffect, useRef } from 'react'
 import { useMotion } from '../../state/motion'
 import { useTheme } from '../../state/theme'
@@ -23,22 +24,14 @@ export type OrbMood = 'idle' | 'hover' | 'open' | 'thinking' | 'talking'
 // Something that happened to it; a new `n` plays `kind` once.
 export type OrbCue = { kind: 'bumped' | 'free' | 'startled' | 'fall' | 'crash' | 'climb' | 'shaken' | 'composed'; n: number }
 
-// Light glyphs only: heavy ones (# % @) made the sphere loud enough to drown out the face.
-const GLYPHS = ' .·:-=+*'
+// The sphere itself is ATEM's agent from @atem-lab/kit (D-441), the one atem-lab.com draws: its dots (`lattice`), how
+// they turn and lean (`projector`), how bright each is (`shade`), its glyph (`glyphIndex`; light glyphs only: heavy
+// ones made the sphere loud enough to drown out the face) and the clear margin round an eye (`nearEye`). Everything
+// else here (the moods, the face's shapes, the antics, the pomegranate) is this app's own.
+const GLYPHS = AGENT_GLYPHS
 const FPS = 30
-const TILT = 0.38
 // The canvas is larger than the orb so floating z's, notes and hearts have room around it.
 const BLEED = 1.36
-
-// Evenly spread points on a unit sphere (Fibonacci lattice).
-function lattice(n: number) {
-  return Array.from({ length: n }, (_, i) => {
-    const y = 1 - (2 * (i + 0.5)) / n
-    const r = Math.sqrt(1 - y * y)
-    const a = i * Math.PI * (3 - Math.sqrt(5))
-    return [Math.cos(a) * r, y, Math.sin(a) * r] as const
-  })
-}
 
 type Colors = {
   bg: string
@@ -925,16 +918,10 @@ export function AgentOrb({ size, mood, cue, peek }: { size: number; mood: OrbMoo
         return { s, x, y, rx: R * 0.15 * flat * w, ry: R * 0.18 * w }
       })
 
-      const cs = Math.cos(spin)
-      const sn = Math.sin(spin)
-      const ct = Math.cos(TILT)
-      const st = Math.sin(TILT)
+      // Spin around the vertical axis, then tilt toward the viewer (the kit's agent).
+      const seen = projector(spin, AGENT_TILT)
       const project = (x: number, y: number, z: number, i: number, crown: number) => {
-        // Spin around the vertical axis, then tilt toward the viewer.
-        const x1 = x * cs + z * sn
-        const z1 = -x * sn + z * cs
-        const y2 = y * ct - z1 * st
-        const z2 = y * st + z1 * ct
+        const [x1, y2, z2] = seen(x, y, z)
         return { x: cx0 + x1 * R, y: cy0 - y2 * R, z: z2, nx: x1, ny: y2, i, crown }
       }
       // As a pomegranate: broad shoulders and a flat top where the calyx sits, a rounder bottom, faint ridges around.
@@ -961,11 +948,10 @@ export function AgentOrb({ size, mood, cue, peek }: { size: number; mood: OrbMoo
         }
         if (appear < 1 && appear <= seeds[p.i]) continue
         // Keep a margin around the eyes clear so they read.
-        if (p.z > 0 && eyes.some((e) => Math.hypot((p.x - e.x) / (e.rx * 1.6), (p.y - e.y) / (e.ry * 1.45)) < 1)) continue
+        if (p.z > 0 && eyes.some((e) => nearEye(p.x, p.y, e, 1.6, 1.45))) continue
         // Lit from the upper left, front.
-        const light = Math.max(0, p.nx * -0.45 + p.ny * 0.5 + p.z * 0.74)
-        const b = p.z < 0 ? 0.14 + (p.z + 1) * 0.14 : 0.3 + light * 0.7
-        const glyph = GLYPHS[Math.min(GLYPHS.length - 1, Math.max(1, Math.round(b * (GLYPHS.length - 1))))]
+        const b = shade(p.nx, p.ny, p.z)
+        const glyph = GLYPHS[glyphIndex(b, GLYPHS.length)]
         const band = m === 'thinking' && Math.abs(Math.sin(p.ny * 3 - shimmer * 5)) < 0.22
         // Angry: the front of the sphere runs hot.
         const hot = p.z > 0.15 && cur.hot > 0.5 && b > 0.45

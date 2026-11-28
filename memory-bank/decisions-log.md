@@ -7989,3 +7989,9 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
 - *Gone:* AmbientField.tsx, AsciiEffect.ts, `three`, `@react-three/fiber`, `@types/three`, the `three` chunk; the dev handles `__advance` and `__backdrop` (nothing used them).
 - *Checked:* the built app before and after at a fixed 1200 × 800 with the clock pinned, dark and light, backdrop and curtain: the same pixels (at most 1 in 255); with the real clock the curtain lifts and goes, the field moves, no errors; tsc, vitest 1281, check:tokens/kit/gallery/lessons/repeats, the build.
 - *Next:* the mascot (AgentOrb.tsx) on the kit's agent.
+
+### D-441 · 2026-11-28 · Accepted (the user: "ikisini de yap": after the backdrop, the mascot on the kit's agent)
+**The mascot's sphere is @atem-lab/kit's agent (v0.5.0); its moods, face, antics and the pomegranate stay this app's.**
+- *From the kit:* the dots (`lattice`), the turn and the lean (`projector`, `AGENT_TILT`), each dot's brightness (`shade`), its glyph (`glyphIndex`, `AGENT_GLYPHS`) and the clear margin round an eye (`nearEye`, here 1.6 × 1.45): the same parts atem-lab.com's North Star page draws its agent with (the kit's `drawAgent`).
+- *Here, as before:* AgentOrb.tsx's moods, the face's shapes and how it slides, the antics, the cues, `peek`, the pomegranate, the colours from tokens, reduced motion.
+- *Checked:* the gallery's six states (idle big, hover, open, thinking, talking, pomegranate) in dark and light, still (reduced motion, the random and the clock fixed): the same pixels before and after, all twelve; in full motion it draws with no error; tsc, vitest 1281, every check, the build.

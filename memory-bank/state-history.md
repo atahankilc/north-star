@@ -1662,3 +1662,7 @@ Offered, not asked for: a deck's column width, the document reader's window.
 ## Done (the backdrop from @atem-lab/kit, D-440, 2026-11-28)
 - Backdrop.tsx and Curtain.tsx on the kit's backdrop (v0.4.0); AmbientField, AsciiEffect, three and R3F gone.
 - Checked: before/after pixel for pixel at a fixed viewport (dark, light, with the curtain), the real clock (curtain lifts, field moves, no errors), tsc, vitest 1281, every check, the build.
+
+## Done (the mascot's sphere from @atem-lab/kit, D-441, 2026-11-28)
+- AgentOrb.tsx draws its sphere with the kit's agent parts (v0.5.0); its moods and the pomegranate unchanged.
+- Checked: twelve gallery states pixel for pixel before and after, full motion without errors, tsc, vitest 1281, every check, the build.
