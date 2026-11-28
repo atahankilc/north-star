@@ -12,7 +12,7 @@ import { demoStates } from './src/demo/demoCss'
 const stub = fileURLToPath(new URL('./src/demo/firebaseStub.ts', import.meta.url))
 
 const base = app as UserConfig
-const LIBS = ['three', 'react', 'rolldown-runtime']
+const LIBS = ['react', 'rolldown-runtime']
 const out = base.build?.rolldownOptions?.output
 const shared = Array.isArray(out) ? out[0] : out
 

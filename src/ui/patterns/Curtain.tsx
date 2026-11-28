@@ -2,12 +2,11 @@
 // the flowing backdrop (same clock, same dim), so you only see the background, plus a small
 // status in the bottom-right corner. When ready, the copy dissolves cell by cell in random order
 // and the page "rebuilds" out of the background without it ever restarting.
-import { Canvas } from '@react-three/fiber'
+import type { Backdrop as KitBackdrop, MaskMode } from '@atem-lab/kit/backdrop.js'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useCurtain } from '../../state/curtain'
-import type { AsciiEffect, MaskMode } from '../../three/AsciiEffect'
-import { BACKDROP_CAMERA, BackdropScene } from '../../three/Backdrop'
+import { useKitBackdrop } from '../../three/Backdrop'
 import { isReducedMotion } from '../../state/motion'
 import { stepBackdropDim } from '../../three/sceneClock'
 import styles from './Curtain.module.css'
@@ -77,12 +76,12 @@ export function Curtain({ field = true }: { field?: boolean }) {
     }
   }, [mounted, revealing, busy, setRevealed])
 
-  const onFrame = (effect: AsciiEffect) => {
+  const onFrame = (effect: KitBackdrop) => {
     if (!drawn.current && cover.current) {
       drawn.current = true
       cover.current.style.background = 'transparent'
     }
-    effect.setDim(stepBackdropDim())
+    effect.set({ dim: stepBackdropDim() })
     const s = sweep.current
     const duration = isReducedMotion() ? 1 : SWEEP_MS
     const p = Math.min(1, (performance.now() - s.startedAt) / duration)
@@ -108,9 +107,7 @@ export function Curtain({ field = true }: { field?: boolean }) {
           style={{ pointerEvents: revealing ? 'none' : 'auto', background: booting.current ? 'var(--bg)' : 'transparent' }}
           aria-hidden
         >
-          <Canvas dpr={[1, 2]} camera={BACKDROP_CAMERA} gl={{ antialias: false, alpha: true, premultipliedAlpha: true }}>
-            <BackdropScene onFrame={onFrame} field={field} />
-          </Canvas>
+          <CurtainCanvas onFrame={onFrame} field={field} />
         </div>
       )}
       <AnimatePresence>
@@ -133,3 +130,10 @@ export function Curtain({ field = true }: { field?: boolean }) {
   )
 }
 
+
+// The copy itself: the kit's backdrop on a transparent canvas, masked cell by cell as the sweep goes.
+function CurtainCanvas({ onFrame, field }: { onFrame: (b: KitBackdrop) => void; field: boolean }) {
+  const canvas = useRef<HTMLCanvasElement>(null)
+  useKitBackdrop(canvas, { transparent: true, field }, onFrame)
+  return <canvas ref={canvas} className={styles.canvas} />
+}

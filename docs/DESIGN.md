@@ -6,7 +6,7 @@
 ## 1. Direction: "3D ASCII"
 
 The interface is a dark, monochrome world rendered through **ASCII glyphs**, with depth and motion
-from three.js. It is mostly black and white. **Colour is rare and meaningful**, so it pops. The one exception is the backdrop, whose waves are in colour (D-386).
+from a WebGL backdrop (@atem-lab/kit, D-440). It is mostly black and white. **Colour is rare and meaningful**, so it pops. The one exception is the backdrop, whose waves are in colour (D-386).
 
 What it took from its references (two pictures by others, kept out of the repo since D-432):
 - a black canvas with flowing 3D forms in fine character dithering, a large clean grotesk headline, small nav text.
@@ -403,7 +403,7 @@ there. A new scrolling area gets the look by itself; one that scrolls with no ba
 - **Colour** (D-386): the waves are in colour. A wave's hue follows the folds of the flow along one ribbon of the accents
   (cyan → blue → magenta → yellow → cyan) and drifts slowly; about one wave in three stays white (black ink in light). The
   field sends the colour and the glyph's weight apart, so a dark hue prints as heavy a glyph as a bright one. Light and dark
-  each have their own strength (`INK`, AmbientField.tsx; the field's math itself is `@atem-lab/kit`'s `FIELD_GLSL`, D-438), so they read alike; light prints its ink in sRGB space. It starts
+  each have their own strength (the kit's `THEMES` ink, 1.4 and 1.55; the backdrop itself is `@atem-lab/kit`'s, D-438, D-440), so they read alike; light prints its ink in sRGB space. It starts
   as the flow: there is no welcome (the stars, sunrise, north star and the light landing's night sky were taken out, D-386).
   The landing has no scrim: the flow reaches every edge, behind the title too (D-340).
 - **Component enter/exit** (D-034, D-035): everything builds up cell by cell on the ASCII grid, in random order, no colour

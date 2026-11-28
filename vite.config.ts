@@ -31,7 +31,6 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
-            { name: 'three', test: /node_modules[\\/](three|@react-three)[\\/]/, priority: 3 },
             { name: 'firebase', test: /node_modules[\\/](firebase|@firebase|idb)[\\/]/, priority: 2 },
             { name: 'react', test: /node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler|motion|motion-dom|motion-utils|framer-motion|zustand)[\\/]/, priority: 1 },
           ],

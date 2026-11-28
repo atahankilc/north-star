@@ -1,8 +1,8 @@
 # CLAUDE.md
 
 North Star (formerly "Mind-Map") is a visual, real-time collaborative startup-ideation workspace (ideas, features,
-competitors, comparison matrix) with a 3D ASCII design language. It is a static React + three.js
-SPA on GitHub Pages, backed by Firebase (Auth, Firestore, Realtime Database). The only server code is a few Cloud
+competitors, comparison matrix) with a 3D ASCII design language. It is a static React SPA (its backdrop from @atem-lab/kit)
+on GitHub Pages, backed by Firebase (Auth, Firestore, Realtime Database). The only server code is a few Cloud
 Functions in `functions/` for the assistant's shared workspace key (D-079).
 
 ## Session start: always

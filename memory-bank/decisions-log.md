@@ -7980,3 +7980,12 @@ Pushed (8833714, deploy ok); the user, live at 150 %: "paneller taşmıyor, iyi"
 - *Here:* only the version moves (v0.2.0 → v0.3.1); AmbientField and AsciiEffect read the same `FIELD_GLSL` and `RAMP`.
 - *Not yet:* this app drawing its backdrop with the kit's (it would also need the curtain's mask), and its mascot (AgentOrb.tsx, with its moods and the pomegranate) built on the kit's agent.
 - *Checked:* tsc, vitest 1281, the build, the landing in headless Chrome without a shader error; in the kit, the default backdrop the same pixels as v0.2.0 at three moments.
+
+### D-440 · 2026-11-28 · Accepted (the user: "ikisini de yap, önce arka planı geçir": the app's backdrop drawn by the kit, then its mascot on the kit's agent)
+**The backdrop and the curtain are drawn by @atem-lab/kit's backdrop (v0.4.0); three.js and @react-three/fiber leave the app.**
+- *Backdrop.tsx:* `useKitBackdrop(canvas, extra, onFrame)` starts the kit's `backdrop()` on a canvas with the app's clock (`sceneTime`, stepped, still under reduced motion), its theme and paper (`usePalette().bg`), the glyphs' face (`fonts.mono`); each frame `onFrame` sets the level (`stepBackdropDim()`), so both copies agree and nothing is drawn between changes (D-063). At level 0 the canvas still goes, and with it the GPU context (the kit's `stop()` loses it) (D-385).
+- *Curtain.tsx:* the same hook on a transparent canvas (`transparent: true`), `field` as before, the sweep through the kit's `setMask(mode, progress)` (the same random order per cell, D-035).
+- *The kit grew for it (v0.4.0):* a cell mask, a transparent canvas, the field switched off, a hook every frame, and light printed exactly as this app printed it; the defaults draw what they drew.
+- *Gone:* AmbientField.tsx, AsciiEffect.ts, `three`, `@react-three/fiber`, `@types/three`, the `three` chunk; the dev handles `__advance` and `__backdrop` (nothing used them).
+- *Checked:* the built app before and after at a fixed 1200 × 800 with the clock pinned, dark and light, backdrop and curtain: the same pixels (at most 1 in 255); with the real clock the curtain lifts and goes, the field moves, no errors; tsc, vitest 1281, check:tokens/kit/gallery/lessons/repeats, the build.
+- *Next:* the mascot (AgentOrb.tsx) on the kit's agent.

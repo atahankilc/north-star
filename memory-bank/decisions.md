@@ -178,7 +178,7 @@ feature comes back as a piece, and check them with the user then.
 - Backdrop: flows by itself (no pointer) in generations every ~9 s (D-026, D-028); 30 fps on demand, one texel per cell
   (D-063); a cell is 9 device px, stars by a sine-free hash, light ink near-black (D-172); full on the landing, the workspaces page and an empty canvas, 0.5 with one piece, gone from two, fading 1.2 s between, its canvas unmounted at 0 so it costs nothing (D-385).
 - The backdrop's waves are in colour (D-386): a wave's hue follows the flow's folds along one ribbon of the accents (cyan → blue → magenta → yellow → cyan), about one wave in three white; colour in rgb and the glyph's weight in alpha, so a dark hue prints as heavy a glyph; light and dark each have their own strength (`INK`) to read alike. It starts as the flow: no welcome intro, no night sky on the light landing.
-- The field's math (`FIELD_GLSL`, `flow(p)`) and the glyph ramp come from `@atem-lab/kit` at a tag, shared with atem-lab.com; change them there, then bump the tag here (D-438); the kit is at v0.3.1, its own backdrop and agent for other apps (D-439).
+- The field's math (`FIELD_GLSL`, `flow(p)`) and the glyph ramp come from `@atem-lab/kit` at a tag, shared with atem-lab.com; change them there, then bump the tag here (D-438); the backdrop and the curtain are the kit's (v0.4.0) given the app's clock, theme and level; no three.js (D-439, D-440).
 - Landing (D-340): the backdrop on the whole screen (no scrim), the name in JetBrains Mono, no HUD, sign-in a `Button` `md`.
 - Motion `full | reduced | system` (default full), read through `useMotion().reduced`; background on/off (D-030, D-063).
 

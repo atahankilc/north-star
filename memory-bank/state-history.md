@@ -1658,3 +1658,7 @@ Offered, not asked for: a deck's column width, the document reader's window.
 ## Done (all rights reserved, the kit v0.3.1, D-439, 2026-11-28)
 - LICENSE and `"license": "UNLICENSED"`; @atem-lab/kit v0.2.0 → v0.3.1.
 - Checked: tsc, vitest 1281, the build, the landing in headless Chrome.
+
+## Done (the backdrop from @atem-lab/kit, D-440, 2026-11-28)
+- Backdrop.tsx and Curtain.tsx on the kit's backdrop (v0.4.0); AmbientField, AsciiEffect, three and R3F gone.
+- Checked: before/after pixel for pixel at a fixed viewport (dark, light, with the curtain), the real clock (curtain lifts, field moves, no errors), tsc, vitest 1281, every check, the build.

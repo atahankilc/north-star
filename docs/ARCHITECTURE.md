@@ -24,7 +24,7 @@ access enforced by that service's permission rules.
 
 ```
 ┌──────────────── Browser (GitHub Pages SPA) ────────────────┐
-│ React + R3F (three.js)  ·  Zustand UI state  ·  Router     │
+│ React + WebGL backdrop ·  Zustand UI state  ·  Router      │
 │   │                    │                       │           │
 │   │ queries/tx,        │ presence/cursors      │ fetch     │
 │   │ auth, files        │ (ephemeral)           │ (BYOK)    │
@@ -60,7 +60,8 @@ The app talks to Firebase only through **`src/data/`**, so another swap would st
 ## 4. Frontend stack
 
 - **Vite + React + TypeScript**
-- **three.js via @react-three/fiber** for the backdrop, with a hand-written ASCII effect (`src/three/AsciiEffect.ts`)
+- **@atem-lab/kit** for the backdrop (D-440): ATEM's ASCII backdrop in plain WebGL, shared with atem-lab.com, given the app's
+  clock, theme and level (`src/three/Backdrop.tsx`); no three.js
 - **Zustand** for local UI state (selection, canvas view, display, motion)
 - **React Router** with **BrowserRouter** (plain paths, no `#`, D-070). GitHub Pages has no rewrites, so the build copies
   `index.html` to `404.html`; every deep link boots the app. All paths come from `src/app/paths.ts`
@@ -69,7 +70,7 @@ The app talks to Firebase only through **`src/data/`**, so another swap would st
 
 ### Rendering strategy (hybrid)
 Fully WebGL text editing is painful and inaccessible. So:
-- **WebGL (R3F):** the flowing ASCII backdrop (`src/three/`), and the curtain's cell-by-cell reveal.
+- **WebGL (@atem-lab/kit):** the flowing ASCII backdrop (`src/three/Backdrop.tsx`), and the curtain's cell-by-cell reveal (its mask).
 - **DOM:** the canvas and every piece on it (planes and their cards, links, text, matrices, tables, kanbans, documents),
   panels, menus and settings, styled in the same ASCII language. The canvas is a transformed DOM layer that pans and
   zooms (`CanvasView.tsx`); only what's on screen is drawn (`visible.ts`); a few dense things paint into a 2D `<canvas>`
